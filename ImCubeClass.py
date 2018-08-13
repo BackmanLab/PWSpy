@@ -5,8 +5,8 @@ Created on Thu Aug  9 11:41:32 2018
 @author: Nick
 """
 import numpy as np
-import tifffile
 from scipy.io import loadmat,savemat
+import tifffile as tf
 import os
 import json
 
@@ -36,10 +36,9 @@ class ImCube:
 
     @classmethod
     def fromTiff(cls,directory):
-        tif = tifffile.TiffFile(os.path.join(directory,'MMStack.ome.tif'))
-        metadata = json.load(open(os.path.join(directory,'pwsmetadata.txt'),'r'))
-        data = np.rollaxis(tif.asarray(),0,3) #Swap axes to match y,x,lambda convention.
-        return cls(data,metadata)
+        with tf.TiffFile(os.path.join(directory,'MMStack.ome.tif')) as tif:
+            data = np.rollaxis(tif.asarray(),0,3) #Swap axes to match y,x,lambda convention.
+        return cls(data,{'r':None})
         
     def toOldPWS(self,directory):
         if os.path.exists(directory):
@@ -57,12 +56,35 @@ class ImCube:
         nimbd = imbd-imbd.min()
         nimbd = nimbd/nimbd.max()
         nimbd = (nimbd*255).astype(np.uint8)
-        im = tifffile.TiffWriter(os.path.join(directory,'image_bd.tif'))
+        im = tf.TiffWriter(os.path.join(directory,'image_bd.tif'))
         im.save(nimbd)
         im.close()
         with open(os.path.join(directory,'image_cube'),'wb') as f:
             f.write(self._data.tobytes(order='F'))
-
+            
+    def compress(self,outpath):
+        im = self._data #3d array of pixel data
+        im = im.astype(np.int32)   #convert to signed integer to avoid overflow during processing.
+        mins = []   #A list to store the minimum value offsets of each of secondary frames.
+        for i in range(im.shape[-1]-1,0,-1): #The first image is unchanged. the rest are expressed as the difference between themselves and the frame before them.
+            im[:,:,i] = im[:,:,i] - im[:,:,i-1]   #Subtract the image from the frame before it.
+            mins.append(im[:,:,i].min())    #record the new minimum value
+            im[:,:,i] -= mins[-1]   #Subtract by the minimum. this ensures that the minimum is 0. If it was negative we would have an issue saving as uint8
+        mins = mins[::-1]   #reverse the list to go back to forward order
+        with open(outpath,'wb') as f:
+            w=tf.TiffWriter(f)
+            w.save(np.rollaxis(im.astype(np.uint16),-1,0),extratags = [(15243,'h',len(mins),mins,True)], compress = 1)
+            w.close()
+    
+    @classmethod
+    def decompress(cls,inpath):
+        with open(inpath,'rb') as f:
+            t = tf.TiffFile(f)
+            im = np.rollaxis(t.asarray(),0,3)
+            mins = t.pages[0].tags['15243'].value
+        for i in range(1,im.shape[-1]):
+            im[:,:,i] = im[:,:,i] + mins[i-1] + im[:,:,i-1]
+        return cls(im,{'r':None})
     
     def __getitem__(self,slic):
         return self._data[slic]
