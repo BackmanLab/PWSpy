@@ -54,8 +54,8 @@ class ImCube:
         savemat(os.path.join(directory,'WV'),wv)
         imbd = self._data.mean(axis=-1)
         savemat(os.path.join(directory,'image_bd'),{'image_bd':imbd})
-        nimbd = imbd-imbd.min()
-        nimbd = nimbd/nimbd.max()
+        nimbd = imbd-np.percentile(imbd,0.1) #.5 percent saturation
+        nimbd = nimbd/np.percentile(nimbd,99.9)
         nimbd = (nimbd*255).astype(np.uint8)
         im = tf.TiffWriter(os.path.join(directory,'image_bd.tif'))
         im.save(nimbd)
