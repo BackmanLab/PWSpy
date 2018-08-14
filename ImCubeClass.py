@@ -38,7 +38,8 @@ class ImCube:
     def fromTiff(cls,directory):
         with tf.TiffFile(os.path.join(directory,'MMStack.ome.tif')) as tif:
             data = np.rollaxis(tif.asarray(),0,3) #Swap axes to match y,x,lambda convention.
-        return cls(data,{'r':None})
+        metadata = json.load(open(os.path.join(directory,'pwsmetadata.txt'),'r'))
+        return cls(data,metadata)
         
     def toOldPWS(self,directory):
         if os.path.exists(directory):
