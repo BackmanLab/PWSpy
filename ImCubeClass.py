@@ -48,7 +48,7 @@ class ImCube:
         m = self.metadata
         info2 = {'info2':[m['waveLengths'][0],0,m['waveLengths'][-1],m['exposure'],0,0,0,0,0,0]}
         info3 = {'info3':[m['systemId'],m['exposure'],m['imgHeight'],m['imgWidth'],0,0,0,0,0,0,0,0]}
-        wv = {"WV":m['waveLengths']}
+        wv = {"WV":[float(i) for i in m['waveLengths']]}
         savemat(os.path.join(directory,'info2'),info2)
         savemat(os.path.join(directory,'info3'),info3)
         savemat(os.path.join(directory,'WV'),wv)
