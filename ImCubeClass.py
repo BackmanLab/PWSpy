@@ -9,12 +9,13 @@ from scipy.io import loadmat,savemat
 import tifffile as tf
 import os
 import json
+import matplotlib.pyplot as plt
 
 class ImCube:
     def __init__(self,data,metadata):
         assert isinstance(data,np.ndarray)
         assert isinstance(metadata,dict)
-        self._data = data
+        self._data = data.astype(np.float32)
         self.metadata = metadata
         
     @classmethod
@@ -61,7 +62,7 @@ class ImCube:
         im.save(nimbd)
         im.close()
         with open(os.path.join(directory,'image_cube'),'wb') as f:
-            f.write(self._data.tobytes(order='F'))
+            f.write(self._data.astype(uint16).tobytes(order='F'))
             
     def compress(self,outpath):
         im = self._data #3d array of pixel data
