@@ -82,9 +82,11 @@ class ImCube:
             mins.append(im[:,:,i].min())    #record the new minimum value
             im[:,:,i] -= mins[-1]   #Subtract by the minimum. this ensures that the minimum is 0. If it was negative we would have an issue saving as uint8
         mins = mins[::-1]   #reverse the list to go back to forward order
+        metadata = self.metadata
+        metadata["compressionMins"] = [int(i) for i in mins] #This is needed for json compatability
         with open(outpath,'wb') as f:
             w=tf.TiffWriter(f)
-            w.save(np.rollaxis(im.astype(np.uint16),-1,0),extratags = [(15243,'h',len(mins),mins,True)], compress = 1)
+            w.save(np.rollaxis(im.astype(np.uint16),-1,0),metadata = metadata, compress = 1)
             w.close()
     
     @classmethod
@@ -92,10 +94,12 @@ class ImCube:
         with open(inpath,'rb') as f:
             t = tf.TiffFile(f)
             im = np.rollaxis(t.asarray(),0,3)
-            mins = t.pages[0].tags['15243'].value
+            md = json.loads(t.pages[0].tags['ImageDescription'].value)
+        mins = md["compressionMins"]
+        del md["compressionMins"]
         for i in range(1,im.shape[-1]):
             im[:,:,i] = im[:,:,i] + mins[i-1] + im[:,:,i-1]
-        return cls(im,{'r':None})
+        return cls(im,md)
     
     def plotMean(self):
         fig,ax = plt.subplots()
