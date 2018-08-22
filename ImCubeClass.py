@@ -37,9 +37,18 @@ class ImCube:
 
     @classmethod
     def fromTiff(cls,directory):
-        with tf.TiffFile(os.path.join(directory,'MMStack.ome.tif')) as tif:
+        if os.path.exists(os.path.join(directory,'MMStack.ome.tif')):
+            path = os.path.join(directory,'MMStack.ome.tif')
+        elif os.path.exists(os.path.join(directory,'pws.tif')):
+            path = os.path.join(directory,'pws.tif')
+        else:
+            raise OSError("No Tiff file was found at:", directory)    
+        with tf.TiffFile(path) as tif:
             data = np.rollaxis(tif.asarray(),0,3) #Swap axes to match y,x,lambda convention.
-        metadata = json.load(open(os.path.join(directory,'pwsmetadata.txt'),'r'))
+        if os.path.exists(os.path.join(directory,'pwsmetadata.txt')):
+            metadata = json.load(open(os.path.join(directory,'pwsmetadata.txt'),'r'))
+        else:
+            metadata = json.loads(tif.pages[0].description)
         return cls(data,metadata)
         
     def toOldPWS(self,directory):
