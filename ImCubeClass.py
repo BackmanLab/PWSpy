@@ -87,5 +87,23 @@ class ImCube:
             im[:,:,i] = im[:,:,i] + mins[i-1] + im[:,:,i-1]
         return cls(im,{'r':None})
     
+    def plotMean(self):
+        fig,ax = plt.subplots()
+        ax.imshow(np.mean(self._data,axis=2))
+        ax.colorbar()
+        
+    def toHyperspy(self):
+        import hyperspy.api as hs
+        return hs.signals.Signal1D(self._data)
+    
+    def normalizeByExposure(self):
+        self._data = self._data / self.metadata['exposure']
+        return self
+    
+    def subtractDarkCount(self,count):
+        count = count * self.metadata['MicroManagerMetadata']['Binning']    #Account for the fact that binning multiplies the darkcount.
+        self._data = self._data - count
+        return self
+        
     def __getitem__(self,slic):
         return self._data[slic]
