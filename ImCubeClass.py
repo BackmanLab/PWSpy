@@ -119,6 +119,15 @@ class ImCube:
         count = count * self.metadata['MicroManagerMetadata']['Binning']**2    #Account for the fact that binning multiplies the darkcount.
         self._data = self._data - count
         return self
+    
+    def getMeanSpectra(self,xSlice = None, ySlice = None):
+        if not hasattr(xSlice,'__iter__'):
+            xSlice = (xSlice,)
+        if not hasattr(ySlice,'__iter__'):
+            ySlice = (ySlice,) 
+        xSlice = slice(*xSlice)
+        ySlice = slice(*ySlice)
+        return self._data[ySlice,xSlice,:].mean(axis=0).mean(axis=0)    
         
     def __getitem__(self,slic):
         return self._data[slic]
