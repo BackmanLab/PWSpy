@@ -12,11 +12,12 @@ import json
 import matplotlib.pyplot as plt
 
 class ImCube:
-    def __init__(self,data,metadata):
+    def __init__(self,data,metadata, dtype = np.float32):
         assert isinstance(data,np.ndarray)
         assert isinstance(metadata,dict)
-        self._data = data.astype(np.float32)
+        self._data = data.astype(dtype)
         self.metadata = metadata
+        self.waveLengths = self.metadata['waveLengths']
         
     @classmethod
     def fromOldPWS(cls,directory):
