@@ -116,7 +116,7 @@ class ImCube:
         return self
     
     def subtractDarkCount(self,count):
-        count = count * self.metadata['MicroManagerMetadata']['Binning']    #Account for the fact that binning multiplies the darkcount.
+        count = count * self.metadata['MicroManagerMetadata']['Binning']**2    #Account for the fact that binning multiplies the darkcount.
         self._data = self._data - count
         return self
         
