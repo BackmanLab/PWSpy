@@ -125,44 +125,51 @@ class ImCube:
         self._data = self._data - count
         return self
     
-    def getMeanSpectra(self,xSlice = None, ySlice = None):
-        if not hasattr(xSlice,'__iter__'):
-            xSlice = (xSlice,)
-        if not hasattr(ySlice,'__iter__'):
-            ySlice = (ySlice,) 
-        xSlice = slice(*xSlice)
-        ySlice = slice(*ySlice)
-        return self._data[ySlice,xSlice,:].mean(axis=0).mean(axis=0)
+    def getMeanSpectra(self,mask = None):
+        return self._data[mask].mean(axis=0)
     
-    def selectROI(self,typ = 'rect'):
-        assert typ =='rect' or typ == 'lasso'
-        fig,ax = self.plotMean()
-        x,y = np.meshgrid(np.arange(self._data.shape[0]),np.arange(self._data.shape[1]))
-        coords = np.vstack((x.flatten(),y.flatten())).T
+    def selectROI(self,typ = 'rect',xSlice = None,ySlice = None):
         mask = np.zeros((self._data.shape[0],self._data.shape[1]),dtype=np.bool)
-
-        def onSelect(verts):
-            p = path.Path(verts)
-            ind = p.contains_points(coords,radius=0)
-            mask[coords[ind,1],coords[ind,0]] = True
-            plt.figure()
-            plt.imshow(mask)
-            plt.close(fig)
-        def rectSelect(mins,maxes):
-            y = [int(mins.ydata),int(maxes.ydata)]
-            x = [int(mins.xdata),int(maxes.xdata)]
-            print(x)
-            print(y)
-            mask[min(y):max(y),min(x):max(x)] = True
-            plt.figure()
-            plt.imshow(mask)
-            plt.close(fig)
-        if typ == 'lasso':
-            lasso = widgets.LassoSelector(ax,onSelect)
+        if (xSlice is not None) and (ySlice is not None):
+            if not hasattr(xSlice,'__iter__'):
+                xSlice = (xSlice,)
+            if not hasattr(ySlice,'__iter__'):
+                ySlice = (ySlice,) 
+            xSlice = slice(*xSlice)
+            ySlice = slice(*ySlice)
+            mask[ySlice,xSlice] = True
         else:
-           r = widgets.RectangleSelector(ax,rectSelect)
-        while plt.fignum_exists(fig.number):
-            plt.pause(0.1)
+            try:
+                assert typ =='rect' or typ == 'lasso'
+            except:
+                raise TypeError("A valid ROI type was not indicated. please use 'rect' or 'lasso'.")
+            fig,ax = self.plotMean()
+            x,y = np.meshgrid(np.arange(self._data.shape[0]),np.arange(self._data.shape[1]))
+            coords = np.vstack((x.flatten(),y.flatten())).T
+            mask = np.zeros((self._data.shape[0],self._data.shape[1]),dtype=np.bool)
+    
+            def onSelect(verts):
+                p = path.Path(verts)
+                ind = p.contains_points(coords,radius=0)
+                mask[coords[ind,1],coords[ind,0]] = True
+                plt.figure()
+                plt.imshow(mask)
+                plt.close(fig)
+            def rectSelect(mins,maxes):
+                y = [int(mins.ydata),int(maxes.ydata)]
+                x = [int(mins.xdata),int(maxes.xdata)]
+                print(x)
+                print(y)
+                mask[min(y):max(y),min(x):max(x)] = True
+                plt.figure()
+                plt.imshow(mask)
+                plt.close(fig)
+            if typ == 'lasso':
+                lasso = widgets.LassoSelector(ax,onSelect)
+            else:
+               r = widgets.RectangleSelector(ax,rectSelect)
+            while plt.fignum_exists(fig.number):
+                plt.pause(0.1)
         return mask
              
     def __getitem__(self,slic):
