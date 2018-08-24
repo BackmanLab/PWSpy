@@ -104,8 +104,10 @@ class ImCube:
     
     def plotMean(self):
         fig,ax = plt.subplots()
-        ax.imshow(np.mean(self._data,axis=2))
-        ax.colorbar()
+        mean = np.mean(self._data,axis=2)
+        im = ax.imshow(mean)
+        plt.colorbar(im, ax = ax)
+        return fig,ax
         
     def toHyperspy(self):
         import hyperspy.api as hs
