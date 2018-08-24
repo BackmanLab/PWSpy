@@ -4,12 +4,15 @@ Created on Thu Aug  9 11:41:32 2018
 
 @author: Nick
 """
+
 import numpy as np
 from scipy.io import loadmat,savemat
 import tifffile as tf
 import os
 import json
 import matplotlib.pyplot as plt
+from matplotlib import widgets
+from matplotlib import path
 
 class ImCube:
     def __init__(self,data,metadata, dtype = np.float32):
@@ -129,7 +132,40 @@ class ImCube:
             ySlice = (ySlice,) 
         xSlice = slice(*xSlice)
         ySlice = slice(*ySlice)
-        return self._data[ySlice,xSlice,:].mean(axis=0).mean(axis=0)    
-        
+        return self._data[ySlice,xSlice,:].mean(axis=0).mean(axis=0)
+    
+    def selectROI(self,typ = 'rect'):
+        assert typ =='rect' or typ == 'lasso'
+        fig,ax = self.plotMean()
+        x,y = np.meshgrid(np.arange(self._data.shape[0]),np.arange(self._data.shape[1]))
+        coords = np.vstack((x.flatten(),y.flatten())).T
+        mask = np.zeros((self._data.shape[0],self._data.shape[1]),dtype=np.bool)
+
+        def onSelect(verts):
+            p = path.Path(verts)
+            ind = p.contains_points(coords,radius=0)
+            mask[coords[ind,1],coords[ind,0]] = True
+            plt.figure()
+            plt.imshow(mask)
+            plt.close(fig)
+        def rectSelect(mins,maxes):
+            y = [int(mins.ydata),int(maxes.ydata)]
+            x = [int(mins.xdata),int(maxes.xdata)]
+            print(x)
+            print(y)
+            mask[min(y):max(y),min(x):max(x)] = True
+            plt.figure()
+            plt.imshow(mask)
+            plt.close(fig)
+        if typ == 'lasso':
+            lasso = widgets.LassoSelector(ax,onSelect)
+        else:
+           r = widgets.RectangleSelector(ax,rectSelect)
+        while plt.fignum_exists(fig.number):
+            plt.pause(0.1)
+        return mask
+             
     def __getitem__(self,slic):
         return self._data[slic]
+
+
