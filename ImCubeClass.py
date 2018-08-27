@@ -127,9 +127,10 @@ class ImCube:
     
     def getMeanSpectra(self,mask = None):
         if mask is None:
-            return self._data.mean(axis=0).mean(axis=0)
-        else:
-            return self._data[mask].mean(axis = 0)
+            mask = np.ones(self._data.shape[:-1], dtype=np.bool)
+        mean = self._data[mask].mean(axis=0)
+        std = self._data[mask].std(axis=0)
+        return mean,std
     
     def selectROI(self,typ = 'rect',xSlice = None,ySlice = None):
         mask = np.zeros((self._data.shape[0],self._data.shape[1]),dtype=np.bool)
