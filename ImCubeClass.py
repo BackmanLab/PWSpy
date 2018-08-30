@@ -68,14 +68,14 @@ class ImCube:
         savemat(os.path.join(directory,'WV'),wv)
         imbd = self._data.mean(axis=-1)
         savemat(os.path.join(directory,'image_bd'),{'image_bd':imbd})
-        nimbd = imbd-np.percentile(imbd,0.1) #.5 percent saturation
-        nimbd = nimbd/np.percentile(nimbd,99.9)
+        nimbd = imbd-np.percentile(imbd,0.01) #.01 percent saturation
+        nimbd = nimbd/np.percentile(nimbd,99.99)
         nimbd = (nimbd*255).astype(np.uint8)
         im = tf.TiffWriter(os.path.join(directory,'image_bd.tif'))
         im.save(nimbd)
         im.close()
         with open(os.path.join(directory,'image_cube'),'wb') as f:
-            f.write(self._data.astype(uint16).tobytes(order='F'))
+            f.write(self._data.astype(np.uint16).tobytes(order='F'))
             
     def compress(self,outpath):
         im = self._data #3d array of pixel data
