@@ -166,7 +166,7 @@ class ImCube:
             else:
                r = widgets.RectangleSelector(ax,rectSelect)
             while plt.fignum_exists(fig.number):
-                plt.pause(0.1)
+                fig.canvas.flush_events()
         return mask
              
     def __getitem__(self,slic):
