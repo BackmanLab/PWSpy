@@ -147,11 +147,12 @@ class ImCube:
             except:
                 raise TypeError("A valid ROI type was not indicated. please use 'rect' or 'lasso'.")
             fig,ax = self.plotMean()
-            fig.suptitle("Close to accept ROI")
+            fig.suptitle("1 for lasso, 2 for rectangle.\nClose to accept ROI")
             x,y = np.meshgrid(np.arange(self._data.shape[0]),np.arange(self._data.shape[1]))
             coords = np.vstack((x.flatten(),y.flatten())).T
             mask = np.zeros((self._data.shape[0],self._data.shape[1]),dtype=np.bool)
-    
+            
+
             def onSelect(verts):
                 p = path.Path(verts)
                 ind = p.contains_points(coords,radius=0)
@@ -160,10 +161,21 @@ class ImCube:
                 y = [int(mins.ydata),int(maxes.ydata)]
                 x = [int(mins.xdata),int(maxes.xdata)]
                 mask[min(y):max(y),min(x):max(x)] = True
-            if typ == 'lasso':
-                lasso = widgets.LassoSelector(ax,onSelect)
-            else:
-               r = widgets.RectangleSelector(ax,rectSelect)
+                
+            l = widgets.LassoSelector(ax,onSelect)
+            r = widgets.RectangleSelector(ax,rectSelect)
+            r.set_active(False)
+            def onPress(event):
+                k = event.key.lower()
+                if k == '1': #Activate the lasso
+                    r.set_active(False)
+                    l.set_active(True)
+                    
+                elif k == '2': #activate the rectancle
+                    l.set_active(False)
+                    r.set_active(True)
+
+            fig.canvas.mpl_connect('key_press_event',onPress)
             while plt.fignum_exists(fig.number):
                 fig.canvas.flush_events()
         return mask
