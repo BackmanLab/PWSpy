@@ -117,14 +117,13 @@ class ImCube:
         return hs.signals.Signal1D(self._data)
     
     def normalizeByExposure(self):
-        self._data = self._data / self.metadata['exposure']
-        return self
+        data = self._data / self.metadata['exposure']
+        self._data = data
     
-    def subtractDarkCount(self,count):
+    def subtractDarkCounts(self,count):
         count = count * self.metadata['MicroManagerMetadata']['Binning']**2    #Account for the fact that binning multiplies the darkcount.
         self._data = self._data - count
-        return self
-    
+
     def getMeanSpectra(self,mask = None):
         if mask is None:
             mask = np.ones(self._data.shape[:-1], dtype=np.bool)
