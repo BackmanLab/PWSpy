@@ -131,7 +131,7 @@ class ImCube:
         std = self._data[mask].std(axis=0)
         return mean,std
     
-    def selectROI(self,typ = 'rect',xSlice = None,ySlice = None):
+    def selectROI(self,xSlice = None,ySlice = None):
         mask = np.zeros((self._data.shape[0],self._data.shape[1]),dtype=np.bool)
         if (xSlice is not None) and (ySlice is not None):
             if not hasattr(xSlice,'__iter__'):
