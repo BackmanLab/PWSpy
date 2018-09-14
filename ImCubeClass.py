@@ -142,10 +142,10 @@ class ImCube:
             ySlice = slice(*ySlice)
             mask[ySlice,xSlice] = True
         else:
-            try:
-                assert typ =='rect' or typ == 'lasso'
-            except:
-                raise TypeError("A valid ROI type was not indicated. please use 'rect' or 'lasso'.")
+#            try:
+#                assert typ =='rect' or typ == 'lasso'
+#            except:
+#                raise TypeError("A valid ROI type was not indicated. please use 'rect' or 'lasso'.")
             fig,ax = self.plotMean()
             fig.suptitle("1 for lasso, 2 for rectangle.\nClose to accept ROI")
             x,y = np.meshgrid(np.arange(self._data.shape[0]),np.arange(self._data.shape[1]))
