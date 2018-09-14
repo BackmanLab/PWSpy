@@ -20,7 +20,7 @@ class ImCube:
         assert isinstance(metadata,dict)
         self._data = data.astype(dtype)
         self.metadata = metadata
-        self.waveLengths = self.metadata['waveLengths']
+        self.wavelengths = self.metadata['wavelengths']
         
     @classmethod
     def fromOldPWS(cls,directory):
@@ -36,7 +36,7 @@ class ImCube:
                  'imgHeight':int(info3[2]),'imgWidth':int(info3[3]),'waveLengths':wv}
         with open(os.path.join(directory,'image_cube'),'rb') as f:
             data = np.frombuffer(f.read(),dtype=np.uint16)
-        data = data.reshape((md['imgHeight'],md['imgWidth'],len(md['waveLengths'])),order='F')
+        data = data.reshape((md['imgHeight'],md['imgWidth'],len(md['wavelengths'])),order='F')
         return cls(data, md)
 
     @classmethod
@@ -60,9 +60,9 @@ class ImCube:
             raise OSError("The specified directory already exists.")
         os.mkdir(directory)
         m = self.metadata
-        info2 = {'info2':[m['waveLengths'][0],0,m['waveLengths'][-1],m['exposure'],0,0,0,0,0,0]}
+        info2 = {'info2':[m['wavelengths'][0],0,m['wavelengths'][-1],m['exposure'],0,0,0,0,0,0]}
         info3 = {'info3':[m['systemId'],m['exposure'],m['imgHeight'],m['imgWidth'],0,0,0,0,0,0,0,0]}
-        wv = {"WV":[float(i) for i in m['waveLengths']]}
+        wv = {"WV":[float(i) for i in m['wavelengths']]}
         savemat(os.path.join(directory,'info2'),info2)
         savemat(os.path.join(directory,'info3'),info3)
         savemat(os.path.join(directory,'WV'),wv)
