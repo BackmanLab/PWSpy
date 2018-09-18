@@ -132,6 +132,7 @@ class ImCube:
         return mean,std
     
     def selectROI(self,xSlice = None,ySlice = None):
+        #X and Y slice allow manual selection of the range.
         mask = np.zeros((self._data.shape[0],self._data.shape[1]),dtype=np.bool)
         if (xSlice is not None) and (ySlice is not None):
             if not hasattr(xSlice,'__iter__'):
