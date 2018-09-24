@@ -13,6 +13,7 @@ import json
 import matplotlib.pyplot as plt
 from matplotlib import widgets
 from matplotlib import path
+from glob import glob
 
 class ImCube:
     def __init__(self,data,metadata, dtype = np.float32):
@@ -20,8 +21,24 @@ class ImCube:
         assert isinstance(metadata,dict)
         self._data = data.astype(dtype)
         self.metadata = metadata
-        self.wavelengths = self.metadata['wavelengths']
+        try:
+            self.wavelengths = self.metadata['wavelengths']
+        except:
+            self.wavelengths = self.metadata["waveLengths"]
         
+    @classmethod
+    def loadAny(cls, directory):
+        try:
+            return ImCube.fromTiff(directory)
+        except Exception as e:
+            try:
+                files = glob(os.path.join(directory,'*.comp.tif'))
+                return ImCube.decompress(files[0])
+            except:
+                try:
+                    return ImCube.fromOldPWS(directory)
+                except:
+                    raise Exception("Could not find a valid PWS image cube file.")
     @classmethod
     def fromOldPWS(cls,directory):
         try:
