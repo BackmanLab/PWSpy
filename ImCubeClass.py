@@ -167,7 +167,7 @@ class ImCube:
             fig,ax = self.plotMean()
             fig.suptitle("1 for lasso, 2 for rectangle.\nClose to accept ROI")
             x,y = np.meshgrid(np.arange(self._data.shape[0]),np.arange(self._data.shape[1]))
-            coords = np.vstack((x.flatten(),y.flatten())).T
+            coords = np.vstack((y.flatten(),x.flatten())).T
             mask = np.zeros((self._data.shape[0],self._data.shape[1]),dtype=np.bool)
             
 
