@@ -138,7 +138,11 @@ class ImCube:
         self._data = data
     
     def subtractDarkCounts(self,count):
-        count = count * self.metadata['MicroManagerMetadata']['Binning']**2    #Account for the fact that binning multiplies the darkcount.
+        try:
+            binning = self.metadata['MicroManagerMetadata']['Binning']
+        except:
+            binning = 1
+        count = count * binning**2    #Account for the fact that binning multiplies the darkcount.
         self._data = self._data - count
 
     def getMeanSpectra(self,mask = None):
