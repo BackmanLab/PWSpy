@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from matplotlib import widgets
 from matplotlib import path
 from glob import glob
+import typing
 
 class ImCube:
     def __init__(self,data,metadata, dtype = np.float32):
@@ -202,6 +203,11 @@ class ImCube:
                 fig.canvas.flush_events()
         return mask
              
+    def correctCameraNonlinearity(self,polynomials:typing.List[float]):
+        #Apply a polynomial to the data where x is the original data and y is the data after correction.
+        cfactor = np.polynomial.polynomial.polyval(self._data, polynomials) #The polynomials tell us a correction factor
+        self._data = self._data / cfactor#Dividing the original data by the correction factor gives us linearized data.
+        
     def __getitem__(self,slic):
         return self._data[slic]
 
