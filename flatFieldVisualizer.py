@@ -47,9 +47,9 @@ if __name__ == "__main__":
     files = glob('G:/Data/thinfilmcomparisonround2/a*')
     files = [i for i in files if ('alopen' not in i) and ('aopen' not in i)  and ('fmid' not in i) and ("fclose" not in i)]
     #%% Loading
-    theory = pd.read_csv('Reflectance-calcs.txt', delimiter = '\t', index_col = 0)   #The theoretical reflectance for a 1um thin film. silica on silicon.
+    theory = pd.read_csv(os.path.join(os.path.split(__file__)[0], 'thinFilmData', 'Reflectance-calcs.txt'), delimiter = '\t', index_col = 0)   #The theoretical reflectance for a 1um thin film. silica on silicon.
     theory = theory.loc[500:700:2]
-    silicon = pd.read_csv('SiliconProps.csv')
+    silicon = pd.read_csv(os.path.join(os.path.split(__file__)[0], 'thinFilmData', 'SiliconProps.csv'))
     silicon = silicon.set_index(silicon['wavelength(nm)'])
     sref = silicon["Reflection"]
     #resample the reflectance to match the other data.
@@ -70,7 +70,6 @@ if __name__ == "__main__":
     
     print("parallel computation")
     result = pool.starmap(proc, [(im, mmask, sref, theory) for im in ims])
-#    result = [proc(ims[0],mmask,sref,theory)]
     ims = [res[0] for res in result]
     for im, amp, corramp, corrmax, minn in result:   
         # Plotting
