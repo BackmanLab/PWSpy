@@ -36,7 +36,7 @@ materials = {
         'water': 'Daimon-21.5C.csv',
         'air': 'Ciddor.csv'}
 n = _init()
-del  _init()
+del  _init
 
 def getReflectance(mat1: str, mat2: str, index = None):
     '''Given the names of two interfaces this provides the reflectance in units of percent.
