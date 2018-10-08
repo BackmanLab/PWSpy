@@ -46,6 +46,7 @@ def getReflectance(mat1: str, mat2: str, index = None):
         index = pd.Index(index)
         combinedIdx = result.index.append(index)    #An index that contains all the original index points and all of the new. That way we can interpolate without first throwing away old data.
         result = result.reindex(combinedIdx)
+        result = result.sort_index()
         result = result.interpolate()
         result = result[~result.index.duplicated()] #remove duplicate indices to avoid error
         result = result.reindex(index)  #reindex again to get rid of unwanted index points.
