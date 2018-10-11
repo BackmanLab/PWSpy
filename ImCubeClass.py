@@ -20,8 +20,7 @@ class ImCube:
     def __init__(self,data,metadata, dtype = np.float32):
         assert isinstance(data,np.ndarray)
         assert isinstance(metadata,dict)
-        self._data = data.astype(dtype)
-        self.data = self._data
+        self.data = data.astype(dtype)
         self.metadata = metadata
         try:
             self.wavelengths = self.metadata['wavelengths']
