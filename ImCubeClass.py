@@ -85,7 +85,7 @@ class ImCube:
         savemat(os.path.join(directory,'info2'),info2)
         savemat(os.path.join(directory,'info3'),info3)
         savemat(os.path.join(directory,'WV'),wv)
-        imbd = self._data.mean(axis=-1)
+        imbd = self.data.mean(axis=-1)
         savemat(os.path.join(directory,'image_bd'),{'image_bd':imbd})
         nimbd = imbd-np.percentile(imbd,0.01) #.01 percent saturation
         nimbd = nimbd/np.percentile(nimbd,99.99)
@@ -94,10 +94,10 @@ class ImCube:
         im.save(nimbd)
         im.close()
         with open(os.path.join(directory,'image_cube'),'wb') as f:
-            f.write(self._data.astype(np.uint16).tobytes(order='F'))
+            f.write(self.data.astype(np.uint16).tobytes(order='F'))
             
     def compress(self,outpath):
-        im = self._data #3d array of pixel data
+        im = self.data #3d array of pixel data
         im = im.astype(np.int32)   #convert to signed integer to avoid overflow during processing.
         mins = []   #A list to store the minimum value offsets of each of secondary frames.
         for i in range(im.shape[-1]-1,0,-1): #The first image is unchanged. the rest are expressed as the difference between themselves and the frame before them.
@@ -126,18 +126,18 @@ class ImCube:
     
     def plotMean(self):
         fig,ax = plt.subplots()
-        mean = np.mean(self._data,axis=2)
+        mean = np.mean(self.data,axis=2)
         im = ax.imshow(mean)
         plt.colorbar(im, ax = ax)
         return fig,ax
         
     def toHyperspy(self):
         import hyperspy.api as hs
-        return hs.signals.Signal1D(self._data)
+        return hs.signals.Signal1D(self.data)
     
     def normalizeByExposure(self):
-        data = self._data / self.metadata['exposure']
-        self._data = data
+        data = self.data / self.metadata['exposure']
+        self.data = data
     
     def subtractDarkCounts(self,count):
         try:
@@ -145,18 +145,18 @@ class ImCube:
         except:
             binning = 1
         count = count * binning**2    #Account for the fact that binning multiplies the darkcount.
-        self._data = self._data - count
+        self.data = self.data - count
 
     def getMeanSpectra(self,mask = None):
         if mask is None:
-            mask = np.ones(self._data.shape[:-1], dtype=np.bool)
-        mean = self._data[mask].mean(axis=0)
-        std = self._data[mask].std(axis=0)
+            mask = np.ones(self.data.shape[:-1], dtype=np.bool)
+        mean = self.data[mask].mean(axis=0)
+        std = self.data[mask].std(axis=0)
         return mean,std
     
     def selectROI(self,xSlice = None,ySlice = None):
         #X and Y slice allow manual selection of the range.
-        mask = np.zeros((self._data.shape[0],self._data.shape[1]),dtype=np.bool)
+        mask = np.zeros((self.data.shape[0],self.data.shape[1]),dtype=np.bool)
         if (xSlice is not None) and (ySlice is not None):
             if not hasattr(xSlice,'__iter__'):
                 xSlice = (xSlice,)
@@ -172,9 +172,9 @@ class ImCube:
 #                raise TypeError("A valid ROI type was not indicated. please use 'rect' or 'lasso'.")
             fig,ax = self.plotMean()
             fig.suptitle("1 for lasso, 2 for rectangle.\nClose to accept ROI")
-            x,y = np.meshgrid(np.arange(self._data.shape[0]),np.arange(self._data.shape[1]))
+            x,y = np.meshgrid(np.arange(self.data.shape[0]),np.arange(self.data.shape[1]))
             coords = np.vstack((y.flatten(),x.flatten())).T
-            mask = np.zeros((self._data.shape[0],self._data.shape[1]),dtype=np.bool)
+            mask = np.zeros((self.data.shape[0],self.data.shape[1]),dtype=np.bool)
             
 
             def onSelect(verts):
@@ -206,10 +206,10 @@ class ImCube:
              
     def correctCameraNonlinearity(self,polynomials:typing.List[float]):
         #Apply a polynomial to the data where x is the original data and y is the data after correction.
-        cfactor = np.polynomial.polynomial.polyval(self._data, polynomials) #The polynomials tell us a correction factor
-        self._data = self._data / cfactor#Dividing the original data by the correction factor gives us linearized data.
+        cfactor = np.polynomial.polynomial.polyval(self.data, polynomials) #The polynomials tell us a correction factor
+        self.data = self.data / cfactor#Dividing the original data by the correction factor gives us linearized data.
         
     def __getitem__(self,slic):
-        return self._data[slic]
+        return self.data[slic]
 
 
