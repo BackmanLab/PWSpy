@@ -21,6 +21,7 @@ class ImCube:
         assert isinstance(data,np.ndarray)
         assert isinstance(metadata,dict)
         self._data = data.astype(dtype)
+        self.data = self._data
         self.metadata = metadata
         try:
             self.wavelengths = self.metadata['wavelengths']
