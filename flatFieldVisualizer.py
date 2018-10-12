@@ -8,10 +8,12 @@ This is a temporary script file.
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from pwspython import ImCube
+from pwspython import ImCube, reflectanceHelper
 from glob import glob
 import os
 import multiprocessing as mp
+
+plt.ion()
 
 __spec__ = None
 def colorbar(mappable):
@@ -26,19 +28,20 @@ def proc(im ,mmask, sref, theory):
     print("Dividing data by mirror spectra")
     mirror = im.getMeanSpectra(mmask)[0][np.newaxis,np.newaxis,:]
     dcount = 50
-    im._data = (im._data - dcount) / ((mirror - dcount) / np.array(sref))
+    im.data = (im.data - dcount) / ((mirror - dcount) / np.array(sref).squeeze())
     _ = np.array(theory).squeeze()
     ztheory = (_ - _.mean())/(_.std() * _.shape[0])     #Zero normalize for correlation
-    zim = (im._data - im._data.mean(axis=2,keepdims = True)) / (im._data.std(axis=2, keepdims = True))  #zero normalize for correlation
+    zim = (im.data - im.data.mean(axis=2,keepdims = True)) / (im.data.std(axis=2, keepdims = True))  #zero normalize for correlation
     print("Cross correlating with theory")
     corr = np.apply_along_axis(lambda arr: np.correlate(ztheory, arr ,mode = 'same'), axis = 2, arr = zim)
     
     # Data Extraction
     print("Extracting data from correlation")
-    amp = im._data.max(axis = 2) - im._data.min(axis = 2)   #The amplitude of the spectra.
+    amp = im.data.max(axis = 2) - im.data.min(axis = 2)   #The amplitude of the spectra.
     corramp = np.max(corr,axis=2)   #The strength of the correlation
     corrmax = np.argmax(corr, axis = 2) - corr.shape[2]//2 #The shift in index that gives the strongest correlation.
-    minn = (im._data.min(axis=2) - np.array(theory).min()) #The difference between the minimum of the spectra and the theoretical minima. this indicates unwanted light.
+    minn = (im.data.min(axis=2) - np.array(theory).min()) #The difference between the minimum of the spectra and the theoretical minima. this indicates unwanted light.
+
     return im, amp, corramp, corrmax, minn
 
 if __name__ == "__main__":
@@ -49,13 +52,7 @@ if __name__ == "__main__":
     #%% Loading
     theory = pd.read_csv(os.path.join(os.path.split(__file__)[0], 'thinFilmData', 'Reflectance-calcs.txt'), delimiter = '\t', index_col = 0)   #The theoretical reflectance for a 1um thin film. silica on silicon.
     theory = theory.loc[500:700:2]
-    silicon = pd.read_csv(os.path.join(os.path.split(__file__)[0], 'thinFilmData', 'SiliconProps.csv'))
-    silicon = silicon.set_index(silicon['wavelength(nm)'])
-    sref = silicon["Reflection"]
-    #resample the reflectance to match the other data.
-    sref = sref.reindex(np.arange(sref.index.min(),sref.index.max()+1,1))
-    sref = sref.interpolate()
-    sref = sref.loc[500:700:2]
+    sref = reflectanceHelper.getReflectance('air','silicon', index = range(500,701,2))
     
     print("Select a mirror")
     mmask = ImCube.loadAny(files[0]).selectROI()
