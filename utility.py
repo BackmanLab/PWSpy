@@ -18,6 +18,7 @@ def _loadIms(q, fileDict, specifierNames):
                     a(v,specifiers + [k])
             elif isinstance(arg,list):
                 for file in arg:
+                    specifiers = specifiers + [file]
                     _ =ImCube.loadAny(file)
                     if specifierNames is None:
                         _.specifiers = specifiers
@@ -37,11 +38,22 @@ def _loadIms(q, fileDict, specifierNames):
                 raise TypeError(f'Filedict must only contain Dict and List, not an item of type: {type(arg)}')
         a(fileDict)
 
-def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = None, parallel = False):
-    numIms = 0
-    for i, v in fileDict.items():
-        for j, lis in v.items():
-            numIms += len(lis)
+def _countIms(fileDict):
+    def a(arg, numIms):
+        if isinstance(arg,dict):
+            for k,v in arg.items():
+                numIms = a(v,numIms)
+        elif isinstance(arg,list):
+            numIms += len(arg)
+            
+        else:
+            raise TypeError(f'Filedict must only contain Dict and List, not an item of type: {type(arg)}')
+        return numIms
+    return a(fileDict, 0)
+
+
+def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = None, parallel = False, procArgs = []):
+    numIms = _countIms(fileDict)
     m = mp.Manager()
     q = m.Queue()
     thread = th.Thread(target = _loadIms, args=[q, fileDict, specifierNames])
@@ -51,9 +63,9 @@ def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = No
         #%% Start processing
         if parallel:
             po = mp.Pool(processes = psutil.cpu_count(logical=False)-1)
-            cubes = po.map(processorFunc, [q]*numIms)
+            cubes = po.starmap(processorFunc, [[q,*procArgs]]*numIms)
         else:
-            cubes = [processorFunc(q) for i in range(numIms)]
+            cubes = [processorFunc(q,*procArgs) for i in range(numIms)]
         thread.join()
     else:
         cubes = [q.get() for i in range(numIms)]
