@@ -12,7 +12,7 @@ from pwspython import ImCube, reflectanceHelper
 from glob import glob
 import os
 import multiprocessing as mp
-
+from pwspython.utility import loadAndProcess
 plt.ion()
 
 __spec__ = None
@@ -24,7 +24,8 @@ def colorbar(mappable):
     cax = divider.append_axes("right", size="5%", pad=0.05)
     return fig.colorbar(mappable, cax=cax)
 
-def proc(im ,mmask, sref, theory):
+def proc(q ,mmask, sref, theory):
+    im = q.get()
     print("Dividing data by mirror spectra")
     mirror = im.getMeanSpectra(mmask)[0][np.newaxis,np.newaxis,:]
     dcount = 50
@@ -58,16 +59,8 @@ if __name__ == "__main__":
     print("Select a mirror")
     mmask = ImCube.loadAny(files[0]).selectROI()
     #%% Processing
-    ims = []
-    pool = mp.Pool(os.cpu_count() - 1)
-    for i, file in enumerate(files):
-        print("loading {} of {}.".format(i+1,len(files)))
-        im = ImCube.loadAny(file)
-        im.filename = os.path.split(file)[1]
-        ims.append(im)
+    result = loadAndProcess(files, processorFunc=proc, specifierNames=['filename'], parallel = True, procArgs = (mmask, sref, theory))
     
-    print("parallel computation")
-    result = pool.starmap(proc, [(im, mmask, sref, theory) for im in ims])
     ims = [res[0] for res in result]
     for im, amp, corramp, corrmax, minn in result:   
         # Plotting
