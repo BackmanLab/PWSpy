@@ -46,19 +46,20 @@ def proc(im ,mmask, sref, theory):
 
 if __name__ == "__main__":
     #%%User Input
-    fileNameTranslator = {'aclosefopen':"Aperture Closed",'alclosefopen':"Aperture Barely Open",'aopenfopen':"Aperture Open"}
+    fileNameTranslator = {'aclosefopen':"Aperture Closed",'alclosefopen':"Aperture Barely Open",'aopenfopen':"Aperture Open", 'alopenfopen':"Aperture Barely Closed"}
     files = glob('G:/Data/thinfilmcomparisonround2/a*')
-    files = [i for i in files if ('alopen' not in i) and ('aopen' not in i)  and ('fmid' not in i) and ("fclose" not in i)]
+    files = [i for i in files if ('fmid' not in i) and ("fclose" not in i)]
     #%% Loading
     theory = pd.read_csv(os.path.join(os.path.split(__file__)[0], 'thinFilmData', 'Reflectance-calcs.txt'), delimiter = '\t', index_col = 0)   #The theoretical reflectance for a 1um thin film. silica on silicon.
     theory = theory.loc[500:700:2]
+    theory = theory * 100
     sref = reflectanceHelper.getReflectance('air','silicon', index = range(500,701,2))
     
     print("Select a mirror")
     mmask = ImCube.loadAny(files[0]).selectROI()
     #%% Processing
     ims = []
-    pool = mp.Pool(os.cpu_count())
+    pool = mp.Pool(os.cpu_count() - 1)
     for i, file in enumerate(files):
         print("loading {} of {}.".format(i+1,len(files)))
         im = ImCube.loadAny(file)
