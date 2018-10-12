@@ -14,8 +14,8 @@ def _init():
     ser = {}    # a dictionary of the series by name
     for name,file in materials.items():
         #create a series for each csv file
-        arr = np.genfromtxt(os.path.join(fileLocation,file),skip_header=1,delimiter=',', converters = {1: lambda x: np.complex(x.decode().replace('i','j'))}, dtype=np.complex)
-        _ = pd.Series(arr[:,1],index=arr[:,0].astype(np.float)*1e3)
+        arr = np.genfromtxt(os.path.join(fileLocation,file),skip_header=1,delimiter=',')
+        _ = pd.DataFrame({'n':arr[:,1], 'k':arr[:,2]},index=arr[:,0].astype(np.float)*1e3)
         ser[name] = _
     
     #Find the first and last indices that won't require us to do any extrapolation
@@ -27,7 +27,9 @@ def _init():
     first  = max(first)
     last = min(last)
     #Interpolate so we don't have any nan values.
-    df = pd.DataFrame(ser).interpolate('index')
+#    df = pd.DataFrame(ser)
+    df = pd.concat(ser, axis='columns')
+    df = df.interpolate('index')
     n = df.loc[first:last]
     return n
 
@@ -42,7 +44,10 @@ del  _init
 def getReflectance(mat1: str, mat2: str, index = None):
     '''Given the names of two interfaces this provides the reflectance in units of percent.
     If given a series as index the data will be interpolated and reindexed to match the index.'''
-    result = ((n[mat1] - n[mat2]) / (n[mat1] + n[mat2]))**2 * 100
+    nc1 = np.array([np.complex(i[0],i[1]) for idx, i in n[mat1].iterrows()])    #complex index for material 1
+    nc2 = np.array([np.complex(i[0],i[1]) for idx, i in n[mat2].iterrows()]) 
+    result = np.abs(((nc1 - nc2) / (nc1 + nc2))**2) * 100
+    result = pd.DataFrame({'R':result}, index=n.index)
     if index is not None:
         index = pd.Index(index)
         combinedIdx = result.index.append(index)    #An index that contains all the original index points and all of the new. That way we can interpolate without first throwing away old data.
@@ -53,4 +58,4 @@ def getReflectance(mat1: str, mat2: str, index = None):
         result = result.reindex(index)  #reindex again to get rid of unwanted index points.
     return result
         
-    
+r= getReflectance('air','silicon')
