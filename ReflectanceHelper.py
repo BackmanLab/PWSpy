@@ -14,8 +14,8 @@ def _init():
     ser = {}    # a dictionary of the series by name
     for name,file in materials.items():
         #create a series for each csv file
-        arr = np.genfromtxt(os.path.join(fileLocation,file),skip_header=1,delimiter=',')
-        _ = pd.Series(arr[:,1],index=arr[:,0]*1e3)
+        arr = np.genfromtxt(os.path.join(fileLocation,file),skip_header=1,delimiter=',', converters = {1: lambda x: np.complex(x.decode().replace('i','j'))}, dtype=np.complex)
+        _ = pd.Series(arr[:,1],index=arr[:,0].astype(np.float)*1e3)
         ser[name] = _
     
     #Find the first and last indices that won't require us to do any extrapolation
@@ -34,7 +34,8 @@ def _init():
 materials = {
         'glass': 'N-BK7.csv',
         'water': 'Daimon-21.5C.csv',
-        'air': 'Ciddor.csv'}
+        'air': 'Ciddor.csv',
+        'silicon': 'Silicon.csv'}
 n = _init()
 del  _init
 
