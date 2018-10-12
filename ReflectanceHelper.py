@@ -47,7 +47,7 @@ def getReflectance(mat1: str, mat2: str, index = None):
     nc1 = np.array([np.complex(i[0],i[1]) for idx, i in n[mat1].iterrows()])    #complex index for material 1
     nc2 = np.array([np.complex(i[0],i[1]) for idx, i in n[mat2].iterrows()]) 
     result = np.abs(((nc1 - nc2) / (nc1 + nc2))**2) * 100
-    result = pd.DataFrame({'R':result}, index=n.index)
+    result = pd.Series(result, index=n.index)
     if index is not None:
         index = pd.Index(index)
         combinedIdx = result.index.append(index)    #An index that contains all the original index points and all of the new. That way we can interpolate without first throwing away old data.
