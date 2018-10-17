@@ -11,8 +11,8 @@ import matplotlib.pyplot as plt
 from pwspython import ImCube, reflectanceHelper
 from glob import glob
 import os
-import multiprocessing as mp
 from pwspython.utility import loadAndProcess
+
 plt.ion()
 
 __spec__ = None
@@ -26,10 +26,10 @@ def colorbar(mappable):
 
 def proc(q ,mmask, sref, theory):
     im = q.get()
+#    im.subtractDarkCounts(1957)
     print("Dividing data by mirror spectra")
     mirror = im.getMeanSpectra(mmask)[0][np.newaxis,np.newaxis,:]
-    dcount = 50
-    im.data = (im.data - dcount) / ((mirror - dcount) / np.array(sref).squeeze())
+    im.data = (im.data) / ((mirror) / np.array(sref).squeeze())
     _ = np.array(theory).squeeze()
     ztheory = (_ - _.mean())/(_.std() * _.shape[0])     #Zero normalize for correlation
     zim = (im.data - im.data.mean(axis=2,keepdims = True)) / (im.data.std(axis=2, keepdims = True))  #zero normalize for correlation
@@ -66,7 +66,7 @@ if __name__ == "__main__":
         # Plotting
         fig,axs = plt.subplots(nrows = 2, ncols=2)
         fig.suptitle(im.filename)
-        imsh = axs[0,0].imshow(amp, vmin = 0, vmax = .5)
+        imsh = axs[0,0].imshow(amp, vmin = np.percentile(amp,1), vmax = np.percentile(amp,99))
         colorbar(imsh)
         axs[0,0].set_title("Amplitude")
         imsh = axs[0,1].imshow(corrmax, vmin = -5, vmax = 5)
@@ -75,22 +75,27 @@ if __name__ == "__main__":
         imsh = axs[1,1].imshow(corramp, vmin = 0, vmax = 1)
         colorbar(imsh)
         axs[1,1].set_title("Max Correlation")
-        imsh = axs[1,0].imshow(minn, vmin = 0, vmax = 0.5)
+        imsh = axs[1,0].imshow(minn, vmin = np.percentile(minn,1), vmax=np.percentile(minn,1))
         colorbar(imsh)
         axs[1,0].set_title("Minimum of data")
-        
+        for ax in axs.flatten():
+            ax.axis('off')
+
     while True:    
-        mask = ims[0].selectROI()
-        fig2, ax = plt.subplots()
-        ax.plot(np.array(theory.index).astype(np.float), np.array(theory["Reflectance"]).astype(np.float), label="Theory")
-        for im in ims:
-            mean, std = im.getMeanSpectra(mask)
-            ax.plot(im.wavelengths,mean, label = fileNameTranslator[im.filename])
-            ax.fill_between(im.wavelengths,mean - std, mean + std, alpha = 0.4)
-        ax.legend()
-        ax.set_xlabel("Wavelength (nm)")
-        ax.set_ylabel("Reflectance")
-        fig2.suptitle("Thin Film Comparison")
-        plt.pause(0.1)
-        while plt.fignum_exists(fig2.number):
-            fig2.canvas.flush_events()
+        try:
+            mask = ims[0].selectROI()
+            fig2, ax = plt.subplots()
+            ax.plot(np.array(theory.index).astype(np.float), np.array(theory["Reflectance"]).astype(np.float), label="Theory")
+            for im in ims:
+                mean, std = im.getMeanSpectra(mask)
+                ax.plot(im.wavelengths,mean, label = fileNameTranslator[im.filename])
+                ax.fill_between(im.wavelengths,mean - std, mean + std, alpha = 0.4)
+            ax.legend()
+            ax.set_xlabel("Wavelength (nm)")
+            ax.set_ylabel("Reflectance")
+            fig2.suptitle("Thin Film Comparison")
+            plt.pause(0.1)
+            while plt.fignum_exists(fig2.number):
+                fig2.canvas.flush_events()
+        except Exception as e:
+            print(e)
