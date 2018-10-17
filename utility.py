@@ -10,6 +10,7 @@ import multiprocessing as mp
 import threading as th
 import typing
 import os
+from time import time
 
 
 def _loadIms(q, fileDict, specifierNames):
@@ -19,13 +20,13 @@ def _loadIms(q, fileDict, specifierNames):
                     a(v,specifiers + [k])
             elif isinstance(arg,list):
                 for file in arg:
-                    specifiers = specifiers + [os.path.split(file)[1]]
+                    fileSpecifiers = specifiers + [os.path.split(file)[1]]
                     _ =ImCube.loadAny(file)
                     if specifierNames is None:
-                        _.specifiers = specifiers
+                        _.specifiers = fileSpecifiers
                     else:
                         for i,name in enumerate(specifierNames):
-                            setattr(_,name,specifiers[i])
+                            setattr(_,name,fileSpecifiers[i])
                     _.exposure = _.metadata['exposure']
                     q.put(_)
                     perc = psutil.virtual_memory().percent
@@ -54,6 +55,7 @@ def _countIms(fileDict):
 
 
 def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = None, parallel = False, procArgs = []):
+    sTime = time()
     numIms = _countIms(fileDict)
     m = mp.Manager()
     q = m.Queue()
@@ -70,4 +72,5 @@ def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = No
         thread.join()
     else:
         cubes = [q.get() for i in range(numIms)]
+    print(f"Loading took {time()-sTime} seconds")
     return cubes
