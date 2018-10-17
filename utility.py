@@ -9,6 +9,7 @@ import psutil
 import multiprocessing as mp
 import threading as th
 import typing
+import os
 
 
 def _loadIms(q, fileDict, specifierNames):
@@ -18,7 +19,7 @@ def _loadIms(q, fileDict, specifierNames):
                     a(v,specifiers + [k])
             elif isinstance(arg,list):
                 for file in arg:
-                    specifiers = specifiers + [file]
+                    specifiers = specifiers + [os.path.split(file)[1]]
                     _ =ImCube.loadAny(file)
                     if specifierNames is None:
                         _.specifiers = specifiers
