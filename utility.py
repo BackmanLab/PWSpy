@@ -20,13 +20,14 @@ def _loadIms(q, fileDict, specifierNames):
                     a(v,specifiers + [k])
             elif isinstance(arg,list):
                 for file in arg:
-                    fileSpecifiers = specifiers + [os.path.split(file)[1]]
+                    fileSpecifiers = specifiers
                     _ =ImCube.loadAny(file)
                     if specifierNames is None:
                         _.specifiers = fileSpecifiers
                     else:
                         for i,name in enumerate(specifierNames):
                             setattr(_,name,fileSpecifiers[i])
+                    _.filename = os.path.split(file)[1]
                     _.exposure = _.metadata['exposure']
                     q.put(_)
                     perc = psutil.virtual_memory().percent
@@ -69,8 +70,8 @@ def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = No
             cubes = po.starmap(processorFunc, [[q,*procArgs]]*numIms)
         else:
             cubes = [processorFunc(q,*procArgs) for i in range(numIms)]
-        thread.join()
     else:
         cubes = [q.get() for i in range(numIms)]
+    thread.join()
     print(f"Loading took {time()-sTime} seconds")
     return cubes
