@@ -122,11 +122,11 @@ def plotExtraReflection(types:list, settings:list, rootDir:str, processorFunc:ca
 
         for air,water in allCombos:
             plt.figure()
-            plt.title("{}, Air:{}ms, Water:{}ms".format(sett, air.exposure, water.exposure))
+            plt.title("{}, Air:{}ms, Water:{}ms".format(sett, int(air.exposure), int(water.exposure)))
             refIm = (((AirR[np.newaxis,np.newaxis,:] * water.data) - (WaterR[np.newaxis,np.newaxis,:] * air.data)) / (air.data - water.data)).mean(axis=2)
             plt.imshow(refIm,vmin=np.percentile(refIm,.5),vmax=np.percentile(refIm,99.5))
             plt.colorbar()
-            ax2.plot(air.getMeanSpectra(mask)[0]/water.getMeanSpectra(mask)[0], label=sett)
+            ax2.plot(air.getMeanSpectra(mask)[0]/water.getMeanSpectra(mask)[0], label="{}, Air:{}ms, Water:{}ms".format(sett, int(air.exposure), int(water.exposure)))
         
         print("{} correction factor".format(sett))
         Rextra = np.array(Rextras)
