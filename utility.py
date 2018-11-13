@@ -80,9 +80,19 @@ def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = No
     print(f"Loading took {time()-sTime} seconds")
     return cubes
 
-def plotExtraReflection(types:list, settings:list, rootDir:str, processorFunc:callable, save = False):
+def plotExtraReflection(types:list, settings:list, rootDir:str, processorFunc:callable, parallel = True, save = False):
+    def interpolateNans(arr):
+        def interp1(arr1):
+            nans = np.isnan(arr1)
+            f = lambda z: z.nonzero()[0]
+            arr1[nans] = np.interp(f(nans), f(~nans), arr1[~nans])
+            return arr1
+        arr = np.apply_along_axis(interp1, 2, arr)
+        return arr
+            
+    
     fileDict = {t:{s:glob(os.path.join(rootDir,t,s,'Cell*')) for s in settings} for t in types}
-    cubes = loadAndProcess(fileDict, processorFunc, specifierNames = ['type', 'setting'], parallel = True)
+    cubes = loadAndProcess(fileDict, processorFunc, specifierNames = ['type', 'setting'], parallel = parallel)
 
 
     mask = [i for i in cubes if i.setting == settings[-1]][0].selectROI()
@@ -123,7 +133,10 @@ def plotExtraReflection(types:list, settings:list, rootDir:str, processorFunc:ca
         for air,water in allCombos:
             plt.figure()
             plt.title("Reflectance %. {}, Air:{}ms, Water:{}ms".format(sett, int(air.exposure), int(water.exposure)))
-            refIm = (((AirR[np.newaxis,np.newaxis,:] * water.data) - (WaterR[np.newaxis,np.newaxis,:] * air.data)) / (air.data - water.data)).mean(axis=2)
+            _ = ((AirR[np.newaxis,np.newaxis,:] * water.data) - (WaterR[np.newaxis,np.newaxis,:] * air.data)) / (air.data - water.data)
+            _[np.isinf(_)] = np.nan
+            _ = interpolateNans(_) #any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
+            refIm = _.mean(axis=2)
             plt.imshow(refIm,vmin=np.percentile(refIm,.5),vmax=np.percentile(refIm,99.5))
             plt.colorbar()
             ax2.plot(air.getMeanSpectra(mask)[0]/water.getMeanSpectra(mask)[0], label="{}, Air:{}ms, Water:{}ms".format(sett, int(air.exposure), int(water.exposure)))
