@@ -84,7 +84,7 @@ class ImCube:
         savemat(os.path.join(directory,'info2'),info2)
         savemat(os.path.join(directory,'info3'),info3)
         savemat(os.path.join(directory,'WV'),wv)
-        imbd = self.data.mean(axis=-1)
+        imbd = self.data[:,:,self.data.shape[-1]//2]
         savemat(os.path.join(directory,'image_bd'),{'image_bd':imbd})
         nimbd = imbd-np.percentile(imbd,0.01) #.01 percent saturation
         nimbd = nimbd/np.percentile(nimbd,99.99)
