@@ -80,7 +80,7 @@ def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = No
     print(f"Loading took {time()-sTime} seconds")
     return cubes
 
-def plotExtraReflection(types:list, settings:list, rootDir:str, processorFunc:callable, parallel = True, save = False):
+def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None):
     def interpolateNans(arr):
         def interp1(arr1):
             nans = np.isnan(arr1)
@@ -90,19 +90,18 @@ def plotExtraReflection(types:list, settings:list, rootDir:str, processorFunc:ca
         arr = np.apply_along_axis(interp1, 2, arr)
         return arr
             
-    
-    fileDict = {t:{s:glob(os.path.join(rootDir,t,s,'Cell*')) for s in settings} for t in types}
-    cubes = loadAndProcess(fileDict, processorFunc, specifierNames = ['type', 'setting'], parallel = parallel)
-
-
-    mask = [i for i in cubes if i.setting == settings[-1]][0].selectROI()
+    if selectMaskUsingSetting is None:        
+        mask = cubes
+    else:
+        mask = [i for i in cubes if (i.setting == selectMaskUsingSetting)]
+    mask = mask[0].selectROI()
     
     #%% load theory reflectance
     AirR = reflectanceHelper.getReflectance('air','glass', index = cubes[0].wavelengths)
     WaterR = reflectanceHelper.getReflectance('water','glass',index = cubes[0].wavelengths)
     #%% Select cubes
-    subs = [i for i in cubes if i.type == types[-1]]
-    cubes = [i for i in cubes if i.type != types[-1]]
+    subs = [i for i in cubes if i.type == 'glass']
+    cubes = [i for i in cubes if i.type != 'glass']
     
     
     #%% plot
@@ -115,10 +114,11 @@ def plotExtraReflection(types:list, settings:list, rootDir:str, processorFunc:ca
     fig2, ax2 = plt.subplots() # for correction factor
     plt.title("Uncorrected A/W reflection ratio")
 
+    settings = set([i.setting for i in cubes]) #Unique setting values
     for sett in settings:
         scubes = [i for i in cubes if (i.setting == sett)] #select out some images
-        airCubes = [i for i in scubes if i.type == types[0]]
-        waterCubes = [i for i in scubes if i.type == types[1]]
+        airCubes = [i for i in scubes if i.type == 'air']
+        waterCubes = [i for i in scubes if i.type == 'water']
     
         allCombos = []
         for air in airCubes:
@@ -135,7 +135,8 @@ def plotExtraReflection(types:list, settings:list, rootDir:str, processorFunc:ca
             plt.title("Reflectance %. {}, Air:{}ms, Water:{}ms".format(sett, int(air.exposure), int(water.exposure)))
             _ = ((AirR[np.newaxis,np.newaxis,:] * water.data) - (WaterR[np.newaxis,np.newaxis,:] * air.data)) / (air.data - water.data)
             _[np.isinf(_)] = np.nan
-            _ = interpolateNans(_) #any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
+            if np.any(np.isnan(_)):
+                _ = interpolateNans(_) #any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
             refIm = _.mean(axis=2)
             plt.imshow(refIm,vmin=np.percentile(refIm,.5),vmax=np.percentile(refIm,99.5))
             plt.colorbar()
@@ -151,6 +152,4 @@ def plotExtraReflection(types:list, settings:list, rootDir:str, processorFunc:ca
     
     df = pd.DataFrame(factors, index = [0])
     df2 = pd.DataFrame(reflections,index = cubes[0].wavelengths)
-    if save:
-        df.to_csv(os.path.join(rootDir, 'calcReflections','factors.csv'))
-        df2.to_csv(os.path.join(rootDir, 'calcReflections','reflections.csv'))
+    return df, df2
