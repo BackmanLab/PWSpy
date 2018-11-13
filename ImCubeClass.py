@@ -79,7 +79,10 @@ class ImCube:
         os.mkdir(directory)
         m = self.metadata
         info2 = {'info2':[m['wavelengths'][0],0,m['wavelengths'][-1],m['exposure'],0,0,0,0,0,0]}
-        info3 = {'info3':[m['systemId'],m['exposure'],m['imgHeight'],m['imgWidth'],0,0,0,0,0,0,0,0]}
+        try:
+            info3 = {'info3':[m['systemId'],m['exposure'],m['imgHeight'],m['imgWidth'],0,0,0,0,0,0,0,0]} #the old way
+        except:
+            info3 = {'info3':[m['system'],m['exposure'],self.data.shape[0],self.data.shape[1],0,0,0,0,0,0,0,0]}    #The new way
         wv = {"WV":[float(i) for i in m['wavelengths']]}
         savemat(os.path.join(directory,'info2'),info2)
         savemat(os.path.join(directory,'info3'),info3)
