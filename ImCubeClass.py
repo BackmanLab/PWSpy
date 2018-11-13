@@ -67,8 +67,8 @@ class ImCube:
             raise OSError("No Tiff file was found at:", directory)    
         with tf.TiffFile(path) as tif:
             data = np.rollaxis(tif.asarray(),0,3) #Swap axes to match y,x,lambda convention.
-        if os.path.exists(os.path.join(directory,'pwsmetadata.txt')):
-            metadata = json.load(open(os.path.join(directory,'pwsmetadata.txt'),'r'))
+        if os.path.exists(os.path.join(directory,'pwsmetadata.json')):
+            metadata = json.load(open(os.path.join(directory,'pwsmetadata.json'),'r'))
         else:
             metadata = json.loads(tif.pages[0].description)
         return cls(data,metadata)
