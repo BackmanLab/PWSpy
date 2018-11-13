@@ -141,6 +141,8 @@ class ImCube:
     def subtractDarkCounts(self,count):
         try:
             binning = self.metadata['MicroManagerMetadata']['Binning']
+            if isinstance(binning, dict): #This is due to a property map change from beta to gamma
+                binning = binning['scalar']
         except:
             binning = 1
         count = count * binning**2    #Account for the fact that binning multiplies the darkcount.
