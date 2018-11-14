@@ -98,8 +98,10 @@ def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None):
     mask = mask[0].selectROI()
     
     # load theory reflectance
-    AirR = reflectanceHelper.getReflectance('air','glass', index = cubes[0].wavelengths)
-    WaterR = reflectanceHelper.getReflectance('water','glass',index = cubes[0].wavelengths)
+    theoryR = {}
+    materials = set([i.material for i in cubes])
+    for material in materials: #For each unique material in the `cubes` list
+        theoryR[material] = reflectanceHelper.getReflectance(material,'glass', index=cubes[0].wavelengths)
   
     # plot
     factors = {}
@@ -114,23 +116,22 @@ def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None):
     settings = set([i.setting for i in cubes]) #Unique setting values
     for sett in settings:
         scubes = [i for i in cubes if (i.setting == sett)] #select out some images
-        airCubes = [i for i in scubes if i.type == 'air']
-        waterCubes = [i for i in scubes if i.type == 'water']
+        matCubes = {material:[cube for cube  in scubes if cube.material==material] for material in materials}
     
         allCombos = []
-        for air in airCubes:
-            for wat in waterCubes:
+        for air in matCubes['air']:
+            for wat in matCubes['water']:
                     allCombos.append((air,wat))
         
         Rextras = []
         for air,water in allCombos:
-            Rextras.append(((AirR * water.getMeanSpectra(mask)[0]) - (WaterR * air.getMeanSpectra(mask)[0])) / (air.getMeanSpectra(mask)[0] - water.getMeanSpectra(mask)[0]))
+            Rextras.append(((theoryR['air'] * water.getMeanSpectra(mask)[0]) - (theoryR['water'] * air.getMeanSpectra(mask)[0])) / (air.getMeanSpectra(mask)[0] - water.getMeanSpectra(mask)[0]))
             ax.plot(air.wavelengths, Rextras[-1], label = '{} Air:{}ms Water:{}ms'.format(sett, int(air.exposure), int(water.exposure)))
 
         for air,water in allCombos:
             plt.figure()
             plt.title("Reflectance %. {}, Air:{}ms, Water:{}ms".format(sett, int(air.exposure), int(water.exposure)))
-            _ = ((AirR[np.newaxis,np.newaxis,:] * water.data) - (WaterR[np.newaxis,np.newaxis,:] * air.data)) / (air.data - water.data)
+            _ = ((theoryR['air'][np.newaxis,np.newaxis,:] * water.data) - (theoryR['water'][np.newaxis,np.newaxis,:] * air.data)) / (air.data - water.data)
             _[np.isinf(_)] = np.nan
             if np.any(np.isnan(_)):
                 _ = _interpolateNans(_) #any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
@@ -141,7 +142,7 @@ def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None):
         
         print("{} correction factor".format(sett))
         Rextra = np.array(Rextras)
-        factors[sett] = (Rextra.mean() + WaterR.mean()) / WaterR.mean()
+        factors[sett] = (Rextra.mean() + theoryR['water'].mean()) / theoryR['water'].mean()
         reflections[sett] = Rextra.mean(axis = 0)
         print(factors[sett])
     ax.legend()
