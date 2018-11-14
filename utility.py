@@ -15,6 +15,7 @@ import typing
 import os
 from time import time
 import pandas as pd
+import itertools
 
 '''Local Functions'''
 def _loadIms(q, fileDict, specifierNames):
@@ -68,7 +69,7 @@ def _interpolateNans(arr):
     return arr
 
 '''User Functions'''
-def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = None, parallel = False, procArgs = []):
+def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = None, parallel = False, procArgs = []) -> typing.List[ImCube]:
     sTime = time()
     numIms = _countIms(fileDict)
     m = mp.Manager()
@@ -89,7 +90,7 @@ def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = No
     print(f"Loading took {time()-sTime} seconds")
     return cubes
 
-def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None):
+def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None) -> (pd.DataFrame, pd.DataFrame):
             
     if selectMaskUsingSetting is None:        
         mask = cubes
@@ -119,26 +120,24 @@ def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None):
         matCubes = {material:[cube for cube  in scubes if cube.material==material] for material in materials}
     
         allCombos = []
-        for air in matCubes['air']:
-            for wat in matCubes['water']:
-                    allCombos.append((air,wat))
+        for combo in itertools.product(*matCubes.values()):
+            allCombos.append(dict(zip(matCubes.keys(), combo)))
         
         Rextras = []
-        for air,water in allCombos:
-            Rextras.append(((theoryR['air'] * water.getMeanSpectra(mask)[0]) - (theoryR['water'] * air.getMeanSpectra(mask)[0])) / (air.getMeanSpectra(mask)[0] - water.getMeanSpectra(mask)[0]))
-            ax.plot(air.wavelengths, Rextras[-1], label = '{} Air:{}ms Water:{}ms'.format(sett, int(air.exposure), int(water.exposure)))
+        for combo in allCombos:
+            Rextras.append(((theoryR['air'] * combo['water'].getMeanSpectra(mask)[0]) - (theoryR['water'] * combo['air'].getMeanSpectra(mask)[0])) / (combo['air'].getMeanSpectra(mask)[0] - combo['water'].getMeanSpectra(mask)[0]))
+            ax.plot(combo['air'].wavelengths, Rextras[-1], label = '{} Air:{}ms Water:{}ms'.format(sett, int(combo['air'].exposure), int(combo['water'].exposure)))
 
-        for air,water in allCombos:
             plt.figure()
-            plt.title("Reflectance %. {}, Air:{}ms, Water:{}ms".format(sett, int(air.exposure), int(water.exposure)))
-            _ = ((theoryR['air'][np.newaxis,np.newaxis,:] * water.data) - (theoryR['water'][np.newaxis,np.newaxis,:] * air.data)) / (air.data - water.data)
+            plt.title("Reflectance %. {}, Air:{}ms, Water:{}ms".format(sett, int(combo['air'].exposure), int(combo['water'].exposure)))
+            _ = ((theoryR['air'][np.newaxis,np.newaxis,:] * combo['water'].data) - (theoryR['water'][np.newaxis,np.newaxis,:] * combo['air'].data)) / (combo['air'].data - combo['water'].data)
             _[np.isinf(_)] = np.nan
             if np.any(np.isnan(_)):
                 _ = _interpolateNans(_) #any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
             refIm = _.mean(axis=2)
             plt.imshow(refIm,vmin=np.percentile(refIm,.5),vmax=np.percentile(refIm,99.5))
             plt.colorbar()
-            ax2.plot(air.getMeanSpectra(mask)[0]/water.getMeanSpectra(mask)[0], label="{}, Air:{}ms, Water:{}ms".format(sett, int(air.exposure), int(water.exposure)))
+            ax2.plot(combo['air'].getMeanSpectra(mask)[0]/combo['water'].getMeanSpectra(mask)[0], label="{}, Air:{}ms, Water:{}ms".format(sett, int(combo['air'].exposure), int(combo['water'].exposure)))
         
         print("{} correction factor".format(sett))
         Rextra = np.array(Rextras)
