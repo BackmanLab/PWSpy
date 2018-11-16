@@ -119,33 +119,40 @@ def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None) -> (pd.Da
     plt.title("Extra Reflection")
     ax.set_ylabel("%")
     ax.set_xlabel("nm")
-    fig2, ax2 = plt.subplots() # for correction factor
-    plt.title("Uncorrected A/W reflection ratio")
+    matCombos = list(itertools.combinations(materials, 2))
+    fig2, ratioAxes = plt.subplots(nrows = len(matCombos)) # for correction factor
+    if not isinstance(ratioAxes, np.ndarray): ratioAxes = np.array(ratioAxes) #If there is only one axis we still want it to be a list for the rest of th code
+    ratioAxes = dict(zip(matCombos,ratioAxes))
+    for combo in matCombos:
+        ratioAxes[combo].set_title(f'{combo[0]}/{combo[1]} reflection ratio')
+        ratioAxes[combo].plot(theoryR[combo[0]]/theoryR[combo[1]], label='Theory')
 
     settings = set([i.setting for i in cubes]) #Unique setting values
     for sett in settings:
-        scubes = [i for i in cubes if (i.setting == sett)] #select out some images
-        matCubes = {material:[cube for cube  in scubes if cube.material==material] for material in materials}
-    
-        allCombos = []
-        for combo in itertools.product(*matCubes.values()):
-            allCombos.append(dict(zip(matCubes.keys(), combo)))
+        for matCombo in matCombos:
+            scubes = [i for i in cubes if (i.setting == sett)] #select out some images
+            matCubes = {material:[cube for cube  in scubes if cube.material==material] for material in matCombo}
         
-        Rextras = []
-        for combo in allCombos:
-            Rextras.append(((theoryR['air'] * combo['water'].getMeanSpectra(mask)[0]) - (theoryR['water'] * combo['air'].getMeanSpectra(mask)[0])) / (combo['air'].getMeanSpectra(mask)[0] - combo['water'].getMeanSpectra(mask)[0]))
-            ax.plot(combo['air'].wavelengths, Rextras[-1], label = '{} Air:{}ms Water:{}ms'.format(sett, int(combo['air'].exposure), int(combo['water'].exposure)))
-
-            plt.figure()
-            plt.title("Reflectance %. {}, Air:{}ms, Water:{}ms".format(sett, int(combo['air'].exposure), int(combo['water'].exposure)))
-            _ = ((theoryR['air'][np.newaxis,np.newaxis,:] * combo['water'].data) - (theoryR['water'][np.newaxis,np.newaxis,:] * combo['air'].data)) / (combo['air'].data - combo['water'].data)
-            _[np.isinf(_)] = np.nan
-            if np.any(np.isnan(_)):
-                _ = _interpolateNans(_) #any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
-            refIm = _.mean(axis=2)
-            plt.imshow(refIm,vmin=np.percentile(refIm,.5),vmax=np.percentile(refIm,99.5))
-            plt.colorbar()
-            ax2.plot(combo['air'].getMeanSpectra(mask)[0]/combo['water'].getMeanSpectra(mask)[0], label="{}, Air:{}ms, Water:{}ms".format(sett, int(combo['air'].exposure), int(combo['water'].exposure)))
+            allCombos = []
+            for combo in itertools.product(*matCubes.values()):
+                allCombos.append(dict(zip(matCubes.keys(), combo)))
+            
+            Rextras = []
+            for combo in allCombos:
+                mat1,mat2 = combo.keys()
+                Rextras.append(((theoryR[mat1] * combo[mat2].getMeanSpectra(mask)[0]) - (theoryR[mat2] * combo[mat1].getMeanSpectra(mask)[0])) / (combo[mat1].getMeanSpectra(mask)[0] - combo[mat2].getMeanSpectra(mask)[0]))
+                ax.plot(combo[mat1].wavelengths, Rextras[-1], label = f'{sett} {mat1}:{int(combo[mat1].exposure)}ms {mat2}:{int(combo[mat2].exposure)}ms')
+    
+                plt.figure()
+                plt.title(f"Reflectance %. {sett}, {mat1}:{int(combo[mat2].exposure)}ms, {mat2}:{int(combo[mat2].exposure)}ms")
+                _ = ((theoryR[mat1][np.newaxis,np.newaxis,:] * combo[mat2].data) - (theoryR[mat2][np.newaxis,np.newaxis,:] * combo[mat1].data)) / (combo[mat1].data - combo[mat2].data)
+                _[np.isinf(_)] = np.nan
+                if np.any(np.isnan(_)):
+                    _ = _interpolateNans(_) #any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
+                refIm = _.mean(axis=2)
+                plt.imshow(refIm,vmin=np.percentile(refIm,.5),vmax=np.percentile(refIm,99.5))
+                plt.colorbar()
+                ratioAxes[matCombo].plot(combo['air'].getMeanSpectra(mask)[0]/combo['water'].getMeanSpectra(mask)[0], label="{}, Air:{}ms, Water:{}ms".format(sett, int(combo['air'].exposure), int(combo['water'].exposure)))
         
         print("{} correction factor".format(sett))
         Rextra = np.array(Rextras)
