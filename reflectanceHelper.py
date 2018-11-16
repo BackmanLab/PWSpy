@@ -38,13 +38,18 @@ materials = {
         'water': 'Daimon-21.5C.csv',
         'air': 'Ciddor.csv',
         'silicon': 'Silicon.csv',
-        'cargille oil 1.7': 'CargilleOil1_7.csv'}
+        'oil 1.7': 'CargilleOil1_7.csv'}
 n = _init()
 del  _init
 
 def getReflectance(mat1: str, mat2: str, index = None):
     '''Given the names of two interfaces this provides the reflectance in units of percent.
     If given a series as index the data will be interpolated and reindexed to match the index.'''
+    try: assert mat1 in materials 
+    except: raise IndexError(f'{mat1} is not a valid material. must be one of: {list(materials.keys())}')
+    try: assert mat2 in materials 
+    except: raise IndexError(f'{mat2} is not a valid material. must be one of: {list(materials.keys())}')
+    
     nc1 = np.array([np.complex(i[0],i[1]) for idx, i in n[mat1].iterrows()])    #complex index for material 1
     nc2 = np.array([np.complex(i[0],i[1]) for idx, i in n[mat2].iterrows()]) 
     result = np.abs(((nc1 - nc2) / (nc1 + nc2))**2) * 100

@@ -91,7 +91,15 @@ def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = No
     return cubes
 
 def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None) -> (pd.DataFrame, pd.DataFrame):
-            
+    '''Expects a list of ImCubes which each has a `material` property matching one of the materials in the `ReflectanceHelper` module and a
+    `setting` property labeling how the microscope was set up for this image.
+    '''
+    
+    #Error checking
+    assert isinstance(cubes[0], ImCube)
+    assert hasattr(cubes[0],'material')
+    assert hasattr(cubes[0],'setting')
+    ##
     if selectMaskUsingSetting is None:        
         mask = cubes
     else:
