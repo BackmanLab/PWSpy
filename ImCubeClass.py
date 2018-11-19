@@ -70,7 +70,10 @@ class ImCube:
         if os.path.exists(os.path.join(directory,'pwsmetadata.json')):
             metadata = json.load(open(os.path.join(directory,'pwsmetadata.json'),'r'))
         else:
-            metadata = json.loads(tif.pages[0].description)
+            try:
+                metadata = json.loads(tif.pages[0].description)
+            except:
+                metadata = json.loads(tif.imagej_metadata['Info']) #The micromanager saves metadata as the info property of the imagej imageplus object.
         return cls(data,metadata)
         
     def toOldPWS(self,directory):
