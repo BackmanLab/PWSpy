@@ -37,7 +37,8 @@ materials = {
         'glass': 'N-BK7.csv',
         'water': 'Daimon-21.5C.csv',
         'air': 'Ciddor.csv',
-        'silicon': 'Silicon.csv'}
+        'silicon': 'Silicon.csv',
+        'cargille oil 1.7': 'CargilleOil1_7.csv'}
 n = _init()
 del  _init
 

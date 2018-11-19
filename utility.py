@@ -16,7 +16,7 @@ import os
 from time import time
 import pandas as pd
 
-
+'''Local Functions'''
 def _loadIms(q, fileDict, specifierNames):
         def a(arg, specifiers:typing.List[str] = []):
             if isinstance(arg,dict):
@@ -58,7 +58,16 @@ def _countIms(fileDict):
         return numIms
     return a(fileDict, 0)
 
+def _interpolateNans(arr):
+    def interp1(arr1):
+        nans = np.isnan(arr1)
+        f = lambda z: z.nonzero()[0]
+        arr1[nans] = np.interp(f(nans), f(~nans), arr1[~nans])
+        return arr1
+    arr = np.apply_along_axis(interp1, 2, arr)
+    return arr
 
+'''User Functions'''
 def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = None, parallel = False, procArgs = []):
     sTime = time()
     numIms = _countIms(fileDict)
@@ -68,7 +77,7 @@ def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = No
     thread.start()
 
     if processorFunc is not None:
-        #%% Start processing
+        # Start processing
         if parallel:
             po = mp.Pool(processes = psutil.cpu_count(logical=False)-1)
             cubes = po.starmap(processorFunc, [[q,*procArgs]]*numIms)
@@ -81,14 +90,6 @@ def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = No
     return cubes
 
 def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None):
-    def interpolateNans(arr):
-        def interp1(arr1):
-            nans = np.isnan(arr1)
-            f = lambda z: z.nonzero()[0]
-            arr1[nans] = np.interp(f(nans), f(~nans), arr1[~nans])
-            return arr1
-        arr = np.apply_along_axis(interp1, 2, arr)
-        return arr
             
     if selectMaskUsingSetting is None:        
         mask = cubes
@@ -96,15 +97,11 @@ def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None):
         mask = [i for i in cubes if (i.setting == selectMaskUsingSetting)]
     mask = mask[0].selectROI()
     
-    #%% load theory reflectance
+    # load theory reflectance
     AirR = reflectanceHelper.getReflectance('air','glass', index = cubes[0].wavelengths)
     WaterR = reflectanceHelper.getReflectance('water','glass',index = cubes[0].wavelengths)
-    #%% Select cubes
-    subs = [i for i in cubes if i.type == 'glass']
-    cubes = [i for i in cubes if i.type != 'glass']
-    
-    
-    #%% plot
+  
+    # plot
     factors = {}
     reflections = {}
     fig, ax = plt.subplots() #For extra reflections
@@ -136,7 +133,7 @@ def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None):
             _ = ((AirR[np.newaxis,np.newaxis,:] * water.data) - (WaterR[np.newaxis,np.newaxis,:] * air.data)) / (air.data - water.data)
             _[np.isinf(_)] = np.nan
             if np.any(np.isnan(_)):
-                _ = interpolateNans(_) #any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
+                _ = _interpolateNans(_) #any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
             refIm = _.mean(axis=2)
             plt.imshow(refIm,vmin=np.percentile(refIm,.5),vmax=np.percentile(refIm,99.5))
             plt.colorbar()
