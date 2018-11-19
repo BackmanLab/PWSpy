@@ -70,6 +70,15 @@ def _interpolateNans(arr):
 
 '''User Functions'''
 def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = None, parallel = False, procArgs = []) -> typing.List[ImCube]:
+    #Error checking
+    if not specifierNames is None:
+        recursionDepth = 0
+        fileStructure = fileDict
+        while not isinstance(fileStructure, list):
+            fileStructure = fileStructure[list(fileStructure.keys())[0]]
+            recursionDepth += 1
+        if recursionDepth != len(specifierNames):
+            raise ValueError("The length of specifier names does not match the number of layers of folders in the fileDict")
     sTime = time()
     numIms = _countIms(fileDict)
     m = mp.Manager()
@@ -152,7 +161,7 @@ def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None) -> (pd.Da
                 refIm = _.mean(axis=2)
                 plt.imshow(refIm,vmin=np.percentile(refIm,.5),vmax=np.percentile(refIm,99.5))
                 plt.colorbar()
-                ratioAxes[matCombo].plot(combo['air'].getMeanSpectra(mask)[0]/combo['water'].getMeanSpectra(mask)[0], label="{}, Air:{}ms, Water:{}ms".format(sett, int(combo['air'].exposure), int(combo['water'].exposure)))
+                ratioAxes[matCombo].plot(combo[mat1].wavelengths, combo[mat1].getMeanSpectra(mask)[0]/combo[mat2].getMeanSpectra(mask)[0], label=f'{sett} {mat1}:{int(combo[mat1].exposure)}ms {mat2}:{int(combo[mat2].exposure)}ms')
         
         print("{} correction factor".format(sett))
         Rextra = np.array(Rextras)
@@ -160,8 +169,8 @@ def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None) -> (pd.Da
         reflections[sett] = Rextra.mean(axis = 0)
         print(factors[sett])
     ax.legend()
-    ax2.legend()
+    [ratioAxes[combo].legend() for combo in matCombos]
     
-    df = pd.DataFrame(factors, index = [0])
-    df2 = pd.DataFrame(reflections,index = cubes[0].wavelengths)
-    return df, df2
+    factors = pd.DataFrame(factors, index = [0])
+    reflections = pd.DataFrame(reflections,index = cubes[0].wavelengths)
+    return factors, reflections
