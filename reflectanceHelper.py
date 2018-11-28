@@ -38,7 +38,9 @@ materials = {
         'water': 'Daimon-21.5C.csv',
         'air': 'Ciddor.csv',
         'silicon': 'Silicon.csv',
-        'oil 1.7': 'CargilleOil1_7.csv'}
+        'oil 1.7': 'CargilleOil1_7.csv',
+        'oil 1.4': "CargilleOil1_4.csv",
+        'ipa': 'Sani-DellOro-IPA.csv'}
 n = _init()
 del  _init
 
@@ -63,5 +65,3 @@ def getReflectance(mat1: str, mat2: str, index = None):
         result = result[~result.index.duplicated()] #remove duplicate indices to avoid error
         result = result.reindex(index)  #reindex again to get rid of unwanted index points.
     return result
-        
-r= getReflectance('air','silicon')
