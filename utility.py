@@ -15,6 +15,7 @@ import typing
 import os
 from time import time
 import pandas as pd
+import itertools
 
 '''Local Functions'''
 def _loadIms(q, fileDict, specifierNames):
@@ -68,7 +69,16 @@ def _interpolateNans(arr):
     return arr
 
 '''User Functions'''
-def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = None, parallel = False, procArgs = []):
+def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = None, parallel = False, procArgs = []) -> typing.List[ImCube]:
+    #Error checking
+    if not specifierNames is None:
+        recursionDepth = 0
+        fileStructure = fileDict
+        while not isinstance(fileStructure, list):
+            fileStructure = fileStructure[list(fileStructure.keys())[0]]
+            recursionDepth += 1
+        if recursionDepth != len(specifierNames):
+            raise ValueError("The length of specifier names does not match the number of layers of folders in the fileDict")
     sTime = time()
     numIms = _countIms(fileDict)
     m = mp.Manager()
@@ -89,8 +99,16 @@ def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = No
     print(f"Loading took {time()-sTime} seconds")
     return cubes
 
-def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None):
-            
+def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None) -> (pd.DataFrame, pd.DataFrame):
+    '''Expects a list of ImCubes which each has a `material` property matching one of the materials in the `ReflectanceHelper` module and a
+    `setting` property labeling how the microscope was set up for this image.
+    '''
+    
+    #Error checking
+    assert isinstance(cubes[0], ImCube)
+    assert hasattr(cubes[0],'material')
+    assert hasattr(cubes[0],'setting')
+    ##
     if selectMaskUsingSetting is None:        
         mask = cubes
     else:
@@ -98,8 +116,10 @@ def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None):
     mask = mask[0].selectROI()
     
     # load theory reflectance
-    AirR = reflectanceHelper.getReflectance('air','glass', index = cubes[0].wavelengths)
-    WaterR = reflectanceHelper.getReflectance('water','glass',index = cubes[0].wavelengths)
+    theoryR = {}
+    materials = set([i.material for i in cubes])
+    for material in materials: #For each unique material in the `cubes` list
+        theoryR[material] = reflectanceHelper.getReflectance(material,'glass', index=cubes[0].wavelengths)
   
     # plot
     factors = {}
@@ -108,45 +128,49 @@ def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None):
     plt.title("Extra Reflection")
     ax.set_ylabel("%")
     ax.set_xlabel("nm")
-    fig2, ax2 = plt.subplots() # for correction factor
-    plt.title("Uncorrected A/W reflection ratio")
+    matCombos = list(itertools.combinations(materials, 2))
+    fig2, ratioAxes = plt.subplots(nrows = len(matCombos)) # for correction factor
+    if not isinstance(ratioAxes, np.ndarray): ratioAxes = np.array(ratioAxes).reshape(1) #If there is only one axis we still want it to be a list for the rest of the code
+    ratioAxes = dict(zip(matCombos,ratioAxes))
+    for combo in matCombos:
+        ratioAxes[combo].set_title(f'{combo[0]}/{combo[1]} reflection ratio')
+        ratioAxes[combo].plot(theoryR[combo[0]]/theoryR[combo[1]], label='Theory')
 
     settings = set([i.setting for i in cubes]) #Unique setting values
     for sett in settings:
-        scubes = [i for i in cubes if (i.setting == sett)] #select out some images
-        airCubes = [i for i in scubes if i.type == 'air']
-        waterCubes = [i for i in scubes if i.type == 'water']
-    
-        allCombos = []
-        for air in airCubes:
-            for wat in waterCubes:
-                    allCombos.append((air,wat))
+        for matCombo in matCombos:
+            scubes = [i for i in cubes if (i.setting == sett)] #select out some images
+            matCubes = {material:[cube for cube  in scubes if cube.material==material] for material in matCombo}
         
-        Rextras = []
-        for air,water in allCombos:
-            Rextras.append(((AirR * water.getMeanSpectra(mask)[0]) - (WaterR * air.getMeanSpectra(mask)[0])) / (air.getMeanSpectra(mask)[0] - water.getMeanSpectra(mask)[0]))
-            ax.plot(air.wavelengths, Rextras[-1], label = '{} Air:{}ms Water:{}ms'.format(sett, int(air.exposure), int(water.exposure)))
-
-        for air,water in allCombos:
-            plt.figure()
-            plt.title("Reflectance %. {}, Air:{}ms, Water:{}ms".format(sett, int(air.exposure), int(water.exposure)))
-            _ = ((AirR[np.newaxis,np.newaxis,:] * water.data) - (WaterR[np.newaxis,np.newaxis,:] * air.data)) / (air.data - water.data)
-            _[np.isinf(_)] = np.nan
-            if np.any(np.isnan(_)):
-                _ = _interpolateNans(_) #any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
-            refIm = _.mean(axis=2)
-            plt.imshow(refIm,vmin=np.percentile(refIm,.5),vmax=np.percentile(refIm,99.5))
-            plt.colorbar()
-            ax2.plot(air.getMeanSpectra(mask)[0]/water.getMeanSpectra(mask)[0], label="{}, Air:{}ms, Water:{}ms".format(sett, int(air.exposure), int(water.exposure)))
+            allCombos = []
+            for combo in itertools.product(*matCubes.values()):
+                allCombos.append(dict(zip(matCubes.keys(), combo)))
+            
+            Rextras = []
+            for combo in allCombos:
+                mat1,mat2 = combo.keys()
+                Rextras.append(((theoryR[mat1] * combo[mat2].getMeanSpectra(mask)[0]) - (theoryR[mat2] * combo[mat1].getMeanSpectra(mask)[0])) / (combo[mat1].getMeanSpectra(mask)[0] - combo[mat2].getMeanSpectra(mask)[0]))
+                ax.plot(combo[mat1].wavelengths, Rextras[-1], label = f'{sett} {mat1}:{int(combo[mat1].exposure)}ms {mat2}:{int(combo[mat2].exposure)}ms')
+    
+                plt.figure()
+                plt.title(f"Reflectance %. {sett}, {mat1}:{int(combo[mat2].exposure)}ms, {mat2}:{int(combo[mat2].exposure)}ms")
+                _ = ((theoryR[mat1][np.newaxis,np.newaxis,:] * combo[mat2].data) - (theoryR[mat2][np.newaxis,np.newaxis,:] * combo[mat1].data)) / (combo[mat1].data - combo[mat2].data)
+                _[np.isinf(_)] = np.nan
+                if np.any(np.isnan(_)):
+                    _ = _interpolateNans(_) #any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
+                refIm = _.mean(axis=2)
+                plt.imshow(refIm,vmin=np.percentile(refIm,.5),vmax=np.percentile(refIm,99.5))
+                plt.colorbar()
+                ratioAxes[matCombo].plot(combo[mat1].wavelengths, combo[mat1].getMeanSpectra(mask)[0]/combo[mat2].getMeanSpectra(mask)[0], label=f'{sett} {mat1}:{int(combo[mat1].exposure)}ms {mat2}:{int(combo[mat2].exposure)}ms')
         
         print("{} correction factor".format(sett))
         Rextra = np.array(Rextras)
-        factors[sett] = (Rextra.mean() + WaterR.mean()) / WaterR.mean()
+        factors[sett] = (Rextra.mean() + theoryR['water'].mean()) / theoryR['water'].mean()
         reflections[sett] = Rextra.mean(axis = 0)
         print(factors[sett])
     ax.legend()
-    ax2.legend()
+    [ratioAxes[combo].legend() for combo in matCombos]
     
-    df = pd.DataFrame(factors, index = [0])
-    df2 = pd.DataFrame(reflections,index = cubes[0].wavelengths)
-    return df, df2
+    factors = pd.DataFrame(factors, index = [0])
+    reflections = pd.DataFrame(reflections,index = cubes[0].wavelengths)
+    return factors, reflections
