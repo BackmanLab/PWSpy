@@ -130,7 +130,7 @@ def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None) -> (pd.Da
     ax.set_xlabel("nm")
     matCombos = list(itertools.combinations(materials, 2))
     fig2, ratioAxes = plt.subplots(nrows = len(matCombos)) # for correction factor
-    if not isinstance(ratioAxes, np.ndarray): ratioAxes = np.array(ratioAxes) #If there is only one axis we still want it to be a list for the rest of th code
+    if not isinstance(ratioAxes, np.ndarray): ratioAxes = np.array(ratioAxes).reshape(1) #If there is only one axis we still want it to be a list for the rest of the code
     ratioAxes = dict(zip(matCombos,ratioAxes))
     for combo in matCombos:
         ratioAxes[combo].set_title(f'{combo[0]}/{combo[1]} reflection ratio')
