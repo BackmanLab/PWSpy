@@ -93,10 +93,29 @@ class PositionList:
     def save(self, savePath):
         #    a=json.dumps(plist,cls=Encoder, ensure_ascii=False)
         #    a = a.replace('{','{\n').replace('[','[\n').replace('}','\n}').replace(',',',\n').replace(']','\n]')
-        with open(savePath+'.pos','w') as f:
+        if savePath[-4:] != '.pos':
+            savePath += '.pos'
+        with open(savePath,'w') as f:
             json.dump(self,f,cls=Encoder)
+    @classmethod
+    def load(cls, filePath):
+        def _decode(dct):
+            if 'format' in dct:
+                if dct['format'] == 'Micro-Manager Property Map' and int(dct['major_version'])==2:
+                    positions=[]
+                    for i in dct['map']['StagePositions']['array']:
+                        label = i['Label']['scalar']
+                        xyStage = i["DefaultXYStage"]['scalar']
+                        coords = i["DevicePositions"]['array'][0]["Position_um"]['array']
+                        positions.append(Position2d(*coords, xyStage, label))
+            else:
+                return dct
+                raise TypeError("Not Recognized")
+            return PositionList(positions)
+        with open(filePath,'r') as f:
+            return json.load(f, object_hook=_decode)
     def __repr__(self):
-        s = "PositionList(["
+        s = "PositionList(\n["
         for i in self.positions:
             s += str(i) + '\n'
         s += '])'
@@ -124,7 +143,7 @@ def generateList(data):
         positions.append(Position2d(*i,'TIXYDrive',f'Cell{n+1}'))
     plist = PositionList(positions)
     return plist
-    
+
     
 if __name__ == '__main__':
 
@@ -138,3 +157,4 @@ if __name__ == '__main__':
     plist = PositionList(positions)
     a=json.dumps(plist,cls=Encoder, ensure_ascii=False)
     a = a.replace('{','{\n').replace('[','[\n').replace('}','\n}').replace(',',',\n').replace(']','\n]')
+    r = PositionList.load(r'G:\ranyaweekedn\position1.pos')
