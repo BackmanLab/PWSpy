@@ -64,6 +64,9 @@ class Position2d:
         self.x += dx
         self.y += dy
         self._regen()
+        
+    def __repr__(self):
+        return f"Position2d({self.xyStage}, {self.x}, {self.y})"
 
 class PositionList:
     def __init__(self, positions: typing.List[Position2d]):
@@ -92,6 +95,12 @@ class PositionList:
         #    a = a.replace('{','{\n').replace('[','[\n').replace('}','\n}').replace(',',',\n').replace(']','\n]')
         with open(savePath+'.pos','w') as f:
             json.dump(self,f,cls=Encoder)
+    def __repr__(self):
+        s = "PositionList(["
+        for i in self.positions:
+            s += str(i) + '\n'
+        s += '])'
+        return s
             
 class Encoder(json.JSONEncoder):
     def default(self,obj):
@@ -119,9 +128,9 @@ def generateList(data):
     
 if __name__ == '__main__':
 
-#    pos=[[0,0],
-#     [1,1],
-#     [2,3]]
+    pos=[[0,0],
+     [1,1],
+     [2,3]]
     
     positions=[]
     for n,i in enumerate(pos):
