@@ -191,7 +191,7 @@ if __name__ == '__main__':
         pws2.mirrorX()
         pws2.mirrorY()
         pws2Origin = Position2d(newOriginX, newOriginY)
-        offset = pws2Origin - pws1.positions[0]
+        offset = pws2Origin - pws2.positions[0]
         pws2 = pws2 + offset
         pws2.renameStage("TIXYDrive")
         return pws2
@@ -199,8 +199,9 @@ if __name__ == '__main__':
     def pws1toSTORM(loadPath,newOriginX, newOriginY):
         pws1 = PositionList.load(loadPath)
         pws2 = pws1.copy()
+        pws2.mirrorY()
         pws2Origin = Position2d(newOriginX, newOriginY)
-        offset = pws2Origin - pws1.positions[0]
+        offset = pws2Origin - pws2.positions[0]
         pws2 = pws2 + offset
         pws2.renameStage("TIXYDrive")
         return pws2
