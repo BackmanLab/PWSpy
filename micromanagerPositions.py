@@ -73,14 +73,14 @@ class Position2d:
     def __repr__(self):
         return f"Position2d({self.xyStage}, {self.x}, {self.y})"
     
-    def __add__(self, other:Position2d) -> Position2d:
+    def __add__(self, other):
         assert isinstance(other, Position2d)
         return Position2d(self.x + other.x,
                           self.y + other.y,
                           self.xyStage,
                           self.label)
         
-    def __sub__(self, other:Position2d) -> Position2d:
+    def __sub__(self, other):
         assert isinstance(other, Position2d)
         return Position2d(self.x - other.x,
                           self.y - other.y,
