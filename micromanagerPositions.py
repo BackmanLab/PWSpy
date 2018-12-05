@@ -34,7 +34,7 @@ class PropertyMap:
             raise TypeError
             
 class Position2d:
-    def __init__(self, x:float, y:float, xyStage:str, label:str):
+    def __init__(self, x:float, y:float, xyStage:str='', label:str=''):
         self.x = x
         self.y = y
         self.xyStage = xyStage
@@ -185,11 +185,13 @@ if __name__ == '__main__':
 #    r = PositionList.load(r'G:\ranyaweekedn\position1.pos')
     
     #pws to pws2
-    pws1.load()
-    pws2 = pws1.copy()
-    pws2.mirrorX()
-    pws2.mirrorY()
-    pws2Origin = Position2d(x,y,'TIXYDrive','')
-    offset = pws2Origin - pws1.positions[0]
-    pws2.addOffset(offset)
-    pws2.save()
+    def pws1to2(loadPath,newOriginX, newOriginY):
+        pws1 = PositionList.load(loadPath)
+        pws2 = pws1.copy()
+        pws2.mirrorX()
+        pws2.mirrorY()
+        pws2Origin = Position2d(newOriginX, newOriginY)
+        offset = pws2Origin - pws1.positions[0]
+        pws2 = pws2 + offset
+        pws2.renameStage("TIXYDrive")
+        return pws2
