@@ -8,6 +8,7 @@ Created on Mon Dec  3 17:53:24 2018
 import json
 import typing
 import numpy as np
+import copy
 
 class Property:
     def __init__(self, name:str, pType:str, value):
@@ -64,6 +65,10 @@ class Position2d:
         self.x += dx
         self.y += dy
         self._regen()
+    
+    def renameStage(self, newName):
+        self.xyStage = newName
+        self._regen()
         
     def __repr__(self):
         return f"Position2d({self.xyStage}, {self.x}, {self.y})"
@@ -90,6 +95,13 @@ class PositionList:
         for i in self.positions:
             i.addOffset(dx, dy)
         self._regen()
+    def renameStage(self, newName):
+        for i in self.positions:
+            i.renameStage(newName)
+        self._regen()
+    
+    def copy(self):
+        return copy.deepcopy(self)
     def save(self, savePath):
         #    a=json.dumps(plist,cls=Encoder, ensure_ascii=False)
         #    a = a.replace('{','{\n').replace('[','[\n').replace('}','\n}').replace(',',',\n').replace(']','\n]')
@@ -150,11 +162,11 @@ if __name__ == '__main__':
     pos=[[0,0],
      [1,1],
      [2,3]]
-    
-    positions=[]
-    for n,i in enumerate(pos):
-        positions.append(Position2d(*i,'XY',f'Cell{n+1}'))
-    plist = PositionList(positions)
-    a=json.dumps(plist,cls=Encoder, ensure_ascii=False)
-    a = a.replace('{','{\n').replace('[','[\n').replace('}','\n}').replace(',',',\n').replace(']','\n]')
-    r = PositionList.load(r'G:\ranyaweekedn\position1.pos')
+#    
+#    positions=[]
+#    for n,i in enumerate(pos):
+#        positions.append(Position2d(*i,'XY',f'Cell{n+1}'))
+#    plist = PositionList(positions)
+#    a=json.dumps(plist,cls=Encoder, ensure_ascii=False)
+#    a = a.replace('{','{\n').replace('[','[\n').replace('}','\n}').replace(',',',\n').replace(']','\n]')
+#    r = PositionList.load(r'G:\ranyaweekedn\position1.pos')
