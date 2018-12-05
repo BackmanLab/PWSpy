@@ -72,7 +72,17 @@ class Position2d:
         
     def __repr__(self):
         return f"Position2d({self.xyStage}, {self.x}, {self.y})"
-
+    
+    def __add__(self, other:Position2d):
+        assert isinstance(other, Position2d)
+        self.x += other.x
+        self.y += other.y
+        
+    def __sub__(self, other:Position2d):
+        assert isinstance(other, Position2d)
+        self.x -= other.x
+        self.y -= other.y
+        
 class PositionList:
     def __init__(self, positions: typing.List[Position2d]):
         self.positions = positions
