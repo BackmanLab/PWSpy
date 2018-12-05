@@ -60,11 +60,6 @@ class Position2d:
     def mirrorY(self):
         self.y *= -1
         self._regen()
-
-    def addOffset(self, dx, dy):
-        self.x += dx
-        self.y += dy
-        self._regen()
     
     def renameStage(self, newName):
         self.xyStage = newName
@@ -104,10 +99,6 @@ class PositionList:
     def mirrorY(self):
         for i in self.positions:
             i.mirrorY()
-        self._regen()
-    def addOffset(self, dx, dy):
-        for i in self.positions:
-            i.addOffset(dx, dy)
         self._regen()
     def renameStage(self, newName):
         for i in self.positions:
