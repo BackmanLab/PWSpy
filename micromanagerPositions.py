@@ -140,15 +140,11 @@ class PositionList:
     
     def __add__(self, other:Position2d):
         assert isinstance(other, Position2d)
-        for i in self.positions:
-            i += other
-        self._regen()
+        return PositionList([i + other for i in self.positions])
         
     def __sub__(self, other:Position2d):
         assert isinstance(other, Position2d)
-        for i in self.positions:
-            i -= other
-        self._regen()
+        return PositionList([i - other for i in self.positions])
         
 class Encoder(json.JSONEncoder):
     def default(self,obj):
