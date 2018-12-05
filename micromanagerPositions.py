@@ -195,3 +195,12 @@ if __name__ == '__main__':
         pws2 = pws2 + offset
         pws2.renameStage("TIXYDrive")
         return pws2
+    
+    def pws1toSTORM(loadPath,newOriginX, newOriginY):
+        pws1 = PositionList.load(loadPath)
+        pws2 = pws1.copy()
+        pws2Origin = Position2d(newOriginX, newOriginY)
+        offset = pws2Origin - pws1.positions[0]
+        pws2 = pws2 + offset
+        pws2.renameStage("TIXYDrive")
+        return pws2
