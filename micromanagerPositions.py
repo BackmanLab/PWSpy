@@ -73,15 +73,19 @@ class Position2d:
     def __repr__(self):
         return f"Position2d({self.xyStage}, {self.x}, {self.y})"
     
-    def __add__(self, other:Position2d):
+    def __add__(self, other:Position2d) -> Position2d:
         assert isinstance(other, Position2d)
-        self.x += other.x
-        self.y += other.y
+        return Position2d(self.x + other.x,
+                          self.y + other.y,
+                          self.xyStage,
+                          self.label)
         
-    def __sub__(self, other:Position2d):
+    def __sub__(self, other:Position2d) -> Position2d:
         assert isinstance(other, Position2d)
-        self.x -= other.x
-        self.y -= other.y
+        return Position2d(self.x - other.x,
+                          self.y - other.y,
+                          self.xyStage,
+                          self.label)
         
 class PositionList:
     def __init__(self, positions: typing.List[Position2d]):
@@ -142,7 +146,19 @@ class PositionList:
             s += str(i) + '\n'
         s += '])'
         return s
-            
+    
+    def __add__(self, other:Position2d):
+        assert isinstance(other, Position2d)
+        for i in self.positions:
+            i += other
+        self._regen()
+        
+    def __sub__(self, other:Position2d):
+        assert isinstance(other, Position2d)
+        for i in self.positions:
+            i -= other
+        self._regen()
+        
 class Encoder(json.JSONEncoder):
     def default(self,obj):
         if isinstance(obj, PositionList):
