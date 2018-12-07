@@ -4,11 +4,12 @@ Created on Mon Dec  3 17:53:24 2018
 
 @author: backman05
 """
-
+from __future__ import annotations
 import json
 import typing
 import numpy as np
 import copy
+
 
 class Property:
     '''Represents a single property from a micromanager PropertyMap'''
@@ -65,13 +66,13 @@ class Position2d:
         self._regen()      
     def __repr__(self):
         return f"Position2d({self.xyStage}, {self.x}, {self.y})"  
-    def __add__(self, other):
+    def __add__(self, other:'Position2d')->'Position2d':
         assert isinstance(other, Position2d)
         return Position2d(self.x + other.x,
                           self.y + other.y,
                           self.xyStage,
                           self.label)       
-    def __sub__(self, other):
+    def __sub__(self, other:Position2d)->Position2d:
         assert isinstance(other, Position2d)
         return Position2d(self.x - other.x,
                           self.y - other.y,
@@ -101,9 +102,9 @@ class PositionList:
         for i in self.positions:
             i.renameStage(newName)
         self._regen()    
-    def copy(self):
+    def copy(self) -> PositionList:
         return copy.deepcopy(self)
-    def save(self, savePath):
+    def save(self, savePath:str):
         #    a=json.dumps(plist,cls=Encoder, ensure_ascii=False)
         #    a = a.replace('{','{\n').replace('[','[\n').replace('}','\n}').replace(',',',\n').replace(']','\n]')
         if savePath[-4:] != '.pos':
@@ -111,7 +112,7 @@ class PositionList:
         with open(savePath,'w') as f:
             json.dump(self,f,cls=PositionList.Encoder)
     @classmethod
-    def load(cls, filePath):
+    def load(cls, filePath:str) -> PositionList:
         def _decode(dct):
             if 'format' in dct:
                 if dct['format'] == 'Micro-Manager Property Map' and int(dct['major_version'])==2:
@@ -133,10 +134,10 @@ class PositionList:
             s += str(i) + '\n'
         s += '])'
         return s  
-    def __add__(self, other:Position2d):
+    def __add__(self, other:Position2d) -> Position2d:
         assert isinstance(other, Position2d)
         return PositionList([i + other for i in self.positions])     
-    def __sub__(self, other:Position2d):
+    def __sub__(self, other:Position2d) -> Position2d:
         assert isinstance(other, Position2d)
         return PositionList([i - other for i in self.positions])      
     class Encoder(json.JSONEncoder):
@@ -146,6 +147,10 @@ class PositionList:
                 return obj._d
             else:
                 return json.JSONEncoder(ensure_ascii=False).default(self, obj)
+    def __len__(self):
+        return len(self.positions)
+    def __getitem__(self,idx:slice):
+        return self.positions[idx]
     
 if __name__ == '__main__':
 
