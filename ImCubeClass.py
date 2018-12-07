@@ -21,6 +21,7 @@ class ImCube:
     def __init__(self,data,metadata, dtype = np.float32):
         assert isinstance(data,np.ndarray)
         assert isinstance(metadata,dict)
+        self._hasBeenNormalized = False #Keeps track of whether or not we have normalized by exposure so that we don't do it twice.
         self.data = data.astype(dtype)
         self.metadata = metadata
         try:
@@ -144,8 +145,11 @@ class ImCube:
         return hs.signals.Signal1D(self.data)
     
     def normalizeByExposure(self):
-        data = self.data / self.metadata['exposure']
-        self.data = data
+        if not self._hasBeenNormalized:
+            self.data = self.data / self.metadata['exposure']
+        else:
+            raise Exception("The ImCube has already been normalized by exposure.")
+        self._hasBeenNormalized = True
     
     def subtractDarkCounts(self,count, binning:int = None):
         #Subtracts the darkcounts from the data. count is darkcounts per pixel. binning should be specified if it wasn't saved in the micromanager metadata.
@@ -243,7 +247,7 @@ class ImCube:
             raise ValueError("Imcube wavelengths are not compatible")
         return ImCube(self.data * other.data, self.metadata)
     
-    def __div__(self, other:ImCube) -> ImCube:
+    def __truediv__(self, other:ImCube) -> ImCube:
         if not self._wavelengthsMatch(other):
             raise ValueError("Imcube wavelengths are not compatible")
         return ImCube(self.data / other.data, self.metadata)
@@ -266,4 +270,7 @@ class ImCube:
 
     def __getattr__(self, attr:str):
         #This gets called if the attribute isn't found in the imcube class. try the numpy method instead
-        return self.data.__getattribute__(attr)
+        try:
+            return self.data.__getattribute__(attr)
+        except AttributeError:
+            raise AttributeError(f"ImCube has no attribute {attr}")
