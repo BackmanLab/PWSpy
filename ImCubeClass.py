@@ -4,6 +4,7 @@ Created on Thu Aug  9 11:41:32 2018
 
 @author: Nick
 """
+from __future__ import annotations
 
 import numpy as np
 from scipy.io import loadmat,savemat
@@ -218,5 +219,27 @@ class ImCube:
         
     def __getitem__(self,slic):
         return self.data[slic]
+    
+    def _wavelengthsMatch(self, other:ImCube) -> bool:
+        return self.wavelengths == other.wavelengths
+    
+    def __add__(self, other:ImCube) -> ImCube:
+        if not self._wavelengthsMatch(other):
+            raise ValueError("Imcube wavelengths are not compatible")
+        return ImCube(self.data + other.data, self.metadata)
 
+    def __sub__(self, other:ImCube) -> ImCube:
+        if not self._wavelengthsMatch(other):
+            raise ValueError("Imcube wavelengths are not compatible")
+        return ImCube(self.data - other.data, self.metadata)
+    
+    def __mul__(self, other:ImCube) -> ImCube:
+        if not self._wavelengthsMatch(other):
+            raise ValueError("Imcube wavelengths are not compatible")
+        return ImCube(self.data * other.data, self.metadata)
+    
+    def __div__(self, other:ImCube) -> ImCube:
+        if not self._wavelengthsMatch(other):
+            raise ValueError("Imcube wavelengths are not compatible")
+        return ImCube(self.data / other.data, self.metadata)
 
