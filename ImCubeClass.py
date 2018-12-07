@@ -267,10 +267,3 @@ class ImCube:
         md = self.metadata
         md['wavelengths'] = wv[iStart:iStop]
         return ImCube(self[:,:,iStart:iStop], md)
-
-    def __getattr__(self, attr:str):
-        #This gets called if the attribute isn't found in the imcube class. try the numpy method instead
-        try:
-            return self.data.__getattribute__(attr)
-        except AttributeError:
-            raise AttributeError(f"ImCube has no attribute {attr}")
