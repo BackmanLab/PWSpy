@@ -27,6 +27,8 @@ class ImCube:
             self.wavelengths = self.metadata['wavelengths']
         except:
             self.wavelengths = self.metadata["waveLengths"]
+        if self.data.shape[2] != len(self.wavelengths):
+            raise ValueError("The length of the wavelengths list doesn't match the wavelength axis of the data array")
         
     @classmethod
     def loadAny(cls, directory):
