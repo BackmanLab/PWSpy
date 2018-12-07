@@ -243,3 +243,7 @@ class ImCube:
             raise ValueError("Imcube wavelengths are not compatible")
         return ImCube(self.data / other.data, self.metadata)
 
+
+    def __getattr__(self, attr:str):
+        #This gets called if the attribute isn't found in the imcube class. try the numpy method instead
+        return self.data.__getattribute__(attr)
