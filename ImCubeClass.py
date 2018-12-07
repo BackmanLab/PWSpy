@@ -243,6 +243,21 @@ class ImCube:
             raise ValueError("Imcube wavelengths are not compatible")
         return ImCube(self.data / other.data, self.metadata)
 
+    def getOpd(self):
+        raise NotImplementedError
+    def getAutoCorrelation(self):
+        raise NotImplementedError
+    def wvIndex(self, start, stop):
+        wv = np.array(self.wavelengths)
+        iStart = np.argmin(np.abs(wv - start))
+        iStop = np.argmin(np.abs(wv - stop))
+        iStop += 1 #include the end point
+        if iStop >= len(wv): #Include everything
+            iStop = None
+        print(iStop)
+        md = self.metadata
+        md['wavelengths'] = wv[iStart:iStop]
+        return ImCube(self[:,:,iStart:iStop], md)
 
     def __getattr__(self, attr:str):
         #This gets called if the attribute isn't found in the imcube class. try the numpy method instead
