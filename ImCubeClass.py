@@ -145,13 +145,16 @@ class ImCube:
         data = self.data / self.metadata['exposure']
         self.data = data
     
-    def subtractDarkCounts(self,count):
-        try:
-            binning = self.metadata['MicroManagerMetadata']['Binning']
-            if isinstance(binning, dict): #This is due to a property map change from beta to gamma
-                binning = binning['scalar']
-        except:
-            binning = 1
+    def subtractDarkCounts(self,count, binning:int = None):
+        #Subtracts the darkcounts from the data. count is darkcounts per pixel. binning should be specified if it wasn't saved in the micromanager metadata.
+        if binning is None:
+            try:
+                binning = self.metadata['MicroManagerMetadata']['Binning']
+                if isinstance(binning, dict): #This is due to a property map change from beta to gamma
+                    binning = binning['scalar']
+            except:
+                print('Micromanager binning data not found. Assuming no binning.')
+                binning = 1
         count = count * binning**2    #Account for the fact that binning multiplies the darkcount.
         self.data = self.data - count
 
