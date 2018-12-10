@@ -43,11 +43,11 @@ def analyzeCube(cubeCell, orderFilter, cutoffFilter, listWavelength, wavelengthS
     ## RMS - POLYFIT
     # The RMS should be calculated on the mean-subtracted polyfit. This may
     # also be accomplished by calculating the standard-deviation.
-    rmsPoly = cubePoly.std(axis=2)
+    rmsPoly = cubePoly.data.std(axis=2)
 
     ## -- RMS
     # Obtain the RMS of each signal in the cube.
-    rms = cube.std(axis=2)
+    rms = cube.data.std(axis=2)
 
     ## -- Autocorrelation
     [slope, rSquared] = pws.analysis.autoCorrelation(cube, isAutocorrMinSub, dk, indexAutocorrLinear);
