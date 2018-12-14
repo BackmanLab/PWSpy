@@ -284,10 +284,116 @@ class KCube(ImCube):
         interpFunc = spi.interp1d(wavenumbers, self.data, kind='linear', axis=2)
         self.data = interpFunc(evenWavenumbers)
         self.wavenumbers = evenWavenumbers
-    def getOpd(self):
-        pass
-    def getAutoCorrelation(self):
-        pass
+    def getOpd(self, isHannWindow, indexOpdStop):
+        fftSize = 2**(np.ceil(np.log2((2*len(self.wavenumbers))-1))) #%This is the next size of fft that is  at least 2x greater than is needed but is a power of two. Results in interpolation, helps amplitude accuracy and fft efficiency.
+
+        if isHannWindow: #if hann window checkbox is selected, create hann window
+            w = np.hanning(len(self.wavenumbers)) # Hann window for one vector
+        else:
+            w = np.ones((len(self.wavenumbers))) # Create unity window
+
+        # Calculate the Fourier Transform of the signal multiplied by Hann window
+        dataOpdPolysub = np.fft.fft(self.data * w[np.newaxis, np.newaxis, :], n=fftSize*2, axis=2)
+    
+        # Normalize the OPD by the quantity of wavelengths.
+        dataOpdPolysub = dataOpdPolysub / len(self.wavenumbers)
+        
+        # by multiplying by Hann window we reduce the total power of signal. To account for that,
+        dataOpdPolysub = np.abs(dataOpdPolysub / np.sqrt(np.mean(w**2)))
+    
+        # Isolate the desired values in the OPD.
+        opd = dataOpdPolysub[:,:,:indexOpdStop]
+    
+        # Generate the xval for the current OPD.
+        maxOpd = 2 * np.pi / (self.wavenumbers[1] - self.wavenumbers[0])
+        dOpd = maxOpd / len(self.wavenumbers)
+        xvalOpdPolysub = len(self.wavenumbers) / 2 * list(range(fftSize+2)) * dOpd / (fftSize+1);
+        xvalOpdPolysub = xvalOpdPolysub[:indexOpdStop]
+        return opd, xvalOpdPolysub
+    
+    def getAutoCorrelation(self,isAutocorrMinSub:bool, stopIndex:int):
+        # The autocorrelation of a signal is the covariance of a signal with a
+        # lagged version of itself, normalized so that the covariance at
+        # zero-lag is equal to 1.0 (c[0] = 1.0).  The same process without
+        # normalization is the autocovariance.
+        #
+        # A fast method for determining the autocovariance of a signal with
+        # itself is to utilize fast-fourier transforms.  In this method, the
+        # signal is converted to the frequency domain using fft.  The
+        # frequency-domain signal is then convolved with itself.  The inverse
+        # fft is performed on this self-convolution, yielding the
+        # autocorrelation.
+        #
+        # In this instance, the autocorrelation is determined for a series of
+        # lags, Z. Z is equal to [-P+1:P-1], where P is the quantity of
+        # measurements in each signal (the quantity of wavenumbers).  Thus, the
+        # quantity of lags is equal to (2*P)-1.  The fft process is fastest
+        # when performed on signals with a length equal to a power of 2.  To
+        # take advantage of this property, a Z-point fft is performed on the
+        # signal, where Z is a number greater than (2*P)-1 that is also a power
+        # of 2.
+        fftSize = 2**(np.ceil(np.log2((2*len(self.wavenumbers))-1))) #This is the next size of fft that is  at least 2x greater than is needed but is a power of two. Results in interpolation, helps amplitude accuracy and fft efficiency.
+        
+        # Determine the fft for each signal.  The length of each signal's fft
+        # will be fftSize.
+        cubeFft = np.fft.fft(self.data, n=fftSize, axis=2)
+        
+        # Determine the ifft of the cubeFft.  The resulting ifft of each signal
+        # will be of length fftSize.
+        # NOTE: See the autocorrelation calculation in the Matlab function
+        # "xcorr".
+        cubeAutocorr = np.fft.ifft(np.abs(cubeFft)**2, axis=2) # This is the autocovariance.
+        # Obtain only the lags desired.
+        # Then, normalize each autocovariance so the value at zero-lags is 1.
+        cubeAutocorr = cubeAutocorr[:,:,:len(self.wavenumbers)]
+        cubeAutocorr /= cubeAutocorr[:,0]
+        
+        # In some instance, minimum subtraction is desired.  In this case,
+        # determine the minimum of each signal and subtract that value from
+        # each value in the signal.
+        if isAutocorrMinSub:
+            cubeAutocorr -= cubeAutocorr.min()
+        
+        # Convert the lags from units of indices to wavenumbers.
+        lags = np.array(self.wavenumbers) - min(self.wavenumbers)
+        
+        # Square the lags. This is how it is in the paper. I'm not sure why though.
+        lagsSquared = lags**2;
+        
+        # Before taking the log of the autocorrelation, zero values must be
+        # modified to prevent outputs of "inf" or "-inf".
+        cubeAutocorr[cubeAutocorr==0] = 1e-323
+        
+        # Obtain the log of the autocorrelation.
+        cubeAutocorrLog = np.log(cubeAutocorr);
+
+        # A first-order polynomial fit is determined between lagsSquared and
+        # and cubeAutocorrLog.  This fit is to be performed only on the first
+        # linear-portion of the lagsSquared vs. cubeAutocorrLog relationship.
+        # The index of the last point to be used is indicated by stopIndex.
+        lagsSquared = lagsSquared[:stopIndex]
+        cubeAutocorrLog = cubeAutocorrLog[:,:,:stopIndex]
+        
+        # Determine the first-order polynomial fit for each cubeAutocorrLag.
+        V = np.concatenate([np.ones(lagsSquared.shape), lagsSquared])
+        M = np.matmul(V, np.linalg.pinv(V))
+        cubeLinear = np.matmul(M, cubeAutocorrLog)
+        cubeSlope  = (cubeLinear[1,:] - cubeLinear[0,:]) / (lagsSquared[1] - lagsSquared[0])
+            
+        ## -- Coefficient of Determination
+        # Obtain the mean of the observed data
+        meanObserved = cubeAutocorrLog.mean()
+        # Obtain the regression sum of squares.
+        ssReg = ((cubeLinear - meanObserved)**2).sum()
+        # Obtain the residual sum of squares.
+        ssErr = ((cubeAutocorrLog - cubeLinear)**2).sum()
+        # Obtain the total sume of squares.
+        ssTot = ssReg + ssErr
+        # Obtain rSquared.
+        rSquared = ssReg/ssTot
+        
+        return cubeSlope, rSquared
+    
     @classmethod
     def loadAny(*args):
         raise NotImplementedError
