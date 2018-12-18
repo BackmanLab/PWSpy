@@ -136,6 +136,13 @@ class ImCube:
             im[:,:,i] = im[:,:,i] + mins[i-1] + im[:,:,i-1]
         return cls(im,md)
     
+    def toTiff(self, outpath):
+        im = self.data
+        im = im.astype(np.uint16)
+        os.mkdir(outpath)
+        with tf.TiffWriter(open(os.path.join(outpath, 'pws.tif'),'wb')) as w:
+            w.save(np.rollaxis(im, -1, 0), metadata=self.metadata)
+    
     def plotMean(self):
         fig,ax = plt.subplots()
         mean = np.mean(self.data,axis=2)
