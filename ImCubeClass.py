@@ -181,55 +181,53 @@ class ImCube:
         std = self.data[mask].std(axis=0)
         return mean,std
     
-    def selectROI(self,xSlice = None,ySlice = None):
+    def selectLassoROI(self):
+        mask = np.zeros((self.data.shape[0],self.data.shape[1]),dtype=np.bool)
+
+        fig,ax = self.plotMean()
+        fig.suptitle("Close to accept ROI")
+        x,y = np.meshgrid(np.arange(self.data.shape[0]),np.arange(self.data.shape[1]))
+        coords = np.vstack((y.flatten(),x.flatten())).T
+        
+        def onSelect(verts):
+            p = path.Path(verts)
+            ind = p.contains_points(coords,radius=0)
+            mask[coords[ind,1],coords[ind,0]] = True
+            
+        l = widgets.LassoSelector(ax,onSelect)
+
+        while plt.fignum_exists(fig.number):
+            fig.canvas.flush_events()
+        return mask
+    
+    def selectRectangleROI(self,xSlice = None,ySlice = None):
         #X and Y slice allow manual selection of the range.
         mask = np.zeros((self.data.shape[0],self.data.shape[1]),dtype=np.bool)
-        if (xSlice is not None) and (ySlice is not None):
-            if not hasattr(xSlice,'__iter__'):
-                xSlice = (xSlice,)
-            if not hasattr(ySlice,'__iter__'):
-                ySlice = (ySlice,) 
-            xSlice = slice(*xSlice)
-            ySlice = slice(*ySlice)
-            mask[ySlice,xSlice] = True
+        slices= {'y':ySlice, 'x':xSlice}
+        if (slices['x'] is not None) and (slices['y'] is not None):
+            if not hasattr(slices['x'],'__iter__'):
+                slices['x'] = (slices['x'],)
+            if not hasattr(slices['y'],'__iter__'):
+                slices['y'] = (slices['y'],) 
+            slices['x'] = slice(*slices['x'])
+            slices['y'] = slice(*slices['y'])
+            mask[slices['y'],slices['x']] = True       
         else:
-#            try:
-#                assert typ =='rect' or typ == 'lasso'
-#            except:
-#                raise TypeError("A valid ROI type was not indicated. please use 'rect' or 'lasso'.")
             fig,ax = self.plotMean()
-            fig.suptitle("1 for lasso, 2 for rectangle.\nClose to accept ROI")
-            x,y = np.meshgrid(np.arange(self.data.shape[0]),np.arange(self.data.shape[1]))
-            coords = np.vstack((y.flatten(),x.flatten())).T
-            mask = np.zeros((self.data.shape[0],self.data.shape[1]),dtype=np.bool)
-            
+            fig.suptitle("Close to accept ROI")
 
-            def onSelect(verts):
-                p = path.Path(verts)
-                ind = p.contains_points(coords,radius=0)
-                mask[coords[ind,1],coords[ind,0]] = True
             def rectSelect(mins,maxes):
                 y = [int(mins.ydata),int(maxes.ydata)]
                 x = [int(mins.xdata),int(maxes.xdata)]
-                mask[min(y):max(y),min(x):max(x)] = True
+                slices['y'] = slice(min(y),max(y))
+                slices['x'] = slice(min(x),max(x))
+                mask[slices['y'],slices['x']] = True
                 
-            l = widgets.LassoSelector(ax,onSelect)
             r = widgets.RectangleSelector(ax,rectSelect)
-            r.set_active(False)
-            def onPress(event):
-                k = event.key.lower()
-                if k == '1': #Activate the lasso
-                    r.set_active(False)
-                    l.set_active(True)
-                    
-                elif k == '2': #activate the rectancle
-                    l.set_active(False)
-                    r.set_active(True)
 
-            fig.canvas.mpl_connect('key_press_event',onPress)
             while plt.fignum_exists(fig.number):
                 fig.canvas.flush_events()
-        return mask
+        return mask, (slices['y'], slices['x']) 
              
     def correctCameraNonlinearity(self,polynomials:typing.List[float]):
         #Apply a polynomial to the data where x is the original data and y is the data after correction.
