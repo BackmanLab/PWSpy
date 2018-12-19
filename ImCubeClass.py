@@ -55,6 +55,7 @@ class ImCube:
             info2 = list(loadmat(os.path.join(directory,'info2.mat'))['info2'].squeeze())
             info3 = list(loadmat(os.path.join(directory,'info3.mat'))['info3'].squeeze())
             wv = list(loadmat(os.path.join(directory,'wv.mat'))['WV'].squeeze())
+            wv = [int(i) for i in wv] #We will have issues saving later if these are numpy int types.
             md = {'startWv':info2[0],'stepWv':info2[1],'stopWv':info2[2],
                  'exposure':info2[3],'time':'{:d}-{:d}-{:d} {:d}:{:d}:{:d}'.format(*[int(i) for i in [info3[8],info3[7],info3[6],info3[9],info3[10],info3[11]]]),'systemId':info3[0],
                  'imgHeight':int(info3[2]),'imgWidth':int(info3[3]),'wavelengths':wv}
