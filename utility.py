@@ -113,7 +113,7 @@ def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None) -> (pd.Da
         mask = cubes
     else:
         mask = [i for i in cubes if (i.setting == selectMaskUsingSetting)]
-    mask = mask[0].selectROI()
+    mask = mask[0].selectLassoROI()
     
     # load theory reflectance
     theoryR = {}
