@@ -6,11 +6,13 @@ Created on Fri Dec  7 12:38:49 2018
 """
 from pwspython import ImCube, KCube   
 import copy
+import scipy.signal as sps
+import numpy as np
 
 ## analyzeCubeReducedMemory
 # Performs analysis on an individual image cube by operating on portions of
 # the cube to reduce total memory usage.
-def analyzeCube(cubeCell, orderFilter, cutoffFilter, wavelengthStart, wavelengthStop, orderPolyfit, isAutocorrMinSub, indexAutocorrLinear, isOpdFiltered, isOpdPolysub, isHannWindow):
+def analyzeCube(cubeCell, orderFilter, cutoffFilter, wavelengthStart, wavelengthStop, orderPolyFit, isAutocorrMinSub, indexAutocorrLinear, isOpdFiltered, isOpdPolysub, isHannWindow):
     # Indicate the OPD Stop Index.
     indexOpdStop = 100   
 
@@ -20,7 +22,8 @@ def analyzeCube(cubeCell, orderFilter, cutoffFilter, wavelengthStart, wavelength
     mirror.normalizeByExposure()
     cube = cube / mirror
     
-    cube = pws.analysis.filterCube(cube, orderFilter, cutoffFilter);
+    b,a = sps.butter(orderFilter, cutoffFilter) #The cutoff totally ignores what the `sample rate` is. so a 2nm interval image cube will be filtered differently than a 1nm interval cube. This is how it is in matlab.
+    cube.data = sps.filtfilt(b,a,cube.data,axis=2)
     
     #The rest of the analysis will be performed only on the selected wavelength range.
     cube = cube.wvIndex(wavelengthStart, wavelengthStop)
@@ -32,7 +35,13 @@ def analyzeCube(cubeCell, orderFilter, cutoffFilter, wavelengthStart, wavelength
     cube = KCube(cube)
 
     ## -- Polynomial Fit
-    cubePoly = pws.analysis.polynomialFit(cube, wavenumberList, orderPolyfit);
+    polydata = cube.data.reshape((cube.data.shape[0]*cube.data.shape[1], cube.data.shape[2]))
+    polydata = np.rollaxis(polydata,1) #Flatten the array to 2d and put the wavenumber axis first.
+    cubePoly = np.zeros(polydata.shape)#make an empty array to hold the fit values.
+    polydata = np.polyfit(cube.wavenumbers,polydata,orderPolyFit) #At this point polydata goes from holding the cube data to holding the polynomial values for each pixel. still 2d.
+    for i in range(orderPolyFit):
+        cubePoly += np.array(cube.wavenumbers)[:,np.newaxis] * polydata[i,:] #Populate cubePoly with the fit values.
+    cubePoly = cubePoly.reshape(cube.data.shape) #reshape back to a cube.
 
     # Remove the polynomial fit from filtered cubeCell.
     cube = cube - cubePoly  
@@ -50,7 +59,7 @@ def analyzeCube(cubeCell, orderFilter, cutoffFilter, wavelengthStart, wavelength
     slope, rSquared = cube.getAutoCorrelation(isAutocorrMinSub, indexAutocorrLinear)
 
     ## OPD Analysis
-    if isOpdPolysub    # If cubeOpdPolysub is to be generated
+    if isOpdPolysub:   # If cubeOpdPolysub is to be generated
         opd, xvalOpd = cube.getOpd(isHannWindow, indexOpdStop)  
 
     ## Ld Calculation
