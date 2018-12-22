@@ -184,3 +184,21 @@ if __name__ == '__main__':
         pws2 = pws2 + offset
         pws2.renameStage("TIXYDrive")
         return pws2
+    
+    def pws2toSTORM(loadPath, newOriginX, newOriginY):
+        pws2 = PositionList.load(loadPath)
+        storm = pws2.copy()
+        storm.mirrorX()
+        stormOrigin = Position2d(newOriginX, newOriginY)
+        offset = stormOrigin - storm.positions[0]
+        storm = storm + offset
+        return storm
+        
+    def STORMtoPws2(loadPath, newOriginX, newOriginY):
+        storm = PositionList.load(loadPath)
+        pws2 = storm.copy()
+        pws2.mirrorX()
+        pws2Origin = Position2d(newOriginX, newOriginY)
+        offset = pws2Origin - pws2.positions[0]
+        pws2 = pws2 + offset
+        return pws2
