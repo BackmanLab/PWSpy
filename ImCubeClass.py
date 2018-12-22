@@ -55,6 +55,7 @@ class ImCube:
             info2 = list(loadmat(os.path.join(directory,'info2.mat'))['info2'].squeeze())
             info3 = list(loadmat(os.path.join(directory,'info3.mat'))['info3'].squeeze())
             wv = list(loadmat(os.path.join(directory,'wv.mat'))['WV'].squeeze())
+            wv = [int(i) for i in wv] #We will have issues saving later if these are numpy int types.
             md = {'startWv':info2[0],'stepWv':info2[1],'stopWv':info2[2],
                  'exposure':info2[3],'time':'{:d}-{:d}-{:d} {:d}:{:d}:{:d}'.format(*[int(i) for i in [info3[8],info3[7],info3[6],info3[9],info3[10],info3[11]]]),'systemId':info3[0],
                  'imgHeight':int(info3[2]),'imgWidth':int(info3[3]),'wavelengths':wv}
@@ -136,6 +137,13 @@ class ImCube:
             im[:,:,i] = im[:,:,i] + mins[i-1] + im[:,:,i-1]
         return cls(im,md)
     
+    def toTiff(self, outpath):
+        im = self.data
+        im = im.astype(np.uint16)
+        os.mkdir(outpath)
+        with tf.TiffWriter(open(os.path.join(outpath, 'pws.tif'),'wb')) as w:
+            w.save(np.rollaxis(im, -1, 0), metadata=self.metadata)
+    
     def plotMean(self):
         fig,ax = plt.subplots()
         mean = np.mean(self.data,axis=2)
@@ -174,55 +182,53 @@ class ImCube:
         std = self.data[mask].std(axis=0)
         return mean,std
     
-    def selectROI(self,xSlice = None,ySlice = None):
+    def selectLassoROI(self):
+        mask = np.zeros((self.data.shape[0],self.data.shape[1]),dtype=np.bool)
+
+        fig,ax = self.plotMean()
+        fig.suptitle("Close to accept ROI")
+        x,y = np.meshgrid(np.arange(self.data.shape[0]),np.arange(self.data.shape[1]))
+        coords = np.vstack((y.flatten(),x.flatten())).T
+        
+        def onSelect(verts):
+            p = path.Path(verts)
+            ind = p.contains_points(coords,radius=0)
+            mask[coords[ind,1],coords[ind,0]] = True
+            
+        l = widgets.LassoSelector(ax,onSelect)
+
+        while plt.fignum_exists(fig.number):
+            fig.canvas.flush_events()
+        return mask
+    
+    def selectRectangleROI(self,xSlice = None,ySlice = None):
         #X and Y slice allow manual selection of the range.
         mask = np.zeros((self.data.shape[0],self.data.shape[1]),dtype=np.bool)
-        if (xSlice is not None) and (ySlice is not None):
-            if not hasattr(xSlice,'__iter__'):
-                xSlice = (xSlice,)
-            if not hasattr(ySlice,'__iter__'):
-                ySlice = (ySlice,) 
-            xSlice = slice(*xSlice)
-            ySlice = slice(*ySlice)
-            mask[ySlice,xSlice] = True
+        slices= {'y':ySlice, 'x':xSlice}
+        if (slices['x'] is not None) and (slices['y'] is not None):
+            if not hasattr(slices['x'],'__iter__'):
+                slices['x'] = (slices['x'],)
+            if not hasattr(slices['y'],'__iter__'):
+                slices['y'] = (slices['y'],) 
+            slices['x'] = slice(*slices['x'])
+            slices['y'] = slice(*slices['y'])
+            mask[slices['y'],slices['x']] = True       
         else:
-#            try:
-#                assert typ =='rect' or typ == 'lasso'
-#            except:
-#                raise TypeError("A valid ROI type was not indicated. please use 'rect' or 'lasso'.")
             fig,ax = self.plotMean()
-            fig.suptitle("1 for lasso, 2 for rectangle.\nClose to accept ROI")
-            x,y = np.meshgrid(np.arange(self.data.shape[0]),np.arange(self.data.shape[1]))
-            coords = np.vstack((y.flatten(),x.flatten())).T
-            mask = np.zeros((self.data.shape[0],self.data.shape[1]),dtype=np.bool)
-            
+            fig.suptitle("Close to accept ROI")
 
-            def onSelect(verts):
-                p = path.Path(verts)
-                ind = p.contains_points(coords,radius=0)
-                mask[coords[ind,1],coords[ind,0]] = True
             def rectSelect(mins,maxes):
                 y = [int(mins.ydata),int(maxes.ydata)]
                 x = [int(mins.xdata),int(maxes.xdata)]
-                mask[min(y):max(y),min(x):max(x)] = True
+                slices['y'] = slice(min(y),max(y))
+                slices['x'] = slice(min(x),max(x))
+                mask[slices['y'],slices['x']] = True
                 
-            l = widgets.LassoSelector(ax,onSelect)
             r = widgets.RectangleSelector(ax,rectSelect)
-            r.set_active(False)
-            def onPress(event):
-                k = event.key.lower()
-                if k == '1': #Activate the lasso
-                    r.set_active(False)
-                    l.set_active(True)
-                    
-                elif k == '2': #activate the rectancle
-                    l.set_active(False)
-                    r.set_active(True)
 
-            fig.canvas.mpl_connect('key_press_event',onPress)
             while plt.fignum_exists(fig.number):
                 fig.canvas.flush_events()
-        return mask
+        return mask, (slices['y'], slices['x']) 
              
     def correctCameraNonlinearity(self,polynomials:typing.List[float]):
         #Apply a polynomial to the data where x is the original data and y is the data after correction.
@@ -284,10 +290,116 @@ class KCube(ImCube):
         interpFunc = spi.interp1d(wavenumbers, self.data, kind='linear', axis=2)
         self.data = interpFunc(evenWavenumbers)
         self.wavenumbers = evenWavenumbers
-    def getOpd(self):
-        pass
-    def getAutoCorrelation(self):
-        pass
+    def getOpd(self, isHannWindow, indexOpdStop):
+        fftSize = 2**(np.ceil(np.log2((2*len(self.wavenumbers))-1))) #%This is the next size of fft that is  at least 2x greater than is needed but is a power of two. Results in interpolation, helps amplitude accuracy and fft efficiency.
+
+        if isHannWindow: #if hann window checkbox is selected, create hann window
+            w = np.hanning(len(self.wavenumbers)) # Hann window for one vector
+        else:
+            w = np.ones((len(self.wavenumbers))) # Create unity window
+
+        # Calculate the Fourier Transform of the signal multiplied by Hann window
+        dataOpdPolysub = np.fft.fft(self.data * w[np.newaxis, np.newaxis, :], n=fftSize*2, axis=2)
+    
+        # Normalize the OPD by the quantity of wavelengths.
+        dataOpdPolysub = dataOpdPolysub / len(self.wavenumbers)
+        
+        # by multiplying by Hann window we reduce the total power of signal. To account for that,
+        dataOpdPolysub = np.abs(dataOpdPolysub / np.sqrt(np.mean(w**2)))
+    
+        # Isolate the desired values in the OPD.
+        opd = dataOpdPolysub[:,:,:indexOpdStop]
+    
+        # Generate the xval for the current OPD.
+        maxOpd = 2 * np.pi / (self.wavenumbers[1] - self.wavenumbers[0])
+        dOpd = maxOpd / len(self.wavenumbers)
+        xvalOpdPolysub = len(self.wavenumbers) / 2 * list(range(fftSize+2)) * dOpd / (fftSize+1);
+        xvalOpdPolysub = xvalOpdPolysub[:indexOpdStop]
+        return opd, xvalOpdPolysub
+    
+    def getAutoCorrelation(self,isAutocorrMinSub:bool, stopIndex:int):
+        # The autocorrelation of a signal is the covariance of a signal with a
+        # lagged version of itself, normalized so that the covariance at
+        # zero-lag is equal to 1.0 (c[0] = 1.0).  The same process without
+        # normalization is the autocovariance.
+        #
+        # A fast method for determining the autocovariance of a signal with
+        # itself is to utilize fast-fourier transforms.  In this method, the
+        # signal is converted to the frequency domain using fft.  The
+        # frequency-domain signal is then convolved with itself.  The inverse
+        # fft is performed on this self-convolution, yielding the
+        # autocorrelation.
+        #
+        # In this instance, the autocorrelation is determined for a series of
+        # lags, Z. Z is equal to [-P+1:P-1], where P is the quantity of
+        # measurements in each signal (the quantity of wavenumbers).  Thus, the
+        # quantity of lags is equal to (2*P)-1.  The fft process is fastest
+        # when performed on signals with a length equal to a power of 2.  To
+        # take advantage of this property, a Z-point fft is performed on the
+        # signal, where Z is a number greater than (2*P)-1 that is also a power
+        # of 2.
+        fftSize = 2**(np.ceil(np.log2((2*len(self.wavenumbers))-1))) #This is the next size of fft that is  at least 2x greater than is needed but is a power of two. Results in interpolation, helps amplitude accuracy and fft efficiency.
+        
+        # Determine the fft for each signal.  The length of each signal's fft
+        # will be fftSize.
+        cubeFft = np.fft.fft(self.data, n=fftSize, axis=2)
+        
+        # Determine the ifft of the cubeFft.  The resulting ifft of each signal
+        # will be of length fftSize.
+        # NOTE: See the autocorrelation calculation in the Matlab function
+        # "xcorr".
+        cubeAutocorr = np.fft.ifft(np.abs(cubeFft)**2, axis=2) # This is the autocovariance.
+        # Obtain only the lags desired.
+        # Then, normalize each autocovariance so the value at zero-lags is 1.
+        cubeAutocorr = cubeAutocorr[:,:,:len(self.wavenumbers)]
+        cubeAutocorr /= cubeAutocorr[:,0]
+        
+        # In some instance, minimum subtraction is desired.  In this case,
+        # determine the minimum of each signal and subtract that value from
+        # each value in the signal.
+        if isAutocorrMinSub:
+            cubeAutocorr -= cubeAutocorr.min()
+        
+        # Convert the lags from units of indices to wavenumbers.
+        lags = np.array(self.wavenumbers) - min(self.wavenumbers)
+        
+        # Square the lags. This is how it is in the paper. I'm not sure why though.
+        lagsSquared = lags**2;
+        
+        # Before taking the log of the autocorrelation, zero values must be
+        # modified to prevent outputs of "inf" or "-inf".
+        cubeAutocorr[cubeAutocorr==0] = 1e-323
+        
+        # Obtain the log of the autocorrelation.
+        cubeAutocorrLog = np.log(cubeAutocorr);
+
+        # A first-order polynomial fit is determined between lagsSquared and
+        # and cubeAutocorrLog.  This fit is to be performed only on the first
+        # linear-portion of the lagsSquared vs. cubeAutocorrLog relationship.
+        # The index of the last point to be used is indicated by stopIndex.
+        lagsSquared = lagsSquared[:stopIndex]
+        cubeAutocorrLog = cubeAutocorrLog[:,:,:stopIndex]
+        
+        # Determine the first-order polynomial fit for each cubeAutocorrLag.
+        V = np.concatenate([np.ones(lagsSquared.shape), lagsSquared])
+        M = np.matmul(V, np.linalg.pinv(V))
+        cubeLinear = np.matmul(M, cubeAutocorrLog)
+        cubeSlope  = (cubeLinear[1,:] - cubeLinear[0,:]) / (lagsSquared[1] - lagsSquared[0])
+            
+        ## -- Coefficient of Determination
+        # Obtain the mean of the observed data
+        meanObserved = cubeAutocorrLog.mean()
+        # Obtain the regression sum of squares.
+        ssReg = ((cubeLinear - meanObserved)**2).sum()
+        # Obtain the residual sum of squares.
+        ssErr = ((cubeAutocorrLog - cubeLinear)**2).sum()
+        # Obtain the total sume of squares.
+        ssTot = ssReg + ssErr
+        # Obtain rSquared.
+        rSquared = ssReg/ssTot
+        
+        return cubeSlope, rSquared
+    
     @classmethod
     def loadAny(*args):
         raise NotImplementedError
