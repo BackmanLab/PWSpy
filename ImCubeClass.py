@@ -349,7 +349,7 @@ class KCube(ImCube):
         # Obtain only the lags desired.
         # Then, normalize each autocovariance so the value at zero-lags is 1.
         cubeAutocorr = cubeAutocorr[:,:,:len(self.wavenumbers)]
-        cubeAutocorr /= cubeAutocorr[:,0]
+        cubeAutocorr /= cubeAutocorr[:,:,0,np.newaxis]
         
         # In some instance, minimum subtraction is desired.  In this case,
         # determine the minimum of each signal and subtract that value from
@@ -384,19 +384,20 @@ class KCube(ImCube):
         V = V.T
         M = np.matmul(V, np.linalg.pinv(V))
         cubeLinear = np.matmul(M, cubeAutocorrLog)
-        cubeSlope  = (cubeLinear[1,:] - cubeLinear[0,:]) / (lagsSquared[1] - lagsSquared[0])
-            
+        cubeSlope = (cubeLinear[1,:] - cubeLinear[0,:]) / (lagsSquared[1] - lagsSquared[0])
+        cubeSlope = cubeSlope.reshape(self.data.shape[0], self.data.shape[1])    
         ## -- Coefficient of Determination
         # Obtain the mean of the observed data
-        meanObserved = cubeAutocorrLog.mean()
+        meanObserved = cubeAutocorrLog.mean(axis=0)
         # Obtain the regression sum of squares.
-        ssReg = ((cubeLinear - meanObserved)**2).sum()
+        ssReg = ((cubeLinear - meanObserved)**2).sum(axis=0)
         # Obtain the residual sum of squares.
-        ssErr = ((cubeAutocorrLog - cubeLinear)**2).sum()
+        ssErr = ((cubeAutocorrLog - cubeLinear)**2).sum(axis=0)
         # Obtain the total sume of squares.
         ssTot = ssReg + ssErr
         # Obtain rSquared.
         rSquared = ssReg/ssTot
+        rSquared = rSquared.reshape(self.data.shape[0],self.data.shape[1])
         
         return cubeSlope, rSquared
     
