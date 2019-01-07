@@ -269,7 +269,6 @@ class ImCube:
         iStop += 1 #include the end point
         if iStop >= len(wv): #Include everything
             iStop = None
-        print(iStop)
         md = self.metadata
         md['wavelengths'] = wv[iStart:iStop]
         return ImCube(self[:,:,iStart:iStop], md)
@@ -291,7 +290,7 @@ class KCube(ImCube):
         self.data = interpFunc(evenWavenumbers)
         self.wavenumbers = evenWavenumbers
     def getOpd(self, isHannWindow, indexOpdStop):
-        fftSize = 2**(np.ceil(np.log2((2*len(self.wavenumbers))-1))) #%This is the next size of fft that is  at least 2x greater than is needed but is a power of two. Results in interpolation, helps amplitude accuracy and fft efficiency.
+        fftSize = int(2**(np.ceil(np.log2((2*len(self.wavenumbers))-1)))) #%This is the next size of fft that is  at least 2x greater than is needed but is a power of two. Results in interpolation, helps amplitude accuracy and fft efficiency.
 
         if isHannWindow: #if hann window checkbox is selected, create hann window
             w = np.hanning(len(self.wavenumbers)) # Hann window for one vector
@@ -313,7 +312,7 @@ class KCube(ImCube):
         # Generate the xval for the current OPD.
         maxOpd = 2 * np.pi / (self.wavenumbers[1] - self.wavenumbers[0])
         dOpd = maxOpd / len(self.wavenumbers)
-        xvalOpdPolysub = len(self.wavenumbers) / 2 * list(range(fftSize+2)) * dOpd / (fftSize+1);
+        xvalOpdPolysub = len(self.wavenumbers) / 2 * np.array(range(fftSize+2)) * dOpd / (fftSize+1);
         xvalOpdPolysub = xvalOpdPolysub[:indexOpdStop]
         return opd, xvalOpdPolysub
     
@@ -338,17 +337,15 @@ class KCube(ImCube):
         # take advantage of this property, a Z-point fft is performed on the
         # signal, where Z is a number greater than (2*P)-1 that is also a power
         # of 2.
-        fftSize = 2**(np.ceil(np.log2((2*len(self.wavenumbers))-1))) #This is the next size of fft that is  at least 2x greater than is needed but is a power of two. Results in interpolation, helps amplitude accuracy and fft efficiency.
+        fftSize = int(2**(np.ceil(np.log2((2*len(self.wavenumbers))-1)))) #This is the next size of fft that is  at least 2x greater than is needed but is a power of two. Results in interpolation, helps amplitude accuracy and fft efficiency.
         
         # Determine the fft for each signal.  The length of each signal's fft
         # will be fftSize.
-        cubeFft = np.fft.fft(self.data, n=fftSize, axis=2)
+        cubeFft = np.fft.rfft(self.data, n=fftSize, axis=2)
         
         # Determine the ifft of the cubeFft.  The resulting ifft of each signal
-        # will be of length fftSize.
-        # NOTE: See the autocorrelation calculation in the Matlab function
-        # "xcorr".
-        cubeAutocorr = np.fft.ifft(np.abs(cubeFft)**2, axis=2) # This is the autocovariance.
+        # will be of length fftSize..
+        cubeAutocorr = np.fft.irfft(np.abs(cubeFft)**2, axis=2) # This is the autocovariance.
         # Obtain only the lags desired.
         # Then, normalize each autocovariance so the value at zero-lags is 1.
         cubeAutocorr = cubeAutocorr[:,:,:len(self.wavenumbers)]
@@ -379,9 +376,12 @@ class KCube(ImCube):
         # The index of the last point to be used is indicated by stopIndex.
         lagsSquared = lagsSquared[:stopIndex]
         cubeAutocorrLog = cubeAutocorrLog[:,:,:stopIndex]
+        cubeAutocorrLog = np.moveaxis(cubeAutocorrLog,2,0)
+        cubeAutocorrLog = cubeAutocorrLog.reshape((cubeAutocorrLog.shape[0],cubeAutocorrLog.shape[1]*cubeAutocorrLog.shape[2]))
         
         # Determine the first-order polynomial fit for each cubeAutocorrLag.
-        V = np.concatenate([np.ones(lagsSquared.shape), lagsSquared])
+        V = np.stack([np.ones(lagsSquared.shape), lagsSquared])
+        V = V.T
         M = np.matmul(V, np.linalg.pinv(V))
         cubeLinear = np.matmul(M, cubeAutocorrLog)
         cubeSlope  = (cubeLinear[1,:] - cubeLinear[0,:]) / (lagsSquared[1] - lagsSquared[0])
@@ -418,4 +418,6 @@ class KCube(ImCube):
         raise NotImplementedError
     def wvIndex(*args):
         raise NotImplementedError
+    def _wavelengthsMatch(self, other:KCube) -> bool:
+        return self.wavenumbers == other.wavenumbers
         
