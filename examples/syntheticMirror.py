@@ -12,6 +12,12 @@ import scipy.signal as sps
 import time
 import copy
 
+'''
+This script blurs an image cube in the xy direction. Allows you to turn an
+image of cells into something that can be used as a reference image, assuming
+most of the the FOV is glass.
+'''
+
 def gaussKernel(radius:int):
     #A kernel that goes to 1 std. It would be better to go out to 2 or 3 std but then you need a larger kernel which greatly increases convolution time.
     lenSide = 1+2*radius
@@ -23,23 +29,7 @@ def gaussKernel(radius:int):
     return k
 
 a = ImCube.fromTiff(r'G:\Vasundhara_MSCs_data\Cell1170')
-m = ImCube.fromTiff(r'G:\Vasundhara_MSCs_data\Cell9999')
-#(a/m).plotMean() #The mirror is bad so we need to make our own
 
-#print("Select an ROI near the center that doesnt contain cells to get the mirror spectrum")
-#mask = (a/m).selectROI()
-#spec = a.getMeanSpectra(mask)[0]
-#B,A = sps.butter(2, 0.1)
-#arr = sps.filtfilt(B,A,a.data, axis=2)#filter along lambda to get rid of sigma
-#amp = arr.max(axis=2) #Get the maximum intensity across the field of view.
-#kernel = gaussKernel(90)
-#print("Start Convolving")
-#time.sleep(0.1)
-#amp = sps.convolve2d(amp, kernel, mode='same', fillvalue = amp.mean())    #Filter along the field of view to remove the cells.
-#print("Done")
-#time.sleep(0.1)
-#amp = amp / amp.max()   #normalize to one
-#mirror = ImCube(spec[np.newaxis,np.newaxis,:] * amp[:,:,np.newaxis], a.metadata)
 
 kernel = gaussKernel(10)
 mirror = copy.deepcopy(a) #This doesn't work right. maybe becuaes of the wi
