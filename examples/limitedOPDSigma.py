@@ -13,13 +13,14 @@ import numpy as np
 import sys
 
 path = r'G:\Calibrations\CellPhantom\lcpws1\5th'
-refName = 'Cell1'
-resinName = 'Cell1'
+refName = 'Cell666'     #This is an imcube of glass, used for normalization.
+resinName = 'Cell1'     #An ROI will be selected from this imcube to generate the OPD for the resin.
 cellNames = ['Cell1', 'Cell2', 'Cell3', 'Cell4']
     
 # identify the depth in um to which the OPD spectra need to be integrated
 opdIntegralEnd = 2.0 ##  in um
 isHannWindow = True #Should Hann windowing be applied to eliminate edge artifacts?
+subtractResinOpd = False
 
 resin_OPD_subtraction = True
 wvStart = 510     #start wavelength for poly subtraction
@@ -30,11 +31,6 @@ RIsample = 1.545
 SavePixelwiseRMS_OPDint = True
 darkCount = 101
 wv_step = 2
-#
-## Crop wavelength range
-#cube = cube.wvIndex(wvStart, wvEnd)
-#num_WVs_cut = len(cube.wavelengths)
-#cube = KCube(cube)
 
 b,a = sps.butter(6, 0.1*wv_step) #The cutoff totally ignores what the `sample rate` is. so a 2nm interval image cube will be filtered differently than a 1nm interval cube. This is how it is in matlab.
 
@@ -43,7 +39,7 @@ ref = ImCube.loadAny(os.path.join(path,refName))
 ref.subtractDarkCounts(darkCount)
 ref.normalizeByExposure()
     
-if resin_OPD_subtraction:
+if subtractResinOpd:
     ### load and save reference empty resin image cube
     resin = ImCube.loadAny(os.path.join(path,resinName))
     resin.subtractDarkCounts(darkCount)
@@ -77,7 +73,8 @@ for cellName in cellNames:
     # Find the fft for each signal in the desired wavelength range
     opdData, xvals = cube.getOpd(isHannWindow, 100)
     
-    opdData = opdData - abs(OPD_resin) #why is this abs?
+    if subtractResinOpd:
+        opdData = opdData - abs(OPD_resin) #why is this abs?
 
     rmsData = np.sqrt(np.mean(cube.data**2, axis=2)) 
     integralStopIdx = np.where(xvals>=opdIntegralEnd)[0][0]
