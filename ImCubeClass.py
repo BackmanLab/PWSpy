@@ -45,7 +45,7 @@ class ImCube:
                 try:
                     return ImCube.fromOldPWS(directory)
                 except:
-                    raise Exception("Could not find a valid PWS image cube file.")
+                    raise Exception(f"Could not find a valid PWS image cube file at {directory}.")
     @classmethod
     def fromOldPWS(cls,directory):
         try:
