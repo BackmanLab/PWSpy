@@ -52,16 +52,13 @@ if resin_OPD_subtraction:
     resin = KCube(resin)
     mask = resin.selectLassoROI()
     OPD_resin, xvals = resin.getOpd(isHannWindow, 100, mask)
-sys.exit() 
-#   access cell data
+
 for cellName in cellNames:               
     cube = ImCube.loadAny(os.path.join(path,cellName))
     cube.subtractDarkCounts(darkCount)
     cube.normalizeByExposure()
     cube /= ref
-
     cube.data = sps.filtfilt(b,a,cube.data,axis=2)
-
     cube = KCube(cube)
 
     ## -- Polynomial Fit
@@ -84,7 +81,7 @@ for cellName in cellNames:
 
     rmsData = np.sqrt(np.mean(cube.data**2, axis=2)) 
     integralStopIdx = np.where(xvals>=opdIntegralEnd)[0][0]
-    rmsOpdIntData = np.sqrt(np.abs(1/(2*np.pi)*np.sum(opdData[:,:,:integralStopIdx],axis=2)**2))/2
+    rmsOpdIntData = np.sqrt(np.abs(1/(2*np.pi)*np.sum(opdData[:,:,:integralStopIdx]**2,axis=2)))/2
 
     
     if SavePixelwiseRMS_OPDint:
