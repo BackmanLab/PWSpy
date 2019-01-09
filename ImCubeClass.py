@@ -62,6 +62,7 @@ class ImCube:
         with open(os.path.join(directory,'image_cube'),'rb') as f:
             data = np.frombuffer(f.read(),dtype=np.uint16)
         data = data.reshape((md['imgHeight'],md['imgWidth'],len(md['wavelengths'])),order='F')
+        cls._checkMetadata(md)
         return cls(data, md)
 
     @classmethod
@@ -81,6 +82,9 @@ class ImCube:
                 metadata = json.loads(tif.pages[0].description)
             except:
                 metadata = json.loads(tif.imagej_metadata['Info']) #The micromanager saves metadata as the info property of the imagej imageplus object.
+        metadata['time'] = tif.pages[0].tags['DateTime'].value
+#        metadata['tags'] = {k: v.value for k,v in tif.pages[0].tags.items()}
+        cls._checkMetadata(metadata)
         return cls(data,metadata)
         
     def toOldPWS(self,directory):
@@ -135,6 +139,7 @@ class ImCube:
         del md["compressionMins"]
         for i in range(1,im.shape[-1]):
             im[:,:,i] = im[:,:,i] + mins[i-1] + im[:,:,i-1]
+        cls._checkMetadata(md)
         return cls(im,md)
     
     def toTiff(self, outpath):
@@ -143,6 +148,12 @@ class ImCube:
         os.mkdir(outpath)
         with tf.TiffWriter(open(os.path.join(outpath, 'pws.tif'),'wb')) as w:
             w.save(np.rollaxis(im, -1, 0), metadata=self.metadata)
+        
+    def _checkMetadata(metadata):
+        required = ['time', 'exposure', 'wavelengths']
+        for i in required:
+            if i not in metadata:
+                raise(f"Metadata does not have a '{i}' field.")
     
     def plotMean(self):
         fig,ax = plt.subplots()
@@ -315,9 +326,9 @@ class KCube(ImCube):
         # Generate the xval for the current OPD.
         maxOpd = 2 * np.pi / (self.wavenumbers[1] - self.wavenumbers[0])
         dOpd = maxOpd / len(self.wavenumbers)
-        xvalOpdPolysub = len(self.wavenumbers) / 2 * np.array(range(fftSize+2)) * dOpd / (fftSize+1);
-        xvalOpdPolysub = xvalOpdPolysub[:indexOpdStop]
-        return opd, xvalOpdPolysub
+        xvals = len(self.wavenumbers) / 2 * np.array(range(fftSize+2)) * dOpd / (fftSize+1);
+        xvals = xvals[:indexOpdStop]
+        return opd, xvals
     
     def getAutoCorrelation(self,isAutocorrMinSub:bool, stopIndex:int):
         # The autocorrelation of a signal is the covariance of a signal with a
@@ -401,7 +412,6 @@ class KCube(ImCube):
         # Obtain rSquared.
         rSquared = ssReg/ssTot
         rSquared = rSquared.reshape(self.data.shape[0],self.data.shape[1])
-        
         return cubeSlope, rSquared
     
     @classmethod
