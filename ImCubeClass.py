@@ -289,7 +289,7 @@ class KCube(ImCube):
         interpFunc = spi.interp1d(wavenumbers, self.data, kind='linear', axis=2)
         self.data = interpFunc(evenWavenumbers)
         self.wavenumbers = evenWavenumbers
-    def getOpd(self, isHannWindow, indexOpdStop):
+    def getOpd(self, isHannWindow, indexOpdStop, mask = None):
         fftSize = int(2**(np.ceil(np.log2((2*len(self.wavenumbers))-1)))) #%This is the next size of fft that is  at least 2x greater than is needed but is a power of two. Results in interpolation, helps amplitude accuracy and fft efficiency.
 
         if isHannWindow: #if hann window checkbox is selected, create hann window
@@ -298,17 +298,20 @@ class KCube(ImCube):
             w = np.ones((len(self.wavenumbers))) # Create unity window
 
         # Calculate the Fourier Transform of the signal multiplied by Hann window
-        dataOpdPolysub = np.fft.fft(self.data * w[np.newaxis, np.newaxis, :], n=fftSize*2, axis=2)
+        opd = np.fft.fft(self.data * w[np.newaxis, np.newaxis, :], n=fftSize*2, axis=2)
     
         # Normalize the OPD by the quantity of wavelengths.
-        dataOpdPolysub = dataOpdPolysub / len(self.wavenumbers)
+        opd = opd / len(self.wavenumbers)
         
         # by multiplying by Hann window we reduce the total power of signal. To account for that,
-        dataOpdPolysub = np.abs(dataOpdPolysub / np.sqrt(np.mean(w**2)))
+        opd = np.abs(opd / np.sqrt(np.mean(w**2)))
     
         # Isolate the desired values in the OPD.
-        opd = dataOpdPolysub[:,:,:indexOpdStop]
-    
+        opd = opd[:,:,:indexOpdStop]
+        
+        if not mask is None:
+            opd = opd[mask].mean(axis=0)
+            
         # Generate the xval for the current OPD.
         maxOpd = 2 * np.pi / (self.wavenumbers[1] - self.wavenumbers[0])
         dOpd = maxOpd / len(self.wavenumbers)
