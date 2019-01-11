@@ -41,10 +41,10 @@ def analyzeCube(cubeCell:ImCube, darkCount:int, mirror:ImCube, orderFilter:int,
 
     ## -- Polynomial Fit
     print("Subtracting Polynomial")
-    polydata = cube.data.reshape((cube.data.shape[0]*cube.data.shape[1], cube.data.shape[2]))
-    polydata = np.rollaxis(polydata,1) #Flatten the array to 2d and put the wavenumber axis first.
-    cubePoly = np.zeros(polydata.shape)#make an empty array to hold the fit values.
-    polydata = np.polyfit(cube.wavenumbers,polydata,orderPolyFit) #At this point polydata goes from holding the cube data to holding the polynomial values for each pixel. still 2d.
+    flattenedData = cube.data.reshape((cube.data.shape[0]*cube.data.shape[1], cube.data.shape[2]))
+    flattenedData = np.rollaxis(flattenedData,1) #Flatten the array to 2d and put the wavenumber axis first.
+    cubePoly = np.zeros(flattenedData.shape)#make an empty array to hold the fit values.
+    polydata = np.polyfit(cube.wavenumbers,flattenedData,orderPolyFit) #At this point polydata goes from holding the cube data to holding the polynomial values for each pixel. still 2d.
     for i in range(orderPolyFit + 1):
         cubePoly += (np.array(cube.wavenumbers)[:,np.newaxis]**i) * polydata[i,:] #Populate cubePoly with the fit values.
     cubePoly = np.moveaxis(cubePoly, 0, 1)
