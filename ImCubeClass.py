@@ -300,17 +300,16 @@ class KCube(ImCube):
         interpFunc = spi.interp1d(wavenumbers, self.data, kind='linear', axis=2)
         self.data = interpFunc(evenWavenumbers)
         self.wavenumbers = evenWavenumbers
-    def getOpd(self, isHannWindow, indexOpdStop, mask = None):
+    def getOpd(self, isHannWindow, indexOpdStop = None, mask = None):
         fftSize = int(2**(np.ceil(np.log2((2*len(self.wavenumbers))-1)))) #%This is the next size of fft that is  at least 2x greater than is needed but is a power of two. Results in interpolation, helps amplitude accuracy and fft efficiency.
-
+        fftSize *= 2 #We double the fftsize for even more iterpolation. Not sure why, but that's how it was done in matlab.
         if isHannWindow: #if hann window checkbox is selected, create hann window
             w = np.hanning(len(self.wavenumbers)) # Hann window for one vector
         else:
             w = np.ones((len(self.wavenumbers))) # Create unity window
 
         # Calculate the Fourier Transform of the signal multiplied by Hann window
-        opd = np.fft.fft(self.data * w[np.newaxis, np.newaxis, :], n=fftSize*2, axis=2)
-    
+        opd = np.fft.rfft(self.data * w[np.newaxis, np.newaxis, :], n=fftSize, axis=2)
         # Normalize the OPD by the quantity of wavelengths.
         opd = opd / len(self.wavenumbers)
         
@@ -326,9 +325,9 @@ class KCube(ImCube):
         # Generate the xval for the current OPD.
         maxOpd = 2 * np.pi / (self.wavenumbers[1] - self.wavenumbers[0])
         dOpd = maxOpd / len(self.wavenumbers)
-        xvals = len(self.wavenumbers) / 2 * np.array(range(fftSize+2)) * dOpd / (fftSize+1);
-        xvals = xvals[:indexOpdStop]
-        return opd, xvals
+        xVals = len(self.wavenumbers) / 2 * np.array(range(fftSize//2+1)) * dOpd / (fftSize//2+1);
+        xVals = xVals[:indexOpdStop]
+        return opd, xVals
     
     def getAutoCorrelation(self,isAutocorrMinSub:bool, stopIndex:int):
         # The autocorrelation of a signal is the covariance of a signal with a
