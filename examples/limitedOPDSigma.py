@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import scipy.signal as sps
 import os
 import numpy as np
+import scipy as sp
 
 
 '''User Input'''
@@ -19,7 +20,7 @@ resinName = 'Cell1'     #An ROI will be selected from this imcube to generate th
 cellNames = ['Cell1', 'Cell2', 'Cell3', 'Cell4']
     
 # identify the depth in um to which the OPD spectra need to be integrated
-opdIntegralEnd = 2.0 ##  in um
+integrationDepth = 2.0 ##  in um
 isHannWindow = True #Should Hann windowing be applied to eliminate edge artifacts?
 subtractResinOpd = True
 wvStart = 510     #start wavelength for poly subtraction
@@ -59,6 +60,7 @@ if subtractResinOpd:
     ax.set_xlabel('OPD')
     ax.set_ylabel("Amplitude")
 
+rmses = {} #Store the rms maps for later saving
 for cellName in cellNames:               
     cube = ImCube.loadAny(os.path.join(path,cellName))
     cube.subtractDarkCounts(darkCount)
@@ -106,6 +108,9 @@ for cellName in cellNames:
     im = axs[1].imshow(rmsOpdIntData, cmap=cmap,  clim = [np.percentile(rmsOpdIntData,0.5),np.percentile(rmsOpdIntData,99.5)])
     fig.colorbar(im, ax=axs[1])
     axs[1].set_title(f'RMS from OPD below {opdIntegralEnd} after resin OPD subtraction')
-    fig.suptitle(cellName)            
-
-
+    fig.suptitle(cellName)
+    rmses[cellName] = rmsOpdIntData     
+plt.pause(0.1)
+for k,v in rmses.items():
+    if input(f"Save opdRms for {k}? (y/n): ").strip().lower() == 'y':
+        sp.io.savemat(os.path.join(path,k,'phantom_Rms.mat'),{'cubeRms':v.astype(np.float32)}) #save as a single
