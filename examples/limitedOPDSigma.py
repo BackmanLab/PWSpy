@@ -14,10 +14,9 @@ import scipy as sp
 
 
 '''User Input'''
-path = r'G:\Calibrations\CellPhantom\lcpws1\5th'
-refName = 'Cell666'     #This is an imcube of glass, used for normalization.
-resinName = 'Cell1'     #An ROI will be selected from this imcube to generate the OPD for the resin.
-cellNames = ['Cell1', 'Cell2', 'Cell3', 'Cell4']
+path = r'G:\Calibrations\CellPhantom\lcpws1\6th'
+refName = 'Cell999'     #This is an imcube of glass, used for normalization.
+cellNames = ['Cell3']#['Cell1', 'Cell2', 'Cell3', 'Cell4']
     
 # identify the depth in um to which the OPD spectra need to be integrated
 integrationDepth = 2.0 ##  in um
@@ -45,20 +44,25 @@ ref.normalizeByExposure()
     
 if subtractResinOpd:
     ### load and save reference empty resin image cube
-    resin = ImCube.loadAny(os.path.join(path,resinName))
-    resin.subtractDarkCounts(darkCount)
-    resin.normalizeByExposure()
-    resin /= ref
-    resin = KCube(resin)
-    print('Select a region containing only resin.')
-    mask = resin.selectLassoROI()
-    resin.data -= resin.data.mean(axis=2)[:,:,np.newaxis]
-    opdResin, xvals = resin.getOpd(isHannWindow, indexOpdStop=None, mask=mask)
     fig, ax = plt.subplots()
-    ax.plot(xvals, opdResin)
-    ax.vlines([opdIntegralEnd], ymin=opdResin.min(), ymax=opdResin.max())
-    ax.set_xlabel('OPD')
-    ax.set_ylabel("Amplitude")
+    resinOpds = {}
+    for cellName in cellNames:
+        resin = ImCube.loadAny(os.path.join(path,cellName))
+        resin.subtractDarkCounts(darkCount)
+        resin.normalizeByExposure()
+        resin /= ref
+        resin = KCube(resin)
+        print('Select a region containing only resin.')
+        mask = resin.selectLassoROI()
+        resin.data -= resin.data.mean(axis=2)[:,:,np.newaxis]
+        opdResin, xvals = resin.getOpd(isHannWindow, indexOpdStop=None, mask=mask)
+        resinOpds[cellName] = opdResin
+        ax.plot(xvals, opdResin, label=cellName)
+        ax.vlines([opdIntegralEnd], ymin=opdResin.min(), ymax=opdResin.max())
+        ax.set_xlabel('OPD')
+        ax.set_ylabel("Amplitude")
+    ax.legend()
+    plt.pause(0.2)
 
 rmses = {} #Store the rms maps for later saving
 for cellName in cellNames:               
@@ -86,7 +90,7 @@ for cellName in cellNames:
     opdData, xvals = cube.getOpd(isHannWindow, None)
     
     if subtractResinOpd:
-        opdData = opdData - abs(opdResin) #why is this abs?
+        opdData = opdData - resinOpds[cellName]
 
     rmsData = np.sqrt(np.mean(cube.data**2, axis=2)) 
     try:
@@ -109,8 +113,11 @@ for cellName in cellNames:
     fig.colorbar(im, ax=axs[1])
     axs[1].set_title(f'RMS from OPD below {opdIntegralEnd} after resin OPD subtraction')
     fig.suptitle(cellName)
-    rmses[cellName] = rmsOpdIntData     
-plt.pause(0.1)
+    rmses[cellName] = rmsOpdIntData   
+    plt.pause(0.2)
+plt.pause(0.5)
+
+#plt.waitforbuttonpress(timeout=-1)
 for k,v in rmses.items():
     if input(f"Save opdRms for {k}? (y/n): ").strip().lower() == 'y':
         sp.io.savemat(os.path.join(path,k,'phantom_Rms.mat'),{'cubeRms':v.astype(np.float32)}) #save as a single
