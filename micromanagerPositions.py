@@ -120,7 +120,8 @@ class PositionList:
                     for i in dct['map']['StagePositions']['array']:
                         label = i['Label']['scalar']
                         xyStage = i["DefaultXYStage"]['scalar']
-                        coords = i["DevicePositions"]['array'][0]["Position_um"]['array']
+                        correctDevice  = [j for j in i["DevicePositions"]['array'] if j['Device']['scalar'] == xyStage][0]
+                        coords = correctDevice["Position_um"]['array']
                         positions.append(Position2d(*coords, xyStage, label))
             else:
                 return dct
