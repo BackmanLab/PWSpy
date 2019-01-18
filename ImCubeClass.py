@@ -84,6 +84,9 @@ class ImCube:
                 metadata = json.loads(tif.imagej_metadata['Info']) #The micromanager saves metadata as the info property of the imagej imageplus object.
         metadata['time'] = tif.pages[0].tags['DateTime'].value
 #        metadata['tags'] = {k: v.value for k,v in tif.pages[0].tags.items()}
+        if 'waveLengths' in metadata:
+            metadata['wavelengths'] = metadata['waveLengths']
+            del metadata['waveLengths']
         cls._checkMetadata(metadata)
         return cls(data,metadata)
         
@@ -153,7 +156,7 @@ class ImCube:
         required = ['time', 'exposure', 'wavelengths']
         for i in required:
             if i not in metadata:
-                raise(f"Metadata does not have a '{i}' field.")
+                raise ValueError(f"Metadata does not have a '{i}' field.")
     
     def plotMean(self):
         fig,ax = plt.subplots()
@@ -433,4 +436,4 @@ class KCube(ImCube):
         raise NotImplementedError
     def _wavelengthsMatch(self, other:KCube) -> bool:
         return self.wavenumbers == other.wavenumbers
-        
+
