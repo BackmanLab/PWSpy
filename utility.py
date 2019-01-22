@@ -99,7 +99,7 @@ def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = No
     print(f"Loading took {time()-sTime} seconds")
     return cubes
 
-def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None) -> (pd.DataFrame, pd.DataFrame):
+def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None, plotReflectionImages:bool = False) -> (pd.DataFrame, pd.DataFrame):
     '''Expects a list of ImCubes which each has a `material` property matching one of the materials in the `ReflectanceHelper` module and a
     `setting` property labeling how the microscope was set up for this image.
     '''
@@ -151,17 +151,17 @@ def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None) -> (pd.Da
                 mat1,mat2 = combo.keys()
                 Rextras.append(((theoryR[mat1] * combo[mat2].getMeanSpectra(mask)[0]) - (theoryR[mat2] * combo[mat1].getMeanSpectra(mask)[0])) / (combo[mat1].getMeanSpectra(mask)[0] - combo[mat2].getMeanSpectra(mask)[0]))
                 ax.plot(combo[mat1].wavelengths, Rextras[-1], label = f'{sett} {mat1}:{int(combo[mat1].exposure)}ms {mat2}:{int(combo[mat2].exposure)}ms')
-    
-                plt.figure()
-                plt.title(f"Reflectance %. {sett}, {mat1}:{int(combo[mat2].exposure)}ms, {mat2}:{int(combo[mat2].exposure)}ms")
-                _ = ((theoryR[mat1][np.newaxis,np.newaxis,:] * combo[mat2].data) - (theoryR[mat2][np.newaxis,np.newaxis,:] * combo[mat1].data)) / (combo[mat1].data - combo[mat2].data)
-                _[np.isinf(_)] = np.nan
-                if np.any(np.isnan(_)):
-                    _ = _interpolateNans(_) #any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
-                refIm = _.mean(axis=2)
-                plt.imshow(refIm,vmin=np.percentile(refIm,.5),vmax=np.percentile(refIm,99.5))
-                plt.colorbar()
                 ratioAxes[matCombo].plot(combo[mat1].wavelengths, combo[mat1].getMeanSpectra(mask)[0]/combo[mat2].getMeanSpectra(mask)[0], label=f'{sett} {mat1}:{int(combo[mat1].exposure)}ms {mat2}:{int(combo[mat2].exposure)}ms')
+                if plotReflectionImages:
+                    plt.figure()
+                    plt.title(f"Reflectance %. {sett}, {mat1}:{int(combo[mat2].exposure)}ms, {mat2}:{int(combo[mat2].exposure)}ms")
+                    _ = ((theoryR[mat1][np.newaxis,np.newaxis,:] * combo[mat2].data) - (theoryR[mat2][np.newaxis,np.newaxis,:] * combo[mat1].data)) / (combo[mat1].data - combo[mat2].data)
+                    _[np.isinf(_)] = np.nan
+                    if np.any(np.isnan(_)):
+                        _ = _interpolateNans(_) #any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
+                    refIm = _.mean(axis=2)
+                    plt.imshow(refIm,vmin=np.percentile(refIm,.5),vmax=np.percentile(refIm,99.5))
+                    plt.colorbar()
         
         print("{} correction factor".format(sett))
         Rextra = np.array(Rextras)
