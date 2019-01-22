@@ -113,6 +113,7 @@ def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None, plotRefle
         mask = cubes
     else:
         mask = [i for i in cubes if (i.setting == selectMaskUsingSetting)]
+    print("Select an ROI")
     mask = mask[0].selectLassoROI()
     
     # load theory reflectance
@@ -137,6 +138,7 @@ def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None, plotRefle
         ratioAxes[combo].plot(theoryR[combo[0]]/theoryR[combo[1]], label='Theory')
 
     settings = set([i.setting for i in cubes]) #Unique setting values
+    Rextras = {i:[] for i in matCombos}
     for sett in settings:
         for matCombo in matCombos:
             scubes = [i for i in cubes if (i.setting == sett)] #select out some images
@@ -146,11 +148,10 @@ def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None, plotRefle
             for combo in itertools.product(*matCubes.values()):
                 allCombos.append(dict(zip(matCubes.keys(), combo)))
             
-            Rextras = []
             for combo in allCombos:
                 mat1,mat2 = combo.keys()
-                Rextras.append(((theoryR[mat1] * combo[mat2].getMeanSpectra(mask)[0]) - (theoryR[mat2] * combo[mat1].getMeanSpectra(mask)[0])) / (combo[mat1].getMeanSpectra(mask)[0] - combo[mat2].getMeanSpectra(mask)[0]))
-                ax.plot(combo[mat1].wavelengths, Rextras[-1], label = f'{sett} {mat1}:{int(combo[mat1].exposure)}ms {mat2}:{int(combo[mat2].exposure)}ms')
+                Rextras[matCombo].append(((theoryR[mat1] * combo[mat2].getMeanSpectra(mask)[0]) - (theoryR[mat2] * combo[mat1].getMeanSpectra(mask)[0])) / (combo[mat1].getMeanSpectra(mask)[0] - combo[mat2].getMeanSpectra(mask)[0]))
+                ax.plot(combo[mat1].wavelengths, Rextras[matCombo][-1], label = f'{sett} {mat1}:{int(combo[mat1].exposure)}ms {mat2}:{int(combo[mat2].exposure)}ms')
                 ratioAxes[matCombo].plot(combo[mat1].wavelengths, combo[mat1].getMeanSpectra(mask)[0]/combo[mat2].getMeanSpectra(mask)[0], label=f'{sett} {mat1}:{int(combo[mat1].exposure)}ms {mat2}:{int(combo[mat2].exposure)}ms')
                 if plotReflectionImages:
                     plt.figure()
@@ -162,9 +163,9 @@ def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None, plotRefle
                     refIm = _.mean(axis=2)
                     plt.imshow(refIm,vmin=np.percentile(refIm,.5),vmax=np.percentile(refIm,99.5))
                     plt.colorbar()
-        
+            Rextras[matCombo] = np.array(Rextras[matCombo]).mean(axis=0) #Store the mean reflection spectrum of all instances of this material combo
         print("{} correction factor".format(sett))
-        Rextra = np.array(Rextras)
+        Rextra = np.array([i for k,i in Rextras.items()]) #Store the mean reflection spectrum accross all material combos.
         factors[sett] = (Rextra.mean() + theoryR['water'].mean()) / theoryR['water'].mean()
         reflections[sett] = Rextra.mean(axis = 0)
         print(factors[sett])
