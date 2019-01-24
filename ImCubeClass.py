@@ -244,11 +244,6 @@ class ImCube:
                 fig.canvas.flush_events()
         return mask, (slices['y'], slices['x']) 
              
-    def correctCameraNonlinearity(self,polynomials:typing.List[float]):
-        #Apply a polynomial to the data where x is the original data and y is the data after correction.
-        cfactor = np.polynomial.polynomial.polyval(self.data, polynomials) #The polynomials tell us a correction factor
-        self.data = self.data / cfactor#Dividing the original data by the correction factor gives us linearized data.
-        
     def __getitem__(self,slic):
         return self.data[slic]
     
