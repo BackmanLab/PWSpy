@@ -100,7 +100,7 @@ def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = No
     print(f"Loading took {time()-sTime} seconds")
     return cubes
 
-def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None, plotReflectionImages:bool = False) -> (pd.DataFrame, pd.DataFrame):
+def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None, plotReflectionImages:bool = False, excludedCombos:list = []):
     '''Expects a list of ImCubes which each has a `material` property matching one of the materials in the `ReflectanceHelper` module and a
     `setting` property labeling how the microscope was set up for this image.
     '''
@@ -123,89 +123,104 @@ def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None, plotRefle
     for material in materials: #For each unique material in the `cubes` list
         theoryR[material] = reflectanceHelper.getReflectance(material,'glass', index=cubes[0].wavelengths)
   
+    matCombos = list(itertools.combinations(materials, 2))  #All the combinations of materials that can be compared
+    matCombos = [(m1,m2) for m1,m2 in matCombos if not (((m1,m2) in excludedCombos) or ((m2,m1) in excludedCombos))] #Remove excluded combinations.
+    for i, (m1,m2) in enumerate(matCombos): #Make sure to arrange materials so that our reflectance ratio is greater than 1
+        if (reflectanceHelper.getReflectance(m1,'glass')/reflectanceHelper.getReflectance(m2,'glass')).mean() < 1:
+            matCombos[i] = (m2,m1)
+    settings = set([i.setting for i in cubes]) #Unique setting values
+    allCombos = {}
+    for sett in settings:
+        allCombos[sett] = {}
+        for matCombo in matCombos:
+            matCubes = {material:[cube for cube  in cubes if ((cube.material==material) and (cube.setting==sett))] for material in matCombo} #The imcubes relevant to this loop.
+            allCombos[sett][matCombo] = [{'cubes':dict(zip(matCubes.keys(), combo))} for combo in itertools.product(*matCubes.values())]
+
+    meanValues = {}
+    params = ['rextra', 'I0', 'mat1Spectra', 'mat2Spectra', 'cFactor']
+    for sett in settings:
+        meanValues[sett] = {}
+        for matCombo in matCombos:
+            for combo in allCombos[sett][matCombo]: 
+                cubes = combo['cubes']
+                mat1,mat2 = cubes.keys()
+                combo['mat1Spectra'] = cubes[mat1].getMeanSpectra(mask)[0]
+                combo['mat2Spectra'] = cubes[mat2].getMeanSpectra(mask)[0]
+                combo['rextra'] = ((theoryR[mat1] * combo['mat2Spectra']) - (theoryR[mat2] * combo['mat1Spectra'])) / (combo['mat1Spectra'] - combo['mat2Spectra'])
+                combo['I0'] = combo['mat2Spectra'] / (theoryR[mat2] + combo['rextra'])
+                combo['cFactor'] = (combo['rextra'].mean() + theoryR['water'].mean()) / theoryR['water'].mean()
+            meanValues[sett][matCombo] = {param : np.array(list([combo[param] for combo in allCombos[sett][matCombo]])).mean(axis=0) for param in params}
+        meanValues[sett]['mean'] = {param : np.array(list([meanValues[sett][matCombo][param] for matCombo in matCombos])).mean(axis=0) for param in params}
+    
+
     # plot
-    factors = {}
-    reflections = {}
     fig, ax = plt.subplots() #For extra reflections
     fig.suptitle("Extra Reflection")
     ax.set_ylabel("%")
     ax.set_xlabel("nm")
-    matCombos = list(itertools.combinations(materials, 2))  #All the combinations of materials that can be compared
-    for i, (m1,m2) in enumerate(matCombos): #Make sure to arrange materials so that our reflectance ratio is greater than 1
-        if (reflectanceHelper.getReflectance(m1,'glass')/reflectanceHelper.getReflectance(m2,'glass')).mean() < 1:
-            matCombos[i] = (m2,m1)
-    fig2, ratioAxes = plt.subplots(nrows = len(matCombos)) # for correction factor
-    fig3, scatterAx = plt.subplots()    #A scatter plot of the theoretical vs observed reflectance ratio.
-    scatterAx.set_ylabel("Theoretical Ratio")
-    scatterAx.set_xlabel("Observed Ratio")
-    fig4, scatterAx2 = plt.subplots()    #A scatter plot of the theoretical vs observed reflectance ratio.
-    scatterAx2.set_ylabel("R_S + R_Extra / R_Ref")
-    scatterAx2.set_xlabel("Observed Ratio")
-#    scatterAx.set_xscale('log')
-#    scatterAx.set_yscale('log')
+    for sett in settings:
+        for matCombo in matCombos:
+            mat1, mat2 = matCombo
+            for combo in allCombos[sett][matCombo]:  
+                cubes = combo['cubes']
+                ax.plot(cubes[mat1].wavelengths, combo['rextra'], label = f'{sett} {mat1}:{int(cubes[mat1].exposure)}ms {mat2}:{int(cubes[mat2].exposure)}ms')
+        ax.plot(cubes[mat1].wavelengths, meanValues[sett]['mean']['rextra'], color='k', label = f'{sett} mean')
+    ax.legend()
 
+    
+    fig2, ratioAxes = plt.subplots(nrows = len(matCombos)) # for correction factor
     if not isinstance(ratioAxes, np.ndarray): ratioAxes = np.array(ratioAxes).reshape(1) #If there is only one axis we still want it to be a list for the rest of the code
     ratioAxes = dict(zip(matCombos,ratioAxes))
     for combo in matCombos:
         ratioAxes[combo].set_title(f'{combo[0]}/{combo[1]} reflection ratio')
         ratioAxes[combo].plot(theoryR[combo[0]]/theoryR[combo[1]], label='Theory')
-
-    settings = set([i.setting for i in cubes]) #Unique setting values
-    Rextras = {i:[] for i in matCombos}
     for sett in settings:
-        scatterPoints = ([],[])
-        scatterPoints2 = ([],[])
         for matCombo in matCombos:
-            matCubes = {material:[cube for cube  in cubes if ((cube.material==material) and (cube.setting==sett))] for material in matCombo} #The imcubes relevant to this loop.
-            allCombos = []
-            for combo in itertools.product(*matCubes.values()):
-                allCombos.append(dict(zip(matCubes.keys(), combo)))
-            refRatios=[]
-            subbedRefRatios = []
-            for combo in allCombos:
-                mat1,mat2 = combo.keys()
-                Rextras[matCombo].append(((theoryR[mat1] * combo[mat2].getMeanSpectra(mask)[0]) - (theoryR[mat2] * combo[mat1].getMeanSpectra(mask)[0])) / (combo[mat1].getMeanSpectra(mask)[0] - combo[mat2].getMeanSpectra(mask)[0]))
-                I0 = combo[mat2].getMeanSpectra(mask)[0] / (theoryR[mat2] + Rextras[matCombo][-1])
-                Iextra = Rextras[matCombo][-1] * I0
-                ax.plot(combo[mat1].wavelengths, Rextras[matCombo][-1], label = f'{sett} {mat1}:{int(combo[mat1].exposure)}ms {mat2}:{int(combo[mat2].exposure)}ms')
-                refRatios.append(combo[mat1].getMeanSpectra(mask)[0]/combo[mat2].getMeanSpectra(mask)[0])
-                subbedRefRatios.append((combo[mat1].getMeanSpectra(mask)[0] - Iextra) / (combo[mat2].getMeanSpectra(mask)[0] - Iextra))
-                ratioAxes[matCombo].plot(combo[mat1].wavelengths, refRatios[-1], label=f'{sett} {mat1}:{int(combo[mat1].exposure)}ms {mat2}:{int(combo[mat2].exposure)}ms')
-                
-                if plotReflectionImages:
+            mat1, mat2 = matCombo
+            for combo in allCombos[sett][matCombo]:
+                cubes = combo['cubes']
+                ratioAxes[matCombo].plot(cubes[mat1].wavelengths, combo['mat1Spectra'] / combo['mat2Spectra'], label=f'{sett} {mat1}:{int(cubes[mat1].exposure)}ms {mat2}:{int(cubes[mat2].exposure)}ms')
+    [ratioAxes[combo].legend() for combo in matCombos]
+    
+
+    for sett in settings:    
+        means = meanValues[sett]['mean']
+        
+        fig3, scatterAx = plt.subplots()    #A scatter plot of the theoretical vs observed reflectance ratio.
+        scatterAx.set_ylabel("Theoretical Ratio")
+        scatterAx.set_xlabel("Observed Ratio")
+        scatterPointsY = [(theoryR[matCombo[0]]/theoryR[matCombo[1]]).mean() for matCombo in matCombos]
+        scatterPointsX = [(meanValues[sett][matCombo]['mat1Spectra'] / meanValues[sett][matCombo]['mat2Spectra']).mean() for matCombo in matCombos]
+        [scatterAx.scatter(x, y, label=f'{matCombo[0]}/{matCombo[1]}') for x,y,matCombo in zip(scatterPointsX, scatterPointsY, matCombos)]
+        x = np.array([0,max(scatterPointsX)])
+        scatterAx.plot(x, means['cFactor']*x, label='Correction Factor')
+        scatterAx.legend()
+
+        fig4, scatterAx2 = plt.subplots()    #A scatter plot of the theoretical vs observed reflectance ratio.
+        scatterAx2.set_ylabel("Theoretical Ratio")
+        scatterAx2.set_xlabel("Observed Ratio after Subtraction")
+        scatterPointsY = [(theoryR[matCombo[0]]/theoryR[matCombo[1]]).mean() for matCombo in matCombos]
+        scatterPointsX = [((meanValues[sett][matCombo]['mat1Spectra'] - means['I0']*means['rextra']) / (meanValues[sett][matCombo]['mat2Spectra'] - means['I0']*means['rextra'])).mean() for matCombo in matCombos]
+        [scatterAx2.scatter(x, y, label=f'{matCombo[0]}/{matCombo[1]}') for x, y, matCombo in zip(scatterPointsX, scatterPointsY, matCombos)]
+        x = np.array([0,max(scatterPointsX)])
+        scatterAx2.plot(x, x, label = '1 to 1')
+        scatterAx2.legend()
+
+        if plotReflectionImages:
+            for matCombo in matCombos:
+                mat1, mat2 = matCombo
+                for combo in allCombos[sett][matCombo]:
+                    cubes = combo['cubes']
                     plt.figure()
-                    plt.title(f"Reflectance %. {sett}, {mat1}:{int(combo[mat2].exposure)}ms, {mat2}:{int(combo[mat2].exposure)}ms")
-                    _ = ((theoryR[mat1][np.newaxis,np.newaxis,:] * combo[mat2].data) - (theoryR[mat2][np.newaxis,np.newaxis,:] * combo[mat1].data)) / (combo[mat1].data - combo[mat2].data)
+                    plt.title(f"Reflectance %. {sett}, {mat1}:{int(cubes[mat2].exposure)}ms, {mat2}:{int(cubes[mat2].exposure)}ms")
+                    _ = ((theoryR[mat1][np.newaxis,np.newaxis,:] * cubes[mat2].data) - (theoryR[mat2][np.newaxis,np.newaxis,:] * cubes[mat1].data)) / (cubes[mat1].data - cubes[mat2].data)
                     _[np.isinf(_)] = np.nan
                     if np.any(np.isnan(_)):
                         _ = _interpolateNans(_) #any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
                     refIm = _.mean(axis=2)
                     plt.imshow(refIm,vmin=np.percentile(refIm,.5),vmax=np.percentile(refIm,99.5))
                     plt.colorbar()
-            Rextras[matCombo] = np.array(Rextras[matCombo]).mean(axis=0) #Store the mean reflection spectrum of all instances of this material combo
-            scatterPoints[1].append(theoryR[matCombo[0]].mean()/theoryR[matCombo[1]].mean())
-            scatterPoints[0].append(np.array(refRatios).mean())
-#            scatterPoints2[1].append((theoryR[matCombo[0]].mean() + Rextras[matCombo].mean()) / theoryR[matCombo[1]].mean())
-            scatterPoints2[1].append(scatterPoints[1][-1])
-            scatterPoints2[0].append(np.array(subbedRefRatios).mean())
-            scatterAx.scatter(scatterPoints[0][-1], scatterPoints[1][-1], label=f'{matCombo[0]}/{matCombo[1]}')
-            scatterAx2.scatter(scatterPoints2[0][-1], scatterPoints2[1][-1], label=f'{matCombo[0]}/{matCombo[1]}')
-        print("{} correction factor".format(sett))
-        Rextra = np.array([i for k,i in Rextras.items()]) #Store the mean reflection spectrum accross all material combos.
-        factors[sett] = (Rextra.mean() + theoryR['water'].mean()) / theoryR['water'].mean()
-        reflections[sett] = Rextra.mean(axis = 0)
-        print(factors[sett])
-    ax.legend()
-    slope = np.linalg.lstsq(np.array(scatterPoints[0])[:,np.newaxis],scatterPoints[1])[0][0]
-    slope2 = np.linalg.lstsq(np.array(scatterPoints2[0])[:,np.newaxis],scatterPoints2[1])[0][0]
-    scatterAx.plot(np.linspace(min(scatterPoints[0]),max(scatterPoints[0])), factors[sett]*np.linspace(min(scatterPoints[0]),max(scatterPoints[0])))
-    scatterAx.legend()
-    scatterAx2.plot(np.linspace(min(scatterPoints2[0]),max(scatterPoints2[0])), slope2*np.linspace(min(scatterPoints2[0]),max(scatterPoints2[0])))
-    scatterAx2.legend()
-    print(f'Slope: {slope}')
-    print(f'Slope2: {slope2}')
-    [ratioAxes[combo].legend() for combo in matCombos]
-    
-    factors = pd.DataFrame(factors, index = [0])
-    reflections = pd.DataFrame(reflections,index = cubes[0].wavelengths)
-    return factors, reflections
+                    
+        print(f"{sett} correction factor")
+        print(means['cFactor'])
+    return meanValues, allCombos
