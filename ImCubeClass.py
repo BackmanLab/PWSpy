@@ -26,10 +26,7 @@ class ImCube:
         self._hasBeenNormalized = False #Keeps track of whether or not we have normalized by exposure so that we don't do it twice.
         self.data = data.astype(dtype)
         self.metadata = metadata
-        try:
-            self.wavelengths = self.metadata['wavelengths']
-        except:
-            self.wavelengths = self.metadata["waveLengths"]
+        self.wavelengths = self.metadata['wavelengths']
         if self.data.shape[2] != len(self.wavelengths):
             raise ValueError("The length of the wavelengths list doesn't match the wavelength axis of the data array")
         
