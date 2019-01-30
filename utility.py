@@ -188,12 +188,12 @@ def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None, plotRefle
         
         fig3, scatterAx = plt.subplots()    #A scatter plot of the theoretical vs observed reflectance ratio.
         scatterAx.set_ylabel("Theoretical Ratio")
-        scatterAx.set_xlabel("Observed Ratio")
+        scatterAx.set_xlabel("Observed Ratio w/ cFactor")
         scatterPointsY = [(theoryR[matCombo[0]]/theoryR[matCombo[1]]).mean() for matCombo in matCombos]
-        scatterPointsX = [(meanValues[sett][matCombo]['mat1Spectra'] / meanValues[sett][matCombo]['mat2Spectra']).mean() for matCombo in matCombos]
+        scatterPointsX = [means['cFactor'] * (meanValues[sett][matCombo]['mat1Spectra'] / meanValues[sett][matCombo]['mat2Spectra']).mean() for matCombo in matCombos]
         [scatterAx.scatter(x, y, label=f'{matCombo[0]}/{matCombo[1]}') for x,y,matCombo in zip(scatterPointsX, scatterPointsY, matCombos)]
         x = np.array([0,max(scatterPointsX)])
-        scatterAx.plot(x, means['cFactor']*x, label='Correction Factor')
+        scatterAx.plot(x,x, label='1:1')
         scatterAx.legend()
 
         fig4, scatterAx2 = plt.subplots()    #A scatter plot of the theoretical vs observed reflectance ratio.
@@ -203,7 +203,7 @@ def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None, plotRefle
         scatterPointsX = [((meanValues[sett][matCombo]['mat1Spectra'] - means['I0']*means['rextra']) / (meanValues[sett][matCombo]['mat2Spectra'] - means['I0']*means['rextra'])).mean() for matCombo in matCombos]
         [scatterAx2.scatter(x, y, label=f'{matCombo[0]}/{matCombo[1]}') for x, y, matCombo in zip(scatterPointsX, scatterPointsY, matCombos)]
         x = np.array([0,max(scatterPointsX)])
-        scatterAx2.plot(x, x, label = '1 to 1')
+        scatterAx2.plot(x, x, label = '1:1')
         scatterAx2.legend()
 
         if plotReflectionImages:
