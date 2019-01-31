@@ -17,6 +17,7 @@ from matplotlib import path
 from glob import glob
 import typing
 import scipy.interpolate as spi
+import numbers
 
 class ImCube:
     ''' A class representing a single acquisition of PWS. Contains methods for loading and saving to multiple formats as well as common operations used in analysis.'''
@@ -247,25 +248,46 @@ class ImCube:
     def _wavelengthsMatch(self, other:ImCube) -> bool:
         return self.wavelengths == other.wavelengths
     
-    def __add__(self, other:ImCube) -> ImCube:
-        if not self._wavelengthsMatch(other):
-            raise ValueError("Imcube wavelengths are not compatible")
-        return ImCube(self.data + other.data, self.metadata)
+    def __add__(self, other:typing.Union[ImCube,numbers.Real]) -> ImCube:
+        if isinstance(other, ImCube):
+            if not self._wavelengthsMatch(other):
+                raise ValueError("Imcube wavelengths are not compatible")
+            return ImCube(self.data + other.data, self.metadata)
+        elif isinstance(other, numbers.Real):
+            return ImCube(self.data + other, self.metadata)
+        else:
+            raise NotImplementedError(f"Addition is not supported between ImCube and {type(other)}")
 
-    def __sub__(self, other:ImCube) -> ImCube:
-        if not self._wavelengthsMatch(other):
-            raise ValueError("Imcube wavelengths are not compatible")
-        return ImCube(self.data - other.data, self.metadata)
+    def __sub__(self, other:typing.Union[ImCube,numbers.Real]) -> ImCube:
+        if isinstance(other, ImCube):
+            if not self._wavelengthsMatch(other):
+                raise ValueError("Imcube wavelengths are not compatible")
+            return ImCube(self.data - other.data, self.metadata)
+        elif isinstance(other, numbers.Real):
+            return ImCube(self.data - other, self.metadata)
+        else:
+            raise NotImplementedError(f"Subtraction is not supported between ImCube and {type(other)}")
     
-    def __mul__(self, other:ImCube) -> ImCube:
-        if not self._wavelengthsMatch(other):
-            raise ValueError("Imcube wavelengths are not compatible")
-        return ImCube(self.data * other.data, self.metadata)
+    def __mul__(self, other:typing.Union[ImCube,numbers.Real]) -> ImCube:
+        if isinstance(other, ImCube):
+            if not self._wavelengthsMatch(other):
+                raise ValueError("Imcube wavelengths are not compatible")
+            return ImCube(self.data * other.data, self.metadata)
+        elif isinstance(other, numbers.Real):
+            return ImCube(self.data * other, self.metadata)
+        else:
+            raise NotImplementedError(f"Multiplication is not supported between ImCube and {type(other)}")
+    __rmul__ = __mul__ #multiplication is commutative. let it work both ways.
     
-    def __truediv__(self, other:ImCube) -> ImCube:
-        if not self._wavelengthsMatch(other):
-            raise ValueError("Imcube wavelengths are not compatible")
-        return ImCube(self.data / other.data, self.metadata)
+    def __truediv__(self, other:typing.Union[ImCube,numbers.Real]) -> ImCube:
+        if isinstance(other, ImCube):
+            if not self._wavelengthsMatch(other):
+                raise ValueError("Imcube wavelengths are not compatible")
+            return ImCube(self.data / other.data, self.metadata)
+        elif isinstance(other, numbers.Real):
+            return ImCube(self.data / other, self.metadata)
+        else:
+            raise NotImplementedError(f"Division is not supported between ImCube and {type(other)}")
 
 
     def wvIndex(self, start, stop):
