@@ -18,6 +18,7 @@ from glob import glob
 import typing
 import scipy.interpolate as spi
 import numbers
+import scipy.signal as sps
 
 class ImCube:
     ''' A class representing a single acquisition of PWS. Contains methods for loading and saving to multiple formats as well as common operations used in analysis.'''
@@ -301,6 +302,21 @@ class ImCube:
         md['wavelengths'] = wv[iStart:iStop]
         return ImCube(self[:,:,iStart:iStop], md)
     
+    def filterDust(self, kernelRadius:int):
+        def _gaussKernel(radius:int):
+            #A kernel that goes to 1 std. It would be better to go out to 2 or 3 std but then you need a larger kernel which greatly increases convolution time.
+            lenSide = 1+2*radius
+            side = np.linspace(-1,1,num=lenSide)
+            X,Y = np.meshgrid(side, side)
+            R = np.sqrt(X**2 + Y**2)
+            k = np.exp(-(R**2)/2)
+            k = k/k.sum() #normalize so the total is 1.
+            return k
+        
+        kernel = _gaussKernel(kernelRadius)
+        for i in range(self.data.shape[2]):
+            self.data[:,:,i] = sps.convolve(self.data[:,:,i],kernel,mode='same')
+        
     
 class KCube(ImCube):
     '''A class representing an ImCube after being transformed from being described in terms of wavelength in to wavenumber (k-space).'''

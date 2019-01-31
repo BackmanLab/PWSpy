@@ -102,35 +102,29 @@ def plot3d(X):
         def __init__(self, ax, X):
             self.ax = ax
             ax.set_title('use scroll wheel to navigate images')
-    
             self.X = X
             rows, cols, self.slices = X.shape
             self.ind = self.slices//2
-    
-            self.max = np.percentile(self.X,99.5)
-            self.min = np.percentile(self.X,0.5)
+            self.max = np.percentile(self.X,99.9)
+            self.min = np.percentile(self.X,0.1)
             self.im = ax.imshow(self.X[:, :, self.ind])
             self.im.set_clim(self.min,self.max)
             self.cbar = plt.colorbar(self.im, ax=ax)
-            self.update()
-    
+            self.update()  
         def onscroll(self, event):
             if ((event.button == 'up') or (event.button=='down')):
                 self.ind = (self.ind + int(event.step)) % self.slices
-            self.update()
-    
+            self.update()    
         def update(self):
             self.im.set_data(self.X[:, :, self.ind])
 #            self.im.set_clim(self.X.min(),self.X.max())
             ax.set_ylabel('slice %s' % self.ind)
             self.im.axes.figure.canvas.draw()
     
-    
-    fig, ax = plt.subplots(1, 1)
-        
+    fig, ax = plt.subplots(1, 1)   
     tracker = IndexTracker(ax, X)
-    
     
     fig.canvas.mpl_connect('scroll_event', tracker.onscroll)
     while plt.fignum_exists(fig.number):
         fig.canvas.flush_events()
+        

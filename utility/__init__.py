@@ -4,4 +4,4 @@ Created on Tue Aug  7 13:20:25 2018
 
 @author: Nick
 """
-from .utility import loadAndProcess
+from .utility import loadAndProcess, plot3d
