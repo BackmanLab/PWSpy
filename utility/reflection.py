@@ -1,64 +1,9 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Oct 11 11:31:48 2018
-
-@author: backman05
-"""
-from pwspython import ImCube, reflectanceHelper
-from glob import glob
+from pwspython import ImCube
+from pwspython.utility import reflectanceHelper
+import itertools
 import matplotlib.pyplot as plt
 import numpy as np
-import psutil
-import multiprocessing as mp
-import threading as th
-import typing
-import os
-from time import time
-import pandas as pd
-import itertools
-from scipy.optimize import curve_fit
-
-'''Local Functions'''
-def _loadIms(q, fileDict, specifierNames):
-        def a(arg, specifiers:typing.List[str] = []):
-            if isinstance(arg,dict):
-                for k,v in arg.items():
-                    a(v,specifiers + [k])
-            elif isinstance(arg,list):
-                for file in arg:
-                    fileSpecifiers = specifiers
-                    _ =ImCube.loadAny(file)
-                    if specifierNames is None:
-                        _.specifiers = fileSpecifiers
-                    else:
-                        for i,name in enumerate(specifierNames):
-                            setattr(_,name,fileSpecifiers[i])
-                    _.filename = os.path.split(file)[1]
-                    _.exposure = _.metadata['exposure']
-                    q.put(_)
-                    perc = psutil.virtual_memory().percent
-                    print(file)
-                    print("Memory Usage: ", perc,'%')
-                    if perc >= 95:
-                        del cubes
-                        print('quitting')
-                        quit()  
-            else:
-                raise TypeError(f'Filedict must only contain Dict and List, not an item of type: {type(arg)}')
-        a(fileDict)
-
-def _countIms(fileDict):
-    def a(arg, numIms):
-        if isinstance(arg,dict):
-            for k,v in arg.items():
-                numIms = a(v,numIms)
-        elif isinstance(arg,list):
-            numIms += len(arg)
-            
-        else:
-            raise TypeError(f'Filedict must only contain Dict and List, not an item of type: {type(arg)}')
-        return numIms
-    return a(fileDict, 0)
+from functools import reduce
 
 def _interpolateNans(arr):
     def interp1(arr1):
@@ -69,42 +14,10 @@ def _interpolateNans(arr):
     arr = np.apply_along_axis(interp1, 2, arr)
     return arr
 
-'''User Functions'''
-def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = None, parallel = False, procArgs = []) -> typing.List[ImCube]:
-    #Error checking
-    if not specifierNames is None:
-        recursionDepth = 0
-        fileStructure = fileDict
-        while not isinstance(fileStructure, list):
-            fileStructure = fileStructure[list(fileStructure.keys())[0]]
-            recursionDepth += 1
-        if recursionDepth != len(specifierNames):
-            raise ValueError("The length of specifier names does not match the number of layers of folders in the fileDict")
-    sTime = time()
-    numIms = _countIms(fileDict)
-    m = mp.Manager()
-    q = m.Queue()
-    thread = th.Thread(target = _loadIms, args=[q, fileDict, specifierNames])
-    thread.start()
-
-    if processorFunc is not None:
-        # Start processing
-        if parallel:
-            po = mp.Pool(processes = psutil.cpu_count(logical=False)-1)
-            cubes = po.starmap(processorFunc, [[q,*procArgs]]*numIms)
-        else:
-            cubes = [processorFunc(q,*procArgs) for i in range(numIms)]
-    else:
-        cubes = [q.get() for i in range(numIms)]
-    thread.join()
-    print(f"Loading took {time()-sTime} seconds")
-    return cubes
-
 def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None, plotReflectionImages:bool = False, excludedCombos:list = []):
     '''Expects a list of ImCubes which each has a `material` property matching one of the materials in the `ReflectanceHelper` module and a
     `setting` property labeling how the microscope was set up for this image.
     '''
-    
     #Error checking
     assert isinstance(cubes[0], ImCube)
     assert hasattr(cubes[0],'material')
@@ -182,7 +95,6 @@ def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None, plotRefle
                 ratioAxes[matCombo].plot(cubes[mat1].wavelengths, combo['mat1Spectra'] / combo['mat2Spectra'], label=f'{sett} {mat1}:{int(cubes[mat1].exposure)}ms {mat2}:{int(cubes[mat2].exposure)}ms')
     [ratioAxes[combo].legend() for combo in matCombos]
     
-
     for sett in settings:    
         means = meanValues[sett]['mean']
         
@@ -220,7 +132,49 @@ def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None, plotRefle
                     refIm = _.mean(axis=2)
                     plt.imshow(refIm,vmin=np.percentile(refIm,.5),vmax=np.percentile(refIm,99.5))
                     plt.colorbar()
-                    
+             
         print(f"{sett} correction factor")
         print(means['cFactor'])
     return meanValues, allCombos
+
+def saveRExtra(cubes:list, excludedCombos:list = []):
+    '''Expects a list of ImCubes which each has a `material` property matching one of the materials in the `ReflectanceHelper` module.'''
+    #Error checking
+    assert isinstance(cubes[0], ImCube)
+    assert hasattr(cubes[0],'material')
+    
+    # load theory reflectance
+    theoryR = {}    #Theoretical reflectances
+    materials = set([i.material for i in cubes])
+    avgdCubes = {}
+    for material in materials: #For each unique material in the `cubes` list
+        print("Averaging cubes for: ", material)
+        theoryR[material] = reflectanceHelper.getReflectance(material,'glass', index=cubes[0].wavelengths) #save the theoretical reflectance
+        _ = [i for i in cubes if i.material==material]#average all cubes of the same material
+        avgdCubes[material] = (reduce(lambda x,y:x+y, _) / len(_))
+    
+    matCombos = list(itertools.combinations(materials, 2))  #All the combinations of materials that can be compared
+    matCombos = [(m1,m2) for m1,m2 in matCombos if not (((m1,m2) in excludedCombos) or ((m2,m1) in excludedCombos))] #Remove excluded combinations.
+    
+    allCombos = {}
+    for matCombo in matCombos:
+        matCubes = {material:avgdCubes[material] for material in matCombo} #The imcubes relevant to this loop.
+        allCombos[matCombo] = matCubes
+    del avgdCubes
+    
+    rExtra = {}
+    for matCombo in matCombos:
+        print("Calculating RExtra for: ", matCombo)
+        combo = allCombos[matCombo]
+        mat1,mat2 = combo.keys()
+        rExtra[matCombo] = ((np.array(theoryR[mat1][np.newaxis,np.newaxis,:]) * combo[mat2].data) - (np.array(theoryR[mat2][np.newaxis,np.newaxis,:]) * combo[mat1].data)) / (combo[mat1].data - combo[mat2].data)
+        del allCombos[matCombo]
+        rExtra[matCombo][np.isinf(rExtra[matCombo])] = np.nan
+        nans = np.isnan(rExtra[matCombo]).sum()
+        if nans > 0:
+            print(nans, " invalid values detected in " + str(matCombo) + ". Interpolating.")
+            rExtra[matCombo] = _interpolateNans(rExtra[matCombo]) #any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
+          
+    _ = [rExtra[matCombo] for matCombo in matCombos]
+    rExtra['mean'] = reduce(lambda x,y:x+y, _) / len(_)
+    return rExtra
