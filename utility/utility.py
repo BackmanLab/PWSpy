@@ -172,9 +172,9 @@ def plot3d(X):
             self.update()
         def update(self):
             self.im.set_data(self.X[:, :, self.coords[2]])
-            self.yplot.set_data(self.X[:,self.coords[1],self.coords[2]],np.arange(self.X.shape[0]))
+            self.yplot.set_data(self.X[:,self.coords[0],self.coords[2]],np.arange(self.X.shape[0]))
             self.ax[1].set_xlim(min(self.yplot.get_data()[0]), max(self.yplot.get_data()[0]))
-            self.xplot.set_data(np.arange(self.X.shape[1]),self.X[self.coords[0],:,self.coords[2]])
+            self.xplot.set_data(np.arange(self.X.shape[1]),self.X[self.coords[1],:,self.coords[2]])
             self.ax[2].set_ylim(min(self.xplot.get_data()[1]), max(self.xplot.get_data()[1]))
             self.zplot.set_data(self.X[self.coords[1],self.coords[0],:],np.arange(self.X.shape[2]))
             self.ax[3].set_xlim(self.min,self.max)
