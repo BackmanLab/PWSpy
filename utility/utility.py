@@ -13,6 +13,8 @@ import threading as th
 import typing
 import os
 from time import time
+import sys
+from threading import Timer
 
 '''Local Functions'''
 def _loadIms(q, fileDict, specifierNames):
@@ -98,6 +100,24 @@ def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = No
 
 
 def plot3d(X):
+    class perpetualTimer():
+       def __init__(self,t,parent):
+          self.t=t
+          self.hFunction = parent.increment
+          self.thread = Timer(self.t,self.handle_function)
+          self.running = False
+       def handle_function(self):
+          self.hFunction()
+          self.thread = Timer(self.t,self.handle_function)
+          self.thread.start()
+       def start(self):
+          self.thread.start()
+          self.running=True
+       def cancel(self):
+          self.thread.cancel()
+          self.running=False
+
+
     class IndexTracker(object):
         def __init__(self, ax, X):
             self.ax = ax
@@ -110,21 +130,36 @@ def plot3d(X):
             self.im = ax.imshow(self.X[:, :, self.ind])
             self.im.set_clim(self.min,self.max)
             self.cbar = plt.colorbar(self.im, ax=ax)
+            self.auto=perpetualTimer(0.2,self)
             self.update()  
         def onscroll(self, event):
             if ((event.button == 'up') or (event.button=='down')):
                 self.ind = (self.ind + int(event.step)) % self.slices
             self.update()    
+        #todo: add autoscrolldef press(event):
+        def press(self,event):
+            if event.key == 'a':
+                if self.auto.running: self.auto.cancel() 
+                else: self.auto.start()
+
+        def increment(self):
+            self.ind +=1
+            if self.ind >= self.X.shape[2]: self.ind -= self.X.shape[2]
+            self.update()
+            
         def update(self):
             self.im.set_data(self.X[:, :, self.ind])
 #            self.im.set_clim(self.X.min(),self.X.max())
             ax.set_ylabel('slice %s' % self.ind)
             self.im.axes.figure.canvas.draw()
-    
-    fig, ax = plt.subplots(1, 1)   
-    tracker = IndexTracker(ax, X)
-    
-    fig.canvas.mpl_connect('scroll_event', tracker.onscroll)
-    while plt.fignum_exists(fig.number):
-        fig.canvas.flush_events()
+    try:
+        fig, ax = plt.subplots(1, 1)   
+        tracker = IndexTracker(ax, X)
+        
+        fig.canvas.mpl_connect('key_press_event', tracker.press)
+        fig.canvas.mpl_connect('scroll_event', tracker.onscroll)
+        while plt.fignum_exists(fig.number):
+            fig.canvas.flush_events()
+    finally:
+        tracker.auto.cancel()
         
