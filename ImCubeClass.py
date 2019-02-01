@@ -315,7 +315,8 @@ class ImCube:
         
         kernel = _gaussKernel(kernelRadius)
         for i in range(self.data.shape[2]):
-            self.data[:,:,i] = sps.convolve(self.data[:,:,i],kernel,mode='same')
+            m = self.data[:,:,i].mean() #By subtracting the mean and then adding it after convolution we are effectively padding the convolution with the mean.
+            self.data[:,:,i] = sps.convolve(self.data[:,:,i]-m,kernel,mode='same')+m
         
     
 class KCube(ImCube):
