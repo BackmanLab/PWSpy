@@ -13,8 +13,9 @@ import threading as th
 import typing
 import os
 from time import time
-import sys
 from threading import Timer
+import matplotlib.gridspec as gridspec
+
 
 '''Local Functions'''
 def _loadIms(q, fileDict, specifierNames):
@@ -109,57 +110,95 @@ def plot3d(X):
        def handle_function(self):
           self.hFunction()
           self.thread = Timer(self.t,self.handle_function)
-          self.thread.start()
+          if self.running:
+              self.thread.start()
        def start(self):
           self.thread.start()
+          print('start')
           self.running=True
        def cancel(self):
-          self.thread.cancel()
+          print('cancel')
+#          self.thread.cancel()
           self.running=False
 
 
     class IndexTracker(object):
         def __init__(self, ax, X):
             self.ax = ax
-            ax.set_title('use scroll wheel to navigate images')
+            ax[0].set_title('use scroll wheel to navigate images')
             self.X = X
             rows, cols, self.slices = X.shape
-            self.ind = self.slices//2
+            self.coords = (100,100, self.slices//2)
+            self.vline = ax[0].plot([100,100],[0,X.shape[0]],'r')[0]
+            self.hline = ax[0].plot([0,X.shape[1]],[100,100],'r')[0]
+            self.line2 = ax[1].plot([0,X.shape[1]],[100,100],'r')[0]
+            self.line3 = ax[2].plot([100,100],[0,X.shape[0]],'r')[0]
+            self.line4 = ax[3].plot([0,X.shape[2]],[100,100],'r')[0]
             self.max = np.percentile(self.X,99.9)
             self.min = np.percentile(self.X,0.1)
-            self.im = ax.imshow(self.X[:, :, self.ind])
+            self.yplot = ax[1].plot(self.X[:,self.coords[1],self.coords[2]], np.arange(self.X.shape[0]))[0]
+            self.xplot = ax[2].plot(np.arange(self.X.shape[1]),self.X[self.coords[0],:,self.coords[2]])[0]
+            self.zplot = ax[3].plot(self.X[self.coords[0],self.coords[1],:], np.arange(self.X.shape[2]))[0]
+            self.im = ax[0].imshow(self.X[:, :, self.coords[2]])
             self.im.set_clim(self.min,self.max)
-            self.cbar = plt.colorbar(self.im, ax=ax)
+            self.cbar = plt.colorbar(self.im, ax=ax[0])
             self.auto=perpetualTimer(0.2,self)
             self.update()  
         def onscroll(self, event):
             if ((event.button == 'up') or (event.button=='down')):
-                self.ind = (self.ind + int(event.step)) % self.slices
+                self.coords = (self.coords[0], self.coords[1], (self.coords[2] + int(event.step)) % self.slices)
             self.update()    
-        #todo: add autoscrolldef press(event):
-        def press(self,event):
+        def onpress(self,event):
             if event.key == 'a':
                 if self.auto.running: self.auto.cancel() 
                 else: self.auto.start()
-
-        def increment(self):
-            self.ind +=1
-            if self.ind >= self.X.shape[2]: self.ind -= self.X.shape[2]
-            self.update()
+        def onclick(self,event):
+            if event.inaxes==self.ax[0]:
+                self.coords = (int(event.xdata), int(event.ydata), self.coords[2])
+            elif event.inaxes==self.ax[1]:
+                self.coords = (int(event.xdata), self.coords[1], self.coords[2])
             
+            self.update()
+        def increment(self):
+            self.coords = (self.coords[0], self.coords[1], self.coords[2]+1)
+            if self.coords[2] >= self.X.shape[2]: self.coords =(self.coords[0], self.coords[1], self.coords[2]-self.X.shape[2])
+            self.update()
         def update(self):
-            self.im.set_data(self.X[:, :, self.ind])
-#            self.im.set_clim(self.X.min(),self.X.max())
-            ax.set_ylabel('slice %s' % self.ind)
+            self.im.set_data(self.X[:, :, self.coords[2]])
+            self.yplot.set_data(self.X[:,self.coords[1],self.coords[2]],np.arange(self.X.shape[0]))
+            self.ax[1].set_xlim(min(self.yplot.get_data()[0]), max(self.yplot.get_data()[0]))
+            self.xplot.set_data(np.arange(self.X.shape[1]),self.X[self.coords[0],:,self.coords[2]])
+            self.ax[2].set_ylim(min(self.xplot.get_data()[1]), max(self.xplot.get_data()[1]))
+            self.zplot.set_data(self.X[self.coords[0],self.coords[1],:],np.arange(self.X.shape[2]))
+            self.ax[3].set_xlim(min(self.zplot.get_data()[0]),max(self.zplot.get_data()[0]))
+            self.hline.set_data(self.hline.get_data()[0],[self.coords[1],self.coords[1]] )
+            self.vline.set_data([self.coords[0],self.coords[0]],  self.vline.get_data()[1])
+            self.line3.set_data([self.coords[0],self.coords[0]], self.line3.get_data()[1])
+            self.line2.set_data( self.line2.get_data()[0],[self.coords[1],self.coords[1]])
+            self.line4.set_data(self.line4.get_data()[0], [self.coords[2], self.coords[2]])
+            ax[0].set_ylabel('slice %s' % self.coords[2])
             self.im.axes.figure.canvas.draw()
-    try:
-        fig, ax = plt.subplots(1, 1)   
-        tracker = IndexTracker(ax, X)
-        
-        fig.canvas.mpl_connect('key_press_event', tracker.press)
-        fig.canvas.mpl_connect('scroll_event', tracker.onscroll)
-        while plt.fignum_exists(fig.number):
-            fig.canvas.flush_events()
-    finally:
-        tracker.auto.cancel()
+            
+    fig = plt.figure() 
+    h,w,_ =X.shape 
+    gs = gridspec.GridSpec(2, 3,width_ratios=[w*.2,w,w*.2], height_ratios=[h,h*.2])
+    ax = [plt.subplot(gs[1]),]
+    ax.append(plt.subplot(gs[2], sharey=ax[0]))
+    ax.append(plt.subplot(gs[4], sharex=ax[0]))
+    ax.append(plt.subplot(gs[0]))
+#bounds = [x.min(),x.max(),y.min(),y.max()]
+#ax[0].imshow(data, cmap='gray', extent = bounds, origin='lower')
+#ax[1].plot(data[:,w/2],Y[:,w/2],'.',data[:,w/2],Y[:,w/2])
+#ax[1].axis([data[:,w/2].max(), data[:,w/2].min(), Y.min(), Y.max()])
+#ax[2].plot(X[h/2,:],data[h/2,:],'.',X[h/2,:],data[h/2,:])
+
+    tracker = IndexTracker(ax, X)
+    
+    fig.canvas.mpl_connect('key_press_event', tracker.onpress)
+    fig.canvas.mpl_connect('scroll_event', tracker.onscroll)
+    fig.canvas.mpl_connect('button_press_event', tracker.onclick)
+
+    while plt.fignum_exists(fig.number):
+        fig.canvas.flush_events()
+    tracker.auto.cancel()
         
