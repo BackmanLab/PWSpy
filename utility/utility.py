@@ -127,8 +127,8 @@ def plot3d(X):
             self.ax = ax
 #            ax[0].set_title('use scroll wheel to navigate images')
             self.X = X
-            self.max = np.percentile(self.X,99.9)
-            self.min = np.percentile(self.X,0.1)
+            self.max = np.percentile(self.X,99.5)
+            self.min = np.percentile(self.X,0.5)
             rows, cols, self.slices = X.shape
             self.coords = (100,100, self.slices//2)
             self.ax[0].get_xaxis().set_visible(False)
@@ -139,6 +139,8 @@ def plot3d(X):
             self.line2 = ax[1].plot([0,X.shape[1]],[100,100],'r',linewidth = lw)[0]
             self.line3 = ax[2].plot([100,100],[0,X.shape[0]],'r',linewidth = lw)[0]
             self.line4 = ax[3].plot([self.min,self.max],[100,100],'r',linewidth = lw)[0]
+#            self.maxline = ax[4].plot([self.max,self.max],[0,10],'r', linewidth=lw)[0]
+#            self.minline = ax[4].plot([self.min,self.min],[0,10],'b',linewidth=lw)[0]
             self.yplot = ax[1].plot(self.X[:,self.coords[1],self.coords[2]], np.arange(self.X.shape[0]))[0]
             self.xplot = ax[2].plot(np.arange(self.X.shape[1]),self.X[self.coords[0],:,self.coords[2]])[0]
             self.zplot = ax[3].plot(self.X[self.coords[0],self.coords[1],:], np.arange(self.X.shape[2]))[0]
@@ -146,7 +148,7 @@ def plot3d(X):
             self.im.set_clim(self.min,self.max)
             self.cbar = plt.colorbar(self.im, cax=ax[4], orientation='horizontal')
             ax[4].xaxis.set_ticks_position("top")
-            self.auto=perpetualTimer(0.2,self)
+            self.auto=perpetualTimer(0.05,self)
             self.update()  
         def onscroll(self, event):
             if ((event.button == 'up') or (event.button=='down')):
@@ -156,7 +158,12 @@ def plot3d(X):
             if event.key == 'a':
                 if self.auto.running: self.auto.cancel() 
                 else: self.auto.start()
+            if event.key == 'r':
+                self.max = np.percentile(self.X,99.5)
+                self.min = np.percentile(self.X,0.5)
+                self.update()
         def onclick(self,event):
+#            print(event.button)
             if event.inaxes==self.ax[0]:
                 self.coords = (int(event.xdata), int(event.ydata), self.coords[2])
             elif event.inaxes==self.ax[1]:
@@ -165,6 +172,11 @@ def plot3d(X):
                 self.coords = (int(event.xdata), self.coords[1], self.coords[2])
             elif event.inaxes==self.ax[3]:
                 self.coords = (self.coords[0], self.coords[1], int(event.ydata))
+            elif event.inaxes==self.ax[4]:
+                if event.button==1:
+                    self.max = event.xdata
+                elif event.button==3:
+                    self.min = event.xdata
             
             self.update()
         def increment(self):
@@ -173,10 +185,11 @@ def plot3d(X):
             self.update()
         def update(self):
             self.im.set_data(self.X[:, :, self.coords[2]])
+            self.im.set_clim(self.min,self.max)
             self.yplot.set_data(self.X[:,self.coords[0],self.coords[2]],np.arange(self.X.shape[0]))
-            self.ax[1].set_xlim(min(self.yplot.get_data()[0]), max(self.yplot.get_data()[0]))
+            self.ax[1].set_xlim(self.min,self.max)
             self.xplot.set_data(np.arange(self.X.shape[1]),self.X[self.coords[1],:,self.coords[2]])
-            self.ax[2].set_ylim(min(self.xplot.get_data()[1]), max(self.xplot.get_data()[1]))
+            self.ax[2].set_ylim(self.min,self.max)
             self.zplot.set_data(self.X[self.coords[1],self.coords[0],:],np.arange(self.X.shape[2]))
             self.ax[3].set_xlim(self.min,self.max)
             self.hline.set_data(self.hline.get_data()[0],[self.coords[1],self.coords[1]] )
@@ -184,6 +197,8 @@ def plot3d(X):
             self.line3.set_data([self.coords[0],self.coords[0]], self.ax[2].get_ylim())
             self.line2.set_data( self.ax[1].get_xlim(),[self.coords[1],self.coords[1]])
             self.line4.set_data(self.line4.get_data()[0], [self.coords[2], self.coords[2]])
+#            self.maxline.set_data([self.max,self.max],self.maxline.get_data()[1])
+#            self.minline.set_data([self.min,self.min],self.minline.get_data()[1])
             self.im.axes.figure.canvas.draw()
             
     fig = plt.figure() 
