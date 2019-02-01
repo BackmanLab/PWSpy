@@ -125,10 +125,10 @@ def plot3d(X):
     class IndexTracker(object):
         def __init__(self, ax, X):
             self.ax = ax
-#            ax[0].set_title('use scroll wheel to navigate images')
+            print('Scroll to navigate stacks.\nPress "a" to automatically scroll.\nLeft click the color bar to set the max color range.\nRight click to set the mininum.\nPress "r" to reset the color range.')
             self.X = X
-            self.max = np.percentile(self.X,99.5)
-            self.min = np.percentile(self.X,0.5)
+            self.max = np.percentile(self.X,99.9)
+            self.min = np.percentile(self.X,0.1)
             rows, cols, self.slices = X.shape
             self.coords = (100,100, self.slices//2)
             self.ax[0].get_xaxis().set_visible(False)
@@ -139,15 +139,12 @@ def plot3d(X):
             self.line2 = ax[1].plot([0,X.shape[1]],[100,100],'r',linewidth = lw)[0]
             self.line3 = ax[2].plot([100,100],[0,X.shape[0]],'r',linewidth = lw)[0]
             self.line4 = ax[3].plot([self.min,self.max],[100,100],'r',linewidth = lw)[0]
-#            self.maxline = ax[4].plot([self.max,self.max],[0,10],'r', linewidth=lw)[0]
-#            self.minline = ax[4].plot([self.min,self.min],[0,10],'b',linewidth=lw)[0]
             self.yplot = ax[1].plot(self.X[:,self.coords[1],self.coords[2]], np.arange(self.X.shape[0]))[0]
             self.xplot = ax[2].plot(np.arange(self.X.shape[1]),self.X[self.coords[0],:,self.coords[2]])[0]
             self.zplot = ax[3].plot(self.X[self.coords[0],self.coords[1],:], np.arange(self.X.shape[2]))[0]
             self.im = ax[0].imshow(self.X[:, :, self.coords[2]])
             self.im.set_clim(self.min,self.max)
             self.cbar = plt.colorbar(self.im, cax=ax[4], orientation='horizontal')
-            ax[4].xaxis.set_ticks_position("top")
             self.auto=perpetualTimer(0.05,self)
             self.update()  
         def onscroll(self, event):
@@ -159,26 +156,44 @@ def plot3d(X):
                 if self.auto.running: self.auto.cancel() 
                 else: self.auto.start()
             if event.key == 'r':
-                self.max = np.percentile(self.X,99.5)
-                self.min = np.percentile(self.X,0.5)
+                self.max = np.percentile(self.X,99.9)
+                self.min = np.percentile(self.X,0.1)
                 self.update()
         def onclick(self,event):
 #            print(event.button)
-            if event.inaxes==self.ax[0]:
-                self.coords = (int(event.xdata), int(event.ydata), self.coords[2])
-            elif event.inaxes==self.ax[1]:
-                self.coords = (self.coords[0], int(event.ydata), self.coords[2])
-            elif event.inaxes==self.ax[2]:
-                self.coords = (int(event.xdata), self.coords[1], self.coords[2])
-            elif event.inaxes==self.ax[3]:
-                self.coords = (self.coords[0], self.coords[1], int(event.ydata))
-            elif event.inaxes==self.ax[4]:
-                if event.button==1:
-                    self.max = event.xdata
-                elif event.button==3:
-                    self.min = event.xdata
+            if event.inaxes is None:
+                return
+            ax = event.inaxes
+            x, y = event.xdata, event.ydata
+            button = event.button
+            self.processMouse(ax,x,y, button,colorbar=True)
             
+        def processMouse(self,ax,x,y, button, colorbar):
+            if ax==self.ax[0]:
+                self.coords = (int(x), int(y), self.coords[2])
+            elif ax==self.ax[1]:
+                self.coords = (self.coords[0], int(y), self.coords[2])
+            elif ax==self.ax[2]:
+                self.coords = (int(x), self.coords[1], self.coords[2])
+            elif ax==self.ax[3]:
+                self.coords = (self.coords[0], self.coords[1], int(y))
+            if colorbar:
+                if ax==self.ax[4]:
+                    if button==1:
+                        self.max = x
+                    elif button==3:
+                        self.min = x
             self.update()
+            
+        def ondrag(self, event):
+            if event.inaxes is None:
+                return
+            if event.button != 1:
+                return
+            ax = event.inaxes
+            x, y = event.xdata, event.ydata
+            button = event.button
+            self.processMouse(ax,x,y, button,colorbar=False)
         def increment(self):
             self.coords = (self.coords[0], self.coords[1], self.coords[2]+1)
             if self.coords[2] >= self.X.shape[2]: self.coords =(self.coords[0], self.coords[1], self.coords[2]-self.X.shape[2])
@@ -192,13 +207,12 @@ def plot3d(X):
             self.ax[2].set_ylim(self.min,self.max)
             self.zplot.set_data(self.X[self.coords[1],self.coords[0],:],np.arange(self.X.shape[2]))
             self.ax[3].set_xlim(self.min,self.max)
+            self.ax[4].xaxis.set_ticks_position("top")
             self.hline.set_data(self.hline.get_data()[0],[self.coords[1],self.coords[1]] )
             self.vline.set_data([self.coords[0],self.coords[0]],  self.vline.get_data()[1])
             self.line3.set_data([self.coords[0],self.coords[0]], self.ax[2].get_ylim())
             self.line2.set_data( self.ax[1].get_xlim(),[self.coords[1],self.coords[1]])
             self.line4.set_data(self.line4.get_data()[0], [self.coords[2], self.coords[2]])
-#            self.maxline.set_data([self.max,self.max],self.maxline.get_data()[1])
-#            self.minline.set_data([self.min,self.min],self.minline.get_data()[1])
             self.im.axes.figure.canvas.draw()
             
     fig = plt.figure() 
@@ -229,7 +243,7 @@ def plot3d(X):
     fig.canvas.mpl_connect('key_press_event', tracker.onpress)
     fig.canvas.mpl_connect('scroll_event', tracker.onscroll)
     fig.canvas.mpl_connect('button_press_event', tracker.onclick)
-
+    fig.canvas.mpl_connect('motion_notify_event', tracker.ondrag)
     while plt.fignum_exists(fig.number):
         fig.canvas.flush_events()
     tracker.auto.cancel()
