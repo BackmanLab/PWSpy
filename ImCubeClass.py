@@ -249,43 +249,43 @@ class ImCube:
     def _wavelengthsMatch(self, other:ImCube) -> bool:
         return self.wavelengths == other.wavelengths
     
-    def __add__(self, other:typing.Union[ImCube,numbers.Real]) -> ImCube:
+    def __add__(self, other:typing.Union[ImCube,numbers.Real,np.ndarray]) -> ImCube:
         if isinstance(other, ImCube):
             if not self._wavelengthsMatch(other):
                 raise ValueError("Imcube wavelengths are not compatible")
             return ImCube(self.data + other.data, self.metadata)
-        elif isinstance(other, numbers.Real):
+        elif isinstance(other, (numbers.Real, np.ndarray)):
             return ImCube(self.data + other, self.metadata)
         else:
             raise NotImplementedError(f"Addition is not supported between ImCube and {type(other)}")
 
-    def __sub__(self, other:typing.Union[ImCube,numbers.Real]) -> ImCube:
+    def __sub__(self, other:typing.Union[ImCube,numbers.Real,np.ndarray]) -> ImCube:
         if isinstance(other, ImCube):
             if not self._wavelengthsMatch(other):
                 raise ValueError("Imcube wavelengths are not compatible")
             return ImCube(self.data - other.data, self.metadata)
-        elif isinstance(other, numbers.Real):
+        elif isinstance(other, (numbers.Real, np.ndarray)):
             return ImCube(self.data - other, self.metadata)
         else:
             raise NotImplementedError(f"Subtraction is not supported between ImCube and {type(other)}")
     
-    def __mul__(self, other:typing.Union[ImCube,numbers.Real]) -> ImCube:
+    def __mul__(self, other:typing.Union[ImCube,numbers.Real, np.ndarray]) -> ImCube:
         if isinstance(other, ImCube):
             if not self._wavelengthsMatch(other):
                 raise ValueError("Imcube wavelengths are not compatible")
             return ImCube(self.data * other.data, self.metadata)
-        elif isinstance(other, numbers.Real):
+        elif isinstance(other,(numbers.Real, np.ndarray)):
             return ImCube(self.data * other, self.metadata)
         else:
             raise NotImplementedError(f"Multiplication is not supported between ImCube and {type(other)}")
     __rmul__ = __mul__ #multiplication is commutative. let it work both ways.
     
-    def __truediv__(self, other:typing.Union[ImCube,numbers.Real]) -> ImCube:
+    def __truediv__(self, other:typing.Union[ImCube,numbers.Real, np.ndarray]) -> ImCube:
         if isinstance(other, ImCube):
             if not self._wavelengthsMatch(other):
                 raise ValueError("Imcube wavelengths are not compatible")
             return ImCube(self.data / other.data, self.metadata)
-        elif isinstance(other, numbers.Real):
+        elif isinstance(other, (numbers.Real, np.ndarray)):
             return ImCube(self.data / other, self.metadata)
         else:
             raise NotImplementedError(f"Division is not supported between ImCube and {type(other)}")
