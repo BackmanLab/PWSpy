@@ -60,7 +60,7 @@ def plotExtraReflection(cubes:list, selectMaskUsingSetting:str = None, plotRefle
                 combo['mat1Spectra'] = cubes[mat1].getMeanSpectra(mask)[0]
                 combo['mat2Spectra'] = cubes[mat2].getMeanSpectra(mask)[0]
                 combo['rextra'] = ((theoryR[mat1] * combo['mat2Spectra']) - (theoryR[mat2] * combo['mat1Spectra'])) / (combo['mat1Spectra'] - combo['mat2Spectra'])
-                combo['I0'] = combo['mat2Spectra'] / (theoryR[mat2] + combo['rextra'])
+                combo['I0'] = combo['mat2Spectra'] / (theoryR[mat2] + combo['rextra'])/100
                 combo['cFactor'] = (combo['rextra'].mean() + theoryR['water'].mean()) / theoryR['water'].mean()
             meanValues[sett][matCombo] = {param : np.array(list([combo[param] for combo in allCombos[sett][matCombo]])).mean(axis=0) for param in params}
         meanValues[sett]['mean'] = {param : np.array(list([meanValues[sett][matCombo][param] for matCombo in matCombos])).mean(axis=0) for param in params}
