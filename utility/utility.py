@@ -144,7 +144,8 @@ def plot3d(X):
             self.zplot = ax[3].plot(self.X[self.coords[0],self.coords[1],:], np.arange(self.X.shape[2]))[0]
             self.im = ax[0].imshow(self.X[:, :, self.coords[2]])
             self.im.set_clim(self.min,self.max)
-#            self.cbar = plt.colorbar(self.im, ax=ax[0])
+            self.cbar = plt.colorbar(self.im, cax=ax[4], orientation='horizontal')
+            ax[4].xaxis.set_ticks_position("top")
             self.auto=perpetualTimer(0.2,self)
             self.update()  
         def onscroll(self, event):
@@ -187,11 +188,12 @@ def plot3d(X):
             
     fig = plt.figure() 
     h,w,_ =X.shape 
-    gs = gridspec.GridSpec(2, 3,hspace=0,width_ratios=[w*.2,w,w*.2], height_ratios=[h,h*.2])
-    ax = [plt.subplot(gs[0,1]),]
-    ax.append(plt.subplot(gs[0,2], sharey=ax[0]))
-    ax.append(plt.subplot(gs[1,1], sharex=ax[0]))
-    ax.append(plt.subplot(gs[0,0]))
+    gs = gridspec.GridSpec(3, 3,hspace=0,width_ratios=[w*.2,w,w*.2], height_ratios=[h*.1,h,h*.2])
+    ax = [plt.subplot(gs[1,1]),]
+    ax.append(plt.subplot(gs[1,2], sharey=ax[0]))
+    ax.append(plt.subplot(gs[2,1], sharex=ax[0]))
+    ax.append(plt.subplot(gs[1,0]))
+    ax.append(plt.subplot(gs[0,1]))
     ax[1].yaxis.set_ticks_position('right')
 
     gs.update(wspace=0)
