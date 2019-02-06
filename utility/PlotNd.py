@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.gridspec as gridspec
 import scipy.ndimage as ndi
-
+from matplotlib.animation import FuncAnimation
 
 class PlotNd(object):
     def __init__(self, X, names, initialCoords=None):
@@ -57,6 +57,14 @@ class PlotNd(object):
         self.im.set_clim(self.min,self.max)
         self.cbar = plt.colorbar(self.im, cax=ax['c'], orientation='horizontal')
         self.update()  
+        plt.pause(0.1)
+    def save(self, path):
+        def f(self,z):
+            self.coords = self.coords[:2]+(z,)+self.coords[3:]
+            self.update()
+        ani = FuncAnimation(self.fig, lambda z:f(self,z), frames=list(range(self.X.shape[2])), blit=False, interval=50)
+        ani.save(path)
+        return ani
         
     def update(self):
         self.im.set_data(np.squeeze(self.X[(slice(None),slice(None))+self.coords[2:]]))
@@ -170,12 +178,12 @@ if __name__ == '__main__':
     crop = np.sqrt(X**2+Y**2)>.75
     
     '''We can also rotate the array if needed'''
-    degrees = 35
-    plane = (0,2) #rotating in the yz plane
-    A = ndi.rotate(A,degrees, axes=plane)
-    crop = ndi.rotate(crop,degrees, axes=plane,order = 0,output=np.bool, cval=True)
+#    degrees = 35
+#    plane = (0,2) #rotating in the yz plane
+#    A = ndi.rotate(A,degrees, axes=plane)
+#    crop = ndi.rotate(crop,degrees, axes=plane,order = 0,output=np.bool, cval=True)
     
     A[crop] = np.nan
 
 
-    PlotNd(A,names)   #Input array dimensions should be [y,x,z]
+    p = PlotNd(A,names)   #Input array dimensions should be [y,x,z]
