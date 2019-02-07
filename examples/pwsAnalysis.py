@@ -24,7 +24,7 @@ def analyzeCube(cubeCell:ImCube, darkCount:int, mirror:ImCube, orderFilter:int,
     mirror.subtractDarkCounts(darkCount)
     mirror.normalizeByExposure()
     cube = cube / mirror
-    
+     
     print("Filtering Signal")
     b,a = sps.butter(orderFilter, cutoffFilter) #The cutoff totally ignores what the `sample rate` is. so a 2nm interval image cube will be filtered differently than a 1nm interval cube. This is how it is in matlab.
     cube.data = sps.filtfilt(b,a,cube.data,axis=2)
@@ -90,7 +90,8 @@ def analyzeCube(cubeCell:ImCube, darkCount:int, mirror:ImCube, orderFilter:int,
     return results
 
 if __name__ == '__main__':   
-    cube = ImCube.fromTiff(r'G:\Data\vf5\cellComparison\vf5300msdelay\Cell1')
-    mirror = ImCube.fromTiff(r'G:\Data\vf5\cellComparison\vf5300msdelay\Cell999')
+    cube = ImCube.loadAny(r'G:\Calibrations\CellPhantom\lcpws1\5th\Cell1')
+    mirror = ImCube.loadAny(r'G:\Calibrations\CellPhantom\lcpws1\5th\Cell666')
     #Default settings
-    results = analyzeCube(cube, 101, mirror, 6, 0.15,  510, 690, 0, True, 7, True, True)
+    darkCounts = 1957
+    results = analyzeCube(cube, darkCounts, mirror, 6, 0.15,  510, 690, 0, True, 7, True, True)

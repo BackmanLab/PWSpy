@@ -15,6 +15,7 @@ import numpy as np
 This script Allows the user to select a region of an ImCube. the spectra of this
 region is then averaged over the X and Y dimensions. This spectra is then saved
 as a reference imCube with the same initial dimensions.
+Can help to make a reference when you don't actually have one for some reason
 '''
 
 
