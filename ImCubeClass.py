@@ -19,12 +19,14 @@ import typing
 import scipy.interpolate as spi
 import numbers
 import scipy.signal as sps
+import scipy.io as spio
 
 class ImCube:
     ''' A class representing a single acquisition of PWS. Contains methods for loading and saving to multiple formats as well as common operations used in analysis.'''
-    def __init__(self,data,metadata, dtype = np.float32):
+    def __init__(self,data,metadata, dtype = np.float32, filePath = None):
         assert isinstance(data,np.ndarray)
         assert isinstance(metadata,dict)
+        self.filePath = filePath
         self._hasBeenNormalized = False #Keeps track of whether or not we have normalized by exposure so that we don't do it twice.
         self.data = data.astype(dtype)
         self.metadata = metadata
@@ -62,7 +64,7 @@ class ImCube:
             data = np.frombuffer(f.read(),dtype=np.uint16)
         data = data.reshape((md['imgHeight'],md['imgWidth'],len(md['wavelengths'])),order='F')
         cls._checkMetadata(md)
-        return cls(data, md)
+        return cls(data, md, filePath = directory)
 
     @classmethod
     def fromTiff(cls,directory):
@@ -87,7 +89,7 @@ class ImCube:
             metadata['wavelengths'] = metadata['waveLengths']
             del metadata['waveLengths']
         cls._checkMetadata(metadata)
-        return cls(data,metadata)
+        return cls(data,metadata, filePath = directory)
         
     def toOldPWS(self,directory):
         if os.path.exists(directory):
@@ -253,9 +255,9 @@ class ImCube:
         if isinstance(other, ImCube):
             if not self._wavelengthsMatch(other):
                 raise ValueError("Imcube wavelengths are not compatible")
-            return ImCube(self.data + other.data, self.metadata)
+            return ImCube(self.data + other.data, self.metadata, filePath = self.filePath)
         elif isinstance(other, (numbers.Real, np.ndarray)):
-            return ImCube(self.data + other, self.metadata)
+            return ImCube(self.data + other, self.metadata, filePath = self.filePath)
         else:
             raise NotImplementedError(f"Addition is not supported between ImCube and {type(other)}")
 
@@ -263,9 +265,9 @@ class ImCube:
         if isinstance(other, ImCube):
             if not self._wavelengthsMatch(other):
                 raise ValueError("Imcube wavelengths are not compatible")
-            return ImCube(self.data - other.data, self.metadata)
+            return ImCube(self.data - other.data, self.metadata, filePath = self.filePath)
         elif isinstance(other, (numbers.Real, np.ndarray)):
-            return ImCube(self.data - other, self.metadata)
+            return ImCube(self.data - other, self.metadata, filePath = self.filePath)
         else:
             raise NotImplementedError(f"Subtraction is not supported between ImCube and {type(other)}")
     
@@ -273,9 +275,9 @@ class ImCube:
         if isinstance(other, ImCube):
             if not self._wavelengthsMatch(other):
                 raise ValueError("Imcube wavelengths are not compatible")
-            return ImCube(self.data * other.data, self.metadata)
+            return ImCube(self.data * other.data, self.metadata, filePath = self.filePath)
         elif isinstance(other,(numbers.Real, np.ndarray)):
-            return ImCube(self.data * other, self.metadata)
+            return ImCube(self.data * other, self.metadata, filePath = self.filePath)
         else:
             raise NotImplementedError(f"Multiplication is not supported between ImCube and {type(other)}")
     __rmul__ = __mul__ #multiplication is commutative. let it work both ways.
@@ -284,9 +286,9 @@ class ImCube:
         if isinstance(other, ImCube):
             if not self._wavelengthsMatch(other):
                 raise ValueError("Imcube wavelengths are not compatible")
-            return ImCube(self.data / other.data, self.metadata)
+            return ImCube(self.data / other.data, self.metadata, filePath = self.filePath)
         elif isinstance(other, (numbers.Real, np.ndarray)):
-            return ImCube(self.data / other, self.metadata)
+            return ImCube(self.data / other, self.metadata, filePath = self.filePath)
         else:
             raise NotImplementedError(f"Division is not supported between ImCube and {type(other)}")
 
@@ -300,7 +302,7 @@ class ImCube:
             iStop = None
         md = self.metadata
         md['wavelengths'] = wv[iStart:iStop]
-        return ImCube(self[:,:,iStart:iStop], md)
+        return ImCube(self[:,:,iStart:iStop], md, filePath = self.filePath)
     
     def filterDust(self, kernelRadius:int):
         def _gaussKernel(radius:int):
@@ -317,12 +319,38 @@ class ImCube:
         for i in range(self.data.shape[2]):
             m = self.data[:,:,i].mean() #By subtracting the mean and then adding it after convolution we are effectively padding the convolution with the mean.
             self.data[:,:,i] = sps.convolve(self.data[:,:,i]-m,kernel,mode='same')+m
+            
+    def saveMask(self,mask:np.ndarray,number:int, suffix:str):
+        assert not self.filePath is None
+        assert len(mask.shape)==2
+        assert mask.shape == self.data.shape[:2]
+        spio.savemat(os.path.join(self.filePath,f'BW{number}_{suffix}.mat'),{"BW":mask.astype(np.bool)})
+        
+    def loadMask(self,number:int, suffix:str):
+        assert not self.filePath is None
+        mask = spio.loadmat(os.path.join(self.filePath,f'BW{number}_{suffix}.mat'))['BW'].astype(np.bool)
+        assert len(mask.shape)==2
+        assert mask.shape == self.data.shape[:2]
+        return mask
+    def getMasks(self):
+        assert not self.filePath is None
+        files = glob(os.path.join(self.filePath,'BW*.mat'))
+        masks = {}
+        for f in files:
+            num, suffix = os.path.split(f)[-1][2:-4].split('_')
+            if suffix in masks:
+                masks[suffix].append(num)
+            else:
+                masks[suffix] = [num]
+        for k,v in masks.items():
+            v.sort()
+        return masks
         
     
 class KCube(ImCube):
     '''A class representing an ImCube after being transformed from being described in terms of wavelength in to wavenumber (k-space).'''
     def __init__(self, cube:ImCube):
-        super().__init__(cube.data, cube.metadata)
+        super().__init__(cube.data, cube.metadata, filePath = cube.filePath)
         #Convert to wavenumber and reverse the order so we are ascending in order.
         wavenumbers = list((2*np.pi)/(np.array(self.wavelengths)*(1e-3)))[::-1]
         self.data = self.data[:,:,::-1]

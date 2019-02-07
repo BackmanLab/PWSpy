@@ -17,6 +17,7 @@ import scipy as sp
 path = r'G:\Calibrations\CellPhantom\lcpws1\6th'
 refName = 'Cell999'     #This is an imcube of glass, used for normalization.
 cellNames = ['Cell3']#['Cell1', 'Cell2', 'Cell3', 'Cell4']
+maskSuffix = 'resin'
     
 # identify the depth in um to which the OPD spectra need to be integrated
 integrationDepth = 2.0 ##  in um
@@ -40,6 +41,7 @@ opdIntegralEnd = integrationDepth * 2 * sampleRI#We need to convert from our des
  ### load and save mirror or glass image cube
 ref = ImCube.loadAny(os.path.join(path,refName))
 ref.subtractDarkCounts(darkCount)
+ref.filterDust(6)
 ref.normalizeByExposure()
     
 if subtractResinOpd:
@@ -52,8 +54,12 @@ if subtractResinOpd:
         resin.normalizeByExposure()
         resin /= ref
         resin = KCube(resin)
-        print('Select a region containing only resin.')
-        mask = resin.selectLassoROI()
+        if maskSuffix in resin.getMasks():
+            mask = resin.loadMask(1,maskSuffix)
+        else:
+            print('Select a region containing only resin.')
+            mask = resin.selectLassoROI()
+            resin.saveMask(mask, 1, maskSuffix)
         resin.data -= resin.data.mean(axis=2)[:,:,np.newaxis]
         opdResin, xvals = resin.getOpd(isHannWindow, indexOpdStop=None, mask=mask)
         resinOpds[cellName] = opdResin
