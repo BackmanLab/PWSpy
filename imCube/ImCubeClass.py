@@ -137,10 +137,6 @@ class ImCube:
         im = ax.imshow(mean)
         plt.colorbar(im, ax = ax)
         return fig,ax
-        
-    def toHyperspy(self):
-        import hyperspy.api as hs
-        return hs.signals.Signal1D(self.data)
     
     def normalizeByExposure(self):
         if not self._hasBeenNormalized:
