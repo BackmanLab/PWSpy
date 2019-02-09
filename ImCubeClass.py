@@ -28,6 +28,7 @@ class ImCube:
         assert isinstance(metadata,dict)
         self.filePath = filePath
         self._hasBeenNormalized = False #Keeps track of whether or not we have normalized by exposure so that we don't do it twice.
+        self._cameraCorrected = False
         self.data = data.astype(dtype)
         self.metadata = metadata
         self.wavelengths = self.metadata['wavelengths']
@@ -146,9 +147,9 @@ class ImCube:
         cls._checkMetadata(md)
         return cls(im,md)
     
-    def toTiff(self, outpath):
+    def toTiff(self, outpath, dtype = np.uint16):
         im = self.data
-        im = im.astype(np.uint16)
+        im = im.astype(dtype)
         os.mkdir(outpath)
         with tf.TiffWriter(open(os.path.join(outpath, 'pws.tif'),'wb')) as w:
             w.save(np.rollaxis(im, -1, 0), metadata=self.metadata)
@@ -177,8 +178,11 @@ class ImCube:
             raise Exception("The ImCube has already been normalized by exposure.")
         self._hasBeenNormalized = True
     
-    def subtractDarkCounts(self,count, binning:int = None):
+    def correctCameraEffects(self, correction:CameraCorrection, binning:int = None):
         #Subtracts the darkcounts from the data. count is darkcounts per pixel. binning should be specified if it wasn't saved in the micromanager metadata.
+        if self._cameraCorrected:
+            print("This ImCube has already had it's camera correction applied!")
+            return
         if binning is None:
             try:
                 binning = self.metadata['MicroManagerMetadata']['Binning']
@@ -187,9 +191,17 @@ class ImCube:
             except:
                 print('Micromanager binning data not found. Assuming no binning.')
                 binning = 1
-        count = count * binning**2    #Account for the fact that binning multiplies the darkcount.
+        count = correction.darkCounts * binning**2    #Account for the fact that binning multiplies the darkcount.
         self.data = self.data - count
-
+        
+        if correction.linearityPolynomial is None:
+            pass
+        else:
+            self.data = np.polynomial.polynomial.polyval(self.data, [0]+correction.linearityPolynomial) #The [0] is the y-intercept (already handled by the darkcount)
+        
+        self._cameraCorrected = True
+        return
+        
     def getMeanSpectra(self,mask = None):
         if mask is None:
             mask = np.ones(self.data.shape[:-1], dtype=np.bool)
@@ -346,6 +358,9 @@ class ImCube:
             v.sort()
         return masks
         
+    def normalizeByReference(self, reference:ImCube):
+        self.data = self.data / reference.data
+        self.metadata['normalizationReference'] = reference.filePath
     
 class KCube(ImCube):
     '''A class representing an ImCube after being transformed from being described in terms of wavelength in to wavenumber (k-space).'''
@@ -552,3 +567,9 @@ class ICMetaData(dict):
         for i in required:
             if i not in metadata:
                 raise ValueError(f"Metadata does not have a '{i}' field.")
+                
+class CameraCorrection:
+    def __init__(self, darkCounts:float, linearityPolynomial:typing.List[float] = None):
+        '''linearityCorrection should be list of polynomial coefficients [a,b,c,etc...] in the order a*x + b*x^2 + c*x^3 + etc...'''
+        self.darkCounts = darkCounts
+        self.linearityPolynomial = linearityPolynomial
