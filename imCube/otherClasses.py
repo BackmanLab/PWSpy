@@ -14,7 +14,7 @@ import typing
 class ICMetaData(dict):
     def __init__(self, metadata):
         assert isinstance(metadata,dict)
-        self._checkMetadata(metadata)
+        ICMetaData._checkMetadata(metadata)
         super().__init__(metadata)
         
     @classmethod
