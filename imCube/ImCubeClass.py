@@ -10,31 +10,23 @@ import numpy as np
 import tifffile as tf
 import os
 import json
-import matplotlib.pyplot as plt
-from matplotlib import widgets
-from matplotlib import path
 from glob import glob
 import typing
 import numbers
-import scipy.signal as sps
-import scipy.io as spio
-from otherClasses import CameraCorrection, ICMetaData
+from scipy.io import savemat
+from .otherClasses import CameraCorrection, ICMetaData
+from .ICBaseClass import ICBase
 
-class ImCube:
+class ImCube(ICBase):
+    ''' A class representing a single acquisition of PWS. Contains methods for loading and saving to multiple formats as well as common operations used in analysis.'''
     Metadata = ICMetaData
     CameraCorrection = CameraCorrection
-    ''' A class representing a single acquisition of PWS. Contains methods for loading and saving to multiple formats as well as common operations used in analysis.'''
+    
     def __init__(self,data, metadata:ICMetaData, dtype = np.float32, filePath = None):
-        assert isinstance(data,np.ndarray)
-        assert isinstance(metadata,dict)
-        self.filePath = filePath
+        super().__init__(data, metadata, tuple(metadata['wavelengths']), dtype=dtype, filePath=filePath)
         self._hasBeenNormalized = False #Keeps track of whether or not we have normalized by exposure so that we don't do it twice.
         self._cameraCorrected = False
-        self.data = data.astype(dtype)
-        self.metadata = metadata
-        self.wavelengths = tuple(self.metadata['wavelengths'])
-        if self.data.shape[2] != len(self.wavelengths):
-            raise ValueError("The length of the wavelengths list doesn't match the wavelength axis of the data array")
+        self.wavelengths = self._index
         
     @classmethod
     def loadAny(cls, directory):
@@ -131,12 +123,6 @@ class ImCube:
         with tf.TiffWriter(open(os.path.join(outpath, 'pws.tif'),'wb')) as w:
             w.save(np.rollaxis(im, -1, 0), metadata=self.metadata)
     
-    def plotMean(self):
-        fig,ax = plt.subplots()
-        mean = np.mean(self.data,axis=2)
-        im = ax.imshow(mean)
-        plt.colorbar(im, ax = ax)
-        return fig,ax
     
     def normalizeByExposure(self):
         if not self._hasBeenNormalized:
@@ -168,71 +154,11 @@ class ImCube:
         
         self._cameraCorrected = True
         return
-        
-    def getMeanSpectra(self,mask = None):
-        if mask is None:
-            mask = np.ones(self.data.shape[:-1], dtype=np.bool)
-        mean = self.data[mask].mean(axis=0)
-        std = self.data[mask].std(axis=0)
-        return mean,std
     
-    def selectLassoROI(self):
-        mask = np.zeros((self.data.shape[0],self.data.shape[1]),dtype=np.bool)
-
-        fig,ax = self.plotMean()
-        fig.suptitle("Close to accept ROI")
-        x,y = np.meshgrid(np.arange(self.data.shape[0]),np.arange(self.data.shape[1]))
-        coords = np.vstack((y.flatten(),x.flatten())).T
-        
-        def onSelect(verts):
-            p = path.Path(verts)
-            ind = p.contains_points(coords,radius=0)
-            mask[coords[ind,1],coords[ind,0]] = True
-            
-        l = widgets.LassoSelector(ax,onSelect)
-
-        while plt.fignum_exists(fig.number):
-            fig.canvas.flush_events()
-        return mask
-    
-    def selectRectangleROI(self,xSlice = None,ySlice = None):
-        #X and Y slice allow manual selection of the range.
-        mask = np.zeros((self.data.shape[0],self.data.shape[1]),dtype=np.bool)
-        slices= {'y':ySlice, 'x':xSlice}
-        if (slices['x'] is not None) and (slices['y'] is not None):
-            if not hasattr(slices['x'],'__iter__'):
-                slices['x'] = (slices['x'],)
-            if not hasattr(slices['y'],'__iter__'):
-                slices['y'] = (slices['y'],) 
-            slices['x'] = slice(*slices['x'])
-            slices['y'] = slice(*slices['y'])
-            mask[slices['y'],slices['x']] = True       
-        else:
-            fig,ax = self.plotMean()
-            fig.suptitle("Close to accept ROI")
-
-            def rectSelect(mins,maxes):
-                y = [int(mins.ydata),int(maxes.ydata)]
-                x = [int(mins.xdata),int(maxes.xdata)]
-                slices['y'] = slice(min(y),max(y))
-                slices['x'] = slice(min(x),max(x))
-                mask[slices['y'],slices['x']] = True
-                
-            r = widgets.RectangleSelector(ax,rectSelect)
-
-            while plt.fignum_exists(fig.number):
-                fig.canvas.flush_events()
-        return mask, (slices['y'], slices['x']) 
-             
-    def __getitem__(self,slic):
-        return self.data[slic]
-    
-    def _wavelengthsMatch(self, other:'ImCube') -> bool:
-        return self.wavelengths == other.wavelengths
     
     def __add__(self, other:typing.Union['ImCube',numbers.Real,np.ndarray]) -> 'ImCube':
         if isinstance(other, ImCube):
-            if not self._wavelengthsMatch(other):
+            if not self._indicesMatch(other):
                 raise ValueError("Imcube wavelengths are not compatible")
             return ImCube(self.data + other.data, self.metadata, filePath = self.filePath)
         elif isinstance(other, (numbers.Real, np.ndarray)):
@@ -242,7 +168,7 @@ class ImCube:
 
     def __sub__(self, other:typing.Union['ImCube',numbers.Real,np.ndarray]) -> 'ImCube':
         if isinstance(other, ImCube):
-            if not self._wavelengthsMatch(other):
+            if not self._indicesMatch(other):
                 raise ValueError("Imcube wavelengths are not compatible")
             return ImCube(self.data - other.data, self.metadata, filePath = self.filePath)
         elif isinstance(other, (numbers.Real, np.ndarray)):
@@ -252,7 +178,7 @@ class ImCube:
     
     def __mul__(self, other:typing.Union['ImCube',numbers.Real, np.ndarray]) -> 'ImCube':
         if isinstance(other, ImCube):
-            if not self._wavelengthsMatch(other):
+            if not self._indicesMatch(other):
                 raise ValueError("Imcube wavelengths are not compatible")
             return ImCube(self.data * other.data, self.metadata, filePath = self.filePath)
         elif isinstance(other,(numbers.Real, np.ndarray)):
@@ -263,67 +189,13 @@ class ImCube:
     
     def __truediv__(self, other:typing.Union['ImCube',numbers.Real, np.ndarray]) -> 'ImCube':
         if isinstance(other, ImCube):
-            if not self._wavelengthsMatch(other):
+            if not self._indicesMatch(other):
                 raise ValueError("Imcube wavelengths are not compatible")
             return ImCube(self.data / other.data, self.metadata, filePath = self.filePath)
         elif isinstance(other, (numbers.Real, np.ndarray)):
             return ImCube(self.data / other, self.metadata, filePath = self.filePath)
         else:
             raise NotImplementedError(f"Division is not supported between ImCube and {type(other)}")
-
-
-    def wvIndex(self, start, stop):
-        wv = np.array(self.wavelengths)
-        iStart = np.argmin(np.abs(wv - start))
-        iStop = np.argmin(np.abs(wv - stop))
-        iStop += 1 #include the end point
-        if iStop >= len(wv): #Include everything
-            iStop = None
-        md = self.metadata
-        md['wavelengths'] = wv[iStart:iStop]
-        return ImCube(self[:,:,iStart:iStop], md, filePath = self.filePath)
-    
-    def filterDust(self, kernelRadius:int):
-        def _gaussKernel(radius:int):
-            #A kernel that goes to 1 std. It would be better to go out to 2 or 3 std but then you need a larger kernel which greatly increases convolution time.
-            lenSide = 1+2*radius
-            side = np.linspace(-1,1,num=lenSide)
-            X,Y = np.meshgrid(side, side)
-            R = np.sqrt(X**2 + Y**2)
-            k = np.exp(-(R**2)/2)
-            k = k/k.sum() #normalize so the total is 1.
-            return k
-        
-        kernel = _gaussKernel(kernelRadius)
-        for i in range(self.data.shape[2]):
-            m = self.data[:,:,i].mean() #By subtracting the mean and then adding it after convolution we are effectively padding the convolution with the mean.
-            self.data[:,:,i] = sps.convolve(self.data[:,:,i]-m,kernel,mode='same')+m
-            
-    def saveMask(self,mask:np.ndarray,number:int, suffix:str):
-        assert not self.filePath is None
-        assert len(mask.shape)==2
-        assert mask.shape == self.data.shape[:2]
-        spio.savemat(os.path.join(self.filePath,f'BW{number}_{suffix}.mat'),{"BW":mask.astype(np.bool)})
-        
-    def loadMask(self,number:int, suffix:str):
-        assert not self.filePath is None
-        mask = spio.loadmat(os.path.join(self.filePath,f'BW{number}_{suffix}.mat'))['BW'].astype(np.bool)
-        assert len(mask.shape)==2
-        assert mask.shape == self.data.shape[:2]
-        return mask
-    def getMasks(self):
-        assert not self.filePath is None
-        files = glob(os.path.join(self.filePath,'BW*.mat'))
-        masks = {}
-        for f in files:
-            num, suffix = os.path.split(f)[-1][2:-4].split('_')
-            if suffix in masks:
-                masks[suffix].append(num)
-            else:
-                masks[suffix] = [num]
-        for k,v in masks.items():
-            v.sort()
-        return masks
         
     def normalizeByReference(self, reference:'ImCube'):
         self.data = self.data / reference.data

@@ -4,25 +4,26 @@ Created on Sat Feb  9 15:54:29 2019
 
 @author: Nick
 """
-from ImCubeClass import ImCube
+from .ICBaseClass import ICBase
+from .ImCubeClass import ImCube
 import numpy as np
 import scipy.interpolate as spi
 
-class KCube(ImCube):
+class KCube(ICBase):
     '''A class representing an ImCube after being transformed from being described in terms of wavelength in to wavenumber (k-space).'''
     def __init__(self, cube:ImCube):
-        super().__init__(cube.data, cube.metadata, filePath = cube.filePath)
         #Convert to wavenumber and reverse the order so we are ascending in order.
-        wavenumbers = list((2*np.pi)/(np.array(self.wavelengths)*(1e-3)))[::-1]
-        self.data = self.data[:,:,::-1]
-        del self.wavelengths
+        wavenumbers = list((2*np.pi)/(np.array(cube.wavelengths)*(1e-3)))[::-1]
+        data = cube.data[:,:,::-1]
         #Generate evenly spaced wavenumbers
 #        dk = (self.wavenumbers[-1] - self.wavenumbers[0])/(len(self.wavenumbers)-1);
         evenWavenumbers = np.linspace(wavenumbers[0], wavenumbers[-1], num = len(wavenumbers))
         #Interpolate to the evenly spaced wavenumbers
-        interpFunc = spi.interp1d(wavenumbers, self.data, kind='linear', axis=2)
-        self.data = interpFunc(evenWavenumbers)
-        self.wavenumbers = evenWavenumbers
+        interpFunc = spi.interp1d(wavenumbers, data, kind='linear', axis=2)
+        data = interpFunc(evenWavenumbers)
+        super().__init__(data, cube.metadata, evenWavenumbers, dtype=np.float32, filePath=cube.filePath)
+        self.wavenumbers = self._index
+        
     def getOpd(self, isHannWindow, indexOpdStop = None, mask = None):
         fftSize = int(2**(np.ceil(np.log2((2*len(self.wavenumbers))-1)))) #%This is the next size of fft that is  at least 2x greater than is needed but is a power of two. Results in interpolation, helps amplitude accuracy and fft efficiency.
         fftSize *= 2 #We double the fftsize for even more iterpolation. Not sure why, but that's how it was done in matlab.
@@ -135,25 +136,4 @@ class KCube(ImCube):
         rSquared = ssReg/ssTot
         rSquared = rSquared.reshape(self.data.shape[0],self.data.shape[1])
         return cubeSlope, rSquared
-    
-    @classmethod
-    def loadAny(*args):
-        raise NotImplementedError
-    @classmethod
-    def fromOldPWS(*args):
-        raise NotImplementedError
-    @classmethod
-    def fromTiff(*args):
-        raise NotImplementedError     
-    def toOldPWS(*args):
-        raise NotImplementedError       
-    def compress(*args):
-        raise NotImplementedError
-    @classmethod
-    def decompress(*args):
-        raise NotImplementedError
-    def wvIndex(*args):
-        raise NotImplementedError
-    def _wavelengthsMatch(self, other:'KCube') -> bool:
-        return self.wavenumbers == other.wavenumbers
     
