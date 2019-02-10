@@ -26,7 +26,10 @@ class ImCube(ICBase):
         super().__init__(data, metadata, tuple(metadata['wavelengths']), dtype=dtype, filePath=filePath)
         self._hasBeenNormalized = False #Keeps track of whether or not we have normalized by exposure so that we don't do it twice.
         self._cameraCorrected = False
-        self.wavelengths = self._index
+    
+    @property
+    def wavelengths(self):
+        return self.index
         
     @classmethod
     def loadAny(cls, directory):

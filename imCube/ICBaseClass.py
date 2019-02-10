@@ -13,8 +13,9 @@ from matplotlib import widgets
 from matplotlib import path
 import os, glob
 
+
 class ICBase:
-    def __init__(self,data, metadata:ICMetaData, index, dtype = np.float32, filePath = None):
+    def __init__(self,data, metadata:ICMetaData, index:tuple, dtype = np.float32, filePath = None):
         assert isinstance(data,np.ndarray)
         assert isinstance(metadata,dict)
         self.filePath = filePath
@@ -23,6 +24,10 @@ class ICBase:
         self._index = index
         if self.data.shape[2] != len(self._index):
             raise ValueError("The length of the index list doesn't match the index axis of the data array")
+    
+    @property
+    def index(self):
+        return self._index
             
     def plotMean(self):
         fig,ax = plt.subplots()

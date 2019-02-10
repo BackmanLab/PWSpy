@@ -22,7 +22,10 @@ class KCube(ICBase):
         interpFunc = spi.interp1d(wavenumbers, data, kind='linear', axis=2)
         data = interpFunc(evenWavenumbers)
         super().__init__(data, cube.metadata, evenWavenumbers, dtype=np.float32, filePath=cube.filePath)
-        self.wavenumbers = self._index
+    
+    @property
+    def wavenumbers(self):
+        return self.index
         
     def getOpd(self, isHannWindow, indexOpdStop = None, mask = None):
         fftSize = int(2**(np.ceil(np.log2((2*len(self.wavenumbers))-1)))) #%This is the next size of fft that is  at least 2x greater than is needed but is a power of two. Results in interpolation, helps amplitude accuracy and fft efficiency.
