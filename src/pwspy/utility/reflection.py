@@ -1,5 +1,5 @@
-from pwspython import ImCube
-from pwspython.utility import reflectanceHelper
+from pwspy import ImCube
+from pwspy.utility import reflectanceHelper
 import itertools
 import matplotlib.pyplot as plt
 import numpy as np

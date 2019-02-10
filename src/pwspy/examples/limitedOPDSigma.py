@@ -5,7 +5,7 @@ Created on Tue Jan  8 10:07:20 2019
 @author: backman05
 """
 
-from pwspython import ImCube, KCube
+from pwspy import ImCube, KCube
 import matplotlib.pyplot as plt
 import scipy.signal as sps
 import os

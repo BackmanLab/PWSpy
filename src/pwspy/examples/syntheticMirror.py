@@ -5,11 +5,10 @@ Created on Fri Dec  7 15:44:57 2018
 @author: backman05
 """
 
-from pwspython import ImCube
+from pwspy import ImCube
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal as sps
-import time
 import copy
 
 '''

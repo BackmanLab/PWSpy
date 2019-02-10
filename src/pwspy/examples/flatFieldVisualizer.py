@@ -8,10 +8,10 @@ This is a temporary script file.
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from pwspython import ImCube, reflectanceHelper
+from pwspy import ImCube, reflectanceHelper
 from glob import glob
 import os
-from pwspython.utility import loadAndProcess
+from pwspy.utility import loadAndProcess
 
 plt.ion()
 

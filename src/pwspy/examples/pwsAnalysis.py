@@ -4,7 +4,7 @@ Created on Fri Dec  7 12:38:49 2018
 
 @author: backman05
 """
-from pwspython import ImCube, KCube   
+from pwspy import ImCube, KCube   
 import copy
 import scipy.signal as sps
 import numpy as np

@@ -5,7 +5,7 @@ Created on Sat Feb  9 17:27:55 2019
 @author: Nick
 """
 
-from pwspython import ImCube, KCube
+from pwspy import ImCube, KCube
 import numpy as np
 import unittest
 

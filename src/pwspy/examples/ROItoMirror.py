@@ -6,7 +6,7 @@ Created on Wed Jan  9 15:00:39 2019
 """
 
 
-from pwspython import ImCube
+from pwspy import ImCube
 import matplotlib.pyplot as plt
 import numpy as np
 

@@ -5,9 +5,9 @@ Created on Fri Feb  8 14:10:12 2019
 @author: backman05
 """
 import numpy as np
-from pwspython import ImCube, CameraCorrection
+from pwspy import ImCube, CameraCorrection
 import os.path as osp
-from pwspython.utility import reflectanceHelper, loadAndProcess
+from pwspy.utility import reflectanceHelper, loadAndProcess
 import typing
 
 
