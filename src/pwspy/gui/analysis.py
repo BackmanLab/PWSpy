@@ -8,7 +8,7 @@ import sys
 import os
 import numpy as np
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QApplication, QWidget
+from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QDockWidget
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QTableWidget,QTableWidgetItem, QVBoxLayout,
                              QTabWidget, QTextEdit, QLabel, QGroupBox,
@@ -18,7 +18,7 @@ from matplotlib.backends.backend_qt5agg import (
     FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
 from matplotlib.figure import Figure
  
-class App(QWidget):
+class App(QMainWindow):
  
     def __init__(self):
         super().__init__()
@@ -29,11 +29,16 @@ class App(QWidget):
         self.height = 480
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
-        
+#        self.setStyleSheet("QMainWindow{background-color: gray} QFrame { border: 5px solid black } ")
         self.tableWidget = QTableWidget()
         self.tableWidget.setRowCount(4)
         self.tableWidget.setColumnCount(1)
         self.tableWidget.setItem(0,0, QTableWidgetItem("Cell (1,1)"))
+        
+        self.resultsTable = QTableWidget()
+        self.resultsTable.setRowCount(5)
+        self.resultsTable.setColumnCount(5)
+        self.resultsTable.setItem(1,1,QTableWidgetItem("rms"))
         
         self.analysisSettings = QGroupBox();
         self.analysisSettings.setLayout(QVBoxLayout())
@@ -50,15 +55,23 @@ class App(QWidget):
         self.plottingTab.layout().addWidget(NavigationToolbar(canvas, self.plottingTab))
         
         
-        # Add box layout, add table to box layout and add box layout to widget
-        self.layout = QVBoxLayout()
-        tab = QTabWidget()
-        tab.addTab(self.tableWidget, 'cells')
-        tab.addTab(self.analysisSettings,'sett')
-        tab.addTab(self.plottingTab, 'plot')
-        self.layout.addWidget(tab)
-        self.setLayout(self.layout) 
-        
+#        c = QGroupBox()
+#        c.setMaximumWidth(5)
+#        self.setCentralWidget(c)
+        d=QDockWidget('Cell Selection')
+        d.setWidget(self.tableWidget)
+        d2 = QDockWidget("Plotting")
+        d2.setWidget(self.plottingTab)
+        d3=QDockWidget('Settings')
+        d3.setWidget(self.analysisSettings)
+        d4 = QDockWidget("Results")
+        d4.setWidget(self.resultsTable)
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, d)
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, d2)
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, d3)
+        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea,d4)
+#        self.setDockNestingEnabled(True)
+        self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks | QMainWindow.AllowTabbedDocks)
         self.show()
  
     
