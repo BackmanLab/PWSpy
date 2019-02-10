@@ -9,13 +9,13 @@ pipelines:
   default:
     - step:
         caches:
-          - pip
+          - pip3
         script: # Modify the commands below to build your repository.
-          - pip install .
+          - pip3 install .
           
     - step:
         name: Test
         deployment: test
         trigger: manual
         script:
-          - python tests/test1.py
+          - python3 tests/test1.py
