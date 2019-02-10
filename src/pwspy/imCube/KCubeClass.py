@@ -8,20 +8,21 @@ from .ICBaseClass import ICBase
 from .ImCubeClass import ImCube
 import numpy as np
 import scipy.interpolate as spi
+import copy
 
 class KCube(ICBase):
     '''A class representing an ImCube after being transformed from being described in terms of wavelength in to wavenumber (k-space).'''
     def __init__(self, cube:ImCube):
         #Convert to wavenumber and reverse the order so we are ascending in order.
-        wavenumbers = list((2*np.pi)/(np.array(cube.wavelengths)*(1e-3)))[::-1]
+        wavenumbers = (2*np.pi)/(np.array(cube.wavelengths,dtype=np.float64)*(1e-3))[::-1]
         data = cube.data[:,:,::-1]
         #Generate evenly spaced wavenumbers
 #        dk = (self.wavenumbers[-1] - self.wavenumbers[0])/(len(self.wavenumbers)-1);
-        evenWavenumbers = np.linspace(wavenumbers[0], wavenumbers[-1], num = len(wavenumbers))
+        evenWavenumbers = np.linspace(wavenumbers[0], wavenumbers[-1], num = len(wavenumbers), dtype=np.float64)
         #Interpolate to the evenly spaced wavenumbers
         interpFunc = spi.interp1d(wavenumbers, data, kind='linear', axis=2)
         data = interpFunc(evenWavenumbers)
-        super().__init__(data, cube.metadata, evenWavenumbers, dtype=np.float32, filePath=cube.filePath)
+        super().__init__(data, cube.metadata, evenWavenumbers.astype(np.float32), dtype=np.float32, filePath=cube.filePath)
     
     @property
     def wavenumbers(self):
@@ -140,3 +141,15 @@ class KCube(ICBase):
         rSquared = rSquared.reshape(self.data.shape[0],self.data.shape[1])
         return cubeSlope, rSquared
     
+    def toImCube(self) -> ImCube:
+        #Convert to wavenumber and reverse the order so we are ascending in order.
+        wavelengths = (2*np.pi)/(np.array(self.wavenumbers,dtype=np.float64)*1e-3)[::-1]
+        data = self.data[:,:,::-1]
+        #Generate evenly spaced wavelengths
+        evenWavelengths = np.linspace(wavelengths[0], wavelengths[-1], num = len(wavelengths), dtype=np.float64)
+        #Interpolate to the evenly spaced wavenumbers
+        interpFunc = spi.interp1d(wavelengths, data, kind='linear', axis=2)
+        data = interpFunc(evenWavelengths)
+        md = copy.deepcopy(self.metadata)
+        md['wavelengths'] = evenWavelengths.astype(np.float32)
+        return ImCube(data, md, dtype=np.float32, filePath=self.filePath)
