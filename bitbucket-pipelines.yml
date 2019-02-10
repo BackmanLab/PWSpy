@@ -19,4 +19,3 @@ pipelines:
         trigger: manual
         script:
           - python tests/test1.py
-					
