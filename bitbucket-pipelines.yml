@@ -11,14 +11,11 @@ pipelines:
         caches:
           - pip
         script: # Modify the commands below to build your repository.
-          - pip install numpy scipy matplotlib tifffile
+          - pip install .
           
     - step:
         name: Test
         deployment: test
         trigger: manual
         script:
-          - echo "`cd`"
-          - echo "`ls`"
-          - cd tests
-          - python test1.py
+          - python tests/test1.py
