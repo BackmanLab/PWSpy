@@ -12,3 +12,10 @@ pipelines:
           - pip
         script: # Modify the commands below to build your repository.
           - pip install -r requirements.txt
+          
+    - step:
+        name: Test
+        deployment: test
+        trigger: manual
+        script:
+          - python tests/test1.py
