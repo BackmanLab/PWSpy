@@ -70,6 +70,9 @@ class ICMetaData(dict):
             if i not in metadata:
                 raise ValueError(f"Metadata does not have a '{i}' field.")
                 
+    def toJson(self, directory):
+        json.dump(self,os.path.join(directory, 'pwsmetadata.json'))
+                
 class CameraCorrection(typing.NamedTuple):
     '''linearityCorrection should be list of polynomial coefficients [a,b,c,etc...] in the order a*x + b*x^2 + c*x^3 + etc...'''
     darkCounts: float
