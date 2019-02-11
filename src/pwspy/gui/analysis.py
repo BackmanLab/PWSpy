@@ -7,12 +7,11 @@ Created on Sun Feb 10 13:26:58 2019
 import sys
 import os
 import numpy as np
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QDockWidget
-from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QTableWidget,QTableWidgetItem, QVBoxLayout,
                              QTabWidget, QTextEdit, QLabel, QGroupBox,
-                             QGridLayout)
+                             QGridLayout, QApplication, QStyleFactory)
 
 from dockWidgets import CellSelector, AnalysisSettings, ResultsTable, PlottingWidget
 
@@ -47,6 +46,7 @@ if __name__ == '__main__':
     if isIpython():
         app = App()
     else:
+        print("Not Ipython")
         app = QApplication(sys.argv)
         ex = App()
         sys.exit(app.exec_())
