@@ -20,19 +20,19 @@ def _processIm(q, Iextra, ref, correction:CameraCorrection):
     return im
 
 
-def subtractionNormalization(rExtra:np.ndarray, ref:ImCube, material:str, correction:CameraCorrection, cubeFiles:typing.List[str]):
+def subtractionNormalization(rExtra:np.ndarray, rExtraDir:str, ref:ImCube, material:str, correction:CameraCorrection, cubeFiles:typing.List[str]):
     ref.correctCameraEffects(correction)
     ref.filterDust(4)
     
     theoryR = reflectanceHelper.getReflectance(material,'glass', index=ref.wavelengths)[np.newaxis,np.newaxis,:]
-    I0 = ref.data / (theoryR + rextra)
-    Iextra = rextra * I0
+    I0 = ref.data / (theoryR + rExtra)
+    Iextra = rExtra * I0
     ref = (ref - Iextra) / (theoryR)
     
     cubes = loadAndProcess(cubeFiles, _processIm, parallel = True, procArgs=[Iextra, ref, correction])
          
     for c in cubes:
-        c.metadata['subtractionCube'] = rextraDir
+        c.metadata['subtractionCube'] = rExtraDir
 
     return cubes
         
@@ -53,4 +53,4 @@ if __name__ == '__main__':
     for patt in searchPattern:
         files.extend(glob(osp.join(rootDir,patt)))
 
-    cubes = subtractionNormalization(rextra, ref, material, correction, files)
+    cubes = subtractionNormalization(rextra, rextraDir, ref, material, correction, files)
