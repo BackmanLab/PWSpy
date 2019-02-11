@@ -19,8 +19,6 @@ from .ICBaseClass import ICBase
 
 class ImCube(ICBase):
     ''' A class representing a single acquisition of PWS. Contains methods for loading and saving to multiple formats as well as common operations used in analysis.'''
-    Metadata = ICMetaData
-    CameraCorrection = CameraCorrection
     
     def __init__(self,data, metadata:ICMetaData, dtype = np.float32, filePath = None):
         super().__init__(data, metadata, tuple(np.array(metadata['wavelengths']).astype(np.float32)), dtype=dtype, filePath=filePath)
@@ -46,7 +44,7 @@ class ImCube(ICBase):
                     raise Exception(f"Could not find a valid PWS image cube file at {directory}.")
     @classmethod
     def fromOldPWS(cls,directory):
-        md = ICMetadata.fromOldPWS(directory)
+        md = ICMetaData.fromOldPWS(directory)
         with open(os.path.join(directory,'image_cube'),'rb') as f:
             data = np.frombuffer(f.read(),dtype=np.uint16)
         data = data.reshape((md['imgHeight'],md['imgWidth'],len(md['wavelengths'])),order='F')
@@ -54,7 +52,7 @@ class ImCube(ICBase):
 
     @classmethod
     def fromTiff(cls,directory):
-        metadata = ICMetadata.fromTiff(directory)
+        metadata = ICMetaData.fromTiff(directory)
         if os.path.exists(os.path.join(directory,'MMStack.ome.tif')):
             path = os.path.join(directory,'MMStack.ome.tif')
         elif os.path.exists(os.path.join(directory,'pws.tif')):
@@ -112,7 +110,7 @@ class ImCube(ICBase):
         with open(inpath,'rb') as f:
             t = tf.TiffFile(f)
             im = np.rollaxis(t.asarray(),0,3)
-            md = ICMetadata(json.loads(t.pages[0].tags['ImageDescription'].value))
+            md = ICMetaData(json.loads(t.pages[0].tags['ImageDescription'].value))
         mins = md["compressionMins"]
         del md["compressionMins"]
         for i in range(1,im.shape[-1]):
