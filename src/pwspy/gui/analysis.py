@@ -18,7 +18,6 @@ from dockWidgets import CellSelector, AnalysisSettings, ResultsTable, PlottingWi
 
  
 class App(QMainWindow):
- 
     def __init__(self):
         super().__init__()
         self.setWindowTitle('PWS Analysis 2')
@@ -31,11 +30,24 @@ class App(QMainWindow):
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.analysisSettings)
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.resultsTable)
         self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks | QMainWindow.AllowTabbedDocks)
+        menuBar = self.menuBar()
+        view = menuBar.addMenu("View")
+        view.addAction("Look at stuff")
         self.showMaximized()
+        settings = QtCore.QSettings("BackmanLab", "PWSAnalysis2");
+        try:
+            self.restoreGeometry(settings.value("geometry"));
+            self.restoreState(settings.value("windowState"));
+        except AttributeError as e: #Setting must not exist
+            print(e)
+        self.show()
         
+    def closeEvent(self, event):
+        settings = QtCore.QSettings("BackmanLab", "PWSAnalysis2")
+        settings.setValue("geometry", self.saveGeometry())
+        settings.setValue("windowState", self.saveState())
+        super().closeEvent(event)
         
- 
-    
 def isIpython():
     try:
         return __IPYTHON__

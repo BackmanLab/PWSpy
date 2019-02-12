@@ -8,13 +8,10 @@ from PyQt5.QtWidgets import (QDockWidget, QTableWidget, QTableWidgetItem,
                              QGroupBox, QGridLayout, QLabel, QLineEdit,
                              QRadioButton, QFrame, QHBoxLayout, QVBoxLayout,
                              QScrollArea, QWidget, QDialog, QSpinBox,
-                             QFileDialog, QPushButton, QApplication)
+                             QFileDialog, QPushButton, QApplication,
+                             QCheckBox)
 from PyQt5 import (QtCore, QtGui)
-from matplotlib.backends.backend_qt5agg import (
-    FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
-from matplotlib.figure import Figure
-import numpy as np
-import matplotlib as mpl
+from customWidgets import CopyableTable, LittlePlot
 
 
 class CellSelector(QDockWidget):
@@ -34,7 +31,8 @@ class AnalysisSettings(QDockWidget):
         self.widget.setLayout(self.layout)
         self.presets()
         self.hardWareCorrections()
-
+        self.signalPrep()
+        self.polySub()
         self.setWidget(self.widget)
         
     def presets(self):
@@ -51,20 +49,53 @@ class AnalysisSettings(QDockWidget):
         _(QLabel('DarkCounts'),0,0); _(QSpinBox(),0,1);
         _(QLabel("Linearity Correction"),0,2); _(QLineEdit(),0,3)
         frame = QFrame(); frame.setLayout(QHBoxLayout())
-        frame.layout().addWidget(QPushButton())
+        frame.layout().addWidget(QLabel("R Subtraction"))
         frame.layout().addWidget(QLineEdit())
+        frame.layout().addWidget(QPushButton())
         _(frame,1,0,1,4)
         self.layout.addWidget(self.hardWareCorrections,1,0,2,2)
+        
+    def signalPrep(self):
+        self.signalPrep = QGroupBox("Signal Prep")
+        self.signalPrep.setLayout(QGridLayout())
+        _ = self.signalPrep.layout().addWidget
+        _(QLabel("Filter Order"),0,0,1,1)
+        _(QSpinBox(),0,1,1,1)
+        _(QLabel("Cutoff Freq."),1,0,1,1)
+        _(QSpinBox(),1,1,1,1)
+        _(QLabel("{Freq units here}"),1,2,1,1)
+        self.layout.addWidget(self.signalPrep)
+    
+    def polySub(self):
+        self.polySub = QGroupBox("Polynomial Subtraction")
+        self.polySub.setLayout(QGridLayout())
+        _ = self.polySub.layout().addWidget
+        _(QLabel("Order"),0,0,1,1)
+        _(QSpinBox(),0,1,1,1)
+        self.layout.addWidget(self.polySub)
         
 class ResultsTable(QDockWidget):
     def __init__(self):
         super().__init__("Results")
+        columns = ("RMS", 'ld', 'Cell', 'etc')
+        self.widget = QWidget()
+        self.widget.setLayout(QHBoxLayout())
         self.table = CopyableTable()
         self.table.setRowCount(5)
-        self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(['RMS','LD'])
+        self.table.setColumnCount(len(columns))
+        self.table.setHorizontalHeaderLabels(columns)
         self.table.setItem(1,1,QTableWidgetItem("rms"))
-        self.setWidget(self.table)
+        self.checkBoxes = QFrame()
+        self.checkBoxes.setLayout(QVBoxLayout())
+        for i,n in enumerate(columns):
+            c = QCheckBox(n)
+            c.setCheckState(2)
+            f = lambda state,i=i : self.table.setColumnHidden(i,state==0)
+            c.stateChanged.connect(f)
+            self.checkBoxes.layout().addWidget(c)
+        self.widget.layout().addWidget(self.checkBoxes)
+        self.widget.layout().addWidget(self.table)
+        self.setWidget(self.widget)
     def copy(self):
         for i in range(self.table.rowCount):
             for j in range(self.table.columnCount):
@@ -86,56 +117,3 @@ class PlottingWidget(QDockWidget):
 
         self.setWidget(self.widget)
         
-class LittlePlot(FigureCanvas):
-    def __init__(self):
-#        self.setLayout(QGraphicsLinearLayout())
-        self.fig = Figure()
-        self.data = np.ones((100,100))*np.sin(np.linspace(1,6,num=100))[None,:]
-        ax = self.fig.add_subplot(1,1,1)
-        ax.imshow(self.data)
-        ax.yaxis.set_visible(False)
-        ax.xaxis.set_visible(False)
-#        canvas = FigureCanvas(self.fig)
-        super().__init__(self.fig)
-#        self.layout().addWidget(canvas)
-#        self.setFixedSize(200,200)
-        self.mpl_connect("button_release_event", self.mouseReleaseEvent)
-    def mouseReleaseEvent(self, event):
-        BigPlot(self.data)
-
-class BigPlot(QWidget):
-    def __init__(self, data):
-        super().__init__()
-        self.setLayout(QGridLayout())
-        self.fig = Figure()
-        ax = self.fig.add_subplot(1,1,1)
-        ax.imshow(data)
-        canvas = FigureCanvas(self.fig)
-        self.layout().addWidget(canvas)
-        self.layout().addWidget(NavigationToolbar(canvas, self))
-        self.show()
- 
-class CopyableTable(QTableWidget):
-    def __init__(self):
-        super().__init__()
-        
-    def keyPressEvent(self, event):
-        if event.matches(QtGui.QKeySequence.Copy):
-            self.copy()
-        else:
-            super().keyPressEvent(event)
-    def copy(self):
-        try:
-            sel = self.selectedRanges()[0]
-            t = '\t'.join([self.horizontalHeaderItem(i).text() for i in range(self.columnCount())]) + '\n'
-            for i in range(sel.topRow(), sel.bottomRow()+1):
-                t +=  self.verticalHeaderItem(i).text()+ '\t'
-                for j in range(sel.leftColumn(), sel.rightColumn()+1):
-                    t += '\t'
-                    item = self.item(i,j)
-                    if not item is None:
-                        t += item.text()                    
-                t += '\n'
-            QApplication.clipboard().setText(t)
-        except Exception as e:
-            print("Copy Failed: ",e)
