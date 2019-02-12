@@ -5,7 +5,7 @@ Created on Sat Feb  9 17:27:55 2019
 @author: Nick
 """
 
-from pwspy import ImCube, KCube
+from pwspy import ImCube, KCube, ICMetaData
 import numpy as np
 import unittest
 
@@ -14,7 +14,7 @@ class myTest(unittest.TestCase):
         self.data = np.ones((400,400,100)) * np.sin(np.linspace(0,6,num=100))[np.newaxis,np.newaxis,:]
         #data = np.random.rand(400,400,100)
         wavelengths = np.linspace(500,700, num = self.data.shape[2])
-        self.md = ImCube.Metadata({'wavelengths':wavelengths,
+        self.md = ICMetadata({'wavelengths':wavelengths,
                  'exposure':59,
                  'time': "1/2/2019 12:53:57"
                  })
