@@ -18,6 +18,7 @@ class ICMetaData:
         ICMetaData._checkMetadata(metadata)
         self.metadata = metadata     
         self.filePath = filePath
+        self.id = 
         
     @classmethod
     def loadAny(cls, directory):
