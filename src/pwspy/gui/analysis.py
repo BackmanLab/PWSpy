@@ -33,7 +33,8 @@ class App(QMainWindow):
         menuBar = self.menuBar()
         view = menuBar.addMenu("View")
         view.addAction("Look at stuff")
-        self.showMaximized()
+#        self.showMaximized()
+
         settings = QtCore.QSettings("BackmanLab", "PWSAnalysis2");
         try:
             self.restoreGeometry(settings.value("geometry"));

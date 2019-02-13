@@ -17,6 +17,7 @@ from customWidgets import CopyableTable, LittlePlot
 class CellSelector(QDockWidget):
     def __init__(self):
         super().__init__("Cell Selector")
+        self.setObjectName('CellSelector') #needed for restore state to work
         self.tableWidget = QTableWidget()
         self.tableWidget.setRowCount(4)
         self.tableWidget.setColumnCount(1)
@@ -26,6 +27,7 @@ class CellSelector(QDockWidget):
 class AnalysisSettings(QDockWidget):
     def __init__(self):
         super().__init__("Settings")
+        self.setObjectName('AnalysisSettings') #needed for restore state to work
         self.widget = QFrame()
         self.layout = QGridLayout()
         self.widget.setLayout(self.layout)
@@ -77,6 +79,7 @@ class AnalysisSettings(QDockWidget):
 class ResultsTable(QDockWidget):
     def __init__(self):
         super().__init__("Results")
+        self.setObjectName('CellSelector')
         columns = ("RMS", 'ld', 'Cell', 'etc')
         self.widget = QWidget()
         self.widget.setLayout(QHBoxLayout())
@@ -106,6 +109,7 @@ class ResultsTable(QDockWidget):
 class PlottingWidget(QDockWidget):
     def __init__(self):
         super().__init__("Plotting")
+        self.setObjectName('PlottingWidget')
         self.widget = QScrollArea()
         self.widget.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         self.widget.setWidgetResizable(True)
