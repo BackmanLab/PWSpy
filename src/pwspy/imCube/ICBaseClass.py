@@ -11,7 +11,8 @@ import scipy.io as spio
 import matplotlib.pyplot as plt
 from matplotlib import widgets
 from matplotlib import path
-import os, glob
+import os
+from glob import glob
 
 
 class ICBase:
@@ -136,6 +137,10 @@ class ICBase:
         for k,v in masks.items():
             v.sort()
         return masks
+    
+    def deleteMask(self, number:int, suffix:str):
+        assert not self.filePath is None
+        os.remove(os.path.join(self.filePath, f'BW{number}_{suffix}.mat'))
     
     def _indicesMatch(self, other:'ICBase') -> bool:
         return self._index == other._index

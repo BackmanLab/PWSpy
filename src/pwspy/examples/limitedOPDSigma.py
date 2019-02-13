@@ -5,7 +5,7 @@ Created on Tue Jan  8 10:07:20 2019
 @author: backman05
 """
 
-from pwspy import ImCube, KCube
+from pwspy import ImCube, KCube, CameraCorrection
 import matplotlib.pyplot as plt
 import scipy.signal as sps
 import os
@@ -14,25 +14,25 @@ import scipy as sp
 
 
 '''User Input'''
-path = r'G:\Calibrations\CellPhantom\lcpws1\6th'
+path = r'G:\Data\LCPWS1TimeSeriesCorrelation\2_7_2019 11.07'
 refName = 'Cell999'     #This is an imcube of glass, used for normalization.
-cellNames = ['Cell3']#['Cell1', 'Cell2', 'Cell3', 'Cell4']
+cellNames = ['Cell1', 'Cell2']#, 'Cell3', 'Cell4','Cell5']
 maskSuffix = 'resin'
     
 # identify the depth in um to which the OPD spectra need to be integrated
 integrationDepth = 2.0 ##  in um
 isHannWindow = True #Should Hann windowing be applied to eliminate edge artifacts?
 subtractResinOpd = True
+resetResinMasks = False
 wvStart = 510     #start wavelength for poly subtraction
 wvEnd = 690     # end wavelength for poly subtraction
 sampleRI = 1.545    #The refractive index of the resin. This is taken from matlab code, I don't know if it's correct.
 orderPolyFit = 0
 wv_step = 2
 RIsample = 1.545
-darkCount = 1957
+correction = CameraCorrection(2000, [0.977241216, 1.73E-06, 1.70E-11])
 
 '''************'''
-
 
 b,a = sps.butter(6, 0.1*wv_step) 
 opdIntegralEnd = integrationDepth * 2 * sampleRI#We need to convert from our desired depth into an opd value. There are some questions about having a 2 here but that's how it is in the matlab code so I'm keeping it. 
@@ -40,7 +40,7 @@ opdIntegralEnd = integrationDepth * 2 * sampleRI#We need to convert from our des
 
  ### load and save mirror or glass image cube
 ref = ImCube.loadAny(os.path.join(path,refName))
-ref.subtractDarkCounts(darkCount)
+ref.correctCameraEffects(correction)
 ref.filterDust(6)
 ref.normalizeByExposure()
     
@@ -50,10 +50,12 @@ if subtractResinOpd:
     resinOpds = {}
     for cellName in cellNames:
         resin = ImCube.loadAny(os.path.join(path,cellName))
-        resin.subtractDarkCounts(darkCount)
+        resin.correctCameraEffects(correction)
         resin.normalizeByExposure()
         resin /= ref
         resin = KCube(resin)
+        if resetResinMasks:
+            [resin.deleteMask(i,maskSuffix) for i in resin.getMasks()[maskSuffix]]
         if maskSuffix in resin.getMasks():
             mask = resin.loadMask(1,maskSuffix)
         else:
@@ -73,7 +75,7 @@ if subtractResinOpd:
 rmses = {} #Store the rms maps for later saving
 for cellName in cellNames:               
     cube = ImCube.loadAny(os.path.join(path,cellName))
-    cube.subtractDarkCounts(darkCount)
+    cube.correctCameraEffects(correction)
     cube.normalizeByExposure()
     cube /= ref
     cube.data = sps.filtfilt(b,a,cube.data,axis=2)
