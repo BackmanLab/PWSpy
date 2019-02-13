@@ -13,6 +13,11 @@ class AnalysisSettings(NamedTuple):
     polynomialOrder:int
     rInternalSubtractionPath:str
     referenceMaterial:str
+    wavelengthStart:int
+    wavelengthStop:int
+    useHannWindow:bool
+    autoCorrStopIndex:int
+        
         
     @classmethod
     def fromJson(cls, filePath):
