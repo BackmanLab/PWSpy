@@ -12,42 +12,41 @@ from PyQt5.QtWidgets import (QDockWidget, QTableWidget, QTableWidgetItem,
                              QCheckBox)
 from PyQt5 import (QtCore, QtGui)
 from customWidgets import CopyableTable, LittlePlot
+from pwspy.analysis import AnalysisSettings
 
 
-class CellSelector(QDockWidget):
+class CellSelectorDock(QDockWidget):
     def __init__(self):
         super().__init__("Cell Selector")
-        self.setObjectName('CellSelector') #needed for restore state to work
+        self.setObjectName('CellSelectorDock') #needed for restore state to work
         self.tableWidget = QTableWidget()
         self.tableWidget.setRowCount(4)
         self.tableWidget.setColumnCount(1)
         self.tableWidget.setItem(0,0, QTableWidgetItem("Cell (1,1)"))
         self.setWidget(self.tableWidget)
     
-class AnalysisSettings(QDockWidget):
+class AnalysisSettingsDock(QDockWidget):
     def __init__(self):
         super().__init__("Settings")
-        self.setObjectName('AnalysisSettings') #needed for restore state to work
+        self.setObjectName('AnalysisSettingsDock') #needed for restore state to work
         self.widget = QFrame()
         self.layout = QGridLayout()
         self.widget.setLayout(self.layout)
-        self.presets()
-        self.hardWareCorrections()
-        self.signalPrep()
-        self.polySub()
+        self.setupFrame()
         self.setWidget(self.widget)
         
-    def presets(self):
-        self.presets = QGroupBox("Presets")
-        self.presets.setLayout(QHBoxLayout())
-        self.presets.layout().addWidget(QRadioButton("Legacy"))
-        self.presets.layout().addWidget(QRadioButton("Reccommended"))
-        self.layout.addWidget(self.presets,0,0,1,2)
+    def setupFrame(self):
+        '''Presets'''
+        presets = QGroupBox("Presets")
+        presets.setLayout(QHBoxLayout())
+        presets.layout().addWidget(QRadioButton("Legacy"))
+        presets.layout().addWidget(QRadioButton("Reccommended"))
+        self.layout.addWidget(presets,0,0,1,2)
 
-    def hardWareCorrections(self):
-        self.hardWareCorrections = QGroupBox("Hardware Corrections")
-        self.hardWareCorrections.setLayout(QGridLayout())
-        _ = self.hardWareCorrections.layout().addWidget
+        '''Hardwarecorrections'''
+        hardWareCorrections = QGroupBox("Hardware Corrections")
+        hardWareCorrections.setLayout(QGridLayout())
+        _ = hardWareCorrections.layout().addWidget
         _(QLabel('DarkCounts'),0,0); _(QSpinBox(),0,1);
         _(QLabel("Linearity Correction"),0,2); _(QLineEdit(),0,3)
         frame = QFrame(); frame.setLayout(QHBoxLayout())
@@ -55,38 +54,48 @@ class AnalysisSettings(QDockWidget):
         frame.layout().addWidget(QLineEdit())
         frame.layout().addWidget(QPushButton())
         _(frame,1,0,1,4)
-        self.layout.addWidget(self.hardWareCorrections,1,0,2,2)
+        self.layout.addWidget(hardWareCorrections,1,0,2,2)
         
-    def signalPrep(self):
-        self.signalPrep = QGroupBox("Signal Prep")
-        self.signalPrep.setLayout(QGridLayout())
-        _ = self.signalPrep.layout().addWidget
+        '''SignalPreparations'''
+        signalPrep = QGroupBox("Signal Prep")
+        signalPrep.setLayout(QGridLayout())
+        _ = signalPrep.layout().addWidget
+        self.filterOrder = QSpinBox()
+        self.filterCutoff = QSpinBox()
         _(QLabel("Filter Order"),0,0,1,1)
-        _(QSpinBox(),0,1,1,1)
+        _(self.filterOrder,0,1,1,1)
         _(QLabel("Cutoff Freq."),1,0,1,1)
-        _(QSpinBox(),1,1,1,1)
+        _(self.filterCutoff, 1,1,1,1)
         _(QLabel("{Freq units here}"),1,2,1,1)
-        self.layout.addWidget(self.signalPrep)
+        self.layout.addWidget(signalPrep)
     
-    def polySub(self):
-        self.polySub = QGroupBox("Polynomial Subtraction")
-        self.polySub.setLayout(QGridLayout())
-        _ = self.polySub.layout().addWidget
+        '''Polynomial subtraction'''
+        polySub = QGroupBox("Polynomial Subtraction")
+        polySub.setLayout(QGridLayout())
+        _ = polySub.layout().addWidget
+        self.polynomialOrder = QSpinBox()
         _(QLabel("Order"),0,0,1,1)
-        _(QSpinBox(),0,1,1,1)
-        self.layout.addWidget(self.polySub)
+        _(self.polynomialOrder,0,1,1,1)
+        self.layout.addWidget(polySub)
         
-class ResultsTable(QDockWidget):
+    def loadFromSettings(self, settings:AnalysisSettings):
+        self.filterOrder.setValue(settings.filterOrder)
+        self.filterCutoff.setValue(settings.filterCutoff)
+        self.polynomialOrder.setValue(settings.polynomialOrder)
+        self.referenceMaterial.setValue(settings.referenceMaterial)
+        
+class ResultsTableDock(QDockWidget):
     def __init__(self):
         super().__init__("Results")
-        self.setObjectName('CellSelector')
-        columns = ("RMS", 'ld', 'Cell', 'etc')
+        self.setObjectName('ResultsTableDock')
+        columns = ('Cell#', "RMS", 'Reflectance', 'ld', 'etc.')
         self.widget = QWidget()
         self.widget.setLayout(QHBoxLayout())
         self.table = CopyableTable()
         self.table.setRowCount(5)
         self.table.setColumnCount(len(columns))
         self.table.setHorizontalHeaderLabels(columns)
+        self.table.verticalHeader().hide()
         self.table.setItem(1,1,QTableWidgetItem("rms"))
         self.checkBoxes = QFrame()
         self.checkBoxes.setLayout(QVBoxLayout())

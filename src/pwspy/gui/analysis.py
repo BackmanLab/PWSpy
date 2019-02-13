@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import (QTableWidget,QTableWidgetItem, QVBoxLayout,
                              QTabWidget, QTextEdit, QLabel, QGroupBox,
                              QGridLayout, QApplication, QStyleFactory)
 
-from dockWidgets import CellSelector, AnalysisSettings, ResultsTable, PlottingWidget
+from dockWidgets import CellSelectorDock, AnalysisSettingsDock, ResultsTableDock, PlottingWidget
 
 
  
@@ -21,9 +21,9 @@ class App(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('PWS Analysis 2')
-        self.cellSelector = CellSelector()
-        self.analysisSettings = AnalysisSettings()
-        self.resultsTable = ResultsTable()
+        self.cellSelector = CellSelectorDock()
+        self.analysisSettings = AnalysisSettingsDock()
+        self.resultsTable = ResultsTableDock()
         self.plots = PlottingWidget()
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.cellSelector)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.plots)
