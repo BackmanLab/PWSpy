@@ -16,7 +16,9 @@ class ICMetaData:
     def __init__(self, metadata:dict, filePath = None):
         assert isinstance(metadata,dict)
         ICMetaData._checkMetadata(metadata)
-        self.metadata = metadata        
+        self.metadata = metadata     
+        self.filePath = filePath
+        
     @classmethod
     def loadAny(cls, directory):
         try:
@@ -40,7 +42,7 @@ class ICMetaData:
             md = {'startWv':info2[0],'stepWv':info2[1],'stopWv':info2[2],
                  'exposure':info2[3],'time':'{:d}-{:d}-{:d} {:d}:{:d}:{:d}'.format(*[int(i) for i in [info3[8],info3[7],info3[6],info3[9],info3[10],info3[11]]]),'systemId':info3[0],
                  'imgHeight':int(info3[2]),'imgWidth':int(info3[3]),'wavelengths':wv}      
-        return cls(md)
+        return cls(md, filePath = directory)
 
     @classmethod
     def fromTiff(cls,directory):
@@ -62,7 +64,7 @@ class ICMetaData:
         if 'waveLengths' in metadata:
             metadata['wavelengths'] = metadata['waveLengths']
             del metadata['waveLengths']
-        return cls(metadata)
+        return cls(metadata, filePath = directory)
     
     def _checkMetadata(metadata):
         required = ['time', 'exposure', 'wavelengths']

@@ -22,8 +22,8 @@ class ImCube(ICBase, ICMetaData):
     ''' A class representing a single acquisition of PWS. Contains methods for loading and saving to multiple formats as well as common operations used in analysis.'''
     
     def __init__(self,data, metadata:dict, dtype = np.float32, filePath = None):
-        ICMetaData.__init__(metadata, filePath)
-        ICBase.__init__(data, metadata, tuple(np.array(self.metadata['wavelengths']).astype(np.float32)), dtype=dtype)
+        ICMetaData.__init__(self, metadata, filePath)
+        ICBase.__init__(self, data, metadata, tuple(np.array(self.metadata['wavelengths']).astype(np.float32)), dtype=dtype)
         self._hasBeenNormalized = False #Keeps track of whether or not we have normalized by exposure so that we don't do it twice.
         self._cameraCorrected = False
     
@@ -46,15 +46,15 @@ class ImCube(ICBase, ICMetaData):
                     raise Exception(f"Could not find a valid PWS image cube file at {directory}.")
     @classmethod
     def fromOldPWS(cls,directory):
-        ret = super(ImCube,cls).fromOldPWS(directory)
+        ret = ICMetaData.fromOldPWS(directory)
         with open(os.path.join(directory,'image_cube'),'rb') as f:
             data = np.frombuffer(f.read(),dtype=np.uint16)
         data = data.reshape((ret.metadata['imgHeight'],ret.metadata['imgWidth'],len(ret.metadata['wavelengths'])),order='F')
-        return cls(data, ret.metadata, filePath = directory)
+        return cls(data, ret.metadata, filePath = ret.filePath)
 
     @classmethod
     def fromTiff(cls,directory):
-        ret = super(ImCube,cls).fromTiff(directory)
+        ret = ICMetaData.fromTiff(directory)
         if os.path.exists(os.path.join(directory,'MMStack.ome.tif')):
             path = os.path.join(directory,'MMStack.ome.tif')
         elif os.path.exists(os.path.join(directory,'pws.tif')):

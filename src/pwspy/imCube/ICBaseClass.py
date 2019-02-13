@@ -5,9 +5,7 @@ Created on Sat Feb  9 16:47:22 2019
 @author: Nick
 """
 import numpy as np
-from .otherClasses import ICMetaData
 import scipy.signal as sps
-import scipy.io as spio
 import matplotlib.pyplot as plt
 from matplotlib import widgets
 from matplotlib import path
