@@ -35,15 +35,15 @@ class ImCube(ICBase, ICMetaData):
     def loadAny(cls, directory):
         try:
             return ImCube.fromTiff(directory)
-        except Exception as e:
+        except:
             try:
                 files = glob(os.path.join(directory,'*.comp.tif'))
                 return ImCube.decompress(files[0])
             except:
                 try:
                     return ImCube.fromOldPWS(directory)
-                except:
-                    raise Exception(f"Could not find a valid PWS image cube file at {directory}.")
+                except OSError:
+                    raise OSError(f"Could not find a valid PWS image cube file at {directory}.")
     @classmethod
     def fromOldPWS(cls,directory):
         ret = ICMetaData.fromOldPWS(directory)
@@ -131,6 +131,8 @@ class ImCube(ICBase, ICMetaData):
     
     
     def normalizeByExposure(self):
+        if not self._cameraCorrected:
+            print("This ImCube has not yet been corrected for camera effects. are you sure you want to normalize by exposure?")
         if not self._hasBeenNormalized:
             self.data = self.data / self.metadata['exposure']
         else:
@@ -140,8 +142,7 @@ class ImCube(ICBase, ICMetaData):
     def correctCameraEffects(self, correction:'CameraCorrection', binning:int = None):
         #Subtracts the darkcounts from the data. count is darkcounts per pixel. binning should be specified if it wasn't saved in the micromanager metadata.
         if self._cameraCorrected:
-            print("This ImCube has already had it's camera correction applied!")
-            return
+            raise Exception("This ImCube has already had it's camera correction applied!")
         if binning is None:
             try:
                 binning = self.metadata['MicroManagerMetadata']['Binning']
