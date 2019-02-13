@@ -22,7 +22,7 @@ class KCube(ICBase):
         #Interpolate to the evenly spaced wavenumbers
         interpFunc = spi.interp1d(wavenumbers, data, kind='linear', axis=2)
         data = interpFunc(evenWavenumbers)
-        super().__init__(data, cube.metadata, evenWavenumbers.astype(np.float32), dtype=np.float32, filePath=cube.filePath)
+        super().__init__(data, evenWavenumbers.astype(np.float32), dtype=np.float32)
     
     @property
     def wavenumbers(self):
@@ -152,4 +152,4 @@ class KCube(ICBase):
         data = interpFunc(evenWavelengths)
         md = copy.deepcopy(self.metadata)
         md['wavelengths'] = evenWavelengths.astype(np.float32)
-        return ImCube(data, md, dtype=np.float32, filePath=self.filePath)
+        return ImCube(data, md, dtype=np.float32)
