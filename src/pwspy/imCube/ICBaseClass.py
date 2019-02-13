@@ -50,7 +50,7 @@ class ICBase():
             ind = p.contains_points(coords,radius=0)
             mask[coords[ind,1],coords[ind,0]] = True
             
-        l = widgets.LassoSelector(ax,onSelect)
+        l = widgets.LassoSelector(ax,onSelect, lineprops={'color':'r'})
 
         while plt.fignum_exists(fig.number):
             fig.canvas.flush_events()
