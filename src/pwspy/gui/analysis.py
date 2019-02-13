@@ -33,11 +33,13 @@ class App(QMainWindow):
         menuBar = self.menuBar()
         view = menuBar.addMenu("View")
         view.addAction("Look at stuff")
-#        self.showMaximized()
-
+        toolBar = self.addToolBar('tool')
+        toolBar.setObjectName('mainToolBar()')
+        toolBar.addAction(QtGui.QIcon(os.path.join('resources','icon.png')),"Idea")
+        toolBar.addAction(QtGui.QIcon(os.path.join('resources','playicon.svg')),'Run')
         settings = QtCore.QSettings("BackmanLab", "PWSAnalysis2");
         try:
-            self.restoreGeometry(settings.value("geometry"));
+            self.restoreGeometry(settings.value("geometry"));  
             self.restoreState(settings.value("windowState"));
         except AttributeError as e: #Setting must not exist
             print(e)
