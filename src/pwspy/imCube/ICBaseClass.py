@@ -11,17 +11,12 @@ import scipy.io as spio
 import matplotlib.pyplot as plt
 from matplotlib import widgets
 from matplotlib import path
-import os
-from glob import glob
 
 
-class ICBase:
-    def __init__(self,data, metadata:ICMetaData, index:tuple, dtype = np.float32, filePath = None):
+class ICBase():
+    def __init__(self,data, metadata:dict, index:tuple, dtype = np.float32):
         assert isinstance(data,np.ndarray)
-        assert isinstance(metadata,dict)
-        self.filePath = filePath
         self.data = data.astype(dtype)
-        self.metadata = metadata
         self._index = index
         if self.data.shape[2] != len(self._index):
             raise ValueError("The length of the index list doesn't match the index axis of the data array")
@@ -111,36 +106,6 @@ class ICBase:
             m = self.data[:,:,i].mean() #By subtracting the mean and then adding it after convolution we are effectively padding the convolution with the mean.
             self.data[:,:,i] = sps.convolve(self.data[:,:,i]-m,kernel,mode='same')+m
             
-    def saveMask(self,mask:np.ndarray,number:int, suffix:str):
-        assert not self.filePath is None
-        assert len(mask.shape)==2
-        assert mask.shape == self.data.shape[:2]
-        spio.savemat(os.path.join(self.filePath,f'BW{number}_{suffix}.mat'),{"BW":mask.astype(np.bool)})
-        
-    def loadMask(self,number:int, suffix:str):
-        assert not self.filePath is None
-        mask = spio.loadmat(os.path.join(self.filePath,f'BW{number}_{suffix}.mat'))['BW'].astype(np.bool)
-        assert len(mask.shape)==2
-        assert mask.shape == self.data.shape[:2]
-        return mask
-    
-    def getMasks(self):
-        assert not self.filePath is None
-        files = glob(os.path.join(self.filePath,'BW*.mat'))
-        masks = {}
-        for f in files:
-            num, suffix = os.path.split(f)[-1][2:-4].split('_')
-            if suffix in masks:
-                masks[suffix].append(num)
-            else:
-                masks[suffix] = [num]
-        for k,v in masks.items():
-            v.sort()
-        return masks
-    
-    def deleteMask(self, number:int, suffix:str):
-        assert not self.filePath is None
-        os.remove(os.path.join(self.filePath, f'BW{number}_{suffix}.mat'))
     
     def _indicesMatch(self, other:'ICBase') -> bool:
         return self._index == other._index
