@@ -65,3 +65,13 @@ class CopyableTable(QTableWidget):
             QApplication.clipboard().setText(t)
         except Exception as e:
             print("Copy Failed: ",e)
+            
+class CellTableWidgetItem(QTableWidgetItem):
+    def __init__(self):
+        super().__init__()
+        
+    def setInvalid(self,invalid:bool):
+        if invalid:
+            self.setBackground(QtCore.Qt.red)
+        else:
+            self.setBackground(QtCore.Qt.white)
