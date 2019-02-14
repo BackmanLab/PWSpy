@@ -65,12 +65,12 @@ class Analysis:
 
     ## -- Autocorrelation
     def getAutoCorrelation(self):
-        slope, rSquared = cube.getAutoCorrelation(isAutocorrMinSub, indexAutocorrLinear)
+        slope, rSquared = cube.getAutoCorrelation(isAutocorrMinSub, self.settings.autoCorrStopIndex)
 
     ## OPD Analysis
     def calculateOpd(self):
         if isOpdPolysub:   # If cubeOpdPolysub is to be generated
-            opd, xvalOpd = cube.getOpd(isHannWindow, indexOpdStop)  
+            opd, xvalOpd = cube.getOpd(self.settings.useHannWindow, indexOpdStop)  
 
     ## Ld Calculation
     def calculateLd(self):

@@ -92,7 +92,7 @@ class KCube(ICBase):
         cubeAutocorr = cubeAutocorr[:,:,:len(self.wavenumbers)]
         cubeAutocorr /= cubeAutocorr[:,:,0,np.newaxis]
         
-        # In some instance, minimum subtraction is desired.  In this case,
+        # In some instances, minimum subtraction is desired.  In this case,
         # determine the minimum of each signal and subtract that value from
         # each value in the signal.
         if isAutocorrMinSub:
