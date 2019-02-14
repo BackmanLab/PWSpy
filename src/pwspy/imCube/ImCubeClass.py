@@ -23,7 +23,7 @@ class ImCube(ICBase, ICMetaData):
     
     def __init__(self,data, metadata:dict, dtype = np.float32, filePath = None):
         ICMetaData.__init__(self, metadata, filePath)
-        ICBase.__init__(self, data, metadata, tuple(np.array(self.metadata['wavelengths']).astype(np.float32)), dtype=dtype)
+        ICBase.__init__(self, data, tuple(np.array(self.metadata['wavelengths']).astype(np.float32)), dtype=dtype)
         self._hasBeenNormalized = False #Keeps track of whether or not we have normalized by exposure so that we don't do it twice.
         self._cameraCorrected = False
     
