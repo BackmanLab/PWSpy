@@ -19,6 +19,7 @@ class WorkingDirDialog(QDialog):
         super().__init__()
         self.setWindowTitle("Working Directory")
         self.setLayout(QGridLayout())
+        self.setModal(True)
         self.textLine = QLineEdit()
         self.browseButton = QPushButton(QtGui.QIcon(os.path.join('resources','folder.png')),'')
         self.scanButton = QPushButton('Scan!')

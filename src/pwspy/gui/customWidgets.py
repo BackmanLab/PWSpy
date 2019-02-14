@@ -9,7 +9,8 @@ import numpy as np
 from matplotlib.backends.backend_qt5agg import (
     FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
 from PyQt5.QtWidgets import (QWidget, QApplication, QGridLayout,
-                             QTableWidget, QTableWidgetItem, QAbstractItemView)
+                             QTableWidget, QTableWidgetItem,
+                             QAbstractItemView, QMenu)
 from PyQt5 import (QtGui, QtCore)
 
 class LittlePlot(FigureCanvas):
@@ -65,7 +66,20 @@ class CopyableTable(QTableWidget):
             QApplication.clipboard().setText(t)
         except Exception as e:
             print("Copy Failed: ",e)
-            
+   
+class CellTableWidget(QTableWidget):
+    def __init__(self):
+        super().__init__()
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.showContextMenu)
+        
+    def showContextMenu(self, point:QtCore.QPoint):
+        menu = QMenu("Context Menu")
+        action = menu.addAction("Disable cell")
+#        action.triggered.connect(s)
+        menu.exec(self.mapToGlobal(point))
+
+         
 class CellTableWidgetItem(QTableWidgetItem):
     def __init__(self):
         super().__init__()

@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import (QDockWidget, QTableWidget, QTableWidgetItem,
                              QFileDialog, QPushButton, QApplication,
                              QCheckBox)
 from PyQt5 import (QtCore, QtGui)
-from customWidgets import CopyableTable, LittlePlot
+from customWidgets import CopyableTable, LittlePlot, CellTableWidget
 from pwspy.analysis import AnalysisSettings
 
 
@@ -19,7 +19,7 @@ class CellSelectorDock(QDockWidget):
     def __init__(self):
         super().__init__("Cell Selector")
         self.setObjectName('CellSelectorDock') #needed for restore state to work
-        self.tableWidget = QTableWidget()
+        self.tableWidget = CellTableWidget()
         self.tableWidget.setRowCount(4)
         self.tableWidget.setColumnCount(1)
         self.tableWidget.setItem(0,0, QTableWidgetItem("Cell (1,1)"))
