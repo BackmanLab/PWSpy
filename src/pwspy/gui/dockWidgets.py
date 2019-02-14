@@ -20,9 +20,9 @@ class CellSelectorDock(QDockWidget):
         super().__init__("Cell Selector")
         self.setObjectName('CellSelectorDock') #needed for restore state to work
         self.tableWidget = CellTableWidget()
-        self.tableWidget.setRowCount(4)
-        self.tableWidget.setColumnCount(1)
-        self.tableWidget.setItem(0,0, QTableWidgetItem("Cell (1,1)"))
+#        self.tableWidget.setRowCount(4)
+#        self.tableWidget.setColumnCount(1)
+#        self.tableWidget.setItem(0,0, QTableWidgetItem("Cell (1,1)"))
         self.setWidget(self.tableWidget)
     
 class AnalysisSettingsDock(QDockWidget):

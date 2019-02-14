@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import (QWidget, QApplication, QGridLayout,
                              QTableWidget, QTableWidgetItem,
                              QAbstractItemView, QMenu)
 from PyQt5 import (QtGui, QtCore)
+import typing
 
 class LittlePlot(FigureCanvas):
     def __init__(self):
@@ -72,13 +73,23 @@ class CellTableWidget(QTableWidget):
         super().__init__()
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.showContextMenu)
-        
+        self.setSelectionBehavior(QAbstractItemView.SelectRows)
+        columns = ('Cell', "ROIs", 'Analyses')
+        self.setRowCount(5)
+        self.setColumnCount(len(columns))
+        self.setHorizontalHeaderLabels(columns)
+        self.verticalHeader().hide()
+#        self.table.setItem(1,1,QTableWidgetItem("rms"))
     def showContextMenu(self, point:QtCore.QPoint):
         menu = QMenu("Context Menu")
         action = menu.addAction("Disable cell")
-#        action.triggered.connect(s)
+        action.triggered.connect(lambda: [i.setInvalid(False) for i in self.selectedCells()])
         menu.exec(self.mapToGlobal(point))
-
+        
+    def selectedCells(self) -> typing.List[int]:
+        '''Returns the rows that have been selected.'''
+        rowIndices = [i.row() for i in self.selectedIndexes()[::self.columnCount()]]
+        return [self.cellWidget(i,0) for i in rowIndices]
          
 class CellTableWidgetItem(QTableWidgetItem):
     def __init__(self):
