@@ -16,6 +16,7 @@ from PyQt5.QtWidgets import (QTableWidget,QTableWidgetItem, QVBoxLayout,
 
 from dockWidgets import CellSelectorDock, AnalysisSettingsDock, ResultsTableDock, PlottingWidget
 from dialogs import WorkingDirDialog
+from glob import glob
 
  
 class App(QMainWindow):
@@ -33,6 +34,7 @@ class App(QMainWindow):
         self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks | QMainWindow.AllowTabbedDocks)
         
         self.fileDialog = WorkingDirDialog()
+        self.fileDialog.scanButtonPushed.connect(self.searchCells)
 
         menuBar = self.menuBar()
         view = menuBar.addMenu("View")
@@ -51,6 +53,10 @@ class App(QMainWindow):
             print(e)
         self.show()
         
+    def searchCells(self, path:str, recursive: bool):
+        pattern = os.path.join('**','Cell*') if recursive else 'Cell*'
+        files = glob(os.path.join(path, pattern,''))
+        print(recursive)        
     def closeEvent(self, event):
         settings = QtCore.QSettings("BackmanLab", "PWSAnalysis2")
         settings.setValue("geometry", self.saveGeometry())
