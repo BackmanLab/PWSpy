@@ -10,7 +10,8 @@ from matplotlib.backends.backend_qt5agg import (
     FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
 from PyQt5.QtWidgets import (QWidget, QApplication, QGridLayout,
                              QTableWidget, QTableWidgetItem,
-                             QAbstractItemView, QMenu)
+                             QAbstractItemView, QMenu, QHBoxLayout,
+                             QPushButton, QLabel, QFrame)
 from PyQt5 import (QtGui, QtCore)
 import typing
 
@@ -74,29 +75,56 @@ class CellTableWidget(QTableWidget):
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.showContextMenu)
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
-        columns = ('Cell', "ROIs", 'Analyses')
+        columns = ('Cell','ROIs','Analyses', 'Notes', 'Plots')
         self.setRowCount(5)
         self.setColumnCount(len(columns))
         self.setHorizontalHeaderLabels(columns)
         self.verticalHeader().hide()
+        self.cells=[]
+        '''Test'''
+        for j in range(self.rowCount()):
+            self.cells.append(CellTableWidgetItem(self, j, None, j))
 #        self.table.setItem(1,1,QTableWidgetItem("rms"))
     def showContextMenu(self, point:QtCore.QPoint):
         menu = QMenu("Context Menu")
         action = menu.addAction("Disable cell")
-        action.triggered.connect(lambda: [i.setInvalid(False) for i in self.selectedCells()])
+        action.triggered.connect(self.toggleSelectedCellsInvalid)
         menu.exec(self.mapToGlobal(point))
         
+    def toggleSelectedCellsInvalid(self):
+        sel = self.selectedCells()
+        state = not sel[0].isInvalid()
+        for i in sel:
+            i.setInvalid(state)
     def selectedCells(self) -> typing.List[int]:
         '''Returns the rows that have been selected.'''
         rowIndices = [i.row() for i in self.selectedIndexes()[::self.columnCount()]]
-        return [self.cellWidget(i,0) for i in rowIndices]
-         
-class CellTableWidgetItem(QTableWidgetItem):
-    def __init__(self):
-        super().__init__()
+        rowIndices.sort()
+        return [self.cells[i] for i in rowIndices]
+    
+
+class CellTableWidgetItem:
+    def __init__(self,parent:CellTableWidget, row:int, cube, num:int):
+#        super().__init__()
+        self.parent = parent
+        self.row=row
+        self.plotsButton = QPushButton("plots")
+        self.notesButton = QPushButton("notes")
+        self.label = QTableWidgetItem(f"Cell{num}")
+        
+        self.parent.setItem(row,0,self.label)
+        self.parent.setItem(row, 1, QTableWidgetItem(str(3)))#len(cube.getMasks())))
+        self.parent.setItem(row, 2, QTableWidgetItem(str(1)))
+        self.parent.setCellWidget(row, 3, self.notesButton)
+        self.parent.setCellWidget(row, 4, self.plotsButton)
+        
+        self._invalid = False
         
     def setInvalid(self,invalid:bool):
         if invalid:
-            self.setBackground(QtCore.Qt.red)
+            self.label.setBackground(QtCore.Qt.red)
         else:
-            self.setBackground(QtCore.Qt.white)
+            self.label.setBackground(QtCore.Qt.white)
+        self._invalid = invalid
+    def isInvalid(self) -> bool :
+        return self._invalid
