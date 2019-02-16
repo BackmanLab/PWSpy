@@ -37,10 +37,15 @@ class ICBase():
         std = self.data[mask].std(axis=0)
         return mean,std
     
-    def selectLassoROI(self):
+    def selectLassoROI(self, displayIndex = None):
+        #display index is used to display a particular z-slice for mask drawing. If None then the mean along Z is displayed.
         mask = np.zeros((self.data.shape[0],self.data.shape[1]),dtype=np.bool)
-
-        fig,ax = self.plotMean()
+        
+        if displayIndex is None:
+            fig,ax = self.plotMean()
+        else:
+            fig, ax = plt.subplots()
+            ax.imshow(self.data[:,:,displayIndex])
         fig.suptitle("Close to accept ROI")
         x,y = np.meshgrid(np.arange(self.data.shape[0]),np.arange(self.data.shape[1]))
         coords = np.vstack((y.flatten(),x.flatten())).T
@@ -56,7 +61,8 @@ class ICBase():
             fig.canvas.flush_events()
         return mask
     
-    def selectRectangleROI(self,xSlice = None,ySlice = None):
+    def selectRectangleROI(self, displayIndex = None, xSlice = None,ySlice = None):
+        #display index is used to display a particular z-slice for mask drawing. If None then the mean along Z is displayed.
         #X and Y slice allow manual selection of the range.
         mask = np.zeros((self.data.shape[0],self.data.shape[1]),dtype=np.bool)
         slices= {'y':ySlice, 'x':xSlice}
@@ -69,7 +75,11 @@ class ICBase():
             slices['y'] = slice(*slices['y'])
             mask[slices['y'],slices['x']] = True       
         else:
-            fig,ax = self.plotMean()
+            if displayIndex is None:
+                fig,ax = self.plotMean()
+            else:
+                fig, ax = plt.subplots()
+                ax.imshow(self.data[:,:,displayIndex])
             fig.suptitle("Close to accept ROI")
 
             def rectSelect(mins,maxes):

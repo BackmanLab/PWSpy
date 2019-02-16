@@ -11,7 +11,7 @@ import scipy.ndimage as ndi
 from matplotlib.animation import FuncAnimation
 
 class PlotNd(object):
-    def __init__(self, X, names, initialCoords=None):
+    def __init__(self, X, names = ['y','x','lambda'], initialCoords=None):
         fig = plt.figure(figsize=(6,6)) 
         h,w =X.shape[:2]
         self.names=names
