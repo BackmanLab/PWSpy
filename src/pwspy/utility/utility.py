@@ -5,7 +5,6 @@ Created on Thu Oct 11 11:31:48 2018
 @author: backman05
 """
 from pwspy import ImCube
-import matplotlib.pyplot as plt
 import numpy as np
 import psutil
 import multiprocessing as mp
