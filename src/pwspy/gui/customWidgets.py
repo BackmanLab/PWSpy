@@ -108,8 +108,8 @@ class CellTableWidgetItem:
 #        super().__init__()
         self.parent = parent
         self.row=row
-        self.plotsButton = QPushButton("plots")
-        self.notesButton = QPushButton("notes")
+        self.plotsButton = QPushButton("show")
+        self.notesButton = QPushButton("open")
         self.label = QTableWidgetItem(f"Cell{num}")
         
         self.parent.setItem(row,0,self.label)
