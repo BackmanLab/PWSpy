@@ -11,6 +11,8 @@ import os
 import json
 import tifffile as tf
 from glob import glob
+import subprocess, sys
+
 
 class ICMetaData:
     def __init__(self, metadata:dict, filePath = None):
@@ -106,4 +108,16 @@ class ICMetaData:
     def deleteMask(self, number:int, suffix:str):
         assert not self.filePath is None
         os.remove(os.path.join(self.filePath, f'BW{number}_{suffix}.mat'))
+        
+    def editNotes(self):
+        filepath = os.path.join(self.filePath,'notes.txt.')
+        if not os.path.exists(filepath):
+            with open(filepath,'w') as f:
+                pass
+        if sys.platform.startswith('darwin'):
+            subprocess.call(('open', filepath))
+        elif os.name == 'nt': # For Windows
+            os.startfile(filepath)
+        elif os.name == 'posix': # For Linux, Mac, etc.
+            subprocess.call(('xdg-open', filepath))
                 

@@ -96,6 +96,7 @@ class CellTableWidget(QTableWidget):
         state = not sel[0].isInvalid()
         for i in sel:
             i.setInvalid(state)
+            
     def selectedCells(self) -> typing.List[int]:
         '''Returns the rows that have been selected.'''
         rowIndices = [i.row() for i in self.selectedIndexes()[::self.columnCount()]]
@@ -108,8 +109,8 @@ class CellTableWidgetItem:
 #        super().__init__()
         self.parent = parent
         self.row=row
-        self.plotsButton = QPushButton("plots")
-        self.notesButton = QPushButton("notes")
+        self.plotsButton = QPushButton("show")
+        self.notesButton = QPushButton("open")
         self.label = QTableWidgetItem(f"Cell{num}")
         
         self.parent.setItem(row,0,self.label)
