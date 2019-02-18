@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (QDockWidget, QTableWidget, QTableWidgetItem,
                              QRadioButton, QFrame, QHBoxLayout, QVBoxLayout,
                              QScrollArea, QWidget, QDialog, QSpinBox,
                              QFileDialog, QPushButton, QApplication,
-                             QCheckBox)
+                             QCheckBox, QSizePolicy)
 from PyQt5 import (QtCore, QtGui)
 from customWidgets import CopyableTable, LittlePlot, CellTableWidget, CollapsibleSection
 from pwspy.analysis import AnalysisSettings
@@ -29,22 +29,25 @@ class AnalysisSettingsDock(QDockWidget):
     def __init__(self):
         super().__init__("Settings")
         self.setObjectName('AnalysisSettingsDock') #needed for restore state to work
-        self.widget = QFrame()
+        self.widget = QScrollArea()
+        internalWidget = QFrame()
+        internalWidget.setFixedSize(200,300)
+        self.widget.setWidget(internalWidget)
         self.layout = QGridLayout()
-        self.widget.setLayout(self.layout)
+        internalWidget.setLayout(self.layout)
         self.setupFrame()
         self.setWidget(self.widget)
         
     def setupFrame(self):
         '''Presets'''
         presets = QGroupBox("Presets")
+        presets.setFixedSize(300,50)
         presets.setLayout(QHBoxLayout())
         presets.layout().addWidget(QRadioButton("Legacy"))
         presets.layout().addWidget(QRadioButton("Reccommended"))
         self.layout.addWidget(presets,0,0,1,2)
 
         '''Hardwarecorrections'''
-#        hardWareCorrections = QGroupBox("Hardware Corrections")
         layout = QGridLayout()
         _ = layout.addWidget
         _(QLabel('DarkCounts'),0,0); _(QSpinBox(),0,1);
@@ -62,6 +65,7 @@ class AnalysisSettingsDock(QDockWidget):
         '''SignalPreparations'''
 #        signalPrep = CollapsibleSection('Hey',2, self)
         signalPrep = QGroupBox("Signal Prep")
+        signalPrep.setFixedSize(200,100)
         signalPrep.setLayout(QGridLayout())
         _ = signalPrep.layout().addWidget
         self.filterOrder = QSpinBox()
@@ -75,6 +79,7 @@ class AnalysisSettingsDock(QDockWidget):
     
         '''Polynomial subtraction'''
         polySub = QGroupBox("Polynomial Subtraction")
+        polySub.setFixedSize(200,100)
         polySub.setLayout(QGridLayout())
         _ = polySub.layout().addWidget
         self.polynomialOrder = QSpinBox()
