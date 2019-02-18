@@ -21,7 +21,7 @@ def _recursiveSearch(fileDict, specifierNames, specifiers:typing.List[str]=[]):
     if isinstance(fileDict,dict):
         for k,v in fileDict.items():
             results.extend(_recursiveSearch(v,specifiers + [k]))
-    elif isinstance(fileDict,list):
+    elif isinstance(fileDict,(list, tuple)):
         for file in fileDict:
             fileSpecifiers = specifiers
             if specifierNames is None:
@@ -29,7 +29,7 @@ def _recursiveSearch(fileDict, specifierNames, specifiers:typing.List[str]=[]):
             else:
                 results.append((dict(zip(specifierNames, fileSpecifiers)), file))
     else:
-        raise TypeError(f'Filedict must only contain Dict and List[str], not an item of type: {type(arg)}')
+        raise TypeError(f'Filedict must only contain Dict and List[str], not an item of type: {type(fileDict)}')
     return results
 
 def _loadIms(qout, qin, lock):
