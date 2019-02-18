@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import (QDockWidget, QTableWidget, QTableWidgetItem,
                              QFileDialog, QPushButton, QApplication,
                              QCheckBox)
 from PyQt5 import (QtCore, QtGui)
-from customWidgets import CopyableTable, LittlePlot, CellTableWidget
+from customWidgets import CopyableTable, LittlePlot, CellTableWidget, CollapsibleSection
 from pwspy.analysis import AnalysisSettings
 
 
@@ -44,9 +44,9 @@ class AnalysisSettingsDock(QDockWidget):
         self.layout.addWidget(presets,0,0,1,2)
 
         '''Hardwarecorrections'''
-        hardWareCorrections = QGroupBox("Hardware Corrections")
-        hardWareCorrections.setLayout(QGridLayout())
-        _ = hardWareCorrections.layout().addWidget
+#        hardWareCorrections = QGroupBox("Hardware Corrections")
+        layout = QGridLayout()
+        _ = layout.addWidget
         _(QLabel('DarkCounts'),0,0); _(QSpinBox(),0,1);
         _(QLabel("Linearity Correction"),0,2); _(QLineEdit(),0,3)
         frame = QFrame(); frame.setLayout(QHBoxLayout())
@@ -54,9 +54,13 @@ class AnalysisSettingsDock(QDockWidget):
         frame.layout().addWidget(QLineEdit())
         frame.layout().addWidget(QPushButton())
         _(frame,1,0,1,4)
+        hardWareCorrections = CollapsibleSection('Automatic Correction',100,self)
+        hardWareCorrections.setLayout(layout)
+
         self.layout.addWidget(hardWareCorrections,1,0,2,2)
         
         '''SignalPreparations'''
+#        signalPrep = CollapsibleSection('Hey',2, self)
         signalPrep = QGroupBox("Signal Prep")
         signalPrep.setLayout(QGridLayout())
         _ = signalPrep.layout().addWidget
