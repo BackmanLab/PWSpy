@@ -135,16 +135,12 @@ class CollapsibleSection(QWidget):
     def __init__(self, title, animationDuration, parent:QWidget):
         super().__init__(parent)
         self.animationDuration = animationDuration
-#        self.toggleButton = QToolButton(self);
         self.toggleButton = QCheckBox(title, self)
         headerLine =  QFrame(self);
         self.toggleAnimation = QtCore.QParallelAnimationGroup(self);
         self.contentArea = QScrollArea(self);
         mainLayout = QGridLayout(self);
-#        self.toggleButton.setStyleSheet("QToolButton {border: none;}");
-#        self.toggleButton.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon);
-#        self.toggleButton.setArrowType(QtCore.Qt.RightArrow);
-#        self.toggleButton.setText(title);
+
         self.toggleButton.setCheckable(True);
         self.toggleButton.setChecked(True);
 

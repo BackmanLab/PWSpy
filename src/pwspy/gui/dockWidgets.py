@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (QDockWidget, QTableWidget, QTableWidgetItem,
                              QRadioButton, QFrame, QHBoxLayout, QVBoxLayout,
                              QScrollArea, QWidget, QDialog, QSpinBox,
                              QFileDialog, QPushButton, QApplication,
-                             QCheckBox, QSizePolicy)
+                             QCheckBox, QSizePolicy, QSpacerItem)
 from PyQt5 import (QtCore, QtGui)
 from customWidgets import CopyableTable, LittlePlot, CellTableWidget, CollapsibleSection
 from pwspy.analysis import AnalysisSettings
@@ -31,21 +31,30 @@ class AnalysisSettingsDock(QDockWidget):
         self.setObjectName('AnalysisSettingsDock') #needed for restore state to work
         self.widget = QScrollArea()
         internalWidget = QFrame()
-        internalWidget.setFixedSize(200,300)
+        internalWidget.setLayout(QVBoxLayout())
+        internalWidget.setFixedSize(350,600)
+
+        internalWidget2 = QFrame()
+#        internalWidget.setSizePolicy(QSizePolicy.)
+        internalWidget2.setMinimumSize(350,100)
+#        internalWidget2.setMaximumSize(400,1000)
+        spacer = QSpacerItem(0,0, QSizePolicy.Expanding, QSizePolicy.Expanding)
+        internalWidget.layout().addWidget(internalWidget2)
+        internalWidget.layout().addItem(spacer)
         self.widget.setWidget(internalWidget)
-        self.layout = QGridLayout()
-        internalWidget.setLayout(self.layout)
+        self.layout = QGridLayout()#QVBoxLayout()
+        internalWidget2.setLayout(self.layout)
         self.setupFrame()
         self.setWidget(self.widget)
         
     def setupFrame(self):
         '''Presets'''
         presets = QGroupBox("Presets")
-        presets.setFixedSize(300,50)
+#        presets.setFixedSize(300,50)
         presets.setLayout(QHBoxLayout())
         presets.layout().addWidget(QRadioButton("Legacy"))
         presets.layout().addWidget(QRadioButton("Reccommended"))
-        self.layout.addWidget(presets,0,0,1,2)
+        self.layout.addWidget(presets,0,0,1,4)
 
         '''Hardwarecorrections'''
         layout = QGridLayout()
@@ -60,12 +69,12 @@ class AnalysisSettingsDock(QDockWidget):
         hardWareCorrections = CollapsibleSection('Automatic Correction',100,self)
         hardWareCorrections.setLayout(layout)
 
-        self.layout.addWidget(hardWareCorrections,1,0,2,2)
+        self.layout.addWidget(hardWareCorrections,1,0,1,4)
         
         '''SignalPreparations'''
 #        signalPrep = CollapsibleSection('Hey',2, self)
         signalPrep = QGroupBox("Signal Prep")
-        signalPrep.setFixedSize(200,100)
+        signalPrep.setFixedSize(150,100)
         signalPrep.setLayout(QGridLayout())
         _ = signalPrep.layout().addWidget
         self.filterOrder = QSpinBox()
@@ -74,18 +83,32 @@ class AnalysisSettingsDock(QDockWidget):
         _(self.filterOrder,0,1,1,1)
         _(QLabel("Cutoff Freq."),1,0,1,1)
         _(self.filterCutoff, 1,1,1,1)
-        _(QLabel("{Freq units here}"),1,2,1,1)
-        self.layout.addWidget(signalPrep)
+        _(QLabel("nm<sup>-1</sup>"),1,2,1,1)
+        self.layout.addWidget(signalPrep,2,0,1,2)
     
         '''Polynomial subtraction'''
         polySub = QGroupBox("Polynomial Subtraction")
-        polySub.setFixedSize(200,100)
+        polySub.setFixedSize(150,100)
         polySub.setLayout(QGridLayout())
         _ = polySub.layout().addWidget
         self.polynomialOrder = QSpinBox()
         _(QLabel("Order"),0,0,1,1)
         _(self.polynomialOrder,0,1,1,1)
-        self.layout.addWidget(polySub)
+        self.layout.addWidget(polySub,2,2,1,2)
+#        sublayout = QHBoxLayout()
+#        sublayout.addWidget(signalPrep)
+#        sublayout.addWidget(polySub)
+#        _ = QWidget()
+#        _.setLayout(sublayout)
+#        self.layout.addWidget(_)
+        
+        '''Advanced Calculations'''
+        advanced = CollapsibleSection('Skip Advanced Analysis', 100, self)
+        layout = QGridLayout()
+        _ = layout.addWidget
+        _(QCheckBox("MinSub"))
+        advanced.setLayout(layout)
+        self.layout.addWidget(advanced,3,0,1,4)
         
     def loadFromSettings(self, settings:AnalysisSettings):
         self.filterOrder.setValue(settings.filterOrder)
