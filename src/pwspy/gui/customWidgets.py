@@ -83,6 +83,7 @@ class CellTableWidget(QTableWidget):
         self.setColumnCount(len(columns))
         self.setHorizontalHeaderLabels(columns)
         self.verticalHeader().hide()
+        [self.setColumnWidth(i,w) for i,w in zip(range(len(columns)), [60,40,40,40,40])]
         self.cells=[]
         '''Test'''
         for j in range(self.rowCount()):
@@ -113,8 +114,10 @@ class CellTableWidgetItem:
         self.cube = cube
         self.parent = parent
         self.row=row
-        self.plotsButton = QPushButton("show")
-        self.notesButton = QPushButton("open")
+        self.plotsButton = QPushButton("Show")
+        self.plotsButton.setFixedSize(40,30)
+        self.notesButton = QPushButton("Open")
+        self.notesButton.setFixedSize(40,30)
         self.label = QTableWidgetItem(cube.filePath)
         
         self.plotsButton.released.connect(self.showPlotsMenu)
