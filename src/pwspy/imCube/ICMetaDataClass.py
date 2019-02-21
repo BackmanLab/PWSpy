@@ -93,7 +93,11 @@ class ICMetaData:
     
     def getMasks(self):
         assert not self.filePath is None
-        files = glob(os.path.join(self.filePath,'BW*.mat'))
+        return self.getMasksAtPath(self.filePath)
+    
+    @staticmethod
+    def getMasksAtPath(filePath:str):
+        files = glob(os.path.join(filePath,'BW*.mat'))
         masks = {}
         for f in files:
             num, suffix = os.path.split(f)[-1][2:-4].split('_')

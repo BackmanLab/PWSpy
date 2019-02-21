@@ -65,7 +65,7 @@ class Position2d:
         self.xyStage = newName
         self._regen()      
     def __repr__(self):
-        return f"Position2d({self.xyStage}, {self.x}, {self.y})"  
+        return f"Position2d({self.label}, {self.xyStage}, {self.x}, {self.y})"  
     def __add__(self, other:'Position2d')->'Position2d':
         assert isinstance(other, Position2d)
         return Position2d(self.x + other.x,
