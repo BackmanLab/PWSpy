@@ -162,6 +162,7 @@ class PositionList:
         annot.set_visible(False)
         ax.set_xlabel("x")
         ax.set_ylabel('y')
+        ax.set_aspect('equal')
         cmap = mpl.cm.get_cmap("Spectral")
         colors = [cmap(i) for i in np.linspace(0,1,num=len(self.positions))]
         names = [pos.label for pos in self.positions]
