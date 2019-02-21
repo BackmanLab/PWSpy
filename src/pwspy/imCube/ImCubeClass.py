@@ -207,3 +207,14 @@ class ImCube(ICBase, ICMetaData):
     def normalizeByReference(self, reference:'ImCube'):
         self.data = self.data / reference.data
         self.metadata['normalizationReference'] = reference.filePath
+        
+class FakeCube(ImCube):
+    def __init__(self, num:int):
+        x = y = np.arange(0,256)
+        z = np.arange(0,100)
+        Y,X,Z = np.meshgrid(y,x,z)
+        freq = np.random.random()/4
+        freq2 = np.random.random()/4
+        data = np.exp(-np.sqrt((X-X.max()/2)**2+(Y-Y.max()/2)**2)/(x.max()/4))*(.75+0.25*np.cos(freq2*2*np.pi*Z))*(0.5+0.5*np.sin(freq*2*np.pi*X))
+        md = {'wavelengths':z+500, 'exposure':100, 'time': '315'}
+        super().__init__(data, md, filePath = f'Cell{num}')

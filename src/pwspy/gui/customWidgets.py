@@ -15,6 +15,8 @@ from PyQt5.QtWidgets import (QWidget, QApplication, QGridLayout,
                              QScrollArea, QLayout, QSizePolicy, QCheckBox)
 from PyQt5 import (QtGui, QtCore)
 import typing
+from pwspy.imCube.ImCubeClass import ImCube, FakeCube
+from pwspy.utility import PlotNd
 
 class LittlePlot(FigureCanvas):
     def __init__(self):
@@ -81,10 +83,11 @@ class CellTableWidget(QTableWidget):
         self.setColumnCount(len(columns))
         self.setHorizontalHeaderLabels(columns)
         self.verticalHeader().hide()
+        [self.setColumnWidth(i,w) for i,w in zip(range(len(columns)), [60,40,40,40,40])]
         self.cells=[]
         '''Test'''
         for j in range(self.rowCount()):
-            self.cells.append(CellTableWidgetItem(self, j, None, j))
+            self.cells.append(CellTableWidgetItem(self, j, FakeCube(j), j))
 #        self.table.setItem(1,1,QTableWidgetItem("rms"))
     def showContextMenu(self, point:QtCore.QPoint):
         menu = QMenu("Context Menu")
@@ -106,13 +109,19 @@ class CellTableWidget(QTableWidget):
     
 
 class CellTableWidgetItem:
-    def __init__(self,parent:CellTableWidget, row:int, cube, num:int):
+    def __init__(self,parent:CellTableWidget, row:int, cube:ImCube, num:int):
 #        super().__init__()
+        self.cube = cube
         self.parent = parent
         self.row=row
-        self.plotsButton = QPushButton("show")
-        self.notesButton = QPushButton("open")
-        self.label = QTableWidgetItem(f"Cell{num}")
+        self.plotsButton = QPushButton("Show")
+        self.plotsButton.setFixedSize(40,30)
+        self.notesButton = QPushButton("Open")
+        self.notesButton.setFixedSize(40,30)
+        self.label = QTableWidgetItem(cube.filePath)
+        
+        self.plotsButton.released.connect(self.showPlotsMenu)
+        self.notesButton.released.connect(self.editNotes)
         
         self.parent.setItem(row,0,self.label)
         self.parent.setItem(row, 1, QTableWidgetItem(str(3)))#len(cube.getMasks())))
@@ -121,6 +130,15 @@ class CellTableWidgetItem:
         self.parent.setCellWidget(row, 4, self.plotsButton)
         
         self._invalid = False
+    
+    def showPlotsMenu(self):
+        menu = QMenu("ContextMenu")
+        action = menu.addAction('3D')
+        action.triggered.connect(lambda: PlotNd(self.cube.data))
+        menu.exec(QtGui.QCursor.pos())
+        
+    def editNotes(self):
+        self.cube.editNotes()
         
     def setInvalid(self,invalid:bool):
         if invalid:
@@ -135,16 +153,12 @@ class CollapsibleSection(QWidget):
     def __init__(self, title, animationDuration, parent:QWidget):
         super().__init__(parent)
         self.animationDuration = animationDuration
-#        self.toggleButton = QToolButton(self);
         self.toggleButton = QCheckBox(title, self)
         headerLine =  QFrame(self);
         self.toggleAnimation = QtCore.QParallelAnimationGroup(self);
         self.contentArea = QScrollArea(self);
         mainLayout = QGridLayout(self);
-#        self.toggleButton.setStyleSheet("QToolButton {border: none;}");
-#        self.toggleButton.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon);
-#        self.toggleButton.setArrowType(QtCore.Qt.RightArrow);
-#        self.toggleButton.setText(title);
+
         self.toggleButton.setCheckable(True);
         self.toggleButton.setChecked(True);
 
