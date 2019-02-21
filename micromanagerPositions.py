@@ -4,7 +4,7 @@ Created on Mon Dec  3 17:53:24 2018
 
 @author: backman05
 """
-from __future__ import annotations
+#from __future__ import annotations
 import json
 import typing
 import numpy as np
@@ -72,7 +72,7 @@ class Position2d:
                           self.y + other.y,
                           self.xyStage,
                           self.label)       
-    def __sub__(self, other:Position2d)->Position2d:
+    def __sub__(self, other:'Position2d')->'Position2d':
         assert isinstance(other, Position2d)
         return Position2d(self.x - other.x,
                           self.y - other.y,
@@ -102,7 +102,7 @@ class PositionList:
         for i in self.positions:
             i.renameStage(newName)
         self._regen()    
-    def copy(self) -> PositionList:
+    def copy(self) -> 'PositionList':
         return copy.deepcopy(self)
     def save(self, savePath:str):
         #    a=json.dumps(plist,cls=Encoder, ensure_ascii=False)
@@ -112,7 +112,7 @@ class PositionList:
         with open(savePath,'w') as f:
             json.dump(self,f,cls=PositionList.Encoder)
     @classmethod
-    def load(cls, filePath:str) -> PositionList:
+    def load(cls, filePath:str) -> 'PositionList':
         def _decode(dct):
             if 'format' in dct:
                 if dct['format'] == 'Micro-Manager Property Map' and int(dct['major_version'])==2:
@@ -165,7 +165,10 @@ if __name__ == '__main__':
         return plist
     
     def pws1to2(loadPath,newOriginX, newOriginY):
-        pws1 = PositionList.load(loadPath)
+        if isinstance(loadPath, str):
+            pws1 = PositionList.load(loadPath)
+        elif isinstance(loadPath, PositionList):
+            pws1 = loadPath
         pws2 = pws1.copy()
         pws2.mirrorX()
         pws2.mirrorY()
@@ -176,7 +179,10 @@ if __name__ == '__main__':
         return pws2
     
     def pws1toSTORM(loadPath,newOriginX, newOriginY):
-        pws1 = PositionList.load(loadPath)
+        if isinstance(loadPath, str):
+            pws1 = PositionList.load(loadPath)
+        elif isinstance(loadPath, PositionList):
+            pws1 = loadPath
         pws2 = pws1.copy()
         pws2.mirrorY()
         pws2Origin = Position2d(newOriginX, newOriginY)
@@ -186,7 +192,10 @@ if __name__ == '__main__':
         return pws2
     
     def pws2toSTORM(loadPath, newOriginX, newOriginY):
-        pws2 = PositionList.load(loadPath)
+        if isinstance(loadPath, str):
+            pws2 = PositionList.load(loadPath)
+        elif isinstance(loadPath, PositionList):
+            pws2 = loadPath
         storm = pws2.copy()
         storm.mirrorX()
         stormOrigin = Position2d(newOriginX, newOriginY)
@@ -195,7 +204,10 @@ if __name__ == '__main__':
         return storm
         
     def STORMtoPws2(loadPath, newOriginX, newOriginY):
-        storm = PositionList.load(loadPath)
+        if isinstance(loadPath, str):
+            storm = PositionList.load(loadPath)
+        elif isinstance(loadPath, PositionList):
+            storm = loadPath
         pws2 = storm.copy()
         pws2.mirrorX()
         pws2Origin = Position2d(newOriginX, newOriginY)
