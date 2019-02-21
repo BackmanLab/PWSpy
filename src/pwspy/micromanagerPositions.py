@@ -9,6 +9,8 @@ import json
 import typing
 import numpy as np
 import copy
+import matplotlib.pyplot as plt
+import matplotlib as mpl
 
 
 class Property:
@@ -65,7 +67,7 @@ class Position2d:
         self.xyStage = newName
         self._regen()      
     def __repr__(self):
-        return f"Position2d({self.xyStage}, {self.x}, {self.y})"  
+        return f"Position2d({self.label}, {self.xyStage}, {self.x}, {self.y})"  
     def __add__(self, other:'Position2d')->'Position2d':
         assert isinstance(other, Position2d)
         return Position2d(self.x + other.x,
@@ -120,7 +122,8 @@ class PositionList:
                     for i in dct['map']['StagePositions']['array']:
                         label = i['Label']['scalar']
                         xyStage = i["DefaultXYStage"]['scalar']
-                        coords = i["DevicePositions"]['array'][0]["Position_um"]['array']
+                        correctDevice  = [j for j in i["DevicePositions"]['array'] if j['Device']['scalar'] == xyStage][0]
+                        coords = correctDevice["Position_um"]['array']
                         positions.append(Position2d(*coords, xyStage, label))
             else:
                 return dct
@@ -151,7 +154,42 @@ class PositionList:
         return len(self.positions)
     def __getitem__(self,idx:slice):
         return self.positions[idx]
-    
+    def plot(self):      
+        fig, ax = plt.subplots()
+        annot = ax.annotate("", xy=(0,0), xytext=(20,20),textcoords="offset points",
+                    bbox=dict(boxstyle="round", fc="w"),
+                    arrowprops=dict(arrowstyle="->"))
+        annot.set_visible(False)
+        ax.set_xlabel("x")
+        ax.set_ylabel('y')
+        cmap = mpl.cm.get_cmap("Spectral")
+        colors = [cmap(i) for i in np.linspace(0,1,num=len(self.positions))]
+        names = [pos.label for pos in self.positions]
+        sc = plt.scatter([pos.x for pos in self.positions], [pos.y for pos in self.positions], c = [colors[i] for i in range(len(self.positions))])
+        def update_annot(ind):
+            pos = sc.get_offsets()[ind["ind"][0]]
+            annot.xy = pos
+            text = "{}, {}".format(" ".join(list(map(str,ind["ind"]))), 
+                                   " ".join([names[n] for n in ind["ind"]]))
+            annot.set_text(text)
+#            annot.get_bbox_patch().set_facecolor(cmap(norm(c[ind["ind"][0]])))
+            annot.get_bbox_patch().set_alpha(0.4)
+            
+        def hover(event):
+            vis = annot.get_visible()
+            if event.inaxes == ax:
+                cont, ind = sc.contains(event)
+                if cont:
+                    update_annot(ind)
+                    annot.set_visible(True)
+                    fig.canvas.draw_idle()
+                else:
+                    if vis:
+                        annot.set_visible(False)
+                        fig.canvas.draw_idle()
+        
+        fig.canvas.mpl_connect("motion_notify_event", hover)
+        
 if __name__ == '__main__':
 
     def generateList(data:np.ndarray):
