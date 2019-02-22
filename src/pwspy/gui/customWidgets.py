@@ -12,10 +12,12 @@ from PyQt5.QtWidgets import (QWidget, QApplication, QGridLayout,
                              QTableWidget, QTableWidgetItem,
                              QAbstractItemView, QMenu, QHBoxLayout,
                              QPushButton, QLabel, QFrame, QToolButton,
-                             QScrollArea, QLayout, QSizePolicy, QCheckBox)
+                             QScrollArea, QLayout, QSizePolicy, QCheckBox,
+                             QBoxLayout, QSpacerItem)
 from PyQt5 import (QtGui, QtCore)
 import typing
 from pwspy.imCube.ImCubeClass import ImCube, FakeCube
+from pwspy.imCube.ICMetaDataClass import ICMetaData
 from pwspy.utility import PlotNd
 
 class LittlePlot(FigureCanvas):
@@ -88,7 +90,6 @@ class CellTableWidget(QTableWidget):
         '''Test'''
         for j in range(self.rowCount()):
             self.cells.append(CellTableWidgetItem(self, j, FakeCube(j), j))
-#        self.table.setItem(1,1,QTableWidgetItem("rms"))
     def showContextMenu(self, point:QtCore.QPoint):
         menu = QMenu("Context Menu")
         action = menu.addAction("Disable cell")
@@ -109,7 +110,7 @@ class CellTableWidget(QTableWidget):
     
 
 class CellTableWidgetItem:
-    def __init__(self,parent:CellTableWidget, row:int, cube:ImCube, num:int):
+    def __init__(self,parent:CellTableWidget, row:int, cube:ICMetaData, num:int):
 #        super().__init__()
         self.cube = cube
         self.parent = parent
@@ -211,3 +212,33 @@ class CollapsibleSection(QWidget):
         contentAnimation.setDuration(self.animationDuration);
         contentAnimation.setStartValue(0);
         contentAnimation.setEndValue(contentHeight);
+        
+class AspectRatioWidget(QWidget):
+    def __init__(self, widget:QWidget, aspect:float, parent:QWidget = None):
+        super().__init__(parent)
+        self.aspect = aspect
+        self.layout = QBoxLayout(QBoxLayout.LeftToRight, self)
+        self.widget = widget
+        # add spacer, then your widget, then spacer
+        self.layout.addItem(QSpacerItem(0, 0));
+        self.layout.addWidget(widget);
+        self.layout.addItem(QSpacerItem(0, 0));
+
+    def resizeEvent(self, event:QtGui.QResizeEvent):
+        thisAspectRatio = event.size().width() / event.size().height()
+    
+        if (thisAspectRatio > self.aspect): # too wide
+            self.layout.setDirection(QBoxLayout.LeftToRight);
+            widgetStretch = self.height() * self.aspect; # i.e., my width
+            outerStretch = (self.width() - widgetStretch) / 2 + 0.5;
+        else: #too tall
+            self.layout.setDirection(QBoxLayout.TopToBottom);
+            widgetStretch = self.width() * (1/self.aspect); # i.e., my height
+            outerStretch = (self.height() - widgetStretch) / 2 + 0.5;
+    
+        self.layout.setStretch(0, outerStretch);
+        self.layout.setStretch(1, widgetStretch);
+        self.layout.setStretch(2, outerStretch);
+    
+    def setAspect(self, aspect:float):
+        self.aspect = aspect

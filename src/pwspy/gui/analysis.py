@@ -55,8 +55,8 @@ class App(QMainWindow):
         
     def searchCells(self, path:str, recursive: bool):
         pattern = os.path.join('**','Cell*') if recursive else 'Cell*'
-        files = glob(os.path.join(path, pattern,''))
-        print(recursive) 
+        files = glob(os.path.join(path, pattern))
+        [self.cellSelector.addCell(f) for f in files]
         
     def closeEvent(self, event):
         settings = QtCore.QSettings("BackmanLab", "PWSAnalysis2")

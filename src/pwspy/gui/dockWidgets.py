@@ -11,8 +11,10 @@ from PyQt5.QtWidgets import (QDockWidget, QTableWidget, QTableWidgetItem,
                              QFileDialog, QPushButton, QApplication,
                              QCheckBox, QSizePolicy, QSpacerItem)
 from PyQt5 import (QtCore, QtGui)
-from customWidgets import CopyableTable, LittlePlot, CellTableWidget, CollapsibleSection
+from customWidgets import CopyableTable, LittlePlot, CellTableWidget, CollapsibleSection, AspectRatioWidget, CellTableWidgetItem
 from pwspy.analysis import AnalysisSettings
+import os
+from pwspy.imCube.ICMetaDataClass import ICMetaData
 
 
 class CellSelectorDock(QDockWidget):
@@ -24,6 +26,12 @@ class CellSelectorDock(QDockWidget):
 #        self.tableWidget.setColumnCount(1)
 #        self.tableWidget.setItem(0,0, QTableWidgetItem("Cell (1,1)"))
         self.setWidget(self.tableWidget)
+        self.cells = []
+    def addCell(self, fileName:str):
+        self.cells.append(ICMetaData.loadAny(fileName))
+        print(fileName)
+        cell = CellTableWidgetItem(self.tableWidget, len(self.cells), self.cells[-1], int(os.path.split(fileName)[-1][4:]))
+        
     
 class AnalysisSettingsDock(QDockWidget):
     def __init__(self):
@@ -150,14 +158,33 @@ class PlottingWidget(QDockWidget):
     def __init__(self):
         super().__init__("Plotting")
         self.setObjectName('PlottingWidget')
-        self.widget = QScrollArea()
-        self.widget.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-        self.widget.setWidgetResizable(True)
-        self.m = QFrame()
-        self.m.setLayout(QVBoxLayout())
+        self.plots = []
+        self.widget = QWidget()
+        self.widget.setLayout(QHBoxLayout())
+        plotScroll = QScrollArea()
+        plotScroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        plotScroll.setWidgetResizable(True)
+        self.scrollContents = QWidget()
+        self.arController = AspectRatioWidget(self.scrollContents, 1, self)
+        self.scrollContents.setLayout(QVBoxLayout())
         for i in range(4):
-            self.m.layout().addWidget(LittlePlot())
-        self.widget.setWidget(self.m)
-
+            self.addPlot(LittlePlot())
+#        scrollContents.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        plotScroll.setWidget(self.arController)
+        buttons = QWidget()
+        buttons.setLayout(QVBoxLayout())
+        _ = buttons.layout().addWidget
+        self.plotRMS = QPushButton("RMS")
+        self.plotBF = QPushButton('BF')
+        
+        _(self.plotRMS)
+        _(self.plotBF)
+        self.widget.layout().addWidget(plotScroll)
+        self.widget.layout().addWidget(buttons)
         self.setWidget(self.widget)
+    
+    def addPlot(self, plot):
+        self.plots.append(plot)
+        self.arController.setAspect(1/len(self.plots))
+        self.scrollContents.layout().addWidget(plot)
         
