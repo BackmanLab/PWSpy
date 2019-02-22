@@ -26,7 +26,7 @@ class App(QMainWindow):
         self.cellSelector = CellSelectorDock()
         self.analysisSettings = AnalysisSettingsDock()
         self.resultsTable = ResultsTableDock()
-        self.plots = PlottingWidget()
+        self.plots = PlottingWidget(self.cellSelector.tableWidget)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.cellSelector)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.plots)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.analysisSettings)

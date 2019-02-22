@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (QDockWidget, QTableWidget, QTableWidgetItem,
                              QRadioButton, QFrame, QHBoxLayout, QVBoxLayout,
                              QScrollArea, QWidget, QDialog, QSpinBox,
                              QFileDialog, QPushButton, QApplication,
-                             QCheckBox, QSizePolicy, QSpacerItem)
+                             QCheckBox, QSizePolicy, QSpacerItem, QMessageBox)
 from PyQt5 import (QtCore, QtGui)
 from customWidgets import CopyableTable, LittlePlot, CellTableWidget, CollapsibleSection, AspectRatioWidget, CellTableWidgetItem
 from pwspy.analysis import AnalysisSettings
@@ -155,8 +155,9 @@ class ResultsTableDock(QDockWidget):
         
         
 class PlottingWidget(QDockWidget):
-    def __init__(self):
+    def __init__(self, cellSelectorTable:CellTableWidget):
         super().__init__("Plotting")
+        self.selector = cellSelectorTable
         self.setObjectName('PlottingWidget')
         self.plots = []
         self.widget = QWidget()
@@ -174,17 +175,44 @@ class PlottingWidget(QDockWidget):
         buttons = QWidget()
         buttons.setLayout(QVBoxLayout())
         _ = buttons.layout().addWidget
-        self.plotRMS = QPushButton("RMS")
-        self.plotBF = QPushButton('BF')
+        self.plotRMSButton = QPushButton("RMS")
+        self.plotBFButton = QPushButton('BF')
+        self.plot3dButton = QPushButton("3D")
+        self.clearButton = QPushButton("Clear")
+        self.plotRMSButton.released.connect(self.plotRMS)
+        self.clearButton.released.connect(self.clearPlots)
         
-        _(self.plotRMS)
-        _(self.plotBF)
+        _(self.plotRMSButton)
+        _(self.plotBFButton)
+        _(self.plot3dButton)
+        _(self.clearButton)
         self.widget.layout().addWidget(plotScroll)
         self.widget.layout().addWidget(buttons)
         self.setWidget(self.widget)
     
     def addPlot(self, plot):
         self.plots.append(plot)
-        self.arController.setAspect(1/len(self.plots))
         self.scrollContents.layout().addWidget(plot)
+        self._plotsChanged()
+        
+    def clearPlots(self):
+        for i in self.plots:
+            self.scrollContents.layout().removeWidget(i)
+            i.deleteLater()
+            i=None   
+        self.plots = []
+        self._plotsChanged()
+        
+    def _plotsChanged(self):
+        if len(self.plots)>0:
+            self.arController.setAspect(1/len(self.plots))
+
+    def plotRMS(self):  
+        cells = self.selector.selectedCells
+        if len(cells)==0:
+            messageBox =  QMessageBox(self)
+            messageBox.critical(self, "Oops!","Please select the cells you would like to plot.")
+            messageBox.setFixedSize(500,200)
+        for i in cells:      
+            self.addPlot(LittlePlot())
         

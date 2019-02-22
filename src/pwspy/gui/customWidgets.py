@@ -101,7 +101,8 @@ class CellTableWidget(QTableWidget):
         state = not sel[0].isInvalid()
         for i in sel:
             i.setInvalid(state)
-            
+    
+    @property
     def selectedCells(self) -> typing.List[int]:
         '''Returns the rows that have been selected.'''
         rowIndices = [i.row() for i in self.selectedIndexes()[::self.columnCount()]]
