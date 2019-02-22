@@ -80,12 +80,12 @@ class CellTableWidget(QTableWidget):
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.showContextMenu)
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
-        columns = ('Cell','ROIs','Analyses', 'Notes', 'Plots')
+        columns = ('Cell','ROIs','Analyses', 'Notes')
         self.setRowCount(5)
         self.setColumnCount(len(columns))
         self.setHorizontalHeaderLabels(columns)
         self.verticalHeader().hide()
-        [self.setColumnWidth(i,w) for i,w in zip(range(len(columns)), [60,40,40,40,40])]
+        [self.setColumnWidth(i,w) for i,w in zip(range(len(columns)), [60,40,40,40])]
         self.cells=[]
         '''Test'''
         for j in range(self.rowCount()):
@@ -97,7 +97,7 @@ class CellTableWidget(QTableWidget):
         menu.exec(self.mapToGlobal(point))
         
     def toggleSelectedCellsInvalid(self):
-        sel = self.selectedCells()
+        sel = self.selectedCells
         state = not sel[0].isInvalid()
         for i in sel:
             i.setInvalid(state)
@@ -112,32 +112,21 @@ class CellTableWidget(QTableWidget):
 
 class CellTableWidgetItem:
     def __init__(self,parent:CellTableWidget, row:int, cube:ICMetaData, num:int):
-#        super().__init__()
         self.cube = cube
         self.parent = parent
         self.row=row
-        self.plotsButton = QPushButton("Show")
-        self.plotsButton.setFixedSize(40,30)
         self.notesButton = QPushButton("Open")
         self.notesButton.setFixedSize(40,30)
         self.label = QTableWidgetItem(cube.filePath)
         
-        self.plotsButton.released.connect(self.showPlotsMenu)
         self.notesButton.released.connect(self.editNotes)
         
         self.parent.setItem(row,0,self.label)
         self.parent.setItem(row, 1, QTableWidgetItem(str(3)))#len(cube.getMasks())))
         self.parent.setItem(row, 2, QTableWidgetItem(str(1)))
         self.parent.setCellWidget(row, 3, self.notesButton)
-        self.parent.setCellWidget(row, 4, self.plotsButton)
         
         self._invalid = False
-    
-    def showPlotsMenu(self):
-        menu = QMenu("ContextMenu")
-        action = menu.addAction('3D')
-        action.triggered.connect(lambda: PlotNd(self.cube.data))
-        menu.exec(QtGui.QCursor.pos())
         
     def editNotes(self):
         self.cube.editNotes()
