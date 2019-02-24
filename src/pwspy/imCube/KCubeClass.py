@@ -6,11 +6,12 @@ Created on Sat Feb  9 15:54:29 2019
 """
 from .ICBaseClass import ICBase
 from .ImCubeClass import ImCube
+from .ICMetaDataClass import ICMetaData
 import numpy as np
 import scipy.interpolate as spi
 import copy
 
-class KCube(ICBase):
+class KCube(ICBase, ICMetaData):
     '''A class representing an ImCube after being transformed from being described in terms of wavelength in to wavenumber (k-space).'''
     def __init__(self, cube:ImCube):
         #Convert to wavenumber and reverse the order so we are ascending in order.
@@ -22,7 +23,8 @@ class KCube(ICBase):
         #Interpolate to the evenly spaced wavenumbers
         interpFunc = spi.interp1d(wavenumbers, data, kind='linear', axis=2)
         data = interpFunc(evenWavenumbers)
-        super().__init__(data, evenWavenumbers.astype(np.float32), dtype=np.float32)
+        ICBase.__init__(self, data, tuple(evenWavenumbers.astype(np.float32)), dtype=np.float32)
+        ICMetaData.__init__(self, cube.metadata, cube.filePath)
     
     @property
     def wavenumbers(self):
