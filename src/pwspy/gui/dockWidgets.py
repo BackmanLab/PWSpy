@@ -38,30 +38,28 @@ class AnalysisSettingsDock(QDockWidget):
         super().__init__("Settings")
         self.setObjectName('AnalysisSettingsDock') #needed for restore state to work
         self.widget = QScrollArea()
-        internalWidget = QFrame()
-        internalWidget.setLayout(QVBoxLayout())
-        internalWidget.setFixedSize(350,400)
-#        internalWidget.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
+        self.internalWidget = QFrame()
+        self.internalWidget.setLayout(QVBoxLayout())
+        self.internalWidget.setFixedSize(350,400)
 
-        internalWidget2 = QFrame()
-        internalWidget2.setMinimumSize(350,100)
+        self.contentsFrame = QFrame()
+        self.contentsFrame.setMinimumSize(350,100)
         spacer = QSpacerItem(0,0, QSizePolicy.Expanding, QSizePolicy.Expanding)
-        internalWidget.layout().addWidget(internalWidget2)
-        internalWidget.layout().addItem(spacer)
-        self.widget.setWidget(internalWidget)
+        self.internalWidget.layout().addWidget(self.contentsFrame)
+        self.internalWidget.layout().addItem(spacer)
+        self.widget.setWidget(self.internalWidget)
         self.layout = QGridLayout()#QVBoxLayout()
-        internalWidget2.setLayout(self.layout)
+        self.contentsFrame.setLayout(self.layout)
         self.setupFrame()
         self.setWidget(self.widget)
         
     def setupFrame(self):
         '''Presets'''
-        presets = QGroupBox("Presets")
-#        presets.setFixedSize(300,50)
-        presets.setLayout(QHBoxLayout())
-        presets.layout().addWidget(QRadioButton("Legacy"))
-        presets.layout().addWidget(QRadioButton("Reccommended"))
-        self.layout.addWidget(presets,0,0,1,4)
+        self.presets = QGroupBox("Presets")
+        self.presets.setLayout(QHBoxLayout())
+        self.presets.layout().addWidget(QRadioButton("Legacy"))
+        self.presets.layout().addWidget(QRadioButton("Reccommended"))
+        self.layout.addWidget(self.presets,0,0,1,4)
 
         '''Hardwarecorrections'''
         layout = QGridLayout()
@@ -73,17 +71,17 @@ class AnalysisSettingsDock(QDockWidget):
         frame.layout().addWidget(QLineEdit())
         frame.layout().addWidget(QPushButton())
         _(frame,1,0,1,4)
-        hardWareCorrections = CollapsibleSection('Automatic Correction',100,self)
-        hardWareCorrections.setLayout(layout)
+        self.hardwareCorrections = CollapsibleSection('Automatic Correction',100,self)
+        self.hardwareCorrections.stateChanged.connect(self.updateSize)
+        self.hardwareCorrections.setLayout(layout)
 
-        self.layout.addWidget(hardWareCorrections,1,0,1,4)
+        self.layout.addWidget(self.hardwareCorrections,1,0,1,4)
         
         '''SignalPreparations'''
-#        signalPrep = CollapsibleSection('Hey',2, self)
-        signalPrep = QGroupBox("Signal Prep")
-        signalPrep.setFixedSize(150,100)
-        signalPrep.setLayout(QGridLayout())
-        _ = signalPrep.layout().addWidget
+        self.signalPrep = QGroupBox("Signal Prep")
+        self.signalPrep.setFixedSize(150,100)
+        self.signalPrep.setLayout(QGridLayout())
+        _ = self.signalPrep.layout().addWidget
         self.filterOrder = QSpinBox()
         self.filterCutoff = QSpinBox()
         _(QLabel("Filter Order"),0,0,1,1)
@@ -91,37 +89,40 @@ class AnalysisSettingsDock(QDockWidget):
         _(QLabel("Cutoff Freq."),1,0,1,1)
         _(self.filterCutoff, 1,1,1,1)
         _(QLabel("nm<sup>-1</sup>"),1,2,1,1)
-        self.layout.addWidget(signalPrep,2,0,1,2)
+        self.layout.addWidget(self.signalPrep,2,0,1,2)
     
         '''Polynomial subtraction'''
-        polySub = QGroupBox("Polynomial Subtraction")
-        polySub.setFixedSize(150,100)
-        polySub.setLayout(QGridLayout())
-        _ = polySub.layout().addWidget
+        self.polySub = QGroupBox("Polynomial Subtraction")
+        self.polySub.setFixedSize(150,100)
+        self.polySub.setLayout(QGridLayout())
+        _ = self.polySub.layout().addWidget
         self.polynomialOrder = QSpinBox()
         _(QLabel("Order"),0,0,1,1)
         _(self.polynomialOrder,0,1,1,1)
-        self.layout.addWidget(polySub,2,2,1,2)
-#        sublayout = QHBoxLayout()
-#        sublayout.addWidget(signalPrep)
-#        sublayout.addWidget(polySub)
-#        _ = QWidget()
-#        _.setLayout(sublayout)
-#        self.layout.addWidget(_)
+        self.layout.addWidget(self.polySub,2,2,1,2)
         
         '''Advanced Calculations'''
-        advanced = CollapsibleSection('Skip Advanced Analysis', 100, self)
+        self.advanced = CollapsibleSection('Skip Advanced Analysis', 100, self)
+        self.advanced.stateChanged.connect(self.updateSize)
         layout = QGridLayout()
         _ = layout.addWidget
         _(QCheckBox("MinSub"))
-        advanced.setLayout(layout)
-        self.layout.addWidget(advanced,3,0,1,4)
+        self.advanced.setLayout(layout)
+        self.layout.addWidget(self.advanced,3,0,1,4)
         
     def loadFromSettings(self, settings:AnalysisSettings):
         self.filterOrder.setValue(settings.filterOrder)
         self.filterCutoff.setValue(settings.filterCutoff)
         self.polynomialOrder.setValue(settings.polynomialOrder)
         self.referenceMaterial.setValue(settings.referenceMaterial)
+        
+    def updateSize(self):
+        height = 50 #give this much excess room.
+        height += self.presets.height()
+        height += self.hardwareCorrections.height()
+        height += self.signalPrep.height()
+        height += self.advanced.height()
+        self.internalWidget.setFixedHeight(height)
         
 class ResultsTableDock(QDockWidget):
     def __init__(self):
