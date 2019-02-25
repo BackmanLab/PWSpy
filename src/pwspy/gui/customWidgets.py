@@ -141,6 +141,7 @@ class CellTableWidgetItem:
         return self._invalid
     
 class CollapsibleSection(QWidget):
+    stateChanged = QtCore.pyqtSignal(bool)
     def __init__(self, title, animationDuration, parent:QWidget):
         super().__init__(parent)
         self.animationDuration = animationDuration
@@ -184,6 +185,7 @@ class CollapsibleSection(QWidget):
                     [#self.toggleButton.setArrowType(QtCore.Qt.DownArrow if checked else QtCore.Qt.RightArrow),
                     self.toggleAnimation.setDirection(QtCore.QAbstractAnimation.Forward if not checked else QtCore.QAbstractAnimation.Backward),
                     self.toggleAnimation.start()])
+        self.toggleAnimation.finished.connect(lambda: self.stateChanged.emit(self.toggleButton.isChecked()))
 
     def setLayout_(self, contentLayout:QLayout):
         oldLayout = self.contentArea.layout()
