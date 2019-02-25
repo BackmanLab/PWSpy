@@ -31,16 +31,21 @@ class WorkingDirDialog(QDialog):
         self.setFixedSize(400,75)
         self.scanButton.released.connect(self.scanButtonPushed_)
         self.browseButton.released.connect(self.browseFile)
+        self.directory = os.path.expanduser('~')
         
     def scanButtonPushed_(self):
         self.accept()
         self.scanButtonPushed.emit(self.textLine.text(), self.recursiveCheckbox.checkState()!=0)
         
     def browseFile(self):
-        _ = QFileDialog(self)
-        _.setFileMode(QFileDialog.DirectoryOnly)
-        _.show()
-        _.fileSelected.connect(self.textLine.setText)
+#        _ = QFileDialog(self)
+#        _.setFileMode(QFileDialog.DirectoryOnly)
+#        _.show()
+#        _.fileSelected.connect(self.textLine.setText)
+        _ = QFileDialog.getExistingDirectory(self, 'Working Directory', self.directory)
+        if _ != '':
+            self.directory = _
+            self.textLine.setText(self.directory)
         
 if __name__ == '__main__':
     _ = WorkingDirDialog()
