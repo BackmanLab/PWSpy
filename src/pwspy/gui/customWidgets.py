@@ -13,23 +13,25 @@ from PyQt5.QtWidgets import (QWidget, QApplication, QGridLayout,
                              QAbstractItemView, QMenu, QHBoxLayout,
                              QPushButton, QLabel, QFrame, QToolButton,
                              QScrollArea, QLayout, QSizePolicy, QCheckBox,
-                             QBoxLayout, QSpacerItem)
+                             QBoxLayout, QSpacerItem, QMessageBox)
 from PyQt5 import (QtGui, QtCore)
 import typing
 from pwspy.imCube.ImCubeClass import ImCube, FakeCube
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 from pwspy.utility import PlotNd
+import os.path as osp
 
 class LittlePlot(FigureCanvas):
-    def __init__(self):
-#        self.setLayout(QGraphicsLinearLayout())
+    def __init__(self, data:np.ndarray, cell:ImCube):
         self.fig = Figure()
-        self.data = np.ones((100,100))*np.sin(np.linspace(1,6,num=100))[None,:]
+#        self.data = np.ones((100,100))*np.sin(np.linspace(1,6,num=100))[None,:]
+        self.data = data
+        self.cell = cell
         ax = self.fig.add_subplot(1,1,1)
         ax.imshow(self.data)
+        ax.set_title(osp.split(cell.filePath)[-1])
         ax.yaxis.set_visible(False)
         ax.xaxis.set_visible(False)
-#        canvas = FigureCanvas(self.fig)
         super().__init__(self.fig)
 #        self.layout().addWidget(canvas)
 #        self.setFixedSize(200,200)
@@ -74,57 +76,15 @@ class CopyableTable(QTableWidget):
         except Exception as e:
             print("Copy Failed: ",e)
    
-class CellTableWidget(QTableWidget):
-    def __init__(self):
-        super().__init__()
-        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.customContextMenuRequested.connect(self.showContextMenu)
-        self.setSelectionBehavior(QAbstractItemView.SelectRows)
-        columns = ('Cell','ROIs','Analyses', 'Notes')
-        self.setRowCount(5)
-        self.setColumnCount(len(columns))
-        self.setHorizontalHeaderLabels(columns)
-        self.verticalHeader().hide()
-        [self.setColumnWidth(i,w) for i,w in zip(range(len(columns)), [60,40,40,40])]
-        self.cells=[]
-        '''Test'''
-        for j in range(self.rowCount()):
-            self.cells.append(CellTableWidgetItem(self, j, FakeCube(j), j))
-    def showContextMenu(self, point:QtCore.QPoint):
-        menu = QMenu("Context Menu")
-        action = menu.addAction("Disable cell")
-        action.triggered.connect(self.toggleSelectedCellsInvalid)
-        menu.exec(self.mapToGlobal(point))
-        
-    def toggleSelectedCellsInvalid(self):
-        sel = self.selectedCells
-        state = not sel[0].isInvalid()
-        for i in sel:
-            i.setInvalid(state)
-    
-    @property
-    def selectedCells(self) -> typing.List[int]:
-        '''Returns the rows that have been selected.'''
-        rowIndices = [i.row() for i in self.selectedIndexes()[::self.columnCount()]]
-        rowIndices.sort()
-        return [self.cells[i] for i in rowIndices]
-    
-
 class CellTableWidgetItem:
-    def __init__(self,parent:CellTableWidget, row:int, cube:ICMetaData, num:int):
+    def __init__(self, cube:ICMetaData, label:str, num:int):
         self.cube = cube
-        self.parent = parent
-        self.row=row
+        self.num = num
         self.notesButton = QPushButton("Open")
         self.notesButton.setFixedSize(40,30)
-        self.label = QTableWidgetItem(cube.filePath)
-        
+        self.label = QTableWidgetItem(label)
+        self.numLabel = QTableWidgetItem(str(num))
         self.notesButton.released.connect(self.editNotes)
-        
-        self.parent.setItem(row,0,self.label)
-        self.parent.setItem(row, 1, QTableWidgetItem(str(3)))#len(cube.getMasks())))
-        self.parent.setItem(row, 2, QTableWidgetItem(str(1)))
-        self.parent.setCellWidget(row, 3, self.notesButton)
         
         self._invalid = False
         
@@ -139,6 +99,55 @@ class CellTableWidgetItem:
         self._invalid = invalid
     def isInvalid(self) -> bool :
         return self._invalid
+    
+class CellTableWidget(QTableWidget):
+    def __init__(self, parent):
+        super().__init__()
+        self.parent = parent
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.showContextMenu)
+        self.setSelectionBehavior(QAbstractItemView.SelectRows)
+        columns = ('Path','Cell#', 'ROIs','Analyses', 'Notes')
+        self.setRowCount(0)
+        self.setColumnCount(len(columns))
+        self.setHorizontalHeaderLabels(columns)
+        self.verticalHeader().hide()
+        [self.setColumnWidth(i,w) for i,w in zip(range(len(columns)), [60,40,40,50,40])]
+        self.cellItems=[]
+
+    def showContextMenu(self, point:QtCore.QPoint):
+        menu = QMenu("Context Menu")
+        state = not self.selectedCells[0].isInvalid()
+        stateString = "Disable Cell(s)" if state else "Enable Cell(s)"
+        action = menu.addAction(stateString)
+        action.triggered.connect(lambda: self.toggleSelectedCellsInvalid(state))
+        menu.exec(self.mapToGlobal(point))
+        
+    def toggleSelectedCellsInvalid(self, state:bool):
+        for i in self.selectedCells:
+            i.setInvalid(state)
+    
+    @property
+    def selectedCells(self) -> typing.List[CellTableWidgetItem]:
+        '''Returns the rows that have been selected.'''
+        rowIndices = [i.row() for i in self.selectedIndexes()[::self.columnCount()]]
+        rowIndices.sort()
+        return [self.cellItems[i] for i in rowIndices]
+    
+    @property
+    def enabledCells(self) -> typing.List[CellTableWidgetItem]:
+        return [i for i in self.cellItems if not i.isInvalid()]
+    
+    def addCellItem(self, item:CellTableWidgetItem):
+        row = len(self.cellItems)
+        self.setRowCount(row+1)
+        self.setItem(row,0,item.label)
+        self.setItem(row, 1, item.numLabel)
+        self.setItem(row, 2, QTableWidgetItem(str(3)))#len(cube.getMasks())))
+        self.setItem(row, 3, QTableWidgetItem(str(1)))
+        self.setCellWidget(row, 4, item.notesButton)
+        self.cellItems.append(item)
+
     
 class CollapsibleSection(QWidget):
     stateChanged = QtCore.pyqtSignal(bool)
