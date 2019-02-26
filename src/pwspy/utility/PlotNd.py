@@ -11,8 +11,9 @@ import scipy.ndimage as ndi
 from matplotlib.animation import FuncAnimation
 
 class PlotNd(object):
-    def __init__(self, X, names = ['y','x','lambda'], initialCoords=None):
+    def __init__(self, X, names = ['y','x','lambda'], initialCoords=None, title=''):
         fig = plt.figure(figsize=(6,6)) 
+        fig.suptitle(title)
         h,w =X.shape[:2]
         self.names=names
         self.extraDims = len(X.shape[2:])
@@ -22,7 +23,6 @@ class PlotNd(object):
         ax['x'] = plt.subplot(gs[2,self.extraDims+1], sharex=ax['im'])
         ax['extra'] = [plt.subplot(gs[1,i]) for i in range(self.extraDims)]
         ax['c'] = plt.subplot(gs[0,self.extraDims+1])
-        fig.suptitle(names[1]+names[0])
         ax['y'].set_title(names[0])
         ax['x'].set_xlabel(names[1])
         ax['y'].yaxis.set_ticks_position('right')

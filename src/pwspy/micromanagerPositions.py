@@ -163,7 +163,7 @@ class PositionList:
         ax.set_xlabel("x")
         ax.set_ylabel('y')
         ax.set_aspect('equal')
-        cmap = mpl.cm.get_cmap("Spectral")
+        cmap = mpl.cm.get_cmap("gist_rainbow")
         colors = [cmap(i) for i in np.linspace(0,1,num=len(self.positions))]
         names = [pos.label for pos in self.positions]
         sc = plt.scatter([pos.x for pos in self.positions], [pos.y for pos in self.positions], c = [colors[i] for i in range(len(self.positions))])
