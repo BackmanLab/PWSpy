@@ -21,17 +21,16 @@ class CellSelectorDock(QDockWidget):
     def __init__(self):
         super().__init__("Cell Selector")
         self.setObjectName('CellSelectorDock') #needed for restore state to work
-        self.tableWidget = CellTableWidget()
+        self.tableWidget = CellTableWidget(self)
 #        self.tableWidget.setRowCount(4)
 #        self.tableWidget.setColumnCount(1)
 #        self.tableWidget.setItem(0,0, QTableWidgetItem("Cell (1,1)"))
         self.setWidget(self.tableWidget)
         self.cells = []
-    def addCell(self, fileName:str):
+    def addCell(self, fileName:str, workingDir:str):
         self.cells.append(ICMetaData.loadAny(fileName))
-        print(fileName)
-        cell = CellTableWidgetItem(self.tableWidget, len(self.cells), self.cells[-1], int(os.path.split(fileName)[-1][4:]))
-        
+        cell = CellTableWidgetItem(self.cells[-1], os.path.split(fileName)[0][len(workingDir)+1:], int(fileName.split('Cell')[-1]))
+        self.tableWidget.addCellItem(cell)
     
 class AnalysisSettingsDock(QDockWidget):
     def __init__(self):
@@ -169,9 +168,6 @@ class PlottingWidget(QDockWidget):
         self.scrollContents = QWidget()
         self.arController = AspectRatioWidget(self.scrollContents, 1, self)
         self.scrollContents.setLayout(QVBoxLayout())
-        for i in range(4):
-            self.addPlot(LittlePlot())
-#        scrollContents.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         plotScroll.setWidget(self.arController)
         buttons = QWidget()
         buttons.setLayout(QVBoxLayout())

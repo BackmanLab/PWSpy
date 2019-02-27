@@ -33,8 +33,8 @@ class App(QMainWindow):
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.resultsTable)
         self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks | QMainWindow.AllowTabbedDocks)
         
-        self.fileDialog = WorkingDirDialog()
-        self.fileDialog.scanButtonPushed.connect(self.searchCells)
+        self.fileDialog = WorkingDirDialog(self)
+#        self.fileDialog.scanButtonPushed.connect(self.searchCells)
 
         menuBar = self.menuBar()
         view = menuBar.addMenu("View")
@@ -53,10 +53,6 @@ class App(QMainWindow):
             print(e)
         self.show()
         
-    def searchCells(self, path:str, recursive: bool):
-        pattern = os.path.join('**','Cell*') if recursive else 'Cell*'
-        files = glob(os.path.join(path, pattern))
-        [self.cellSelector.addCell(f) for f in files]
         
     def closeEvent(self, event):
         settings = QtCore.QSettings("BackmanLab", "PWSAnalysis2")

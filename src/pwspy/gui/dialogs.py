@@ -9,14 +9,16 @@ from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QDockWidget
 from PyQt5.QtWidgets import (QTableWidget,QTableWidgetItem, QVBoxLayout,
                              QTabWidget, QTextEdit, QLabel, QGroupBox,
                              QGridLayout, QApplication, QStyleFactory, QDialog,
-                             QHBoxLayout, QLineEdit, QPushButton, QFileDialog, QCheckBox)
+                             QHBoxLayout, QLineEdit, QPushButton, QFileDialog, QCheckBox,
+                             QMessageBox)
 import os
+from glob import glob
 
 class WorkingDirDialog(QDialog):
-    scanButtonPushed = QtCore.pyqtSignal(str, bool)
+#    scanButtonPushed = QtCore.pyqtSignal(str, bool)
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent):
+        super().__init__(parent)
         self.setWindowTitle("Working Directory")
         self.setLayout(QGridLayout())
         self.setModal(True)
@@ -34,8 +36,18 @@ class WorkingDirDialog(QDialog):
         self.directory = os.path.expanduser('~')
         
     def scanButtonPushed_(self):
-        self.accept()
-        self.scanButtonPushed.emit(self.textLine.text(), self.recursiveCheckbox.checkState()!=0)
+#            def searchCells(self, path:str, recursive: bool):
+        self.workingDir = self.textLine.text()
+        recursive = self.recursiveCheckbox.checkState()!=0
+        pattern = os.path.join('**','Cell*') if recursive else 'Cell*'
+        files = glob(os.path.join(self.workingDir, pattern))
+        if len(files)==0:
+            QMessageBox.information(self, "Hmm", "No PWS files were found.")
+        else:
+            _,files = zip(*sorted([(int(f.split('Cell')[-1]),f) for f in files]))
+            [self.parent().cellSelector.addCell(f, self.workingDir) for f in files]
+            self.accept()
+#        self.scanButtonPushed.emit(self.textLine.text(), self.recursiveCheckbox.checkState()!=0)
         
     def browseFile(self):
 #        _ = QFileDialog(self)
