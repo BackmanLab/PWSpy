@@ -100,7 +100,6 @@ class myLasso(_SelectorWidget):
         self.set_active(True) #needed for blitting to work
         
     def _press(self, event):
-        print(self.p)
         if self.p is None:
             self.verts = [self._get_data(event)]
             self.set_visible(True)
