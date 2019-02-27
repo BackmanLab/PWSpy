@@ -13,12 +13,14 @@ from PyQt5.QtWidgets import (QWidget, QApplication, QGridLayout,
                              QAbstractItemView, QMenu, QHBoxLayout,
                              QPushButton, QLabel, QFrame, QToolButton,
                              QScrollArea, QLayout, QSizePolicy, QCheckBox,
-                             QBoxLayout, QSpacerItem)
+                             QBoxLayout, QSpacerItem, QButtonGroup)
 from PyQt5 import (QtGui, QtCore)
 import typing
 from pwspy.imCube.ImCubeClass import ImCube, FakeCube
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 from pwspy.utility import PlotNd
+from pwspy.imCube.matplotlibwidg import myLasso
+from matplotlib.widgets import LassoSelector
 
 class LittlePlot(FigureCanvas):
     def __init__(self):
@@ -37,20 +39,41 @@ class LittlePlot(FigureCanvas):
         self.setMaximumWidth(200)
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
-            BigPlot(self.data)
+            BigPlot(self, self.data)
 
 class BigPlot(QWidget):
-    def __init__(self, data):
-        super().__init__()
+    def __init__(self, parent, data):
+        super().__init__(parent, QtCore.Qt.Window)
+        self.setWindowTitle("What?!")
         self.setLayout(QGridLayout())
         self.fig = Figure()
-        ax = self.fig.add_subplot(1,1,1)
-        ax.imshow(data)
-        canvas = FigureCanvas(self.fig)
-        self.layout().addWidget(canvas)
-        self.layout().addWidget(NavigationToolbar(canvas, self))
+        self.ax = self.fig.add_subplot(1,1,1)
+        self.ax.imshow(data)
+        self.canvas = FigureCanvas(self.fig)
+        self.canvas.setFocusPolicy( QtCore.Qt.ClickFocus )
+        self.canvas.setFocus()
+        self.buttonGroup = QButtonGroup(self)
+        self.lassoButton = QPushButton("L")
+        self.ellipseButton = QPushButton("O")
+        self.lastButton_ = None
+        self.buttonGroup.addButton(self.lassoButton,1)
+        self.buttonGroup.addButton(self.ellipseButton)
+        self.buttonGroup.buttonReleased.connect(self.handleButtons)
+        [i.setCheckable(True) for i in self.buttonGroup.buttons()]
+        
+        self.layout().addWidget(self.lassoButton,0,0,1,1)
+        self.layout().addWidget(self.ellipseButton,0,1,1,1)
+        self.layout().addWidget(self.canvas,1,0,8,8)
+        self.layout().addWidget(NavigationToolbar(self.canvas, self),10,0,8,8)
         self.show()
- 
+    def handleButtons(self,button):
+        if button != self.lastButton_:
+            if button is self.lassoButton:
+                self.selector=myLasso(self.ax)
+            elif button is self.ellipseButton:
+                self.selector = LassoSelector(self.ax)
+            self.lastButton_ = button
+
 class CopyableTable(QTableWidget):
     def __init__(self):
         super().__init__()
