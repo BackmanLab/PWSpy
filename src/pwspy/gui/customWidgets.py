@@ -13,8 +13,7 @@ from PyQt5.QtWidgets import (QWidget, QApplication, QGridLayout,
                              QAbstractItemView, QMenu, QHBoxLayout,
                              QPushButton, QLabel, QFrame, QToolButton,
                              QScrollArea, QLayout, QSizePolicy, QCheckBox,
-                             QBoxLayout, QSpacerItem, QButtonGroup)
-                             QBoxLayout, QSpacerItem, QMessageBox)
+                             QBoxLayout, QSpacerItem, QButtonGroup, QMessageBox)
 from PyQt5 import (QtGui, QtCore)
 import typing
 from pwspy.imCube.ImCubeClass import ImCube, FakeCube
