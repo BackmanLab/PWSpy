@@ -13,38 +13,7 @@ from matplotlib import path
 import matplotlib.pyplot as plt
 from scipy import interpolate
 from shapely.geometry import LinearRing, Polygon as shapelyPolygon
-
-
-class myBase:
-    def __init__(self, ax):
-        self.ax = ax
-        self.canvas = ax.figure.canvas
-        self.background = self.canvas.copy_from_bbox(self.ax.bbox)
-        self.artists = []
-
-    def update(self):
-        self.canvas.restore_region(self.background)
-        [self.ax.draw_artist(i) for i in self.artists]
-        self.canvas.blit(self.ax.bbox)
-        
-    def setActive(self, active:bool):
-        if active:
-            self.canvas.mpl_connect('draw_event', self.onDraw)
-            self.canvas.mpl_connect('button_press_event', self.onPress)
-            self.canvas.mpl_connect('key_press_event', self.onKey)
-            self.canvas.mpl_connect('button_release_event', self.onRelease)
-            self.canvas.mpl_connect('motion_notify_event', self.onMotion)
-            [i.set_visible(True) for i in self.artists]
-        else:
-            for i in self.artists:
-                i.set_visible(False)         
-        self.update()
-
-    def onDraw(self, event):
-        self.background = self.canvas.copy_from_bbox(self.ax.bbox)
-        [self.ax.draw_artist(i) for i in self.artists]
-        # do not need to blit here, this will fire before the screen is
-        # updated
+import numpy as np
 
 class myLasso(_SelectorWidget):
     """
@@ -96,66 +65,55 @@ class myLasso(_SelectorWidget):
         self.polygon.set_visible(False)
         self.ax.add_patch(self.polygon)
         self.artists = [self.polygon]
-        self.p = None
         self.set_active(True) #needed for blitting to work
         
     def _press(self, event):
-        if self.p is None:
-            self.verts = [self._get_data(event)]
-            self.set_visible(True)
+        self.verts = [self._get_data(event)]
+        self.set_visible(True)
 
 
 
     def _release(self, event):
-        if self.p is None:
 
-            self.disconnect_events()
-            if (self.verts is not None) and (self.onselect is not None):
-                self.onselect(self.verts)
-            self.set_visible(False)
-            self.set_active(False)
-    
-            l = shapelyPolygon(LinearRing(self.verts))
-            l = l.buffer(0)
-            l=l.simplify(l.length/2e2, preserve_topology=False)
-            self.polygon.set_xy(l.exterior.coords)
-    
-    #        plt.plot(*list(zip(*list(l.exterior.coords))))
-            
-    #        tck,u = interpolate.splprep([[i[0] for i in self.verts], [i[1] for i in self.verts]], per=True)
-    #        unew = np.linspace(0,1)
-    #        out = interpolate.splev(unew, tck)
-    #        self.ax.plot(out[0],out[1])
-    #        pat = path.Path(self.verts, closed=True)
-    #        newverts = [vert for vert,code in pat.iter_segments(simplify=True)]
-            self.p=PolygonInteractor(self.ax, self.polygon.xy)
-            self.p.setActive(True)
-    #        p.wait()
-            self.set_active(True)
-            self.connect_default_events()
-            self.verts = None
-            self.update()
+        self.disconnect_events()
+        if (self.verts is not None) and (self.onselect is not None):
+            self.onselect(self.verts)
+        self.set_visible(False)
+        self.set_active(False)
+
+#            l = shapelyPolygon(LinearRing(self.verts))
+#            l = l.buffer(0)
+#            l=l.simplify(l.length/2e2, preserve_topology=False)
+#            self.polygon.set_xy(l.exterior.coords)
+#    
+#    #        plt.plot(*list(zip(*list(l.exterior.coords))))
+#            
+#    #        tck,u = interpolate.splprep([[i[0] for i in self.verts], [i[1] for i in self.verts]], per=True)
+#    #        unew = np.linspace(0,1)
+#    #        out = interpolate.splev(unew, tck)
+#    #        self.ax.plot(out[0],out[1])
+#    #        pat = path.Path(self.verts, closed=True)
+#    #        newverts = [vert for vert,code in pat.iter_segments(simplify=True)]
+#            self.p=PolygonInteractor(self.ax, self.polygon.xy)
+#            self.p.setActive(True)
+#    #        p.wait()
+#            self.set_active(True)
+#            self.connect_default_events()
+#            self.verts = None
+#        self.update()
 
     def _onmove(self, event):
-        if self.p is None:
-            if self.verts is None:
-                return
-            self.verts.append(self._get_data(event))
-            self.polygon.set_xy(self.verts)
-            self.update()
+        if self.verts is None:
+            return
+        self.verts.append(self._get_data(event))
+        self.polygon.set_xy(self.verts)
+        self.update()
 #            self.canvas.restore_region(self.background)
 #            self.ax.draw_artist(self.polygon)
 #            self.canvas.blit(self.ax.bbox)
-        
-        
-import numpy as np
-from  scipy.interpolate import interp1d
-from matplotlib.lines import Line2D
-from matplotlib.artist import Artist
-from matplotlib.mlab import dist_point_to_segment
 
 
-class PolygonInteractor(myBase):
+class PolygonInteractor(_SelectorWidget):
     """
     A polygon editor.
     https://matplotlib.org/gallery/event_handling/poly_editor.html
@@ -174,25 +132,33 @@ class PolygonInteractor(myBase):
     showverts = True
     epsilon = 5  # max pixel distance to count as a vertex hit
 
-    def __init__(self, ax, verts):
-        super().__init__(ax)    
+    def __init__(self, ax):
+        super().__init__(ax, None, useblit = True)    
 
-        x, y = zip(*verts)
-        self.line = Line2D(x[:], y[:], ls="",
+        self.line = Line2D([0],[0], ls="",
                            marker='o', markerfacecolor='r',
                            animated=True)
         self.ax.add_line(self.line)
-        self.artists.append(self.line)
         self._ind = None  # the active vert
         self._hoverInd = None
 
-        xy = self.interpolate()
-        self.line2 = Polygon(xy, animated=True, facecolor=(0,0,1,.1), edgecolor=(0,0,1,.9))
+        self.line2 = Polygon([[0,0]], animated=True, facecolor=(0,0,1,.1), edgecolor=(0,0,1,.9))
         self.ax.add_patch(self.line2)
-        self.done = False
         self.artists = [self.line2, self.line]
-        self.canvas.draw_idle()
+#        self.set_active(True)
+#        self.canvas.draw_idle()
+        
+    def initialize(self, verts):
 
+        x, y = zip(*verts)
+        self.line.set_data(x,y)
+        print(self.line.get_data())
+        xy=[[0,0],[100,100],[0,100]]
+#        xy = self.interpolate()
+        self.line2.set_xy(xy)
+        self.set_visible(True)
+        self.update()
+        
     def interpolate(self):
         x,y = self.line.get_data()
         tck, u = interpolate.splprep([x, y], s=0, per=True)   
@@ -209,13 +175,12 @@ class PolygonInteractor(myBase):
         d = np.hypot(xt - event.x, yt - event.y)
         indseq, = np.nonzero(d == d.min())
         ind = indseq[0]
-
         if d[ind] >= self.epsilon:
             ind = None
 
         return ind
 
-    def onPress(self, event):
+    def _press(self, event):
         'whenever a mouse button is pressed'
         if not self.showverts:
             return
@@ -225,7 +190,7 @@ class PolygonInteractor(myBase):
             return
         self._ind = self.get_ind_under_point(event)
 
-    def onRelease(self, event):
+    def _release(self, event):
         'whenever a mouse button is released'
         if not self.showverts:
             return
@@ -233,7 +198,7 @@ class PolygonInteractor(myBase):
             return
         self._ind = None
 
-    def onKey(self, event):
+    def _on_key_press(self, event):
         'whenever a key is pressed'
 #        if not event.inaxes:
 #            return
@@ -266,7 +231,7 @@ class PolygonInteractor(myBase):
             self.canvas.draw_idle()
 
 
-    def onMotion(self, event):
+    def _onmove(self, event):
         'on mouse movement'
         if not self.showverts:
             return
@@ -302,5 +267,17 @@ if __name__ == '__main__':
 
     from pwspy import ImCube
 
-    a = ImCube.loadAny(r'C:\Users\Nick\Downloads\lctf50msdelay\vf5nodelay\Cell1')
-    a.selectLassoROI()
+#    a = ImCube.loadAny(r'C:\Users\Nick\Downloads\lctf50msdelay\vf5nodelay\Cell1')
+#    a.selectLassoROI()
+#    fig,ax = a.plotMean()
+    fig, ax = plt.subplots()
+    def onselect(verts):
+        l = shapelyPolygon(LinearRing(verts))
+        l = l.buffer(0)
+        l=l.simplify(l.length/2e2, preserve_topology=False)
+        
+        p.active=True
+        p.initialize(l.exterior.coords)
+    l = myLasso(ax, onselect=onselect)
+    p = PolygonInteractor(ax)
+    p.active = False
