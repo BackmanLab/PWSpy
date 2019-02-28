@@ -143,10 +143,12 @@ class ImCube(ICBase, ICMetaData):
             raise Exception("The ImCube has already been normalized by exposure.")
         self._hasBeenNormalized = True
     
-    def correctCameraEffects(self, correction:'CameraCorrection'=self.cameraCorrection, binning:int=None):
+    def correctCameraEffects(self, correction:'CameraCorrection'=None, binning:int=None):
         #Subtracts the darkcounts from the data. count is darkcounts per pixel. binning should be specified if it wasn't saved in the micromanager metadata.
         if self._cameraCorrected:
             raise Exception("This ImCube has already had it's camera correction applied!")
+        if correction is None:
+            correction = self.cameraCorrection
         if binning is None:
             try:
                 binning = self.metadata['MicroManagerMetadata']['Binning']

@@ -60,7 +60,7 @@ def loadThenProcess(procFunc,procFuncArgs, lock, fileAndSpecifiers):
     return procFunc(im, *procFuncArgs)
 
 '''User Functions'''
-def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = None, parallel = False, procArgs = [], constArgs = [], initializer=None) -> typing.List[ImCube]:
+def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = None, parallel = False, procArgs = []) -> typing.List[ImCube]:
     #Error checking
     numThreads = 2 #even this might be unnecesary. don't bother going higher.
     print("Starting loading")
@@ -81,7 +81,7 @@ def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = No
             raise Exception("Running in parallel with no processorFunc is a bad idea.")
         m = mp.Manager()
         lock = m.Lock()
-        po = mp.Pool(processes = psutil.cpu_count(logical=False)-1, initializer=initializer, initargs=constArgs)
+        po = mp.Pool(processes = psutil.cpu_count(logical=False)-1)
         cubes = po.starmap(loadThenProcess, zip(*zip(*[[processorFunc, procArgs, lock]]*len(files)), files))
     else:
         qout = queue.Queue()
@@ -92,7 +92,7 @@ def loadAndProcess(fileDict:dict, processorFunc = None, specifierNames:list = No
         [thread.start() for thread in threads]
         print('threads started')
         if processorFunc is not None:
-            cubes = [processorFunc(qout.get(),*(procArgs+constArgs)) for i in range(len(files))]
+            cubes = [processorFunc(qout.get(),*procArgs) for i in range(len(files))]
         else:
             cubes = [qout.get() for i in range(len(files))]
 #        thread1.join()
