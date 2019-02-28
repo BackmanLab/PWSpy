@@ -105,11 +105,11 @@ class NumberTableWidgetItem(QTableWidgetItem):
             super().__init__(str(num))
             num = float(num) #in case the constructor is called with a string. 
             self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled) #read only
-            self._number = num
+            self.number = num
         def __lt__(self, other:'NumberTableWidgetItem'):
-            return self._number < other._number
+            return self.number < other.number
         def __gt__(self, other:'NumberTableWidgetItem'):
-            return self._number > other._number
+            return self.number > other.number
 
 
 class CellTableWidgetItem:

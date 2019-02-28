@@ -29,13 +29,12 @@ class CellSelectorDock(QDockWidget):
         self.tableWidget = CellTableWidget(self.widget)
         self.filterWidget = QWidget(self.widget)
         self.pathFilter = QComboBox(self.filterWidget)
-        self.pathFilter.currentTextChanged.connect(self.filterPath)
         self.pathFilter.setEditable(True)
-        self.numberFilter = QLineEdit(self.filterWidget)
-        self.numberFilter.editingFinished.connect(self.filterNumbers)
+        self.expressionFilter = QLineEdit(self.filterWidget)
+        self.expressionFilter.editingFinished.connect(self.executeFilter)
         _ = QGridLayout()
         _.addWidget(self.pathFilter,0,0,1,1)
-        _.addWidget(self.numberFilter,0,1,1,1)
+        _.addWidget(self.expressionFilter,0,1,1,1)
         self.filterWidget.setLayout(_)
         layout.addWidget(self.tableWidget)
         layout.addWidget(self.filterWidget)
@@ -50,34 +49,43 @@ class CellSelectorDock(QDockWidget):
         self.cells = []
         self.tableWidget.clearCellItems()
     def updateFilters(self):
+        try:
+            self.pathFilter.currentIndexChanged.disconnect()
+        except:
+            pass
         self.pathFilter.clear()
         self.pathFilter.addItem('.*')
         paths = []
         for i in self.tableWidget.cellItems:
             paths.append(i.path.text())
         self.pathFilter.addItems(set(paths))
-    def filterPath(self, path:str):
-#        path = r'{}'.format(path)
+        self.pathFilter.currentIndexChanged.connect(self.executeFilter) #reconnect
+
+    def executeFilter(self):
+        path = self.pathFilter.currentText()
         path = path.replace('\\', '\\\\')
         for i in range(self.tableWidget.rowCount()):
-#            text = r'{}'.format(self.tableWidget.item(i,0).text())
             text = self.tableWidget.item(i,0).text()
             text = text.replace(r'\\', r'\\\\')
-            print(text, path)
-            if re.match(path,text):
+            try:
+                match = re.match(path, text)
+            except:
+                QMessageBox.information(self, 'Hmm', f'{text} is not a valid regex expression.')
+                return
+            expr = self.expressionFilter.text()
+            if expr.strip() != '':
+                try:
+                    ret = bool(eval(expr.format(num=self.tableWidget.item(i,1).number)))
+                except:
+                    QMessageBox.information(self, 'Hmm', f'{expr} is not a valid boolean expression.')
+                    return
+            else:
+                ret = True
+            if match and ret:
                 self.tableWidget.setRowHidden(i,False)
             else:
                 self.tableWidget.setRowHidden(i,True)
-    def filterNumbers(self):
-        pattern = self.numberFilter.text()
-        try:
-            ret = eval(pattern)
-        except:
-            QMessageBox.information(f'{pattern} is not a valid command.')
-            return
-        if not isinstance(ret, Iterable):
-            QMessageBox.information(f'{pattern} does not generate an iterator.')
-            return
+
     
 class AnalysisSettingsDock(QDockWidget):
     def __init__(self):

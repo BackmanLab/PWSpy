@@ -15,8 +15,6 @@ import os
 from glob import glob
 
 class WorkingDirDialog(QDialog):
-#    scanButtonPushed = QtCore.pyqtSignal(str, bool)
-
     def __init__(self, parent):
         super().__init__(parent, QtCore.Qt.WindowTitleHint | QtCore.Qt.WindowSystemMenuHint | QtCore.Qt.WindowCloseButtonHint) #Construct without a question mark button
         self.setWindowTitle("Working Directory")
