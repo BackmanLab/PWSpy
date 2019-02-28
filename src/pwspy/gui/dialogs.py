@@ -18,7 +18,7 @@ class WorkingDirDialog(QDialog):
 #    scanButtonPushed = QtCore.pyqtSignal(str, bool)
 
     def __init__(self, parent):
-        super().__init__(parent)
+        super().__init__(parent, QtCore.Qt.WindowTitleHint | QtCore.Qt.WindowSystemMenuHint | QtCore.Qt.WindowCloseButtonHint) #Construct without a question mark button
         self.setWindowTitle("Working Directory")
         self.setLayout(QGridLayout())
         self.setModal(True)
