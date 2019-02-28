@@ -9,28 +9,75 @@ from PyQt5.QtWidgets import (QDockWidget, QTableWidget, QTableWidgetItem,
                              QRadioButton, QFrame, QHBoxLayout, QVBoxLayout,
                              QScrollArea, QWidget, QDialog, QSpinBox,
                              QFileDialog, QPushButton, QApplication,
-                             QCheckBox, QSizePolicy, QSpacerItem, QMessageBox)
+                             QCheckBox, QSizePolicy, QSpacerItem, QMessageBox,
+                             QComboBox)
 from PyQt5 import (QtCore, QtGui)
 from customWidgets import CopyableTable, LittlePlot, CellTableWidget, CollapsibleSection, AspectRatioWidget, CellTableWidgetItem
 from pwspy.analysis import AnalysisSettings
 import os
 from pwspy.imCube.ICMetaDataClass import ICMetaData
+import re
+from collections.abc import Iterable
 
 
 class CellSelectorDock(QDockWidget):
     def __init__(self):
         super().__init__("Cell Selector")
         self.setObjectName('CellSelectorDock') #needed for restore state to work
-        self.tableWidget = CellTableWidget(self)
-#        self.tableWidget.setRowCount(4)
-#        self.tableWidget.setColumnCount(1)
-#        self.tableWidget.setItem(0,0, QTableWidgetItem("Cell (1,1)"))
-        self.setWidget(self.tableWidget)
+        self.widget = QWidget(self)
+        layout = QVBoxLayout()
+        self.tableWidget = CellTableWidget(self.widget)
+        self.filterWidget = QWidget(self.widget)
+        self.pathFilter = QComboBox(self.filterWidget)
+        self.pathFilter.currentTextChanged.connect(self.filterPath)
+        self.pathFilter.setEditable(True)
+        self.numberFilter = QLineEdit(self.filterWidget)
+        self.numberFilter.editingFinished.connect(self.filterNumbers)
+        _ = QGridLayout()
+        _.addWidget(self.pathFilter,0,0,1,1)
+        _.addWidget(self.numberFilter,0,1,1,1)
+        self.filterWidget.setLayout(_)
+        layout.addWidget(self.tableWidget)
+        layout.addWidget(self.filterWidget)
+        self.widget.setLayout(layout)
+        self.setWidget(self.widget)
         self.cells = []
     def addCell(self, fileName:str, workingDir:str):
         self.cells.append(ICMetaData.loadAny(fileName))
         cell = CellTableWidgetItem(self.cells[-1], os.path.split(fileName)[0][len(workingDir)+1:], int(fileName.split('Cell')[-1]))
         self.tableWidget.addCellItem(cell)
+    def clearCells(self):
+        self.cells = []
+        self.tableWidget.clearCellItems()
+    def updateFilters(self):
+        self.pathFilter.clear()
+        self.pathFilter.addItem('.*')
+        paths = []
+        for i in self.tableWidget.cellItems:
+            paths.append(i.path.text())
+        self.pathFilter.addItems(set(paths))
+    def filterPath(self, path:str):
+#        path = r'{}'.format(path)
+        path = path.replace('\\', '\\\\')
+        for i in range(self.tableWidget.rowCount()):
+#            text = r'{}'.format(self.tableWidget.item(i,0).text())
+            text = self.tableWidget.item(i,0).text()
+            text = text.replace(r'\\', r'\\\\')
+            print(text, path)
+            if re.match(path,text):
+                self.tableWidget.setRowHidden(i,False)
+            else:
+                self.tableWidget.setRowHidden(i,True)
+    def filterNumbers(self):
+        pattern = self.numberFilter.text()
+        try:
+            ret = eval(pattern)
+        except:
+            QMessageBox.information(f'{pattern} is not a valid command.')
+            return
+        if not isinstance(ret, Iterable):
+            QMessageBox.information(f'{pattern} does not generate an iterator.')
+            return
     
 class AnalysisSettingsDock(QDockWidget):
     def __init__(self):

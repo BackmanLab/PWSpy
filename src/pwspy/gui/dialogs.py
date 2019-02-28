@@ -36,16 +36,19 @@ class WorkingDirDialog(QDialog):
         self.directory = os.path.expanduser('~')
         
     def scanButtonPushed_(self):
-#            def searchCells(self, path:str, recursive: bool):
         self.workingDir = self.textLine.text()
         recursive = self.recursiveCheckbox.checkState()!=0
-        pattern = os.path.join('**','Cell*') if recursive else 'Cell*'
-        files = glob(os.path.join(self.workingDir, pattern))
+        pattern = [os.path.join('**','Cell*')] if recursive else ['Cell*']
+        files = []
+        for patt in pattern:
+            files.extend(glob(os.path.join(self.workingDir, patt), recursive=recursive))
         if len(files)==0:
             QMessageBox.information(self, "Hmm", "No PWS files were found.")
         else:
             _,files = zip(*sorted([(int(f.split('Cell')[-1]),f) for f in files]))
+            self.parent().cellSelector.clearCells()
             [self.parent().cellSelector.addCell(f, self.workingDir) for f in files]
+            self.parent().cellSelector.updateFilters()
             self.accept()
 #        self.scanButtonPushed.emit(self.textLine.text(), self.recursiveCheckbox.checkState()!=0)
         

@@ -20,6 +20,7 @@ from pwspy.imCube.ImCubeClass import ImCube, FakeCube
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 from pwspy.utility import PlotNd
 import os.path as osp
+import time
 
 class LittlePlot(FigureCanvas):
     def __init__(self, data:np.ndarray, cell:ImCube):
@@ -76,14 +77,26 @@ class CopyableTable(QTableWidget):
         except Exception as e:
             print("Copy Failed: ",e)
    
+class NumberTableWidgetItem(QTableWidgetItem):
+        def __init__(self, num:float):
+            super().__init__(str(num))
+            num = float(num) #in case the constructor is called with a string. 
+            self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled) #read only
+            self._number = num
+        def __lt__(self, other:'NumberTableWidgetItem'):
+            return self._number < other._number
+        def __gt__(self, other:'NumberTableWidgetItem'):
+            return self._number > other._number
+
+
 class CellTableWidgetItem:
     def __init__(self, cube:ICMetaData, label:str, num:int):
         self.cube = cube
         self.num = num
         self.notesButton = QPushButton("Open")
         self.notesButton.setFixedSize(40,30)
-        self.label = QTableWidgetItem(label)
-        self.numLabel = QTableWidgetItem(str(num))
+        self.path = QTableWidgetItem(label)
+        self.numLabel = NumberTableWidgetItem(num)
         self.notesButton.released.connect(self.editNotes)
         
         self._invalid = False
@@ -93,17 +106,19 @@ class CellTableWidgetItem:
         
     def setInvalid(self,invalid:bool):
         if invalid:
-            self.label.setBackground(QtCore.Qt.red)
+            self.path.setBackground(QtCore.Qt.red)
         else:
-            self.label.setBackground(QtCore.Qt.white)
+            self.path.setBackground(QtCore.Qt.white)
         self._invalid = invalid
-    def isInvalid(self) -> bool :
+        
+    def isInvalid(self) -> bool:
         return self._invalid
     
 class CellTableWidget(QTableWidget):
     def __init__(self, parent):
-        super().__init__()
+        super().__init__(parent)
         self.parent = parent
+        self.setSortingEnabled(True)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.showContextMenu)
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -140,15 +155,20 @@ class CellTableWidget(QTableWidget):
     
     def addCellItem(self, item:CellTableWidgetItem):
         row = len(self.cellItems)
+        self.setSortingEnabled(False) #The fact that we are adding items assuming its the last row is a problem is sorting is on.
         self.setRowCount(row+1)
-        self.setItem(row,0,item.label)
+        self.setItem(row, 0, item.path)
         self.setItem(row, 1, item.numLabel)
         self.setItem(row, 2, QTableWidgetItem(str(3)))#len(cube.getMasks())))
         self.setItem(row, 3, QTableWidgetItem(str(1)))
         self.setCellWidget(row, 4, item.notesButton)
+        self.setSortingEnabled(True)
         self.cellItems.append(item)
 
-    
+    def clearCellItems(self):
+        self.setRowCount(0)
+        self.cellItems = []
+
 class CollapsibleSection(QWidget):
     stateChanged = QtCore.pyqtSignal(bool)
     def __init__(self, title, animationDuration, parent:QWidget):
