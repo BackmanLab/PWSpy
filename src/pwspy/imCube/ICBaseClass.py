@@ -9,6 +9,7 @@ import scipy.signal as sps
 import matplotlib.pyplot as plt
 from matplotlib import widgets
 from matplotlib import path
+from .matplotlibwidg import myLasso, Polygon, PolygonInteractor
 
 
 class ICBase():
@@ -50,12 +51,15 @@ class ICBase():
         x,y = np.meshgrid(np.arange(self.data.shape[0]),np.arange(self.data.shape[1]))
         coords = np.vstack((y.flatten(),x.flatten())).T
         
-        def onSelect(verts):
-            p = path.Path(verts)
-            ind = p.contains_points(coords,radius=0)
-            mask[coords[ind,1],coords[ind,0]] = True
+        def onSelect(verts):   
+            pass
+#            p = path.Path(verts)
+#            ind = p.contains_points(coords,radius=0)
+#            mask[coords[ind,1],coords[ind,0]] = True
             
-        l = widgets.LassoSelector(ax,onSelect, lineprops={'color':'r'})
+#        l = widgets.LassoSelector(ax,onSelect, lineprops={'color':'r'})
+        l = myLasso(ax,onSelect)
+
 
         while plt.fignum_exists(fig.number):
             fig.canvas.flush_events()
