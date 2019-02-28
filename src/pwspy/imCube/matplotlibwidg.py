@@ -6,7 +6,7 @@ Created on Sun Feb 24 22:59:45 2019
 """
 
 from matplotlib.patches import Polygon
-from matplotlib.widgets import _SelectorWidget
+from matplotlib.widgets import _SelectorWidget, AxesWidget, Lasso
 from matplotlib.lines import Line2D
 import matplotlib as mpl
 from matplotlib import path
@@ -16,26 +16,33 @@ from shapely.geometry import LinearRing, Polygon as shapelyPolygon
 import time
 
 class myBase:
-    def __init__(self, ax):
+    def __init__(self, ax, blit=True):
         self.ax = ax
+        self.blit = blit
         self.canvas = ax.figure.canvas
-        self.background = self.canvas.copy_from_bbox(self.ax.bbox)
+        self.background = None#self.canvas.copy_from_bbox(self.ax.bbox)
         self.artists = []
         self.connections = []
-        self.canvas.draw_idle()
+        self.canvas.mpl_connect('draw_event', self.onDraw)
+#        self.onDraw(None)
+#
+#        self.canvas.draw()
 
     def update(self):
-        self.canvas.restore_region(self.background)
-        try:
-            [self.ax.draw_artist(i) for i in self.artists]
-        except Exception as e:
-            print(e)
-        self.canvas.blit(self.ax.bbox)
+        if self.blit:
+#            if self.background:
+            self.canvas.restore_region(self.background)
+            try:
+                [self.ax.draw_artist(i) for i in self.artists]
+            except Exception as e:
+                print(e)
+            self.canvas.blit(self.ax.bbox)
+        else:
+            self.canvas.draw()
         
     def setActive(self, active:bool):
         if active:
             self.connections = []
-            self.connections.append(self.canvas.mpl_connect('draw_event', self.onDraw))
             self.connections.append( self.canvas.mpl_connect('button_press_event', self._onPress))
             self.connections.append(self.canvas.mpl_connect('key_press_event', self._onKey))
             self.connections.append(self.canvas.mpl_connect('button_release_event', self._onRelease))
@@ -54,6 +61,7 @@ class myBase:
 
     def onDraw(self, event):
         self.background = self.canvas.copy_from_bbox(self.ax.bbox)
+        print(self.background)
         [self.ax.draw_artist(i) for i in self.artists]
         # do not need to blit here, this will fire before the screen is
         # updated
@@ -327,20 +335,20 @@ if __name__ == '__main__':
     fig.canvas.draw()
     def onselect(ref):
         ref.setActive(False)
-        l = shapelyPolygon(LinearRing(ref.verts))
-        l = l.buffer(0)
-        l=l.simplify(l.length/2e2, preserve_topology=False)
+        l2 = shapelyPolygon(LinearRing(ref.verts))
+        l2 = l2.buffer(0)
+        l2=l2.simplify(l2.length/2e2, preserve_topology=False)
 #        self.polygon.set_xy(l.exterior.coords)
 #        print(list(l.exterior.coords))
         p.initialize(l.exterior.coords)
         p.setActive(True)
         p.setVisible(True)
 #        ref.update()
-    
+#    l=Lasso(ax,[0,0])
     l = myLasso(ax, onselect=onselect)
     p = PolygonInteractor(ax)
-
+#
 #    l.setActive(False)
     l.setActive(True)
-    fig.show()
+#    fig.show()
     
