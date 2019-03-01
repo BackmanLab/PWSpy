@@ -18,11 +18,12 @@ class PlotNd(object):
         self.names=names
         self.extraDims = len(X.shape[2:])
         gs = gridspec.GridSpec(3, 2+self.extraDims+1,hspace=0,width_ratios=[w*.2/(self.extraDims+1)]*(self.extraDims+1)+[w,w*.2], height_ratios=[h*.1,h,h*.2], wspace=0)
-        ax = dict(im = plt.subplot(gs[1,self.extraDims+1]),
-            y = plt.subplot(gs[1,self.extraDims+2], sharey=ax['im']),
-            x = plt.subplot(gs[2,self.extraDims+1], sharex=ax['im']),
+        imSubPlot = plt.subplot(gs[1,self.extraDims+1])
+        ax = dict(im = imSubPlot,
+            y = plt.subplot(gs[1,self.extraDims+2], sharey=imSubPlot),
+            x = plt.subplot(gs[2,self.extraDims+1], sharex=imSubPlot),
             extra = [plt.subplot(gs[1,i]) for i in range(self.extraDims)],
-            c = plt.subplot(gs[0,self.extraDims+1])
+            c = plt.subplot(gs[0,self.extraDims+1]))
         ax['y'].set_title(names[0])
         ax['x'].set_xlabel(names[1])
         ax['y'].yaxis.set_ticks_position('right')

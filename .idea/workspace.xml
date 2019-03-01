@@ -2,27 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="fe6f95a2-f101-46fc-a1e5-9afb91b4b001" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/setup.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pwspy/analysis/analysisClass.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/analysis/analysisClass.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pwspy/examples/flatFieldVisualizer.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/examples/flatFieldVisualizer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pwspy/examples/pwsAnalysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/examples/pwsAnalysis.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pwspy/examples/subtractionNormalization.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/examples/subtractionNormalization.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pwspy/examples/syntheticMirror.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/examples/syntheticMirror.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pwspy/gui/analysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/gui/analysis.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pwspy/gui/customWidgets.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/gui/customWidgets.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pwspy/gui/dialogs.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/gui/dialogs.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pwspy/gui/dockWidgets.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/gui/dockWidgets.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pwspy/imCube/ICBaseClass.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/imCube/ICBaseClass.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pwspy/imCube/ICMetaDataClass.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/imCube/ICMetaDataClass.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pwspy/imCube/ImCubeClass.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/imCube/ImCubeClass.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pwspy/imCube/KCubeClass.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/imCube/KCubeClass.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pwspy/imCube/otherClasses.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/imCube/otherClasses.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pwspy/micromanagerPositions.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/micromanagerPositions.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/pwspy/utility/PlotNd.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/utility/PlotNd.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pwspy/utility/reflectanceHelper.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/utility/reflectanceHelper.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pwspy/utility/reflection.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/utility/reflection.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pwspy/utility/utility.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/utility/utility.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -89,8 +69,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/pwspy/utility/PlotNd.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="307">
-              <caret line="28" column="22" selection-start-line="28" selection-start-column="22" selection-end-line="28" selection-end-column="22" />
+            <state relative-caret-position="264">
+              <caret line="20" column="55" selection-start-line="20" selection-start-column="55" selection-end-line="20" selection-end-column="55" />
               <folding>
                 <element signature="e#83#121#0" expanded="true" />
               </folding>
@@ -152,7 +132,6 @@
         <option value="$PROJECT_DIR$/src/pwspy/examples/flatFieldVisualizer.py" />
         <option value="$PROJECT_DIR$/src/pwspy/imCube/ICBaseClass.py" />
         <option value="$PROJECT_DIR$/src/pwspy/imCube/KCubeClass.py" />
-        <option value="$PROJECT_DIR$/src/pwspy/utility/PlotNd.py" />
         <option value="$PROJECT_DIR$/src/pwspy/examples/subtractionNormalization.py" />
         <option value="$PROJECT_DIR$/src/pwspy/gui/dockWidgets.py" />
         <option value="$PROJECT_DIR$/src/pwspy/micromanagerPositions.py" />
@@ -160,6 +139,7 @@
         <option value="$PROJECT_DIR$/src/pwspy/analysis/analysisClass.py" />
         <option value="$PROJECT_DIR$/src/pwspy/imCube/ImCubeClass.py" />
         <option value="$PROJECT_DIR$/src/pwspy/examples/pwsAnalysis.py" />
+        <option value="$PROJECT_DIR$/src/pwspy/utility/PlotNd.py" />
       </list>
     </option>
   </component>
@@ -403,8 +383,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/pwspy/utility/PlotNd.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="307">
-          <caret line="28" column="22" selection-start-line="28" selection-start-column="22" selection-end-line="28" selection-end-column="22" />
+        <state relative-caret-position="264">
+          <caret line="20" column="55" selection-start-line="20" selection-start-column="55" selection-end-line="20" selection-end-column="55" />
           <folding>
             <element signature="e#83#121#0" expanded="true" />
           </folding>
