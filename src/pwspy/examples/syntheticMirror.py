@@ -16,17 +16,14 @@ image of cells into something that can be used as a reference image, assuming
 most of the the FOV is glass.
 '''
 
-
 a = ImCube.fromTiff(r'G:\Vasundhara_MSCs_data\Cell1170')
 
-
-mirror = copy.deepcopy(a) #This doesn't work right. maybe becuaes of the wi
+mirror = copy.deepcopy(a)  # This doesn't work right. maybe becuaes of the wi
 mirror.filterDust(10)
 
 a.plotMean()
 mirror.plotMean()
-norm = (a/mirror)
+norm = (a / mirror)
 norm.plotMean()
 plt.figure()
 plt.imshow(norm.data.std(axis=2))
-

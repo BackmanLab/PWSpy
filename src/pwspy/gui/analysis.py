@@ -28,7 +28,7 @@ class App(QMainWindow):
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.analysisSettings)
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.resultsTable)
         self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks | QMainWindow.AllowTabbedDocks)
-        
+
         self.fileDialog = WorkingDirDialog()
         self.fileDialog.scanButtonPushed.connect(self.searchCells)
 
@@ -37,15 +37,15 @@ class App(QMainWindow):
         view.addAction("Look at stuff")
         toolBar = self.addToolBar('tool')
         toolBar.setObjectName('mainToolBar()')
-        action = toolBar.addAction(QtGui.QIcon(os.path.join('resources','folder.png')), "Set Path")
+        action = toolBar.addAction(QtGui.QIcon(os.path.join('resources', 'folder.png')), "Set Path")
         action.triggered.connect(self.fileDialog.show)
-        toolBar.addAction(QtGui.QIcon(os.path.join('resources','icon.png')),"Idea")
-        toolBar.addAction(QtGui.QIcon(os.path.join('resources','playicon.svg')),'Run')
+        toolBar.addAction(QtGui.QIcon(os.path.join('resources', 'icon.png')), "Idea")
+        toolBar.addAction(QtGui.QIcon(os.path.join('resources', 'playicon.svg')), 'Run')
         settings = QtCore.QSettings("BackmanLab", "PWSAnalysis2")
         try:
             self.restoreGeometry(settings.value("geometry"))
             self.restoreState(settings.value("windowState"))
-        except TypeError as e: #Setting must not exist
+        except TypeError as e:  # Setting must not exist
             print(e)
         self.show()
 
@@ -54,13 +54,15 @@ class App(QMainWindow):
         settings.setValue("geometry", self.saveGeometry())
         settings.setValue("windowState", self.saveState())
         super().closeEvent(event)
-        
+
+
 def isIpython():
     try:
         return __IPYTHON__
     except NameError:
         return False
-    
+
+
 if __name__ == '__main__':
     if isIpython():
         app = App()
