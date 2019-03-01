@@ -273,27 +273,6 @@ class myLasso(mySelectorWidget):
         if (self.verts is not None) and (self.onselect is not None):
             self.onselect(self.verts)
         self.set_visible(False)
-#        self.set_active(False)
-
-#            l = shapelyPolygon(LinearRing(self.verts))
-#            l = l.buffer(0)
-#            l=l.simplify(l.length/2e2, preserve_topology=False)
-#            self.polygon.set_xy(l.exterior.coords)
-#    
-#    #        plt.plot(*list(zip(*list(l.exterior.coords))))
-#            
-#    #        tck,u = interpolate.splprep([[i[0] for i in self.verts], [i[1] for i in self.verts]], per=True)
-#    #        unew = np.linspace(0,1)
-#    #        out = interpolate.splev(unew, tck)
-#    #        self.ax.plot(out[0],out[1])
-#    #        pat = path.Path(self.verts, closed=True)
-#    #        newverts = [vert for vert,code in pat.iter_segments(simplify=True)]
-#            self.p=PolygonInteractor(self.ax, self.polygon.xy)
-#            self.p.setActive(True)
-#    #        p.wait()
-#            self.set_active(True)
-#            self.connect_default_events()
-#            self.verts = None
         self.axMan.draw()
 
     def _ondrag(self, event):
@@ -427,10 +406,7 @@ class PolygonInteractor(mySelectorWidget):
             
     def _ondrag(self, event):
         'on mouse movement'
-#        if not self.showverts:
-#            return
-#        if event.inaxes is None:
-#            return
+
         if self._ind is None:
             return
         x, y = event.xdata, event.ydata
@@ -448,11 +424,7 @@ class PolygonInteractor(mySelectorWidget):
             
         
 if __name__ == '__main__':
-    from pwspy import ImCube
 
-#    a = ImCube.loadAny(r'C:\Users\Nick\Downloads\lctf50msdelay\vf5nodelay\Cell1')
-#    a.selectLassoROI()
-#    fig,ax = a.plotMean()
     fig, ax = plt.subplots()
     def onselect(verts):
         l = shapelyPolygon(LinearRing(verts))
