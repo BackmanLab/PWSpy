@@ -270,11 +270,8 @@ class myLasso(mySelectorWidget):
         self.set_visible(True)
 
     def _release(self, event):
-        self.disconnect_events()
         if (self.verts is not None) and (self.onselect is not None):
             self.onselect(self.verts)
-        self.set_visible(False)
-        self.axMan.draw()
 
     def _ondrag(self, event):
         if self.verts is None:
@@ -352,9 +349,9 @@ class PolygonInteractor(mySelectorWidget):
     showverts = True
     epsilon = 5  # max pixel distance to count as a vertex hit
 
-    def __init__(self, axMan):
+    def __init__(self, axMan, onselect = None):
         super().__init__(axMan, None)    
-
+        self.onselect = onselect
         self.line = Line2D([0],[0], ls="",
                            marker='o', markerfacecolor='r',
                            animated=True)
@@ -444,8 +441,7 @@ class PolygonInteractor(mySelectorWidget):
                     self.line.set_data(np.insert(self.line.get_data, i+1, [event.ydata, event.xdata], axis=0))
                     break
         elif event.key == 'enter':
-            self.done = True
-            self.close()
+            self.onselect(self.line2.xy)
             return
         if self.line.stale:
             self.canvas.draw_idle()
@@ -478,24 +474,49 @@ class PolygonInteractor(mySelectorWidget):
         self.line2.set_xy(xy)
         self.axMan.update()
             
+class AdjustableSelector():
+    def __init__(self, ax, selectorClass):
+        self.axMan = AxManager(ax)
+        self.s = selectorClass(self.axMan, onselect=self.goPoly)
+        self.s.active = True
+        self.p = PolygonInteractor(self.axMan, onselect=self.andSet)
+        self.p.active = False
+        
+    def goPoly(self, verts):
+        self.s.active = False
+        self.s.set_visible(False)
+        l = shapelyPolygon(LinearRing(verts))
+        l = l.buffer(0)
+        l=l.simplify(l.length/2e2, preserve_topology=False)  
+        self.p.initialize(l.exterior.coords)
+        self.p.active=True
+        
+    def andSet(self, verts):
+        self.axMan.ax.add_patch(Polygon(verts, facecolor=(1,0,0,.4)))
+        self.p.active = False
+        self.p.set_visible(False)
+        self.s.set_visible(True)
+        self.s.active=True
         
 if __name__ == '__main__':
 
     fig, ax = plt.subplots()
     ax.set_aspect('equal')
-    def onselect(verts):
-        e.set_visible(False)
-        e.active = False
-        p.set_visible(True)
-        l = shapelyPolygon(LinearRing(verts))
-        l = l.buffer(0)
-        l=l.simplify(l.length/2e2, preserve_topology=False)  
-        p.active=True
-        p.initialize(l.exterior.coords)
-
-    axm = AxManager(ax)
-#    l = myLasso(axm, onselect=onselect)
-    e = myEllipse(axm, onselect=onselect)
-    p = PolygonInteractor(axm)
-    p.active = False
+#    def onselect(verts):
+#        e.set_visible(False)
+#        e.active = False
+#        p.set_visible(True)
+#        l = shapelyPolygon(LinearRing(verts))
+#        l = l.buffer(0)
+#        l=l.simplify(l.length/2e2, preserve_topology=False)  
+#        p.active=True
+#        p.initialize(l.exterior.coords)
+#
+#    axm = AxManager(ax)
+#    l = myLasso(axm)#, onselect=onselect)
+#    e = myEllipse(axm, onselect=onselect)
+#    p = PolygonInteractor(axm)
+#    p.active = False
+    a= AdjustableSelector(ax, myEllipse)
+    
     plt.show()
