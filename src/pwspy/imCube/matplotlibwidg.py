@@ -5,7 +5,7 @@ Created on Sun Feb 24 22:59:45 2019
 @author: Nick
 """
 
-from matplotlib.patches import Polygon
+from matplotlib.patches import Polygon, Ellipse
 from matplotlib.widgets import AxesWidget
 from matplotlib.lines import Line2D
 import matplotlib as mpl
@@ -282,7 +282,49 @@ class myLasso(mySelectorWidget):
         self.polygon.set_xy(self.verts)
         self.axMan.update()
 
-
+class myEllipse(mySelectorWidget):
+    def __init__(self, axMan):
+        super().__init__(axMan)
+        self.started = False
+        self.settingWidth = False
+        self.startPoint = None
+        self.patch = Ellipse([0,0],0,0,0, facecolor=(0,0,1,.1), animated=True, edgecolor=(0,0,1,.8))
+        self.axMan.ax.add_patch(self.patch)
+        self.addArtist(self.patch)
+    def _press(self, event):
+        if event.button!=1:
+            return
+        if not self.started:
+            self.startPoint = [event.xdata, event.ydata]
+            self.patch.set_center(self.startPoint)
+            self.started = True
+    def _ondrag(self,event):
+        if self.started:
+            dx = event.xdata-self.startPoint[0]
+            dy = event.ydata-self.startPoint[1]
+            self.patch.height = np.sqrt(dx**2 + dy**2)
+            self.patch.width = self.patch.height / 4
+            self.patch.set_center([self.startPoint[0]+dx/2, self.startPoint[1]+dy/2])
+            self.patch.angle = np.degrees(np.arctan2(dy,dx)) - 90
+            self.axMan.update()
+    def _onhover(self, event):
+        if self.started:
+            dx = event.xdata - self.patch.center[0]
+            dy = event.ydata - self.patch.center[1]
+            h = np.sqrt(dx**2 + dy**2)
+            theta = np.arctan2(dy,dx) - np.radians(self.patch.angle)
+            self.patch.width = 2*h*np.cos(theta)
+            self.axMan.update()
+    def _release(self, event):
+        if event.button!=1:
+            return
+        if self.started:
+            if not self.settingWidth:
+                self.settingWidth = True
+            else:
+                self.started = False
+                self.settingWidth = False
+                
 class PolygonInteractor(mySelectorWidget):
     """
     A polygon editor.
@@ -426,6 +468,7 @@ class PolygonInteractor(mySelectorWidget):
 if __name__ == '__main__':
 
     fig, ax = plt.subplots()
+    ax.set_aspect('equal')
     def onselect(verts):
         l = shapelyPolygon(LinearRing(verts))
         l = l.buffer(0)
@@ -433,6 +476,8 @@ if __name__ == '__main__':
         p.active=True
         p.initialize(l.exterior.coords)
     axm = AxManager(ax)
-    l = myLasso(axm, onselect=onselect)
+#    l = myLasso(axm, onselect=onselect)
+    e = myEllipse(axm)
     p = PolygonInteractor(axm)
     p.active = False
+    plt.show()
