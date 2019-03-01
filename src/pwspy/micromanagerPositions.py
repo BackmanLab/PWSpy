@@ -11,21 +11,28 @@ import numpy as np
 import copy
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from typing import NamedTuple
 
 
-class Property:
-    '''Represents a single property from a micromanager PropertyMap'''
-    def __init__(self, name:str, pType:str, value):
-        self.name = name
-        assert pType in ['STRING','DOUBLE','INTEGER']
-        self._d = {'type': pType}
-        if isinstance(value, list):
-            self._d['array'] = value
+class Property(NamedTuple):
+    """Represents a single property from a micromanager PropertyMap"""
+        name: str
+        pType: str
+        value: typing.Union[str, int, float]
+    def __init__(self):
+        super().__init__()
+        assert self.pType in ['STRING','DOUBLE','INTEGER']
+        self._d = {'type': self.pType}
+        if isinstance(self.value, list):
+            self._d['array'] = self.value
         else:
-            self._d['scalar'] = value
+            self._d['scalar'] = self.value
+    def toDict(self):
+        return self._d
+
 
 class PropertyMap:
-    '''Represents a propertyMap from micromanager. basically a list of properties.'''
+    """Represents a propertyMap from micromanager. basically a list of properties."""
     def __init__(self,name:str, properties:typing.List[Property]):
         self.properties = properties
         self.name = name
@@ -34,12 +41,12 @@ class PropertyMap:
                       'array': [{i.name:i for i in self.properties}]}
         elif isinstance(properties[0], Position2d):
             self._d = {'type':'PROPERTY_MAP',
-                      'array': [i._d for i in self.properties]}
+                      'array': [i.toDict() for i in self.properties]}
         else:
             raise TypeError
             
 class Position2d:
-    '''Represents a position for a single xy stage in micromanager.'''
+    """Represents a position for a single xy stage in micromanager."""
     def __init__(self, x:float, y:float, xyStage:str='', label:str=''):
         self.x = x
         self.y = y
@@ -82,7 +89,7 @@ class Position2d:
                           self.label)
         
 class PositionList:
-    '''Represents a micromanager positionList. can be loaded from and saved to a micromanager .pos file.'''
+    """Represents a micromanager positionList. can be loaded from and saved to a micromanager .pos file."""
     def __init__(self, positions: typing.List[Position2d]):
         self.positions = positions
         self._regen()
@@ -127,7 +134,6 @@ class PositionList:
                         positions.append(Position2d(*coords, xyStage, label))
             else:
                 return dct
-                raise TypeError("Not Recognized")
             return PositionList(positions)
         with open(filePath,'r') as f:
             return json.load(f, object_hook=_decode)
@@ -144,7 +150,7 @@ class PositionList:
         assert isinstance(other, Position2d)
         return PositionList([i - other for i in self.positions])      
     class Encoder(json.JSONEncoder):
-        '''Allows for the position list and related objects to be jsonified.'''
+        """Allows for the position list and related objects to be jsonified."""
         def default(self,obj):
             if isinstance(obj, (PositionList, Position2d, PropertyMap, Property)):
                 return obj._d

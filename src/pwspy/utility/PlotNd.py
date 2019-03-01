@@ -4,25 +4,25 @@ Created on Fri Feb  1 19:37:35 2019
 
 @author: Nick
 """
+import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib.gridspec as gridspec
-import scipy.ndimage as ndi
 from matplotlib.animation import FuncAnimation
 
+
 class PlotNd(object):
-    def __init__(self, X, names = ['y','x','lambda'], initialCoords=None, title=''):
+    def __init__(self, X, names = ('y','x','lambda'), initialCoords=None, title=''):
         fig = plt.figure(figsize=(6,6)) 
         fig.suptitle(title)
         h,w =X.shape[:2]
         self.names=names
         self.extraDims = len(X.shape[2:])
         gs = gridspec.GridSpec(3, 2+self.extraDims+1,hspace=0,width_ratios=[w*.2/(self.extraDims+1)]*(self.extraDims+1)+[w,w*.2], height_ratios=[h*.1,h,h*.2], wspace=0)
-        ax = {'im':plt.subplot(gs[1,self.extraDims+1])}
-        ax['y'] = plt.subplot(gs[1,self.extraDims+2], sharey=ax['im'])
-        ax['x'] = plt.subplot(gs[2,self.extraDims+1], sharex=ax['im'])
-        ax['extra'] = [plt.subplot(gs[1,i]) for i in range(self.extraDims)]
-        ax['c'] = plt.subplot(gs[0,self.extraDims+1])
+        ax = dict(im = plt.subplot(gs[1,self.extraDims+1]),
+            y = plt.subplot(gs[1,self.extraDims+2], sharey=ax['im']),
+            x = plt.subplot(gs[2,self.extraDims+1], sharex=ax['im']),
+            extra = [plt.subplot(gs[1,i]) for i in range(self.extraDims)],
+            c = plt.subplot(gs[0,self.extraDims+1])
         ax['y'].set_title(names[0])
         ax['x'].set_xlabel(names[1])
         ax['y'].yaxis.set_ticks_position('right')
@@ -88,7 +88,7 @@ class PlotNd(object):
         self.min = np.percentile(self.X[np.logical_not(np.isnan(self.X))],0.01)
         
     def onscroll(self, event):
-        if ((event.button == 'up') or (event.button=='down')):
+        if (event.button == 'up') or (event.button=='down'):
             self.coords = self.coords[:2] + ((self.coords[2] + int(event.step)) % self.X.shape[2],) + (self.coords[3:])
         self.update() 
         

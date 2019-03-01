@@ -5,12 +5,13 @@ Created on Tue Feb 12 23:10:35 2019
 @author: Nick
 """
 
-from pwspy import ImCube, CameraCorrection, KCube
-from typing import NamedTuple
 import json
+import os.path as osp
+from typing import NamedTuple
+
 import numpy as np
 import scipy.signal as sps
-import os.path as osp
+from pwspy import ImCube, KCube
 
 
 class AnalysisSettings(NamedTuple):
@@ -55,7 +56,7 @@ class Analysis:
         assert cube.isCorrected()
         assert ref.isCorrected()
         cube = self._normalizeImCube(cube, ref)
-        cube = self._filterSignal(cube)
+        cube.data = self._filterSignal(cube.data)
         #The rest of the analysis will be performed only on the selected wavelength range.
         cube = cube.wvIndex(
                 self.settings.wavelengthStart, 
@@ -63,7 +64,7 @@ class Analysis:
         # Determine the mean-reflectance for each pixel in the cell.
         reflectance = cube.data.mean(axis=2)
         cube = KCube(cube)     ## -- Convert to K-Space
-        cubePoly = self._fitPolynomial()
+        cubePoly = self._fitPolynomial(cube)
         # Remove the polynomial fit from filtered cubeCell.
         cube.data = cube.data - cubePoly  
     
@@ -84,27 +85,28 @@ class Analysis:
             rmsPoly = slope = rSquared = opd = xvalOpd = ld = None
         
         self.results = AnalysisResults(
-                reflectance = reflectance,
-                rms = rms,
-                rmsPoly = rmsPoly,
-                slope = slope,
-                rSquared = rSquared,
-                opd = opd,
-                xvalOpd = xvalOpd,
-                ld = ld)
+                reflectance=reflectance,
+                rms=rms,
+                polynomialRms=rmsPoly,
+                slope=slope,
+                rSquared=rSquared,
+                opd=opd,
+                xvalOpd=xvalOpd,
+                ld=ld,
+                autoCorrelationSlope=slope)
         
         return self.results
         
     
-    def _normalizeImCube(self, cube:ImCube, ref:ImCube):
+    def _normalizeImCube(cube:ImCube, ref:ImCube):
         cube.normalizeByExposure()    
         ref.normalizeByExposure()
         cube.normalizeByReference(ref)
         return cube
      
-    def _filterSignal(self, cube:ImCube):
+    def _filterSignal(self, data:np.ndarray):
         b,a = sps.butter(self.settings.filterOrder, self.settings.filterCutoff) #The cutoff totally ignores what the `sample rate` is. so a 2nm interval image cube will be filtered differently than a 1nm interval cube. This is how it is in matlab.
-        cube.data = sps.filtfilt(b,a,cube.data,axis=2)
+        return sps.filtfilt(b,a,data,axis=2)
 
     ## -- Polynomial Fit
     def _fitPolynomial(self, cube:KCube):
@@ -120,9 +122,10 @@ class Analysis:
         return cubePoly
 
     ## Ld Calculation
-    def _calculateLd(self, rms:np.ndarray, slope:np.ndarray):
+    @staticmethod
+    def _calculateLd(rms:np.ndarray, slope:np.ndarray):
         k = 2 * np.pi / 0.55
-        fact = 1.38 * 1.38 / 2 / k / k;
+        fact = 1.38 * 1.38 / 2 / k / k
         A1 = 0.008
         A2 = 4
         ld = ((A2 / A1) * fact) * (rms / (-1 * slope.reshape(rms.shape)))

@@ -4,13 +4,12 @@ Created on Sun Feb 10 18:51:35 2019
 
 @author: Nick
 """
-from PyQt5.QtWidgets import (QDockWidget, QTableWidget, QTableWidgetItem,
+from PyQt5 import (QtCore)
+from PyQt5.QtWidgets import (QDockWidget, QTableWidgetItem,
                              QGroupBox, QGridLayout, QLabel, QLineEdit,
                              QRadioButton, QFrame, QHBoxLayout, QVBoxLayout,
-                             QScrollArea, QWidget, QDialog, QSpinBox,
-                             QFileDialog, QPushButton, QApplication,
-                             QCheckBox, QSizePolicy, QSpacerItem)
-from PyQt5 import (QtCore, QtGui)
+                             QScrollArea, QWidget, QSpinBox,
+                             QPushButton, QCheckBox, QSizePolicy, QSpacerItem)
 from customWidgets import CopyableTable, LittlePlot, CellTableWidget, CollapsibleSection
 from pwspy.analysis import AnalysisSettings
 
@@ -47,7 +46,7 @@ class AnalysisSettingsDock(QDockWidget):
         self.setWidget(self.widget)
         
     def setupFrame(self):
-        '''Presets'''
+        """Presets"""
         presets = QGroupBox("Presets")
 #        presets.setFixedSize(300,50)
         presets.setLayout(QHBoxLayout())
@@ -58,7 +57,7 @@ class AnalysisSettingsDock(QDockWidget):
         '''Hardwarecorrections'''
         layout = QGridLayout()
         _ = layout.addWidget
-        _(QLabel('DarkCounts'),0,0); _(QSpinBox(),0,1);
+        _(QLabel('DarkCounts'),0,0); _(QSpinBox(),0,1)
         _(QLabel("Linearity Correction"),0,2); _(QLineEdit(),0,3)
         frame = QFrame(); frame.setLayout(QHBoxLayout())
         frame.layout().addWidget(QLabel("R Subtraction"))
@@ -130,10 +129,10 @@ class ResultsTableDock(QDockWidget):
         self.table.setItem(1,1,QTableWidgetItem("rms"))
         self.checkBoxes = QFrame()
         self.checkBoxes.setLayout(QVBoxLayout())
-        for i,n in enumerate(columns):
+        for i, n in enumerate(columns):
             c = QCheckBox(n)
             c.setCheckState(2)
-            f = lambda state,i=i : self.table.setColumnHidden(i,state==0)
+            f = lambda state, num=i : self.table.setColumnHidden(num, state==0)
             c.stateChanged.connect(f)
             self.checkBoxes.layout().addWidget(c)
         self.widget.layout().addWidget(self.checkBoxes)

@@ -27,7 +27,7 @@ def subtractionNormalization(rExtra:np.ndarray, rExtraDir:str, ref:ImCube, mater
     theoryR = reflectanceHelper.getReflectance(material,'glass', index=ref.wavelengths)[np.newaxis,np.newaxis,:]
     I0 = ref.data / (theoryR + rExtra)
     Iextra = rExtra * I0
-    ref = (ref - Iextra) / (theoryR)
+    ref = (ref - Iextra) / theoryR
     
     cubes = loadAndProcess(cubeFiles, _processIm, parallel = True, procArgs=[Iextra, ref, correction])
          

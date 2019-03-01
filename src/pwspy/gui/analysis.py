@@ -4,21 +4,17 @@ Created on Sun Feb 10 13:26:58 2019
 
 @author: Nick
 """
-import sys
 import os
-import numpy as np
+import sys
+
 from PyQt5 import QtCore, QtGui
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QDockWidget
-from PyQt5.QtWidgets import (QTableWidget,QTableWidgetItem, QVBoxLayout,
-                             QTabWidget, QTextEdit, QLabel, QGroupBox,
-                             QGridLayout, QApplication, QStyleFactory, QDialog,
-                             QHBoxLayout, QLineEdit, QPushButton)
+from PyQt5.QtWidgets import (QApplication)
+from PyQt5.QtWidgets import QMainWindow
 
-from dockWidgets import CellSelectorDock, AnalysisSettingsDock, ResultsTableDock, PlottingWidget
-from dialogs import WorkingDirDialog
-from glob import glob
+from .dialogs import WorkingDirDialog
+from .dockWidgets import CellSelectorDock, AnalysisSettingsDock, ResultsTableDock, PlottingWidget
 
- 
+
 class App(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -45,19 +41,14 @@ class App(QMainWindow):
         action.triggered.connect(self.fileDialog.show)
         toolBar.addAction(QtGui.QIcon(os.path.join('resources','icon.png')),"Idea")
         toolBar.addAction(QtGui.QIcon(os.path.join('resources','playicon.svg')),'Run')
-        settings = QtCore.QSettings("BackmanLab", "PWSAnalysis2");
+        settings = QtCore.QSettings("BackmanLab", "PWSAnalysis2")
         try:
-            self.restoreGeometry(settings.value("geometry"));  
-            self.restoreState(settings.value("windowState"));
+            self.restoreGeometry(settings.value("geometry"))
+            self.restoreState(settings.value("windowState"))
         except TypeError as e: #Setting must not exist
             print(e)
         self.show()
-        
-    def searchCells(self, path:str, recursive: bool):
-        pattern = os.path.join('**','Cell*') if recursive else 'Cell*'
-        files = glob(os.path.join(path, pattern,''))
-        print(recursive) 
-        
+
     def closeEvent(self, event):
         settings = QtCore.QSettings("BackmanLab", "PWSAnalysis2")
         settings.setValue("geometry", self.saveGeometry())
@@ -67,7 +58,7 @@ class App(QMainWindow):
 def isIpython():
     try:
         return __IPYTHON__
-    except:
+    except NameError:
         return False
     
 if __name__ == '__main__':

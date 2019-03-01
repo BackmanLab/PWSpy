@@ -4,19 +4,20 @@ Created on Mon Feb 11 21:22:01 2019
 
 @author: Nick
 """
-from matplotlib.figure import Figure
+import typing
+
 import numpy as np
-from matplotlib.backends.backend_qt5agg import (
-    FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
+from PyQt5 import (QtGui, QtCore)
 from PyQt5.QtWidgets import (QWidget, QApplication, QGridLayout,
                              QTableWidget, QTableWidgetItem,
-                             QAbstractItemView, QMenu, QHBoxLayout,
-                             QPushButton, QLabel, QFrame, QToolButton,
-                             QScrollArea, QLayout, QSizePolicy, QCheckBox)
-from PyQt5 import (QtGui, QtCore)
-import typing
+                             QAbstractItemView, QMenu, QPushButton, QFrame, QScrollArea, QLayout, QSizePolicy,
+                             QCheckBox)
+from matplotlib.backends.backend_qt5agg import (
+    FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
+from matplotlib.figure import Figure
 from pwspy.imCube.ImCubeClass import ImCube, FakeCube
 from pwspy.utility import PlotNd
+
 
 class LittlePlot(FigureCanvas):
     def __init__(self):
@@ -102,7 +103,7 @@ class CellTableWidget(QTableWidget):
             i.setInvalid(state)
             
     def selectedCells(self) -> typing.List[int]:
-        '''Returns the rows that have been selected.'''
+        """Returns the rows that have been selected."""
         rowIndices = [i.row() for i in self.selectedIndexes()[::self.columnCount()]]
         rowIndices.sort()
         return [self.cells[i] for i in rowIndices]
@@ -154,30 +155,30 @@ class CollapsibleSection(QWidget):
         super().__init__(parent)
         self.animationDuration = animationDuration
         self.toggleButton = QCheckBox(title, self)
-        headerLine =  QFrame(self);
-        self.toggleAnimation = QtCore.QParallelAnimationGroup(self);
-        self.contentArea = QScrollArea(self);
-        mainLayout = QGridLayout(self);
+        headerLine =  QFrame(self)
+        self.toggleAnimation = QtCore.QParallelAnimationGroup(self)
+        self.contentArea = QScrollArea(self)
+        mainLayout = QGridLayout(self)
 
-        self.toggleButton.setCheckable(True);
-        self.toggleButton.setChecked(True);
+        self.toggleButton.setCheckable(True)
+        self.toggleButton.setChecked(True)
 
-        headerLine.setFrameShape(QFrame.HLine);
-        headerLine.setFrameShadow(QFrame.Sunken);
-        headerLine.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum);
+        headerLine.setFrameShape(QFrame.HLine)
+        headerLine.setFrameShadow(QFrame.Sunken)
+        headerLine.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
 
-        self.contentArea.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed);
+        self.contentArea.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         # start out collapsed
-        self.contentArea.setMaximumHeight(0);
-        self.contentArea.setMinimumHeight(0);
+        self.contentArea.setMaximumHeight(0)
+        self.contentArea.setMinimumHeight(0)
 
         # let the entire widget grow and shrink with its content
-        self.toggleAnimation.addAnimation(QtCore.QPropertyAnimation(self, b"minimumHeight"));
-        self.toggleAnimation.addAnimation(QtCore.QPropertyAnimation(self, b"maximumHeight"));
-        self.toggleAnimation.addAnimation(QtCore.QPropertyAnimation(self.contentArea, b"maximumHeight"));
+        self.toggleAnimation.addAnimation(QtCore.QPropertyAnimation(self, b"minimumHeight"))
+        self.toggleAnimation.addAnimation(QtCore.QPropertyAnimation(self, b"maximumHeight"))
+        self.toggleAnimation.addAnimation(QtCore.QPropertyAnimation(self.contentArea, b"maximumHeight"))
 
-        mainLayout.setVerticalSpacing(0);
-        mainLayout.setContentsMargins(0, 0, 0, 0);
+        mainLayout.setVerticalSpacing(0)
+        mainLayout.setContentsMargins(0, 0, 0, 0)
 
         mainLayout.addWidget(self.toggleButton, 0, 0, 1, 1, QtCore.Qt.AlignLeft)
 
@@ -185,7 +186,7 @@ class CollapsibleSection(QWidget):
 
         mainLayout.addWidget(self.contentArea, 1, 0, 1, 3)
 
-        self.setLayout(mainLayout);
+        self.setLayout(mainLayout)
         self.setLayout = self.setLayout_
 
         self.toggleButton.toggled.connect(
@@ -198,9 +199,9 @@ class CollapsibleSection(QWidget):
         oldLayout = self.contentArea.layout()
         del oldLayout
         self.contentArea.setLayout(contentLayout)
-        collapsedHeight = self.sizeHint().height() - self.contentArea.maximumHeight();
-        contentHeight = contentLayout.sizeHint().height();
-    
+        collapsedHeight = self.sizeHint().height() - self.contentArea.maximumHeight()
+        contentHeight = contentLayout.sizeHint().height()
+
         for i in range(self.toggleAnimation.animationCount()-1):
             SectionAnimation = self.toggleAnimation.animationAt(i)
             SectionAnimation.setDuration(self.animationDuration)
@@ -208,6 +209,6 @@ class CollapsibleSection(QWidget):
             SectionAnimation.setEndValue(collapsedHeight + contentHeight)
     
         contentAnimation = self.toggleAnimation.animationAt(self.toggleAnimation.animationCount() - 1)
-        contentAnimation.setDuration(self.animationDuration);
-        contentAnimation.setStartValue(0);
-        contentAnimation.setEndValue(contentHeight);
+        contentAnimation.setDuration(self.animationDuration)
+        contentAnimation.setStartValue(0)
+        contentAnimation.setEndValue(contentHeight)

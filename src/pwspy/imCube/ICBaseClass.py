@@ -11,7 +11,7 @@ from matplotlib import widgets
 from matplotlib import path
 
 
-class ICBase():
+class ICBase:
     def __init__(self,data, index:tuple, dtype = np.float32):
         assert isinstance(data,np.ndarray)
         self.data = data.astype(dtype)

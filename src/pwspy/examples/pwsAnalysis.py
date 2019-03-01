@@ -69,11 +69,13 @@ def analyzeCube(cubeCell:ImCube, darkCount:int, mirror:ImCube, orderFilter:int,
     ## OPD Analysis
     print("Calculating OPD")
     if isOpdPolysub:   # If cubeOpdPolysub is to be generated
-        opd, xvalOpd = cube.getOpd(isHannWindow, indexOpdStop)  
+        opd, xvalOpd = cube.getOpd(isHannWindow, indexOpdStop)
+    else:
+        opd = xvalOpd = None
 
     ## Ld Calculation
     k = 2 * np.pi / 0.55
-    fact = 1.38 * 1.38 / 2 / k / k;
+    fact = 1.38 * 1.38 / 2 / k / k
     A1 = 0.008
     A2 = 4
     ld = ((A2 / A1) * fact) * (rms / (-1 * slope.reshape(rms.shape)))

@@ -29,7 +29,7 @@ def proc(q ,mmask, sref, theory):
 #    im.subtractDarkCounts(1957)
     print("Dividing data by mirror spectra")
     mirror = im.getMeanSpectra(mmask)[0][np.newaxis,np.newaxis,:]
-    im.data = (im.data) / ((mirror) / np.array(sref).squeeze())
+    im.data = im.data / (mirror / np.array(sref).squeeze())
     _ = np.array(theory).squeeze()
     ztheory = (_ - _.mean())/(_.std() * _.shape[0])     #Zero normalize for correlation
     zim = (im.data - im.data.mean(axis=2,keepdims = True)) / (im.data.std(axis=2, keepdims = True))  #zero normalize for correlation

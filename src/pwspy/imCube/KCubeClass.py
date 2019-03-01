@@ -12,10 +12,10 @@ import scipy.interpolate as spi
 import copy
 
 class KCube(ICBase, ICMetaData):
-    '''A class representing an ImCube after being transformed from being described in terms of wavelength in to wavenumber (k-space).'''
+    """A class representing an ImCube after being transformed from being described in terms of wavelength in to wavenumber (k-space)."""
     def __init__(self, cube:ImCube):
         #Convert to wavenumber and reverse the order so we are ascending in order.
-        wavenumbers = (2*np.pi)/(np.array(cube.wavelengths,dtype=np.float64)*(1e-3))[::-1]
+        wavenumbers = (2*np.pi)/(np.array(cube.wavelengths,dtype=np.float64)*1e-3)[::-1]
         data = cube.data[:,:,::-1]
         #Generate evenly spaced wavenumbers
 #        dk = (self.wavenumbers[-1] - self.wavenumbers[0])/(len(self.wavenumbers)-1);
@@ -55,7 +55,7 @@ class KCube(ICBase, ICMetaData):
         # Generate the xval for the current OPD.
         maxOpd = 2 * np.pi / (self.wavenumbers[1] - self.wavenumbers[0])
         dOpd = maxOpd / len(self.wavenumbers)
-        xVals = len(self.wavenumbers) / 2 * np.array(range(fftSize//2+1)) * dOpd / (fftSize//2+1);
+        xVals = len(self.wavenumbers) / 2 * np.array(range(fftSize//2+1)) * dOpd / (fftSize//2+1)
         xVals = xVals[:indexOpdStop]
         return opd, xVals
     
@@ -104,14 +104,14 @@ class KCube(ICBase, ICMetaData):
         lags = np.array(self.wavenumbers) - min(self.wavenumbers)
         
         # Square the lags. This is how it is in the paper. I'm not sure why though.
-        lagsSquared = lags**2;
-        
+        lagsSquared = lags**2
+
         # Before taking the log of the autocorrelation, zero values must be
         # modified to prevent outputs of "inf" or "-inf".
         cubeAutocorr[cubeAutocorr==0] = 1e-323
         
         # Obtain the log of the autocorrelation.
-        cubeAutocorrLog = np.log(cubeAutocorr);
+        cubeAutocorrLog = np.log(cubeAutocorr)
 
         # A first-order polynomial fit is determined between lagsSquared and
         # and cubeAutocorrLog.  This fit is to be performed only on the first

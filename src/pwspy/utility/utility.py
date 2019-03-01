@@ -4,16 +4,14 @@ Created on Thu Oct 11 11:31:48 2018
 
 @author: backman05
 """
-from pwspy import ImCube
-import numpy as np
-import psutil
 import multiprocessing as mp
+import queue
 import threading as th
 import typing
-import os
 from time import time
-import sys
-import queue
+
+import psutil
+from pwspy import ImCube
 
 '''Local Functions'''
 def _recursiveSearch(fileDict, specifierNames, specifiers:typing.List[str]=[]):

@@ -17,7 +17,7 @@ import subprocess, sys
 class ICMetaData:
     def __init__(self, metadata:dict, filePath = None):
         assert isinstance(metadata,dict)
-        ICMetaData._checkMetadata(metadata)
+        self._checkMetadata(metadata)
         self.metadata = metadata     
         self.filePath = filePath
 #        self.id = 
@@ -68,8 +68,9 @@ class ICMetaData:
             metadata['wavelengths'] = metadata['waveLengths']
             del metadata['waveLengths']
         return cls(metadata, filePath = directory)
-    
-    def _checkMetadata(metadata):
+
+    @staticmethod
+    def _checkMetadata(metadata: dict):
         required = ['time', 'exposure', 'wavelengths']
         for i in required:
             if i not in metadata:

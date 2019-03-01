@@ -19,7 +19,7 @@ from .ICBaseClass import ICBase
 from .ICMetaDataClass import ICMetaData
 
 class ImCube(ICBase, ICMetaData):
-    ''' A class representing a single acquisition of PWS. Contains methods for loading and saving to multiple formats as well as common operations used in analysis.'''
+    """ A class representing a single acquisition of PWS. Contains methods for loading and saving to multiple formats as well as common operations used in analysis."""
     
     def __init__(self,data, metadata:dict, dtype = np.float32, filePath = None):
         ICMetaData.__init__(self, metadata, filePath)
@@ -118,7 +118,7 @@ class ImCube(ICBase, ICMetaData):
         with open(inpath,'rb') as f:
             t = tf.TiffFile(f)
             im = np.rollaxis(t.asarray(),0,3)
-            md = ICMetaData(json.loads(t.pages[0].tags['ImageDescription'].value))
+            md = json.loads(t.pages[0].tags['ImageDescription'].value)
         mins = md["compressionMins"]
         del md["compressionMins"]
         for i in range(1,im.shape[-1]):

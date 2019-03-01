@@ -46,8 +46,8 @@ n = _init()
 del  _init
 
 def getReflectance(mat1: str, mat2: str, index = None):
-    '''Given the names of two interfaces this provides the reflectance in units of percent.
-    If given a series as index the data will be interpolated and reindexed to match the index.'''
+    """Given the names of two interfaces this provides the reflectance in units of percent.
+    If given a series as index the data will be interpolated and reindexed to match the index."""
     try: assert mat1 in materials 
     except: raise IndexError(f'{mat1} is not a valid material. must be one of: {list(materials.keys())}')
     try: assert mat2 in materials 
