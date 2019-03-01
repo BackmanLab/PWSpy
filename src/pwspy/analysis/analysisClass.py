@@ -10,6 +10,7 @@ from typing import NamedTuple
 import json
 import numpy as np
 import scipy.signal as sps
+import os.path as osp
 
 
 class AnalysisSettings(NamedTuple):
@@ -22,15 +23,15 @@ class AnalysisSettings(NamedTuple):
     wavelengthStop:int
     useHannWindow:bool
     autoCorrStopIndex:int
-    hardwareCorrection:CameraCorrection
-              
+    autoCorrMinSub:bool #Determines if the autocorrelation should have it's minimum subtracted from it before processing. These is mathematically nonsense but is needed if the autocorrelation has negative values in it.
+    
     @classmethod
-    def fromJson(cls, filePath):
-        with open(filePath,'r') as f:
-            return cls(**json.load(f))
+    def fromJson(cls, filePath:str, name:str):
+        with open(osp.join(filePath,f'{name}_analysis.json'),'r') as f:
+            return cls( **json.load(f))
         
-    def toJson(self,filePath):
-        with open(filePath,'w') as f:
+    def toJson(self,filePath:str, name:str):
+        with open(osp.join(filePath,f'{name}_analysis.json'),'w') as f:
             json.dump(dict(self),f)
                     
 class AnalysisResults(NamedTuple):
@@ -51,6 +52,8 @@ class Analysis:
         self.advanced = advanced
     
     def run(self, cube:ImCube, ref:ImCube):
+        assert cube.isCorrected()
+        assert ref.isCorrected()
         cube = self._normalizeImCube(cube, ref)
         cube = self._filterSignal(cube)
         #The rest of the analysis will be performed only on the selected wavelength range.
@@ -74,7 +77,7 @@ class Analysis:
             # also be accomplished by calculating the standard-deviation.
             rmsPoly = cubePoly.std(axis=2)
             
-            slope, rSquared = cube.getAutoCorrelation(isAutocorrMinSub, self.settings.autoCorrStopIndex)
+            slope, rSquared = cube.getAutoCorrelation(self.settings.autoCorrMinSub, self.settings.autoCorrStopIndex)
             opd, xvalOpd = cube.getOpd(self.settings.useHannWindow, self.indexOpdStop)  
             ld = self._calculateLd(rms, slope)
         else:
@@ -94,9 +97,7 @@ class Analysis:
         
     
     def _normalizeImCube(self, cube:ImCube, ref:ImCube):
-        cube.correctCameraEffects(self.settings.hardwareCorrection)
         cube.normalizeByExposure()    
-        ref.correctCameraEffects(self.settings.hardwareCorrection)
         ref.normalizeByExposure()
         cube.normalizeByReference(ref)
         return cube

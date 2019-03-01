@@ -214,6 +214,9 @@ class ImCube(ICBase, ICMetaData):
         self.data = self.data / reference.data
         self.metadata['normalizationReference'] = reference.filePath
         
+    def isCorrected(self) -> bool:
+        return self._cameraCorrected
+    
 class FakeCube(ImCube):
     def __init__(self, num:int):
         x = y = np.arange(0,256)
