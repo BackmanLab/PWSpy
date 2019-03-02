@@ -275,7 +275,7 @@ class PlottingWidget(QDockWidget):
         cells = self.selector.selectedCells
         if len(cells) == 0:
             messageBox = QMessageBox(self)
-            messageBox.critical(self, "Oops!", "Please select the cells you would like to plot.")
+            messageBox.information(self, "Oops!", "Please select the cells you would like to plot.")
             messageBox.setFixedSize(500, 200)
         for i in cells:
             self.addPlot(LittlePlot())
