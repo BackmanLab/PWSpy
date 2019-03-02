@@ -165,9 +165,9 @@ for sett in settings:
             plt.imshow(refIm, vmin=np.percentile(refIm, .5), vmax=np.percentile(refIm, 99.5))
             plt.colorbar()
 
-print(f"{sett} correction factor")
-print(means['cFactor'])
-return meanValues, allCombos
+    print(f"{sett} correction factor")
+    print(means['cFactor'])
+    return meanValues, allCombos
 
 
 def saveRExtra(cubes: list, excludedCombos: list = None):

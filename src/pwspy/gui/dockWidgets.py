@@ -4,21 +4,21 @@ Created on Sun Feb 10 18:51:35 2019
 
 @author: Nick
 """
-from PyQt5.QtWidgets import (QDockWidget, QTableWidget, QTableWidgetItem,
+import os
+import re
+
+from PyQt5 import (QtCore)
+from PyQt5.QtWidgets import (QDockWidget, QTableWidgetItem,
                              QGroupBox, QGridLayout, QLabel, QLineEdit,
                              QRadioButton, QFrame, QHBoxLayout, QVBoxLayout,
-                             QScrollArea, QWidget, QDialog, QSpinBox,
-                             QFileDialog, QPushButton, QApplication,
-                             QCheckBox, QSizePolicy, QSpacerItem, QMessageBox,
+                             QScrollArea, QWidget, QSpinBox,
+                             QPushButton, QCheckBox, QSizePolicy, QSpacerItem, QMessageBox,
                              QComboBox)
-from PyQt5 import (QtCore, QtGui)
 from customWidgets import CopyableTable, LittlePlot, CellTableWidget, CollapsibleSection, AspectRatioWidget, \
     CellTableWidgetItem
+
 from pwspy.analysis import AnalysisSettings
-import os
 from pwspy.imCube.ICMetaDataClass import ICMetaData
-import re
-from collections.abc import Iterable
 
 
 class CellSelectorDock(QDockWidget):
@@ -113,7 +113,7 @@ class AnalysisSettingsDock(QDockWidget):
         self.setWidget(self.widget)
 
     def setupFrame(self):
-        '''Presets'''
+        """Presets"""
         self.presets = QGroupBox("Presets")
         self.presets.setLayout(QHBoxLayout())
         self.presets.layout().addWidget(QRadioButton("Legacy"))

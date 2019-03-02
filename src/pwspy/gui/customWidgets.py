@@ -181,7 +181,7 @@ class CellTableWidget(QTableWidget):
 
     @property
     def selectedCells(self) -> typing.List[CellTableWidgetItem]:
-        '''Returns the rows that have been selected.'''
+        """Returns the rows that have been selected."""
         rowIndices = [i.row() for i in self.selectedIndexes()[::self.columnCount()]]
         rowIndices.sort()
         return [self.cellItems[i] for i in rowIndices]
@@ -290,7 +290,7 @@ class AspectRatioWidget(QWidget):
     def resizeEvent(self, event: QtGui.QResizeEvent):
         thisAspectRatio = event.size().width() / event.size().height()
 
-        if (thisAspectRatio > self.aspect):  # too wide
+        if thisAspectRatio > self.aspect:  # too wide
             self.layout.setDirection(QBoxLayout.LeftToRight);
             widgetStretch = self.height() * self.aspect;  # i.e., my width
             outerStretch = (self.width() - widgetStretch) / 2 + 0.5;

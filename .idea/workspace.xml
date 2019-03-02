@@ -3,12 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="fe6f95a2-f101-46fc-a1e5-9afb91b4b001" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/setup.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pwspy/examples/limitedOPDSigma.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/examples/limitedOPDSigma.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pwspy/gui/analysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/gui/analysis.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/pwspy/gui/customWidgets.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/gui/customWidgets.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pwspy/gui/dialogs.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/gui/dialogs.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/pwspy/gui/dockWidgets.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/gui/dockWidgets.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pwspy/imCube/ImCubeClass.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/imCube/ImCubeClass.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/pwspy/imCube/matplotlibwidg.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/imCube/matplotlibwidg.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/pwspy/utility/reflection.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/pwspy/utility/reflection.py" afterDir="false" />
     </list>
@@ -20,11 +16,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/pwspy/utility/reflection.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="211">
-              <caret line="175" column="27" selection-start-line="175" selection-start-column="27" selection-end-line="175" selection-end-column="27" />
+            <state relative-caret-position="357">
+              <caret line="170" lean-forward="true" selection-start-line="170" selection-end-line="170" />
             </state>
           </provider>
         </entry>
@@ -68,7 +64,7 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/pwspy/imCube/ICMetaDataClass.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="168">
@@ -90,7 +86,7 @@
         <entry file="file://$PROJECT_DIR$/src/pwspy/gui/dockWidgets.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="270">
-              <caret line="166" lean-forward="true" selection-start-line="166" selection-end-line="166" />
+              <caret line="166" selection-start-line="166" selection-end-line="166" />
             </state>
           </provider>
         </entry>
@@ -111,7 +107,7 @@
         <entry file="file://$PROJECT_DIR$/setup.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="238">
-              <caret line="14" column="75" selection-start-line="14" selection-start-column="75" selection-end-line="14" selection-end-column="75" />
+              <caret line="14" column="97" selection-start-line="14" selection-start-column="97" selection-end-line="14" selection-end-column="97" />
             </state>
           </provider>
         </entry>
@@ -149,14 +145,14 @@
         <option value="$PROJECT_DIR$/src/pwspy/examples/syntheticMirror.py" />
         <option value="$PROJECT_DIR$/src/pwspy/imCube/KCubeClass.py" />
         <option value="$PROJECT_DIR$/src/pwspy/examples/limitedOPDSigma.py" />
-        <option value="$PROJECT_DIR$/setup.py" />
-        <option value="$PROJECT_DIR$/src/pwspy/utility/reflection.py" />
         <option value="$PROJECT_DIR$/src/pwspy/utility/utility.py" />
         <option value="$PROJECT_DIR$/src/pwspy/analysis/analysisClass.py" />
         <option value="$PROJECT_DIR$/src/pwspy/gui/customWidgets.py" />
         <option value="$PROJECT_DIR$/src/pwspy/gui/dialogs.py" />
         <option value="$PROJECT_DIR$/src/pwspy/gui/dockWidgets.py" />
         <option value="$PROJECT_DIR$/src/pwspy/imCube/matplotlibwidg.py" />
+        <option value="$PROJECT_DIR$/setup.py" />
+        <option value="$PROJECT_DIR$/src/pwspy/utility/reflection.py" />
       </list>
     </option>
   </component>
@@ -251,6 +247,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1390" height="1040" extended-state="0" />
+    <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.2514793" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
@@ -390,24 +387,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/setup.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" column="75" selection-start-line="14" selection-start-column="75" selection-end-line="14" selection-end-column="75" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/pwspy/utility/utility.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="194">
           <caret line="20" column="23" selection-start-line="20" selection-start-column="23" selection-end-line="20" selection-end-column="23" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/pwspy/utility/reflection.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="211">
-          <caret line="175" column="27" selection-start-line="175" selection-start-column="27" selection-end-line="175" selection-end-column="27" />
         </state>
       </provider>
     </entry>
@@ -421,7 +404,7 @@
     <entry file="file://$PROJECT_DIR$/src/pwspy/gui/dockWidgets.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="270">
-          <caret line="166" lean-forward="true" selection-start-line="166" selection-end-line="166" />
+          <caret line="166" selection-start-line="166" selection-end-line="166" />
         </state>
       </provider>
     </entry>
@@ -453,6 +436,20 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="168">
           <caret line="39" column="8" selection-start-line="39" selection-start-column="8" selection-end-line="39" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/setup.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="238">
+          <caret line="14" column="97" selection-start-line="14" selection-start-column="97" selection-end-line="14" selection-end-column="97" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/pwspy/utility/reflection.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="357">
+          <caret line="170" lean-forward="true" selection-start-line="170" selection-end-line="170" />
         </state>
       </provider>
     </entry>

@@ -231,7 +231,7 @@ class PolygonInteractor(myBase):
         return list(zip(xi, yi))
 
     def get_ind_under_point(self, event):
-        'get the index of the vertex under point if within epsilon tolerance'
+        """get the index of the vertex under point if within epsilon tolerance"""
         # display coords
         xy = np.asarray(list(zip(*self.line.get_data())))
         xyt = self.line.get_transform().transform(xy)
@@ -246,7 +246,7 @@ class PolygonInteractor(myBase):
         return ind
 
     def onPress(self, event):
-        'whenever a mouse button is pressed'
+        """whenever a mouse button is pressed"""
         if not self.showverts:
             return
         if event.inaxes is None:
@@ -256,7 +256,7 @@ class PolygonInteractor(myBase):
         self._ind = self.get_ind_under_point(event)
 
     def onRelease(self, event):
-        'whenever a mouse button is released'
+        """whenever a mouse button is released"""
         if not self.showverts:
             return
         if event.button != 1:
@@ -264,7 +264,7 @@ class PolygonInteractor(myBase):
         self._ind = None
 
     def onKey(self, event):
-        'whenever a key is pressed'
+        """whenever a key is pressed"""
         #        if not event.inaxes:
         #            return
         if event.key == 't':
@@ -297,7 +297,7 @@ class PolygonInteractor(myBase):
             self.canvas.draw_idle()
 
     def onMotion(self, event):
-        'on mouse movement'
+        """on mouse movement"""
         if not self.showverts:
             return
         if event.inaxes is None:
