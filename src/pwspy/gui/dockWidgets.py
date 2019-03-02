@@ -157,7 +157,7 @@ class AnalysisSettingsDock(QDockWidget):
         '''Polynomial subtraction'''
         self.polySub = QGroupBox("Polynomial Subtraction")
         self.polySub.setFixedSize(150, 100)
-        layout = QGridLayout
+        layout = QGridLayout()
         _ = layout.addWidget
         self.polynomialOrder = QSpinBox()
         _(QLabel("Order"), 0, 0, 1, 1)

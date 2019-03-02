@@ -95,8 +95,7 @@ class Analysis:
             rSquared=rSquared,
             opd=opd,
             xvalOpd=xvalOpd,
-            ld=ld,
-            autoCorrelationSlope=slope)
+            ld=ld)
 
         return self.results
 

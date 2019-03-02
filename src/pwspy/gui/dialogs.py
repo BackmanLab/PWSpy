@@ -28,7 +28,7 @@ class WorkingDirDialog(QDialog):
         layout.addWidget(self.browseButton, 0, 5, 1, 1)
         layout.addWidget(self.recursiveCheckbox, 1, 0, 1, 2)
         layout.addWidget(self.scanButton, 1, 2, 1, 1)
-        self.setLayout(QGridLayout())
+        self.setLayout(layout)
         self.setFixedSize(400, 75)
         self.scanButton.released.connect(self.scanButtonPushed_)
         self.browseButton.released.connect(self.browseFile)

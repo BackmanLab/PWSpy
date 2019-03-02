@@ -55,19 +55,3 @@ class App(QMainWindow):
         settings.setValue("windowState", self.saveState())
         super().closeEvent(event)
 
-
-def isIpython():
-    try:
-        return __IPYTHON__
-    except:
-        return False
-
-
-if __name__ == '__main__':
-    if isIpython():
-        app = App()
-    else:
-        print("Not Ipython")
-        app = QApplication(sys.argv)
-        ex = App()
-        sys.exit(app.exec_())
