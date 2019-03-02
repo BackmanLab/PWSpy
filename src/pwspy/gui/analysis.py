@@ -4,19 +4,14 @@ Created on Sun Feb 10 13:26:58 2019
 
 @author: Nick
 """
-import sys
 import os
-import numpy as np
-from PyQt5 import QtCore, QtGui
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QDockWidget
-from PyQt5.QtWidgets import (QTableWidget, QTableWidgetItem, QVBoxLayout,
-                             QTabWidget, QTextEdit, QLabel, QGroupBox,
-                             QGridLayout, QApplication, QStyleFactory, QDialog,
-                             QHBoxLayout, QLineEdit, QPushButton)
+import sys
 
-from dockWidgets import CellSelectorDock, AnalysisSettingsDock, ResultsTableDock, PlottingWidget
-from dialogs import WorkingDirDialog
-from glob import glob
+from PyQt5 import QtCore, QtGui
+from PyQt5.QtWidgets import (QApplication)
+from PyQt5.QtWidgets import QMainWindow
+from .dialogs import WorkingDirDialog
+from .dockWidgets import CellSelectorDock, AnalysisSettingsDock, ResultsTableDock, PlottingWidget
 
 
 class App(QMainWindow):

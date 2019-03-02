@@ -6,14 +6,8 @@ Created on Sun Feb 24 22:59:45 2019
 """
 
 from matplotlib.patches import Polygon
-from matplotlib.widgets import _SelectorWidget, AxesWidget, Lasso
-from matplotlib.lines import Line2D
-import matplotlib as mpl
-from matplotlib import path
-import matplotlib.pyplot as plt
 from scipy import interpolate
 from shapely.geometry import LinearRing, Polygon as shapelyPolygon
-import time
 
 
 class myBase:
@@ -175,10 +169,7 @@ class myLasso(myBase):
 
 
 import numpy as np
-from scipy.interpolate import interp1d
 from matplotlib.lines import Line2D
-from matplotlib.artist import Artist
-from matplotlib.mlab import dist_point_to_segment
 
 
 class PolygonInteractor(myBase):

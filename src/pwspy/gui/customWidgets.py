@@ -4,25 +4,24 @@ Created on Mon Feb 11 21:22:01 2019
 
 @author: Nick
 """
-from matplotlib.figure import Figure
+import os.path as osp
+import typing
+
 import numpy as np
-from matplotlib.backends.backend_qt5agg import (
-    FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
+from PyQt5 import (QtGui, QtCore)
 from PyQt5.QtWidgets import (QWidget, QApplication, QGridLayout,
                              QTableWidget, QTableWidgetItem,
-                             QAbstractItemView, QMenu, QHBoxLayout,
-                             QPushButton, QLabel, QFrame, QToolButton,
-                             QScrollArea, QLayout, QSizePolicy, QCheckBox,
-                             QBoxLayout, QSpacerItem, QButtonGroup, QMessageBox)
-from PyQt5 import (QtGui, QtCore)
-import typing
-from pwspy.imCube.ImCubeClass import ImCube, FakeCube
-from pwspy.imCube.ICMetaDataClass import ICMetaData
-from pwspy.utility import PlotNd
-from pwspy.imCube.matplotlibwidg import myLasso
-import os.path as osp
+                             QAbstractItemView, QMenu, QPushButton, QFrame, QScrollArea, QLayout, QSizePolicy,
+                             QCheckBox,
+                             QBoxLayout, QSpacerItem, QButtonGroup)
+from matplotlib.backends.backend_qt5agg import (
+    FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
+from matplotlib.figure import Figure
 from matplotlib.widgets import LassoSelector
-import time
+
+from pwspy.imCube.ICMetaDataClass import ICMetaData
+from pwspy.imCube.ImCubeClass import ImCube
+from pwspy.imCube.matplotlibwidg import myLasso
 
 
 class LittlePlot(FigureCanvas):

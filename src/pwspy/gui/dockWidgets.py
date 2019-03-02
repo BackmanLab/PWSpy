@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import (QDockWidget, QTableWidgetItem,
                              QScrollArea, QWidget, QSpinBox,
                              QPushButton, QCheckBox, QSizePolicy, QSpacerItem, QMessageBox,
                              QComboBox)
-from customWidgets import CopyableTable, LittlePlot, CellTableWidget, CollapsibleSection, AspectRatioWidget, \
+from .customWidgets import CopyableTable, LittlePlot, CellTableWidget, CollapsibleSection, AspectRatioWidget, \
     CellTableWidgetItem
 
 from pwspy.analysis import AnalysisSettings

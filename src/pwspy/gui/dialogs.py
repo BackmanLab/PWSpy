@@ -4,15 +4,13 @@ Created on Wed Feb 13 18:04:57 2019
 
 @author: backman05
 """
-from PyQt5 import QtCore, QtGui
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QDockWidget
-from PyQt5.QtWidgets import (QTableWidget, QTableWidgetItem, QVBoxLayout,
-                             QTabWidget, QTextEdit, QLabel, QGroupBox,
-                             QGridLayout, QApplication, QStyleFactory, QDialog,
-                             QHBoxLayout, QLineEdit, QPushButton, QFileDialog, QCheckBox,
-                             QMessageBox)
 import os
 from glob import glob
+
+from PyQt5 import QtCore, QtGui
+from PyQt5.QtWidgets import (QGridLayout, QDialog,
+                             QLineEdit, QPushButton, QFileDialog, QCheckBox,
+                             QMessageBox)
 
 
 class WorkingDirDialog(QDialog):

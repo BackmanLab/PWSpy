@@ -109,61 +109,55 @@ def plotExtraReflection(cubes: list, selectMaskUsingSetting: str = None, plotRef
             for combo in allCombos[sett][matCombo]:
                 cubes = combo['cubes']
                 ratioAxes[matCombo].plot(cubes[mat1].wavelengths, combo['mat1Spectra'] / combo['mat2Spectra'],
-                                         label=f'{sett} {mat1}:{int(cubes[mat1].exposure)}ms {mat2}:{int(
-                cubes[mat2].exposure)}ms
-                ')
+                                         label=f'{sett} {mat1}:{int(cubes[mat1].exposure)}ms {mat2}:{int(cubes[mat2].exposure)}ms')
+    [ratioAxes[combo].legend() for combo in matCombos]
 
+    for sett in settings:
+        means = meanValues[sett]['mean']
 
-[ratioAxes[combo].legend() for combo in matCombos]
+        fig3, scatterAx = plt.subplots()  # A scatter plot of the theoretical vs observed reflectance ratio.
+        scatterAx.set_ylabel("Theoretical Ratio")
+        scatterAx.set_xlabel("Observed Ratio w/ cFactor")
+        scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in matCombos]
+        scatterPointsX = [means['cFactor'] * (
+                meanValues[sett][matCombo]['mat1Spectra'] / meanValues[sett][matCombo]['mat2Spectra']).mean() for
+                          matCombo in matCombos]
+        [scatterAx.scatter(x, y, label=f'{matCombo[0]}/{matCombo[1]}') for x, y, matCombo in
+         zip(scatterPointsX, scatterPointsY, matCombos)]
+        x = np.array([0, max(scatterPointsX)])
+        scatterAx.plot(x, x, label='1:1')
+        scatterAx.legend()
 
-for sett in settings:
-    means = meanValues[sett]['mean']
+        fig4, scatterAx2 = plt.subplots()  # A scatter plot of the theoretical vs observed reflectance ratio.
+        scatterAx2.set_ylabel("Theoretical Ratio")
+        scatterAx2.set_xlabel("Observed Ratio after Subtraction")
+        scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in matCombos]
+        scatterPointsX = [((meanValues[sett][matCombo]['mat1Spectra'] - means['I0'] * means['rextra']) / (
+                meanValues[sett][matCombo]['mat2Spectra'] - means['I0'] * means['rextra'])).mean() for matCombo in
+                          matCombos]
+        [scatterAx2.scatter(x, y, label=f'{matCombo[0]}/{matCombo[1]}') for x, y, matCombo in
+         zip(scatterPointsX, scatterPointsY, matCombos)]
+        x = np.array([0, max(scatterPointsX)])
+        scatterAx2.plot(x, x, label='1:1')
+        scatterAx2.legend()
 
-    fig3, scatterAx = plt.subplots()  # A scatter plot of the theoretical vs observed reflectance ratio.
-    scatterAx.set_ylabel("Theoretical Ratio")
-    scatterAx.set_xlabel("Observed Ratio w/ cFactor")
-    scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in matCombos]
-    scatterPointsX = [means['cFactor'] * (
-            meanValues[sett][matCombo]['mat1Spectra'] / meanValues[sett][matCombo]['mat2Spectra']).mean() for
-                      matCombo in matCombos]
-    [scatterAx.scatter(x, y, label=f'{matCombo[0]}/{matCombo[1]}') for x, y, matCombo in
-     zip(scatterPointsX, scatterPointsY, matCombos)]
-    x = np.array([0, max(scatterPointsX)])
-    scatterAx.plot(x, x, label='1:1')
-    scatterAx.legend()
-
-    fig4, scatterAx2 = plt.subplots()  # A scatter plot of the theoretical vs observed reflectance ratio.
-    scatterAx2.set_ylabel("Theoretical Ratio")
-    scatterAx2.set_xlabel("Observed Ratio after Subtraction")
-    scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in matCombos]
-    scatterPointsX = [((meanValues[sett][matCombo]['mat1Spectra'] - means['I0'] * means['rextra']) / (
-            meanValues[sett][matCombo]['mat2Spectra'] - means['I0'] * means['rextra'])).mean() for matCombo in
-                      matCombos]
-    [scatterAx2.scatter(x, y, label=f'{matCombo[0]}/{matCombo[1]}') for x, y, matCombo in
-     zip(scatterPointsX, scatterPointsY, matCombos)]
-    x = np.array([0, max(scatterPointsX)])
-    scatterAx2.plot(x, x, label='1:1')
-    scatterAx2.legend()
-
-    if plotReflectionImages:
-        for matCombo in matCombos:
-            mat1, mat2 = matCombo
-            for combo in allCombos[sett][matCombo]:
-                cubes = combo['cubes']
-                plt.figure()
-                plt.title(f"Reflectance %. {sett}, {mat1}:{int(cubes[mat2].exposure)}ms, {mat2}:{int(
-                cubes[mat2].exposure)}ms
-                ")
-            _ = ((theoryR[mat1][np.newaxis, np.newaxis, :] * cubes[mat2].data) - (
-                    theoryR[mat2][np.newaxis, np.newaxis, :] * cubes[mat1].data)) / (
-                        cubes[mat1].data - cubes[mat2].data)
-            _[np.isinf(_)] = np.nan
-            if np.any(np.isnan(_)):
-                _ = _interpolateNans(
-                    _)  # any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
-            refIm = _.mean(axis=2)
-            plt.imshow(refIm, vmin=np.percentile(refIm, .5), vmax=np.percentile(refIm, 99.5))
-            plt.colorbar()
+        if plotReflectionImages:
+            for matCombo in matCombos:
+                mat1, mat2 = matCombo
+                for combo in allCombos[sett][matCombo]:
+                    cubes = combo['cubes']
+                    plt.figure()
+                    plt.title(f"Reflectance %. {sett}, {mat1}:{int(cubes[mat2].exposure)}ms, {mat2}:{int(cubes[mat2].exposure)}ms")
+                _ = ((theoryR[mat1][np.newaxis, np.newaxis, :] * cubes[mat2].data) - (
+                        theoryR[mat2][np.newaxis, np.newaxis, :] * cubes[mat1].data)) / (
+                            cubes[mat1].data - cubes[mat2].data)
+                _[np.isinf(_)] = np.nan
+                if np.any(np.isnan(_)):
+                    _ = _interpolateNans(
+                        _)  # any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
+                refIm = _.mean(axis=2)
+                plt.imshow(refIm, vmin=np.percentile(refIm, .5), vmax=np.percentile(refIm, 99.5))
+                plt.colorbar()
 
     print(f"{sett} correction factor")
     print(means['cFactor'])
