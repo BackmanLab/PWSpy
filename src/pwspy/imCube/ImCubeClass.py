@@ -238,6 +238,6 @@ class FakeCube(ImCube):
         freq = np.random.random() / 4
         freq2 = np.random.random() / 4
         data = np.exp(-np.sqrt((X - X.max() / 2) ** 2 + (Y - Y.max() / 2) ** 2) / (x.max() / 4)) * (
-                    .75 + 0.25 * np.cos(freq2 * 2 * np.pi * Z)) * (0.5 + 0.5 * np.sin(freq * 2 * np.pi * X))
+                .75 + 0.25 * np.cos(freq2 * 2 * np.pi * Z)) * (0.5 + 0.5 * np.sin(freq * 2 * np.pi * X))
         md = {'wavelengths': z + 500, 'exposure': 100, 'time': '315'}
         super().__init__(data, md, filePath=f'Cell{num}')

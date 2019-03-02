@@ -86,7 +86,8 @@ for cellName in cellNames:
     polydata = np.polyfit(cube.wavenumbers, polydata,
                           orderPolyFit)  # At this point polydata goes from holding the cube data to holding the polynomial values for each pixel. still 2d.
     for i in range(orderPolyFit + 1):
-        cubePoly += (np.array(cube.wavenumbers)[:, np.newaxis] ** i) * polydata[i, :]  # Populate cubePoly with the fit values.
+        cubePoly += (np.array(cube.wavenumbers)[:, np.newaxis] ** i) * polydata[i,
+                                                                       :]  # Populate cubePoly with the fit values.
     cubePoly = np.moveaxis(cubePoly, 0, 1)
     cubePoly = cubePoly.reshape(cube.data.shape)  # reshape back to a cube.
     # Remove the polynomial fit from filtered cubeCell.
