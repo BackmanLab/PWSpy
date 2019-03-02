@@ -18,10 +18,12 @@ def _interpolateNans(arr):
 
 
 def plotExtraReflection(cubes: list, selectMaskUsingSetting: str = None, plotReflectionImages: bool = False,
-                        excludedCombos: list = []):
+                        excludedCombos: list = None):
     """Expects a list of ImCubes which each has a `material` property matching one of the materials in the `ReflectanceHelper` module and a
     `setting` property labeling how the microscope was set up for this image.
     """
+    if excludedCombos is None:
+        excludedCombos = []
     # Error checking
     assert isinstance(cubes[0], ImCube)
     assert hasattr(cubes[0], 'material')
@@ -163,8 +165,10 @@ def plotExtraReflection(cubes: list, selectMaskUsingSetting: str = None, plotRef
     return meanValues, allCombos
 
 
-def saveRExtra(cubes: list, excludedCombos: list = []):
+def saveRExtra(cubes: list, excludedCombos: list = None):
     """Expects a list of ImCubes which each has a `material` property matching one of the materials in the `ReflectanceHelper` module."""
+    if excludedCombos is None:
+        excludedCombos = []
     # Error checking
     assert isinstance(cubes[0], ImCube)
     assert hasattr(cubes[0], 'material')

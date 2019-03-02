@@ -15,19 +15,20 @@ import os
 from glob import glob
 
 class WorkingDirDialog(QDialog):
-    def __init__(self, parent):
+    def __init__(self, parent = None):
         super().__init__(parent, QtCore.Qt.WindowTitleHint | QtCore.Qt.WindowSystemMenuHint | QtCore.Qt.WindowCloseButtonHint) #Construct without a question mark button
         self.setWindowTitle("Working Directory")
-        self.setLayout(QGridLayout())
+        layout = QGridLayout()
         self.setModal(True)
         self.textLine = QLineEdit()
         self.browseButton = QPushButton(QtGui.QIcon(os.path.join('resources','folder.png')),'')
         self.scanButton = QPushButton('Scan!')
         self.recursiveCheckbox = QCheckBox("recursively scan subfolders")
-        self.layout().addWidget(self.textLine,0,0,1,4)
-        self.layout().addWidget(self.browseButton,0,5,1,1)
-        self.layout().addWidget(self.recursiveCheckbox,1,0,1,2)
-        self.layout().addWidget(self.scanButton,1,2,1,1)
+        layout.addWidget(self.textLine,0,0,1,4)
+        layout.addWidget(self.browseButton,0,5,1,1)
+        layout.addWidget(self.recursiveCheckbox,1,0,1,2)
+        layout.addWidget(self.scanButton,1,2,1,1)
+        self.setLayout(QGridLayout())
         self.setFixedSize(400,75)
         self.scanButton.released.connect(self.scanButtonPushed_)
         self.browseButton.released.connect(self.browseFile)

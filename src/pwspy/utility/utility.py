@@ -16,7 +16,9 @@ from pwspy import ImCube
 '''Local Functions'''
 
 
-def _recursiveSearch(fileDict, specifierNames, specifiers: typing.List[str] = []):
+def _recursiveSearch(fileDict, specifierNames, specifiers: typing.List[str] = None):
+    if specifiers is None:
+        specifiers = []
     results = []
     if isinstance(fileDict, dict):
         for k, v in fileDict.items():
@@ -65,8 +67,10 @@ def loadThenProcess(procFunc, procFuncArgs, lock, fileAndSpecifiers):
 '''User Functions'''
 
 
-def loadAndProcess(fileDict: dict, processorFunc=None, specifierNames: list = None, parallel=False, procArgs=[]) -> \
+def loadAndProcess(fileDict: dict, processorFunc=None, specifierNames: list = None, parallel=False, procArgs=None) -> \
         typing.List[ImCube]:
+    if procArgs is None:
+        procArgs = []
     # Error checking
     numThreads = 2  # even this might be unnecesary. don't bother going higher.
     print("Starting loading")

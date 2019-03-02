@@ -134,8 +134,8 @@ class AnalysisSettingsDock(QDockWidget):
         '''SignalPreparations'''
         self.signalPrep = QGroupBox("Signal Prep")
         self.signalPrep.setFixedSize(150,100)
-        self.signalPrep.setLayout(QGridLayout())
-        _ = self.signalPrep.layout().addWidget
+        layout = QGridLayout()
+        _ = layout.addWidget
         self.filterOrder = QSpinBox()
         self.filterCutoff = QSpinBox()
         _(QLabel("Filter Order"),0,0,1,1)
@@ -143,16 +143,18 @@ class AnalysisSettingsDock(QDockWidget):
         _(QLabel("Cutoff Freq."),1,0,1,1)
         _(self.filterCutoff, 1,1,1,1)
         _(QLabel("nm<sup>-1</sup>"),1,2,1,1)
+        self.signalPrep.setLayout(layout)
         self.layout.addWidget(self.signalPrep,2,0,1,2)
     
         '''Polynomial subtraction'''
         self.polySub = QGroupBox("Polynomial Subtraction")
         self.polySub.setFixedSize(150,100)
-        self.polySub.setLayout(QGridLayout())
-        _ = self.polySub.layout().addWidget
+        layout = QGridLayout
+        _ = layout.addWidget
         self.polynomialOrder = QSpinBox()
         _(QLabel("Order"),0,0,1,1)
         _(self.polynomialOrder,0,1,1,1)
+        self.polySub.setLayout(layout)
         self.layout.addWidget(self.polySub,2,2,1,2)
         
         '''Advanced Calculations'''

@@ -220,7 +220,9 @@ class PolygonInteractor(myBase):
         self.line.set_data(x,y)
         self.poly.set_xy(xy)
         self.update()
-    def interpolate(self, x, y):
+
+    @staticmethod
+    def interpolate(x, y):
 #        x,y = self.line.get_data()
         tck, u = interpolate.splprep([x, y], s=0, per=True)   
         # evaluate the spline fits for 1000 evenly spaced distance values

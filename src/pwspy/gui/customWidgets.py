@@ -48,7 +48,7 @@ class BigPlot(QWidget):
     def __init__(self, parent, data):
         super().__init__(parent, QtCore.Qt.Window)
         self.setWindowTitle("What?!")
-        self.setLayout(QGridLayout())
+        layout = QGridLayout()
         self.fig = Figure()
         self.ax = self.fig.add_subplot(1,1,1)
         self.ax.imshow(data)
@@ -64,10 +64,12 @@ class BigPlot(QWidget):
         self.buttonGroup.buttonReleased.connect(self.handleButtons)
         [i.setCheckable(True) for i in self.buttonGroup.buttons()]
         
-        self.layout().addWidget(self.lassoButton,0,0,1,1)
-        self.layout().addWidget(self.ellipseButton,0,1,1,1)
-        self.layout().addWidget(self.canvas,1,0,8,8)
-        self.layout().addWidget(NavigationToolbar(self.canvas, self),10,0,8,8)
+        layout.addWidget(self.lassoButton,0,0,1,1)
+        layout.addWidget(self.ellipseButton,0,1,1,1)
+        layout.addWidget(self.canvas,1,0,8,8)
+        layout.addWidget(NavigationToolbar(self.canvas, self),10,0,8,8)
+        self.setLayout(layout)
+
         self.show()
     def handleButtons(self,button):
         if button != self.lastButton_:

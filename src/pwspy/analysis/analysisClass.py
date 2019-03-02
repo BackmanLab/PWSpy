@@ -91,7 +91,7 @@ class Analysis:
             reflectance=reflectance,
             rms=rms,
             polynomialRms=rmsPoly,
-            slope=slope,
+            autoCorrelationSlope=slope,
             rSquared=rSquared,
             opd=opd,
             xvalOpd=xvalOpd,
@@ -100,6 +100,7 @@ class Analysis:
 
         return self.results
 
+    @staticmethod
     def _normalizeImCube(cube: ImCube, ref: ImCube):
         cube.normalizeByExposure()
         ref.normalizeByExposure()
