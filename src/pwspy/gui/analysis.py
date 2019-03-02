@@ -26,15 +26,15 @@ class App(QMainWindow):
         self.cellSelector = CellSelectorDock()
         self.analysisSettings = AnalysisSettingsDock()
         self.resultsTable = ResultsTableDock()
-        self.plots = PlottingWidget()
+        self.plots = PlottingWidget(self.cellSelector.tableWidget)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.cellSelector)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.plots)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.analysisSettings)
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.resultsTable)
         self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks | QMainWindow.AllowTabbedDocks)
         
-        self.fileDialog = WorkingDirDialog()
-        self.fileDialog.scanButtonPushed.connect(self.searchCells)
+        self.fileDialog = WorkingDirDialog(self)
+#        self.fileDialog.scanButtonPushed.connect(self.searchCells)
 
         menuBar = self.menuBar()
         view = menuBar.addMenu("View")
@@ -43,7 +43,8 @@ class App(QMainWindow):
         toolBar.setObjectName('mainToolBar()')
         action = toolBar.addAction(QtGui.QIcon(os.path.join('resources','folder.png')), "Set Path")
         action.triggered.connect(self.fileDialog.show)
-        toolBar.addAction(QtGui.QIcon(os.path.join('resources','icon.png')),"Idea")
+        action2 = toolBar.addAction(QtGui.QIcon(os.path.join('resources','icon.png')),"Idea")
+        action2.triggered.connect(self.cellSelector.clearCells)
         toolBar.addAction(QtGui.QIcon(os.path.join('resources','playicon.svg')),'Run')
         settings = QtCore.QSettings("BackmanLab", "PWSAnalysis2");
         try:
@@ -53,10 +54,6 @@ class App(QMainWindow):
             print(e)
         self.show()
         
-    def searchCells(self, path:str, recursive: bool):
-        pattern = os.path.join('**','Cell*') if recursive else 'Cell*'
-        files = glob(os.path.join(path, pattern,''))
-        print(recursive) 
         
     def closeEvent(self, event):
         settings = QtCore.QSettings("BackmanLab", "PWSAnalysis2")
