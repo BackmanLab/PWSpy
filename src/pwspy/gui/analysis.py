@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import QMainWindow
 
 from .dialogs import WorkingDirDialog
 from .dockWidgets import CellSelectorDock, AnalysisSettingsDock, ResultsTableDock, PlottingWidget
+from . import resources
 
 
 class App(QMainWindow):
@@ -35,11 +36,11 @@ class App(QMainWindow):
         view.addAction("Look at stuff")
         toolBar = self.addToolBar('tool')
         toolBar.setObjectName('mainToolBar()')
-        action = toolBar.addAction(QtGui.QIcon(os.path.join('resources', 'folder.png')), "Set Path")
+        action = toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'folder.png')), "Set Path")
         action.triggered.connect(self.fileDialog.show)
-        action2 = toolBar.addAction(QtGui.QIcon(os.path.join('resources', 'icon.png')), "Idea")
+        action2 = toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'icon.png')), "Idea")
         action2.triggered.connect(self.cellSelector.clearCells)
-        toolBar.addAction(QtGui.QIcon(os.path.join('resources', 'playicon.svg')), 'Run')
+        toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'playicon.svg')), 'Run')
         settings = QtCore.QSettings("BackmanLab", "PWSAnalysis2");
         try:
             self.restoreGeometry(settings.value("geometry"));
@@ -53,4 +54,5 @@ class App(QMainWindow):
         settings.setValue("geometry", self.saveGeometry())
         settings.setValue("windowState", self.saveState())
         super().closeEvent(event)
+
 

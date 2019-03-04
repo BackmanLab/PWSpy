@@ -6,7 +6,7 @@ Created on Wed Feb 13 18:04:57 2019
 """
 import os
 from glob import glob
-
+from . import resources
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import (QGridLayout, QDialog,
                              QLineEdit, QPushButton, QFileDialog, QCheckBox,
@@ -21,7 +21,7 @@ class WorkingDirDialog(QDialog):
         layout = QGridLayout()
         self.setModal(True)
         self.textLine = QLineEdit()
-        self.browseButton = QPushButton(QtGui.QIcon(os.path.join('resources', 'folder.png')), '')
+        self.browseButton = QPushButton(QtGui.QIcon(os.path.join(resources, 'folder.png')), '')
         self.scanButton = QPushButton('Scan!')
         self.recursiveCheckbox = QCheckBox("recursively scan subfolders")
         layout.addWidget(self.textLine, 0, 0, 1, 4)
