@@ -81,7 +81,8 @@ class ICMetaData:
                 raise ValueError(f"Metadata does not have a '{i}' field.")
 
     def toJson(self, directory):
-        json.dump(self.metadata, os.path.join(directory, 'pwsmetadata.json'))
+        with open(os.path.join(directory, 'pwsmetadata.json'), 'w') as f:
+            json.dump(self.metadata, f)
 
     def saveMask(self, mask: np.ndarray, number: int, suffix: str):
         assert self.filePath is not None

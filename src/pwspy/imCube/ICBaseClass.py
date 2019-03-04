@@ -111,9 +111,20 @@ class ICBase:
 
         kernel = _gaussKernel(kernelRadius)
         for i in range(self.data.shape[2]):
-            m = self.data[:, :,
-                i].mean()  # By subtracting the mean and then adding it after convolution we are effectively padding the convolution with the mean.
+            m = self.data[:, :, i].mean()  # By subtracting the mean and then adding it after convolution we are effectively padding the convolution with the mean.
             self.data[:, :, i] = sps.convolve(self.data[:, :, i] - m, kernel, mode='same') + m
 
     def _indicesMatch(self, other: 'ICBase') -> bool:
         return self._index == other._index
+
+    def selIndex(self, start, stop):
+        wv = np.array(self.index)
+        iStart = np.argmin(np.abs(wv - start))
+        iStop = np.argmin(np.abs(wv - stop))
+        iStop += 1  # include the end point
+        if iStop >= len(wv):  # Include everything
+            iStop = None
+        self.data = self.data[:, :, iStart:iStop]
+        self._index = self.index[iStart:iStop]
+
+

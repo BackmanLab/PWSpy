@@ -229,6 +229,9 @@ class ImCube(ICBase, ICMetaData):
     def isCorrected(self) -> bool:
         return self._cameraCorrected
 
+    def selIndex(self, start, stop):
+        super().selIndex(start, stop)
+        self.metadata["wavelengths"] = self.index
 
 class FakeCube(ImCube):
     def __init__(self, num: int):
