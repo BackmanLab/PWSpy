@@ -84,16 +84,14 @@ class ICMetaData:
         json.dump(self.metadata, os.path.join(directory, 'pwsmetadata.json'))
 
     def saveMask(self, mask: np.ndarray, number: int, suffix: str):
-        assert not self.filePath is None
+        assert self.filePath is not None
         assert len(mask.shape) == 2
-        assert mask.shape == self.data.shape[:2]
         spio.savemat(os.path.join(self.filePath, f'BW{number}_{suffix}.mat'), {"BW": mask.astype(np.bool)})
 
     def loadMask(self, number: int, suffix: str):
         assert not self.filePath is None
         mask = spio.loadmat(os.path.join(self.filePath, f'BW{number}_{suffix}.mat'))['BW'].astype(np.bool)
         assert len(mask.shape) == 2
-        assert mask.shape == self.data.shape[:2]
         return mask
 
     def getMasks(self):

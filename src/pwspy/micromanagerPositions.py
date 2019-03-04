@@ -20,19 +20,17 @@ class Property(NamedTuple):
     pType: str
     value: typing.Union[str, int, float]
 
+    def __init__(self):
+        super().__init__()
+        assert self.pType in ['STRING', 'DOUBLE', 'INTEGER']
+        self._d = {'type': self.pType}
+        if isinstance(self.value, list):
+            self._d['array'] = self.value
+        else:
+            self._d['scalar'] = self.value
 
-def __init__(self):
-    super().__init__()
-    assert self.pType in ['STRING', 'DOUBLE', 'INTEGER']
-    self._d = {'type': self.pType}
-    if isinstance(self.value, list):
-        self._d['array'] = self.value
-    else:
-        self._d['scalar'] = self.value
-
-
-def toDict(self):
-    return self._d
+    def toDict(self):
+        return self._d
 
 
 class PropertyMap:

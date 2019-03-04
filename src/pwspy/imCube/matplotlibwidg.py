@@ -118,17 +118,6 @@ class myLasso(myBase):
     onselect : function
         Whenever the lasso is released, the *onselect* function is called and
         passed the vertices of the selected path.
-    button : List[Int], optional
-        A list of integers indicating which mouse buttons should be used for
-        rectangle selection. You can also specify a single integer if only a
-        single button is desired.  Default is ``None``, which does not limit
-        which button can be used.
-
-        Note, typically:
-
-        - 1 = left mouse button
-        - 2 = center mouse button (scroll wheel)
-        - 3 = right mouse button
     """
 
     def __init__(self, ax, onselect=None):
@@ -281,8 +270,6 @@ class PolygonInteractor(myBase):
                     self.line.set_data(np.insert(self.line.get_data, i + 1, [event.ydata, event.xdata], axis=0))
                     break
         elif event.key == 'enter':
-            self.done = True
-            self.close()
             return
         if self.line.stale:
             self.canvas.draw_idle()
@@ -335,7 +322,7 @@ if __name__ == '__main__':
         l2 = l2.simplify(l2.length / 2e2, preserve_topology=False)
         #        self.polygon.set_xy(l.exterior.coords)
         #        print(list(l.exterior.coords))
-        p.initialize(l.exterior.coords)
+        p.initialize(l2.exterior.coords)
         p.setActive(True)
         p.setVisible(True)
 

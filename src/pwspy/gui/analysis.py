@@ -5,11 +5,10 @@ Created on Sun Feb 10 13:26:58 2019
 @author: Nick
 """
 import os
-import sys
 
 from PyQt5 import QtCore, QtGui
-from PyQt5.QtWidgets import (QApplication)
 from PyQt5.QtWidgets import QMainWindow
+
 from .dialogs import WorkingDirDialog
 from .dockWidgets import CellSelectorDock, AnalysisSettingsDock, ResultsTableDock, PlottingWidget
 
