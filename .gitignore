@@ -1,2 +1,3 @@
 *.pyc
 src/pwspy.egg-info/
+.idea/
