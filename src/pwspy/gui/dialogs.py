@@ -45,16 +45,9 @@ class WorkingDirDialog(QDialog):
         else:
             _, files = zip(*sorted([(int(f.split('Cell')[-1]), f) for f in files]))
             self.parent().cellSelector.clearCells()
-            self.progressBar = QProgressDialog('Scanning', 'Cancel', 0, len(files), self)
-            self.progressBar.setAutoClose(True)
-            self.progressBar.setWindowModality(QtCore.Qt.WindowModal)
             for i, f in enumerate(files):
-                self.progressBar.setValue(i)
                 self.parent().cellSelector.addCell(f, self.directory)
-                if self.progressBar.wasCanceled():
-                    break
             self.parent().cellSelector.updateFilters()
-            self.progressBar.reset()
 
     def browseFile(self):
         _ = QFileDialog.getExistingDirectory(self, 'Working Directory', self.directory)
