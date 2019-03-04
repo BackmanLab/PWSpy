@@ -72,6 +72,8 @@ class BigPlot(QWidget):
         layout.addWidget(NavigationToolbar(self.canvas, self), 10, 0, 8, 8)
         self.setLayout(layout)
 
+        self.selector = None
+
         self.show()
 
     def handleButtons(self, button):

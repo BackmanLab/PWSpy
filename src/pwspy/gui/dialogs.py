@@ -30,38 +30,37 @@ class WorkingDirDialog(QDialog):
         layout.addWidget(self.scanButton, 1, 2, 1, 1)
         self.setLayout(layout)
         self.setFixedSize(400, 75)
-        self.scanButton.released.connect(self.scanButtonPushed_)
+        self.scanButton.released.connect(self._scanButtonPushed)
         self.browseButton.released.connect(self.browseFile)
         self.directory = os.path.expanduser('~')
 
-    def scanButtonPushed_(self):
-        self.workingDir = self.textLine.text()
+    def _scanButtonPushed(self):
         recursive = self.recursiveCheckbox.checkState() != 0
         pattern = [os.path.join('**', 'Cell*')] if recursive else ['Cell*']
         files = []
         for patt in pattern:
-            files.extend(glob(os.path.join(self.workingDir, patt), recursive=recursive))
+            files.extend(glob(os.path.join(self.directory, patt), recursive=recursive))
         if len(files) == 0:
             QMessageBox.information(self, "Hmm", "No PWS files were found.")
         else:
             _, files = zip(*sorted([(int(f.split('Cell')[-1]), f) for f in files]))
             self.parent().cellSelector.clearCells()
-            [self.parent().cellSelector.addCell(f, self.workingDir) for f in files]
+            self.progressBar = QProgressDialog('Scanning', 'Cancel', 0, len(files), self)
+            self.progressBar.setAutoClose(True)
+            self.progressBar.setWindowModality(QtCore.Qt.WindowModal)
+            for i, f in enumerate(files):
+                self.progressBar.setValue(i)
+                self.parent().cellSelector.addCell(f, self.directory)
+                if self.progressBar.wasCanceled():
+                    break
             self.parent().cellSelector.updateFilters()
-            self.accept()
-
-    #        self.scanButtonPushed.emit(self.textLine.text(), self.recursiveCheckbox.checkState()!=0)
+            self.progressBar.reset()
 
     def browseFile(self):
-        #        _ = QFileDialog(self)
-        #        _.setFileMode(QFileDialog.DirectoryOnly)
-        #        _.show()
-        #        _.fileSelected.connect(self.textLine.setText)
         _ = QFileDialog.getExistingDirectory(self, 'Working Directory', self.directory)
         if _ != '':
             self.directory = _
             self.textLine.setText(self.directory)
-
 
 if __name__ == '__main__':
     _ = WorkingDirDialog()
