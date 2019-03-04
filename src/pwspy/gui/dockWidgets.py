@@ -74,14 +74,14 @@ class CellSelectorDock(QDockWidget):
             text = text.replace(r'\\', r'\\\\')
             try:
                 match = re.match(path, text)
-            except:
+            except re.error:
                 QMessageBox.information(self, 'Hmm', f'{text} is not a valid regex expression.')
                 return
             expr = self.expressionFilter.text()
             if expr.strip() != '':
                 try:
                     ret = bool(eval(expr.format(num=self.tableWidget.item(i, 1).number)))
-                except:
+                except Exception:
                     QMessageBox.information(self, 'Hmm', f'{expr} is not a valid boolean expression.')
                     return
             else:
