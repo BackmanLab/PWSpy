@@ -272,10 +272,10 @@ class PlottingWidget(QDockWidget):
             self.arController.setAspect(1 / len(self.plots))
 
     def plotRMS(self):
-        cells = self.selector.selectedCells
+        cells = [i.cube for i in self.selector.selectedCellItems]
         if len(cells) == 0:
             messageBox = QMessageBox(self)
             messageBox.information(self, "Oops!", "Please select the cells you would like to plot.")
             messageBox.setFixedSize(500, 200)
-        for i in cells:
-            self.addPlot(LittlePlot())
+        for cell in cells:
+            self.addPlot(LittlePlot(#need to provide a way to get the rms data. icmetadata analysis handling.# cell))

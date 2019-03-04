@@ -48,6 +48,7 @@ class WorkingDirDialog(QDialog):
             for i, f in enumerate(files):
                 self.parent().cellSelector.addCell(f, self.directory)
             self.parent().cellSelector.updateFilters()
+            self.accept()
 
     def browseFile(self):
         _ = QFileDialog.getExistingDirectory(self, 'Working Directory', self.directory)

@@ -25,9 +25,9 @@ from pwspy.imCube.matplotlibwidg import myLasso
 
 
 class LittlePlot(FigureCanvas):
-    def __init__(self, data: np.ndarray, cell: ImCube):
+    def __init__(self, data: np.ndarray, cell: ICMetaData):
+        assert len(data.shape) == 2
         self.fig = Figure()
-        #        self.data = np.ones((100,100))*np.sin(np.linspace(1,6,num=100))[None,:]
         self.data = data
         self.cell = cell
         ax = self.fig.add_subplot(1, 1, 1)
@@ -170,18 +170,18 @@ class CellTableWidget(QTableWidget):
 
     def showContextMenu(self, point: QtCore.QPoint):
         menu = QMenu("Context Menu")
-        state = not self.selectedCells[0].isInvalid()
+        state = not self.selectedCellItems[0].isInvalid()
         stateString = "Disable Cell(s)" if state else "Enable Cell(s)"
         action = menu.addAction(stateString)
         action.triggered.connect(lambda: self.toggleSelectedCellsInvalid(state))
         menu.exec(self.mapToGlobal(point))
 
     def toggleSelectedCellsInvalid(self, state: bool):
-        for i in self.selectedCells:
+        for i in self.selectedCellItems:
             i.setInvalid(state)
 
     @property
-    def selectedCells(self) -> typing.List[CellTableWidgetItem]:
+    def selectedCellItems(self) -> typing.List[CellTableWidgetItem]:
         """Returns the rows that have been selected."""
         rowIndices = [i.row() for i in self.selectedIndexes()[::self.columnCount()]]
         rowIndices.sort()
