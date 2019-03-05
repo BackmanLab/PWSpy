@@ -6,6 +6,7 @@ Created on Tue Feb 12 23:10:35 2019
 """
 
 import json
+import os
 import os.path as osp
 from typing import NamedTuple
 
@@ -37,6 +38,7 @@ class AnalysisSettings(NamedTuple):
 
 
 class AnalysisResults(NamedTuple):
+    settings: AnalysisSettings
     reflectance: np.ndarray
     rms: np.ndarray
     polynomialRms: np.ndarray
@@ -46,6 +48,16 @@ class AnalysisResults(NamedTuple):
     opd: np.ndarray
     xvalOpd: np.ndarray
 
+    def toHDF5(self, directory:str, name: str):
+        fileName = osp.join(directory, f'{name}.hdf5')
+        if osp.exists(fileName):
+            raise OSError(f'{fileName} already exists.')
+        #now save the stuff
+
+    @classmethod
+    def load(cls, directory: str, name: str):
+        fileName = osp.join(directory, f'{name}.hdf5')
+        #load stuff
 
 class Analysis:
     indexOpdStop = 100

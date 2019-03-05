@@ -4,6 +4,7 @@ Created on Tue Feb 12 19:17:14 2019
 
 @author: Nick
 """
+import typing
 
 import scipy.io as spio
 import numpy as np
@@ -12,6 +13,9 @@ import json
 import tifffile as tf
 from glob import glob
 import subprocess, sys
+import re
+
+from pwspy.analysis import AnalysisResults
 
 
 class ICMetaData:
@@ -20,7 +24,6 @@ class ICMetaData:
         self._checkMetadata(metadata)
         self.metadata = metadata
         self.filePath = filePath
-
     #        self.id =
 
     @classmethod
@@ -117,6 +120,24 @@ class ICMetaData:
         assert not self.filePath is None
         os.remove(os.path.join(self.filePath, f'BW{number}_{suffix}.mat'))
 
+    def getAnalyses(self):
+        assert self.filePath is not None
+        return self.getAnalysesAtPath(self.filePath)
+
+    @staticmethod
+    def getAnalysesAtPath(path: str) -> typing.List[str]:
+        anPath = os.path.join(path, 'analyses')
+        if os.path.exists(anPath):
+            return os.listdir(os.path.join(path, 'analyses'))
+        else:
+            return []
+
+    def saveAnalysis(self, analysis: AnalysisResults, name:str):
+        analysis.toHDF5(os.path.join(self.filePath, 'analyses'), name)
+
+    def getAnalysis(self, name:str) -> AnalysisResults:
+        return AnalysisResults.load(os.path.join(self.filePath, 'analyses', name))
+
     def editNotes(self):
         filepath = os.path.join(self.filePath, 'notes.txt.')
         if not os.path.exists(filepath):
@@ -128,3 +149,4 @@ class ICMetaData:
             os.startfile(filepath)
         elif os.name == 'posix':  # For Linux, Mac, etc.
             subprocess.call(('xdg-open', filepath))
+
