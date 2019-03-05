@@ -1,0 +1,38 @@
+{% set data = load_setup_py_data() %}
+
+package:
+  name: pwspy
+  version: {{ data['version'] }}
+
+source:
+  path: ..
+
+build:
+  number: 0
+  script: python setup.py install --single-version-externally-managed --record=record.txt
+
+requirements:
+  build:
+    - python >=3.7,{{PY_VER}}*
+    - setuptools
+
+  run:
+    - python {{PY_VER}}*
+    - numpy >=1.8*
+    - scipy >=0.18*
+    - tifffile
+    - psutil
+    - shapely
+    - h5py
+    - pandas
+    - matplotlib >=1.4*
+
+about:
+  home: data['url']
+  license: BSD 3-Clause
+  license_file: LICENSE.md
+  license_family: BSD
+
+  summary: data['description']
+  description: data['long_description']
+  dev_url: data['url']
