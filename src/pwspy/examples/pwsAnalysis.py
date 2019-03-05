@@ -9,6 +9,8 @@ import copy
 import scipy.signal as sps
 import numpy as np
 
+from pwspy.analysis import AnalysisResults
+
 
 def analyzeCube(cubeCell: ImCube, darkCount: int, mirror: ImCube, orderFilter: int,
                 cutoffFilter: float, wavelengthStart: int, wavelengthStop: int,
@@ -32,7 +34,7 @@ def analyzeCube(cubeCell: ImCube, darkCount: int, mirror: ImCube, orderFilter: i
     cube.data = sps.filtfilt(b, a, cube.data, axis=2)
 
     # The rest of the analysis will be performed only on the selected wavelength range.
-    cube = cube.wvIndex(wavelengthStart, wavelengthStop)
+    cube = cube.selIndex(wavelengthStart, wavelengthStop)
 
     # Determine the mean-reflectance for each pixel in the cell.
     reflectance = cube.data.mean(axis=2)
@@ -84,15 +86,15 @@ def analyzeCube(cubeCell: ImCube, darkCount: int, mirror: ImCube, orderFilter: i
     A2 = 4
     ld = ((A2 / A1) * fact) * (rms / (-1 * slope.reshape(rms.shape)))
     ## Outputs
-    results = {
-        'reflectance': reflectance,
-        'rms': rms,
-        'polynomialRms': rmsPoly,
-        'autoCorrelationSlope': slope,
-        'rSquared': rSquared,
-        'ld': ld,
-        'opd': opd,
-        'xvalOpd': xvalOpd}
+    results = AnalysisResults(
+        reflectance=reflectance,
+        rms=rms,
+        polynomialRms=rmsPoly,
+        autoCorrelationSlope=slope,
+        rSquared=rSquared,
+        ld=ld,
+        opd=opd,
+        xvalOpd=xvalOpd)
     return results
 
 
