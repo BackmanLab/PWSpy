@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+
+import h5py
 import numpy as np
 import os.path as osp
 from datetime import datetime
@@ -16,6 +18,7 @@ class AnalysisResults:
     ld: np.ndarray
     opd: np.ndarray
     xvalOpd: np.ndarray
+    time: str = None
 
     def __post_init__(self):
         self.__setattr__('time', datetime.now().strftime("%m-%d-%y %H:%M:%s"))
@@ -24,9 +27,16 @@ class AnalysisResults:
         fileName = osp.join(directory, f'{name}.hdf5')
         if osp.exists(fileName):
             raise OSError(f'{fileName} already exists.')
-        #now save the stuff
+        # now save the stuff
+        with h5py.File(fileName, 'w') as hf:
+            for k,v in self.asDict().items():
+                hf.create_dataset(k, data=v)
+
 
     @classmethod
-    def load(cls, directory: str, name: str):
+    def fromHDF5(cls, directory: str, name: str):
         fileName = osp.join(directory, f'{name}.hdf5')
-        #load stuff
+        # load stuff
+        with h5py.File(fileName, 'r') as hf:
+            d = dict(hf)
+            return cls(**d)
