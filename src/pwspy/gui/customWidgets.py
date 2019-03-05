@@ -216,30 +216,30 @@ class CollapsibleSection(QWidget):
         super().__init__(parent)
         self.animationDuration = animationDuration
         self.toggleButton = QCheckBox(title, self)
-        headerLine = QFrame(self);
-        self.toggleAnimation = QtCore.QParallelAnimationGroup(self);
-        self.contentArea = QScrollArea(self);
-        mainLayout = QGridLayout(self);
+        headerLine = QFrame(self)
+        self.toggleAnimation = QtCore.QParallelAnimationGroup(self)
+        self.contentArea = QScrollArea(self)
+        mainLayout = QGridLayout(self)
 
-        self.toggleButton.setCheckable(True);
-        self.toggleButton.setChecked(True);
+        self.toggleButton.setCheckable(True)
+        self.toggleButton.setChecked(True)
 
-        headerLine.setFrameShape(QFrame.HLine);
-        headerLine.setFrameShadow(QFrame.Sunken);
-        headerLine.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum);
+        headerLine.setFrameShape(QFrame.HLine)
+        headerLine.setFrameShadow(QFrame.Sunken)
+        headerLine.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
 
-        self.contentArea.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed);
+        self.contentArea.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         # start out collapsed
-        self.contentArea.setMaximumHeight(0);
-        self.contentArea.setMinimumHeight(0);
+        self.contentArea.setMaximumHeight(0)
+        self.contentArea.setMinimumHeight(0)
 
         # let the entire widget grow and shrink with its content
-        self.toggleAnimation.addAnimation(QtCore.QPropertyAnimation(self, b"minimumHeight"));
-        self.toggleAnimation.addAnimation(QtCore.QPropertyAnimation(self, b"maximumHeight"));
-        self.toggleAnimation.addAnimation(QtCore.QPropertyAnimation(self.contentArea, b"maximumHeight"));
+        self.toggleAnimation.addAnimation(QtCore.QPropertyAnimation(self, b"minimumHeight"))
+        self.toggleAnimation.addAnimation(QtCore.QPropertyAnimation(self, b"maximumHeight"))
+        self.toggleAnimation.addAnimation(QtCore.QPropertyAnimation(self.contentArea, b"maximumHeight"))
 
-        mainLayout.setVerticalSpacing(0);
-        mainLayout.setContentsMargins(0, 0, 0, 0);
+        mainLayout.setVerticalSpacing(0)
+        mainLayout.setContentsMargins(0, 0, 0, 0)
 
         mainLayout.addWidget(self.toggleButton, 0, 0, 1, 1, QtCore.Qt.AlignLeft)
 
@@ -247,7 +247,7 @@ class CollapsibleSection(QWidget):
 
         mainLayout.addWidget(self.contentArea, 1, 0, 1, 3)
 
-        self.setLayout(mainLayout);
+        self.setLayout(mainLayout)
         self.setLayout = self.setLayout_
 
         self.toggleButton.toggled.connect(
@@ -262,9 +262,9 @@ class CollapsibleSection(QWidget):
         oldLayout = self.contentArea.layout()
         del oldLayout
         self.contentArea.setLayout(contentLayout)
-        collapsedHeight = self.sizeHint().height() - self.contentArea.maximumHeight();
-        contentHeight = contentLayout.sizeHint().height();
-
+        collapsedHeight = self.sizeHint().height() - self.contentArea.maximumHeight()
+        contentHeight = contentLayout.sizeHint().height()
+        print(contentHeight)
         for i in range(self.toggleAnimation.animationCount() - 1):
             SectionAnimation = self.toggleAnimation.animationAt(i)
             SectionAnimation.setDuration(self.animationDuration)
@@ -272,9 +272,9 @@ class CollapsibleSection(QWidget):
             SectionAnimation.setEndValue(collapsedHeight + contentHeight)
 
         contentAnimation = self.toggleAnimation.animationAt(self.toggleAnimation.animationCount() - 1)
-        contentAnimation.setDuration(self.animationDuration);
-        contentAnimation.setStartValue(0);
-        contentAnimation.setEndValue(contentHeight);
+        contentAnimation.setDuration(self.animationDuration)
+        contentAnimation.setStartValue(0)
+        contentAnimation.setEndValue(contentHeight)
 
 
 class AspectRatioWidget(QWidget):
@@ -284,25 +284,25 @@ class AspectRatioWidget(QWidget):
         self.layout = QBoxLayout(QBoxLayout.LeftToRight, self)
         self.widget = widget
         # add spacer, then your widget, then spacer
-        self.layout.addItem(QSpacerItem(0, 0));
-        self.layout.addWidget(widget);
-        self.layout.addItem(QSpacerItem(0, 0));
+        self.layout.addItem(QSpacerItem(0, 0))
+        self.layout.addWidget(widget)
+        self.layout.addItem(QSpacerItem(0, 0))
 
     def resizeEvent(self, event: QtGui.QResizeEvent):
         thisAspectRatio = event.size().width() / event.size().height()
 
         if thisAspectRatio > self.aspect:  # too wide
-            self.layout.setDirection(QBoxLayout.LeftToRight);
-            widgetStretch = self.height() * self.aspect;  # i.e., my width
-            outerStretch = (self.width() - widgetStretch) / 2 + 0.5;
+            self.layout.setDirection(QBoxLayout.LeftToRight)
+            widgetStretch = self.height() * self.aspect  # i.e., my width
+            outerStretch = (self.width() - widgetStretch) / 2 + 0.5
         else:  # too tall
-            self.layout.setDirection(QBoxLayout.TopToBottom);
-            widgetStretch = self.width() * (1 / self.aspect);  # i.e., my height
-            outerStretch = (self.height() - widgetStretch) / 2 + 0.5;
+            self.layout.setDirection(QBoxLayout.TopToBottom)
+            widgetStretch = self.width() * (1 / self.aspect)  # i.e., my height
+            outerStretch = (self.height() - widgetStretch) / 2 + 0.5
 
-        self.layout.setStretch(0, outerStretch);
-        self.layout.setStretch(1, widgetStretch);
-        self.layout.setStretch(2, outerStretch);
+        self.layout.setStretch(0, outerStretch)
+        self.layout.setStretch(1, widgetStretch)
+        self.layout.setStretch(2, outerStretch)
 
     def setAspect(self, aspect: float):
         self.aspect = aspect

@@ -13,7 +13,9 @@ from PyQt5.QtWidgets import (QDockWidget, QTableWidgetItem,
                              QRadioButton, QFrame, QHBoxLayout, QVBoxLayout,
                              QScrollArea, QWidget, QSpinBox,
                              QPushButton, QCheckBox, QSizePolicy, QSpacerItem, QMessageBox,
-                             QComboBox)
+                             QComboBox, QDoubleSpinBox, QLayout)
+
+from pwspy.utility import reflectanceHelper
 from .customWidgets import CopyableTable, LittlePlot, CellTableWidget, CollapsibleSection, AspectRatioWidget, \
     CellTableWidgetItem
 
@@ -122,18 +124,31 @@ class AnalysisSettingsDock(QDockWidget):
 
         '''Hardwarecorrections'''
         layout = QGridLayout()
+        #layout.setSizeConstraint(QLayout.SetMaximumSize)
+        self.darkCountBox = QSpinBox()
+        self.linearityEdit = QLineEdit()
+        self.RSubtractionEdit = QLineEdit()
+        self.RSubtractionBrowseButton = QPushButton()
         _ = layout.addWidget
-        _(QLabel('DarkCounts'), 0, 0);
-        _(QSpinBox(), 0, 1);
-        _(QLabel("Linearity Correction"), 0, 2);
-        _(QLineEdit(), 0, 3)
-        frame = QFrame();
-        frame.setLayout(QHBoxLayout())
-        frame.layout().addWidget(QLabel("R Subtraction"))
-        frame.layout().addWidget(QLineEdit())
-        frame.layout().addWidget(QPushButton())
-        _(frame, 1, 0, 1, 4)
-        self.hardwareCorrections = CollapsibleSection('Automatic Correction', 100, self)
+        _(QLabel('DarkCounts'), 0, 0)
+        _(self.darkCountBox, 0, 1)
+        _(QLabel("Linearity Correction"), 0, 2)
+        _(self.linearityEdit, 0, 3)
+        # frame = QFrame()
+        # frame.setLayout(QHBoxLayout())
+        _(QLabel("R Subtraction"), 1, 0)
+        _(self.RSubtractionEdit, 1, 1, 1, 2)
+        _(self.RSubtractionBrowseButton, 1, 3, 1, 1)
+        # _(frame, 1, 0, 1, 4)
+        self.refMaterialCombo = QComboBox()
+        self.refMaterialCombo.addItems([
+            k for k in reflectanceHelper.materials.keys() if k != 'glass'])
+        # frame = QFrame()
+        # frame.setLayout(QHBoxLayout())
+        _(QLabel("Reference Material"), 2, 0)
+        _(self.refMaterialCombo, 2, 1, 1, 1)
+        # _(frame, 2, 0, 1, 4)
+        self.hardwareCorrections = CollapsibleSection('Automatic Correction', 200, self)
         self.hardwareCorrections.stateChanged.connect(self.updateSize)
         self.hardwareCorrections.setLayout(layout)
 
@@ -145,14 +160,15 @@ class AnalysisSettingsDock(QDockWidget):
         layout = QGridLayout()
         _ = layout.addWidget
         self.filterOrder = QSpinBox()
-        self.filterCutoff = QSpinBox()
+        self.filterCutoff = QDoubleSpinBox()
+
         _(QLabel("Filter Order"), 0, 0, 1, 1)
         _(self.filterOrder, 0, 1, 1, 1)
         _(QLabel("Cutoff Freq."), 1, 0, 1, 1)
         _(self.filterCutoff, 1, 1, 1, 1)
         _(QLabel("nm<sup>-1</sup>"), 1, 2, 1, 1)
         self.signalPrep.setLayout(layout)
-        self.layout.addWidget(self.signalPrep, 2, 0, 1, 2)
+        self.layout.addWidget(self.signalPrep, 3, 0, 1, 2)
 
         '''Polynomial subtraction'''
         self.polySub = QGroupBox("Polynomial Subtraction")
@@ -163,16 +179,16 @@ class AnalysisSettingsDock(QDockWidget):
         _(QLabel("Order"), 0, 0, 1, 1)
         _(self.polynomialOrder, 0, 1, 1, 1)
         self.polySub.setLayout(layout)
-        self.layout.addWidget(self.polySub, 2, 2, 1, 2)
+        self.layout.addWidget(self.polySub, 3, 2, 1, 2)
 
         '''Advanced Calculations'''
-        self.advanced = CollapsibleSection('Skip Advanced Analysis', 100, self)
+        self.advanced = CollapsibleSection('Skip Advanced Analysis', 200, self)
         self.advanced.stateChanged.connect(self.updateSize)
         layout = QGridLayout()
         _ = layout.addWidget
         _(QCheckBox("MinSub"))
         self.advanced.setLayout(layout)
-        self.layout.addWidget(self.advanced, 3, 0, 1, 4)
+        self.layout.addWidget(self.advanced, 4, 0, 1, 4)
 
     def loadFromSettings(self, settings: AnalysisSettings):
         self.filterOrder.setValue(settings.filterOrder)
@@ -278,4 +294,4 @@ class PlottingWidget(QDockWidget):
             messageBox.information(self, "Oops!", "Please select the cells you would like to plot.")
             messageBox.setFixedSize(500, 200)
         for cell in cells:
-            self.addPlot(LittlePlot(#need to provide a way to get the rms data. icmetadata analysis handling.# cell))
+            self.addPlot(LittlePlot())#need to provide a way to get the rms data. icmetadata analysis handling.# cell))

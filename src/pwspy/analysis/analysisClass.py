@@ -17,54 +17,9 @@ import scipy.signal as sps
 from pwspy import ImCube, KCube
 
 
-@dataclass(frozen=True)
-class AnalysisSettings:
-    filterOrder: int
-    filterCutoff: float
-    polynomialOrder: int
-    rInternalSubtractionPath: str
-    referenceMaterial: str
-    wavelengthStart: int
-    wavelengthStop: int
-    useHannWindow: bool
-    autoCorrStopIndex: int
-    autoCorrMinSub: bool  # Determines if the autocorrelation should have it's minimum subtracted from it before processing. These is mathematically nonsense but is needed if the autocorrelation has negative values in it.
-
-    @classmethod
-    def fromJson(cls, filePath: str, name: str):
-        with open(osp.join(filePath, f'{name}_analysis.json'), 'r') as f:
-            return cls(**json.load(f))
-
-    def toJson(self, filePath: str, name: str):
-        with open(osp.join(filePath, f'{name}_analysis.json'), 'w') as f:
-            json.dump(dict(self), f)
 
 
-@dataclass(frozen=True)
-class AnalysisResults:
-    settings: AnalysisSettings
-    reflectance: np.ndarray
-    rms: np.ndarray
-    polynomialRms: np.ndarray
-    autoCorrelationSlope: np.ndarray
-    rSquared: np.ndarray
-    ld: np.ndarray
-    opd: np.ndarray
-    xvalOpd: np.ndarray
 
-    def __post_init__(self):
-        self.__setattr__('time', datetime.now().strftime("%m-%d-%y %H:%M:%s"))
-
-    def toHDF5(self, directory: str, name: str):
-        fileName = osp.join(directory, f'{name}.hdf5')
-        if osp.exists(fileName):
-            raise OSError(f'{fileName} already exists.')
-        #now save the stuff
-
-    @classmethod
-    def load(cls, directory: str, name: str):
-        fileName = osp.join(directory, f'{name}.hdf5')
-        #load stuff
 
 
 class Analysis:

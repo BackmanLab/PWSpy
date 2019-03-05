@@ -4,4 +4,5 @@ Created on Tue Feb 12 21:44:31 2019
 
 @author: Nick
 """
-from .analysisClass import AnalysisSettings, AnalysisResults
+from .analysisResults import AnalysisResults
+from .analysisSettings import AnalysisSettings
