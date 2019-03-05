@@ -7,7 +7,7 @@ Created on Sun Feb 10 18:51:35 2019
 import os
 import re
 
-from PyQt5 import (QtCore)
+from PyQt5 import (QtCore, QtGui)
 from PyQt5.QtWidgets import (QDockWidget, QTableWidgetItem,
                              QGroupBox, QGridLayout, QLabel, QLineEdit,
                              QRadioButton, QFrame, QHBoxLayout, QVBoxLayout,
@@ -21,6 +21,7 @@ from .customWidgets import CopyableTable, LittlePlot, CellTableWidget, Collapsib
 
 from pwspy.analysis import AnalysisSettings
 from pwspy.imCube.ICMetaDataClass import ICMetaData
+from . import resources
 
 
 class CellSelectorDock(QDockWidget):
@@ -124,11 +125,11 @@ class AnalysisSettingsDock(QDockWidget):
 
         '''Hardwarecorrections'''
         layout = QGridLayout()
-        #layout.setSizeConstraint(QLayout.SetMaximumSize)
         self.darkCountBox = QSpinBox()
+        self.darkCountBox.setRange(0,10000)
         self.linearityEdit = QLineEdit()
         self.RSubtractionEdit = QLineEdit()
-        self.RSubtractionBrowseButton = QPushButton()
+        self.RSubtractionBrowseButton = QPushButton(QtGui.QIcon(os.path.join(resources, 'folder.png')), 'Browse')
         _ = layout.addWidget
         _(QLabel('DarkCounts'), 0, 0)
         _(self.darkCountBox, 0, 1)
@@ -143,11 +144,8 @@ class AnalysisSettingsDock(QDockWidget):
         self.refMaterialCombo = QComboBox()
         self.refMaterialCombo.addItems([
             k for k in reflectanceHelper.materials.keys() if k != 'glass'])
-        # frame = QFrame()
-        # frame.setLayout(QHBoxLayout())
         _(QLabel("Reference Material"), 2, 0)
         _(self.refMaterialCombo, 2, 1, 1, 1)
-        # _(frame, 2, 0, 1, 4)
         self.hardwareCorrections = CollapsibleSection('Automatic Correction', 200, self)
         self.hardwareCorrections.stateChanged.connect(self.updateSize)
         self.hardwareCorrections.setLayout(layout)
@@ -156,12 +154,12 @@ class AnalysisSettingsDock(QDockWidget):
 
         '''SignalPreparations'''
         self.signalPrep = QGroupBox("Signal Prep")
-        self.signalPrep.setFixedSize(150, 100)
+        self.signalPrep.setFixedSize(175, 75)
         layout = QGridLayout()
         _ = layout.addWidget
         self.filterOrder = QSpinBox()
+        self.filterOrder.setRange(0,6)
         self.filterCutoff = QDoubleSpinBox()
-
         _(QLabel("Filter Order"), 0, 0, 1, 1)
         _(self.filterOrder, 0, 1, 1, 1)
         _(QLabel("Cutoff Freq."), 1, 0, 1, 1)
@@ -170,39 +168,74 @@ class AnalysisSettingsDock(QDockWidget):
         self.signalPrep.setLayout(layout)
         self.layout.addWidget(self.signalPrep, 3, 0, 1, 2)
 
+        '''Cropping'''
+        self.cropping = QGroupBox("Wavelength Cropping")
+        self.cropping.setFixedSize(125,75)
+        layout = QGridLayout()
+        _ = layout.addWidget
+        self.wavelengthStart = QSpinBox()
+        self.wavelengthStop = QSpinBox()
+        self.wavelengthStart.setRange(300, 800)
+        self.wavelengthStop.setRange(300, 800)
+        _(QLabel("Start"), 0, 0)
+        _(QLabel("Stop"), 0, 1)
+        _(self.wavelengthStart, 1, 0)
+        _(self.wavelengthStop, 1, 1)
+        self.cropping.setLayout(layout)
+        self.layout.addWidget(self.cropping, 3, 2, 1, 2)
+
         '''Polynomial subtraction'''
         self.polySub = QGroupBox("Polynomial Subtraction")
-        self.polySub.setFixedSize(150, 100)
+        self.polySub.setFixedSize(150, 50)
         layout = QGridLayout()
         _ = layout.addWidget
         self.polynomialOrder = QSpinBox()
         _(QLabel("Order"), 0, 0, 1, 1)
         _(self.polynomialOrder, 0, 1, 1, 1)
         self.polySub.setLayout(layout)
-        self.layout.addWidget(self.polySub, 3, 2, 1, 2)
+        self.layout.addWidget(self.polySub, 4, 0, 1, 2)
 
         '''Advanced Calculations'''
         self.advanced = CollapsibleSection('Skip Advanced Analysis', 200, self)
         self.advanced.stateChanged.connect(self.updateSize)
+        self.minSubCheckBox = QCheckBox("MinSub")
+        self.hannWindowCheckBox = QCheckBox("Hanning Window")
         layout = QGridLayout()
         _ = layout.addWidget
-        _(QCheckBox("MinSub"))
+        _(self.minSubCheckBox)
+        _(self.hannWindowCheckBox)
         self.advanced.setLayout(layout)
-        self.layout.addWidget(self.advanced, 4, 0, 1, 4)
+        self.layout.addWidget(self.advanced, 5, 0, 1, 4)
 
     def loadFromSettings(self, settings: AnalysisSettings):
         self.filterOrder.setValue(settings.filterOrder)
         self.filterCutoff.setValue(settings.filterCutoff)
         self.polynomialOrder.setValue(settings.polynomialOrder)
+        self.RSubtractionEdit.setText(settings.rInternalSubtractionPath)
         self.referenceMaterial.setValue(settings.referenceMaterial)
+        self.wave
 
     def updateSize(self):
-        height = 50  # give this much excess room.
+        height = 75  # give this much excess room.
         height += self.presets.height()
         height += self.hardwareCorrections.height()
         height += self.signalPrep.height()
+        height += self.polySub.height()
         height += self.advanced.height()
         self.internalWidget.setFixedHeight(height)
+
+    def getSettings(self) -> AnalysisSettings:
+        return AnalysisSettings(filterOrder=self.filterOrder.value(),
+                                filterCutoff=self.filterCutoff.value(),
+                                polynomialOrder=self.polynomialOrder.value(),
+                                rInternalSubtractionPath=self.RSubtractionEdit.text(),
+                                referenceMaterial=self.refMaterialCombo.currentText(),
+                                wavelengthStart=self.wavelengthStart.value(),
+                                wavelengthStop=self.wavelengthStop.value(),
+                                wavelengthStep=self.wavelengthStep.value(),
+                                skipAdvanced=self.advanced.checkState() != 0,
+                                useHannWindow=self.hannWindowCheckBox.checkState() != 0,
+                                autoCorrMinSub=self.minSubCheckBox.checkState() != 0)
 
 
 class ResultsTableDock(QDockWidget):
