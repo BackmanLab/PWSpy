@@ -5,21 +5,10 @@ Created on Tue Feb 12 23:10:35 2019
 @author: Nick
 """
 
-import json
-import os
-import os.path as osp
-from dataclasses import dataclass
-from datetime import datetime
-from typing import NamedTuple
-
 import numpy as np
 import scipy.signal as sps
 from pwspy import ImCube, KCube
-
-
-
-
-
+from pwspy.analysis import AnalysisSettings, AnalysisResults
 
 
 class Analysis:

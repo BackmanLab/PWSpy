@@ -3,7 +3,7 @@ import json
 import os.path as osp
 
 
-@dataclass(frozen=True)
+@dataclass
 class AnalysisSettings:
     filterOrder: int
     filterCutoff: float
@@ -12,6 +12,7 @@ class AnalysisSettings:
     referenceMaterial: str
     wavelengthStart: int
     wavelengthStop: int
+    skipAdvanced: bool
     useHannWindow: bool
     autoCorrStopIndex: int
     autoCorrMinSub: bool  # Determines if the autocorrelation should have it's minimum subtracted from it before processing. These is mathematically nonsense but is needed if the autocorrelation has negative values in it.
