@@ -29,7 +29,7 @@ class AnalysisResults:
             raise OSError(f'{fileName} already exists.')
         # now save the stuff
         with h5py.File(fileName, 'w') as hf:
-            for k,v in self.asDict().items():
+            for k,v in self.asdict().items():
                 hf.create_dataset(k, data=v)
 
 

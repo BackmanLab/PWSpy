@@ -248,7 +248,7 @@ class CollapsibleSection(QWidget):
         mainLayout.addWidget(self.contentArea, 1, 0, 1, 3)
 
         self.setLayout(mainLayout)
-        self.setLayout = self.setLayout_
+        self.setLayout = self._setLayout
 
         self.toggleButton.toggled.connect(
             lambda checked:
@@ -258,7 +258,10 @@ class CollapsibleSection(QWidget):
                 self.toggleAnimation.start()])
         self.toggleAnimation.finished.connect(lambda: self.stateChanged.emit(self.toggleButton.isChecked()))
 
-    def setLayout_(self, contentLayout: QLayout):
+    def checkState(self):
+        return self.toggleButton.checkState()
+
+    def _setLayout(self, contentLayout: QLayout):
         oldLayout = self.contentArea.layout()
         del oldLayout
         self.contentArea.setLayout(contentLayout)

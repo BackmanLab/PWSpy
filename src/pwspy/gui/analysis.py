@@ -36,11 +36,12 @@ class App(QMainWindow):
         view.addAction("Look at stuff")
         toolBar = self.addToolBar('tool')
         toolBar.setObjectName('mainToolBar()')
-        action = toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'folder.png')), "Set Path")
-        action.triggered.connect(self.fileDialog.show)
+        browseAction = toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'folder.png')), "Set Path")
+        browseAction.triggered.connect(self.fileDialog.show)
         action2 = toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'icon.png')), "Idea")
         action2.triggered.connect(self.cellSelector.clearCells)
-        toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'playicon.svg')), 'Run')
+        runAction = toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'playicon.svg')), 'Run')
+        runAction.triggered.connect(self.runAnalysis)
         settings = QtCore.QSettings("BackmanLab", "PWSAnalysis2");
         try:
             self.restoreGeometry(settings.value("geometry"));
@@ -56,3 +57,5 @@ class App(QMainWindow):
         super().closeEvent(event)
 
 
+    def runAnalysis(self):
+        self.analysisSettings.getSettings()
