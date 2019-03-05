@@ -4,7 +4,6 @@ Created on Mon Dec  3 17:53:24 2018
 
 @author: backman05
 """
-# from __future__ import annotations
 import json
 import typing
 from dataclasses import dataclass
