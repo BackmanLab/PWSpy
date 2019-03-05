@@ -7,6 +7,8 @@ Created on Mon Dec  3 17:53:24 2018
 # from __future__ import annotations
 import json
 import typing
+from dataclasses import dataclass
+
 import numpy as np
 import copy
 import matplotlib.pyplot as plt
@@ -14,7 +16,8 @@ import matplotlib as mpl
 from typing import NamedTuple
 
 
-class Property(NamedTuple):
+@dataclass
+class Property:
     """Represents a single property from a micromanager PropertyMap"""
     name: str
     pType: str

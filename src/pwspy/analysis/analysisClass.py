@@ -8,14 +8,16 @@ Created on Tue Feb 12 23:10:35 2019
 import json
 import os
 import os.path as osp
+from dataclasses import dataclass
+from datetime import datetime
 from typing import NamedTuple
 
 import numpy as np
 import scipy.signal as sps
 from pwspy import ImCube, KCube
 
-
-class AnalysisSettings(NamedTuple):
+@dataclass(frozen=True)
+class AnalysisSettings:
     filterOrder: int
     filterCutoff: float
     polynomialOrder: int
@@ -37,7 +39,8 @@ class AnalysisSettings(NamedTuple):
             json.dump(dict(self), f)
 
 
-class AnalysisResults(NamedTuple):
+@dataclass(frozen=True)
+class AnalysisResults:
     settings: AnalysisSettings
     reflectance: np.ndarray
     rms: np.ndarray
@@ -48,7 +51,10 @@ class AnalysisResults(NamedTuple):
     opd: np.ndarray
     xvalOpd: np.ndarray
 
-    def toHDF5(self, directory:str, name: str):
+    def __post_init__(self):
+        self.__setattr__('time', datetime.now().strftime("%m-%d-%y %H:%M:%s"))
+
+    def toHDF5(self, directory: str, name: str):
         fileName = osp.join(directory, f'{name}.hdf5')
         if osp.exists(fileName):
             raise OSError(f'{fileName} already exists.')
