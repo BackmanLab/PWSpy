@@ -13,11 +13,11 @@ build:
 
 requirements:
   build:
-    - python >=3.7,{{PY_VER}}*
+    - python
     - setuptools
 
   run:
-    - python {{PY_VER}}*
+    - python
     - numpy >=1.8*
     - scipy >=0.18*
     - tifffile
