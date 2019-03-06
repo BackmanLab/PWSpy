@@ -17,6 +17,7 @@ from pwspy.utility import loadAndProcess
 from .dialogs import WorkingDirDialog
 from .dockWidgets import CellSelectorDock, AnalysisSettingsDock, ResultsTableDock, PlottingWidget
 from . import resources
+from . import applicationVars
 
 class PWSApp(QApplication):
     def __init__(self, args):
@@ -24,6 +25,9 @@ class PWSApp(QApplication):
         self.window = PWSWindow()
         self.anMan = AnalysisManager(self)
         self.window.runAction.triggered.connect(self.anMan.run)
+        if not os.path.exists(applicationVars.dataDirectory):
+            os.mkdir(applicationVars.dataDirectory)
+
 
 class PWSWindow(QMainWindow):
     def __init__(self):

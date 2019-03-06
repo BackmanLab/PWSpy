@@ -13,8 +13,9 @@ from PyQt5.QtWidgets import (QDockWidget, QTableWidgetItem,
                              QRadioButton, QFrame, QHBoxLayout, QVBoxLayout,
                              QScrollArea, QWidget, QSpinBox,
                              QPushButton, QCheckBox, QSizePolicy, QSpacerItem, QMessageBox,
-                             QComboBox, QDoubleSpinBox, QLayout)
+                             QComboBox, QDoubleSpinBox, QLayout, QFileDialog)
 
+from pwspy.gui import applicationVars
 from pwspy.utility import reflectanceHelper
 from .customWidgets import CopyableTable, LittlePlot, CellTableWidget, CollapsibleSection, AspectRatioWidget, \
     CellTableWidgetItem
@@ -133,6 +134,7 @@ class AnalysisSettingsDock(QDockWidget):
         self.linearityEdit = QLineEdit()
         self.RSubtractionEdit = QLineEdit()
         self.RSubtractionBrowseButton = QPushButton(QtGui.QIcon(os.path.join(resources, 'folder.png')), '')
+        self.RSubtractionBrowseButton.released.connect(self._browseReflection)
         self.refMaterialCombo = QComboBox()
         self.refMaterialCombo.addItems([
             k for k in reflectanceHelper.materials.keys() if k != 'glass'])
@@ -246,7 +248,12 @@ class AnalysisSettingsDock(QDockWidget):
                                 skipAdvanced=self.advanced.checkState() != 0,
                                 useHannWindow=self.hannWindowCheckBox.checkState() != 0,
                                 autoCorrMinSub=self.minSubCheckBox.checkState() != 0,
-                                autoCorrStopIndex=self.autoCorrStopIndex.getValue())
+                                autoCorrStopIndex=self.autoCorrStopIndex.value())
+
+    def _browseReflection(self):
+        file, _filter = QFileDialog.getOpenFileName(self, 'Working Directory', applicationVars.dataDirectory, "HDF5 (*.h5 *.hdf5)")
+        if file != '':
+            self.RSubtractionEdit.setText(file)
 
 
 class ResultsTableDock(QDockWidget):
@@ -273,13 +280,6 @@ class ResultsTableDock(QDockWidget):
         self.widget.layout().addWidget(self.checkBoxes)
         self.widget.layout().addWidget(self.table)
         self.setWidget(self.widget)
-
-    def copy(self):
-        for i in range(self.table.rowCount):
-            for j in range(self.table.columnCount):
-                if self.table.cellWidget(i, j).isSelected():
-                    print('a')
-
 
 class PlottingWidget(QDockWidget):
     def __init__(self, cellSelectorTable: CellTableWidget):

@@ -291,7 +291,6 @@ class CollapsibleSection(QWidget):
         self.contentArea.setLayout(contentLayout)
         collapsedHeight = self.sizeHint().height() - self.contentArea.maximumHeight()
         contentHeight = contentLayout.sizeHint().height()
-        print(contentHeight)
         for i in range(self.toggleAnimation.animationCount() - 1):
             SectionAnimation = self.toggleAnimation.animationAt(i)
             SectionAnimation.setDuration(self.animationDuration)
