@@ -5,16 +5,27 @@ Created on Sun Feb 10 13:26:58 2019
 @author: Nick
 """
 import os
+import typing
 
 from PyQt5 import QtCore, QtGui
-from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtWidgets import QMainWindow, QApplication
 
+from pwspy import ImCube
+from pwspy.analysis.analysisClass import Analysis
+from pwspy.imCube.ICMetaDataClass import ICMetaData
+from pwspy.utility import loadAndProcess
 from .dialogs import WorkingDirDialog
 from .dockWidgets import CellSelectorDock, AnalysisSettingsDock, ResultsTableDock, PlottingWidget
 from . import resources
 
+class PWSApp(QApplication):
+    def __init__(self, args):
+        super().__init__(args)
+        self.window = PWSWindow()
+        self.anMan = AnalysisManager(self)
+        self.window.runAction.triggered.connect(self.anMan.run)
 
-class App(QMainWindow):
+class PWSWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('PWS Analysis 2')
@@ -40,8 +51,7 @@ class App(QMainWindow):
         browseAction.triggered.connect(self.fileDialog.show)
         action2 = toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'icon.png')), "Idea")
         action2.triggered.connect(self.cellSelector.clearCells)
-        runAction = toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'playicon.svg')), 'Run')
-        runAction.triggered.connect(self.runAnalysis)
+        self.runAction = toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'playicon.svg')), 'Run')
         settings = QtCore.QSettings("BackmanLab", "PWSAnalysis2");
         try:
             self.restoreGeometry(settings.value("geometry"));
@@ -57,5 +67,29 @@ class App(QMainWindow):
         super().closeEvent(event)
 
 
-    def runAnalysis(self):
-        self.analysisSettings.getSettings()
+class AnalysisManager:
+    def __init__(self, app: PWSApp):
+        self.app = app
+
+    def run(self):
+        cellMetas = self.app.window.cellSelector.getSelectedCellMetas()
+        self._checkMetaConsistency(cellMetas)
+        settings = self.app.window.analysisSettings.getSettings()
+        analysis = Analysis(settings)
+        loadAndProcess([i.filePath for i in cellMetas], processorFunc=self._process, procArgs=[ref, analysis],
+                       parallel=True)
+
+    @staticmethod
+    def _process(im: ImCube, ref: ImCube, analysis: Analysis):
+        im.correctCameraEffects()
+        results = analysis.run(im, ref)
+        im.saveAnalysis(results, )
+
+    @staticmethod
+    def _checkMetaConsistency(cellMetas: typing.List[ICMetaData]):
+        camCorrections = [i.cameraCorrection  for i in cellMetas]
+        if None in camCorrections:
+            #cell is missing automatic camera correction
+        if len(set([hash(i) for i in camCorrections])) > 1:
+            # multiple camera corrections are present.
+

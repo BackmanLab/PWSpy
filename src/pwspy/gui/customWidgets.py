@@ -127,6 +127,8 @@ class NumberTableWidgetItem(QTableWidgetItem):
 
 
 class CellTableWidgetItem:
+    cube: ICMetaData
+
     def __init__(self, cube: ICMetaData, label: str, num: int):
         self.cube = cube
         self.num = num
@@ -191,7 +193,7 @@ class CellTableWidget(QTableWidget):
     def enabledCells(self) -> typing.List[CellTableWidgetItem]:
         return [i for i in self.cellItems if not i.isInvalid()]
 
-    def addCellItem(self, item: CellTableWidgetItem):
+    def addCellItem(self, item: CellTableWidgetItem) -> None:
         row = len(self.cellItems)
         self.setSortingEnabled(
             False)  # The fact that we are adding items assuming its the last row is a problem is sorting is on.
@@ -204,7 +206,7 @@ class CellTableWidget(QTableWidget):
         self.setSortingEnabled(True)
         self.cellItems.append(item)
 
-    def clearCellItems(self):
+    def clearCellItems(self) -> None:
         self.setRowCount(0)
         self.cellItems = []
 

@@ -14,10 +14,9 @@ from pwspy.analysis import AnalysisSettings, AnalysisResults
 class Analysis:
     indexOpdStop = 100
 
-    def __init__(self, settings: AnalysisSettings, verbose: bool, advanced: bool):
+    def __init__(self, settings: AnalysisSettings, verbose: bool):
         self.settings = settings
         self.verbose = verbose
-        self.advanced = advanced
 
     def run(self, cube: ImCube, ref: ImCube):
         assert cube.isCorrected()
@@ -39,7 +38,7 @@ class Analysis:
         # Obtain the RMS of each signal in the cube.
         rms = cube.data.std(axis=2)
 
-        if self.advanced:
+        if not self.settings.skipAdvanced:
             # RMS - POLYFIT
             # The RMS should be calculated on the mean-subtracted polyfit. This may
             # also be accomplished by calculating the standard-deviation.
@@ -59,7 +58,8 @@ class Analysis:
             rSquared=rSquared,
             opd=opd,
             xvalOpd=xvalOpd,
-            ld=ld)
+            ld=ld,
+            settings=self.settings)
 
         return results
 
