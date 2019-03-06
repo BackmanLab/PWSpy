@@ -76,10 +76,11 @@ class AnalysisManager:
         self.app = app
 
     def run(self):
+        refMetas = self.app.window.cellSelector.getSelectedReferenceMetas()
         cellMetas = self.app.window.cellSelector.getSelectedCellMetas()
         self._checkMetaConsistency(cellMetas)
         settings = self.app.window.analysisSettings.getSettings()
-        analysis = Analysis(settings)
+        analysis = Analysis(settings, verbose=True)
         loadAndProcess([i.filePath for i in cellMetas], processorFunc=self._process, procArgs=[ref, analysis],
                        parallel=True)
 
