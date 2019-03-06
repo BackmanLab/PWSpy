@@ -138,7 +138,8 @@ class AnalysisSettingsDock(QDockWidget):
         self.polynomialOrder.setValue(settings.polynomialOrder)
         self.RSubtractionEdit.setText(settings.rInternalSubtractionPath)
         self.referenceMaterial.setValue(settings.referenceMaterial)
-        self.wave
+        self.wavelengthStop.setValue(settings.wavelengthStop)
+        self.wavelengthStart.setValue(settings.wavelengthStart)
 
     def updateSize(self):
         height = 75  # give this much excess room.

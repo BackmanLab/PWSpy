@@ -4,20 +4,20 @@ Created on Tue Feb 12 19:17:14 2019
 
 @author: Nick
 """
+import json
+import os
+import subprocess
+import sys
 import typing
+from glob import glob
 from typing import Optional, Union
 
-import scipy.io as spio
 import numpy as np
-import os
-import json
+import scipy.io as spio
 import tifffile as tf
-from glob import glob
-import subprocess, sys
-import re
 
-from .otherClasses import CameraCorrection
 from pwspy.analysis import AnalysisResults
+from .otherClasses import CameraCorrection
 
 
 class ICMetaData:
@@ -147,7 +147,7 @@ class ICMetaData:
         analysis.toHDF5(os.path.join(self.filePath, 'analyses'), name)
 
     def loadAnalysis(self, name: str) -> AnalysisResults:
-        return AnalysisResults.fromHDF5(os.path.join(self.filePath, 'analyses', name))
+        return AnalysisResults.fromHDF5(os.path.join(self.filePath, 'analyses'), name)
 
     def editNotes(self):
         filepath = os.path.join(self.filePath, 'notes.txt.')

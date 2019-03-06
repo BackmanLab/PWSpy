@@ -9,6 +9,7 @@ import queue
 import threading as th
 import typing
 from time import time
+from typing import Union
 
 import psutil
 from pwspy import ImCube
@@ -67,7 +68,7 @@ def loadThenProcess(procFunc, procFuncArgs, lock, fileAndSpecifiers):
 '''User Functions'''
 
 
-def loadAndProcess(fileDict: dict, processorFunc=None, specifierNames: list = None, parallel=False, procArgs=None) -> \
+def loadAndProcess(fileDict: Union[dict, list], processorFunc=None, specifierNames: list = None, parallel=False, procArgs=None) -> \
         typing.List[ImCube]:
     if procArgs is None:
         procArgs = []

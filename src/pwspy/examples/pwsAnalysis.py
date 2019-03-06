@@ -34,7 +34,7 @@ def analyzeCube(cubeCell: ImCube, darkCount: int, mirror: ImCube, orderFilter: i
     cube.data = sps.filtfilt(b, a, cube.data, axis=2)
 
     # The rest of the analysis will be performed only on the selected wavelength range.
-    cube = cube.selIndex(wavelengthStart, wavelengthStop)
+    cube.selIndex(wavelengthStart, wavelengthStop)
 
     # Determine the mean-reflectance for each pixel in the cell.
     reflectance = cube.data.mean(axis=2)

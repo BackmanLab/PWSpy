@@ -45,7 +45,7 @@ if __name__ == '__main__':
     searchPattern = ['Cell[1-9]', 'Cell10']  # list of search patters
     material = 'ethanol'
     refName = 'Cell998'
-    correction = CameraCorrection(2000, [0.977241216, 1.73E-06, 1.70E-11])
+    correction = CameraCorrection(2000, (0.977241216, 1.73E-06, 1.70E-11))
     rextraDir = r'G:\Calibrations\4matExtraReflection\LCPWS1\2_5_2019'
 
     ref = ImCube.loadAny(osp.join(rootDir, refName))

@@ -181,11 +181,11 @@ class PositionList:
         s += '])'
         return s
 
-    def __add__(self, other: Position2d) -> Position2d:
+    def __add__(self, other: Position2d) -> 'PositionList':
         assert isinstance(other, Position2d)
         return PositionList([i + other for i in self.positions])
 
-    def __sub__(self, other: Position2d) -> Position2d:
+    def __sub__(self, other: Position2d) -> 'PositionList':
         assert isinstance(other, Position2d)
         return PositionList([i - other for i in self.positions])
 
@@ -204,7 +204,7 @@ class PositionList:
     def __getitem__(self, idx: slice):
         return self.positions[idx]
 
-    def __eq__(self, other: Position2d):
+    def __eq__(self, other: 'PositionList'):
         return all([len(self) == len(other)] +
                    [self[i] == other[i] for i in self])
 

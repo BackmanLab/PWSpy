@@ -24,4 +24,4 @@ class AnalysisSettings:
 
     def toJson(self, filePath: str, name: str):
         with open(osp.join(filePath, f'{name}_analysis.json'), 'w') as f:
-            json.dump(dict(self), f)
+            json.dump(self.asdict(), f)

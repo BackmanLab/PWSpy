@@ -9,7 +9,6 @@ def isIpython():
 
 if __name__ == '__main__':
     from pwspy.gui.analysis import PWSApp
-    from PyQt5.QtWidgets import QApplication
     import sys
 
     if isIpython():

@@ -5,16 +5,16 @@ Created on Sun Feb 24 22:59:45 2019
 @author: Nick
 """
 
+import copy
+
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.lines import Line2D
 from matplotlib.patches import Polygon, Ellipse
 from matplotlib.widgets import AxesWidget
-from matplotlib.lines import Line2D
-import matplotlib as mpl
-from matplotlib import path
-import matplotlib.pyplot as plt
 from scipy import interpolate
 from shapely.geometry import LinearRing, Polygon as shapelyPolygon
-import numpy as np
-import copy
+
 
 class AxManager:
     def __init__(self, ax):
@@ -333,7 +333,7 @@ class myEllipse(mySelectorWidget):
                     y_ = self.patch.height/2 * np.sin(angle)
                     s = np.sin(np.radians(self.patch.angle))
                     c = np.cos(np.radians(self.patch.angle))
-                    x = x_ * c - y_ * s;  # rotate ellipse
+                    x = x_ * c - y_ * s  # rotate ellipse
                     y = x_ * s + y_ * c;
                     x += self.patch.center[0] #translate ellipse
                     y += self.patch.center[1]
@@ -477,7 +477,7 @@ class PolygonInteractor(mySelectorWidget):
         self.line2.set_xy(xy)
         self.axMan.update()
             
-class AdjustableSelector():
+class AdjustableSelector:
     def __init__(self, ax, selectorClass):
         self.axMan = AxManager(ax)
         self.s = selectorClass(self.axMan, onselect=self.goPoly)

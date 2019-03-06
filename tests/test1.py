@@ -22,7 +22,7 @@ class myTest(unittest.TestCase):
         try:
             im = ImCube.loadAny(testCellPath)
             im.filterDust(4)
-            im.correctCameraEffects(CameraCorrection(2000, [1, 2, 3]))
+            im.correctCameraEffects(CameraCorrection(2000, (1, 2, 3)))
             spec, std = im.getMeanSpectra()
         except Exception as e:
             self.fail(f"test_process raised {e}")
