@@ -20,10 +20,9 @@ class Property:
     """Represents a single property from a micromanager PropertyMap"""
     name: str
     pType: str
-    value: typing.Union[str, int, float]
+    value: typing.Union[str, int, float, typing.List[typing.Union[str, int, float]]]
 
-    def __init__(self):
-        super().__init__()
+    def __post_init__(self):
         assert self.pType in ['STRING', 'DOUBLE', 'INTEGER']
         self._d = {'type': self.pType}
         if isinstance(self.value, list):
@@ -101,6 +100,12 @@ class Position2d:
                           self.y - other.y,
                           self.xyStage,
                           self.label)
+
+    def __eq__(self, other: 'Position2d'):
+        return all([self.x == other.x,
+                    self.y == other.y,
+                    self.label == other.label,
+                    self.xyStage == other.xyStage])
 
 
 class PositionList:
@@ -192,6 +197,11 @@ class PositionList:
 
     def __getitem__(self, idx: slice):
         return self.positions[idx]
+
+    def __eq__(self, other: Position2d):
+        return all([len(self) == len(other)] +
+                   [self[i] == other[i] for i in self])
+
 
     def plot(self):
         fig, ax = plt.subplots()
