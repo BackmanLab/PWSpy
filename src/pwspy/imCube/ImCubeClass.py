@@ -20,6 +20,8 @@ from .ICMetaDataClass import ICMetaData
 
 class ImCube(ICBase, ICMetaData):
     """ A class representing a single acquisition of PWS. Contains methods for loading and saving to multiple formats as well as common operations used in analysis."""
+    _cameraCorrected: bool
+    _hasBeenNormalized: bool
 
     def __init__(self, data, metadata: dict, dtype=np.float32, filePath=None):
         ICMetaData.__init__(self, metadata, filePath)

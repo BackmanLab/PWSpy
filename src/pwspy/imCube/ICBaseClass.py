@@ -12,7 +12,10 @@ from matplotlib import path
 
 
 class ICBase:
-    def __init__(self, data, index: tuple, dtype=np.float32):
+    _index: tuple
+    data: np.ndarray
+
+    def __init__(self, data: np.ndarray, index: tuple, dtype=np.float32):
         assert isinstance(data, np.ndarray)
         self.data = data.astype(dtype)
         self._index = index
@@ -98,7 +101,7 @@ class ICBase:
     def __getitem__(self, slic):
         return self.data[slic]
 
-    def filterDust(self, kernelRadius: int):
+    def filterDust(self, kernelRadius: int) -> None:
         def _gaussKernel(radius: int):
             # A kernel that goes to 1 std. It would be better to go out to 2 or 3 std but then you need a larger kernel which greatly increases convolution time.
             lenSide = 1 + 2 * radius
@@ -117,7 +120,7 @@ class ICBase:
     def _indicesMatch(self, other: 'ICBase') -> bool:
         return self._index == other._index
 
-    def selIndex(self, start, stop):
+    def selIndex(self, start, stop) -> None:
         wv = np.array(self.index)
         iStart = np.argmin(np.abs(wv - start))
         iStop = np.argmin(np.abs(wv - stop))

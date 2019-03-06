@@ -51,14 +51,9 @@ del _init
 def getReflectance(mat1: str, mat2: str, index=None):
     """Given the names of two interfaces this provides the reflectance in units of percent.
     If given a series as index the data will be interpolated and reindexed to match the index."""
-    try:
-        assert mat1 in materials
-    except:
-        raise IndexError(f'{mat1} is not a valid material. must be one of: {list(materials.keys())}')
-    try:
-        assert mat2 in materials
-    except:
-        raise IndexError(f'{mat2} is not a valid material. must be one of: {list(materials.keys())}')
+    assert mat1 in materials, f'{mat1} is not a valid material. must be one of: {list(materials.keys())}'
+    assert mat2 in materials, f'{mat2} is not a valid material. must be one of: {list(materials.keys())}'
+
 
     nc1 = np.array([np.complex(i[0], i[1]) for idx, i in n[mat1].iterrows()])  # complex index for material 1
     nc2 = np.array([np.complex(i[0], i[1]) for idx, i in n[mat2].iterrows()])
