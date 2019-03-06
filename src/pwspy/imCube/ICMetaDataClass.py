@@ -5,6 +5,7 @@ Created on Tue Feb 12 19:17:14 2019
 @author: Nick
 """
 import typing
+from typing import Optional, Union
 
 import scipy.io as spio
 import numpy as np
@@ -20,16 +21,21 @@ from pwspy.analysis import AnalysisResults
 
 
 class ICMetaData:
-    def __init__(self, metadata: dict, filePath=None):
-        assert isinstance(metadata, dict)
-        self._checkMetadata(metadata)
-        self.metadata = metadata
-        self.filePath = filePath
-        if all([i in self.metadata for i in ['darkCounts', 'linearityPoly']]):
-            self.cameraCorrection = CameraCorrection(darkCounts=self.metadata['darkCounts'],
-                                                     linearityPolynomial=self.metadata['linearityPoly'])
+    filePath: Optional[str]
+    metadata: dict
+
+    def __init__(self, metadata: Union[dict, 'ICMetaData'], filePath: str=None):
+        if isinstance(metadata, ICMetaData):
+            self = metadata
         else:
-            self.cameraCorrection = None
+            self._checkMetadata(metadata)
+            self.metadata = metadata
+            self.filePath = filePath
+            if all([i in self.metadata for i in ['darkCounts', 'linearityPoly']]):
+                self.cameraCorrection = CameraCorrection(darkCounts=self.metadata['darkCounts'],
+                                                        linearityPolynomial=self.metadata['linearityPoly'])
+            else:
+                self.cameraCorrection = None
 
     @classmethod
     def loadAny(cls, directory):
@@ -140,8 +146,8 @@ class ICMetaData:
     def saveAnalysis(self, analysis: AnalysisResults, name:str):
         analysis.toHDF5(os.path.join(self.filePath, 'analyses'), name)
 
-    def getAnalysis(self, name:str) -> AnalysisResults:
-        return AnalysisResults.load(os.path.join(self.filePath, 'analyses', name))
+    def getAnalysis(self, name: str) -> AnalysisResults:
+        return AnalysisResults.fromHDF5(os.path.join(self.filePath, 'analyses', name)
 
     def editNotes(self):
         filepath = os.path.join(self.filePath, 'notes.txt.')
