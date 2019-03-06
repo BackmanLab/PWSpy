@@ -24,11 +24,6 @@ class ImCube(ICBase, ICMetaData):
     def __init__(self, data, metadata: dict, dtype=np.float32, filePath=None):
         ICMetaData.__init__(self, metadata, filePath)
         ICBase.__init__(self, data, tuple(np.array(self.metadata['wavelengths']).astype(np.float32)), dtype=dtype)
-        if all([i in self.metadata for i in ['darkCounts', 'linearityPoly']]):
-            self.cameraCorrection = CameraCorrection(darkCounts=self.metadata['darkCounts'],
-                                                     linearityPolynomial=self.metadata['linearityPoly'])
-        else:
-            self.cameraCorrection = None
         self._hasBeenNormalized = False  # Keeps track of whether or not we have normalized by exposure so that we don't do it twice.
         self._cameraCorrected = False
 
@@ -153,12 +148,10 @@ class ImCube(ICBase, ICMetaData):
             raise Exception("The ImCube has already been normalized by exposure.")
         self._hasBeenNormalized = True
 
-    def correctCameraEffects(self, correction: 'CameraCorrection' = None, binning: int = None):
+    def correctCameraEffects(self, correction: CameraCorrection, binning: int = None):
         # Subtracts the darkcounts from the data. count is darkcounts per pixel. binning should be specified if it wasn't saved in the micromanager metadata.
         if self._cameraCorrected:
             raise Exception("This ImCube has already had it's camera correction applied!")
-        if correction is None:
-            correction = self.cameraCorrection
         if binning is None:
             try:
                 binning = self.metadata['MicroManagerMetadata']['Binning']
@@ -173,8 +166,7 @@ class ImCube(ICBase, ICMetaData):
         if correction.linearityPolynomial is None:
             pass
         else:
-            self.data = np.polynomial.polynomial.polyval(self.data, [
-                0] + correction.linearityPolynomial)  # The [0] is the y-intercept (already handled by the darkcount)
+            self.data = np.polynomial.polynomial.polyval(self.data, [0.] + correction.linearityPolynomial)  # The [0] is the y-intercept (already handled by the darkcount)
 
         self._cameraCorrected = True
         return
