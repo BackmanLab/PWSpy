@@ -48,17 +48,19 @@ class ImCube(ICBase, ICMetaData):
                     raise OSError(f"Could not find a valid PWS image cube file at {directory}.")
 
     @classmethod
-    def fromOldPWS(cls, directory):
-        ret = ICMetaData.fromOldPWS(directory)
+    def fromOldPWS(cls, directory, metadata: ICMetaData=None):
+        if metadata is None:
+            metadata = ICMetaData.fromOldPWS(directory)
         with open(os.path.join(directory, 'image_cube'), 'rb') as f:
             data = np.frombuffer(f.read(), dtype=np.uint16)
-        data = data.reshape((ret.metadata['imgHeight'], ret.metadata['imgWidth'], len(ret.metadata['wavelengths'])),
+        data = data.reshape((metadata.metadata['imgHeight'], metadata.metadata['imgWidth'], len(metadata.metadata['wavelengths'])),
                             order='F')
-        return cls(data, ret.metadata, filePath=ret.filePath)
+        return cls(data, metadata.metadata, filePath=metadata.filePath)
 
     @classmethod
-    def fromTiff(cls, directory):
-        ret = ICMetaData.fromTiff(directory)
+    def fromTiff(cls, directory, metadata: ICMetaData=None):
+        if metadata is None:
+            metadata = ICMetaData.fromTiff(directory)
         if os.path.exists(os.path.join(directory, 'MMStack.ome.tif')):
             path = os.path.join(directory, 'MMStack.ome.tif')
         elif os.path.exists(os.path.join(directory, 'pws.tif')):
@@ -67,7 +69,11 @@ class ImCube(ICBase, ICMetaData):
             raise OSError("No Tiff file was found at:", directory)
         with tf.TiffFile(path) as tif:
             data = np.rollaxis(tif.asarray(), 0, 3)  # Swap axes to match y,x,lambda convention.
-        return cls(data, ret.metadata, filePath=directory)
+        return cls(data, metadata.metadata, filePath=directory)
+    
+    @classmethod
+    def fromMetadata(cls, meta: ICMetaData):
+        return cls.loadAny(meta.filePath, metadata=meta)
 
     def toOldPWS(self, directory):
         if os.path.exists(directory):
