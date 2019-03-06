@@ -20,8 +20,7 @@ from matplotlib.figure import Figure
 from matplotlib.widgets import LassoSelector
 
 from pwspy.imCube.ICMetaDataClass import ICMetaData
-from pwspy.imCube.ImCubeClass import ImCube
-from pwspy.imCube.matplotlibwidg import myLasso
+from pwspy.utility.matplotlibwidg import myLasso
 
 
 class LittlePlot(FigureCanvas):
