@@ -15,6 +15,7 @@ from glob import glob
 import subprocess, sys
 import re
 
+from .otherClasses import CameraCorrection
 from pwspy.analysis import AnalysisResults
 
 
@@ -24,7 +25,11 @@ class ICMetaData:
         self._checkMetadata(metadata)
         self.metadata = metadata
         self.filePath = filePath
-    #        self.id =
+        if all([i in self.metadata for i in ['darkCounts', 'linearityPoly']]):
+            self.cameraCorrection = CameraCorrection(darkCounts=self.metadata['darkCounts'],
+                                                     linearityPolynomial=self.metadata['linearityPoly'])
+        else:
+            self.cameraCorrection = None
 
     @classmethod
     def loadAny(cls, directory):
