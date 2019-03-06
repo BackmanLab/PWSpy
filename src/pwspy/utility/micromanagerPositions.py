@@ -48,6 +48,9 @@ class PropertyMap:
                        'array': [i.toDict() for i in self.properties]}
         else:
             raise TypeError
+            
+    def toDict(self):
+        return self._d        
 
 
 class Position2d:
@@ -106,6 +109,9 @@ class Position2d:
                     self.y == other.y,
                     self.label == other.label,
                     self.xyStage == other.xyStage])
+    
+    def toDict(self):
+        return self._d
 
 
 class PositionList:
