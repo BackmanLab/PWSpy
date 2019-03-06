@@ -32,11 +32,10 @@ class AnalysisResults:
             for k,v in self.asdict().items():
                 hf.create_dataset(k, data=v)
 
-
     @classmethod
     def fromHDF5(cls, directory: str, name: str):
         fileName = osp.join(directory, f'{name}.hdf5')
         # load stuff
         with h5py.File(fileName, 'r') as hf:
-            d = dict(hf)
+            d = {k: np.array(v) for k,v in hf.items()}
             return cls(**d)
