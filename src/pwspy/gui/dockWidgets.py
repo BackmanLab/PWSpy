@@ -94,6 +94,9 @@ class CellSelectorDock(QDockWidget):
             else:
                 self.tableWidget.setRowHidden(i, True)
 
+    def getSelectedCellMetas(self):
+        return [i.cube for i in self.tableWidget.selectedCellItems]
+
 
 class AnalysisSettingsDock(QDockWidget):
     def __init__(self):
@@ -203,12 +206,15 @@ class AnalysisSettingsDock(QDockWidget):
         '''Advanced Calculations'''
         self.advanced = CollapsibleSection('Skip Advanced Analysis', 200, self)
         self.advanced.stateChanged.connect(self.updateSize)
+        self.autoCorrStopIndex = QSpinBox()
         self.minSubCheckBox = QCheckBox("MinSub")
         self.hannWindowCheckBox = QCheckBox("Hanning Window")
         layout = QGridLayout()
         _ = layout.addWidget
-        _(self.minSubCheckBox)
-        _(self.hannWindowCheckBox)
+        _(QLabel("AutoCorr Stop Index"), 0, 0, 1, 1)
+        _(self.autoCorrStopIndex, 0, 1, 1, 1)
+        _(self.minSubCheckBox, 1, 0, 1, 1)
+        _(self.hannWindowCheckBox, 1, 1, 1, 1)
         self.advanced.setLayout(layout)
         self.layout.addWidget(self.advanced, 5, 0, 1, 4)
 
@@ -237,10 +243,10 @@ class AnalysisSettingsDock(QDockWidget):
                                 referenceMaterial=self.refMaterialCombo.currentText(),
                                 wavelengthStart=self.wavelengthStart.value(),
                                 wavelengthStop=self.wavelengthStop.value(),
-                                wavelengthStep=self.wavelengthStep.value(),
                                 skipAdvanced=self.advanced.checkState() != 0,
                                 useHannWindow=self.hannWindowCheckBox.checkState() != 0,
-                                autoCorrMinSub=self.minSubCheckBox.checkState() != 0)
+                                autoCorrMinSub=self.minSubCheckBox.checkState() != 0,
+                                autoCorrStopIndex=self.autoCorrStopIndex.getValue())
 
 
 class ResultsTableDock(QDockWidget):
