@@ -8,7 +8,7 @@ Created on Tue Feb 12 23:10:35 2019
 import numpy as np
 import scipy.signal as sps
 from pwspy import ImCube, KCube
-from pwspy.analysis import AnalysisSettings, AnalysisResults
+from . import AnalysisSettings, AnalysisResults
 
 
 class Analysis:
