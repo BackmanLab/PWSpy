@@ -24,18 +24,15 @@ class ICMetaData:
     filePath: Optional[str]
     metadata: dict
 
-    def __init__(self, metadata: Union[dict, 'ICMetaData'], filePath: str=None):
-        if isinstance(metadata, ICMetaData):
-            self = metadata
+    def __init__(self, metadata: dict, filePath: str=None):
+        self._checkMetadata(metadata)
+        self.metadata = metadata
+        self.filePath = filePath
+        if all([i in self.metadata for i in ['darkCounts', 'linearityPoly']]):
+            self.cameraCorrection = CameraCorrection(darkCounts=self.metadata['darkCounts'],
+                                                    linearityPolynomial=self.metadata['linearityPoly'])
         else:
-            self._checkMetadata(metadata)
-            self.metadata = metadata
-            self.filePath = filePath
-            if all([i in self.metadata for i in ['darkCounts', 'linearityPoly']]):
-                self.cameraCorrection = CameraCorrection(darkCounts=self.metadata['darkCounts'],
-                                                        linearityPolynomial=self.metadata['linearityPoly'])
-            else:
-                self.cameraCorrection = None
+            self.cameraCorrection = None
 
     @classmethod
     def loadAny(cls, directory):
