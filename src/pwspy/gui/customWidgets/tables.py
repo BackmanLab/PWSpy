@@ -1,9 +1,10 @@
 import typing
 
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtWidgets import QTableWidget, QAbstractItemView, QApplication, QTableWidgetItem, QPushButton, QMenu
+from PyQt5.QtWidgets import QTableWidget, QAbstractItemView, QApplication, QTableWidgetItem, QPushButton, QMenu, QWidget
 
 from pwspy.imCube.ICMetaDataClass import ICMetaData
+import os
 
 
 class CopyableTable(QTableWidget):
@@ -81,7 +82,7 @@ class CellTableWidgetItem:
         if reference:
             self._setItemColor(QtCore.Qt.green)
         else:
-            self.__setItemColor(QtCore.Qt.white)
+            self._setItemColor(QtCore.Qt.white)
         self._reference = reference
 
     def _setItemColor(self, color):
@@ -96,6 +97,9 @@ class CellTableWidgetItem:
 
 
 class CellTableWidget(QTableWidget):
+    referencesChanged = QtCore.pyqtSignal(bool, list)
+    itemsCleared = QtCore.pyqtSignal()
+
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
@@ -128,8 +132,10 @@ class CellTableWidget(QTableWidget):
             i.setInvalid(state)
 
     def toggleSelectedCellsReference(self, state: bool) -> None:
-        for i in self.selectedCellItems:
+        items = self.selectedCellItems
+        for i in items:
             i.setReference(state)
+        self.referencesChanged.emit(state, items)
 
     @property
     def selectedCellItems(self) -> typing.List[CellTableWidgetItem]:
@@ -139,8 +145,8 @@ class CellTableWidget(QTableWidget):
         return [self.cellItems[i] for i in rowIndices]
 
     @property
-    def enabledCells(self) -> typing.List[CellTableWidgetItem]:
-        return [i for i in self.cellItems if not i.isInvalid()]
+    def analyzableCells(self) -> typing.List[CellTableWidgetItem]:
+        return [i for i in self.cellItems if not (i.isInvalid() or i.isReference())]
 
     def addCellItem(self, item: CellTableWidgetItem) -> None:
         row = len(self.cellItems)
@@ -158,3 +164,51 @@ class CellTableWidget(QTableWidget):
     def clearCellItems(self) -> None:
         self.setRowCount(0)
         self.cellItems = []
+        self.itemsCleared.emit()
+
+
+class ReferencesTableItem(QTableWidgetItem):
+    def __init__(self, item: CellTableWidgetItem):
+        self.item = item
+        super().__init__(os.path.join(item.path.text(), f'Cell{item.num}'))
+
+
+class ReferencesTable(QTableWidget):
+    def __init__(self, parent: QWidget, cellTable: CellTableWidget):
+        super().__init__(parent)
+        self.setColumnCount(1)
+        self.setHorizontalHeaderLabels(('Reference',))
+        self.setRowCount(0)
+        self.verticalHeader().hide()
+        cellTable.referencesChanged.connect(self.updateReferences)
+        cellTable.itemsCleared.connect(self.clearItems)
+        self.references: typing.List[CellTableWidgetItem] = []
+
+    def updateReferences(self, state: bool, items: typing.List[CellTableWidgetItem]):
+        if state:
+            for item in items:
+                if item not in self.references:
+                    row = len(self.references)
+                    self.setRowCount(row + 1)
+                    self.setItem(row, 0, ReferencesTableItem(item))
+                    self.references.append(item)
+        else:
+            for item in items:
+                if item in self.references:
+                    self.references.remove(item)
+                    # find row number
+                    for i in range(self.rowCount()):
+                        if item is self.item(i, 0).item:
+                            self.removeRow(i)
+                            break
+
+    def clearItems(self):
+        self.setRowCount(0)
+        self.references = []
+
+    @property
+    def selectedReferenceMetaDatas(self) -> typing.List[ICMetaData]:
+        """Returns the rows that have been selected."""
+        rowIndices = [i.row() for i in self.selectedIndexes()[::self.columnCount()]]
+        rowIndices.sort()
+        return [self.references[i].cube for i in rowIndices]

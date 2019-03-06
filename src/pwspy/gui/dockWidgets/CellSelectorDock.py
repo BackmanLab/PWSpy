@@ -1,9 +1,11 @@
 import os
 import re
 
-from PyQt5.QtWidgets import QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineEdit, QGridLayout, QMessageBox
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineEdit, QGridLayout, QMessageBox, \
+    QHBoxLayout, QTableWidget, QSplitter, QSizePolicy
 
-from pwspy.gui.customWidgets import CellTableWidget, CellTableWidgetItem
+from pwspy.gui.customWidgets import CellTableWidget, CellTableWidgetItem, ReferencesTable
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 
 
@@ -14,6 +16,7 @@ class CellSelectorDock(QDockWidget):
         self.widget = QWidget(self)
         layout = QVBoxLayout()
         self.tableWidget = CellTableWidget(self.widget)
+        self.refTableWidget = ReferencesTable(self.widget, self.tableWidget)
         self.filterWidget = QWidget(self.widget)
         self.pathFilter = QComboBox(self.filterWidget)
         self.pathFilter.setEditable(True)
@@ -24,7 +27,13 @@ class CellSelectorDock(QDockWidget):
         _.addWidget(self.pathFilter, 0, 0, 1, 1)
         _.addWidget(self.expressionFilter, 0, 1, 1, 1)
         self.filterWidget.setLayout(_)
-        layout.addWidget(self.tableWidget)
+        _ = QSplitter()
+        _.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        _.addWidget(self.tableWidget)
+        _.addWidget(self.refTableWidget)
+        _.setSizes([300, 100])
+        print(_.sizes())
+        layout.addWidget(_)
         layout.addWidget(self.filterWidget)
         self.widget.setLayout(layout)
         self.setWidget(self.widget)
