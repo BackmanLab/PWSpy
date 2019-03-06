@@ -139,6 +139,7 @@ class CellTableWidgetItem:
         self.notesButton.released.connect(self.editNotes)
 
         self._invalid = False
+        self._reference = False
 
     def editNotes(self):
         self.cube.editNotes()
@@ -148,10 +149,23 @@ class CellTableWidgetItem:
             self.path.setBackground(QtCore.Qt.red)
         else:
             self.path.setBackground(QtCore.Qt.white)
+            self._reference = False
         self._invalid = invalid
+
+    def setReference(self, reference: bool) -> None:
+        if self.isInvalid():
+            return
+        if reference:
+            self.path.setBackground(QtCore.Qt.green)
+        else:
+            self.path.setBackground(QtCore.Qt.white)
+        self._reference = reference
 
     def isInvalid(self) -> bool:
         return self._invalid
+
+    def isReference(self) -> bool:
+        return self._reference
 
 
 class CellTableWidget(QTableWidget):
@@ -174,13 +188,21 @@ class CellTableWidget(QTableWidget):
         menu = QMenu("Context Menu")
         state = not self.selectedCellItems[0].isInvalid()
         stateString = "Disable Cell(s)" if state else "Enable Cell(s)"
-        action = menu.addAction(stateString)
-        action.triggered.connect(lambda: self.toggleSelectedCellsInvalid(state))
+        refState = not self.selectedCellItems[0].isReference()
+        refStateString = "Set as Reference" if refState else "Unset as Reference"
+        invalidAction = menu.addAction(stateString)
+        invalidAction.triggered.connect(lambda: self.toggleSelectedCellsInvalid(state))
+        refAction = menu.addAction(refStateString)
+        refAction.triggered.connect(lambda: self.toggleSelectedCellsReference(refState))
         menu.exec(self.mapToGlobal(point))
 
     def toggleSelectedCellsInvalid(self, state: bool):
         for i in self.selectedCellItems:
             i.setInvalid(state)
+
+    def toggleSelectedCellsReference(self, state: bool) -> None:
+        for i in self.selectedCellItems:
+            i.setReference(state)
 
     @property
     def selectedCellItems(self) -> typing.List[CellTableWidgetItem]:

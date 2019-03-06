@@ -89,7 +89,7 @@ class AnalysisManager:
     def _checkMetaConsistency(cellMetas: typing.List[ICMetaData]):
         camCorrections = [i.cameraCorrection  for i in cellMetas]
         if None in camCorrections:
-            #cell is missing automatic camera correction
+            raise Exception("cell is missing automatic camera correction")
         if len(set([hash(i) for i in camCorrections])) > 1:
-            # multiple camera corrections are present.
+            raise Exception("multiple camera corrections are present.")
 
