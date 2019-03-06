@@ -147,7 +147,7 @@ class ICMetaData:
         analysis.toHDF5(os.path.join(self.filePath, 'analyses'), name)
 
     def getAnalysis(self, name: str) -> AnalysisResults:
-        return AnalysisResults.fromHDF5(os.path.join(self.filePath, 'analyses', name)
+        return AnalysisResults.fromHDF5(os.path.join(self.filePath, 'analyses', name))
 
     def editNotes(self):
         filepath = os.path.join(self.filePath, 'notes.txt.')

@@ -15,7 +15,7 @@ from pwspy.analysis.analysisClass import Analysis
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 from pwspy.utility import loadAndProcess
 from .dialogs import WorkingDirDialog
-from .dockWidgets import CellSelectorDock, AnalysisSettingsDock, ResultsTableDock, PlottingWidget
+from .dockWidgets import CellSelectorDock, AnalysisSettingsDock, ResultsTableDock, PlottingDock
 from . import resources
 from . import applicationVars
 
@@ -36,7 +36,7 @@ class PWSWindow(QMainWindow):
         self.cellSelector = CellSelectorDock()
         self.analysisSettings = AnalysisSettingsDock()
         self.resultsTable = ResultsTableDock()
-        self.plots = PlottingWidget(self.cellSelector.tableWidget)
+        self.plots = PlottingDock(self.cellSelector.tableWidget)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.cellSelector)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.plots)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.analysisSettings)
