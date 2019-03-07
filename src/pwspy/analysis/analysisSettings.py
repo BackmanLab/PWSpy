@@ -22,9 +22,13 @@ class AnalysisSettings:
         with open(osp.join(filePath, f'{name}_analysis.json'), 'r') as f:
             return cls(**json.load(f))
 
-    def saveAsJson(self, filePath: str, name: str):
+    def toJson(self, filePath: str, name: str):
         with open(osp.join(filePath, f'{name}_analysis.json'), 'w') as f:
             json.dump(dataclasses.asdict(self), f)
 
-    def toJson(self):
+    def toJsonString(self):
         return json.dumps(dataclasses.asdict(self))
+
+    @classmethod
+    def fromJsonString(cls, string: str):
+        return cls(**json.loads(string))

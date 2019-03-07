@@ -32,7 +32,7 @@ class myTest(unittest.TestCase):
             im = ImCube.loadAny(osp.join(resources, "Cell1"))
             print(im.getMasks())
             im.loadMask(1, 'nuc')
-            im.toJson(testCellPath)
+            im.toJsonString(testCellPath)
         except Exception as e:
             self.fail(f'test_meta raised {e}')
 
