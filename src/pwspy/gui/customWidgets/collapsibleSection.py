@@ -54,6 +54,9 @@ class CollapsibleSection(QWidget):
     def checkState(self):
         return self.toggleButton.checkState()
 
+    def setCheckState(self, state: bool):
+        self.toggleButton.setCheckState(state)
+
     def _setLayout(self, contentLayout: QLayout):
         oldLayout = self.contentArea.layout()
         del oldLayout

@@ -89,5 +89,5 @@ class CellSelectorDock(QDockWidget):
     def getSelectedCellMetas(self):
         return [i.cube for i in self.tableWidget.selectedCellItems]
 
-    def getSelectedReferenceMetas(self):
-        return self.refTableWidget.selectedReferenceMetaDatas
+    def getSelectedReferenceMeta(self):
+        return self.refTableWidget.selectedReferenceMeta

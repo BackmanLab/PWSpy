@@ -208,7 +208,7 @@ class ReferencesTable(QTableWidget):
         self.references = []
 
     @property
-    def selectedReferenceMetaData(self) -> typing.List[ICMetaData]:
+    def selectedReferenceMeta(self) -> typing.List[ICMetaData]:
         """Returns the rows that have been selected."""
         items: ReferencesTableItem = self.selectedItems()
         assert len(items) <= 1

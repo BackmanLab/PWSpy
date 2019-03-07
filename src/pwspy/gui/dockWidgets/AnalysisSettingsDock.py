@@ -159,6 +159,10 @@ class AnalysisSettingsDock(QDockWidget):
         self.refMaterialCombo.setCurrentIndex(self.refMaterialCombo.findText(settings.referenceMaterial))
         self.wavelengthStop.setValue(settings.wavelengthStop)
         self.wavelengthStart.setValue(settings.wavelengthStart)
+        self.advanced.setCheckState(2 if settings.skipAdvanced else 0)
+        self.autoCorrStopIndex.setValue(settings.autoCorrStopIndex)
+        self.minSubCheckBox.setCheckState(2 if settings.autoCorrMinSub else 0)
+        self.hannWindowCheckBox.setCheckState(2 if settings.useHannWindow else 0)
 
     def updateSize(self):
         height = 75  # give this much excess room.
