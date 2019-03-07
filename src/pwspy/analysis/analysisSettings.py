@@ -1,9 +1,9 @@
-from dataclasses import dataclass
+import dataclasses
 import json
 import os.path as osp
 
 
-@dataclass
+@dataclasses.dataclass
 class AnalysisSettings:
     filterOrder: int
     filterCutoff: float
@@ -24,4 +24,4 @@ class AnalysisSettings:
 
     def toJson(self, filePath: str, name: str):
         with open(osp.join(filePath, f'{name}_analysis.json'), 'w') as f:
-            json.dump(self.asdict(), f)
+            json.dump(dataclasses.asdict(self), f)
