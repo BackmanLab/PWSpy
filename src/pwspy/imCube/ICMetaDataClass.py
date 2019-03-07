@@ -78,7 +78,7 @@ class ICMetaData:
                 except:
                     metadata = json.loads(tif.imagej_metadata[
                                               'Info'])  # The micromanager saves metadata as the info property of the imagej imageplus object.
-        metadata['time'] = tif.pages[0].tags['DateTime'].value
+                metadata['time'] = tif.pages[0].tags['DateTime'].value
         if 'waveLengths' in metadata:
             metadata['wavelengths'] = metadata['waveLengths']
             del metadata['waveLengths']
