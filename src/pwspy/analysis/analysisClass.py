@@ -24,9 +24,7 @@ class Analysis:
         cube = self._normalizeImCube(cube, ref)
         cube.data = self._filterSignal(cube.data)
         # The rest of the analysis will be performed only on the selected wavelength range.
-        cube = cube.selIndex(
-            self.settings.wavelengthStart,
-            self.settings.wavelengthStop)
+        cube.selIndex(self.settings.wavelengthStart, self.settings.wavelengthStop)
         # Determine the mean-reflectance for each pixel in the cell.
         reflectance = cube.data.mean(axis=2)
         cube = KCube(cube)  # -- Convert to K-Space
@@ -71,9 +69,8 @@ class Analysis:
         return cube
 
     def _filterSignal(self, data: np.ndarray):
-        # The cutoff totally ignores what the `sample rate` is. so a 2nm interval image cube will be filtered differently than a 1nm interval cube. This is how it is in matlab.
-        b, a = sps.butter(self.settings.filterOrder,
-                          self.settings.filterCutoff)
+        # TODO The cutoff totally ignores what the `sample rate` is. so a 2nm interval image cube will be filtered differently than a 1nm interval cube. This is how it is in matlab.
+        b, a = sps.butter(self.settings.filterOrder, self.settings.filterCutoff)
         return sps.filtfilt(b, a, data, axis=2)
 
     # -- Polynomial Fit
