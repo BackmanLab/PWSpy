@@ -40,9 +40,8 @@ def _loadIms(qout, qin, lock):
     while not qin.empty():
         specs, file = qin.get()
         print('starting', file)
-        lock.acquire()
-        im = ImCube.loadAny(file)
-        lock.release()
+        with lock:
+            im = ImCube.loadAny(file)
         for k, v in specs.items():
             setattr(im, k, v)
         qout.put(im)
@@ -56,9 +55,8 @@ def _loadIms(qout, qin, lock):
 
 def loadThenProcess(procFunc, procFuncArgs, lock, fileAndSpecifiers):
     specs, file = fileAndSpecifiers
-    lock.acquire()
-    im = ImCube.loadAny(file)
-    lock.release()
+    with lock:
+        im = ImCube.loadAny(file)
     for k, v in specs.items():
         setattr(im, k, v)
     print("Run", file)
@@ -107,8 +105,6 @@ def loadAndProcess(fileDict: Union[dict, list], processorFunc=None, specifierNam
             cubes = [processorFunc(qout.get(), *procArgs) for i in range(len(files))]
         else:
             cubes = [qout.get() for i in range(len(files))]
-        #        thread1.join()
-        #        thread2.join()
         [thread.join() for thread in threads]
     print(f"Loading took {time() - sTime} seconds")
     return cubes
