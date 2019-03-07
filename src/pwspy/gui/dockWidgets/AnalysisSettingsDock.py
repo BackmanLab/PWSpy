@@ -1,9 +1,10 @@
 import os
+from glob import glob
 
-from PyQt5 import QtGui
+from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import QDockWidget, QScrollArea, QFrame, QVBoxLayout, QSpacerItem, QSizePolicy, QGridLayout, \
     QGroupBox, QHBoxLayout, QRadioButton, QSpinBox, QLineEdit, QPushButton, QComboBox, QLabel, QDoubleSpinBox, \
-    QCheckBox, QFileDialog
+    QCheckBox, QFileDialog, QWidget
 
 from pwspy.analysis import AnalysisSettings
 from pwspy.gui import resources, applicationVars
@@ -33,10 +34,28 @@ class AnalysisSettingsDock(QDockWidget):
 
     def setupFrame(self):
         """Presets"""
+
         self.presets = QGroupBox("Presets")
         self.presets.setLayout(QHBoxLayout())
-        self.presets.layout().addWidget(QRadioButton("Legacy"))
-        self.presets.layout().addWidget(QRadioButton("Reccommended"))
+        self.presets.layout().setContentsMargins(0, 0, 0, 5)
+        _2 = QWidget()
+        _2.setLayout(QHBoxLayout())
+        _2.layout().setContentsMargins(5, 0, 5, 0)
+        for f in glob(os.path.join(applicationVars.analysisSettingsDirectory, '*_analysis.json')):
+            name = os.path.split(f)[-1][:-14]
+            b = QRadioButton(name)
+            b.released.connect(
+                lambda n=name: self.loadFromSettings(
+                AnalysisSettings.fromJson(applicationVars.analysisSettingsDirectory, n)))
+            _2.layout().addWidget(b)
+        _ = QScrollArea()
+        _.setWidget(_2)
+        _.setFrameShape(QFrame.NoFrame)
+        _.setContentsMargins(0, 0, 0, 0)
+        _.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        _.horizontalScrollBar().setStyleSheet("QScrollBar:horizontal { height: 10px; }")
+        self.presets.setFixedHeight(45)
+        self.presets.layout().addWidget(_)
         self.layout.addWidget(self.presets, 0, 0, 1, 4)
 
         '''Hardwarecorrections'''
@@ -137,7 +156,7 @@ class AnalysisSettingsDock(QDockWidget):
         self.filterCutoff.setValue(settings.filterCutoff)
         self.polynomialOrder.setValue(settings.polynomialOrder)
         self.RSubtractionEdit.setText(settings.rInternalSubtractionPath)
-        self.referenceMaterial.setValue(settings.referenceMaterial)
+        self.refMaterialCombo.setCurrentIndex(self.refMaterialCombo.findText(settings.referenceMaterial))
         self.wavelengthStop.setValue(settings.wavelengthStop)
         self.wavelengthStart.setValue(settings.wavelengthStart)
 
