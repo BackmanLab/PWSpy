@@ -27,6 +27,9 @@ class PWSApp(QApplication):
         self.window.runAction.triggered.connect(self.anMan.run)
         if not os.path.exists(applicationVars.dataDirectory):
             os.mkdir(applicationVars.dataDirectory)
+        if not os.path.exists(applicationVars.analysisSettingsDirectory):
+            os.mkdir(applicationVars.analysisSettingsDirectory)
+
 
 
 class PWSWindow(QMainWindow):
@@ -76,23 +79,24 @@ class AnalysisManager:
         self.app = app
 
     def run(self):
-        refMetas = self.app.window.cellSelector.getSelectedReferenceMetas()
+        refMeta = self.app.window.cellSelector.getSelectedReferenceMeta()
         cellMetas = self.app.window.cellSelector.getSelectedCellMetas()
         self._checkMetaConsistency(cellMetas)
+        ref = ImCube.fromMetadata(refMeta)
         settings = self.app.window.analysisSettings.getSettings()
         analysis = Analysis(settings, verbose=True)
-        loadAndProcess([i.filePath for i in cellMetas], processorFunc=self._process, procArgs=[ref, analysis],
-                       parallel=True)
+        out = loadAndProcess([i.filePath for i in cellMetas], processorFunc=self._process, procArgs=[ref, analysis],
+                             parallel=True)
 
     @staticmethod
     def _process(im: ImCube, ref: ImCube, analysis: Analysis):
         im.correctCameraEffects()
         results = analysis.run(im, ref)
-        im.saveAnalysis(results, )
+        im.saveAnalysis(results, 'analysisNamePlaceholder')
 
     @staticmethod
     def _checkMetaConsistency(cellMetas: typing.List[ICMetaData]):
-        camCorrections = [i.cameraCorrection  for i in cellMetas]
+        camCorrections = [i.cameraCorrection for i in cellMetas]
         if None in camCorrections:
             raise Exception("cell is missing automatic camera correction")
         if len(set([hash(i) for i in camCorrections])) > 1:

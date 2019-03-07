@@ -176,6 +176,7 @@ class ReferencesTableItem(QTableWidgetItem):
 class ReferencesTable(QTableWidget):
     def __init__(self, parent: QWidget, cellTable: CellTableWidget):
         super().__init__(parent)
+        self.setSelectionMode(QAbstractItemView.SingleSelection)
         self.setColumnCount(1)
         self.setHorizontalHeaderLabels(('Reference',))
         self.setRowCount(0)
@@ -207,8 +208,8 @@ class ReferencesTable(QTableWidget):
         self.references = []
 
     @property
-    def selectedReferenceMetaDatas(self) -> typing.List[ICMetaData]:
+    def selectedReferenceMetaData(self) -> typing.List[ICMetaData]:
         """Returns the rows that have been selected."""
-        rowIndices = [i.row() for i in self.selectedIndexes()[::self.columnCount()]]
-        rowIndices.sort()
-        return [self.references[i].cube for i in rowIndices]
+        items: ReferencesTableItem = self.selectedItems()
+        assert len(items) <= 1
+        return items[0].item.cube
