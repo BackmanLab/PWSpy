@@ -10,8 +10,8 @@ class PlottingDock(QDockWidget):
         self.selector = cellSelectorTable
         self.setObjectName('PlottingWidget')
         self.plots = []
-        self.widget = QWidget()
-        self.widget.setLayout(QHBoxLayout())
+        self._widget = QWidget()
+        self._widget.setLayout(QHBoxLayout())
         plotScroll = QScrollArea()
         plotScroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         plotScroll.setWidgetResizable(True)
@@ -33,9 +33,9 @@ class PlottingDock(QDockWidget):
         _(self.plotBFButton)
         _(self.plot3dButton)
         _(self.clearButton)
-        self.widget.layout().addWidget(plotScroll)
-        self.widget.layout().addWidget(buttons)
-        self.setWidget(self.widget)
+        self._widget.layout().addWidget(plotScroll)
+        self._widget.layout().addWidget(buttons)
+        self.setWidget(self._widget)
 
     def addPlot(self, plot):
         self.plots.append(plot)
@@ -52,7 +52,7 @@ class PlottingDock(QDockWidget):
 
     def _plotsChanged(self):
         if len(self.plots) > 0:
-            self.arController.setAspect(1 / len(self.plots))
+            self.arController.aspect = 1 / len(self.plots)
 
     def plotRMS(self):
         cells: ICMetaData = [i.cube for i in self.selector.selectedCellItems]
@@ -61,4 +61,4 @@ class PlottingDock(QDockWidget):
             messageBox.information(self, "Oops!", "Please select the cells you would like to plot.")
             messageBox.setFixedSize(500, 200)
         for cell in cells:
-            self.addPlot(LittlePlot(cell.loadAnalysis(cell.getAnalyses()[0]).rms, cell))#need to provide a way to get the rms data. icmetadata analysis handling.# cell))
+            self.addPlot(LittlePlot(cell.loadAnalysis(cell.getAnalyses()[0]).rms, cell))

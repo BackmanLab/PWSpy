@@ -13,39 +13,39 @@ class CellSelectorDock(QDockWidget):
     def __init__(self):
         super().__init__("Cell Selector")
         self.setObjectName('CellSelectorDock')  # needed for restore state to work
-        self.widget = QWidget(self)
+        self._widget = QWidget(self)
         layout = QVBoxLayout()
-        self.tableWidget = CellTableWidget(self.widget)
-        self.refTableWidget = ReferencesTable(self.widget, self.tableWidget)
-        self.filterWidget = QWidget(self.widget)
-        self.pathFilter = QComboBox(self.filterWidget)
+        self.tableWidget = CellTableWidget(self._widget)
+        self.refTableWidget = ReferencesTable(self._widget, self.tableWidget)
+        self._filterWidget = QWidget(self._widget)
+        self.pathFilter = QComboBox(self._filterWidget)
         self.pathFilter.setEditable(True)
-        self.expressionFilter = QLineEdit(self.filterWidget)
+        self.expressionFilter = QLineEdit(self._filterWidget)
         self.expressionFilter.setPlaceholderText("Python boolean expression. Cell#: {num}")
         self.expressionFilter.returnPressed.connect(self.executeFilter)
         _ = QGridLayout()
         _.addWidget(self.pathFilter, 0, 0, 1, 1)
         _.addWidget(self.expressionFilter, 0, 1, 1, 1)
-        self.filterWidget.setLayout(_)
+        self._filterWidget.setLayout(_)
         _ = QSplitter()
         _.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         _.addWidget(self.tableWidget)
         _.addWidget(self.refTableWidget)
         _.setSizes([300, 100])
         layout.addWidget(_)
-        layout.addWidget(self.filterWidget)
-        self.widget.setLayout(layout)
-        self.setWidget(self.widget)
-        self.cells = []
+        layout.addWidget(self._filterWidget)
+        self._widget.setLayout(layout)
+        self.setWidget(self._widget)
+        self._cells = []
 
     def addCell(self, fileName: str, workingDir: str):
-        self.cells.append(ICMetaData.loadAny(fileName))
-        cell = CellTableWidgetItem(self.cells[-1], os.path.split(fileName)[0][len(workingDir) + 1:],
+        self._cells.append(ICMetaData.loadAny(fileName))
+        cell = CellTableWidgetItem(self._cells[-1], os.path.split(fileName)[0][len(workingDir) + 1:],
                                    int(fileName.split('Cell')[-1]))
         self.tableWidget.addCellItem(cell)
 
     def clearCells(self):
-        self.cells = []
+        self._cells = []
         self.tableWidget.clearCellItems()
 
     def updateFilters(self):
@@ -56,7 +56,7 @@ class CellSelectorDock(QDockWidget):
         self.pathFilter.clear()
         self.pathFilter.addItem('.*')
         paths = []
-        for i in self.tableWidget.cellItems:
+        for i in self.tableWidget._cellItems:
             paths.append(i.path.text())
         self.pathFilter.addItems(set(paths))
         self.pathFilter.currentIndexChanged.connect(self.executeFilter)  # reconnect

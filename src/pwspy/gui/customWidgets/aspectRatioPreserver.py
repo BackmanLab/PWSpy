@@ -7,7 +7,6 @@ class AspectRatioWidget(QWidget):
         super().__init__(parent)
         self.aspect = aspect
         self.layout = QBoxLayout(QBoxLayout.LeftToRight, self)
-        self.widget = widget
         # add spacer, then your widget, then spacer
         self.layout.addItem(QSpacerItem(0, 0))
         self.layout.addWidget(widget)
@@ -28,6 +27,3 @@ class AspectRatioWidget(QWidget):
         self.layout.setStretch(0, outerStretch)
         self.layout.setStretch(1, widgetStretch)
         self.layout.setStretch(2, outerStretch)
-
-    def setAspect(self, aspect: float):
-        self.aspect = aspect

@@ -5,10 +5,63 @@ import numpy as np
 import os.path as osp
 from datetime import datetime
 from .analysisSettings import AnalysisSettings
+from abc import ABC, abstractmethod
+
+
+class AbstractAnalysisResults(ABC):
+    @property
+    @abstractmethod
+    def settings(self) -> AnalysisSettings:
+        pass
+
+    @property
+    @abstractmethod
+    def reflectance(self) -> np.ndarray:
+        pass
+
+    @property
+    @abstractmethod
+    def rms(self) -> np.ndarray:
+        pass
+
+    @property
+    @abstractmethod
+    def polynomialRms(self) -> np.ndarray:
+        pass
+
+    @property
+    @abstractmethod
+    def autoCorrelationSlope(self) -> np.ndarray:
+        pass
+
+    @property
+    @abstractmethod
+    def rSquared(self) -> np.ndarray:
+        pass
+
+    @property
+    @abstractmethod
+    def ld(self) -> np.ndarray:
+        pass
+
+    @property
+    @abstractmethod
+    def opd(self) -> np.ndarray:
+        pass
+
+    @property
+    @abstractmethod
+    def xvalOpd(self) -> np.ndarray:
+        pass
+
+    @property
+    @abstractmethod
+    def time(self) -> str:
+        pass
 
 
 @dataclass(frozen=True)
-class AnalysisResults:
+class AnalysisResults(AbstractAnalysisResults):
     settings: AnalysisSettings
     reflectance: np.ndarray
     rms: np.ndarray
@@ -62,14 +115,20 @@ class cached_property(object):
         return value
 
 
-class LazyAnalysisResultsLoader:
+class LazyAnalysisResultsLoader(AbstractAnalysisResults):
     def __init__(self, directory: str, name: str):
         self.file = h5py.File(osp.join(directory, f'{name}.hdf5'))
-        self.settings = AnalysisSettings.fromJsonString(self.file['settings'])
-        self.time = self.file['time']
 
     def __del__(self):
         self.file.close()
+
+    @cached_property
+    def settings(self) -> AnalysisSettings:
+        return AnalysisSettings.fromJsonString(self.file['settings'])
+
+    @cached_property
+    def time(self) -> str:
+        return self.file['time']
 
     @cached_property
     def reflectance(self) -> np.ndarray:
@@ -102,3 +161,21 @@ class LazyAnalysisResultsLoader:
     @cached_property
     def xvalOpd(self) -> np.ndarray:
         return np.array(self.file['xvalOpd'])
+
+
+class ROIAnalysisResults(AbstractAnalysisResults):
+    def __init__(self, results: AbstractAnalysisResults, roi: np.ndarray):
+        assert len(roi.shape) == 2
+        self.roi = roi
+        self.reflectance = self.avgOverRoi(results.reflectance)
+        self.rms = self.avgOverRoi(results.rms)
+        self.polynomialRms = self.avgOverRoi(results.polynomialRms)
+        self.autoCorrelationSlope = self.avgOverRoi(results.autoCorrelationSlope)
+        self.rSquared = self.avgOverRoi(results.rSquared)
+        self.ld = self.avgOverRoi(results.ld)
+        self.opd = self.avgOverRoi(results.opd)
+        self.xvalOpd = self.avgOverRoi(results.xvalOpd)
+        # TODO calculate the mean roi spectra ratio
+
+    def avgOverRoi(self, arr: np.ndarray):
+        return arr[self.roi].mean()

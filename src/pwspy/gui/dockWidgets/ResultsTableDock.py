@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QTableWidgetItem, QFrame, QVBoxLayout, QCheckBox
 
 from pwspy.gui.customWidgets import CopyableTable
+from pwspy.gui.customWidgets.tables import ResultsTable
 
 
 class ResultsTableDock(QDockWidget):
@@ -8,9 +9,9 @@ class ResultsTableDock(QDockWidget):
         super().__init__("Results")
         self.setObjectName('ResultsTableDock')
         columns = ('Cell#', "RMS", 'Reflectance', 'ld', 'etc.')
-        self.widget = QWidget()
-        self.widget.setLayout(QHBoxLayout())
-        self.table = CopyableTable()
+        self._widget = QWidget()
+        self._widget.setLayout(QHBoxLayout())
+        self.table = ResultsTable()
         self.table.setRowCount(5)
         self.table.setColumnCount(len(columns))
         self.table.setHorizontalHeaderLabels(columns)
@@ -24,6 +25,6 @@ class ResultsTableDock(QDockWidget):
             f = lambda state, i=i: self.table.setColumnHidden(i, state == 0)
             c.stateChanged.connect(f)
             self.checkBoxes.layout().addWidget(c)
-        self.widget.layout().addWidget(self.checkBoxes)
-        self.widget.layout().addWidget(self.table)
-        self.setWidget(self.widget)
+        self._widget.layout().addWidget(self.checkBoxes)
+        self._widget.layout().addWidget(self.table)
+        self.setWidget(self._widget)
