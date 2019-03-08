@@ -4,7 +4,7 @@ from glob import glob
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import QDockWidget, QScrollArea, QFrame, QVBoxLayout, QSpacerItem, QSizePolicy, QGridLayout, \
     QGroupBox, QHBoxLayout, QRadioButton, QSpinBox, QLineEdit, QPushButton, QComboBox, QLabel, QDoubleSpinBox, \
-    QCheckBox, QFileDialog, QWidget
+    QCheckBox, QFileDialog, QWidget, QLayout
 
 from pwspy.analysis import AnalysisSettings
 from pwspy.gui import resources, applicationVars
@@ -12,32 +12,45 @@ from pwspy.gui.customWidgets import CollapsibleSection
 from pwspy.utility import reflectanceHelper
 
 
+class VerticallyCompressedWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.setLayout(QVBoxLayout())
+        self._contentsFrame = QFrame()
+        spacer = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.layout().addWidget(self._contentsFrame)
+        self.layout().addItem(spacer)
+        self.layout = self._layout # override methods
+        self.setLayout = self._setLayout
+
+    def _layout(self) -> QLayout:
+        return self._contentsFrame.layout()
+
+    def _setLayout(self, layout: QLayout):
+        self._contentsFrame.setLayout(layout)
+
+
 class AnalysisSettingsDock(QDockWidget):
     def __init__(self):
         super().__init__("Settings")
         self.setObjectName('AnalysisSettingsDock')  # needed for restore state to work
-        self.widget = QScrollArea()
-        self.internalWidget = QFrame()
-        self.internalWidget.setLayout(QVBoxLayout())
-        self.internalWidget.setFixedSize(350, 400)
-
-        self.contentsFrame = QFrame()
-        self.contentsFrame.setMinimumSize(350, 100)
-        spacer = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.internalWidget.layout().addWidget(self.contentsFrame)
-        self.internalWidget.layout().addItem(spacer)
-        self.widget.setWidget(self.internalWidget)
-        self.layout = QGridLayout()  # QVBoxLayout()
-        self.contentsFrame.setLayout(self.layout)
+        scroll = QScrollArea()
+        self._frame = VerticallyCompressedWidget(self)
+        self._frame.setLayout(QGridLayout())
+        self._frame.setFixedWidth(350)
+        scroll.setWidget(self._frame)
+        self._layout = self._frame.layout()
         self.setupFrame()
-        self.setWidget(self.widget)
+        self.setWidget(scroll)
+        self._updateSize()
+
 
     def setupFrame(self):
         """Presets"""
         row = 0
         self.analysisNameEdit = QLineEdit()
-        self.layout.addWidget(QLabel("Analysis Name: "), row, 0, 1, 1)
-        self.layout.addWidget(self.analysisNameEdit, row, 1, 1, 1)
+        self._layout.addWidget(QLabel("Analysis Name: "), row, 0, 1, 1)
+        self._layout.addWidget(self.analysisNameEdit, row, 1, 1, 1)
         row += 1
         self.presets = QGroupBox("Presets")
         self.presets.setLayout(QHBoxLayout())
@@ -60,7 +73,7 @@ class AnalysisSettingsDock(QDockWidget):
         _.horizontalScrollBar().setStyleSheet("QScrollBar:horizontal { height: 10px; }")
         self.presets.setFixedHeight(45)
         self.presets.layout().addWidget(_)
-        self.layout.addWidget(self.presets, row, 0, 1, 4)
+        self._layout.addWidget(self.presets, row, 0, 1, 4)
         row += 1
 
         '''Hardwarecorrections'''
@@ -93,10 +106,10 @@ class AnalysisSettingsDock(QDockWidget):
         _(self.refMaterialCombo)
         layout.addLayout(rLayout)
         self.hardwareCorrections = CollapsibleSection('Automatic Correction', 200, self)
-        self.hardwareCorrections.stateChanged.connect(self.updateSize)
+        self.hardwareCorrections.stateChanged.connect(self._updateSize)
         self.hardwareCorrections.setLayout(layout)
 
-        self.layout.addWidget(self.hardwareCorrections, row, 0, 1, 4)
+        self._layout.addWidget(self.hardwareCorrections, row, 0, 1, 4)
         row += 1
 
         '''SignalPreparations'''
@@ -113,7 +126,7 @@ class AnalysisSettingsDock(QDockWidget):
         _(self.filterCutoff, 1, 1, 1, 1)
         _(QLabel("nm<sup>-1</sup>"), 1, 2, 1, 1)
         self.signalPrep.setLayout(layout)
-        self.layout.addWidget(self.signalPrep, row, 0, 1, 2)
+        self._layout.addWidget(self.signalPrep, row, 0, 1, 2)
 
         '''Cropping'''
         self.cropping = QGroupBox("Wavelength Cropping")
@@ -129,7 +142,7 @@ class AnalysisSettingsDock(QDockWidget):
         _(self.wavelengthStart, 1, 0)
         _(self.wavelengthStop, 1, 1)
         self.cropping.setLayout(layout)
-        self.layout.addWidget(self.cropping, row, 2, 1, 2)
+        self._layout.addWidget(self.cropping, row, 2, 1, 2)
         row += 1
 
         '''Polynomial subtraction'''
@@ -141,12 +154,12 @@ class AnalysisSettingsDock(QDockWidget):
         _(QLabel("Order"), 0, 0, 1, 1)
         _(self.polynomialOrder, 0, 1, 1, 1)
         self.polySub.setLayout(layout)
-        self.layout.addWidget(self.polySub, row, 0, 1, 2)
+        self._layout.addWidget(self.polySub, row, 0, 1, 2)
         row += 1
 
         '''Advanced Calculations'''
         self.advanced = CollapsibleSection('Skip Advanced Analysis', 200, self)
-        self.advanced.stateChanged.connect(self.updateSize)
+        self.advanced.stateChanged.connect(self._updateSize)
         self.autoCorrStopIndex = QSpinBox()
         self.minSubCheckBox = QCheckBox("MinSub")
         self.hannWindowCheckBox = QCheckBox("Hanning Window")
@@ -157,7 +170,7 @@ class AnalysisSettingsDock(QDockWidget):
         _(self.minSubCheckBox, 1, 0, 1, 1)
         _(self.hannWindowCheckBox, 1, 1, 1, 1)
         self.advanced.setLayout(layout)
-        self.layout.addWidget(self.advanced, row, 0, 1, 4)
+        self._layout.addWidget(self.advanced, row, 0, 1, 4)
         row += 1
 
     def loadFromSettings(self, settings: AnalysisSettings):
@@ -173,14 +186,14 @@ class AnalysisSettingsDock(QDockWidget):
         self.minSubCheckBox.setCheckState(2 if settings.autoCorrMinSub else 0)
         self.hannWindowCheckBox.setCheckState(2 if settings.useHannWindow else 0)
 
-    def updateSize(self):
+    def _updateSize(self):
         height = 75  # give this much excess room.
         height += self.presets.height()
         height += self.hardwareCorrections.height()
         height += self.signalPrep.height()
         height += self.polySub.height()
         height += self.advanced.height()
-        self.internalWidget.setFixedHeight(height)
+        self._frame.setFixedHeight(height)
 
     def getSettings(self) -> AnalysisSettings:
         return AnalysisSettings(filterOrder=self.filterOrder.value(),
