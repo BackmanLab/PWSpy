@@ -93,6 +93,7 @@ class Analysis:
     # Ld Calculation
     @staticmethod
     def _calculateLd(rms: np.ndarray, slope: np.ndarray):
+        assert rms.shape == slope.shape
         k = 2 * np.pi / 0.55
         fact = 1.38 * 1.38 / 2 / k / k
         A1 = 0.008

@@ -9,3 +9,5 @@ def checkMeanReflectance(r: np.ndarray):
         return None
 
 def checkMeanSpectraRatio():
+
+def checkRSquared():

@@ -170,12 +170,18 @@ class ROIAnalysisResults(AbstractAnalysisResults):
         self.reflectance = self.avgOverRoi(results.reflectance)
         self.rms = self.avgOverRoi(results.rms)
         self.polynomialRms = self.avgOverRoi(results.polynomialRms)
-        self.autoCorrelationSlope = self.avgOverRoi(results.autoCorrelationSlope)
+        self.autoCorrelationSlope = self.avgOverRoi(results.autoCorrelationSlope,
+                                                    condition=np.logical_and(results.rSquared > 0.9,
+                                                                             results.autoCorrelationSlope < 0))
         self.rSquared = self.avgOverRoi(results.rSquared)
         self.ld = self.avgOverRoi(results.ld)
         self.opd = self.avgOverRoi(results.opd)
         self.xvalOpd = self.avgOverRoi(results.xvalOpd)
         # TODO calculate the mean roi spectra ratio
 
-    def avgOverRoi(self, arr: np.ndarray):
-        return arr[self.roi].mean()
+    def avgOverRoi(self, arr: np.ndarray, condition: np.ndarray = None):
+        if condition:
+            return arr[np.logical_and(self.roi, condition)].mean()
+        else:
+            return arr[self.roi].mean()
+
