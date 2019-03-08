@@ -31,9 +31,13 @@ class ICMetaData:
         self.filePath = filePath
         if all([i in self.metadata for i in ['darkCounts', 'linearityPoly']]):
             self.cameraCorrection = CameraCorrection(darkCounts=self.metadata['darkCounts'],
-                                                    linearityPolynomial=self.metadata['linearityPoly'])
+                                                     linearityPolynomial=self.metadata['linearityPoly'])
         else:
             self.cameraCorrection = None
+
+    @property
+    def idTag(self):
+        return f"{self.metadata['time']}" # TODO finish this
 
     @classmethod
     def loadAny(cls, directory):
