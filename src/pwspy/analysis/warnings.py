@@ -11,3 +11,6 @@ def checkMeanReflectance(r: np.ndarray):
 def checkMeanSpectraRatio():
 
 def checkRSquared():
+
+
+class AnalysisWarning:

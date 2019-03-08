@@ -178,25 +178,3 @@ class LazyAnalysisResultsLoader(AbstractAnalysisResults):
         return np.array(self.file['xvalOpd'])
 
 
-class ROIAnalysisResults(AbstractAnalysisResults):
-    def __init__(self, results: AbstractAnalysisResults, roi: np.ndarray):
-        assert len(roi.shape) == 2
-        self.roi = roi
-        self.reflectance = self._avgOverRoi(results.reflectance)
-        self.rms = self._avgOverRoi(results.rms)
-        self.polynomialRms = self._avgOverRoi(results.polynomialRms)
-        self.autoCorrelationSlope = self._avgOverRoi(results.autoCorrelationSlope,
-                                                     condition=np.logical_and(results.rSquared > 0.9,
-                                                                             results.autoCorrelationSlope < 0))
-        self.rSquared = self._avgOverRoi(results.rSquared)
-        self.ld = self._avgOverRoi(results.ld)
-        self.opd = self._avgOverRoi(results.opd)
-        self.xvalOpd = self._avgOverRoi(results.xvalOpd)
-        # TODO calculate the mean roi spectra ratio
-
-    def _avgOverRoi(self, arr: np.ndarray, condition: np.ndarray = None):
-        if condition:
-            return arr[np.logical_and(self.roi, condition)].mean()
-        else:
-            return arr[self.roi].mean()
-

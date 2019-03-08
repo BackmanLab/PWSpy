@@ -10,8 +10,10 @@ import subprocess
 import sys
 import typing
 from glob import glob
-from typing import Optional, Union
+from typing import Optional, Union, List, Tuple
+import re
 
+import h5py
 import numpy as np
 import scipy.io as spio
 import tifffile as tf
@@ -37,7 +39,7 @@ class ICMetaData:
 
     @property
     def idTag(self):
-        return f"{self.metadata['time']}" # TODO finish this
+        return f"{self.metadata['time']}"  # TODO finish this
 
     @classmethod
     def loadAny(cls, directory):
@@ -82,7 +84,7 @@ class ICMetaData:
                     metadata = json.loads(tif.pages[0].description)
                 except:
                     metadata = json.loads(tif.imagej_metadata[
-                                              'Info'])  # The micromanager saves metadata as the info property of the imagej imageplus object.
+                                              'Info'])  # The micromanager plugin saves metadata as the info property of the imagej imageplus object.
                 metadata['time'] = tif.pages[0].tags['DateTime'].value
         if 'waveLengths' in metadata:
             metadata['wavelengths'] = metadata['waveLengths']
@@ -100,38 +102,9 @@ class ICMetaData:
         with open(os.path.join(directory, 'pwsmetadata.json'), 'w') as f:
             json.dump(self.metadata, f)
 
-    def saveMask(self, mask: np.ndarray, number: int, suffix: str):
+    def getRois(self) -> List[Tuple[str, int]]:
         assert self.filePath is not None
-        assert len(mask.shape) == 2
-        spio.savemat(os.path.join(self.filePath, f'BW{number}_{suffix}.mat'), {"BW": mask.astype(np.bool)})
-
-    def loadMask(self, number: int, suffix: str):
-        assert not self.filePath is None
-        mask = spio.loadmat(os.path.join(self.filePath, f'BW{number}_{suffix}.mat'))['BW'].astype(np.bool)
-        assert len(mask.shape) == 2
-        return mask
-
-    def getMasks(self):
-        assert not self.filePath is None
-        return self.getMasksAtPath(self.filePath)
-
-    @staticmethod
-    def getMasksAtPath(filePath: str):
-        files = glob(os.path.join(filePath, 'BW*.mat'))
-        masks = {}
-        for f in files:
-            num, suffix = os.path.split(f)[-1][2:-4].split('_')
-            if suffix in masks:
-                masks[suffix].append(num)
-            else:
-                masks[suffix] = [num]
-        for k, v in masks.items():
-            v.sort()
-        return masks
-
-    def deleteMask(self, number: int, suffix: str):
-        assert not self.filePath is None
-        os.remove(os.path.join(self.filePath, f'BW{number}_{suffix}.mat'))
+        return Roi.getValidRoisInPath(self.filePath)
 
     def getAnalyses(self):
         assert self.filePath is not None
@@ -163,3 +136,53 @@ class ICMetaData:
         elif os.name == 'posix':  # For Linux, Mac, etc.
             subprocess.call(('xdg-open', filepath))
 
+
+class Roi:
+    def __init__(self, name:str, number: int, data: np.ndarray, filePath: str = None):
+        assert data.dtype == np.bool
+        self.data = data
+        self.name = name
+        self.number = number
+        self.filePath = filePath
+
+    @classmethod
+    def fromHDF(cls, directory: str, name: str, number: int):
+        filePath = os.path.join(directory, f'roi{number}_{name}.h5')
+        with h5py.File(filePath) as hf:
+            return cls(name, number, hf['data'], filePath=filePath)
+
+    @classmethod
+    def fromMat(cls, directory: str, name: str, number: int):
+        filePath = os.path.join(directory, f'BW{number}_{name}.mat')
+        return cls(name, number,
+                   spio.loadmat(filePath)['BW'].astype(np.bool),
+                   filePath= filePath)
+
+    @classmethod
+    def loadAny(cls, directory: str, name: str, number: int):
+        try:
+            return Roi.fromHDF(directory, name, number)
+        except OSError: #For backwards compatibility purposes
+            return Roi.fromMat(directory, name, number)
+
+    def toHDF(self, directory):
+        savePath = os.path.join(directory, f'roi{self.number}_{self.name}.h5')
+        if os.path.exists(savePath):
+            raise Exception(f"The Roi file {savePath} already exists.")
+        with h5py.File(savePath, 'w') as hf:
+            hf.create_dataset('data', data=self.data)
+
+    def deleteFile(self):
+        if self.filePath is None:
+            raise Exception("There is no filepath variable pointing to a file")
+        os.remove(self.filePath)
+
+    @staticmethod
+    def getValidRoisInPath(path: str) -> List[Tuple[str, int]]:
+        files = glob(path)
+        ret = []
+        for f in files:
+            fname = os.path.split(f)[-1]
+            if any([re.match(pattern, fname) is not None for pattern in ["BW.+_.+\.mat", "roi.+_.+\.h5"]]):
+                ret.append(('_'.join(fname.split('_')[1:]).split('.')[0], int(fname.split('_')[0][2:])))
+        return ret
