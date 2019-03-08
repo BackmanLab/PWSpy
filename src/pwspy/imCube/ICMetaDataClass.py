@@ -17,6 +17,7 @@ import scipy.io as spio
 import tifffile as tf
 
 from pwspy.analysis import AnalysisResults
+from pwspy.analysis.analysisResults import LazyAnalysisResultsLoader
 from .otherClasses import CameraCorrection
 
 
@@ -143,8 +144,8 @@ class ICMetaData:
     def saveAnalysis(self, analysis: AnalysisResults, name:str):
         analysis.toHDF5(os.path.join(self.filePath, 'analyses'), name)
 
-    def loadAnalysis(self, name: str) -> AnalysisResults:
-        return AnalysisResults.fromHDF5(os.path.join(self.filePath, 'analyses'), name)
+    def loadAnalysis(self, name: str) -> LazyAnalysisResultsLoader:
+        return LazyAnalysisResultsLoader(os.path.join(self.filePath, 'analyses'), name)
 
     def editNotes(self):
         filepath = os.path.join(self.filePath, 'notes.txt.')

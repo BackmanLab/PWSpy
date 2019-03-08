@@ -18,7 +18,7 @@ class Analysis:
         self.settings = settings
         self.verbose = verbose
 
-    def run(self, cube: ImCube, ref: ImCube):
+    def run(self, cube: ImCube, ref: ImCube) -> AnalysisResults:
         assert cube.isCorrected()
         assert ref.isCorrected()
         cube = self._normalizeImCube(cube, ref)
