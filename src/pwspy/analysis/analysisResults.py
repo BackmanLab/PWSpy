@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 
 
 class AbstractAnalysisResults(ABC):
+    """Enforce that derived classes will have the following properties."""
     @property
     @abstractmethod
     def settings(self) -> AnalysisSettings:
@@ -59,6 +60,15 @@ class AbstractAnalysisResults(ABC):
     def time(self) -> str:
         pass
 
+    @property
+    @abstractmethod
+    def imCubeIdTag(self) -> str:
+        pass
+
+    @property
+    @abstractmethod
+    def referenceIdTag(self) -> str:
+        pass
 
 @dataclass(frozen=True)
 class AnalysisResults(AbstractAnalysisResults):
@@ -83,10 +93,14 @@ class AnalysisResults(AbstractAnalysisResults):
         # now save the stuff
         with h5py.File(fileName, 'w') as hf:
             for k, v in self.asdict().items():
-                if k in ['settings', 'time']:
-                    hf.create_dataset(k, v.toJsonString())
-                else:
+                if k == 'settings':
+                    v = v.toJsonString()
+                if isinstance(v, str):
+                    hf.create_dataset(k, data=np.string_(v)) #h5py recommends encoding strings this way for compatability.
+                elif isinstance(v, np.ndarray):
                     hf.create_dataset(k, data=v)
+                else:
+                    raise TypeError(f"Analysis results type {k}, {type(v)} not supported or expected")
 
     @classmethod
     def fromHDF5(cls, directory: str, name: str):
@@ -116,6 +130,7 @@ class cached_property(object):
 
 
 class LazyAnalysisResultsLoader(AbstractAnalysisResults):
+    """A read-only loader for analysis results that will only load them from hard disk as needed."""
     def __init__(self, directory: str, name: str):
         self.file = h5py.File(osp.join(directory, f'{name}.hdf5'))
 
@@ -167,19 +182,19 @@ class ROIAnalysisResults(AbstractAnalysisResults):
     def __init__(self, results: AbstractAnalysisResults, roi: np.ndarray):
         assert len(roi.shape) == 2
         self.roi = roi
-        self.reflectance = self.avgOverRoi(results.reflectance)
-        self.rms = self.avgOverRoi(results.rms)
-        self.polynomialRms = self.avgOverRoi(results.polynomialRms)
-        self.autoCorrelationSlope = self.avgOverRoi(results.autoCorrelationSlope,
-                                                    condition=np.logical_and(results.rSquared > 0.9,
+        self.reflectance = self._avgOverRoi(results.reflectance)
+        self.rms = self._avgOverRoi(results.rms)
+        self.polynomialRms = self._avgOverRoi(results.polynomialRms)
+        self.autoCorrelationSlope = self._avgOverRoi(results.autoCorrelationSlope,
+                                                     condition=np.logical_and(results.rSquared > 0.9,
                                                                              results.autoCorrelationSlope < 0))
-        self.rSquared = self.avgOverRoi(results.rSquared)
-        self.ld = self.avgOverRoi(results.ld)
-        self.opd = self.avgOverRoi(results.opd)
-        self.xvalOpd = self.avgOverRoi(results.xvalOpd)
+        self.rSquared = self._avgOverRoi(results.rSquared)
+        self.ld = self._avgOverRoi(results.ld)
+        self.opd = self._avgOverRoi(results.opd)
+        self.xvalOpd = self._avgOverRoi(results.xvalOpd)
         # TODO calculate the mean roi spectra ratio
 
-    def avgOverRoi(self, arr: np.ndarray, condition: np.ndarray = None):
+    def _avgOverRoi(self, arr: np.ndarray, condition: np.ndarray = None):
         if condition:
             return arr[np.logical_and(self.roi, condition)].mean()
         else:
