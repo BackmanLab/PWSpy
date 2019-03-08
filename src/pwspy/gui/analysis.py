@@ -85,14 +85,15 @@ class AnalysisManager:
         ref = ImCube.fromMetadata(refMeta)
         settings = self.app.window.analysisSettings.getSettings()
         analysis = Analysis(settings, verbose=True)
-        out = loadAndProcess([i.filePath for i in cellMetas], processorFunc=self._process, procArgs=[ref, analysis],
+        analysisName = self.app.window.analysisSettings.getAnalysisName()
+        loadAndProcess([i.filePath for i in cellMetas], processorFunc=self._process, procArgs=[ref, analysis, analysisName],
                              parallel=True)
 
     @staticmethod
-    def _process(im: ImCube, ref: ImCube, analysis: Analysis):
+    def _process(im: ImCube, ref: ImCube, analysis: Analysis, analysisName: str):
         im.correctCameraEffects()
         results = analysis.run(im, ref)
-        im.saveAnalysis(results, 'analysisNamePlaceholder')
+        im.saveAnalysis(results, analysisName)
 
     @staticmethod
     def _checkMetaConsistency(cellMetas: typing.List[ICMetaData]):

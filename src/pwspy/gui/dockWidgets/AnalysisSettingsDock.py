@@ -34,7 +34,11 @@ class AnalysisSettingsDock(QDockWidget):
 
     def setupFrame(self):
         """Presets"""
-
+        row = 0
+        self.analysisNameEdit = QLineEdit()
+        self.layout.addWidget(QLabel("Analysis Name: "), row, 0, 1, 1)
+        self.layout.addWidget(self.analysisNameEdit, row, 1, 1, 1)
+        row += 1
         self.presets = QGroupBox("Presets")
         self.presets.setLayout(QHBoxLayout())
         self.presets.layout().setContentsMargins(0, 0, 0, 5)
@@ -56,7 +60,8 @@ class AnalysisSettingsDock(QDockWidget):
         _.horizontalScrollBar().setStyleSheet("QScrollBar:horizontal { height: 10px; }")
         self.presets.setFixedHeight(45)
         self.presets.layout().addWidget(_)
-        self.layout.addWidget(self.presets, 0, 0, 1, 4)
+        self.layout.addWidget(self.presets, row, 0, 1, 4)
+        row += 1
 
         '''Hardwarecorrections'''
         layout = QVBoxLayout()
@@ -91,7 +96,8 @@ class AnalysisSettingsDock(QDockWidget):
         self.hardwareCorrections.stateChanged.connect(self.updateSize)
         self.hardwareCorrections.setLayout(layout)
 
-        self.layout.addWidget(self.hardwareCorrections, 1, 0, 1, 4)
+        self.layout.addWidget(self.hardwareCorrections, row, 0, 1, 4)
+        row += 1
 
         '''SignalPreparations'''
         self.signalPrep = QGroupBox("Signal Prep")
@@ -107,7 +113,7 @@ class AnalysisSettingsDock(QDockWidget):
         _(self.filterCutoff, 1, 1, 1, 1)
         _(QLabel("nm<sup>-1</sup>"), 1, 2, 1, 1)
         self.signalPrep.setLayout(layout)
-        self.layout.addWidget(self.signalPrep, 3, 0, 1, 2)
+        self.layout.addWidget(self.signalPrep, row, 0, 1, 2)
 
         '''Cropping'''
         self.cropping = QGroupBox("Wavelength Cropping")
@@ -123,7 +129,8 @@ class AnalysisSettingsDock(QDockWidget):
         _(self.wavelengthStart, 1, 0)
         _(self.wavelengthStop, 1, 1)
         self.cropping.setLayout(layout)
-        self.layout.addWidget(self.cropping, 3, 2, 1, 2)
+        self.layout.addWidget(self.cropping, row, 2, 1, 2)
+        row += 1
 
         '''Polynomial subtraction'''
         self.polySub = QGroupBox("Polynomial Subtraction")
@@ -134,7 +141,8 @@ class AnalysisSettingsDock(QDockWidget):
         _(QLabel("Order"), 0, 0, 1, 1)
         _(self.polynomialOrder, 0, 1, 1, 1)
         self.polySub.setLayout(layout)
-        self.layout.addWidget(self.polySub, 4, 0, 1, 2)
+        self.layout.addWidget(self.polySub, row, 0, 1, 2)
+        row += 1
 
         '''Advanced Calculations'''
         self.advanced = CollapsibleSection('Skip Advanced Analysis', 200, self)
@@ -149,7 +157,8 @@ class AnalysisSettingsDock(QDockWidget):
         _(self.minSubCheckBox, 1, 0, 1, 1)
         _(self.hannWindowCheckBox, 1, 1, 1, 1)
         self.advanced.setLayout(layout)
-        self.layout.addWidget(self.advanced, 5, 0, 1, 4)
+        self.layout.addWidget(self.advanced, row, 0, 1, 4)
+        row += 1
 
     def loadFromSettings(self, settings: AnalysisSettings):
         self.filterOrder.setValue(settings.filterOrder)
@@ -185,6 +194,9 @@ class AnalysisSettingsDock(QDockWidget):
                                 useHannWindow=self.hannWindowCheckBox.checkState() != 0,
                                 autoCorrMinSub=self.minSubCheckBox.checkState() != 0,
                                 autoCorrStopIndex=self.autoCorrStopIndex.value())
+
+    def getAnalysisName(self):
+        return self.analysisNameEdit.text()
 
     def _browseReflection(self):
         file, _filter = QFileDialog.getOpenFileName(self, 'Working Directory', applicationVars.dataDirectory, "HDF5 (*.h5 *.hdf5)")
