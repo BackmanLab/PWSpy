@@ -13,6 +13,8 @@ from glob import glob
 import typing
 import numbers
 from scipy.io import savemat
+
+from pwspy.imCube.ICMetaDataClass import ICFileFormats
 from .otherClasses import CameraCorrection
 from .ICBaseClass import ICBase
 from .ICMetaDataClass import ICMetaData
@@ -23,8 +25,8 @@ class ImCube(ICBase, ICMetaData):
     _cameraCorrected: bool
     _hasBeenNormalized: bool
 
-    def __init__(self, data, metadata: dict, dtype=np.float32, filePath=None):
-        ICMetaData.__init__(self, metadata, filePath)
+    def __init__(self, data, metadata: dict, dtype=np.float32, filePath: str=None, fileFormat: ICFileFormats=None):
+        ICMetaData.__init__(self, metadata, filePath, fileFormat=fileFormat)
         ICBase.__init__(self, data, tuple(np.array(self.metadata['wavelengths']).astype(np.float32)), dtype=dtype)
         self._hasBeenNormalized = False  # Keeps track of whether or not we have normalized by exposure so that we don't do it twice.
         self._cameraCorrected = False
@@ -55,7 +57,7 @@ class ImCube(ICBase, ICMetaData):
             data = np.frombuffer(f.read(), dtype=np.uint16)
         data = data.reshape((metadata.metadata['imgHeight'], metadata.metadata['imgWidth'], len(metadata.metadata['wavelengths'])),
                             order='F')
-        return cls(data, metadata.metadata, filePath=metadata.filePath)
+        return cls(data, metadata.metadata, filePath=metadata.filePath, fileFormat=ICFileFormats.RawBinary)
 
     @classmethod
     def fromTiff(cls, directory, metadata: ICMetaData=None):
@@ -69,11 +71,18 @@ class ImCube(ICBase, ICMetaData):
             raise OSError("No Tiff file was found at:", directory)
         with tf.TiffFile(path) as tif:
             data = np.rollaxis(tif.asarray(), 0, 3)  # Swap axes to match y,x,lambda convention.
-        return cls(data, metadata.metadata, filePath=directory)
+        return cls(data, metadata.metadata, filePath=directory, fileFormat=ICFileFormats.Tiff)
     
     @classmethod
     def fromMetadata(cls, meta: ICMetaData):
-        return cls.loadAny(meta.filePath, metadata=meta)
+        if meta.fileFormat == ICFileFormats.Tiff:
+            return cls.fromTiff(meta.filePath, metadata=meta)
+        elif meta.fileFormat == ICFileFormats.RawBinary:
+            return cls.fromOldPWS(meta.filePath, metadata=meta)
+        elif meta.fileFormat is None:
+            return cls.loadAny(meta.filePath, metadata=meta)
+        else:
+            raise TypeError("Invalid FileFormat")
 
     def toOldPWS(self, directory):
         if os.path.exists(directory):

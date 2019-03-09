@@ -9,28 +9,30 @@ import os
 import subprocess
 import sys
 import typing
-from glob import glob
-from typing import Optional, Union, List, Tuple
-import re
+from enum import Enum
+from typing import Optional, List, Tuple
 
-import h5py
-import numpy as np
 import scipy.io as spio
 import tifffile as tf
 
 from pwspy.analysis import AnalysisResults
 from pwspy.analysis.analysisResults import LazyAnalysisResultsLoader
+from pwspy.imCube.otherClasses import Roi
 from .otherClasses import CameraCorrection
+
+ICFileFormats = Enum("ICFileFormats", "RawBinary Tiff")
+RoiFileFormats = Enum("RoiFileFormats", "HDF MAT")
 
 
 class ICMetaData:
     filePath: Optional[str]
     metadata: dict
 
-    def __init__(self, metadata: dict, filePath: str=None):
+    def __init__(self, metadata: dict, filePath: str=None, fileFormat: ICFileFormats=None):
         self._checkMetadata(metadata)
         self.metadata = metadata
         self.filePath = filePath
+        self.fileFormat: ICFileFormats = fileFormat
         if all([i in self.metadata for i in ['darkCounts', 'linearityPoly']]):
             self.cameraCorrection = CameraCorrection(darkCounts=self.metadata['darkCounts'],
                                                      linearityPolynomial=self.metadata['linearityPoly'])
@@ -66,7 +68,7 @@ class ICMetaData:
                     *[int(i) for i in [info3[8], info3[7], info3[6], info3[9], info3[10], info3[11]]]),
                   'systemId': info3[0],
                   'imgHeight': int(info3[2]), 'imgWidth': int(info3[3]), 'wavelengths': wv}
-        return cls(md, filePath=directory)
+        return cls(md, filePath=directory, fileFormat=ICFileFormats.RawBinary)
 
     @classmethod
     def fromTiff(cls, directory):
@@ -89,7 +91,7 @@ class ICMetaData:
         if 'waveLengths' in metadata:
             metadata['wavelengths'] = metadata['waveLengths']
             del metadata['waveLengths']
-        return cls(metadata, filePath=directory)
+        return cls(metadata, filePath=directory, fileFormat=ICFileFormats.Tiff)
 
     @staticmethod
     def _checkMetadata(metadata: dict):
@@ -137,52 +139,3 @@ class ICMetaData:
             subprocess.call(('xdg-open', filepath))
 
 
-class Roi:
-    def __init__(self, name:str, number: int, data: np.ndarray, filePath: str = None):
-        assert data.dtype == np.bool
-        self.data = data
-        self.name = name
-        self.number = number
-        self.filePath = filePath
-
-    @classmethod
-    def fromHDF(cls, directory: str, name: str, number: int):
-        filePath = os.path.join(directory, f'roi{number}_{name}.h5')
-        with h5py.File(filePath) as hf:
-            return cls(name, number, hf['data'], filePath=filePath)
-
-    @classmethod
-    def fromMat(cls, directory: str, name: str, number: int):
-        filePath = os.path.join(directory, f'BW{number}_{name}.mat')
-        return cls(name, number,
-                   spio.loadmat(filePath)['BW'].astype(np.bool),
-                   filePath= filePath)
-
-    @classmethod
-    def loadAny(cls, directory: str, name: str, number: int):
-        try:
-            return Roi.fromHDF(directory, name, number)
-        except OSError: #For backwards compatibility purposes
-            return Roi.fromMat(directory, name, number)
-
-    def toHDF(self, directory):
-        savePath = os.path.join(directory, f'roi{self.number}_{self.name}.h5')
-        if os.path.exists(savePath):
-            raise Exception(f"The Roi file {savePath} already exists.")
-        with h5py.File(savePath, 'w') as hf:
-            hf.create_dataset('data', data=self.data)
-
-    def deleteFile(self):
-        if self.filePath is None:
-            raise Exception("There is no filepath variable pointing to a file")
-        os.remove(self.filePath)
-
-    @staticmethod
-    def getValidRoisInPath(path: str) -> List[Tuple[str, int]]:
-        files = glob(path)
-        ret = []
-        for f in files:
-            fname = os.path.split(f)[-1]
-            if any([re.match(pattern, fname) is not None for pattern in ["BW.+_.+\.mat", "roi.+_.+\.h5"]]):
-                ret.append(('_'.join(fname.split('_')[1:]).split('.')[0], int(fname.split('_')[0][2:])))
-        return ret
