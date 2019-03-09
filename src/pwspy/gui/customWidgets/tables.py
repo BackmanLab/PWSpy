@@ -52,6 +52,7 @@ class NumberTableWidgetItem(QTableWidgetItem):
 
 class ResultsTableItem(AbstractAnalysisResults):
     def __init__(self, meta: ICMetaData, maskName: str, maskNum: int, ):
+        pass
 
 class ResultsTable(CopyableTable):
     itemsCleared = QtCore.pyqtSignal()

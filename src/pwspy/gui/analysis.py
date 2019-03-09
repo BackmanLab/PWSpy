@@ -61,10 +61,10 @@ class PWSWindow(QMainWindow):
         self.runAction = toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'playicon.svg')), 'Run')
         settings = QtCore.QSettings("BackmanLab", "PWSAnalysis2")
         try:
-            self.restoreGeometry(settings.value("geometry"));
-            self.restoreState(settings.value("windowState"));
+            self.restoreGeometry(settings.value("geometry"))
+            self.restoreState(settings.value("windowState"))
         except TypeError as e:  # Setting must not exist
-            print(e)
+            self.resize(1024, 768)
         self.show()
 
     def closeEvent(self, event):

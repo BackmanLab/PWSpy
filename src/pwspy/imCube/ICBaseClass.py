@@ -12,6 +12,9 @@ from matplotlib import path
 
 
 class ICBase:
+    """A class to handle the data operations common to PWS related `image cubes`. Does not contain any file specific
+    functionality. uses the generic `index` attribute which can be overridden by derived classes to be wavelength, wavenumber,
+    time, etc."""
     _index: tuple
     data: np.ndarray
 
