@@ -39,7 +39,7 @@ class LegacyAnalysis(AbstractAnalysis):
         # The rest of the analysis will be performed only on the selected wavelength range.
         cube.selIndex(self.settings.wavelengthStart, self.settings.wavelengthStop)
         # Determine the mean-reflectance for each pixel in the cell.
-        reflectance = cube.data.mean(axis=2)
+        reflectance = cube.data.mean(axis=2) #TODO save the whole cube instead of just the mean reflectance. Should we save the KCube or the ImCube?
         cube = KCube.fromImCube(cube)  # -- Convert to K-Space
         cubePoly = self._fitPolynomial(cube)
         # Remove the polynomial fit from filtered cubeCell.
@@ -62,7 +62,8 @@ class LegacyAnalysis(AbstractAnalysis):
             rmsPoly = slope = rSquared = opd = xvalOpd = ld = None
 
         results = AnalysisResults(
-            reflectance=reflectance,
+            meanReflectance=reflectance,
+            reflectance=
             rms=rms,
             polynomialRms=rmsPoly,
             autoCorrelationSlope=slope,

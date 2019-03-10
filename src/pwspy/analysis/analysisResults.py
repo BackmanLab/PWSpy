@@ -4,6 +4,8 @@ import h5py
 import numpy as np
 import os.path as osp
 from datetime import datetime
+
+from pwspy import KCube
 from .analysisSettings import AnalysisSettings
 from abc import ABC, abstractmethod
 
@@ -17,7 +19,12 @@ class AbstractAnalysisResults(ABC):
 
     @property
     @abstractmethod
-    def reflectance(self) -> np.ndarray:
+    def reflectance(self) -> #TODO ImCube or KCube:
+        pass
+
+    @property
+    @abstractmethod
+    def meanReflectance(self) -> np.ndarray:
         pass
 
     @property
@@ -73,7 +80,8 @@ class AbstractAnalysisResults(ABC):
 @dataclasses.dataclass(frozen=True)
 class AnalysisResults(AbstractAnalysisResults):
     settings: AnalysisSettings
-    reflectance: np.ndarray
+    reflectance: #TODO IMCube or KCUbe
+    meanReflectance: np.ndarray
     rms: np.ndarray
     polynomialRms: np.ndarray
     autoCorrelationSlope: np.ndarray
@@ -99,18 +107,22 @@ class AnalysisResults(AbstractAnalysisResults):
                     v = v.toJsonString()
                 if isinstance(v, str):
                     hf.create_dataset(k, data=np.string_(v)) #h5py recommends encoding strings this way for compatability.
+                elif isinstance(v, KCube):
+                    grp = hf.create_group(k)
+                    grp.create_dataset('data', data=v.data)
+                    grp.create_dataset('wavenumbers', data=v.wavenumbers)
                 elif isinstance(v, np.ndarray):
                     hf.create_dataset(k, data=v)
                 else:
                     raise TypeError(f"Analysis results type {k}, {type(v)} not supported or expected")
 
-    @classmethod
-    def fromHDF5(cls, directory: str, name: str):
-        fileName = osp.join(directory, f'{name}.hdf5')
-        # load stuff
-        with h5py.File(fileName, 'r') as hf:
-            d = {k: np.array(v) for k,v in hf.items()}
-            return cls(**d)
+    # @classmethod
+    # def fromHDF5(cls, directory: str, name: str):
+    #     fileName = osp.join(directory, f'{name}.hdf5')
+    #     # load stuff
+    #     with h5py.File(fileName, 'r') as hf:
+    #         d = {k: np.array(v) for k,v in hf.items()}
+    #         return cls(**d)
 
 
 class cached_property(object):
@@ -156,9 +168,14 @@ class LazyAnalysisResultsLoader(AbstractAnalysisResults):
         return self.file['time']
 
     @cached_property
-    def reflectance(self) -> np.ndarray:
-        return np.array(self.file['reflectance'])
+    def reflectance(self):
+        grp = self.file['reflectance']
+        return KCube(grp['data'], grp['wavenumbers'])
 
+    @cached_property
+    def meanReflectance(self):
+        return np.ndarray(self.file['reflectance'])
+    
     @cached_property
     def rms(self) -> np.ndarray:
         return np.array(self.file['rms'])
