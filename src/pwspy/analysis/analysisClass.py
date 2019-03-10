@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 import scipy.signal as sps
 from pwspy import ImCube, KCube
+from pwspy.utility import reflectanceHelper
 from . import AnalysisSettings, AnalysisResults
 
 class AbstractAnalysis(ABC):
@@ -16,18 +17,22 @@ class AbstractAnalysis(ABC):
         self.settings = settings
 
     @abstractmethod
-    def run(self, cube, ref) -> AnalysisResults:
+    def run(self, cube) -> AnalysisResults:
         pass
 
 # TODO save mean spectra of ROIS
 class LegacyAnalysis(AbstractAnalysis):
     indexOpdStop = 100
 
-    def run(self, cube: ImCube, ref: ImCube) -> AnalysisResults:
-        assert cube.isCorrected()
+    def __init__(self, settings: AnalysisSettings, ref: ImCube):
         assert ref.isCorrected()
-        assert ref.isExposureNormalized()
-        cube = self._normalizeImCube(cube, ref)
+        super().__init__(settings)
+        ref.normalizeByExposure()
+        self.ref = ref
+
+    def run(self, cube: ImCube) -> AnalysisResults:
+        assert cube.isCorrected()
+        cube = self._normalizeImCube(cube, self.ref)
         cube.data = self._filterSignal(cube.data)
         # The rest of the analysis will be performed only on the selected wavelength range.
         cube.selIndex(self.settings.wavelengthStart, self.settings.wavelengthStop)
@@ -69,11 +74,9 @@ class LegacyAnalysis(AbstractAnalysis):
 
         return results
 
-    @staticmethod
-    def _normalizeImCube(cube: ImCube, ref: ImCube) -> ImCube:
+    def _normalizeImCube(self, cube: ImCube) -> ImCube:
         cube.normalizeByExposure()
-        ref.normalizeByExposure()
-        cube.normalizeByReference(ref)
+        cube.normalizeByReference(self.ref)
         return cube
 
     def _filterSignal(self, data: np.ndarray):
@@ -104,14 +107,28 @@ class LegacyAnalysis(AbstractAnalysis):
         assert rms.shape == slope.shape
         k = 2 * np.pi / 0.55
         fact = 1.38 * 1.38 / 2 / k / k
-        A1 = 0.008
+        A1 = 0.008 # TODO Determine what these constants are. Are they still valid for the newer analysis where we are using actual reflectance rather than just normalizing to reflectance ~= 1 ?
         A2 = 4
         ld = ((A2 / A1) * fact) * (rms / (-1 * slope.reshape(rms.shape)))
         return ld
 
 class Analysis(LegacyAnalysis):
-    def _normalizeImCube(self, cube: ImCube, ref: ImCube) -> ImCube:
-        cube.normalizeByExposure()
-        ref.normalizeByExposure()
+    def __init__(self, settings: AnalysisSettings, ref: ImCube, extraReflectance: np.ndarray, referenceMaterial: str):
+        super().__init__(settings, ref)
+        #TODO decide if we want to do this: ref.filterDust(4)
 
+        theoryR = reflectanceHelper.getReflectance(referenceMaterial, 'glass', index=ref.wavelengths)[np.newaxis, np.newaxis, :]
+        I0 = ref.data / (theoryR + extraReflectance) # I0 is the intensity of the illumination source, reconstructed in units of `counts`. this is an inversion of our assumption that reference = I0*(referenceReflectance + extraReflectance)
+        Iextra = extraReflectance * I0 # converting extraReflectance to the extra reflection in units of counts
+        ref = ref - Iextra # remove the extra reflection from our data
+        ref = ref / theoryR # now when we normalize by our reference we will get a result in units of physical reflectrance rather than arbitrary units.
+        self.ref = ref
+        self.extraReflection = Iextra
+
+    def _normalizeImCube(self, cube: ImCube) -> ImCube:
+        cube.normalizeByExposure()
+        cube.subtractExtraReflection(self.extraReflection)
+        cube.normalizeByReference(self.ref)
+        # TODO add extra reflection information to the analysis results
+        return cube
 

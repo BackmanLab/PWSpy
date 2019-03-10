@@ -159,7 +159,7 @@ class ImCube(ICBase, ICMetaData):
 
     def normalizeByExposure(self):
         if not self._cameraCorrected:
-            print(
+            raise Exception(
                 "This ImCube has not yet been corrected for camera effects. are you sure you want to normalize by exposure?")
         if not self._hasBeenNormalized:
             self.data = self.data / self.metadata['exposure']
@@ -233,9 +233,15 @@ class ImCube(ICBase, ICMetaData):
 
     def normalizeByReference(self, reference: 'ImCube'):
         self.data = self.data / reference.data
-        
+
     def subtractExtraReflection(self, extraReflection: np.ndarray):
-        self.data -= extraReflection
+        assert self.data.shape == extraReflection.shape
+        if not self._hasBeenNormalized:
+            raise Exception("This ImCube has not yet been normalized by exposure. are you sure you want to normalize by exposure?")
+        if not self._hasExtraReflectionSubtracted:
+            self.data = self.data - extraReflection
+        else:
+            raise Exception("The ImCube has already has extra reflection subtracted.")
 
     def isCorrected(self) -> bool:
         return self._cameraCorrected
