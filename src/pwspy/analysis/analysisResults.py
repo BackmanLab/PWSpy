@@ -188,7 +188,7 @@ class LazyAnalysisResultsLoader(AbstractAnalysisResults):
         return np.array(self.file['xvalOpd'])
 
     def loadAllFromDisk(self) -> None:
-        '''Access all cached properties in order to load them from disk'''
+        """Access all cached properties in order to load them from disk"""
         for i in [self.opdIndex, self.opd, self.ld, self.rSquared,
                   self.autoCorrelationSlope, self.polynomialRms,
                   self.rms, self.reflectance, self.time, self.referenceIdTag,

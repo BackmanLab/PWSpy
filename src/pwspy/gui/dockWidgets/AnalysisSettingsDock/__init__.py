@@ -188,7 +188,7 @@ class AnalysisSettingsDock(QDockWidget):
         self.hannWindowCheckBox.setCheckState(2 if settings.useHannWindow else 0)
 
     def _updateSize(self):
-        height = 75  # give this much excess room.
+        height = 100  # give this much excess room.
         height += self.presets.height()
         height += self.hardwareCorrections.height()
         height += self.extraReflection.height()
