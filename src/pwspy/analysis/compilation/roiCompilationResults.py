@@ -7,6 +7,9 @@ from pwspy.imCube.otherClasses import Roi
 
 @dataclass(frozen=True)
 class RoiAnalysisResults:
+        cellPath: str
+        cellNumber: int
+        analysisName: str
         roi: Roi
         reflectance: float
         rms: float

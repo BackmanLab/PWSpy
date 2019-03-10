@@ -7,15 +7,9 @@ class ResultsTableDock(QDockWidget):
     def __init__(self):
         super().__init__("Results")
         self.setObjectName('ResultsTableDock')
-        columns = ('Cell#', "RMS", 'Reflectance', 'ld', 'etc.')
         self._widget = QWidget()
         self._widget.setLayout(QHBoxLayout())
         self.table = ResultsTable()
-        self.table.setRowCount(5)
-        self.table.setColumnCount(len(columns))
-        self.table.setHorizontalHeaderLabels(columns)
-        self.table.verticalHeader().hide()
-        self.table.setItem(1, 1, QTableWidgetItem("rms"))
         self.checkBoxes = QFrame()
         self.checkBoxes.setLayout(QVBoxLayout())
         for i, n in enumerate(columns):

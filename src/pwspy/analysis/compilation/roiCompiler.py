@@ -21,7 +21,7 @@ class RoiCompiler:
             ld = self._avgOverRoi(roi, results.ld)
             opd = results.opd[roi[:, :, None]].mean(axis=(0,1))
             opdIndex = results.opdIndex
-            # TODO calculate the mean roi spectra ratio, maybe we should be saving the whole normalized cube
+
             spectra, _ = results.reflectance.getMeanSpectra(roi)[0]
             meanRms = spectra.std()
             varRatio = meanRms**2 / (results.rms[roi.data]**2).mean()

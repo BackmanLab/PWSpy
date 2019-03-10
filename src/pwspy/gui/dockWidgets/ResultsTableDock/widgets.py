@@ -12,7 +12,9 @@ from pwspy.imCube.ICMetaDataClass import ICMetaData
 class ResultsTableItem:
     def __init__(self, results: RoiAnalysisResults, meta: ICMetaData ):
         self.results = results
-        # self.roi = results.roi
+        self.cellPathLabel = QTableWidgetItem(results.cellPath)
+        self.cellNumLabel = NumberTableWidgetItem(results.cellNumber)
+        self.analysisNameLabel = QTableWidgetItem(results.analysisName)
         self.roiNameLabel = QTableWidgetItem(results.roi.name)
         self.roiNumLabel = NumberTableWidgetItem(results.roi.number)
         self.rmsLabel = NumberTableWidgetItem(results.rms)
@@ -29,13 +31,18 @@ class ResultsTableItem:
         ax = fig.add_subplot(1, 1, 1)
         canvas = FigureCanvasQT(fig)
         ax.plot(self.results.opdIndex, self.results.opd)
-
+        canvas.show()
 
 class ResultsTable(CopyableTable):
     itemsCleared = QtCore.pyqtSignal()
 
     def __init__(self):
         super().__init__()
+        columns = ("CellPath", 'Cell#', "Analysis", 'ROI', 'ROI#', "RMS", 'Reflectance', 'ld', "AutoCorr Slope", 'R<sup>2</sup>', 'OPD')
+        self.setRowCount(0)
+        self.setColumnCount(len(columns))
+        self.setHorizontalHeaderLabels(columns)
+        self.verticalHeader().hide()
         self.setSortingEnabled(True)
         self._items = []
 
@@ -44,15 +51,20 @@ class ResultsTable(CopyableTable):
         # The fact that we are adding items assuming its the last row is a problem is sorting is on.
         self.setSortingEnabled(False)
         self.setRowCount(row + 1)
-        self.setItem(row, 0, item.roiNameLabel)
-        self.setItem(row, 1, item.roiNumLabel)
-        self.setItem(row, 2, item.rmsLabel)
-        self.setItem(row, 3, item.reflectanceLabel)
-        self.setItem(row, 4, item.polynomialRmsLabel)
-        self.setItem(row, 5, item.autoCorrelationSlopeLabel)
-        self.setItem(row, 6, item.rSquaredLabel)
-        self.setItem(row, 7, item.ldLabel)
-        self.setCellWidget(row, 8, item.opdButton)
+
+        self.setItem(row, 0, item.cellPathLabel)
+        self.setItem(row, 1, item.cellNumLabel)
+        self.setItem(row, 2, item.analysisNameLabel)
+        self.setItem(row, 3, item.roiNameLabel)
+        self.setItem(row, 4, item.roiNumLabel)
+        self.setItem(row, 5, item.rmsLabel)
+        self.setItem(row, 6, item.reflectanceLabel)
+        self.setItem(row, 7, item.polynomialRmsLabel)
+        self.setItem(row, 8, item.autoCorrelationSlopeLabel)
+        self.setItem(row, 9, item.rSquaredLabel)
+        self.setItem(row, 10, item.ldLabel)
+        self.setCellWidget(row, 11, item.opdButton)
+
         self.setSortingEnabled(True)
         self._items.append(item)
 
