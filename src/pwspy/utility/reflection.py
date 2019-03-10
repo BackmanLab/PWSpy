@@ -206,8 +206,7 @@ def saveRExtra(cubes: list, excludedCombos: list = None):
         nans = np.isnan(rExtra[matCombo]).sum()
         if nans > 0:
             print(nans, " invalid values detected in " + str(matCombo) + ". Interpolating.")
-            rExtra[matCombo] = _interpolateNans(rExtra[
-                                                    matCombo])  # any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
+            rExtra[matCombo] = _interpolateNans(rExtra[matCombo])  # any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
 
     _ = [rExtra[matCombo] for matCombo in matCombos]
     rExtra['mean'] = reduce(lambda x, y: x + y, _) / len(_)

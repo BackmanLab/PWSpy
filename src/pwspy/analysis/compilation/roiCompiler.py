@@ -2,6 +2,7 @@ import numpy as np
 
 from pwspy.analysis.analysisResults import AbstractAnalysisResults
 from pwspy.analysis.compilation.compilerSettings import CompilerSettings
+from pwspy.imCube.otherClasses import Roi
 
 
 class RoiCompiler:
@@ -19,12 +20,12 @@ class RoiCompiler:
                                                                                   results.autoCorrelationSlope < 0))
             self.rSquared = self._avgOverRoi(roi, results.rSquared)
             self.ld = self._avgOverRoi(roi, results.ld)
-            self.opd =
-            self.xvalOpd =
-            # TODO calculate the mean roi spectra ratio
+            self.opd = results.opd[roi[:, :, None]].mean(axis=(0,1))
+            self.opdIndex = results.opdIndex
+            # TODO calculate the mean roi spectra ratio, maybe we should be saving the whole normalized cube
 
     @staticmethod
-    def _avgOverRoi(roi: Roi, arr: np.ndarray, condition: np.ndarray = None):
+    def _avgOverRoi(roi: Roi, arr: np.ndarray, condition: np.ndarray = None) -> float:
         if condition:
             return arr[np.logical_and(roi, condition)].mean()
         else:

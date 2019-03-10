@@ -3,7 +3,6 @@ from typing import Tuple
 
 import h5py
 import jsonschema
-from pandas.tests.io.json import test_json_table_schema
 
 from pwspy.imCube.ICBaseClass import ICBase
 import numpy as np
@@ -24,6 +23,8 @@ class ExtraReflectanceCube(ICBase):
 
     def __init__(self, data: np.ndarray, wavelengths:Tuple[float, ...], metadata: dict):
         jsonschema.validate(instance=metadata, schema=self._jsonSchema)
+        if data.max() > 1 or data.min() < 0:
+            raise ValueError("Reflectance values must be between 0 and 1")
         super().__init__(data, wavelengths)
         self.metadata = metadata
 
