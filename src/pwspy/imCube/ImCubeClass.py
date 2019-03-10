@@ -189,48 +189,6 @@ class ImCube(ICBase, ICMetaData):
         self._cameraCorrected = True
         return
 
-    def __add__(self, other: typing.Union['ImCube', numbers.Real, np.ndarray]) -> 'ImCube':
-        if isinstance(other, ImCube):
-            if not self._indicesMatch(other):
-                raise ValueError("Imcube wavelengths are not compatible")
-            return ImCube(self.data + other.data, self.metadata, filePath=self.filePath)
-        elif isinstance(other, (numbers.Real, np.ndarray)):
-            return ImCube(self.data + other, self.metadata, filePath=self.filePath)
-        else:
-            raise NotImplementedError(f"Addition is not supported between ImCube and {type(other)}")
-
-    def __sub__(self, other: typing.Union['ImCube', numbers.Real, np.ndarray]) -> 'ImCube':
-        if isinstance(other, ImCube):
-            if not self._indicesMatch(other):
-                raise ValueError("Imcube wavelengths are not compatible")
-            return ImCube(self.data - other.data, self.metadata, filePath=self.filePath)
-        elif isinstance(other, (numbers.Real, np.ndarray)):
-            return ImCube(self.data - other, self.metadata, filePath=self.filePath)
-        else:
-            raise NotImplementedError(f"Subtraction is not supported between ImCube and {type(other)}")
-
-    def __mul__(self, other: typing.Union['ImCube', numbers.Real, np.ndarray]) -> 'ImCube':
-        if isinstance(other, ImCube):
-            if not self._indicesMatch(other):
-                raise ValueError("Imcube wavelengths are not compatible")
-            return ImCube(self.data * other.data, self.metadata, filePath=self.filePath)
-        elif isinstance(other, (numbers.Real, np.ndarray)):
-            return ImCube(self.data * other, self.metadata, filePath=self.filePath)
-        else:
-            raise NotImplementedError(f"Multiplication is not supported between ImCube and {type(other)}")
-
-    __rmul__ = __mul__  # multiplication is commutative. let it work both ways.
-
-    def __truediv__(self, other: typing.Union['ImCube', numbers.Real, np.ndarray]) -> 'ImCube':
-        if isinstance(other, ImCube):
-            if not self._indicesMatch(other):
-                raise ValueError("Imcube wavelengths are not compatible")
-            return ImCube(self.data / other.data, self.metadata, filePath=self.filePath)
-        elif isinstance(other, (numbers.Real, np.ndarray)):
-            return ImCube(self.data / other, self.metadata, filePath=self.filePath)
-        else:
-            raise NotImplementedError(f"Division is not supported between ImCube and {type(other)}")
-
     def normalizeByReference(self, reference: 'ImCube'):
         self.data = self.data / reference.data
 
@@ -255,6 +213,23 @@ class ImCube(ICBase, ICMetaData):
 
     def isExtraReflectionSubtracted(self) -> bool:
         return self._hasExtraReflectionSubtracted
+
+    def __add__(self, other):
+        ret = self._add(other)
+        return ImCube(ret, self.metadata, filePath=self.filePath, fileFormat=self.fileFormat)
+
+    def __sub__(self, other):
+        ret = self._sub(other)
+        return ImCube(ret, self.metadata, filePath=self.filePath, fileFormat=self.fileFormat)
+
+    def __mul__(self, other):
+        ret = self._mul(other)
+        return ImCube(ret, self.metadata, filePath=self.filePath, fileFormat=self.fileFormat)
+
+    def __truediv__(self, other):
+        ret = self._truediv(other)
+        return ImCube(ret, self.metadata, filePath=self.filePath, fileFormat=self.fileFormat)
+
 
 class FakeCube(ImCube):
     def __init__(self, num: int):

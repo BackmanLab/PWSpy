@@ -180,7 +180,7 @@ class AnalysisSettingsDock(QDockWidget):
         self.filterOrder.setValue(settings.filterOrder)
         self.filterCutoff.setValue(settings.filterCutoff)
         self.polynomialOrder.setValue(settings.polynomialOrder)
-        self.RSubtractionEdit.setText(settings.rInternalSubtractionPath)
+        self.RSubtractionEdit.setText(settings.extraReflectionPath)
         self.refMaterialCombo.setCurrentIndex(self.refMaterialCombo.findText(settings.referenceMaterial))
         self.wavelengthStop.setValue(settings.wavelengthStop)
         self.wavelengthStart.setValue(settings.wavelengthStart)

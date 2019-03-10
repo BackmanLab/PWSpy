@@ -96,9 +96,8 @@ class AnalysisManager:
         else:
             print("Using automatically detected camera corrections")
             ref.correctCameraEffects(ref.cameraCorrection)
-        ref.normalizeByExposure()
         # todo adjust extra reflection by reference here. also load the material reflectance array
-        analysis = Analysis(settings, verbose=True)
+        analysis = Analysis(settings, ref)
         analysisName = self.app.window.analysisSettings.getAnalysisName()
         loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[ref, analysis, analysisName],
                              parallel=True)

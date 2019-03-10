@@ -8,7 +8,7 @@ class AnalysisSettings:
     filterOrder: int
     filterCutoff: float
     polynomialOrder: int
-    rInternalSubtractionPath: str
+    extraReflectionPath: str
     referenceMaterial: str
     wavelengthStart: int
     wavelengthStop: int

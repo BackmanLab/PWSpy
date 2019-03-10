@@ -12,6 +12,7 @@ from pwspy import ImCube, KCube
 from pwspy.utility import reflectanceHelper
 from . import AnalysisSettings, AnalysisResults
 
+
 class AbstractAnalysis(ABC):
     def __init__(self, settings: AnalysisSettings):
         self.settings = settings
@@ -19,6 +20,7 @@ class AbstractAnalysis(ABC):
     @abstractmethod
     def run(self, cube) -> AnalysisResults:
         pass
+
 
 # TODO save mean spectra of ROIS
 class LegacyAnalysis(AbstractAnalysis):
@@ -114,11 +116,12 @@ class LegacyAnalysis(AbstractAnalysis):
 
 
 class Analysis(LegacyAnalysis):
-    def __init__(self, settings: AnalysisSettings, ref: ImCube, extraReflectance: np.ndarray, referenceMaterial: str):
+    def __init__(self, settings: AnalysisSettings, ref: ImCube):
         super().__init__(settings, ref)
         #TODO decide if we want to do this: ref.filterDust(4)
 
-        theoryR = reflectanceHelper.getReflectance(referenceMaterial, 'glass', index=ref.wavelengths)[np.newaxis, np.newaxis, :]
+        theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, 'glass', index=ref.wavelengths)[np.newaxis, np.newaxis, :]
+        extraReflectance = ExtraReflectanceCube.load(settings.extraReflectionPath) #Todo make this class
         I0 = ref.data / (theoryR + extraReflectance) # I0 is the intensity of the illumination source, reconstructed in units of `counts`. this is an inversion of our assumption that reference = I0*(referenceReflectance + extraReflectance)
         Iextra = extraReflectance * I0 # converting extraReflectance to the extra reflection in units of counts
         ref = ref - Iextra # remove the extra reflection from our data

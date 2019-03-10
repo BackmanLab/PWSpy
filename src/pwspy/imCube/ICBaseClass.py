@@ -9,7 +9,8 @@ import scipy.signal as sps
 import matplotlib.pyplot as plt
 from matplotlib import widgets
 from matplotlib import path
-
+import typing, numbers
+from __future__ import annotations
 
 class ICBase:
     """A class to handle the data operations common to PWS related `image cubes`. Does not contain any file specific
@@ -132,5 +133,50 @@ class ICBase:
             iStop = None
         self.data = self.data[:, :, iStart:iStop]
         self._index = self.index[iStart:iStop]
+        
+    def _add(self, other: typing.Union['self.__class__', numbers.Real, np.ndarray]) -> 'self.__class__':
+        if isinstance(other, self.__class__):
+            if not self._indicesMatch(other):
+                raise ValueError(f"{self.__class__} indices are not compatible")
+            ret = self.data + other.data
+        elif isinstance(other, (numbers.Real, np.ndarray)):
+            ret = self.data + other
+        else:
+            raise NotImplementedError(f"Addition is not supported between {self.__class__} and {type(other)}")
+        return ret
 
+    def _sub(self, other: typing.Union[self.__class__, numbers.Real, np.ndarray]) -> self.__class__:
+        if isinstance(other, self.__class__):
+            if not self._indicesMatch(other):
+                raise ValueError(f"{self.__class__} indices are not compatible")
+            ret = self.data - other.data
+        elif isinstance(other, (numbers.Real, np.ndarray)):
+            ret = self.data - other
+        else:
+            raise NotImplementedError(f"Subtraction is not supported between {self.__class__} and {type(other)}")
+        return ret
 
+    def _mul(self, other: typing.Union[self.__class__, numbers.Real, np.ndarray]) -> self.__class__:
+        if isinstance(other, self.__class__):
+            if not self._indicesMatch(other):
+                raise ValueError(f"{self.__class__} indices are not compatible")
+            ret = self.data * other.data
+        elif isinstance(other, (numbers.Real, np.ndarray)):
+            ret = self.data * other
+        else:
+            raise NotImplementedError(f"Multiplication is not supported between {self.__class__} and {type(other)}")
+        return ret
+
+    __mul__ = None
+    __rmul__ = __mul__  # multiplication is commutative. let it work both ways.
+
+    def _truediv(self, other: typing.Union[self.__class__, numbers.Real, np.ndarray]) -> self.__class__:
+        if isinstance(other, self.__class__):
+            if not self._indicesMatch(other):
+                raise ValueError(f"{self.__class__} indices are not compatible")
+            ret = self.data / other.data
+        elif isinstance(other, (numbers.Real, np.ndarray)):
+            ret = self.data / other
+        else:
+            raise NotImplementedError(f"Division is not supported between {self.__class__} and {type(other)}")
+        return ret

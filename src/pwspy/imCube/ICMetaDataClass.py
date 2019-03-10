@@ -40,6 +40,7 @@ class ICMetaData:
 
     @property
     def idTag(self):
+        #TODO math operations on the cube should mangle this somehow so that a modified cube wouldn't be saved with a duplicate id.
         return f"{self.metadata['system']}_{self.metadata['time']}"
 
     @classmethod
