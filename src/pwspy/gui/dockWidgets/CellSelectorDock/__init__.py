@@ -30,6 +30,8 @@ class CellSelectorDock(QDockWidget):
         _.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         _.addWidget(self.tableWidget)
         _.addWidget(self.refTableWidget)
+        _.setCollapsible(0, False)
+        _.setCollapsible(1, False)
         _.setSizes([300, 100])
         layout.addWidget(_)
         layout.addWidget(self._filterWidget)
