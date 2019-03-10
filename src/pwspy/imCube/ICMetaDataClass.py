@@ -9,7 +9,7 @@ import os
 import subprocess
 import sys
 import typing
-from enum import Enum
+from enum import Enum, auto
 from typing import Optional, List, Tuple
 
 import jsonschema
@@ -21,7 +21,10 @@ from pwspy.analysis.analysisResults import LazyAnalysisResultsLoader
 from pwspy.imCube.otherClasses import Roi
 from .otherClasses import CameraCorrection
 
-ICFileFormats = Enum("ICFileFormats", "RawBinary Tiff")
+
+class ICFileFormats(Enum):
+    RawBinary = auto()
+    Tiff = auto()
 
 
 class ICMetaData:

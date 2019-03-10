@@ -9,7 +9,7 @@ import re
 
 import typing
 from dataclasses import dataclass
-from enum import Enum
+from enum import Enum, auto()
 from glob import glob
 from typing import List, Tuple
 
@@ -17,7 +17,9 @@ import h5py
 import numpy as np
 from scipy import io as spio
 
-RoiFileFormats = Enum("RoiFileFormats", "HDF MAT")
+class RoiFileFormats(Enum):
+    HDF = auto()
+    MAT = auto()
 
 @dataclass(frozen=True)
 class CameraCorrection:
