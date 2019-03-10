@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 from matplotlib import widgets
 from matplotlib import path
 import typing, numbers
-from __future__ import annotations
 
 class ICBase:
     """A class to handle the data operations common to PWS related `image cubes`. Does not contain any file specific

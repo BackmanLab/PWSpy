@@ -103,12 +103,12 @@ class AnalysisManager:
                              parallel=True)
 
     @staticmethod
-    def _process(im: ImCube, ref: ImCube, analysis: Analysis, analysisName: str, cameraCorrection: CameraCorrection):
+    def _process(im: ImCube, analysis: Analysis, analysisName: str, cameraCorrection: CameraCorrection):
         if cameraCorrection is not None:
             im.correctCameraEffects(cameraCorrection)
         else:
             im.correctCameraEffects(im.cameraCorrection)
-        results = analysis.run(im, ref)
+        results = analysis.run(im)
         im.saveAnalysis(results, analysisName)
 
     @staticmethod

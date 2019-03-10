@@ -50,7 +50,7 @@ if subtractResinOpd:
         resin.correctCameraEffects(correction)
         resin.normalizeByExposure()
         resin /= ref
-        resin = KCube(resin)
+        resin = KCube.fromImCube(resin)
         if resetResinMasks:
             [resin.deleteMask(i, maskSuffix) for i in resin.getMasks()[maskSuffix]]
         if maskSuffix in resin.getMasks():
@@ -76,7 +76,7 @@ for cellName in cellNames:
     cube.normalizeByExposure()
     cube /= ref
     cube.data = sps.filtfilt(b, a, cube.data, axis=2)
-    cube = KCube(cube)
+    cube = KCube.fromImCube(cube)
 
     ## -- Polynomial Fit
     print("Subtracting Polynomial")

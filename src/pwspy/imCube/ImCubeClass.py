@@ -38,21 +38,21 @@ class ImCube(ICBase, ICMetaData):
         return self.index
 
     @classmethod
-    def loadAny(cls, directory):
+    def loadAny(cls, directory, metadata: ICMetaData = None):
         try:
-            return ImCube.fromTiff(directory)
+            return ImCube.fromTiff(directory, metadata=metadata)
         except:
             try:
                 files = glob(os.path.join(directory, '*.comp.tif'))
-                return ImCube.decompress(files[0])
+                return ImCube.decompress(files[0]) #TODO remove this?
             except:
                 try:
-                    return ImCube.fromOldPWS(directory)
+                    return ImCube.fromOldPWS(directory, metadata=metadata)
                 except OSError:
                     raise OSError(f"Could not find a valid PWS image cube file at {directory}.")
 
     @classmethod
-    def fromOldPWS(cls, directory, metadata: ICMetaData=None):
+    def fromOldPWS(cls, directory, metadata: ICMetaData = None):
         if metadata is None:
             metadata = ICMetaData.fromOldPWS(directory)
         with open(os.path.join(directory, 'image_cube'), 'rb') as f:
@@ -62,7 +62,7 @@ class ImCube(ICBase, ICMetaData):
         return cls(data, metadata.metadata, filePath=metadata.filePath, fileFormat=ICFileFormats.RawBinary)
 
     @classmethod
-    def fromTiff(cls, directory, metadata: ICMetaData=None):
+    def fromTiff(cls, directory, metadata: ICMetaData = None):
         if metadata is None:
             metadata = ICMetaData.fromTiff(directory)
         if os.path.exists(os.path.join(directory, 'MMStack.ome.tif')):

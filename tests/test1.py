@@ -39,7 +39,7 @@ class myTest(unittest.TestCase):
     def test_kcube(self):
         try:
             im = ImCube.loadAny(testCellPath)
-            k = KCube(im)
+            k = KCube.fromImCube(im)
             slope, r2 = k.getAutoCorrelation(True, 100)
         except Exception as e:
             self.fail(f"test_kcube raised {e}")

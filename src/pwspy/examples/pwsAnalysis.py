@@ -41,7 +41,7 @@ def analyzeCube(cubeCell: ImCube, darkCount: int, mirror: ImCube, orderFilter: i
 
     ## -- Convert to K-Space
     print("Converting to K-Space")
-    cube = KCube(cube)
+    cube = KCube.fromImCube(cube)
 
     ## -- Polynomial Fit
     print("Subtracting Polynomial")
@@ -94,7 +94,7 @@ def analyzeCube(cubeCell: ImCube, darkCount: int, mirror: ImCube, orderFilter: i
         rSquared=rSquared,
         ld=ld,
         opd=opd,
-        xvalOpd=xvalOpd)
+        opdIndex=xvalOpd)
     return results
 
 

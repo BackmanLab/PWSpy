@@ -213,7 +213,7 @@ class AnalysisSettingsDock(QDockWidget):
                 AnalysisSettings(filterOrder=self.filterOrder.value(),
                                 filterCutoff=self.filterCutoff.value(),
                                 polynomialOrder=self.polynomialOrder.value(),
-                                rInternalSubtractionPath=self.RSubtractionEdit.text(),
+                                extraReflectionPath=self.RSubtractionEdit.text(),
                                 referenceMaterial=self.refMaterialCombo.currentText(),
                                 wavelengthStart=self.wavelengthStart.value(),
                                 wavelengthStop=self.wavelengthStop.value(),

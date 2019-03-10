@@ -34,13 +34,13 @@ class LegacyAnalysis(AbstractAnalysis):
 
     def run(self, cube: ImCube) -> AnalysisResults:
         assert cube.isCorrected()
-        cube = self._normalizeImCube(cube, self.ref)
+        cube = self._normalizeImCube(cube)
         cube.data = self._filterSignal(cube.data)
         # The rest of the analysis will be performed only on the selected wavelength range.
         cube.selIndex(self.settings.wavelengthStart, self.settings.wavelengthStop)
         # Determine the mean-reflectance for each pixel in the cell.
         reflectance = cube.data.mean(axis=2)
-        cube = KCube(cube)  # -- Convert to K-Space
+        cube = KCube.fromImCube(cube)  # -- Convert to K-Space
         cubePoly = self._fitPolynomial(cube)
         # Remove the polynomial fit from filtered cubeCell.
         cube.data = cube.data - cubePoly

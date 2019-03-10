@@ -10,14 +10,14 @@ class RoiCompiler:
     def run(self, results: AbstractAnalysisResults, roi: np.ndarray):
             assert len(roi.shape) == 2
             self.roi = roi
-            self.reflectance = self._avgOverRoi(results.reflectance)
-            self.rms = self._avgOverRoi(results.rms)
-            self.polynomialRms = self._avgOverRoi(results.polynomialRms)
-            self.autoCorrelationSlope = self._avgOverRoi(results.autoCorrelationSlope,
+            self.reflectance = self._avgOverRoi(roi, results.reflectance)
+            self.rms = self._avgOverRoi(roi, results.rms)
+            self.polynomialRms = self._avgOverRoi(roi, results.polynomialRms)
+            self.autoCorrelationSlope = self._avgOverRoi(roi, results.autoCorrelationSlope,
                                                          condition=np.logical_and(results.rSquared > 0.9,
                                                                                   results.autoCorrelationSlope < 0))
-            self.rSquared = self._avgOverRoi(results.rSquared)
-            self.ld = self._avgOverRoi(results.ld)
+            self.rSquared = self._avgOverRoi(roi, results.rSquared)
+            self.ld = self._avgOverRoi(roi, results.ld)
             self.opd =
             self.xvalOpd =
             # TODO calculate the mean roi spectra ratio
