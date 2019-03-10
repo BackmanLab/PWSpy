@@ -2,7 +2,7 @@ import os
 import typing
 
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QPushButton, QTableWidgetItem, QTableWidget, QAbstractItemView, QMenu, QWidget
+from PyQt5.QtWidgets import QPushButton, QTableWidgetItem, QTableWidget, QAbstractItemView, QMenu, QWidget, QToolTip
 
 from pwspy.gui.sharedWidgets.tables import NumberTableWidgetItem
 from pwspy.imCube.ICMetaDataClass import ICMetaData
@@ -17,6 +17,7 @@ class CellTableWidgetItem:
         self.path = label
         self._notesButton = QPushButton("Open")
         self._notesButton.setFixedSize(40, 30)
+        self._notesButton.setToolTip(cube.getNotes())
         self._pathLabel = QTableWidgetItem(self.path)
         self._numLabel = NumberTableWidgetItem(num)
         self._roiLabel = NumberTableWidgetItem(len(cube.getMasks()))

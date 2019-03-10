@@ -65,6 +65,8 @@ class AnalysisSettingsDock(QDockWidget):
         '''Hardwarecorrections'''
         layout = QGridLayout()
         self.darkCountBox = QSpinBox()
+        self.darkCountBox.setToolTip("The counts/pixel reported by the camera when it is not exposed to any light."
+                                     " e.g if using 2x2 binning and you measure 400 counts, then the value to put here is 100.")
         self.darkCountBox.setRange(0, 10000)
         self.linearityEdit = QLineEdit()
         self.linearityEdit.setValidator(LinearityValidator())

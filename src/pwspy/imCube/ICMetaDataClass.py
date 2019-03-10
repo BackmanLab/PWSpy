@@ -137,4 +137,12 @@ class ICMetaData:
         elif os.name == 'posix':  # For Linux, Mac, etc.
             subprocess.call(('xdg-open', filepath))
 
+    def hasNotes(self) -> bool:
+        return os.path.exists(os.path.join(self.filePath, 'notes.txt'))
 
+    def getNotes(self) -> str:
+        if self.hasNotes():
+            with open(os.path.join(self.filePath, 'notes.txt'), 'r') as f:
+                return f.readlines().join('\n')
+        else:
+            return ''

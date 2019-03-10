@@ -13,6 +13,7 @@ from typing import Union
 
 import psutil
 from pwspy import ImCube
+from pwspy.imCube.ICMetaDataClass import ICMetaData
 
 '''Local Functions'''
 
@@ -56,7 +57,12 @@ def _loadIms(qout, qin, lock):
 def loadThenProcess(procFunc, procFuncArgs, lock, fileAndSpecifiers):
     specs, file = fileAndSpecifiers
     with lock:
-        im = ImCube.loadAny(file)
+        if isinstance(file, str):
+            im = ImCube.loadAny(file)
+        elif isinstance(file, ICMetaData):
+            im = ImCube.fromMetadata(file)
+        else:
+            raise TypeError("files specified to the loader must be either str or ICMetaData")
     for k, v in specs.items():
         setattr(im, k, v)
     print("Run", file)
@@ -85,7 +91,6 @@ def loadAndProcess(fileDict: Union[dict, list], processorFunc=None, specifierNam
     sTime = time()
     files = _recursiveSearch(fileDict, specifierNames)
     print(f'found {len(files)} files')
-    #    numIms = len(files)
     if parallel:
         if processorFunc is None:
             raise Exception("Running in parallel with no processorFunc is a bad idea.")

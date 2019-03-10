@@ -92,7 +92,7 @@ class AnalysisManager:
         settings = self.app.window.analysisSettings.getSettings()
         analysis = Analysis(settings, verbose=True)
         analysisName = self.app.window.analysisSettings.getAnalysisName()
-        loadAndProcess([i.filePath for i in cellMetas], processorFunc=self._process, procArgs=[ref, analysis, analysisName],
+        loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[ref, analysis, analysisName],
                              parallel=True)
 
     @staticmethod
