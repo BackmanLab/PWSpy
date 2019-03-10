@@ -19,7 +19,7 @@ class AbstractAnalysisResults(ABC):
 
     @property
     @abstractmethod
-    def reflectance(self) -> #TODO ImCube or KCube:
+    def reflectance(self) -> KCube:
         pass
 
     @property
@@ -80,7 +80,7 @@ class AbstractAnalysisResults(ABC):
 @dataclasses.dataclass(frozen=True)
 class AnalysisResults(AbstractAnalysisResults):
     settings: AnalysisSettings
-    reflectance: #TODO IMCube or KCUbe
+    reflectance: KCube
     meanReflectance: np.ndarray
     rms: np.ndarray
     polynomialRms: np.ndarray
@@ -175,7 +175,7 @@ class LazyAnalysisResultsLoader(AbstractAnalysisResults):
     @cached_property
     def meanReflectance(self):
         return np.ndarray(self.file['reflectance'])
-    
+
     @cached_property
     def rms(self) -> np.ndarray:
         return np.array(self.file['rms'])

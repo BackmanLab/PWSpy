@@ -63,7 +63,7 @@ class LegacyAnalysis(AbstractAnalysis):
 
         results = AnalysisResults(
             meanReflectance=reflectance,
-            reflectance=
+            reflectance=cube,
             rms=rms,
             polynomialRms=rmsPoly,
             autoCorrelationSlope=slope,

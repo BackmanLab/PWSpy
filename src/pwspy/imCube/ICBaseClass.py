@@ -4,12 +4,17 @@ Created on Sat Feb  9 16:47:22 2019
 
 @author: Nick
 """
+from typing import Tuple, Union
+
 import numpy as np
 import scipy.signal as sps
 import matplotlib.pyplot as plt
 from matplotlib import widgets
 from matplotlib import path
 import typing, numbers
+
+from pwspy.imCube.otherClasses import Roi
+
 
 class ICBase:
     """A class to handle the data operations common to PWS related `image cubes`. Does not contain any file specific
@@ -36,7 +41,9 @@ class ICBase:
         plt.colorbar(im, ax=ax)
         return fig, ax
 
-    def getMeanSpectra(self, mask=None):
+    def getMeanSpectra(self, mask: Union[Roi, np.ndarray] = None) ->Tuple[np.ndarray, np.ndarray]:
+        if isinstance(mask, Roi):
+            mask = mask.data
         if mask is None:
             mask = np.ones(self.data.shape[:-1], dtype=np.bool)
         mean = self.data[mask].mean(axis=0)
