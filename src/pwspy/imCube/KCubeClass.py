@@ -4,6 +4,8 @@ Created on Sat Feb  9 15:54:29 2019
 
 @author: Nick
 """
+from typing import Tuple
+
 from .ICBaseClass import ICBase
 from .ImCubeClass import ImCube
 from .ICMetaDataClass import ICMetaData
@@ -12,11 +14,16 @@ import scipy.interpolate as spi
 import copy
 
 
-class KCube(ICBase, ICMetaData):
+class KCube(ICBase):
     """A class representing an ImCube after being transformed from being described in terms of wavelength in to
     wavenumber (k-space)."""
 
-    def __init__(self, cube: ImCube):
+    def __init__(self, data: np.ndarray, wavenumbers: Tuple[float], imCube: ImCube=None):
+        self.imCube = imCube #Just saving a reference to the original imcube in case we want to reference it.
+        ICBase.__init__(self, data, wavenumbers, dtype=np.float32)
+
+    @classmethod
+    def fromImCube(cls, cube: ImCube):
         # Convert to wavenumber and reverse the order so we are ascending in order.
         wavenumbers = (2 * np.pi) / (np.array(cube.wavelengths, dtype=np.float64) * 1e-3)[::-1]
         data = cube.data[:, :, ::-1]
@@ -26,8 +33,7 @@ class KCube(ICBase, ICMetaData):
         # Interpolate to the evenly spaced wavenumbers
         interpFunc = spi.interp1d(wavenumbers, data, kind='linear', axis=2)
         data = interpFunc(evenWavenumbers)
-        ICBase.__init__(self, data, tuple(evenWavenumbers.astype(np.float32)), dtype=np.float32)
-        ICMetaData.__init__(self, cube.metadata, cube.filePath)
+        return cls(data, tuple(evenWavenumbers.astype(np.float32)), imCube=cube)
 
     @property
     def wavenumbers(self):
@@ -161,3 +167,19 @@ class KCube(ICBase, ICMetaData):
         md = copy.deepcopy(self.metadata)
         md['wavelengths'] = evenWavelengths.astype(np.float32)
         return ImCube(data, md, dtype=np.float32)
+
+    def __add__(self, other):
+        ret = self._add(other)
+        return KCube(ret, self.wavenumbers, imCube=self.imCube)
+
+    def __sub__(self, other):
+        ret = self._sub(other)
+        return KCube(ret, self.wavenumbers, imCube=self.imCube)
+
+    def __mul__(self, other):
+        ret = self._mul(other)
+        return KCube(ret, self.wavenumbers, imCube=self.imCube)
+
+    def __truediv__(self, other):
+        ret = self._truediv(other)
+        return KCube(ret, self.wavenumbers, imCube=self.imCube)
