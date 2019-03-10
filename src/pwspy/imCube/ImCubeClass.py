@@ -233,8 +233,7 @@ class ImCube(ICBase, ICMetaData):
 
     def normalizeByReference(self, reference: 'ImCube'):
         self.data = self.data / reference.data
-        self.metadata['normalizationReference'] = reference.filePath
-
+        
     def subtractExtraReflection(self, extraReflection: np.ndarray):
         self.data -= extraReflection
 
