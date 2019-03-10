@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QScrollArea, QVBo
 from pwspy.gui.dockWidgets.CellSelectorDock import CellTableWidget
 from pwspy.gui.dockWidgets.PlottingDock.widgets import AspectRatioWidget, LittlePlot
 
+# TODO add blinded roi drawing
 
 class PlottingDock(QDockWidget):
     def __init__(self, cellSelectorTable: CellTableWidget):
