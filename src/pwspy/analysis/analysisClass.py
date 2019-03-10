@@ -70,7 +70,7 @@ class LegacyAnalysis(AbstractAnalysis):
             ld=ld,
             settings=self.settings,
             imCubeIdTag=cube.idTag,
-            referenceIdTag=ref.idTag)
+            referenceIdTag=self.ref.idTag)
 
         return results
 
@@ -111,6 +111,7 @@ class LegacyAnalysis(AbstractAnalysis):
         A2 = 4
         ld = ((A2 / A1) * fact) * (rms / (-1 * slope.reshape(rms.shape)))
         return ld
+
 
 class Analysis(LegacyAnalysis):
     def __init__(self, settings: AnalysisSettings, ref: ImCube, extraReflectance: np.ndarray, referenceMaterial: str):
