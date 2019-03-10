@@ -21,7 +21,6 @@ from pwspy.imCube.otherClasses import Roi
 from .otherClasses import CameraCorrection
 
 ICFileFormats = Enum("ICFileFormats", "RawBinary Tiff")
-RoiFileFormats = Enum("RoiFileFormats", "HDF MAT")
 
 
 class ICMetaData:

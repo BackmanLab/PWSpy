@@ -10,7 +10,7 @@ import scipy.signal as sps
 from pwspy import ImCube, KCube
 from . import AnalysisSettings, AnalysisResults
 
-
+# TODO save mean spectra of ROIS
 class Analysis:
     indexOpdStop = 100
 

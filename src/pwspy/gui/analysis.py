@@ -25,15 +25,21 @@ class PWSApp(QApplication):
         self.window = PWSWindow()
         self.anMan = AnalysisManager(self)
         self.window.runAction.triggered.connect(self.anMan.run)
+        self._setupDataDirectories()
+
+    def _setupDataDirectories(self):
         if not os.path.exists(applicationVars.dataDirectory):
             os.mkdir(applicationVars.dataDirectory)
         if not os.path.exists(applicationVars.analysisSettingsDirectory):
             os.mkdir(applicationVars.analysisSettingsDirectory)
+        if not os.path.exists(applicationVars.extraReflectionDirectory):
+            os.mkdir(applicationVars.extraReflectionDirectory)
 
 
 
 class PWSWindow(QMainWindow):
     def __init__(self):
+        QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
         super().__init__()
         self.setWindowTitle('PWS Analysis 2')
         self.cellSelector = CellSelectorDock()

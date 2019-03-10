@@ -9,6 +9,7 @@ import re
 
 import typing
 from dataclasses import dataclass
+from enum import Enum
 from glob import glob
 from typing import List, Tuple
 
@@ -16,8 +17,7 @@ import h5py
 import numpy as np
 from scipy import io as spio
 
-from pwspy.imCube.ICMetaDataClass import RoiFileFormats
-
+RoiFileFormats = Enum("RoiFileFormats", "HDF MAT")
 
 @dataclass(frozen=True)
 class CameraCorrection:
@@ -79,3 +79,5 @@ class Roi:
             if any([re.match(pattern, fname) is not None for pattern in ["BW.+_.+\\.mat", "roi.+_.+\\.h5"]]):
                 ret.append(('_'.join(fname.split('_')[1:]).split('.')[0], int(fname.split('_')[0][2:])))
         return ret
+
+

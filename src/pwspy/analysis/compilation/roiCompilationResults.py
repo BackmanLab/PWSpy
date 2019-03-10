@@ -2,9 +2,12 @@ from dataclasses import dataclass
 
 import numpy as np
 
-@dataclass
+from pwspy.imCube.otherClasses import Roi
+
+
+@dataclass(frozen=True)
 class ROIAnalysisResults:
-        roi = roi
+        roi: Roi
         reflectance: float
         rms: float
         polynomialRms: float
@@ -12,5 +15,5 @@ class ROIAnalysisResults:
         rSquared: float
         ld: float
         opd: np.ndarray
-        xvalOpd
+        opdIndex: np.ndarray #The x axis of a plot of opd
 
