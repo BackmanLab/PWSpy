@@ -14,10 +14,9 @@ import typing
 import numbers
 from scipy.io import savemat
 
-from pwspy.imCube.ICMetaDataClass import ICFileFormats
 from .otherClasses import CameraCorrection
 from .ICBaseClass import ICBase
-from .ICMetaDataClass import ICMetaData
+from .ICMetaDataClass import ICMetaData, ICFileFormats
 
 
 class ImCube(ICBase, ICMetaData):

@@ -1,11 +1,13 @@
+from __future__ import annotations
 import dataclasses
 
 import h5py
 import numpy as np
 import os.path as osp
 from datetime import datetime
-
-from pwspy import KCube
+import typing
+if typing.TYPE_CHECKING:
+    from pwspy import KCube
 from .analysisSettings import AnalysisSettings
 from abc import ABC, abstractmethod
 

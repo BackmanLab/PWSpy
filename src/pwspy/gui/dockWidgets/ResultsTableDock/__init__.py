@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QTableWidgetItem, QFrame, QVBoxLayout, QCheckBox
 
-from pwspy.gui.dockWidgets.ResultsTableDock.widgets import ResultsTable
+from .widgets import ResultsTable
 
 
 class ResultsTableDock(QDockWidget):

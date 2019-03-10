@@ -4,6 +4,7 @@ Created on Sat Feb  9 16:47:22 2019
 
 @author: Nick
 """
+from __future__ import annotations
 from typing import Tuple, Union
 
 import numpy as np
