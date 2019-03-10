@@ -4,24 +4,29 @@ Created on Tue Feb 12 23:10:35 2019
 
 @author: Nick
 """
+from abc import ABC, abstractmethod
 
 import numpy as np
 import scipy.signal as sps
 from pwspy import ImCube, KCube
 from . import AnalysisSettings, AnalysisResults
 
+class AbstractAnalysis(ABC):
+    def __init__(self, settings: AnalysisSettings):
+        self.settings = settings
+
+    @abstractmethod
+    def run(self, cube, ref) -> AnalysisResults:
+        pass
 
 # TODO save mean spectra of ROIS
-class Analysis:
+class LegacyAnalysis(AbstractAnalysis):
     indexOpdStop = 100
-
-    def __init__(self, settings: AnalysisSettings, verbose: bool):
-        self.settings = settings
-        self.verbose = verbose
 
     def run(self, cube: ImCube, ref: ImCube) -> AnalysisResults:
         assert cube.isCorrected()
         assert ref.isCorrected()
+        assert ref.isExposureNormalized()
         cube = self._normalizeImCube(cube, ref)
         cube.data = self._filterSignal(cube.data)
         # The rest of the analysis will be performed only on the selected wavelength range.
@@ -65,7 +70,7 @@ class Analysis:
         return results
 
     @staticmethod
-    def _normalizeImCube(cube: ImCube, ref: ImCube):
+    def _normalizeImCube(cube: ImCube, ref: ImCube) -> ImCube:
         cube.normalizeByExposure()
         ref.normalizeByExposure()
         cube.normalizeByReference(ref)
@@ -103,3 +108,10 @@ class Analysis:
         A2 = 4
         ld = ((A2 / A1) * fact) * (rms / (-1 * slope.reshape(rms.shape)))
         return ld
+
+class Analysis(LegacyAnalysis):
+    def _normalizeImCube(self, cube: ImCube, ref: ImCube) -> ImCube:
+        cube.normalizeByExposure()
+        ref.normalizeByExposure()
+
+

@@ -10,7 +10,7 @@ import typing
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QMainWindow, QApplication
 
-from pwspy import ImCube
+from pwspy import ImCube, CameraCorrection
 from pwspy.analysis.analysisClass import Analysis
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 from pwspy.utility import loadAndProcess
@@ -81,6 +81,7 @@ class PWSWindow(QMainWindow):
 
 
 class AnalysisManager:
+    #TODO add extra reflection subtraction
     def __init__(self, app: PWSApp):
         self.app = app
 
@@ -89,15 +90,25 @@ class AnalysisManager:
         cellMetas = self.app.window.cellSelector.getSelectedCellMetas()
         self._checkMetaConsistency(cellMetas)
         ref = ImCube.fromMetadata(refMeta)
-        settings = self.app.window.analysisSettings.getSettings()
+        cameraCorrection, settings = self.app.window.analysisSettings.getSettings()
+        if cameraCorrection is not None:
+            ref.correctCameraEffects(cameraCorrection)
+        else:
+            print("Using automatically detected camera corrections")
+            ref.correctCameraEffects(ref.cameraCorrection)
+        ref.normalizeByExposure()
+        # todo adjust extra reflection by reference here. also load the material reflectance array
         analysis = Analysis(settings, verbose=True)
         analysisName = self.app.window.analysisSettings.getAnalysisName()
         loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[ref, analysis, analysisName],
                              parallel=True)
 
     @staticmethod
-    def _process(im: ImCube, ref: ImCube, analysis: Analysis, analysisName: str):
-        im.correctCameraEffects()
+    def _process(im: ImCube, ref: ImCube, analysis: Analysis, analysisName: str, cameraCorrection: CameraCorrection):
+        if cameraCorrection is not None:
+            im.correctCameraEffects(cameraCorrection)
+        else:
+            im.correctCameraEffects(im.cameraCorrection)
         results = analysis.run(im, ref)
         im.saveAnalysis(results, analysisName)
 

@@ -24,12 +24,14 @@ class ImCube(ICBase, ICMetaData):
     """ A class representing a single acquisition of PWS. Contains methods for loading and saving to multiple formats as well as common operations used in analysis."""
     _cameraCorrected: bool
     _hasBeenNormalized: bool
+    _hasExtraReflectionSubtracted: bool
 
     def __init__(self, data, metadata: dict, dtype=np.float32, filePath: str=None, fileFormat: ICFileFormats=None):
         ICMetaData.__init__(self, metadata, filePath, fileFormat=fileFormat)
         ICBase.__init__(self, data, tuple(np.array(self.metadata['wavelengths']).astype(np.float32)), dtype=dtype)
         self._hasBeenNormalized = False  # Keeps track of whether or not we have normalized by exposure so that we don't do it twice.
         self._cameraCorrected = False
+        self._hasExtraReflectionSubtracted = False
 
     @property
     def wavelengths(self):
@@ -174,9 +176,8 @@ class ImCube(ICBase, ICMetaData):
                 binning = self.metadata['MicroManagerMetadata']['Binning']
                 if isinstance(binning, dict):  # This is due to a property map change from beta to gamma
                     binning = binning['scalar']
-            except:
-                print('Micromanager binning data not found. Assuming no binning.')
-                binning = 1
+            except KeyError:
+                raise ValueError('Binning metadata not found. Binning must be specified in function argument.')
         count = correction.darkCounts * binning ** 2  # Account for the fact that binning multiplies the darkcount.
         self.data = self.data - count
 
@@ -234,12 +235,21 @@ class ImCube(ICBase, ICMetaData):
         self.data = self.data / reference.data
         self.metadata['normalizationReference'] = reference.filePath
 
+    def subtractExtraReflection(self, extraReflection: np.ndarray):
+        self.data -= extraReflection
+
     def isCorrected(self) -> bool:
         return self._cameraCorrected
+
+    def isExposureNormalized(self) -> bool:
+        return self._hasBeenNormalized
 
     def selIndex(self, start, stop):
         super().selIndex(start, stop)
         self.metadata["wavelengths"] = self.index
+
+    def isExtraReflectionSubtracted(self) -> bool:
+        return self._hasExtraReflectionSubtracted
 
 class FakeCube(ImCube):
     def __init__(self, num: int):
