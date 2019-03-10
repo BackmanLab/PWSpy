@@ -26,6 +26,7 @@ requirements:
     - h5py
     - pandas
     - matplotlib >=1.4*
+    - jsonschema
 
 about:
   home: data['url']

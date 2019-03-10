@@ -2,15 +2,28 @@ import json
 from typing import Tuple
 
 import h5py
+import jsonschema
 from pandas.tests.io.json import test_json_table_schema
 
 from pwspy.imCube.ICBaseClass import ICBase
 import numpy as np
 import os
 
+
 class ExtraReflectanceCube(ICBase):
+    _jsonSchema = {"$schema": "http://json-schema.org/schema#",
+                   '$id': 'extraReflectionMetadataSchema',
+                   'title': 'extraReflectionMetadataSchema',
+                   'required': ['system', 'description'],
+                   'type': 'object',
+                   'properties': {
+                       'system': {'type': 'string'},
+                       'description': {'type': 'string'}
+                        }
+                   }
+
     def __init__(self, data: np.ndarray, wavelengths:Tuple[float, ...], metadata: dict):
-        self._checkMetadata(metadata)
+        jsonschema.validate(instance=metadata, schema=self._jsonSchema)
         super().__init__(data, wavelengths)
         self.metadata = metadata
 
@@ -31,6 +44,3 @@ class ExtraReflectanceCube(ICBase):
             hf.create_dataset('data', data=self.data)
             hf.create_dataset('wavelengths', data=self.wavelengths)
             hf.create_dataset('metadata', np.string_(json.dumps(self.metadata)))
-
-    def _checkMetadata(self, md: dict) -> None:
-        raise ValueError

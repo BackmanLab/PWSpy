@@ -12,6 +12,7 @@ import typing
 from enum import Enum
 from typing import Optional, List, Tuple
 
+import jsonschema
 import scipy.io as spio
 import tifffile as tf
 
@@ -24,13 +25,24 @@ ICFileFormats = Enum("ICFileFormats", "RawBinary Tiff")
 
 
 class ICMetaData:
-    filePath: Optional[str]
-    metadata: dict
+    _jsonSchema = {"$schema": "http://json-schema.org/schema#",
+                   '$id': 'ICMetadataSchema',
+                   'title': 'ICMetadataSchema',
+                   'type': 'object',
+                   'required': ['system', 'time', 'exposure', 'wavelengths'],
+                   'properties': {
+                       'system': {'type': 'string'},
+                       'time': {'type': 'string'},
+                       'exposure': {'type': 'number'},
+                       'wavelengths': {'type': 'array',
+                                       'items': 'number'}
+                        }
+                   }
 
     def __init__(self, metadata: dict, filePath: str = None, fileFormat: ICFileFormats = None):
-        self._checkMetadata(metadata)
-        self.metadata = metadata
-        self.filePath = filePath
+        jsonschema.validate(instance=metadata, schema=self._jsonSchema)
+        self.metadata: dict = metadata
+        self.filePath: Optional[str] = filePath
         self.fileFormat: ICFileFormats = fileFormat
         if all([i in self.metadata for i in ['darkCounts', 'linearityPoly']]):
             self.cameraCorrection = CameraCorrection(darkCounts=self.metadata['darkCounts'],
