@@ -52,7 +52,7 @@ class AbstractAnalysisResults(ABC):
 
     @property
     @abstractmethod
-    def xvalOpd(self) -> np.ndarray:
+    def opdIndex(self) -> np.ndarray:
         pass
 
     @property
@@ -80,7 +80,9 @@ class AnalysisResults(AbstractAnalysisResults):
     rSquared: np.ndarray
     ld: np.ndarray
     opd: np.ndarray
-    xvalOpd: np.ndarray
+    opdIndex: np.ndarray
+    imCubeIdTag: str
+    referenceIdTag: str
     time: str = None
 
     def __post_init__(self):
@@ -142,6 +144,14 @@ class LazyAnalysisResultsLoader(AbstractAnalysisResults):
         return AnalysisSettings.fromJsonString(self.file['settings'])
 
     @cached_property
+    def imCubeIdTag(self) -> str:
+        return self.file['imCubeIdTag']
+
+    @cached_property
+    def referenceIdTag(self) -> str:
+        return self.file['referenceIdTag']
+
+    @cached_property
     def time(self) -> str:
         return self.file['time']
 
@@ -174,7 +184,14 @@ class LazyAnalysisResultsLoader(AbstractAnalysisResults):
         return np.array(self.file['opd'])
 
     @cached_property
-    def xvalOpd(self) -> np.ndarray:
+    def opdIndex(self) -> np.ndarray:
         return np.array(self.file['xvalOpd'])
 
+    def loadAllFromDisk(self) -> None:
+        '''Access all cached properties in order to load them from disk'''
+        for i in [self.opdIndex, self.opd, self.ld, self.rSquared,
+                  self.autoCorrelationSlope, self.polynomialRms,
+                  self.rms, self.reflectance, self.time, self.referenceIdTag,
+                  self.imCubeIdTag, self.settings]:
+            _ = i
 

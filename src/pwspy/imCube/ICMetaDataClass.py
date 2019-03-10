@@ -27,7 +27,7 @@ class ICMetaData:
     filePath: Optional[str]
     metadata: dict
 
-    def __init__(self, metadata: dict, filePath: str=None, fileFormat: ICFileFormats=None):
+    def __init__(self, metadata: dict, filePath: str = None, fileFormat: ICFileFormats = None):
         self._checkMetadata(metadata)
         self.metadata = metadata
         self.filePath = filePath
@@ -40,7 +40,7 @@ class ICMetaData:
 
     @property
     def idTag(self):
-        return f"{self.metadata['time']}"  # TODO finish this
+        return f"{self.metadata['system']}_{self.metadata['time']}"
 
     @classmethod
     def loadAny(cls, directory):
@@ -94,7 +94,7 @@ class ICMetaData:
 
     @staticmethod
     def _checkMetadata(metadata: dict):
-        required = ['time', 'exposure', 'wavelengths']
+        required = {'time', 'exposure', 'wavelengths', 'system'}
         for i in required:
             if i not in metadata:
                 raise ValueError(f"Metadata does not have a '{i}' field.")

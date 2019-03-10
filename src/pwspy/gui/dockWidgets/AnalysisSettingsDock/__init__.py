@@ -5,7 +5,8 @@ from typing import Tuple
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import QPalette, QValidator
 from PyQt5.QtWidgets import QDockWidget, QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupBox, QHBoxLayout, QWidget, \
-    QRadioButton, QFrame, QVBoxLayout, QSpinBox, QPushButton, QComboBox, QDoubleSpinBox, QCheckBox, QFileDialog
+    QRadioButton, QFrame, QVBoxLayout, QSpinBox, QPushButton, QComboBox, QDoubleSpinBox, QCheckBox, QFileDialog, \
+    QMessageBox
 
 from pwspy import CameraCorrection
 from pwspy.analysis import AnalysisSettings
@@ -33,9 +34,9 @@ class AnalysisSettingsDock(QDockWidget):
     def _setupFrame(self):
         """Presets"""
         row = 0
-        self.analysisNameEdit = QLineEdit()
+        self._analysisNameEdit = QLineEdit()
         self._layout.addWidget(QLabel("Analysis Name: "), row, 0, 1, 1)
-        self._layout.addWidget(self.analysisNameEdit, row, 1, 1, 1)
+        self._layout.addWidget(self._analysisNameEdit, row, 1, 1, 1)
         row += 1
         self.presets = QGroupBox("Presets")
         self.presets.setLayout(QHBoxLayout())
@@ -197,9 +198,13 @@ class AnalysisSettingsDock(QDockWidget):
         self._frame.setFixedHeight(height)
 
     def getSettings(self) -> Tuple[CameraCorrection, AnalysisSettings]:
-        linearityPoly = self.linearityEdit.text().split()
+        if self.linearityEdit.validator().state != QValidator.Acceptable:
+            QMessageBox.information(self, "Hold On", "The camera linearity correction input is not valid.")
+            raise ValueError("The camera linearity correction input is not valid.")
+        linText = self.linearityEdit.text()
+        linearityPoly = tuple(float(i) for i in linText.split(',')) if linText != '' else None
         if self.hardwareCorrections.checkState() == 0:
-            cameraCorrection = CameraCorrection(self.darkCountBox.value(), self.linearityEdit)
+            cameraCorrection = CameraCorrection(self.darkCountBox.value(), linearityPoly)
         else:
             cameraCorrection = None
         return (cameraCorrection,
@@ -216,7 +221,7 @@ class AnalysisSettingsDock(QDockWidget):
                                 autoCorrStopIndex=self.autoCorrStopIndex.value()))
 
     def getAnalysisName(self):
-        return self.analysisNameEdit.text()
+        return self._analysisNameEdit.text()
 
     def _browseReflection(self):
         file, _filter = QFileDialog.getOpenFileName(self, 'Working Directory',
