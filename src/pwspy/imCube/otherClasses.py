@@ -9,7 +9,7 @@ import re
 
 import typing
 from dataclasses import dataclass
-from enum import Enum, auto()
+from enum import Enum, auto
 from glob import glob
 from typing import List, Tuple
 

@@ -1,5 +1,6 @@
 import numpy as np
 
+from pwspy.analysis.analysisResults import AbstractAnalysisResults
 from pwspy.analysis.compilation.compilerSettings import CompilerSettings
 
 

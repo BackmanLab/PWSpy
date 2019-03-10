@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+import dataclasses
 
 import h5py
 import numpy as np
@@ -70,7 +70,7 @@ class AbstractAnalysisResults(ABC):
     def referenceIdTag(self) -> str:
         pass
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class AnalysisResults(AbstractAnalysisResults):
     settings: AnalysisSettings
     reflectance: np.ndarray
@@ -94,7 +94,7 @@ class AnalysisResults(AbstractAnalysisResults):
             raise OSError(f'{fileName} already exists.')
         # now save the stuff
         with h5py.File(fileName, 'w') as hf:
-            for k, v in self.asdict().items():
+            for k, v in dataclasses.asdict().items():
                 if k == 'settings':
                     v = v.toJsonString()
                 if isinstance(v, str):
