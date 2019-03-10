@@ -8,7 +8,7 @@ from pwspy.imCube.ICBaseClass import ICBase
 import numpy as np
 import os
 
-class ExtraReflectionCube(ICBase):
+class ExtraReflectanceCube(ICBase):
     def __init__(self, data: np.ndarray, wavelengths:Tuple[float, ...], metadata: dict):
         self._checkMetadata(metadata)
         super().__init__(data, wavelengths)
@@ -20,10 +20,11 @@ class ExtraReflectionCube(ICBase):
 
     @classmethod
     def load(cls, directory: str, name: str):
-
+        with h5py.File(os.path.join(directory, f'{name}_eReflectance.h5')) as hf:
+            return cls(hf['data'], hf['wavelengths'], json.loads(hf['metadata']))
 
     def save(self, directory: str, name: str) -> None:
-        savePath = os.path.join(directory, f'.h5')
+        savePath = os.path.join(directory, f'{name}_eReflectance.h5')
         if os.path.exists(savePath):
             raise OSError(f"The path {savePath} already exists.")
         with h5py.File(savePath, 'w') as hf:
@@ -32,4 +33,4 @@ class ExtraReflectionCube(ICBase):
             hf.create_dataset('metadata', np.string_(json.dumps(self.metadata)))
 
     def _checkMetadata(self, md: dict) -> None:
-        
+        raise ValueError
