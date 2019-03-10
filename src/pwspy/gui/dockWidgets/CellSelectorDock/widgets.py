@@ -140,9 +140,20 @@ class ReferencesTable(QTableWidget):
         self.setHorizontalHeaderLabels(('Reference',))
         self.setRowCount(0)
         self.verticalHeader().hide()
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.showContextMenu)
         cellTable.referencesChanged.connect(self.updateReferences)
         cellTable.itemsCleared.connect(self.clearItems)
         self._references: typing.List[CellTableWidgetItem] = []
+
+    def showContextMenu(self, point: QtCore.QPoint):
+        items = self.selectedItems()
+        if len(items) > 0:
+            menu = QMenu("Context Menu")
+            refStateString = "Unset as Reference"
+            refAction = menu.addAction(refStateString)
+            refAction.triggered.connect(lambda: self.updateReferences(False, [i.item for i in self.selectedItems()]))
+            menu.exec(self.mapToGlobal(point))
 
     def updateReferences(self, state: bool, items: typing.List[CellTableWidgetItem]):
         if state:
@@ -156,6 +167,7 @@ class ReferencesTable(QTableWidget):
             for item in items:
                 if item in self._references:
                     self._references.remove(item)
+                    item.setReference(False)
                     # find row number
                     for i in range(self.rowCount()):
                         if item is self.item(i, 0).item:

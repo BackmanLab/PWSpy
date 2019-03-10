@@ -33,12 +33,13 @@ class ResultsTableItem:
         ax.plot(self.results.opdIndex, self.results.opd)
         canvas.show()
 
+
 class ResultsTable(CopyableTable):
     itemsCleared = QtCore.pyqtSignal()
 
     def __init__(self):
         super().__init__()
-        self.columns = ("CellPath", 'Cell#', "Analysis", 'ROI', 'ROI#', "RMS", 'Reflectance', 'ld', "AutoCorr Slope", 'R^2', 'OPD')
+        self.columns = ("Path", 'Cell#', "Analysis", 'ROI', 'ROI#', "RMS", 'Reflectance', 'ld', "AutoCorr Slope", 'R^2', 'OPD')
         self.setRowCount(0)
         self.setColumnCount(len(self.columns))
         self.setHorizontalHeaderLabels(self.columns)
