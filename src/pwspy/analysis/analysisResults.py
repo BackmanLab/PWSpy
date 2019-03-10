@@ -171,6 +171,7 @@ class LazyAnalysisResultsLoader(AbstractAnalysisResults):
 
     @cached_property
     def reflectance(self):
+        #TODO add support for in-file slicing. only if chunking is implemented.
         grp = self.file['reflectance']
         return KCube(grp['data'], grp['wavenumbers'])
 

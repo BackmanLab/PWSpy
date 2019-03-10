@@ -187,3 +187,5 @@ class ICBase:
         else:
             raise NotImplementedError(f"Division is not supported between {self.__class__} and {type(other)}")
         return ret
+
+    # TODO implement saving to hdf using differencing and chunking for compression. https://www.oreilly.com/library/view/python-and-hdf5/9781491944981/ch04.html Should we save each wavelength as its own dataset?
