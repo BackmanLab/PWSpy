@@ -1,5 +1,6 @@
 from PyQt5.QtGui import QValidator, QDoubleValidator
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QFrame, QSpacerItem, QSizePolicy, QLayout
+from PyQt5 import QtCore
 
 
 class VerticallyCompressedWidget(QWidget):
@@ -21,18 +22,23 @@ class VerticallyCompressedWidget(QWidget):
 
 
 class LinearityValidator(QValidator):
-    allowedChars = '0123456789,.- '
+    stateChanged = QtCore.pyqtSignal(QValidator.State)
 
     def __init__(self):
         super().__init__()
         self.doubleValidator = QDoubleValidator()
+        self.state = QValidator.Acceptable
 
     def validate(self, input: str, pos: int):
-        for i in input:
-            if i not in self.allowedChars:
-                return (QValidator.Invalid, input, 0)
+        oldState = self.state
         for i in input.split(','):
             ret = self.doubleValidator.validate(i, pos)
-            if  ret == QValidator.Acceptable:
-                return (ret, input, pos)
-        return (QValidator.Acceptable, input, pos)
+            if ret[0] == QValidator.Intermediate:
+                self.state = ret[0]
+                if self.state != oldState: self.stateChanged.emit(self.state)
+                return (self.state, input, pos)
+            elif ret[0] == QValidator.Invalid:
+                return ret
+        self.state = QValidator.Acceptable
+        if self.state != oldState: self.stateChanged.emit(self.state)
+        return (self.state, input, pos)

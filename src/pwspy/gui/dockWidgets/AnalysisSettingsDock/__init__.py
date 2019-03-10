@@ -3,6 +3,7 @@ from glob import glob
 from typing import Tuple
 
 from PyQt5 import QtCore, QtGui
+from PyQt5.QtGui import QPalette, QValidator
 from PyQt5.QtWidgets import QDockWidget, QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupBox, QHBoxLayout, QWidget, \
     QRadioButton, QFrame, QVBoxLayout, QSpinBox, QPushButton, QComboBox, QDoubleSpinBox, QCheckBox, QFileDialog
 
@@ -66,6 +67,12 @@ class AnalysisSettingsDock(QDockWidget):
         self.darkCountBox.setRange(0, 10000)
         self.linearityEdit = QLineEdit()
         self.linearityEdit.setValidator(LinearityValidator())
+        origPalette = self.linearityEdit.palette()
+        palette = QPalette()
+        palette.setColor(QPalette.Text, QtCore.Qt.red)
+        self.linearityEdit.validator().stateChanged.connect(lambda state:
+            self.linearityEdit.setPalette(palette) if state != QValidator.Acceptable else self.linearityEdit.setPalette(origPalette))
+
         _ = layout.addWidget
         _(QLabel('Dark Counts'), 0, 0)
         _(self.darkCountBox, 0, 1)
