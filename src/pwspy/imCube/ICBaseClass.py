@@ -33,7 +33,7 @@ class ICBase:
             raise ValueError("The length of the index list doesn't match the index axis of the data array")
 
     @property
-    def index(self):
+    def index(self) -> Tuple[float, ...]:
         return self._index
 
     def plotMean(self):
