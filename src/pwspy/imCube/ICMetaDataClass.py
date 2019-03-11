@@ -32,7 +32,7 @@ class ICMetaData:
                    '$id': 'ICMetadataSchema',
                    'title': 'ICMetadataSchema',
                    'type': 'object',
-                   'required': ['time', 'exposure', 'wavelengths'],
+                   'required': ['system', 'time', 'exposure', 'wavelengths'],
                    'properties': {
                        'system': {'type': 'string'},
                        'time': {'type': 'string'},
@@ -82,7 +82,7 @@ class ICMetaData:
             md = {'startWv': info2[0], 'stepWv': info2[1], 'stopWv': info2[2],
                   'exposure': info2[3], 'time': '{:d}-{:d}-{:d} {:d}:{:d}:{:d}'.format(
                     *[int(i) for i in [info3[8], info3[7], info3[6], info3[9], info3[10], info3[11]]]),
-                  'systemId': info3[0],
+                  'systemId': info3[0], 'system': str(info3[0]),
                   'imgHeight': int(info3[2]), 'imgWidth': int(info3[3]), 'wavelengths': wv}
         return cls(md, filePath=directory, fileFormat=ICFileFormats.RawBinary)
 
