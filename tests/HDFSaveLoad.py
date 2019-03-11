@@ -1,32 +1,57 @@
 from timeit import timeit
 import os.path as osp
-from pwspy import ImCube, KCube
+from pwspy import ImCube
+from pwspy.utility.io import toHdf, toHdf2, toHdf3, toHdf4, toHdf5, toHdf6, fromHdf
+import os
+import pprint
+
+pp = pprint.PrettyPrinter(indent=4)
 
 resources = osp.join(osp.split(__file__)[0], 'resources')
 testCellPath = osp.join(resources, 'Cell1')
+savePath = osp.join(resources, 'testCube.h5')
 
 im = ImCube.loadAny(testCellPath)
-im.data = im.data.copy(order='F') #This is currently how data is read into the array by default
-im2 = ImCube.loadAny(testCellPath)
-im2.data = im2.data.copy(order='C')
+compression: int = 3
+
+def compareCompression(saver, loader=None):
+    #uncompressed
+    saveTime = timeit(lambda: saver(im, savePath, compression=None), setup='from __main__ import savePath, im', number=1)
+    saveSize = osp.getsize(savePath) / 1e6
+    if loader:
+        loadTime = timeit(lambda: loader(savePath), number=1)
+    else:
+        loadTime = None
+    os.remove(savePath)
+
+    csaveTime = timeit(lambda: saver(im, savePath, compression=3), setup='from __main__ import savePath, im', number=1)
+    csaveSize = osp.getsize(savePath) / 1e6
+    if loader:
+        cloadTime = timeit(lambda: loader(savePath), number=1)
+    else:
+        cloadTime = None
+    os.remove(savePath)
+
+    ratio = csaveSize/saveSize
+
+    return {'saveTime': saveTime,
+            'saveSize': saveSize,
+            'loadTime': loadTime,
+            'csaveTime': csaveTime,
+            'csaveSize': csaveSize,
+            'cloadTime': cloadTime,
+            'ratio': ratio}
 
 if __name__ == '__main__':
-    print('meanR')
-    print('F: ', timeit(stmt='cube.data.mean(axis=2)', setup='from __main__ import  im as cube', number=5))
-    print('C: ', timeit(stmt='cube.data.mean(axis=2)', setup='from __main__ import im2 as cube', number=5))
-
-    print('rms')
-    print('F: ', timeit(stmt='cube.data.std(axis=2)', setup='from __main__ import im as cube', number=5))
-    print('C: ', timeit(stmt='cube.data.std(axis=2)', setup='from __main__ import im2 as cube', number=5))
+    pass
+    pp.pprint(compareCompression(toHdf, fromHdf)) #This appears best.
 
 
-    print('convert KCUbe and get OPD')
-    print('C: ', timeit(stmt='KCube.fromImCube(cube).getOpd(isHannWindow=True, indexOpdStop=100)', setup='from __main__ import KCube, im2 as cube', number=5))
-    print('F: ', timeit(stmt='KCube.fromImCube(cube).getOpd(isHannWindow=True, indexOpdStop=100)', setup='from __main__ import KCube, im as cube', number=5))
+    # pp.pprint(compareCompression(toHdf3))
 
 
-    print('meanSpectra')
-    print('F: ', timeit(stmt='cube.getMeanSpectra()', setup='from __main__ import im as cube', number=5))
-    print('C: ', timeit(stmt='cube.getMeanSpectra()', setup='from __main__ import im2 as cube', number=5))
+    # pp.pprint(compareCompression(toHdf4)) #this appears to be terrible
 
-#It appears that C ordering is always better.
+    pp.pprint(compareCompression(toHdf5, fromHdf))
+
+    pp.pprint(compareCompression(toHdf6, fromHdf))
