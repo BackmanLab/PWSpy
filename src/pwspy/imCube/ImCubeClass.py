@@ -57,7 +57,7 @@ class ImCube(ICBase, ICMetaData):
         with open(os.path.join(directory, 'image_cube'), 'rb') as f:
             data = np.frombuffer(f.read(), dtype=np.uint16)
         data = data.reshape((metadata.metadata['imgHeight'], metadata.metadata['imgWidth'], len(metadata.metadata['wavelengths'])),
-                            order='F')
+                            order='F').copy(order='C')
         return cls(data, metadata.metadata, filePath=metadata.filePath, fileFormat=ICFileFormats.RawBinary)
 
     @classmethod
@@ -72,6 +72,7 @@ class ImCube(ICBase, ICMetaData):
             raise OSError("No Tiff file was found at:", directory)
         with tf.TiffFile(path) as tif:
             data = np.rollaxis(tif.asarray(), 0, 3)  # Swap axes to match y,x,lambda convention.
+            #TODO find out how memory is ordered here. find fastest way to order as C
         return cls(data, metadata.metadata, filePath=directory, fileFormat=ICFileFormats.Tiff)
     
     @classmethod
