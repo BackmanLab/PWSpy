@@ -190,7 +190,7 @@ class ICBase:
         return ret
 
     def toHdf(self, g: h5py.Group, name: str) -> h5py.Group:
-        dset = g.create_dataset(name, data=self.data)
+        dset = g.create_dataset(name, data=self.data, compression=3)
         print(dset.chunks)
         dset.attrs['index'] = np.array(self.index)
         dset.attrs['type'] = np.string_("ICBaseDataSet")
@@ -200,5 +200,6 @@ class ICBase:
     def fromHdf(cls, d: h5py.Dataset):
         assert 'type' in d.attrs
         assert 'index' in d.attrs
+        assert d.attrs['type'] == "ICBaseDataSet"
         return cls(np.array(d), tuple(d.attrs['index']))
     # TODO implement saving to hdf using differencing and chunking for compression. https://www.oreilly.com/library/view/python-and-hdf5/9781491944981/ch04.html Should we save each wavelength as its own dataset?
