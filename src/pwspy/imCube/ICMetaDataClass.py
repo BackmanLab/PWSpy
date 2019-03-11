@@ -18,7 +18,7 @@ import tifffile as tf
 
 from pwspy.analysis import AnalysisResults
 from pwspy.analysis.analysisResults import LazyAnalysisResultsLoader
-from pwspy.imCube.otherClasses import Roi
+from pwspy.imCube.otherClasses import Roi, RoiFileFormats
 from .otherClasses import CameraCorrection
 
 
@@ -116,13 +116,21 @@ class ICMetaData:
             if i not in metadata:
                 raise ValueError(f"Metadata does not have a '{i}' field.")
 
-    def toJson(self, directory):
+    def metadataToJson(self, directory):
         with open(os.path.join(directory, 'pwsmetadata.json'), 'w') as f:
             json.dump(self.metadata, f)
 
-    def getRois(self) -> List[Tuple[str, int]]:
+    def getRois(self) -> List[Tuple[str, int, RoiFileFormats]]:
         assert self.filePath is not None
         return Roi.getValidRoisInPath(self.filePath)
+
+    def loadRoi(self, name: str, num: int, fformat: RoiFileFormats = None) -> Roi:
+        if fformat == RoiFileFormats.MAT:
+            return Roi.fromMat(self.filePath, name, num)
+        elif fformat == RoiFileFormats.HDF:
+            return Roi.fromHDF(self.filePath, name, num)
+        else:
+            return Roi.loadAny(self.filePath, name, num)
 
     def getAnalyses(self):
         assert self.filePath is not None

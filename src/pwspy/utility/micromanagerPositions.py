@@ -206,7 +206,7 @@ class PositionList:
 
     def __eq__(self, other: 'PositionList'):
         return all([len(self) == len(other)] +
-                   [self[i] == other[i] for i in self])
+                   [self[i] == other[i] for i in range(len(self))])
 
 
     def plot(self):

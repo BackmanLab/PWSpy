@@ -42,9 +42,11 @@ class Roi:
 
     @classmethod
     def fromHDF(cls, directory: str, name: str, number: int):
-        filePath = os.path.join(directory, f'roi{number}_{name}.h5')
-        with h5py.File(filePath) as hf:
-            return cls(name, number, hf['data'], filePath=filePath, fileFormat=RoiFileFormats.HDF)
+        path = os.path.join(directory, f'roi_{name}.h5')
+        if not os.path.exists(path):
+            raise OSError(f"File {path} does not exist.")
+        with h5py.File(path, 'r') as hf:
+            return cls(name, number, hf[number], filePath=path, fileFormat=RoiFileFormats.HDF)
 
     @classmethod
     def fromMat(cls, directory: str, name: str, number: int):
@@ -61,11 +63,11 @@ class Roi:
             return Roi.fromMat(directory, name, number)
 
     def toHDF(self, directory):
-        savePath = os.path.join(directory, f'roi{self.number}_{self.name}.h5')
-        if os.path.exists(savePath):
-            raise Exception(f"The Roi file {savePath} already exists.")
+        savePath = os.path.join(directory, f'roi_{self.name}.h5')
         with h5py.File(savePath, 'w') as hf:
-            hf.create_dataset('data', data=self.data)
+            if self.number in hf.keys():
+                raise Exception(f"The Roi file {savePath} already exists.")
+            hf.create_dataset(self.number, data=self.data, compression=3)
 
     def deleteFile(self):
         if self.filePath is None:
@@ -73,13 +75,20 @@ class Roi:
         os.remove(self.filePath)
 
     @staticmethod
-    def getValidRoisInPath(path: str) -> List[Tuple[str, int]]:
-        files = glob(path)
+    def getValidRoisInPath(path: str) -> List[Tuple[str, int, RoiFileFormats]]:
+        patterns = [('BW*_*.mat', RoiFileFormats.MAT), ('*_roi.h5', RoiFileFormats.HDF)]
+        files = {format: glob(os.path.join(path, p)) for p, format in patterns}
         ret = []
-        for f in files:
-            fname = os.path.split(f)[-1]
-            if any([re.match(pattern, fname) is not None for pattern in ["BW.+_.+\\.mat", "roi.+_.+\\.h5"]]):
-                ret.append(('_'.join(fname.split('_')[1:]).split('.')[0], int(fname.split('_')[0][2:])))
+        for k, v in files.items():
+            if k == RoiFileFormats.HDF:
+                for i in v:
+                    raise NotImplementedError
+            elif k == RoiFileFormats.MAT:
+                for i in v: #list in files
+                    i = os.path.split(i)[-1]
+                    num = int(i.split('_')[0][2:])
+                    name = i.split('_')[1][:-4]
+                    ret.append((name, num, RoiFileFormats.MAT))
         return ret
 
 

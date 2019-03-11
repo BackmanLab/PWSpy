@@ -184,7 +184,7 @@ class ImCube(ICBase, ICMetaData):
         if correction.linearityPolynomial is None:
             pass
         else:
-            self.data = np.polynomial.polynomial.polyval(self.data, [0.] + correction.linearityPolynomial)  # The [0] is the y-intercept (already handled by the darkcount)
+            self.data = np.polynomial.polynomial.polyval(self.data, (0.0,) + correction.linearityPolynomial)  # The [0] is the y-intercept (already handled by the darkcount)
 
         self._cameraCorrected = True
         return
