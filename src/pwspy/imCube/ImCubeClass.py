@@ -71,8 +71,7 @@ class ImCube(ICBase, ICMetaData):
         else:
             raise OSError("No Tiff file was found at:", directory)
         with tf.TiffFile(path) as tif:
-            data = np.rollaxis(tif.asarray(), 0, 3)  # Swap axes to match y,x,lambda convention.
-            #TODO find out how memory is ordered here. find fastest way to order as C
+            data = np.rollaxis(tif.asarray(), 0, 3).copy(order='C')  # Swap axes to match y,x,lambda convention.
         return cls(data, metadata.metadata, filePath=directory, fileFormat=ICFileFormats.Tiff)
     
     @classmethod
@@ -120,6 +119,7 @@ class ImCube(ICBase, ICMetaData):
         im.close()
 
     def compress(self, outpath):
+        '''deprecated'''
         im = self.data  # 3d array of pixel data
         im = im.astype(np.int32)  # convert to signed integer to avoid overflow during processing.
         mins = []  # A list to store the minimum value offsets of each of secondary frames.
@@ -139,6 +139,7 @@ class ImCube(ICBase, ICMetaData):
 
     @classmethod
     def decompress(cls, inpath):
+        '''deprecated'''
         with open(inpath, 'rb') as f:
             t = tf.TiffFile(f)
             im = np.rollaxis(t.asarray(), 0, 3)
