@@ -15,6 +15,7 @@ from pwspy.imCube.ICMetaDataClass import ICMetaData
 
 resources = osp.join(osp.split(__file__)[0], 'resources')
 testCellPath = osp.join(resources, 'Cell1')
+posListPath = osp.join(resources, 'testPositions.pos')
 
 
 class myTest(unittest.TestCase):
@@ -46,7 +47,7 @@ class myTest(unittest.TestCase):
 
     def test_posList(self):
         try:
-            pos = PositionList.load(osp.join(resources, 'positionList.pos'))
+            pos = PositionList.load(positionListPath)
             pos2 = pos.copy()
             pos2.mirrorX()
             pos2.mirrorY()
