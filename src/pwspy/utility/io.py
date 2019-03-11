@@ -28,7 +28,8 @@ def toHdf4(cube: ICBase, path: str, compression: int):
 def toHdf5(cube: ICBase, path: str, compression: int):
     data = np.diff(cube.data, axis=2)
     with h5py.File(path, 'w') as hf:
-        hf.create_dataset('data', data=data, compression=compression, chunks=True)
+        hf.create_dataset('data', data=cube.data[:,:,0], compression=compression, chunks=True)
+        hf.create_dataset('diffdata', data=data, compression=compression, chunks=True)
         hf.create_dataset('index', data=cube.index)
 
 
@@ -38,4 +39,12 @@ def fromHdf(path: str):
         return ICBase(data, f['index'])
 
 def fromDiffHdf(path: str):
-    
+    with h5py.File(path, 'r') as f:
+        odata = f['data']
+        diffdata = f['diffdata']
+        ind = f['index']
+        data = np.zeros((odata.shape[0], odata.shape[1], ind.shape[0]))
+        data[:,:,0] = odata
+        for i in range(1,data.shape[2]):
+            data[:,:,i] = data[:,:, i-1] + diffdata[:,:, i-1]
+        return ICBase(data, ind)

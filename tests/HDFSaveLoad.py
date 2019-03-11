@@ -1,7 +1,7 @@
 from timeit import timeit
 import os.path as osp
 from pwspy import ImCube
-from pwspy.utility.io import toHdf, toHdf2, toHdf3, toHdf4, toHdf5, toHdf6, fromHdf
+from pwspy.utility.io import toHdf, toHdf2, toHdf3, toHdf4, toHdf5, fromHdf, fromDiffHdf
 import os
 import pprint
 
@@ -52,6 +52,6 @@ if __name__ == '__main__':
 
     # pp.pprint(compareCompression(toHdf4)) #this appears to be terrible
 
-    pp.pprint(compareCompression(toHdf5, fromHdf))
+    pp.pprint(compareCompression(toHdf5, fromDiffHdf))
 
-    pp.pprint(compareCompression(toHdf6, fromHdf))
+    # pp.pprint(compareCompression(toHdf6, fromHdf))
