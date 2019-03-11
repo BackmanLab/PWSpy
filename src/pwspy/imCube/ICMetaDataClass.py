@@ -32,13 +32,14 @@ class ICMetaData:
                    '$id': 'ICMetadataSchema',
                    'title': 'ICMetadataSchema',
                    'type': 'object',
-                   'required': ['system', 'time', 'exposure', 'wavelengths'],
+                   'required': ['time', 'exposure', 'wavelengths'],
                    'properties': {
                        'system': {'type': 'string'},
                        'time': {'type': 'string'},
                        'exposure': {'type': 'number'},
                        'wavelengths': {'type': 'array',
-                                       'items': 'number'}
+                                       'items': {'type': 'number'}
+                                       }
                         }
                    }
 
@@ -76,7 +77,7 @@ class ICMetaData:
             print("Json metadata not found")
             info2 = list(spio.loadmat(os.path.join(directory, 'info2.mat'))['info2'].squeeze())
             info3 = list(spio.loadmat(os.path.join(directory, 'info3.mat'))['info3'].squeeze())
-            wv = list(spio.loadmat(os.path.join(directory, 'wv.mat'))['WV'].squeeze())
+            wv = list(spio.loadmat(os.path.join(directory, 'WV.mat'))['WV'].squeeze())
             wv = [int(i) for i in wv]  # We will have issues saving later if these are numpy int types.
             md = {'startWv': info2[0], 'stepWv': info2[1], 'stopWv': info2[2],
                   'exposure': info2[3], 'time': '{:d}-{:d}-{:d} {:d}:{:d}:{:d}'.format(
