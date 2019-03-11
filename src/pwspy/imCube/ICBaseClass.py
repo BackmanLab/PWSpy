@@ -7,6 +7,7 @@ Created on Sat Feb  9 16:47:22 2019
 from __future__ import annotations
 from typing import Tuple, Union
 
+import h5py
 import numpy as np
 import scipy.signal as sps
 import matplotlib.pyplot as plt
@@ -188,4 +189,16 @@ class ICBase:
             raise NotImplementedError(f"Division is not supported between {self.__class__} and {type(other)}")
         return ret
 
+    def toHdf(self, g: h5py.Group, name: str) -> h5py.Group:
+        dset = g.create_dataset(name, data=self.data)
+        print(dset.chunks)
+        dset.attrs['index'] = np.array(self.index)
+        dset.attrs['type'] = np.string_("ICBaseDataSet")
+        return g
+
+    @classmethod
+    def fromHdf(cls, d: h5py.Dataset):
+        assert 'type' in d.attrs
+        assert 'index' in d.attrs
+        return cls(np.array(d), tuple(d.attrs['index']))
     # TODO implement saving to hdf using differencing and chunking for compression. https://www.oreilly.com/library/view/python-and-hdf5/9781491944981/ch04.html Should we save each wavelength as its own dataset?
