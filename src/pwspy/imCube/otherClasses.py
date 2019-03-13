@@ -33,7 +33,8 @@ class CameraCorrection:
 
 class Roi:
     def __init__(self, name: str, number: int, data: np.ndarray, filePath: str = None, fileFormat: RoiFileFormats=None):
-        assert data.dtype == np.bool
+        assert isinstance(data, np.ndarray), f"data is a {type(data)}"
+        assert data.dtype==np.bool
         self.data = data
         self.name = name
         self.number = number
@@ -46,7 +47,7 @@ class Roi:
         if not os.path.exists(path):
             raise OSError(f"File {path} does not exist.")
         with h5py.File(path, 'r') as hf:
-            return cls(name, number, hf[number], filePath=path, fileFormat=RoiFileFormats.HDF)
+            return cls(name, number, np.array(hf[str(number)]).astype(np.bool), filePath=path, fileFormat=RoiFileFormats.HDF)
 
     @classmethod
     def fromMat(cls, directory: str, name: str, number: int):
@@ -64,10 +65,10 @@ class Roi:
 
     def toHDF(self, directory):
         savePath = os.path.join(directory, f'roi_{self.name}.h5')
-        with h5py.File(savePath, 'w') as hf:
-            if self.number in hf.keys():
-                raise Exception(f"The Roi file {savePath} already exists.")
-            hf.create_dataset(self.number, data=self.data, compression=3)
+        with h5py.File(savePath, 'a') as hf:
+            if np.string_(str(self.number)) in hf.keys():
+                raise Exception(f"The Roi file {savePath} already contains a dataset {self.number}")
+            hf.create_dataset(np.string_(str(self.number)), data=self.data.astype(np.uint8), compression=None)
 
     def deleteFile(self):
         if self.filePath is None:
