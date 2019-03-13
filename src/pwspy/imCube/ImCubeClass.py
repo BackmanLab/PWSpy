@@ -59,7 +59,8 @@ class ImCube(ICBase, ICMetaData):
             data = data.reshape((metadata.metadata['imgHeight'], metadata.metadata['imgWidth'], len(metadata.metadata['wavelengths'])),
                                 order='F')
         finally:
-            lock.release()
+            if lock is not None:
+                lock.release()
         data = data.copy(order='C')
         return cls(data, metadata.metadata, filePath=metadata.filePath, fileFormat=ICFileFormats.RawBinary)
 
@@ -79,7 +80,8 @@ class ImCube(ICBase, ICMetaData):
             with tf.TiffFile(path) as tif:
                 data = np.rollaxis(tif.asarray(), 0, 3)  # Swap axes to match y,x,lambda convention.
         finally:
-            lock.release()
+            if lock is not None:
+                lock.release()
         data = data.copy(order='C')
         return cls(data, metadata.metadata, filePath=directory, fileFormat=ICFileFormats.Tiff)
     
