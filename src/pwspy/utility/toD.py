@@ -1,8 +1,8 @@
 import numpy as np
+import scipy.special as sps
 
 def acf(d, lmin, lmax, x):
-    out = ((3-d) * ((((lmin**4) * ((lmin / lmax)**(-d)) * vpa(expint(-2 + d, sym(x / lmax)))) / (lmax**3)) -
-                    lmin * vpa(expint(-2 + d, sym(x / lmin))))) / (lmin * (1 - (lmin / lmax)**(3-d)))
+    out = ((3 - d) * ((((lmin**4) * ((lmin / lmax)**(-d)) * sps.expn(-2 + d, x / lmax)) / (lmax**3)) - lmin * sps.expn(-2 + d, x / lmin))) / (lmin * (1 - (lmin / lmax)**(3-d)))
     return out
 
 def acfd(d, lmin, lmax):
@@ -22,13 +22,13 @@ def calcDSize(system: str, system_correction: float, raw_rms: np.ndarray):
     else: raise NameError("No valid system found")
     return d_size
 
-def  SigmaToD(d_size: np.ndarray):
+def sigma2D(d_size: np.ndarray):
     mf = 1000000
     d_size[d_size == 3] = 3.00001
 
     lmaxlminapprox = 100
-    correction = ((3 - d_size) * (1 - (lmaxlminapprox ^ (-1. * d_size)))) / (
-                d_size * (1 - (lmaxlminapprox ^ (d_size - 3))))
+    correction = ((3 - d_size) * (1 - (lmaxlminapprox**(-1. * d_size)))) / (
+                d_size * (1 - (lmaxlminapprox**(d_size - 3))))
     mass = mf / correction
 
     d_exact = acfd(d_size, 1, mass**(1. / d_size))
