@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 import scipy.signal as sps
-from pwspy import ImCube, KCube
+from pwspy import ImCube, KCube, ExtraReflectanceCube
 from pwspy.utility import reflectanceHelper
 from . import AnalysisSettings, AnalysisResults
 
@@ -122,7 +122,7 @@ class Analysis(LegacyAnalysis):
         #TODO decide if we want to do this: ref.filterDust(4)
 
         theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, 'glass', index=ref.wavelengths)[np.newaxis, np.newaxis, :]
-        extraReflectance = ExtraReflectanceCube.load(settings.extraReflectionPath) #Todo make this class
+        extraReflectance = ExtraReflectanceCube.load(settings.extraReflectionPath)
         I0 = ref.data / (theoryR + extraReflectance) # I0 is the intensity of the illumination source, reconstructed in units of `counts`. this is an inversion of our assumption that reference = I0*(referenceReflectance + extraReflectance)
         Iextra = extraReflectance * I0 # converting extraReflectance to the extra reflection in units of counts
         ref = ref - Iextra # remove the extra reflection from our data

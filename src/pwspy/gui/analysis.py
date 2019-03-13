@@ -81,7 +81,6 @@ class PWSWindow(QMainWindow):
 
 
 class AnalysisManager:
-    #TODO add extra reflection subtraction
     def __init__(self, app: PWSApp):
         self.app = app
 
@@ -96,7 +95,6 @@ class AnalysisManager:
         else:
             print("Using automatically detected camera corrections")
             ref.correctCameraEffects(ref.cameraCorrection)
-        # todo adjust extra reflection by reference here. also load the material reflectance array
         analysis = Analysis(settings, ref)
         analysisName = self.app.window.analysisSettings.getAnalysisName()
         loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[ref, analysis, analysisName],

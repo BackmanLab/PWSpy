@@ -7,3 +7,4 @@ Created on Tue Aug  7 13:20:25 2018
 from .imCube.ImCubeClass import ImCube
 from .imCube.KCubeClass import KCube
 from .imCube.otherClasses import CameraCorrection
+from .imCube.ExtraReflectanceCubeClass import ExtraReflectanceCube
