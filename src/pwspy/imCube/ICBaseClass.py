@@ -153,7 +153,7 @@ class ICBase:
             raise NotImplementedError(f"Addition is not supported between {self.__class__} and {type(other)}")
         return ret
 
-    def _sub(self, other: typing.Union[self.__class__, numbers.Real, np.ndarray]) -> self.__class__:
+    def _sub(self, other: typing.Union['self.__class__', numbers.Real, np.ndarray]) -> 'self.__class__':
         if isinstance(other, self.__class__):
             if not self._indicesMatch(other):
                 raise ValueError(f"{self.__class__} indices are not compatible")
@@ -164,7 +164,7 @@ class ICBase:
             raise NotImplementedError(f"Subtraction is not supported between {self.__class__} and {type(other)}")
         return ret
 
-    def _mul(self, other: typing.Union[self.__class__, numbers.Real, np.ndarray]) -> self.__class__:
+    def _mul(self, other: typing.Union['self.__class__', numbers.Real, np.ndarray]) -> 'self.__class__':
         if isinstance(other, self.__class__):
             if not self._indicesMatch(other):
                 raise ValueError(f"{self.__class__} indices are not compatible")
@@ -178,7 +178,7 @@ class ICBase:
     __mul__ = None
     __rmul__ = __mul__  # multiplication is commutative. let it work both ways.
 
-    def _truediv(self, other: typing.Union[self.__class__, numbers.Real, np.ndarray]) -> self.__class__:
+    def _truediv(self, other: typing.Union['self.__class__', numbers.Real, np.ndarray]) -> 'self.__class__':
         if isinstance(other, self.__class__):
             if not self._indicesMatch(other):
                 raise ValueError(f"{self.__class__} indices are not compatible")
@@ -201,5 +201,5 @@ class ICBase:
         assert 'type' in d.attrs
         assert 'index' in d.attrs
         assert d.attrs['type'] == "ICBaseDataSet"
+        print('chunks: ', d.chunks)
         return cls(np.array(d), tuple(d.attrs['index']))
-    # TODO implement saving to hdf using differencing and chunking for compression. https://www.oreilly.com/library/view/python-and-hdf5/9781491944981/ch04.html Should we save each wavelength as its own dataset?
