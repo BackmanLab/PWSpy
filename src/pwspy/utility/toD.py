@@ -1,14 +1,15 @@
 import numpy as np
 
 def acf(d, lmin, lmax, x):
-    out = ((3-d) .* ((((lmin.^4) .* ((lmin./lmax).^(-1.*d)) .* vpa(expint(-2+d, sym(x./lmax))))./(lmax.^3))...
-    - lmin .* vpa(expint(-2+d, sym(x./lmin))))) ./ (lmin.*(1 - (lmin./lmax).^(3-d)));
+    out = ((3-d) * ((((lmin**4) * ((lmin / lmax)**(-d)) * vpa(expint(-2 + d, sym(x / lmax)))) / (lmax**3)) -
+                    lmin * vpa(expint(-2 + d, sym(x / lmin))))) / (lmin * (1 - (lmin / lmax)**(3-d)))
+    return out
 
 def acfd(d, lmin, lmax):
-    delta = 0.1;
-    out = 3 + (log(acf(d, lmin, lmax, (lmax+lmin)./100 + delta)) - ...
-        log(acf(d, lmin, lmax, (lmax+lmin)./100)))./ ...
-        (log((lmax+lmin)./100 + delta) - log((lmax+lmin)./100));
+    delta = 0.1
+    x = (lmax+lmin) / 100
+    out = 3 + np.log(acf(d, lmin, lmax, x + delta) / acf(d, lmin, lmax, x)) / (np.log(x + delta) - np.log(x))
+    return out
 
 def calcDSize(system: str, system_correction: float, raw_rms: np.ndarray):
     if system == 'storm':
