@@ -43,13 +43,9 @@ class ImCube(ICBase, ICMetaData):
             return ImCube.fromTiff(directory, metadata=metadata, lock=lock)
         except:
             try:
-                files = glob(os.path.join(directory, '*.comp.tif'))
-                return ImCube.decompress(files[0]) #TODO remove this?
-            except:
-                try:
-                    return ImCube.fromOldPWS(directory, metadata=metadata, lock=lock)
-                except OSError:
-                    raise OSError(f"Could not find a valid PWS image cube file at {directory}.")
+                return ImCube.fromOldPWS(directory, metadata=metadata, lock=lock)
+            except OSError:
+                raise OSError(f"Could not find a valid PWS image cube file at {directory}.")
 
     @classmethod
     def fromOldPWS(cls, directory, metadata: ICMetaData = None,  lock: mp.Lock = None):
@@ -130,38 +126,6 @@ class ImCube(ICBase, ICMetaData):
         im = tf.TiffWriter(os.path.join(directory, 'image_bd.tif'))
         im.save(nimbd)
         im.close()
-
-    def compress(self, outpath):
-        '''deprecated'''
-        im = self.data  # 3d array of pixel data
-        im = im.astype(np.int32)  # convert to signed integer to avoid overflow during processing.
-        mins = []  # A list to store the minimum value offsets of each of secondary frames.
-        for i in range(im.shape[-1] - 1, 0,
-                       -1):  # The first image is unchanged. the rest are expressed as the difference between themselves and the frame before them.
-            im[:, :, i] = im[:, :, i] - im[:, :, i - 1]  # Subtract the image from the frame before it.
-            mins.append(im[:, :, i].min())  # record the new minimum value
-            im[:, :, i] -= mins[
-                -1]  # Subtract by the minimum. this ensures that the minimum is 0. If it was negative we would have an issue saving as uint8
-        mins = mins[::-1]  # reverse the list to go back to forward order
-        metadata = self.metadata
-        metadata["compressionMins"] = [int(i) for i in mins]  # This is needed for json compatability
-        with open(outpath, 'wb') as f:
-            w = tf.TiffWriter(f)
-            w.save(np.rollaxis(im.astype(np.uint16), -1, 0), metadata=metadata, compress=1)
-            w.close()
-
-    @classmethod
-    def decompress(cls, inpath):
-        '''deprecated'''
-        with open(inpath, 'rb') as f:
-            t = tf.TiffFile(f)
-            im = np.rollaxis(t.asarray(), 0, 3)
-            md = json.loads(t.pages[0].tags['ImageDescription'].value)
-        mins = md["compressionMins"]
-        del md["compressionMins"]
-        for i in range(1, im.shape[-1]):
-            im[:, :, i] = im[:, :, i] + mins[i - 1] + im[:, :, i - 1]
-        return cls(im, md)
 
     def toTiff(self, outpath, dtype=np.uint16):
         im = self.data
