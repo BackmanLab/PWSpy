@@ -146,7 +146,7 @@ class ImCube(ICBase, ICMetaData):
         self._hasBeenNormalized = True
 
     def correctCameraEffects(self, correction: CameraCorrection, binning: int = None):
-        # Subtracts the darkcounts from the data. count is darkcounts per pixel. binning should be specified if it wasn't saved in the micromanager metadata.
+        """ Subtracts the darkcounts from the data. count is darkcounts per pixel. binning should be specified if it wasn't saved in the micromanager metadata."""
         if self._cameraCorrected:
             raise Exception("This ImCube has already had it's camera correction applied!")
         if binning is None:
@@ -158,12 +158,10 @@ class ImCube(ICBase, ICMetaData):
                 raise ValueError('Binning metadata not found. Binning must be specified in function argument.')
         count = correction.darkCounts * binning ** 2  # Account for the fact that binning multiplies the darkcount.
         self.data = self.data - count
-
         if correction.linearityPolynomial is None:
             pass
         else:
             self.data = np.polynomial.polynomial.polyval(self.data, (0.0,) + correction.linearityPolynomial)  # The [0] is the y-intercept (already handled by the darkcount)
-
         self._cameraCorrected = True
         return
 
