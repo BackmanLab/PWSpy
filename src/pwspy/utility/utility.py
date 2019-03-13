@@ -41,8 +41,7 @@ def _loadIms(qout, qin, lock):
     while not qin.empty():
         specs, file = qin.get()
         print('starting', file)
-        with lock:
-            im = ImCube.loadAny(file)
+        im = ImCube.loadAny(file, lock=lock)
         for k, v in specs.items():
             setattr(im, k, v)
         qout.put(im)
@@ -56,13 +55,12 @@ def _loadIms(qout, qin, lock):
 
 def loadThenProcess(procFunc, procFuncArgs, lock, fileAndSpecifiers):
     specs, file = fileAndSpecifiers
-    with lock:
-        if isinstance(file, str):
-            im = ImCube.loadAny(file)
-        elif isinstance(file, ICMetaData):
-            im = ImCube.fromMetadata(file)
-        else:
-            raise TypeError("files specified to the loader must be either str or ICMetaData")
+    if isinstance(file, str):
+        im = ImCube.loadAny(file, lock=lock)
+    elif isinstance(file, ICMetaData):
+        im = ImCube.fromMetadata(file, lock=lock)
+    else:
+        raise TypeError("files specified to the loader must be either str or ICMetaData")
     for k, v in specs.items():
         setattr(im, k, v)
     print("Run", file)

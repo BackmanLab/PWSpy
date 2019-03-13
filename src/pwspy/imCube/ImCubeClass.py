@@ -17,6 +17,7 @@ from scipy.io import savemat
 from .otherClasses import CameraCorrection
 from .ICBaseClass import ICBase
 from .ICMetaDataClass import ICMetaData, ICFileFormats
+import multiprocessing as mp
 
 
 class ImCube(ICBase, ICMetaData):
@@ -37,51 +38,63 @@ class ImCube(ICBase, ICMetaData):
         return self.index
 
     @classmethod
-    def loadAny(cls, directory, metadata: ICMetaData = None):
+    def loadAny(cls, directory, metadata: ICMetaData = None,  lock: mp.Lock = None):
         try:
-            return ImCube.fromTiff(directory, metadata=metadata)
+            return ImCube.fromTiff(directory, metadata=metadata, lock=lock)
         except:
             try:
                 files = glob(os.path.join(directory, '*.comp.tif'))
                 return ImCube.decompress(files[0]) #TODO remove this?
             except:
                 try:
-                    return ImCube.fromOldPWS(directory, metadata=metadata)
+                    return ImCube.fromOldPWS(directory, metadata=metadata, lock=lock)
                 except OSError:
                     raise OSError(f"Could not find a valid PWS image cube file at {directory}.")
 
     @classmethod
-    def fromOldPWS(cls, directory, metadata: ICMetaData = None):
-        if metadata is None:
-            metadata = ICMetaData.fromOldPWS(directory)
-        with open(os.path.join(directory, 'image_cube'), 'rb') as f:
-            data = np.frombuffer(f.read(), dtype=np.uint16)
-        data = data.reshape((metadata.metadata['imgHeight'], metadata.metadata['imgWidth'], len(metadata.metadata['wavelengths'])),
-                            order='F').copy(order='C')
+    def fromOldPWS(cls, directory, metadata: ICMetaData = None,  lock: mp.Lock = None):
+        if lock is not None:
+            lock.acquire()
+        try:
+            if metadata is None:
+                metadata = ICMetaData.fromOldPWS(directory)
+            with open(os.path.join(directory, 'image_cube'), 'rb') as f:
+                data = np.frombuffer(f.read(), dtype=np.uint16)
+            data = data.reshape((metadata.metadata['imgHeight'], metadata.metadata['imgWidth'], len(metadata.metadata['wavelengths'])),
+                                order='F')
+        finally:
+            lock.release()
+        data = data.copy(order='C')
         return cls(data, metadata.metadata, filePath=metadata.filePath, fileFormat=ICFileFormats.RawBinary)
 
     @classmethod
-    def fromTiff(cls, directory, metadata: ICMetaData = None):
-        if metadata is None:
-            metadata = ICMetaData.fromTiff(directory)
-        if os.path.exists(os.path.join(directory, 'MMStack.ome.tif')):
-            path = os.path.join(directory, 'MMStack.ome.tif')
-        elif os.path.exists(os.path.join(directory, 'pws.tif')):
-            path = os.path.join(directory, 'pws.tif')
-        else:
-            raise OSError("No Tiff file was found at:", directory)
-        with tf.TiffFile(path) as tif:
-            data = np.rollaxis(tif.asarray(), 0, 3).copy(order='C')  # Swap axes to match y,x,lambda convention.
+    def fromTiff(cls, directory, metadata: ICMetaData = None,  lock: mp.Lock = None):
+        if lock is not None:
+            lock.acquire()
+        try:
+            if metadata is None:
+                metadata = ICMetaData.fromTiff(directory)
+            if os.path.exists(os.path.join(directory, 'MMStack.ome.tif')):
+                path = os.path.join(directory, 'MMStack.ome.tif')
+            elif os.path.exists(os.path.join(directory, 'pws.tif')):
+                path = os.path.join(directory, 'pws.tif')
+            else:
+                raise OSError("No Tiff file was found at:", directory)
+            with tf.TiffFile(path) as tif:
+                data = np.rollaxis(tif.asarray(), 0, 3)  # Swap axes to match y,x,lambda convention.
+        finally:
+            lock.release()
+        data = data.copy(order='C')
         return cls(data, metadata.metadata, filePath=directory, fileFormat=ICFileFormats.Tiff)
     
     @classmethod
-    def fromMetadata(cls, meta: ICMetaData):
+    def fromMetadata(cls, meta: ICMetaData,  lock: mp.Lock = None):
         if meta.fileFormat == ICFileFormats.Tiff:
-            return cls.fromTiff(meta.filePath, metadata=meta)
+            return cls.fromTiff(meta.filePath, metadata=meta, lock=lock)
         elif meta.fileFormat == ICFileFormats.RawBinary:
-            return cls.fromOldPWS(meta.filePath, metadata=meta)
+            return cls.fromOldPWS(meta.filePath, metadata=meta, lock=lock)
         elif meta.fileFormat is None:
-            return cls.loadAny(meta.filePath, metadata=meta)
+            return cls.loadAny(meta.filePath, metadata=meta, lock=lock)
         else:
             raise TypeError("Invalid FileFormat")
 
