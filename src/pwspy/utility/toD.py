@@ -1,14 +1,22 @@
 import numpy as np
-import scipy.special as sps
+#from scipy.special import expn
+from scipy.integrate import quad
+
+def myexpn(n,x):
+    #this is needed since scipy.special.expn only accepts integers for n
+    def integrand(t, n, x):
+        return np.exp(-x*t) / t**n
+    return quad(integrand, 1, np.inf, args=(n, x))[0]
+expn = np.vectorize(myexpn)
 
 def acf(d, lmin, lmax, x):
-    out = ((3 - d) * ((((lmin**4) * ((lmin / lmax)**(-d)) * sps.expn(-2 + d, x / lmax)) / (lmax**3)) - lmin * sps.expn(-2 + d, x / lmin))) / (lmin * (1 - (lmin / lmax)**(3-d)))
+    out = ((3 - d) * ((((lmin**4) * ((lmin / lmax)**(-d)) * expn(-2 + d, x / lmax)) / (lmax**3)) - lmin * expn(-2 + d, x / lmin))) / (lmin * (1 - (lmin / lmax)**(3-d)))
     return out
 
 def acfd(d, lmin, lmax):
     delta = 0.1
     x = (lmax+lmin) / 100
-    out = 3 + np.log(acf(d, lmin, lmax, x + delta) / acf(d, lmin, lmax, x)) / (np.log(x + delta) - np.log(x))
+    out = 3 + (np.log(acf(d, lmin, lmax, x + delta)) - np.log(acf(d, lmin, lmax, x))) / (np.log(x + delta) - np.log(x))
     return out
 
 def calcDSize(system: str, system_correction: float, raw_rms: np.ndarray):
@@ -23,6 +31,7 @@ def calcDSize(system: str, system_correction: float, raw_rms: np.ndarray):
     return d_size
 
 def sigma2D(d_size: np.ndarray):
+    #This runs 6 times faster than the matlab version for some reason
     mf = 1000000
     d_size[d_size == 3] = 3.00001
 
@@ -38,3 +47,12 @@ def sigma2D(d_size: np.ndarray):
 def sigma2DApprox(d_size):
     d_estimate = 3 * (1 - np.exp(-(d_size / 3)**7))**(1 / 7)
     return d_estimate
+
+def testexpn():
+    lmin=1;
+    d=np.array([2.1796160,2.9585142,2.6632771,1.8785352,1.8430616])
+    x=np.array([8.8774614,2.6083560,3.6681373,20.619408,23.234888])
+#    d=d[1]
+#    x=x[1]
+    res = expn(-2+d, x/lmin)
+    return res
