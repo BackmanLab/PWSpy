@@ -39,7 +39,7 @@ class LegacyAnalysis(AbstractAnalysis):
         # The rest of the analysis will be performed only on the selected wavelength range.
         cube.selIndex(self.settings.wavelengthStart, self.settings.wavelengthStop)
         # Determine the mean-reflectance for each pixel in the cell.
-        reflectance = cube.data.mean(axis=2) #TODO save the whole cube instead of just the mean reflectance. Should we save the KCube or the ImCube?
+        reflectance = cube.data.mean(axis=2)
         cube = KCube.fromImCube(cube)  # -- Convert to K-Space
         cubePoly = self._fitPolynomial(cube)
         # Remove the polynomial fit from filtered cubeCell.
@@ -73,7 +73,8 @@ class LegacyAnalysis(AbstractAnalysis):
             ld=ld,
             settings=self.settings,
             imCubeIdTag=cube.idTag,
-            referenceIdTag=self.ref.idTag)
+            referenceIdTag=self.ref.idTag,
+            extraReflectionTag=None)
 
         return results
 
@@ -119,21 +120,25 @@ class LegacyAnalysis(AbstractAnalysis):
 class Analysis(LegacyAnalysis):
     def __init__(self, settings: AnalysisSettings, ref: ImCube):
         super().__init__(settings, ref)
-        #TODO decide if we want to do this: ref.filterDust(4)
+        # TODO decide if we want to do this: ref.filterDust(4)
 
-        theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, 'glass', index=ref.wavelengths)[np.newaxis, np.newaxis, :]
+        theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, 'glass', index=ref.wavelengths)[None, None, :]
         extraReflectance = ExtraReflectanceCube.load(settings.extraReflectionPath)
         I0 = ref.data / (theoryR + extraReflectance) # I0 is the intensity of the illumination source, reconstructed in units of `counts`. this is an inversion of our assumption that reference = I0*(referenceReflectance + extraReflectance)
-        Iextra = extraReflectance * I0 # converting extraReflectance to the extra reflection in units of counts
-        ref = ref - Iextra # remove the extra reflection from our data
-        ref = ref / theoryR # now when we normalize by our reference we will get a result in units of physical reflectrance rather than arbitrary units.
+        Iextra = extraReflectance * I0  # converting extraReflectance to the extra reflection in units of counts
+        ref = ref - Iextra  # remove the extra reflection from our data
+        ref = ref / theoryR  # now when we normalize by our reference we will get a result in units of physical reflectrance rather than arbitrary units.
         self.ref = ref
         self.extraReflection = Iextra
+
+    def run(self, cube: ImCube) -> AnalysisResults:
+        results = super().run(cube)
+        results.extraReflectionTag = self.extraReflection.idTag
+        return results
 
     def _normalizeImCube(self, cube: ImCube) -> ImCube:
         cube.normalizeByExposure()
         cube.subtractExtraReflection(self.extraReflection)
         cube.normalizeByReference(self.ref)
-        # TODO add extra reflection information to the analysis results
         return cube
 

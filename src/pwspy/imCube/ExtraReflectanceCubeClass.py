@@ -29,6 +29,10 @@ class ExtraReflectanceCube(ICBase):
         self.metadata = metadata
 
     @property
+    def idTag(self):
+        return f"ExtraReflection_{self.metadata['system']}_{self.metadata['time']}"
+
+    @property
     def wavelengths(self) -> Tuple[float, ...]:
         return self.index
 

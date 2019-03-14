@@ -18,7 +18,7 @@ import scipy.io as spio
 import tifffile as tf
 
 from pwspy.analysis import AnalysisResults
-from pwspy.analysis.analysisResults import LazyAnalysisResultsLoader
+from pwspy.analysis.analysisResults import AnalysisResultsLoader
 from pwspy.imCube.otherClasses import Roi, RoiFileFormats
 from .otherClasses import CameraCorrection
 import numpy as np
@@ -59,7 +59,7 @@ class ICMetaData:
     @property
     def idTag(self):
         #TODO math operations on the cube should mangle this somehow so that a modified cube wouldn't be saved with a duplicate id.
-        return f"{self.metadata['system']}_{self.metadata['time']}"
+        return f"ImCube_{self.metadata['system']}_{self.metadata['time']}"
 
     @classmethod
     def loadAny(cls, directory):
@@ -149,8 +149,8 @@ class ICMetaData:
     def saveAnalysis(self, analysis: AnalysisResults, name:str):
         analysis.toHDF5(os.path.join(self.filePath, 'analyses'), name)
 
-    def loadAnalysis(self, name: str) -> LazyAnalysisResultsLoader:
-        return LazyAnalysisResultsLoader(os.path.join(self.filePath, 'analyses'), name)
+    def loadAnalysis(self, name: str) -> AnalysisResultsLoader:
+        return AnalysisResultsLoader(os.path.join(self.filePath, 'analyses'), name)
 
     def editNotes(self):
         filepath = os.path.join(self.filePath, 'notes.txt.')

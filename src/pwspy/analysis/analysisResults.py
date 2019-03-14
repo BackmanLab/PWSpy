@@ -79,7 +79,12 @@ class AbstractAnalysisResults(ABC):
     def referenceIdTag(self) -> str:
         pass
 
-@dataclasses.dataclass(frozen=True)
+    @property
+    @abstractmethod
+    def extraReflectionTag(self) -> str:
+        pass
+
+@dataclasses.dataclass
 class AnalysisResults(AbstractAnalysisResults):
     settings: AnalysisSettings
     reflectance: KCube
@@ -93,6 +98,7 @@ class AnalysisResults(AbstractAnalysisResults):
     opdIndex: np.ndarray
     imCubeIdTag: str
     referenceIdTag: str
+    extraReflectionTag: str
     time: str = None
 
     def __post_init__(self):
@@ -118,14 +124,6 @@ class AnalysisResults(AbstractAnalysisResults):
                 else:
                     raise TypeError(f"Analysis results type {k}, {type(v)} not supported or expected")
 
-    # @classmethod
-    # def fromHDF5(cls, directory: str, name: str):
-    #     fileName = osp.join(directory, f'{name}.hdf5')
-    #     # load stuff
-    #     with h5py.File(fileName, 'r') as hf:
-    #         d = {k: np.array(v) for k,v in hf.items()}
-    #         return cls(**d)
-
 
 class cached_property(object):
     """ A property that is only computed once per instance and then replaces
@@ -145,7 +143,7 @@ class cached_property(object):
         return value
 
 
-class LazyAnalysisResultsLoader(AbstractAnalysisResults):
+class AnalysisResultsLoader(AbstractAnalysisResults):
     """A read-only loader for analysis results that will only load them from hard disk as needed."""
     def __init__(self, directory: str, name: str):
         self.file = h5py.File(osp.join(directory, f'{name}.hdf5'))
@@ -159,11 +157,11 @@ class LazyAnalysisResultsLoader(AbstractAnalysisResults):
 
     @cached_property
     def imCubeIdTag(self) -> str:
-        return self.file['imCubeIdTag']
+        return self.file['imCubeIdTag'].encode()
 
     @cached_property
     def referenceIdTag(self) -> str:
-        return self.file['referenceIdTag']
+        return self.file['referenceIdTag'].encode()
 
     @cached_property
     def time(self) -> str:
@@ -207,11 +205,15 @@ class LazyAnalysisResultsLoader(AbstractAnalysisResults):
     def opdIndex(self) -> np.ndarray:
         return np.array(self.file['xvalOpd'])
 
+    @cached_property
+    def extraReflectionTag(self) -> str:
+        return self.file['extraReflectionTag'].encode()
+
     def loadAllFromDisk(self) -> None:
         """Access all cached properties in order to load them from disk"""
         for i in [self.opdIndex, self.opd, self.ld, self.rSquared,
                   self.autoCorrelationSlope, self.polynomialRms,
                   self.rms, self.reflectance, self.time, self.referenceIdTag,
-                  self.imCubeIdTag, self.settings]:
+                  self.imCubeIdTag, self.settings, self.extraReflectionTag]:
             _ = i
 
