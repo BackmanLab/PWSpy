@@ -52,27 +52,52 @@ class PropertyMap:
     def toDict(self):
         return self._d        
 
-
-class Position2d:
-    """Represents a position for a single xy stage in micromanager."""
-
-    def __init__(self, x: float, y: float, xyStage: str = '', label: str = ''):
-        self.x = x
-        self.y = y
-        self.xyStage = xyStage
+class MultiStagePosition:
+    def __init__(self, label: str = ''):
         self.label = label
         self._regen()
-
+        
     def _regen(self):
         contents = [
             Property("DefaultXYStage", "STRING", self.xyStage),
-            Property("DefaultZStage", "STRING", ""),
-            PropertyMap("DevicePositions",
-                        [Property("Device", "STRING", self.xyStage),
-                         Property("Position_um", "DOUBLE", [self.x, self.y])]),
+            Property("DefaultZStage", "STRING", ""), 
+            PropertyMap("DevicePositions", self.positions),
             Property("GridCol", "INTEGER", 0),
             Property("GridRow", "INTEGER", 0),
             Property("Label", "STRING", self.label)]
+        self._d = {i.name: i for i in contents}
+
+        
+    def __repr__(self):
+        return f"MultiStagePosition({self.label}, {i.__repr__() for i in self.positions})"
+
+        
+class Position1d:
+    def __init__(self, z: float, zStage: str = ''):
+        self.z = z
+        self.zStage = zStage
+        self._regen()
+        
+    def _regen(self):
+        contents = [Property("Device", "STRING", self.zStage),
+             Property("Position_um", "DOUBLE", [self.z])]
+        self._d = {i.name: i for i in contents}
+        
+    def __repr__(self):
+        return f"Position1d({self.zStage}, {self.z})"
+    
+class Position2d:
+    """Represents a position for a single xy stage in micromanager."""
+
+    def __init__(self, x: float, y: float, xyStage: str = ''):
+        self.x = x
+        self.y = y
+        self.xyStage = xyStage
+        self._regen()
+
+    def _regen(self):
+        contents = [Property("Device", "STRING", self.xyStage),
+             Property("Position_um", "DOUBLE", [self.x, self.y])]
         self._d = {i.name: i for i in contents}
 
     def mirrorX(self):
@@ -88,7 +113,7 @@ class Position2d:
         self._regen()
 
     def __repr__(self):
-        return f"Position2d({self.label}, {self.xyStage}, {self.x}, {self.y})"
+        return f"Position2d({self.xyStage}, {self.x}, {self.y})"
 
     def __add__(self, other: 'Position2d') -> 'Position2d':
         assert isinstance(other, Position2d)
