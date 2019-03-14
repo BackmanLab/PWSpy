@@ -4,7 +4,7 @@ Created on Thu Aug  9 11:41:32 2018
 
 @author: Nick
 """
-
+import h5py
 import numpy as np
 import tifffile as tf
 import os
@@ -208,6 +208,11 @@ class ImCube(ICBase, ICMetaData):
         ret = self._truediv(other)
         return ImCube(ret, self.metadata, filePath=self.filePath, fileFormat=self.fileFormat)
 
+    @classmethod
+    def fromHdf(cls, d: h5py.Dataset):
+        data, index = cls._decodeHdf(d)
+        md = cls._decodeHdfMetadata(d)
+        return cls(data, md, fileFormat=ICFileFormats.Hdf)
 
 class FakeCube(ImCube):
     def __init__(self, num: int):
