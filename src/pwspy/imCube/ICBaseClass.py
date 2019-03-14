@@ -200,6 +200,6 @@ class ICBase:
     def fromHdf(cls, d: h5py.Dataset):
         assert 'type' in d.attrs
         assert 'index' in d.attrs
-        assert d.attrs['type'] == "ICBaseDataSet"
+        assert d.attrs['type'] == b"ICBaseDataSet", f"Got {d.attrs['type']} instead"
         print('chunks: ', d.chunks)
         return cls(np.array(d), tuple(d.attrs['index']))
