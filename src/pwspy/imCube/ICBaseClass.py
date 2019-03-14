@@ -193,13 +193,18 @@ class ICBase:
         dset = g.create_dataset(name, data=self.data, compression=3)
         print(dset.chunks)
         dset.attrs['index'] = np.array(self.index)
-        dset.attrs['type'] = np.string_("ICBaseDataSet")
+        dset.attrs['type'] = np.string_(cls.__name__)
         return g
 
     @classmethod
-    def fromHdf(cls, d: h5py.Dataset):
+    def _decodeHdf(cls, d: h5py.Dataset):
         assert 'type' in d.attrs
         assert 'index' in d.attrs
-        assert d.attrs['type'] == "ICBaseDataSet"
+        assert d.attrs['type'].encode() == cls.__name__, f"Got {d.attrs['type']} instead of {cls.__name__}"
         print('chunks: ', d.chunks)
-        return cls(np.array(d), tuple(d.attrs['index']))
+        return np.array(d), tuple(d.attrs['index'])
+
+
+    @classmethod
+    def fromHdf(cls, d: h5py.Dataset):
+        return cls(*cls._decodeHdf(d))

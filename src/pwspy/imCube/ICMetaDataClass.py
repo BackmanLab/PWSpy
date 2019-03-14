@@ -12,6 +12,7 @@ import typing
 from enum import Enum, auto
 from typing import Optional, List, Tuple
 
+import h5py
 import jsonschema
 import scipy.io as spio
 import tifffile as tf
@@ -25,6 +26,7 @@ from .otherClasses import CameraCorrection
 class ICFileFormats(Enum):
     RawBinary = auto()
     Tiff = auto()
+    Hdf = auto()
 
 
 class ICMetaData:
@@ -171,3 +173,13 @@ class ICMetaData:
                 return f.readlines().join('\n')
         else:
             return ''
+
+    @classmethod
+    def _decodeHdfMetadata(cls, d: h5py.Dataset) -> dict:
+        assert d.attrs['type'].encode == cls.__name__
+        assert 'metadata' in d.attrs
+        return json.loads(d.attrs['metadata'])
+
+    @classmethod
+    def fromHdf(cls, d: h5py.Dataset):
+        return cls(cls._decodeHdfMetadata(d))

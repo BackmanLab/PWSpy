@@ -12,117 +12,176 @@ import numpy as np
 import copy
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from typing import NamedTuple
+from abc import ABC, abstractmethod
 
+class JsonAble(ABC):
+    
+    @abstractmethod
+    def toDict(self) -> dict:
+        pass
 
 @dataclass
-class Property:
+class Property(JsonAble):
     """Represents a single property from a micromanager PropertyMap"""
     name: str
     pType: str
     value: typing.Union[str, int, float, typing.List[typing.Union[str, int, float]]]
 
-    def __post_init__(self):
-        assert self.pType in ['STRING', 'DOUBLE', 'INTEGER']
-        self._d = {'type': self.pType}
-        if isinstance(self.value, list):
-            self._d['array'] = self.value
-        else:
-            self._d['scalar'] = self.value
-
     def toDict(self):
-        return self._d
-
-
-class PropertyMap:
-    """Represents a propertyMap from micromanager. basically a list of properties."""
-
-    def __init__(self, name: str, properties: typing.List[Property]):
-        self.properties = properties
-        self.name = name
-        if isinstance(properties[0], Property):
-            self._d = {'type': 'PROPERTY_MAP',
-                       'array': [{i.name: i for i in self.properties}]}
-        elif isinstance(properties[0], Position2d):
-            self._d = {'type': 'PROPERTY_MAP',
-                       'array': [i.toDict() for i in self.properties]}
+        assert self.pType in ['STRING', 'DOUBLE', 'INTEGER']
+        d = {'type': self.pType}
+        if isinstance(self.value, list):
+            d['array'] = self.value
         else:
-            raise TypeError
+            d['scalar'] = self.value
+        return d
+
+@dataclass
+class PropertyMap(JsonAble):
+    """Represents a propertyMap from micromanager. basically a list of properties."""
+    name: str
+    properties: typing.List[Property]
             
     def toDict(self):
-        return self._d        
+        if isinstance(self.properties[0], Property):
+            d = {'type': 'PROPERTY_MAP',
+                       'array': [{i.name: i for i in self.properties}]}
+        elif isinstance(self.properties[0], (MultiStagePosition, Position1d, Position2d)):
+            d = {'type': 'PROPERTY_MAP',
+                       'array': [i.toDict() for i in self.properties]}
+        else:
+            raise TypeError(f"Got type of: {type(self.properties[0])}")
+        return d
 
+@dataclass   
+class Position1d(JsonAble):  
+    z: float    
+    zStage: str  = ''  
+    
+    def toDict(self):
+        contents = [Property("Device", "STRING", self.zStage),
+             Property("Position_um", "DOUBLE", [self.z])]
+        return {i.name: i for i in contents}
+        
+    def __repr__(self):
+        return f"Position1d({self.zStage}, {self.z})"
 
-class Position2d:
+@dataclass
+class Position2d(JsonAble):
     """Represents a position for a single xy stage in micromanager."""
+    x: float
+    y: float
+    xyStage: str = ''
 
-    def __init__(self, x: float, y: float, xyStage: str = '', label: str = ''):
-        self.x = x
-        self.y = y
-        self.xyStage = xyStage
-        self.label = label
-        self._regen()
-
-    def _regen(self):
-        contents = [
-            Property("DefaultXYStage", "STRING", self.xyStage),
-            Property("DefaultZStage", "STRING", ""),
-            PropertyMap("DevicePositions",
-                        [Property("Device", "STRING", self.xyStage),
-                         Property("Position_um", "DOUBLE", [self.x, self.y])]),
-            Property("GridCol", "INTEGER", 0),
-            Property("GridRow", "INTEGER", 0),
-            Property("Label", "STRING", self.label)]
-        self._d = {i.name: i for i in contents}
+    def toDict(self):
+        contents = [Property("Device", "STRING", self.xyStage),
+             Property("Position_um", "DOUBLE", [self.x, self.y])]
+        return {i.name: i for i in contents}
 
     def mirrorX(self):
         self.x *= -1
-        self._regen()
 
     def mirrorY(self):
         self.y *= -1
-        self._regen()
 
     def renameStage(self, newName):
         self.xyStage = newName
-        self._regen()
 
     def __repr__(self):
-        return f"Position2d({self.label}, {self.xyStage}, {self.x}, {self.y})"
+        return f"Position2d({self.xyStage}, {self.x}, {self.y})"
 
     def __add__(self, other: 'Position2d') -> 'Position2d':
         assert isinstance(other, Position2d)
         return Position2d(self.x + other.x,
                           self.y + other.y,
-                          self.xyStage,
-                          self.label)
+                          self.xyStage)
 
     def __sub__(self, other: 'Position2d') -> 'Position2d':
         assert isinstance(other, Position2d)
         return Position2d(self.x - other.x,
                           self.y - other.y,
-                          self.xyStage,
-                          self.label)
+                          self.xyStage)
 
     def __eq__(self, other: 'Position2d'):
         return all([self.x == other.x,
                     self.y == other.y,
-                    self.label == other.label,
                     self.xyStage == other.xyStage])
-    
+
+@dataclass
+class MultiStagePosition(JsonAble):
+    label: str
+    xyStage: str
+    zStage: str
+    positions: typing.List[typing.Union[Position1d, Position2d]]
+        
     def toDict(self):
-        return self._d
+        contents = [
+            Property("DefaultXYStage", "STRING", self.xyStage),
+            Property("DefaultZStage", "STRING", self.zStage), 
+            PropertyMap("DevicePositions", self.positions),
+            Property("GridCol", "INTEGER", 0),
+            Property("GridRow", "INTEGER", 0),
+            Property("Label", "STRING", self.label)]
+        return {i.name: i for i in contents}
+   
+    def getXYPosition(self):
+        d1pos = [i for i in self.positions if isinstance(i, Position2d)]
+        return [i for i in d1pos if i.xyStage == self.xyStage][0]
+    
+    def getZPosition(self):
+        try:
+            d1pos = [i for i in self.positions if isinstance(i, Position1d)]
+            return [i for i in d1pos if i.zStage == self.zStage][0]
+        except IndexError:
+            return None
+    
+    def renameXYStage(self, label: str):
+        self.xyStage = label
+        self.getXYPosition().renameStage(label)
+        
+    def __add__(self, other: 'Position2d') -> 'Position2d':
+        if isinstance(other, Position2d):
+            newPos = self.getXYPosition().__add__(other)
+            positions = copy.copy(self.positions)
+            positions.remove(self.getXYPosition())
+            positions.append(newPos)
+            return MultiStagePosition(self.label, self.xyStage, self.zStage, positions=positions)
+        else:
+            raise NotImplementedError
+            
+    def __sub__(self, other: 'Position2d') -> 'Position2d':
+        if isinstance(other, Position2d):
+            newPos = self.getXYPosition().__sub__(other)
+            positions = copy.copy(self.positions)
+            positions.remove(self.getXYPosition())
+            positions.append(newPos)
+            return MultiStagePosition(self.label, self.xyStage, self.zStage, positions=positions)
+        else:
+            raise NotImplementedError
+    
+    def __eq__(self, other: 'MultiStagePosition'):
+        return all([self.xyStage == other.xyStage,
+                    self.zStage == other.zStage,
+                    self.getXYPosition() == other.getXYPosition(),
+                    self.getZPosition() == other.getZPosition()])
+    
+    def __repr__(self):
+        s = f"MultiStagePosition({self.label}, "
+        for i in self.positions:
+            s+= '\n\t' + i.__repr__()
+        return s
 
 
-class PositionList:
+class PositionList(JsonAble):
     """Represents a micromanager positionList. can be loaded from and saved to a micromanager .pos file."""
 
-    def __init__(self, positions: typing.List[Position2d]):
+    def __init__(self, positions: typing.List[MultiStagePosition]):
+        assert isinstance(positions, list)
+        assert isinstance(positions[0], MultiStagePosition)
         self.positions = positions
-        self._regen()
 
-    def _regen(self):
-        self._d = {"encoding": "UTF-8",
+    def toDict(self):
+        return {"encoding": "UTF-8",
                    'format': 'Micro-Manager Property Map',
                    'major_version': 2,
                    'minor_version': 0,
@@ -130,25 +189,20 @@ class PositionList:
 
     def mirrorX(self):
         for i in self.positions:
-            i.mirrorX()
-        self._regen()
+            i.getXYPosition().mirrorX()
 
     def mirrorY(self):
         for i in self.positions:
-            i.mirrorY()
-        self._regen()
+            i.getXYPosition().mirrorY()
 
     def renameStage(self, newName):
         for i in self.positions:
-            i.renameStage(newName)
-        self._regen()
+            i.renameXYStage(newName)
 
     def copy(self) -> 'PositionList':
         return copy.deepcopy(self)
 
     def save(self, savePath: str):
-        #    a=json.dumps(plist,cls=Encoder, ensure_ascii=False)
-        #    a = a.replace('{','{\n').replace('[','[\n').replace('}','\n}').replace(',',',\n').replace(']','\n]')
         if savePath[-4:] != '.pos':
             savePath += '.pos'
         with open(savePath, 'w') as f:
@@ -163,10 +217,18 @@ class PositionList:
                     for i in dct['map']['StagePositions']['array']:
                         label = i['Label']['scalar']
                         xyStage = i["DefaultXYStage"]['scalar']
-                        correctDevice = [j for j in i["DevicePositions"]['array'] if j['Device']['scalar'] == xyStage][
-                            0]
-                        coords = correctDevice["Position_um"]['array']
-                        positions.append(Position2d(*coords, xyStage, label))
+                        zStage = i["DefaultZStage"]['scalar']
+                        xyDict = [j for j in i["DevicePositions"]['array'] if j['Device']['scalar'] == xyStage][0]
+                        xyCoords = xyDict["Position_um"]['array']
+                        mspPositions = [Position2d(*xyCoords, xyStage)]
+                        try:
+                            zDict = [j for j in i["DevicePositions"]['array'] if j['Device']['scalar'] == zStage][0]
+                            zCoord = zDict['Position_um']['array'][0]
+                            mspPositions.append(Position1d(zCoord, zStage))
+                        except IndexError:
+                            pass
+                        positions.append(MultiStagePosition(label, xyStage, zStage,
+                                                            positions=mspPositions))
             else:
                 return dct
             return PositionList(positions)
@@ -191,10 +253,9 @@ class PositionList:
 
     class Encoder(json.JSONEncoder):
         """Allows for the position list and related objects to be jsonified."""
-
         def default(self, obj):
-            if isinstance(obj, (PositionList, Position2d, PropertyMap, Property)):
-                return obj._d
+            if isinstance(obj, JsonAble):
+                return obj.toDict()
             else:
                 return json.JSONEncoder(ensure_ascii=False).default(self, obj)
 
