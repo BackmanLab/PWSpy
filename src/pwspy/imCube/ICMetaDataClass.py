@@ -21,7 +21,7 @@ from pwspy.analysis import AnalysisResults
 from pwspy.analysis.analysisResults import LazyAnalysisResultsLoader
 from pwspy.imCube.otherClasses import Roi, RoiFileFormats
 from .otherClasses import CameraCorrection
-
+import numpy as np
 
 class ICFileFormats(Enum):
     RawBinary = auto()
@@ -170,7 +170,7 @@ class ICMetaData:
     def getNotes(self) -> str:
         if self.hasNotes():
             with open(os.path.join(self.filePath, 'notes.txt'), 'r') as f:
-                return f.readlines().join('\n')
+                return '\n'.join(f.readlines())
         else:
             return ''
 
@@ -183,3 +183,7 @@ class ICMetaData:
     @classmethod
     def fromHdf(cls, d: h5py.Dataset):
         return cls(cls._decodeHdfMetadata(d))
+
+    def _encodeHdfMetadata(self, d: h5py.Dataset) -> h5py.Dataset:
+        d.attrs['metadata'] = np.string_(json.dumps(self.metadata))
+        return d

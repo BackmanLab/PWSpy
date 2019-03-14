@@ -36,16 +36,13 @@ class ExtraReflectanceCube(ICBase):
     def load(cls, directory: str, name: str):
         with h5py.File(os.path.join(directory, f'{name}_eReflectance.h5')) as hf:
             dset = hf['extraReflection']
-            base = super().fromHdf(dset)
-            return cls(base.data, base.index, json.loads(dset.attrs['metadata']))
+            data, index = ICBase._decodeHdf(dset)
+            return cls(data, index, json.loads(dset.attrs['metadata']))
 
     def save(self, directory: str, name: str) -> None:
         savePath = os.path.join(directory, f'{name}_eReflectance.h5')
         if os.path.exists(savePath):
             raise OSError(f"The path {savePath} already exists.")
         with h5py.File(savePath, 'w') as hf:
-            hf = super().toHdf(hf, 'extraReflection')
+            hf = ICBase.toHdf(hf, 'extraReflection')
             hf.attrs['metadata'] = np.string_(json.dumps(self.metadata))
-            # hf.create_dataset('data', data=self.data)
-            # hf.create_dataset('wavelengths', data=self.wavelengths)
-            # hf.create_dataset('metadata', np.string_(json.dumps(self.metadata)))

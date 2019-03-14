@@ -193,7 +193,7 @@ class ICBase:
         dset = g.create_dataset(name, data=self.data, compression=3)
         print(dset.chunks)
         dset.attrs['index'] = np.array(self.index)
-        dset.attrs['type'] = np.string_(cls.__name__)
+        dset.attrs['type'] = np.string_(self.__class__.__name__)
         return g
 
     @classmethod

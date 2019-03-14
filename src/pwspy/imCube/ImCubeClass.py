@@ -103,7 +103,6 @@ class ImCube(ICBase, ICMetaData):
         m = self.metadata
         info2 = {'info2': np.array([m['wavelengths'][0], 0, m['wavelengths'][-1], m['exposure'], 0, 0, 0, 0, 0, 0],
                                    dtype=object)}
-
         try:
             info3 = {
                 'info3': np.array([m['systemId'], m['exposure'], m['imgHeight'], m['imgWidth'], 0, 0, 0, 0, 0, 0, 0, 0],
@@ -213,6 +212,12 @@ class ImCube(ICBase, ICMetaData):
         data, index = cls._decodeHdf(d)
         md = cls._decodeHdfMetadata(d)
         return cls(data, md, fileFormat=ICFileFormats.Hdf)
+
+    def toHDF(self, g: h5py.Group, name: str) -> None:
+        g = ICBase.toHdf(g, name=name)
+        d = self._encodeHdfMetadata(g[name])
+
+
 
 class FakeCube(ImCube):
     def __init__(self, num: int):
