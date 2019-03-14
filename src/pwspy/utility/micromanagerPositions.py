@@ -176,6 +176,8 @@ class PositionList(JsonAble):
     """Represents a micromanager positionList. can be loaded from and saved to a micromanager .pos file."""
 
     def __init__(self, positions: typing.List[MultiStagePosition]):
+        assert isinstance(positions, list)
+        assert isinstance(positions[0], MultiStagePosition)
         self.positions = positions
 
     def toDict(self):
