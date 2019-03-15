@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import QDockWidget, QScrollArea, QGridLayout, QLineEdit, QL
 from pwspy import CameraCorrection
 from pwspy.analysis import AnalysisSettings
 from pwspy.gui import applicationVars, resources
+from pwspy.gui.dockWidgets import CellSelectorDock
 from pwspy.gui.dockWidgets.AnalysisSettingsDock.widgets import LinearityValidator
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 from .widgets import VerticallyCompressedWidget
@@ -246,9 +247,10 @@ class QueuedAnalyses(QScrollArea):
         self.setWidget(self.listWidget)
         self.listWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.listWidget.customContextMenuRequested.connect(self.showContextMenu)
+        self.listWidget.itemDoubleClicked.connect( # TODO display settings)
 
-    def addAnalysis(self, cameraCorrection: CameraCorrection, settings: AnalysisSettings):
-        item = AnalysisListItem(cameraCorrection, settings, None, [None], 'BlahBlah', self.listWidget)
+    def addAnalysis(self, cameraCorrection: CameraCorrection, settings: AnalysisSettings, reference: ICMetaData, cells: List[ICMetaData]):
+        item = AnalysisListItem(cameraCorrection, settings, reference, cells, 'BlahBlah', self.listWidget)
         self.listWidget.addItem(item)
 
     def showContextMenu(self, point: QPoint):
@@ -260,8 +262,9 @@ class QueuedAnalyses(QScrollArea):
 
 
 class AnalysisSettingsDock(QDockWidget):
-    def __init__(self):
+    def __init__(self, cellSelector: CellSelectorDock):
         super().__init__("Settings")
+        self.selector = cellSelector
         self.setObjectName('AnalysisSettingsDock')  # needed for restore state to work
         splitter = QSplitter(QtCore.Qt.Vertical, self)
         widg = QWidget()
@@ -272,7 +275,12 @@ class AnalysisSettingsDock(QDockWidget):
         widg.layout().addWidget(self.addAnalysisButton)
         self.analysesQueue = QueuedAnalyses()
 
-        self.addAnalysisButton.released.connect(lambda: self.analysesQueue.addAnalysis(*self.settingsFrame.getSettings()))
+        self.addAnalysisButton.released.connect(
+            lambda: self.analysesQueue.addAnalysis(*self.settingsFrame.getSettings(),
+                                                   self.selector.getSelectedReferenceMeta(),
+                                                   self.selector.getSelectedCellMetas()))
+        self.analysesQueue.listWidget.currentItemChanged.connect(#TODO Highlight cells and ref)
+
 
         splitter.addWidget(widg)
         splitter.addWidget(self.analysesQueue)
