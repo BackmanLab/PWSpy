@@ -32,6 +32,7 @@ class PWSApp(QApplication):
             os.mkdir(applicationVars.dataDirectory)
         if not os.path.exists(applicationVars.analysisSettingsDirectory):
             os.mkdir(applicationVars.analysisSettingsDirectory)
+            # TODO unpack the default analysis settings
         if not os.path.exists(applicationVars.extraReflectionDirectory):
             os.mkdir(applicationVars.extraReflectionDirectory)
 
