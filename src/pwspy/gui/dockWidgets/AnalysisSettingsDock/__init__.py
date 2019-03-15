@@ -1,37 +1,34 @@
 import os
 from glob import glob
-from typing import Tuple
+from typing import Tuple, Optional, List
 
 from PyQt5 import QtCore, QtGui
+from PyQt5.QtCore import QPoint
 from PyQt5.QtGui import QPalette, QValidator
 from PyQt5.QtWidgets import QDockWidget, QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupBox, QHBoxLayout, QWidget, \
     QRadioButton, QFrame, QVBoxLayout, QSpinBox, QPushButton, QComboBox, QDoubleSpinBox, QCheckBox, QFileDialog, \
-    QMessageBox
+    QMessageBox, QSplitter, QListWidget, QListWidgetItem, QMenu, QAction
 
 from pwspy import CameraCorrection
 from pwspy.analysis import AnalysisSettings
 from pwspy.gui import applicationVars, resources
 from pwspy.gui.dockWidgets.AnalysisSettingsDock.widgets import LinearityValidator
+from pwspy.imCube.ICMetaDataClass import ICMetaData
 from .widgets import VerticallyCompressedWidget
 from pwspy.gui.sharedWidgets import CollapsibleSection
 from pwspy.utility import reflectanceHelper
 
-
-class AnalysisSettingsDock(QDockWidget):
+class SettingsFrame(QScrollArea):
     def __init__(self):
-        super().__init__("Settings")
-        self.setObjectName('AnalysisSettingsDock')  # needed for restore state to work
-        scroll = QScrollArea()
+        super().__init__()
         self._frame = VerticallyCompressedWidget(self)
-        self._frame.setLayout(QGridLayout())
+        self._layout = QGridLayout()
+        self._frame.setLayout(self._layout)
         self._frame.setFixedWidth(350)
-        scroll.setWidget(self._frame)
-        self._layout = self._frame.layout()
-        self._setupFrame()
-        self.setWidget(scroll)
-        self._updateSize()
+        self.setWidget(self._frame)
 
-    def _setupFrame(self):
+        """Set up Frame"""
+
         """Presets"""
         row = 0
         self._analysisNameEdit = QLineEdit()
@@ -176,6 +173,18 @@ class AnalysisSettingsDock(QDockWidget):
         self._layout.addWidget(self.advanced, row, 0, 1, 4)
         row += 1
 
+        self._updateSize()
+
+    def _updateSize(self):
+        height = 100  # give this much excess room.
+        height += self.presets.height()
+        height += self.hardwareCorrections.height()
+        height += self.extraReflection.height()
+        height += self.signalPrep.height()
+        height += self.polySub.height()
+        height += self.advanced.height()
+        self._frame.setFixedHeight(height)
+
     def loadFromSettings(self, settings: AnalysisSettings):
         self.filterOrder.setValue(settings.filterOrder)
         self.filterCutoff.setValue(settings.filterCutoff)
@@ -189,16 +198,6 @@ class AnalysisSettingsDock(QDockWidget):
         self.minSubCheckBox.setCheckState(2 if settings.autoCorrMinSub else 0)
         self.hannWindowCheckBox.setCheckState(2 if settings.useHannWindow else 0)
 
-    def _updateSize(self):
-        height = 100  # give this much excess room.
-        height += self.presets.height()
-        height += self.hardwareCorrections.height()
-        height += self.extraReflection.height()
-        height += self.signalPrep.height()
-        height += self.polySub.height()
-        height += self.advanced.height()
-        self._frame.setFixedHeight(height)
-
     def getSettings(self) -> Tuple[CameraCorrection, AnalysisSettings]:
         if self.linearityEdit.validator().state != QValidator.Acceptable:
             QMessageBox.information(self, "Hold On", "The camera linearity correction input is not valid.")
@@ -211,19 +210,16 @@ class AnalysisSettingsDock(QDockWidget):
             cameraCorrection = None
         return (cameraCorrection,
                 AnalysisSettings(filterOrder=self.filterOrder.value(),
-                                filterCutoff=self.filterCutoff.value(),
-                                polynomialOrder=self.polynomialOrder.value(),
-                                extraReflectionPath=self.RSubtractionEdit.text(),
-                                referenceMaterial=self.refMaterialCombo.currentText(),
-                                wavelengthStart=self.wavelengthStart.value(),
-                                wavelengthStop=self.wavelengthStop.value(),
-                                skipAdvanced=self.advanced.checkState() != 0,
-                                useHannWindow=self.hannWindowCheckBox.checkState() != 0,
-                                autoCorrMinSub=self.minSubCheckBox.checkState() != 0,
-                                autoCorrStopIndex=self.autoCorrStopIndex.value()))
-
-    def getAnalysisName(self):
-        return self._analysisNameEdit.text()
+                                 filterCutoff=self.filterCutoff.value(),
+                                 polynomialOrder=self.polynomialOrder.value(),
+                                 extraReflectionPath=self.RSubtractionEdit.text(),
+                                 referenceMaterial=self.refMaterialCombo.currentText(),
+                                 wavelengthStart=self.wavelengthStart.value(),
+                                 wavelengthStop=self.wavelengthStop.value(),
+                                 skipAdvanced=self.advanced.checkState() != 0,
+                                 useHannWindow=self.hannWindowCheckBox.checkState() != 0,
+                                 autoCorrMinSub=self.minSubCheckBox.checkState() != 0,
+                                 autoCorrStopIndex=self.autoCorrStopIndex.value()))
 
     def _browseReflection(self):
         file, _filter = QFileDialog.getOpenFileName(self, 'Working Directory',
@@ -231,3 +227,63 @@ class AnalysisSettingsDock(QDockWidget):
                                                     "HDF5 (*.h5 *.hdf5)")
         if file != '':
             self.RSubtractionEdit.setText(file)
+
+
+class AnalysisListItem(QListWidgetItem):
+    def __init__(self, cameraCorrection: CameraCorrection, settings: AnalysisSettings, reference: ICMetaData, cells: List[ICMetaData], label: str,
+                 parent: Optional[QWidget] = None):
+        super().__init__(label, parent)
+        self.cameraCorrection = cameraCorrection
+        self.settings = settings
+        self.reference = reference
+        self.cells = cells
+
+
+class QueuedAnalyses(QScrollArea):
+    def __init__(self):
+        super().__init__()
+        self.listWidget = QListWidget()
+        self.setWidget(self.listWidget)
+        self.listWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.listWidget.customContextMenuRequested.connect(self.showContextMenu)
+
+    def addAnalysis(self, cameraCorrection: CameraCorrection, settings: AnalysisSettings):
+        item = AnalysisListItem(cameraCorrection, settings, None, [None], 'BlahBlah', self.listWidget)
+        self.listWidget.addItem(item)
+
+    def showContextMenu(self, point: QPoint):
+        menu = QMenu("ContextMenu", self)
+        deleteAction = QAction("Delete", self)
+        deleteAction.triggered.connect(self.deleteSelected)
+        menu.addAction(deleteAction)
+        menu.exec(self.mapToGlobal(point));
+
+
+class AnalysisSettingsDock(QDockWidget):
+    def __init__(self):
+        super().__init__("Settings")
+        self.setObjectName('AnalysisSettingsDock')  # needed for restore state to work
+        splitter = QSplitter(QtCore.Qt.Vertical, self)
+        widg = QWidget()
+        widg.setLayout(QVBoxLayout())
+        self.settingsFrame = SettingsFrame()
+        widg.layout().addWidget(self.settingsFrame)
+        self.addAnalysisButton = QPushButton("Add Analysis")
+        widg.layout().addWidget(self.addAnalysisButton)
+        self.analysesQueue = QueuedAnalyses()
+
+        self.addAnalysisButton.released.connect(lambda: self.analysesQueue.addAnalysis(*self.settingsFrame.getSettings()))
+
+        splitter.addWidget(widg)
+        splitter.addWidget(self.analysesQueue)
+        splitter.setChildrenCollapsible(False)
+        self.setWidget(splitter)
+
+    def loadFromSettings(self, settings: AnalysisSettings):
+        self.settingsFrame.loadFromSettings(settings)
+
+    def getSettings(self) -> Tuple[CameraCorrection, AnalysisSettings]:
+        return self.settingsFrame.getSettings()
+
+    def getAnalysisName(self):
+        return self.settingsFrame._analysisNameEdit.text()
