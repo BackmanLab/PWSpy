@@ -1,14 +1,16 @@
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QScrollArea, QVBoxLayout, QPushButton, QMessageBox
 
-from pwspy.gui.dockWidgets.CellSelectorDock import CellTableWidget
-from pwspy.gui.dockWidgets.PlottingDock.widgets import AspectRatioWidget, LittlePlot
+from pwspy.gui.dockWidgets import CellSelectorDock
+from pwspy.imCube.ICMetaDataClass import ICMetaData
+from .widgets import AspectRatioWidget, LittlePlot
 
 # TODO add blinded roi drawing
 
 class PlottingDock(QDockWidget):
-    def __init__(self, cellSelectorTable: CellTableWidget):
+    def __init__(self, cellSelectorTable: CellSelectorDock):
         super().__init__("Plotting")
+        self.setStyleSheet("QDockWidget > QWidget { border: 1px solid lightgray; }")
         self.selector = cellSelectorTable
         self.setObjectName('PlottingWidget')
         self.plots = []

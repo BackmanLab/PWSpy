@@ -11,6 +11,7 @@ from pwspy.imCube.ICMetaDataClass import ICMetaData
 class CellSelectorDock(QDockWidget):
     def __init__(self):
         super().__init__("Cell Selector")
+        self.setStyleSheet("QDockWidget > QWidget { border: 1px solid lightgray; }")
         self.setObjectName('CellSelectorDock')  # needed for restore state to work
         self._widget = QWidget(self)
         layout = QVBoxLayout()

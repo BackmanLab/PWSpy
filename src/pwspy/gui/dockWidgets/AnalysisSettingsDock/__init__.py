@@ -247,7 +247,7 @@ class QueuedAnalyses(QScrollArea):
         self.setWidget(self.listWidget)
         self.listWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.listWidget.customContextMenuRequested.connect(self.showContextMenu)
-        self.listWidget.itemDoubleClicked.connect( # TODO display settings)
+        #self.listWidget.itemDoubleClicked.connect( # TODO display settings)
 
     def addAnalysis(self, cameraCorrection: CameraCorrection, settings: AnalysisSettings, reference: ICMetaData, cells: List[ICMetaData]):
         item = AnalysisListItem(cameraCorrection, settings, reference, cells, 'BlahBlah', self.listWidget)
@@ -264,6 +264,7 @@ class QueuedAnalyses(QScrollArea):
 class AnalysisSettingsDock(QDockWidget):
     def __init__(self, cellSelector: CellSelectorDock):
         super().__init__("Settings")
+        self.setStyleSheet("QDockWidget > QWidget { border: 1px solid lightgray; }")
         self.selector = cellSelector
         self.setObjectName('AnalysisSettingsDock')  # needed for restore state to work
         splitter = QSplitter(QtCore.Qt.Vertical, self)
@@ -273,17 +274,19 @@ class AnalysisSettingsDock(QDockWidget):
         widg.layout().addWidget(self.settingsFrame)
         self.addAnalysisButton = QPushButton("Add Analysis")
         widg.layout().addWidget(self.addAnalysisButton)
+        widg2 = QWidget()
+        widg2.setLayout(QVBoxLayout())
         self.analysesQueue = QueuedAnalyses()
+        widg2.layout().addWidget(self.analysesQueue)
 
         self.addAnalysisButton.released.connect(
             lambda: self.analysesQueue.addAnalysis(*self.settingsFrame.getSettings(),
                                                    self.selector.getSelectedReferenceMeta(),
                                                    self.selector.getSelectedCellMetas()))
-        self.analysesQueue.listWidget.currentItemChanged.connect(#TODO Highlight cells and ref)
-
+        #self.analysesQueue.listWidget.currentItemChanged.connect(#TODO Highlight cells and ref)
 
         splitter.addWidget(widg)
-        splitter.addWidget(self.analysesQueue)
+        splitter.addWidget(widg2)
         splitter.setChildrenCollapsible(False)
         self.setWidget(splitter)
 

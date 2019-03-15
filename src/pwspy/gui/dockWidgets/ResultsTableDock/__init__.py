@@ -8,6 +8,7 @@ from .widgets import ResultsTable
 class ResultsTableDock(QDockWidget):
     def __init__(self):
         super().__init__("Results")
+        self.setStyleSheet("QDockWidget > QWidget { border: 1px solid lightgray; }")
         self.setObjectName('ResultsTableDock')
         self._widget = QWidget()
         self._widget.setLayout(QGridLayout())
