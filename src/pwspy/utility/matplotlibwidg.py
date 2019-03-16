@@ -291,7 +291,7 @@ class myEllipse(mySelectorWidget):
         self.onselect = onselect
         self.settingWidth = False
         self.startPoint = None
-        self.patch = Ellipse([0,0],0,0,0, facecolor=(0,0,1,.1), animated=True, edgecolor=(0,0,1,.8))
+        self.patch = Ellipse((0, 0), 0, 0, 0, facecolor=(0, 0, 1, .1), animated=True, edgecolor=(0,0,1,.8))
         self.axMan.ax.add_patch(self.patch)
         self.addArtist(self.patch)
     def _press(self, event):
@@ -334,7 +334,7 @@ class myEllipse(mySelectorWidget):
                     s = np.sin(np.radians(self.patch.angle))
                     c = np.cos(np.radians(self.patch.angle))
                     x = x_ * c - y_ * s  # rotate ellipse
-                    y = x_ * s + y_ * c;
+                    y = x_ * s + y_ * c
                     x += self.patch.center[0] #translate ellipse
                     y += self.patch.center[1]
                     verts = list(zip(x,y))

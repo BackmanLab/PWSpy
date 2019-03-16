@@ -28,7 +28,7 @@ wvEnd = 690  # end wavelength for poly subtraction
 sampleRI = 1.545  # The refractive index of the resin. This is taken from matlab code, I don't know if it's correct.
 orderPolyFit = 0
 wv_step = 2
-correction = CameraCorrection(2000, [0.977241216, 1.73E-06, 1.70E-11])
+correction = CameraCorrection(2000, (0.977241216, 1.73E-06, 1.70E-11))
 
 '''************'''
 

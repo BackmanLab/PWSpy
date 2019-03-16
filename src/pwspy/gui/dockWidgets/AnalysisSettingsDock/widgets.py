@@ -29,16 +29,16 @@ class LinearityValidator(QValidator):
         self.doubleValidator = QDoubleValidator()
         self.state = QValidator.Acceptable
 
-    def validate(self, input: str, pos: int):
+    def validate(self, inp: str, pos: int):
         oldState = self.state
-        for i in input.split(','):
+        for i in inp.split(','):
             ret = self.doubleValidator.validate(i, pos)
             if ret[0] == QValidator.Intermediate:
                 self.state = ret[0]
                 if self.state != oldState: self.stateChanged.emit(self.state)
-                return (self.state, input, pos)
+                return self.state, inp, pos
             elif ret[0] == QValidator.Invalid:
                 return ret
         self.state = QValidator.Acceptable
         if self.state != oldState: self.stateChanged.emit(self.state)
-        return (self.state, input, pos)
+        return self.state, inp, pos

@@ -58,8 +58,8 @@ class CellSelectorDock(QDockWidget):
         self.pathFilter.clear()
         self.pathFilter.addItem('.*')
         paths = []
-        for i in self.tableWidget._cellItems:
-            paths.append(i.path.text())
+        for i in self.tableWidget.cellItems:
+            paths.append(i.path)
         self.pathFilter.addItems(set(paths))
         self.pathFilter.currentIndexChanged.connect(self.executeFilter)  # reconnect
 

@@ -1,7 +1,7 @@
 import os
 import traceback
 
-from . import applicationVars
+from pwspy.gui import applicationVars
 
 
 def isIpython():
@@ -15,6 +15,15 @@ def isIpython():
 if __name__ == '__main__':
     from pwspy.gui.analysis import PWSApp
     import sys
+
+    # This prevents errors from happening silently.
+    sys.excepthook_backup = sys.excepthook
+    def exception_hook(exctype, value, traceback):
+        print(exctype, value, traceback)
+        sys.excepthook_backup(exctype, value, traceback)
+        sys.exit(1)
+    sys.excepthook = exception_hook
+
     try:
         if isIpython():
             app = PWSApp(sys.argv)

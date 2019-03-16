@@ -25,7 +25,7 @@ class RoiCompiler:
             spectra, _ = results.reflectance.getMeanSpectra(roi)[0]
             meanRms = spectra.std()
             varRatio = meanRms**2 / (results.rms[roi.data]**2).mean()
-            RoiAnalysisResults(
+            return RoiAnalysisResults(
                 reflectance=reflectance,
                 rms=rms,
                 polynomialRms=polynomialRms,

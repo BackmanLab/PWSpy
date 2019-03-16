@@ -1,3 +1,5 @@
+from typing import List
+
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QScrollArea, QVBoxLayout, QPushButton, QMessageBox
 
@@ -59,10 +61,10 @@ class PlottingDock(QDockWidget):
             self.arController.aspect = 1 / len(self.plots)
 
     def plotRMS(self):
-        cells: ICMetaData = [i.cube for i in self.selector.selectedCellItems]
+        cells: List[ICMetaData] = self.selector.getSelectedCellMetas()
         if len(cells) == 0:
             messageBox = QMessageBox(self)
             messageBox.information(self, "Oops!", "Please select the cells you would like to plot.")
             messageBox.setFixedSize(500, 200)
         for cell in cells:
-            self.addPlot(LittlePlot(cell.loadAnalysis(cell.getAnalyses()[0]).rms, cell))
+            self.addPlot(LittlePlot(cell.loadAnalysis(cell.getAnalyses()[0]).rms, cell)) #TODO this crashes if no analysis is present

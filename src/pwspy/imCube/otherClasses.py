@@ -78,7 +78,7 @@ class Roi:
     @staticmethod
     def getValidRoisInPath(path: str) -> List[Tuple[str, int, RoiFileFormats]]:
         patterns = [('BW*_*.mat', RoiFileFormats.MAT), ('*_roi.h5', RoiFileFormats.HDF)]
-        files = {format: glob(os.path.join(path, p)) for p, format in patterns}
+        files = {fformat: glob(os.path.join(path, p)) for p, fformat in patterns}
         ret = []
         for k, v in files.items():
             if k == RoiFileFormats.HDF:

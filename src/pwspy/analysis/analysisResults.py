@@ -1,5 +1,6 @@
 from __future__ import annotations
 import dataclasses
+from typing import Optional
 
 import h5py
 import numpy as np
@@ -98,7 +99,7 @@ class AnalysisResults(AbstractAnalysisResults):
     opdIndex: np.ndarray
     imCubeIdTag: str
     referenceIdTag: str
-    extraReflectionTag: str
+    extraReflectionTag: Optional[str]
     time: str = None
 
     def __post_init__(self):
@@ -110,12 +111,12 @@ class AnalysisResults(AbstractAnalysisResults):
             raise OSError(f'{fileName} already exists.')
         # now save the stuff
         with h5py.File(fileName, 'w') as hf:
-            for k, v in dataclasses.asdict().items():
+            for k, v in dataclasses.asdict(self).items():
                 if k == 'settings':
                     v = v.toJsonString()
                 if isinstance(v, str):
                     hf.create_dataset(k, data=np.string_(v)) #h5py recommends encoding strings this way for compatability.
-                elif isinstance(v, KCube):
+                elif isinstance(v, KCube): # Todo add support for extra reflection. account for kcube having it's own tohdf method
                     grp = hf.create_group(k)
                     grp.create_dataset('data', data=v.data)
                     grp.create_dataset('wavenumbers', data=v.wavenumbers)

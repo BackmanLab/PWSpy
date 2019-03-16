@@ -49,7 +49,7 @@ def sigma2DApprox(d_size):
     return d_estimate
 
 def testexpn():
-    lmin=1;
+    lmin=1
     d=np.array([2.1796160,2.9585142,2.6632771,1.8785352,1.8430616])
     x=np.array([8.8774614,2.6083560,3.6681373,20.619408,23.234888])
 #    d=d[1]

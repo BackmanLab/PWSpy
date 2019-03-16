@@ -176,6 +176,10 @@ class SettingsFrame(QScrollArea):
 
         self._updateSize()
 
+    @property
+    def analysisName(self) -> str:
+        return self._analysisNameEdit.text()
+
     def _updateSize(self):
         height = 100  # give this much excess room.
         height += self.presets.height()
@@ -258,7 +262,7 @@ class QueuedAnalyses(QScrollArea):
         deleteAction = QAction("Delete", self)
         deleteAction.triggered.connect(self.deleteSelected)
         menu.addAction(deleteAction)
-        menu.exec(self.mapToGlobal(point));
+        menu.exec(self.mapToGlobal(point))
 
 
 class AnalysisSettingsDock(QDockWidget):
@@ -297,4 +301,4 @@ class AnalysisSettingsDock(QDockWidget):
         return self.settingsFrame.getSettings()
 
     def getAnalysisName(self):
-        return self.settingsFrame._analysisNameEdit.text()
+        return self.settingsFrame.analysisName

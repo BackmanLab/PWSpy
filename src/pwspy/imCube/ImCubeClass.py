@@ -214,7 +214,7 @@ class ImCube(ICBase, ICMetaData):
         return cls(data, md, fileFormat=ICFileFormats.Hdf)
 
     def toHDF(self, g: h5py.Group, name: str) -> None:
-        g = ICBase.toHdf(g, name=name)
+        g = super().toHdf(g, name=name)
         d = self._encodeHdfMetadata(g[name])
 
 

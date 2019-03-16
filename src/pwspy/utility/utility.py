@@ -94,8 +94,8 @@ def loadAndProcess(fileDict: Union[dict, list], processorFunc=None, specifierNam
             raise Exception("Running in parallel with no processorFunc is a bad idea.")
         m = mp.Manager()
         lock = m.Lock()
+        po = mp.Pool(processes=psutil.cpu_count(logical=False) - 1)
         try:
-            po = mp.Pool(processes=psutil.cpu_count(logical=False) - 1)
             cubes = po.starmap(loadThenProcess, zip(*zip(*[[processorFunc, procArgs, lock]] * len(files)), files))
         finally:
             po.close()
