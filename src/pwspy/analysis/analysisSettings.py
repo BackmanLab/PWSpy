@@ -24,10 +24,10 @@ class AnalysisSettings:
 
     def toJson(self, filePath: str, name: str):
         with open(osp.join(filePath, f'{name}_analysis.json'), 'w') as f:
-            json.dump(dataclasses.asdict(self), f)
+            json.dump(dataclasses.asdict(self), f, indent=4)
 
     def toJsonString(self):
-        return json.dumps(dataclasses.asdict(self))
+        return json.dumps(dataclasses.asdict(self), indent=4)
 
     @classmethod
     def fromJsonString(cls, string: str):

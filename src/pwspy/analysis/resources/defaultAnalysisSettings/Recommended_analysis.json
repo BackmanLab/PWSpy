@@ -1,1 +1,1 @@
-{"filterOrder": 2, "filterCutoff": 0.2, "polynomialOrder": 0, "rInternalSubtractionPath": "What?", "referenceMaterial": "ethanol", "wavelengthStart": 510, "wavelengthStop": 690, "skipAdvanced": false, "useHannWindow": true, "autoCorrStopIndex": 7, "autoCorrMinSub": true}
+{"filterOrder": 2, "filterCutoff": 0.2, "polynomialOrder": 0, "extraReflectionPath": "What?", "referenceMaterial": "ethanol", "wavelengthStart": 510, "wavelengthStop": 690, "skipAdvanced": false, "useHannWindow": true, "autoCorrStopIndex": 7, "autoCorrMinSub": true}

@@ -25,12 +25,13 @@ from glob import glob
 class PWSApp(QApplication):
     def __init__(self, args):
         super().__init__(args)
+        self._setupDataDirectories()
         self.window = PWSWindow()
         self.anMan = AnalysisManager(self)
         self.window.runAction.triggered.connect(self.anMan.run)
-        self._setupDataDirectories()
 
-    def _setupDataDirectories(self):
+    @staticmethod
+    def _setupDataDirectories():
         if not os.path.exists(applicationVars.dataDirectory):
             os.mkdir(applicationVars.dataDirectory)
         if not os.path.exists(applicationVars.analysisSettingsDirectory):
@@ -59,11 +60,10 @@ class PWSWindow(QMainWindow):
         self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks | QMainWindow.AllowTabbedDocks)
 
         self.fileDialog = WorkingDirDialog(self)
-        #        self.fileDialog.scanButtonPushed.connect(self.searchCells)
 
-        menuBar = self.menuBar()
-        view = menuBar.addMenu("View")
-        view.addAction("Look at stuff")
+        # menuBar = self.menuBar()
+        # view = menuBar.addMenu("View")
+        # view.addAction("Look at stuff")
         toolBar = self.addToolBar('tool')
         toolBar.setObjectName('mainToolBar()')
         browseAction = toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'folder.png')), "Set Path")
