@@ -254,6 +254,9 @@ class QueuedAnalyses(QScrollArea):
         #self.listWidget.itemDoubleClicked.connect( # TODO display settings)
 
     def addAnalysis(self, cameraCorrection: CameraCorrection, settings: AnalysisSettings, reference: ICMetaData, cells: List[ICMetaData]):
+        if reference is None:
+            QMessageBox.information(self, '!', f'Please select a reference Cell.')
+            return
         item = AnalysisListItem(cameraCorrection, settings, reference, cells, 'BlahBlah', self.listWidget)
         self.listWidget.addItem(item)
 
