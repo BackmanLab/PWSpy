@@ -106,7 +106,7 @@ class AnalysisResults(AbstractAnalysisResults):
         self.__setattr__('time', datetime.now().strftime("%m-%d-%y %H:%M:%s"))
 
     def toHDF5(self, directory: str, name: str):
-        fileName = osp.join(directory, f'{name}.hdf5')
+        fileName = osp.join(directory, f'analysisResults_{name}.hdf5')
         if osp.exists(fileName):
             raise OSError(f'{fileName} already exists.')
         # now save the stuff
@@ -147,7 +147,7 @@ class cached_property(object):
 class AnalysisResultsLoader(AbstractAnalysisResults):
     """A read-only loader for analysis results that will only load them from hard disk as needed."""
     def __init__(self, directory: str, name: str):
-        self.file = h5py.File(osp.join(directory, f'{name}.hdf5'))
+        self.file = h5py.File(osp.join(directory, f'analysisResults_{name}.hdf5'))
 
     def __del__(self):
         self.file.close()
@@ -170,7 +170,6 @@ class AnalysisResultsLoader(AbstractAnalysisResults):
 
     @cached_property
     def reflectance(self):
-        #TODO add support for in-file slicing. only if chunking is implemented.
         grp = self.file['reflectance']
         return KCube(grp['data'], grp['wavenumbers'])
 
