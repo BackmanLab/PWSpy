@@ -29,6 +29,7 @@ class QueuedAnalysesFrame(QScrollArea):
         self.listWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.listWidget.customContextMenuRequested.connect(self.showContextMenu)
         self.listWidget.itemDoubleClicked.connect(self.displayItemSettings)
+        self.listWidget.currentItemChanged.connect(self.highlightItemCells)
 
     def addAnalysis(self, analysisName: str, cameraCorrection: CameraCorrection, settings: AnalysisSettings, reference: ICMetaData, cells: List[ICMetaData]):
         if reference is None:
@@ -50,3 +51,7 @@ class QueuedAnalysesFrame(QScrollArea):
 
     def displayItemSettings(self, item: AnalysisListItem):
         message = QMessageBox.information(self, item.name, item.settings.toJsonString())
+
+    def highlightItemCells(self, currentItem: AnalysisListItem, oldItem: AnalysisListItem):
+        pass # Todo
+
