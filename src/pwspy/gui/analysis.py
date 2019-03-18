@@ -93,9 +93,13 @@ class AnalysisManager:
     def run(self):
         refMeta = self.app.window.cellSelector.getSelectedReferenceMeta()
         cellMetas = self.app.window.cellSelector.getSelectedCellMetas()
-        if self._checkMetaConsistency(cellMetas): # If the metadata looks ok to proceed
+        cameraCorrection, settings = self.app.window.analysisSettings.getSettings()
+        if cameraCorrection is None: # This means that we the user has selected automatic cameraCorrection
+            correctionsOk = self._checkAutoCorrectionConsistency(cellMetas + [refMeta])
+        else:
+            correctionsOk = True #We're using a user provided camera correction so we assume it's good to go.
+        if correctionsOk:
             ref = ImCube.fromMetadata(refMeta)
-            cameraCorrection, settings = self.app.window.analysisSettings.getSettings()
             if cameraCorrection is not None:
                 ref.correctCameraEffects(cameraCorrection)
             else:
@@ -104,7 +108,7 @@ class AnalysisManager:
             analysis = Analysis(settings, ref)
             analysisName = self.app.window.analysisSettings.getAnalysisName()
             loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[ref, analysis, analysisName],
-                                 parallel=True)
+                            parallel=True)
 
     @staticmethod
     def _process(im: ImCube, analysis: Analysis, analysisName: str, cameraCorrection: CameraCorrection):
@@ -115,10 +119,13 @@ class AnalysisManager:
         results = analysis.run(im)
         im.saveAnalysis(results, analysisName)
 
-    def _checkMetaConsistency(self, cellMetas: typing.List[ICMetaData]) -> bool:
+    def _checkAutoCorrectionConsistency(self, cellMetas: typing.List[ICMetaData]) -> bool:
         camCorrections = [i.cameraCorrection for i in cellMetas]
-        if None in camCorrections:
-            QMessageBox.information(self.app.window, 'Hmm', 'Cell is missing automatic camera correction')
+        names = [os.path.split(i.filePath)[-1] for i in cellMetas]
+        missing, _ = zip(*[(name, cam) for name, cam in zip(names, camCorrections) if cam is None])
+        if len(missing) > 0:
+            missingMessage = str(missing) if len(missing) <= 3 else 'Many cells are'
+            QMessageBox.information(self.app.window, 'Hmm', f'{missingMessage} missing automatic camera correction')
             return False
         if len(set([hash(i) for i in camCorrections])) > 1:
             QMessageBox.information(self.app.window, 'Hmm', "Multiple camera corrections are present in the set of selected cells.")
