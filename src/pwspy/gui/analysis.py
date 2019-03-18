@@ -5,6 +5,7 @@ Created on Sun Feb 10 13:26:58 2019
 @author: Nick
 """
 import os
+import shutil
 import typing
 
 from PyQt5 import QtCore, QtGui
@@ -13,11 +14,13 @@ from PyQt5.QtWidgets import QMainWindow, QApplication
 from pwspy import ImCube, CameraCorrection
 from pwspy.analysis.analysisClass import Analysis
 from pwspy.imCube.ICMetaDataClass import ICMetaData
+from pwspy.analysis import defaultSettingsPath
 from pwspy.utility import loadAndProcess
 from .dialogs import WorkingDirDialog
 from .dockWidgets import CellSelectorDock, AnalysisSettingsDock, ResultsTableDock, PlottingDock
 from . import resources
 from . import applicationVars
+from glob import glob
 
 class PWSApp(QApplication):
     def __init__(self, args):
@@ -32,7 +35,9 @@ class PWSApp(QApplication):
             os.mkdir(applicationVars.dataDirectory)
         if not os.path.exists(applicationVars.analysisSettingsDirectory):
             os.mkdir(applicationVars.analysisSettingsDirectory)
-            # TODO unpack the default analysis settings
+            settingsFiles = glob(os.path.join(defaultSettingsPath, '*.json'))
+            for f in settingsFiles:
+                shutil.copyfile(f, os.path.join(applicationVars.analysisSettingsDirectory, os.path.split(f)[-1]))
         if not os.path.exists(applicationVars.extraReflectionDirectory):
             os.mkdir(applicationVars.extraReflectionDirectory)
 

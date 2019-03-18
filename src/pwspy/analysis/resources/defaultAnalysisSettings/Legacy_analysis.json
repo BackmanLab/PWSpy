@@ -1,0 +1,1 @@
+{"filterOrder": 2, "filterCutoff": 0.15, "polynomialOrder": 0, "rInternalSubtractionPath": "unkn", "referenceMaterial": "water", "wavelengthStart": 510, "wavelengthStop": 690, "skipAdvanced": true, "useHannWindow": true, "autoCorrStopIndex": 7, "autoCorrMinSub": true}
