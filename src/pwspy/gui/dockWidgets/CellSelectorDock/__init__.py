@@ -20,6 +20,8 @@ class CellSelectorDock(QDockWidget):
         self._filterWidget = QWidget(self._widget)
         self.pathFilter = QComboBox(self._filterWidget)
         self.pathFilter.setEditable(True)
+        width = self.pathFilter.minimumSizeHint().width()
+        self.pathFilter.view().setMinimumWidth(width)
         self.expressionFilter = QLineEdit(self._filterWidget)
         self.expressionFilter.setPlaceholderText("Python boolean expression. Cell#: {num}")
         self.expressionFilter.returnPressed.connect(self.executeFilter)
