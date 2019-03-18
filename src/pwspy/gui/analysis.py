@@ -9,7 +9,7 @@ import shutil
 import typing
 
 from PyQt5 import QtCore, QtGui
-from PyQt5.QtWidgets import QMainWindow, QApplication
+from PyQt5.QtWidgets import QMainWindow, QApplication, QMessageBox
 
 from pwspy import ImCube, CameraCorrection
 from pwspy.analysis.analysisClass import Analysis
@@ -93,18 +93,18 @@ class AnalysisManager:
     def run(self):
         refMeta = self.app.window.cellSelector.getSelectedReferenceMeta()
         cellMetas = self.app.window.cellSelector.getSelectedCellMetas()
-        self._checkMetaConsistency(cellMetas)
-        ref = ImCube.fromMetadata(refMeta)
-        cameraCorrection, settings = self.app.window.analysisSettings.getSettings()
-        if cameraCorrection is not None:
-            ref.correctCameraEffects(cameraCorrection)
-        else:
-            print("Using automatically detected camera corrections")
-            ref.correctCameraEffects(ref.cameraCorrection)
-        analysis = Analysis(settings, ref)
-        analysisName = self.app.window.analysisSettings.getAnalysisName()
-        loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[ref, analysis, analysisName],
-                             parallel=True)
+        if self._checkMetaConsistency(cellMetas): # If the metadata looks ok to proceed
+            ref = ImCube.fromMetadata(refMeta)
+            cameraCorrection, settings = self.app.window.analysisSettings.getSettings()
+            if cameraCorrection is not None:
+                ref.correctCameraEffects(cameraCorrection)
+            else:
+                print("Using automatically detected camera corrections")
+                ref.correctCameraEffects(ref.cameraCorrection)
+            analysis = Analysis(settings, ref)
+            analysisName = self.app.window.analysisSettings.getAnalysisName()
+            loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[ref, analysis, analysisName],
+                                 parallel=True)
 
     @staticmethod
     def _process(im: ImCube, analysis: Analysis, analysisName: str, cameraCorrection: CameraCorrection):
@@ -115,11 +115,13 @@ class AnalysisManager:
         results = analysis.run(im)
         im.saveAnalysis(results, analysisName)
 
-    @staticmethod
-    def _checkMetaConsistency(cellMetas: typing.List[ICMetaData]):
+    def _checkMetaConsistency(self, cellMetas: typing.List[ICMetaData]) -> bool:
         camCorrections = [i.cameraCorrection for i in cellMetas]
         if None in camCorrections:
-            raise Exception("cell is missing automatic camera correction")
+            QMessageBox.information(self.app.window, 'Hmm', 'Cell is missing automatic camera correction')
+            return False
         if len(set([hash(i) for i in camCorrections])) > 1:
-            raise Exception("multiple camera corrections are present.")
+            QMessageBox.information(self.app.window, 'Hmm', "Multiple camera corrections are present in the set of selected cells.")
+            return False
+        return True
 
