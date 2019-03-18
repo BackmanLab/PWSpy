@@ -42,10 +42,13 @@ class CellSelectorDock(QDockWidget):
         self.setWidget(self._widget)
         self._cells = []
 
-    def addCell(self, fileName: str, workingDir: str):
+    def addCell(self, fileName: str, workingDir: str, isReference: bool = False):
         self._cells.append(ICMetaData.loadAny(fileName))
         cell = CellTableWidgetItem(self._cells[-1], os.path.split(fileName)[0][len(workingDir) + 1:],
                                    int(fileName.split('Cell')[-1]))
+        if isReference:
+            cell.setReference(True)
+            self.refTableWidget.updateReferences(True, [cell])
         self.tableWidget.addCellItem(cell)
 
     def clearCells(self):

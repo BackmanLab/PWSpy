@@ -105,6 +105,8 @@ class CellTableWidget(QTableWidget):
     def toggleSelectedCellsInvalid(self, state: bool):
         for i in self.selectedCellItems:
             i.setInvalid(state)
+        if state:
+            self.referencesChanged.emit(state, self.selectedCellItems)
 
     def toggleSelectedCellsReference(self, state: bool) -> None:
         items = self.selectedCellItems
