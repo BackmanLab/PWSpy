@@ -66,13 +66,13 @@ class PlotNd(object):
         self.update()
         plt.pause(0.1)
 
-    def save(self, path):
+    def save(self, path, interval = 50):
         def f(self, z):
             self.coords = self.coords[:2] + (z,) + self.coords[3:]
             self.update()
 
         ani = FuncAnimation(self.fig, lambda z: f(self, z), frames=list(range(self.X.shape[2])), blit=False,
-                            interval=50)
+                            interval=interval)
         ani.save(path)
         return ani
 

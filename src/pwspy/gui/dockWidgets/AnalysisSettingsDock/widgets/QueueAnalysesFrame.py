@@ -30,6 +30,7 @@ class QueuedAnalysesFrame(QScrollArea):
         self.listWidget.customContextMenuRequested.connect(self.showContextMenu)
         self.listWidget.itemDoubleClicked.connect(self.displayItemSettings)
         self.listWidget.currentItemChanged.connect(self.highlightItemCells)
+        self.setWidgetResizable(True)
 
     def addAnalysis(self, analysisName: str, cameraCorrection: CameraCorrection, settings: AnalysisSettings, reference: ICMetaData, cells: List[ICMetaData]):
         if reference is None:
