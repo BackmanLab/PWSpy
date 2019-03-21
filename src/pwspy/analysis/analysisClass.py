@@ -14,16 +14,20 @@ from . import AnalysisSettings, AnalysisResults
 
 
 class AbstractAnalysis(ABC):
+    @abstractmethod
     def __init__(self, settings: AnalysisSettings):
+        """Does all of the one-time tasks needed to start running an analysis. e.g. prepare the reference, load the extrareflection cube, etc."""
         self.settings = settings
 
     @abstractmethod
     def run(self, cube) -> AnalysisResults:
+        """Given an ImCube to analyze this function returns an instanse of AnalysisResults. In the gui this function is run in parallel by the AnalysisManager."""
         pass
 
 
 # TODO save mean spectra of ROIS
 class LegacyAnalysis(AbstractAnalysis):
+    """An analysis without Extra reflection subtraction."""
     indexOpdStop = 100
 
     def __init__(self, settings: AnalysisSettings, ref: ImCube):
