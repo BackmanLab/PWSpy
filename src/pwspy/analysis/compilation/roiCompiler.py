@@ -34,6 +34,8 @@ class RoiCompiler:
         else:
             varRatio = None
         return RoiAnalysisResults(
+            roi=roi,
+            analysisName=results.analysisName,
             reflectance=reflectance,
             rms=rms,
             polynomialRms=polynomialRms,
