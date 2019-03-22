@@ -30,7 +30,6 @@ class CellTableWidgetItem:
         self.path = label
         self.notesButton = NotesButton("Open", cube.getNotes)
         self.notesButton.setFixedSize(40, 30)
-        # self.notesButton.setToolTip(cube.getNotes())
         self.pathLabel = QTableWidgetItem(self.path)
         self.numLabel = NumberTableWidgetItem(num)
         self.roiLabel = NumberTableWidgetItem(len(cube.getRois()))
@@ -93,6 +92,14 @@ class CellTableWidget(QTableWidget):
         self.verticalHeader().hide()
         [self.setColumnWidth(i, w) for i, w in zip(range(len(columns)), [60, 40, 40, 50, 40])]
         self._cellItems = []
+        #This makes the items stay looking selected even when the table is inactive
+        self.setStyleSheet("""QTableWidget::item:active {
+                                selection-background-color: darkblue;
+                                selection-color: white;}
+                                
+                                QTableWidget::item:inactive {
+                                selection-background-color: darkblue;
+                                selection-color: white;}""")
         self.palette().setColor(QPalette.Highlight, QtGui.QColor("#3a7fc2")) # This makes it so the selected cells stay colored even when the table isn't active.
         self.palette().setColor(QPalette.HighlightedText, QtCore.Qt.white)
 
@@ -170,6 +177,14 @@ class ReferencesTableItem(QTableWidgetItem):
 class ReferencesTable(QTableWidget):
     def __init__(self, parent: QWidget, cellTable: CellTableWidget):
         super().__init__(parent)
+        #This makes the items stay looking selected even when the table is inactive
+        self.setStyleSheet("""QTableWidget::item:active {   
+                                selection-background-color: darkblue;
+                                selection-color: white;}
+
+                                QTableWidget::item:inactive {
+                                selection-background-color: darkblue;
+                                selection-color: white;}""")
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         self.setColumnCount(1)
         self.setHorizontalHeaderLabels(('Reference',))
