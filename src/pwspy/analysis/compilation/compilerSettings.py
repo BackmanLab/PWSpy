@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 @dataclass
 class CompilerSettings:
+    """These settings determine which values should be processed during compilation"""
     reflectance: bool
     rms: bool
     polynomialRms: bool
@@ -10,3 +11,4 @@ class CompilerSettings:
     rSquared: bool
     ld: bool
     opd: bool
+    meanSigmaRatio: bool
