@@ -35,6 +35,7 @@ class WorkingDirDialog(QDialog):
         self.directory = os.path.expanduser('~')
 
     def _scanButtonPushed(self):
+        self.directory = self.textLine.text()
         recursive = self.recursiveCheckbox.checkState() != 0
         pattern = [os.path.join('**', 'Cell[0-9]*')] if recursive else ['Cell[0-9]*']
         files = []

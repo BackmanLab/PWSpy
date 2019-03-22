@@ -13,7 +13,7 @@ def isIpython():
 
 
 if __name__ == '__main__':
-    from pwspy.gui.analysis import PWSApp
+    from pwspy.gui.PWSAnalysisApp import PWSApp
     import sys
 
     # This prevents errors from happening silently.

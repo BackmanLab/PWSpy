@@ -10,6 +10,17 @@ from pwspy.gui.sharedWidgets.tables import NumberTableWidgetItem
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 
 
+class NotesButton(QPushButton):
+    def __init__(self, label: str, method):
+        super().__init__(label)
+        self.toolTipMethod = method
+
+    def event(self, e: QtCore.QEvent):
+        if e.type() == QtCore.QEvent.ToolTip:
+            self.setToolTip(self.toolTipMethod())
+        return super().event(e)
+
+
 class CellTableWidgetItem:
     cube: ICMetaData
 
@@ -17,10 +28,9 @@ class CellTableWidgetItem:
         self.cube = cube
         self.num = num
         self.path = label
-        self.notesButton = QPushButton("Open")
-        self._notesOrigColor = self.notesButton.palette().color(QPalette.Button)
+        self.notesButton = NotesButton("Open", cube.getNotes)
         self.notesButton.setFixedSize(40, 30)
-        self.notesButton.setToolTip(cube.getNotes())
+        # self.notesButton.setToolTip(cube.getNotes())
         self.pathLabel = QTableWidgetItem(self.path)
         self.numLabel = NumberTableWidgetItem(num)
         self.roiLabel = NumberTableWidgetItem(len(cube.getRois()))
@@ -49,14 +59,10 @@ class CellTableWidgetItem:
         self._reference = reference
 
     def _updateHasNotes(self):
-        pal = self.notesButton.palette()
-        if self.cube.hasNotes():
-            pal.setColor(QPalette.Button, QtCore.Qt.green)  # TODO need to use a style sheet for this to work apparently.
-            pal.setColor(QPalette.Background, QtCore.Qt.green)
+        if self.cube.getNotes() != '':
+            self.notesButton.setStyleSheet('QPushButton { background-color: lightgreen;}')
         else:
-            pal.setColor(QPalette.Button, self._notesOrigColor)
-            pal.setColor(QPalette.Background, self._notesOrigColor)
-        self.notesButton.setPalette(pal)
+            self.notesButton.setStyleSheet('QPushButton { background-color: lightgrey;}')
 
     def _setItemColor(self, color):
         for i in self._items:
@@ -108,16 +114,22 @@ class CellTableWidget(QTableWidget):
             menu.exec(self.mapToGlobal(point))
 
     def toggleSelectedCellsInvalid(self, state: bool):
+        changedItems = []
         for i in self.selectedCellItems:
-            i.setInvalid(state)
+            if i.isInvalid() != state:
+                i.setInvalid(state)
+                changedItems.append(i)
         if state:
-            self.referencesChanged.emit(state, self.selectedCellItems)
+            self.referencesChanged.emit(False, changedItems)
 
     def toggleSelectedCellsReference(self, state: bool) -> None:
         items = self.selectedCellItems
+        changedItems = []
         for i in items:
-            i.setReference(state)
-        self.referencesChanged.emit(state, items)
+            if ((i.isReference() != state) and (not i.isInvalid())):
+                i.setReference(state)
+                changedItems.append(i)
+        self.referencesChanged.emit(state, changedItems)
 
     @property
     def selectedCellItems(self) -> typing.List[CellTableWidgetItem]:

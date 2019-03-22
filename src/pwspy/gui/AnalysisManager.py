@@ -5,13 +5,12 @@ from PyQt5.QtWidgets import QMessageBox
 
 from pwspy import ImCube, CameraCorrection
 from pwspy.analysis.analysisClass import Analysis
-from pwspy.gui.analysis import PWSApp
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 from pwspy.utility import loadAndProcess
 
 
 class AnalysisManager:
-    def __init__(self, app: PWSApp):
+    def __init__(self, app: 'PWSApp'):
         self.app = app
 
     def run(self):
