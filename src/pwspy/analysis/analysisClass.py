@@ -25,7 +25,6 @@ class AbstractAnalysis(ABC):
         pass
 
 
-# TODO save mean spectra of ROIS
 class LegacyAnalysis(AbstractAnalysis):
     """An analysis without Extra reflection subtraction."""
     indexOpdStop = 100
@@ -39,7 +38,8 @@ class LegacyAnalysis(AbstractAnalysis):
     def run(self, cube: ImCube) -> AnalysisResults:
         assert cube.isCorrected()
         cube = self._normalizeImCube(cube)
-        cube.data = self._filterSignal(cube.data)
+        interval = (max(cube.wavelengths) - min(cube.wavelengths)) / (len(cube.wavelengths) - 1)# Wavelength interval. We are assuming equally spaced wavelengths here
+        cube.data = self._filterSignal(cube.data, 1/interval)
         # The rest of the analysis will be performed only on the selected wavelength range.
         cube.selIndex(self.settings.wavelengthStart, self.settings.wavelengthStop)
         # Determine the mean-reflectance for each pixel in the cell.
@@ -87,9 +87,8 @@ class LegacyAnalysis(AbstractAnalysis):
         cube.normalizeByReference(self.ref)
         return cube
 
-    def _filterSignal(self, data: np.ndarray):
-        # TODO The cutoff totally ignores what the `sample rate` is. so a 2nm interval image cube will be filtered differently than a 1nm interval cube. This is how it is in matlab.
-        b, a = sps.butter(self.settings.filterOrder, self.settings.filterCutoff)
+    def _filterSignal(self, data: np.ndarray, sampleFreq: float):
+        b, a = sps.butter(self.settings.filterOrder, self.settings.filterCutoff, fs=sampleFreq)
         return sps.filtfilt(b, a, data, axis=2)
 
     # -- Polynomial Fit
@@ -124,7 +123,7 @@ class LegacyAnalysis(AbstractAnalysis):
 class Analysis(LegacyAnalysis):
     def __init__(self, settings: AnalysisSettings, ref: ImCube):
         super().__init__(settings, ref)
-        # TODO decide if we want to do this: ref.filterDust(4)
+        ref.filterDust(4)  # Apply a blur to filter out dust particles
 
         theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, 'glass', index=ref.wavelengths)[None, None, :]
         extraReflectance = ExtraReflectanceCube.load(settings.extraReflectionPath)

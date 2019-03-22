@@ -2,7 +2,7 @@ import os
 import typing
 from typing import List
 
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import QPalette
 from PyQt5.QtWidgets import QPushButton, QTableWidgetItem, QTableWidget, QAbstractItemView, QMenu, QWidget, QToolTip
 
@@ -51,9 +51,11 @@ class CellTableWidgetItem:
     def _updateHasNotes(self):
         pal = self.notesButton.palette()
         if self.cube.hasNotes():
-            pal.setColor(QPalette.Button, QtCore.Qt.green) #TODO need to use a style sheet for this to work apparently.
+            pal.setColor(QPalette.Button, QtCore.Qt.green)  # TODO need to use a style sheet for this to work apparently.
+            pal.setColor(QPalette.Background, QtCore.Qt.green)
         else:
             pal.setColor(QPalette.Button, self._notesOrigColor)
+            pal.setColor(QPalette.Background, self._notesOrigColor)
         self.notesButton.setPalette(pal)
 
     def _setItemColor(self, color):
@@ -85,6 +87,8 @@ class CellTableWidget(QTableWidget):
         self.verticalHeader().hide()
         [self.setColumnWidth(i, w) for i, w in zip(range(len(columns)), [60, 40, 40, 50, 40])]
         self._cellItems = []
+        self.palette().setColor(QPalette.Highlight, QtGui.QColor("#3a7fc2")) # This makes it so the selected cells stay colored even when the table isn't active.
+        self.palette().setColor(QPalette.HighlightedText, QtCore.Qt.white)
 
     @property
     def cellItems(self) -> List[CellTableWidgetItem]:

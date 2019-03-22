@@ -7,6 +7,8 @@ from PyQt5.QtWidgets import QListWidgetItem, QWidget, QScrollArea, QListWidget, 
 
 from pwspy import CameraCorrection
 from pwspy.analysis import AnalysisSettings
+from pwspy.gui.dockWidgets import CellSelectorDock
+from pwspy.gui.dockWidgets.CellSelectorDock import CellTableWidgetItem
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 
 
@@ -53,6 +55,4 @@ class QueuedAnalysesFrame(QScrollArea):
     def displayItemSettings(self, item: AnalysisListItem):
         message = QMessageBox.information(self, item.name, item.settings.toJsonString())
 
-    def highlightItemCells(self, currentItem: AnalysisListItem, oldItem: AnalysisListItem):
-        pass # Todo
 

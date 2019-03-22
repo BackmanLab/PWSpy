@@ -33,7 +33,6 @@ class AnalysisSettingsDock(QDockWidget):
             lambda: self.analysesQueue.addAnalysis(self.settingsFrame.analysisName, *self.settingsFrame.getSettings(),
                                                    self.selector.getSelectedReferenceMeta(),
                                                    self.selector.getSelectedCellMetas()))
-        #self.analysesQueue.listWidget.currentItemChanged.connect(#TODO Highlight cells and ref)
 
         splitter.addWidget(widg)
         splitter.addWidget(widg2)
