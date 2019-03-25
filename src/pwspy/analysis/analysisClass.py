@@ -138,10 +138,10 @@ class Analysis(LegacyAnalysis):
         self.ref = ref
         self.extraReflection = Iextra
 
-    def run(self, cube: ImCube) -> AnalysisResults:
-        results = super().run(cube)
+    def run(self, cube: ImCube) -> Tuple[AnalysisResults, List[warnings.AnalysisWarning]]:
+        results, warns = super().run(cube)
         results.extraReflectionTag = self.extraReflection.idTag
-        return results
+        return results, warns
 
     def _normalizeImCube(self, cube: ImCube) -> ImCube:
         cube.normalizeByExposure()
