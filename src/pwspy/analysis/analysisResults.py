@@ -123,10 +123,8 @@ class AnalysisResults(AbstractAnalysisResults):
                     v = v.toJsonString()
                 if isinstance(v, str):
                     hf.create_dataset(k, data=np.string_(v)) #h5py recommends encoding strings this way for compatability.
-                elif isinstance(v, KCube): # Todo add support for extra reflection. account for kcube having it's own tohdf method
-                    grp = hf.create_group(k)
-                    grp.create_dataset('data', data=v.data)
-                    grp.create_dataset('wavenumbers', data=v.wavenumbers)
+                elif isinstance(v, KCube): # Todo add support for extra reflection.
+                    hf = v.toHdf(hf, k)
                 elif isinstance(v, np.ndarray):
                     hf.create_dataset(k, data=v)
                 else:

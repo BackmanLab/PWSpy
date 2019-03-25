@@ -85,7 +85,6 @@ class CellTableWidgetItem:
 
     def isInvalid(self) -> bool:
         return self._invalid
-    # Todo keep metadata file that tracks cell status
 
     def isReference(self) -> bool:
         return self._reference
