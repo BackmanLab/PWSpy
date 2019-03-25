@@ -1,6 +1,7 @@
+import json
 import os
 import typing
-from typing import List
+from typing import List, Union
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import QPalette
@@ -26,6 +27,11 @@ class CellTableWidgetItem:
 
     def __init__(self, cube: ICMetaData, label: str, num: int):
         self.cube = cube
+        path = os.path.join(self.cube.filePath, 'AnAppPrefs.json')
+        self._f = open(path, 'w')
+        self.md = json.load(self._f)
+        self.setReference(self._reference)
+        self.setInvalid(self._invalid)
         self.num = num
         self.path = label
         self.notesButton = NotesButton("Open", cube.getNotes)
@@ -36,9 +42,19 @@ class CellTableWidgetItem:
         self.anLabel = NumberTableWidgetItem(len(cube.getAnalyses()))
         self.notesButton.released.connect(self.cube.editNotes)
         self._items = [self.pathLabel, self.numLabel, self.roiLabel, self.anLabel]
-        self._invalid = False
-        self._reference = False
         self._updateHasNotes()
+
+    @property
+    def _invalid(self): return self.md['invalid']
+
+    @_invalid.setter
+    def _invalid(self, val): self.md['invalid'] = val
+
+    @property
+    def _reference(self): return self.md['reference']
+
+    @_reference.setter
+    def _reference(self, val): self.md['reference'] = val
 
     def setInvalid(self, invalid: bool):
         if invalid:
@@ -74,6 +90,9 @@ class CellTableWidgetItem:
     def isReference(self) -> bool:
         return self._reference
 
+    def __del__(self):
+        json.dump(self.md, self._f)
+        self._f.close()
 
 class CellTableWidget(QTableWidget):
     referencesChanged = QtCore.pyqtSignal(bool, list)
