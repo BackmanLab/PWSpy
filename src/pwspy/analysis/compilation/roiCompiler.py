@@ -1,16 +1,20 @@
+from typing import Tuple, List
+
 import numpy as np
 
 from pwspy.analysis.analysisResults import AbstractAnalysisResults
 from pwspy.analysis.compilation.compilerSettings import CompilerSettings
 from pwspy.analysis.compilation.roiCompilationResults import RoiAnalysisResults
 from pwspy.imCube.otherClasses import Roi
+from pwspy.analysis import warnings
 
 
 class RoiCompiler:
     def __init__(self, settings: CompilerSettings):
         self._settings = settings
 
-    def run(self, results: AbstractAnalysisResults, roi: Roi) ->RoiAnalysisResults:
+    def run(self, results: AbstractAnalysisResults, roi: Roi) -> Tuple[RoiAnalysisResults, List[warnings.AnalysisWarning]]:
+        warns = []
         reflectance = self._avgOverRoi(roi, results.meanReflectance) if self._settings.reflectance else None
         rms = self._avgOverRoi(roi, results.rms) if self._settings.rms else None
         polynomialRms = self._avgOverRoi(roi, results.polynomialRms) if self._settings.polynomialRms else None
@@ -31,20 +35,22 @@ class RoiCompiler:
             spectra, _ = results.reflectance.getMeanSpectra(roi)[0]
             meanRms = spectra.std()
             varRatio = meanRms**2 / (results.rms[roi.data]**2).mean()
+            warns.append(warnings.checkMeanSpectraRatio(varRatio))
         else:
             varRatio = None
-        return RoiAnalysisResults(
-            roi=roi,
-            analysisName=results.analysisName,
-            reflectance=reflectance,
-            rms=rms,
-            polynomialRms=polynomialRms,
-            autoCorrelationSlope=autoCorrelationSlope,
-            rSquared=rSquared,
-            ld=ld,
-            opd=opd,
-            opdIndex=opdIndex,
-            varRatio=varRatio)
+        results = RoiAnalysisResults( # TODO missing args here
+                    roi=roi,
+                    analysisName=results.analysisName,
+                    reflectance=reflectance,
+                    rms=rms,
+                    polynomialRms=polynomialRms,
+                    autoCorrelationSlope=autoCorrelationSlope,
+                    rSquared=rSquared,
+                    ld=ld,
+                    opd=opd,
+                    opdIndex=opdIndex,
+                    varRatio=varRatio)
+        return results, warns
 
     @staticmethod
     def _avgOverRoi(roi: Roi, arr: np.ndarray, condition: np.ndarray = None) -> float:

@@ -5,10 +5,12 @@ Created on Tue Feb 12 23:10:35 2019
 @author: Nick
 """
 from abc import ABC, abstractmethod
+from typing import List, Tuple
 
 import numpy as np
 import scipy.signal as sps
 from pwspy import ImCube, KCube, ExtraReflectanceCube
+from pwspy.analysis import warnings
 from pwspy.utility import reflectanceHelper
 from . import AnalysisSettings, AnalysisResults
 
@@ -35,8 +37,9 @@ class LegacyAnalysis(AbstractAnalysis):
         ref.normalizeByExposure()
         self.ref = ref
 
-    def run(self, cube: ImCube) -> AnalysisResults:
+    def run(self, cube: ImCube) -> Tuple[AnalysisResults, List[warnings.AnalysisWarning]]:
         assert cube.isCorrected()
+        warns = []
         cube = self._normalizeImCube(cube)
         interval = (max(cube.wavelengths) - min(cube.wavelengths)) / (len(cube.wavelengths) - 1)# Wavelength interval. We are assuming equally spaced wavelengths here
         cube.data = self._filterSignal(cube.data, 1/interval)
@@ -44,6 +47,7 @@ class LegacyAnalysis(AbstractAnalysis):
         cube.selIndex(self.settings.wavelengthStart, self.settings.wavelengthStop)
         # Determine the mean-reflectance for each pixel in the cell.
         reflectance = cube.data.mean(axis=2)
+        warns.append(warnings.checkMeanReflectance(reflectance))
         cube = KCube.fromImCube(cube)  # -- Convert to K-Space
         cubePoly = self._fitPolynomial(cube)
         # Remove the polynomial fit from filtered cubeCell.
@@ -80,7 +84,7 @@ class LegacyAnalysis(AbstractAnalysis):
             referenceIdTag=self.ref.idTag,
             extraReflectionTag=None)
 
-        return results
+        return results, warns
 
     def _normalizeImCube(self, cube: ImCube) -> ImCube:
         cube.normalizeByExposure()
