@@ -24,6 +24,7 @@ class RoiCompiler:
                                                                               results.autoCorrelationSlope < 0))
         else:
             autoCorrelationSlope = None
+        warns.append(warnings.checkRSquared(results.rSquared))
         rSquared = self._avgOverRoi(roi, results.rSquared) if self._settings.rSquared else None
         ld = self._avgOverRoi(roi, results.ld) if self._settings.ld else None
         if self._settings.opd:
@@ -61,3 +62,4 @@ class RoiCompiler:
             return arr[np.logical_and(roi.data, condition)].mean()
         else:
             return arr[roi.data].mean()
+        
