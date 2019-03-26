@@ -10,6 +10,7 @@ from pwspy.analysis import AnalysisSettings
 from pwspy.gui.dockWidgets import CellSelectorDock
 from pwspy.gui.dockWidgets.CellSelectorDock import CellTableWidgetItem
 from pwspy.imCube.ICMetaDataClass import ICMetaData
+import json
 
 
 class AnalysisListItem(QListWidgetItem):
@@ -38,6 +39,10 @@ class QueuedAnalysesFrame(QScrollArea):
             QMessageBox.information(self, '!', f'Please select a reference Cell.')
             return
         item = AnalysisListItem(cameraCorrection, settings, reference, cells, analysisName, self.listWidget)
+        for i in range(self.listWidget.count()):
+            if self.listWidget.item(i).name == item.name:
+                QMessageBox.information(self, '!', f'Analysis {item.name} already exists.')
+                return
         self.listWidget.addItem(item)
 
     def showContextMenu(self, point: QPoint):
@@ -52,6 +57,6 @@ class QueuedAnalysesFrame(QScrollArea):
             self.listWidget.takeItem(self.listWidget.row(i))
 
     def displayItemSettings(self, item: AnalysisListItem):
-        message = QMessageBox.information(self, item.name, item.settings.toJsonString())
+        message = QMessageBox.information(self, item.name, json.dumps({'Cells': [i.filePath for i in item.cells], 'Reference': item.reference.filePath, 'Settings': item.settings.toJsonString()}, indent=4))
 
 
