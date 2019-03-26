@@ -55,8 +55,7 @@ class WorkingDirDialog(QDialog):
             nums, files = zip(*sorted(zip(nums, newFiles)))
             self.parent().cellSelector.clearCells()
             for i, (num, f) in enumerate(zip(nums, files)):
-                isRef = True if num >= 900 else False
-                self.parent().cellSelector.addCell(f, self.directory, isReference=isRef)
+                self.parent().cellSelector.addCell(f, self.directory)
             self.parent().cellSelector.updateFilters()
             self.accept()
 
