@@ -1,6 +1,7 @@
 import json
 import os
 import typing
+from json import JSONDecodeError
 from typing import List, Union
 
 from PyQt5 import QtCore, QtGui
@@ -27,11 +28,6 @@ class CellTableWidgetItem:
 
     def __init__(self, cube: ICMetaData, label: str, num: int):
         self.cube = cube
-        path = os.path.join(self.cube.filePath, 'AnAppPrefs.json')
-        self._f = open(path, 'w')
-        self.md = json.load(self._f)
-        self.setReference(self._reference)
-        self.setInvalid(self._invalid)
         self.num = num
         self.path = label
         self.notesButton = NotesButton("Open", cube.getNotes)
@@ -43,6 +39,14 @@ class CellTableWidgetItem:
         self.notesButton.released.connect(self.cube.editNotes)
         self._items = [self.pathLabel, self.numLabel, self.roiLabel, self.anLabel]
         self._updateHasNotes()
+        self.mdPath = os.path.join(self.cube.filePath, 'AnAppPrefs.json')
+        with open(self.mdPath, 'r') as f:
+            try:
+                self.md = json.load(f)
+            except JSONDecodeError:
+                self.md = {'invalid': False, 'reference': False}
+        self.setInvalid(self._invalid) #Update item color based on saved status. Since invalid status overrides reference status we must do this first.
+        self.setReference(self._reference)
 
     @property
     def _invalid(self): return self.md['invalid']
@@ -89,9 +93,13 @@ class CellTableWidgetItem:
     def isReference(self) -> bool:
         return self._reference
 
+    def close(self):
+        with open(self.mdPath, 'w') as f:
+            json.dump(self.md, f)
+
     def __del__(self):
-        json.dump(self.md, self._f)
-        self._f.close()
+        self.close() #This is here just in case. realistacally del rarely gets called, need to manually close each cell item.
+
 
 class CellTableWidget(QTableWidget):
     referencesChanged = QtCore.pyqtSignal(bool, list)
@@ -182,6 +190,8 @@ class CellTableWidget(QTableWidget):
 
     def clearCellItems(self) -> None:
         self.setRowCount(0)
+        for c in self._cellItems:
+            c.close() #This causes the cell item to save it's metadata.
         self._cellItems = []
         self.itemsCleared.emit()
 
