@@ -14,6 +14,8 @@ from PyQt5.QtWidgets import (QGridLayout, QDialog,
 
 
 class WorkingDirDialog(QDialog):
+    directoryChanged = QtCore.pyqtSignal()
+
     def __init__(self, parent=None):
         super().__init__(parent,
                          QtCore.Qt.WindowTitleHint | QtCore.Qt.WindowSystemMenuHint | QtCore.Qt.WindowCloseButtonHint)  # Construct without a question mark button
@@ -36,6 +38,7 @@ class WorkingDirDialog(QDialog):
 
     def _scanButtonPushed(self):
         self.directory = self.textLine.text()
+        self.directoryChanged.emit(self.directory)
         recursive = self.recursiveCheckbox.checkState() != 0
         pattern = [os.path.join('**', 'Cell[0-9]*')] if recursive else ['Cell[0-9]*']
         files = []

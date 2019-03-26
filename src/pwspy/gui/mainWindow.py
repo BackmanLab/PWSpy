@@ -12,7 +12,7 @@ class PWSWindow(QMainWindow):
     def __init__(self):
         QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
         super().__init__()
-        self.setWindowTitle('PWS Analysis 2')
+        self.setWindowTitle('PWS Analysis v2')
         self.setWindowIcon(QtGui.QIcon(os.path.join(resources, 'cellLogo.png')))
         self.cellSelector = CellSelectorDock()
         self.analysisSettings = AnalysisSettingsDock(self.cellSelector)
@@ -25,6 +25,7 @@ class PWSWindow(QMainWindow):
         self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks | QMainWindow.AllowTabbedDocks)
 
         self.fileDialog = WorkingDirDialog(self)
+        self.fileDialog.directoryChanged.connect(lambda directory: self.setWindowTitle(f'PWS Analysis v2 - {directory}'))
 
         # menuBar = self.menuBar()
         # view = menuBar.addMenu("View")
