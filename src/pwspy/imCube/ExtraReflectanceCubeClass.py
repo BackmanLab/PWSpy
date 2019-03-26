@@ -1,5 +1,5 @@
 import json
-from typing import Tuple
+from typing import Tuple, Union
 
 import h5py
 import jsonschema
@@ -20,6 +20,9 @@ class ExtraReflectanceCube(ICBase):
                        'description': {'type': 'string'}
                         }
                    }
+    fileSuffix = '_eReflectance.h5'
+    dataSetTag = 'extraReflection'
+    mdTag = 'metadata'
 
     def __init__(self, data: np.ndarray, wavelengths:Tuple[float, ...], metadata: dict):
         jsonschema.validate(instance=metadata, schema=self._jsonSchema)
@@ -38,15 +41,29 @@ class ExtraReflectanceCube(ICBase):
 
     @classmethod
     def load(cls, directory: str, name: str):
-        with h5py.File(os.path.join(directory, f'{name}_eReflectance.h5')) as hf:
-            dset = hf['extraReflection']
+        with h5py.File(os.path.join(directory, f'{name}{cls.fileSuffix}')) as hf:
+            dset = hf[cls.dataSetTag]
             data, index = ICBase._decodeHdf(dset)
-            return cls(data, index, json.loads(dset.attrs['metadata']))
+            return cls(data, index, json.loads(dset.attrs[cls.mdTag]))
 
     def save(self, directory: str, name: str) -> None:
-        savePath = os.path.join(directory, f'{name}_eReflectance.h5')
+        savePath = os.path.join(directory, f'{name}{self.fileSuffix}')
         if os.path.exists(savePath):
             raise OSError(f"The path {savePath} already exists.")
         with h5py.File(savePath, 'w') as hf:
-            hf = ICBase.toHdf(hf, 'extraReflection')
-            hf.attrs['metadata'] = np.string_(json.dumps(self.metadata))
+            hf = ICBase.toHdf(hf, self.dataSetTag)
+            hf.attrs[self.mdTag] = np.string_(json.dumps(self.metadata))
+
+    @classmethod
+    def validPath(cls, path: str) -> Tuple[bool, Union[str, bytes], Union[str, bytes]]:
+        if cls.fileSuffix in path:
+            directory, fileName = os.path.split(path)
+            name = fileName.split(cls.fileSuffix)[0]
+            with h5py.File(os.path.join(directory, f'{name}{cls.fileSuffix}')) as hf:
+                try:
+                    valid = cls.mdTag in hf[cls.dataSetTag].attrs
+                except:
+                    valid = False
+            return valid, directory, name
+        else:
+            return False, '', ''

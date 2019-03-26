@@ -15,6 +15,7 @@ from .mainWindow import PWSWindow
 from . import applicationVars
 from glob import glob
 
+
 class PWSApp(QApplication):
     def __init__(self, args):
         super().__init__(args)
@@ -34,3 +35,6 @@ class PWSApp(QApplication):
                 shutil.copyfile(f, os.path.join(applicationVars.analysisSettingsDirectory, os.path.split(f)[-1]))
         if not os.path.exists(applicationVars.extraReflectionDirectory):
             os.mkdir(applicationVars.extraReflectionDirectory)
+            with open('readme.txt', 'w') as f:
+                f.write("""Extra reflection `data cubes` and an index file are stored on the Backman Lab google drive account.
+                Download the index file and and any data cube you plan to use this this folder.""")
