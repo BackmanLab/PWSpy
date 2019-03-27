@@ -53,7 +53,7 @@ def _loadIms(qout, qin, lock):
             return
 
 
-def loadThenProcess(procFunc, procFuncArgs, lock, fileAndSpecifiers):
+def _loadThenProcess(procFunc, procFuncArgs, lock, fileAndSpecifiers):
     specs, file = fileAndSpecifiers
     if isinstance(file, str):
         im = ImCube.loadAny(file, lock=lock)
@@ -96,7 +96,7 @@ def loadAndProcess(fileDict: Union[dict, list], processorFunc=None, specifierNam
         lock = m.Lock()
         po = mp.Pool(processes=psutil.cpu_count(logical=False) - 1)
         try:
-            cubes = po.starmap(loadThenProcess, zip(*zip(*[[processorFunc, procArgs, lock]] * len(files)), files))
+            cubes = po.starmap(_loadThenProcess, zip(*zip(*[[processorFunc, procArgs, lock]] * len(files)), files))
         finally:
             po.close()
     else:

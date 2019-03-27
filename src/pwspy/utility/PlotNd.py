@@ -11,7 +11,8 @@ from matplotlib.animation import FuncAnimation
 
 
 class PlotNd(object):
-    def __init__(self, X, names=('y', 'x', 'lambda'), initialCoords=None, title=''):
+    """A class to conveniently view 3d or greater data."""
+    def __init__(self, X: np.ndarray, names=('y', 'x', 'lambda'), initialCoords=None, title=''):
         fig = plt.figure(figsize=(6, 6))
         fig.suptitle(title)
         h, w = X.shape[:2]

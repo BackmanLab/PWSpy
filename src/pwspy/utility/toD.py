@@ -1,6 +1,8 @@
 import numpy as np
 #from scipy.special import expn
 from scipy.integrate import quad
+# TODO wait till adam posts somewhat final matlab code and update from that. Then see email from self (nicholas.anthony@northwestern.edu) on 3/26/2019 showing how the equations can be simplified to be more efficient)
+
 
 def myexpn(n,x):
     #this is needed since scipy.special.expn only accepts integers for n
