@@ -96,4 +96,3 @@ class ERManager:
 
 if __name__ == '__main__':
     m = ERManager(applicationVars.extraReflectionDirectory)
-    m.download('index.json')

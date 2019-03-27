@@ -27,6 +27,9 @@ requirements:
     - pandas
     - matplotlib >=1.4*
     - jsonschema
+    - google-api-python-client
+    - google-auth-httplib2
+    - google-auth-oauthlib
 
 about:
   home: data['url']
