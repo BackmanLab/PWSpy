@@ -10,8 +10,8 @@ from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupB
 
 from pwspy import CameraCorrection
 from pwspy.analysis import AnalysisSettings
-from pwspy.gui import applicationVars, resources
-from pwspy.gui.sharedWidgets import CollapsibleSection
+from pwspy.apps.PWSAnalysisApp import applicationVars, resources
+from pwspy.apps.PWSAnalysisApp.sharedWidgets.collapsibleSection import CollapsibleSection
 from pwspy.utility import reflectanceHelper
 
 

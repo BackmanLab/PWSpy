@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QDockWidget, QWidget, \
 
 from pwspy import CameraCorrection
 from pwspy.analysis import AnalysisSettings
-from pwspy.gui.dockWidgets import CellSelectorDock
+from pwspy.apps.PWSAnalysisApp.dockWidgets import CellSelectorDock
 from .widgets.QueueAnalysesFrame import AnalysisListItem, QueuedAnalysesFrame
 from .widgets.SettingsFrame import SettingsFrame
 

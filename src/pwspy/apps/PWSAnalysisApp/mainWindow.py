@@ -3,9 +3,9 @@ import os
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QMainWindow, QApplication
 
-from pwspy.gui import resources
-from pwspy.gui.dialogs import WorkingDirDialog
-from pwspy.gui.dockWidgets import CellSelectorDock, AnalysisSettingsDock, ResultsTableDock, PlottingDock
+from . import resources
+from .dialogs import WorkingDirDialog
+from .dockWidgets import CellSelectorDock, AnalysisSettingsDock, ResultsTableDock, PlottingDock
 
 
 class PWSWindow(QMainWindow):

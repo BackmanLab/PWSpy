@@ -4,8 +4,7 @@ from matplotlib.backends.backend_qt5 import FigureCanvasQT
 from matplotlib.figure import Figure
 
 from pwspy.analysis.compilation.roiCompilationResults import RoiAnalysisResults
-from pwspy.gui.sharedWidgets import CopyableTable
-from pwspy.gui.sharedWidgets.tables import NumberTableWidgetItem
+from pwspy.apps.PWSAnalysisApp.sharedWidgets.tables import CopyableTable, NumberTableWidgetItem
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 
 

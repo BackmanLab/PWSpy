@@ -3,12 +3,10 @@ from typing import List, Optional
 from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
 
-from PyQt5.QtWidgets import QListWidgetItem, QWidget, QScrollArea, QListWidget, QMessageBox, QMenu, QAction, QTextEdit
+from PyQt5.QtWidgets import QListWidgetItem, QWidget, QScrollArea, QListWidget, QMessageBox, QMenu, QAction
 
 from pwspy import CameraCorrection
 from pwspy.analysis import AnalysisSettings
-from pwspy.gui.dockWidgets import CellSelectorDock
-from pwspy.gui.dockWidgets.CellSelectorDock import CellTableWidgetItem
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 import json
 

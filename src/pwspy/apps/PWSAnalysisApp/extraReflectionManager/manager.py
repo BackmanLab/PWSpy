@@ -10,7 +10,7 @@ from google.auth.transport.requests import Request
 from googleapiclient.http import MediaIoBaseDownload
 
 from pwspy import ExtraReflectanceCube
-from pwspy.gui import applicationVars
+from pwspy.apps.PWSAnalysisApp import applicationVars
 
 
 class ERManager:

@@ -2,13 +2,13 @@ import json
 import os
 import typing
 from json import JSONDecodeError
-from typing import List, Union
+from typing import List
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import QPalette
-from PyQt5.QtWidgets import QPushButton, QTableWidgetItem, QTableWidget, QAbstractItemView, QMenu, QWidget, QToolTip
+from PyQt5.QtWidgets import QPushButton, QTableWidgetItem, QTableWidget, QAbstractItemView, QMenu, QWidget
 
-from pwspy.gui.sharedWidgets.tables import NumberTableWidgetItem
+from pwspy.apps.PWSAnalysisApp.sharedWidgets.tables import NumberTableWidgetItem
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 
 
