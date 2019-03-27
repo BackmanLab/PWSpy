@@ -43,19 +43,27 @@ class ExtraReflectanceCube(ICBase):
     def load(cls, directory: str, name: str):
         with h5py.File(os.path.join(directory, f'{name}{cls.fileSuffix}')) as hf:
             dset = hf[cls.dataSetTag]
-            data, index = ICBase._decodeHdf(dset)
-            return cls(data, index, json.loads(dset.attrs[cls.mdTag]))
+            return cls.fromHdf(dset)
 
     def save(self, directory: str, name: str) -> None:
         savePath = os.path.join(directory, f'{name}{self.fileSuffix}')
         if os.path.exists(savePath):
             raise OSError(f"The path {savePath} already exists.")
         with h5py.File(savePath, 'w') as hf:
-            hf = ICBase.toHdf(hf, self.dataSetTag)
-            hf.attrs[self.mdTag] = np.string_(json.dumps(self.metadata))
+            self.toHdf(hf, name)
+
+    def toHdf(self, g: h5py.Group, name: str) -> h5py.Group:
+        g = super().toHdf(g, self.dataSetTag)
+        g.attrs[self.mdTag] = np.string_(json.dumps(self.metadata))
+        return g
 
     @classmethod
-    def getMetadata(cls,directory: str, name: str) -> dict:
+    def fromHdf(cls, d: h5py.Dataset):
+        data, index = ICBase._decodeHdf(d)
+        return cls(data, index, json.loads(d.attrs[cls.mdTag]))
+
+    @classmethod
+    def getMetadata(cls, directory: str, name: str) -> dict:
         with h5py.File(os.path.join(directory, f'{name}{cls.fileSuffix}')) as hf:
             dset = hf[cls.dataSetTag]
             return json.loads(dset.attr[cls.mdTag])

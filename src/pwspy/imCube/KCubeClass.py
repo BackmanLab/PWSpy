@@ -155,18 +155,18 @@ class KCube(ICBase):
         rSquared = rSquared.reshape(self.data.shape[0], self.data.shape[1])
         return cubeSlope, rSquared
 
-    def toImCube(self) -> ImCube:
-        # Convert to wavenumber and reverse the order so we are ascending in order.
-        wavelengths = (2 * np.pi) / (np.array(self.wavenumbers, dtype=np.float64) * 1e-3)[::-1]
-        data = self.data[:, :, ::-1]
-        # Generate evenly spaced wavelengths
-        evenWavelengths = np.linspace(wavelengths[0], wavelengths[-1], num=len(wavelengths), dtype=np.float64)
-        # Interpolate to the evenly spaced wavenumbers
-        interpFunc = spi.interp1d(wavelengths, data, kind='linear', axis=2)
-        data = interpFunc(evenWavelengths)
-        md = copy.deepcopy(self.metadata)
-        md['wavelengths'] = evenWavelengths.astype(np.float32)
-        return ImCube(data, md, dtype=np.float32)
+    # def toImCube(self) -> ImCube:
+    #     # Convert to wavenumber and reverse the order so we are ascending in order.
+    #     wavelengths = (2 * np.pi) / (np.array(self.wavenumbers, dtype=np.float64) * 1e-3)[::-1]
+    #     data = self.data[:, :, ::-1]
+    #     # Generate evenly spaced wavelengths
+    #     evenWavelengths = np.linspace(wavelengths[0], wavelengths[-1], num=len(wavelengths), dtype=np.float64)
+    #     # Interpolate to the evenly spaced wavenumbers
+    #     interpFunc = spi.interp1d(wavelengths, data, kind='linear', axis=2)
+    #     data = interpFunc(evenWavelengths)
+    #     md = copy.deepcopy(self.metadata)
+    #     md['wavelengths'] = evenWavelengths.astype(np.float32)
+    #     return ImCube(data, md, dtype=np.float32)
 
     def __add__(self, other):
         ret = self._add(other)

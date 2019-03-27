@@ -1,4 +1,6 @@
-from pwspy import ImCube
+from typing import Dict
+
+from pwspy import ImCube, ExtraReflectanceCube
 from pwspy.utility import reflectanceHelper
 import itertools
 import matplotlib.pyplot as plt
@@ -21,6 +23,8 @@ def plotExtraReflection(cubes: list, selectMaskUsingSetting: str = None, plotRef
                         excludedCombos: list = None):
     """Expects a list of ImCubes which each has a `material` property matching one of the materials in the `ReflectanceHelper` module and a
     `setting` property labeling how the microscope was set up for this image.
+
+    This is used to examine the output of extra reflection calculation before using saveRExtra to save a cube for each setting.
     """
     if excludedCombos is None:
         excludedCombos = []
@@ -164,7 +168,7 @@ def plotExtraReflection(cubes: list, selectMaskUsingSetting: str = None, plotRef
     return meanValues, allCombos
 
 
-def saveRExtra(cubes: list, excludedCombos: list = None):
+def saveRExtra(cubes: list, excludedCombos: list = None) -> Dict[str, ExtraReflectanceCube]:
     """Expects a list of ImCubes which each has a `material` property matching one of the materials in the `ReflectanceHelper` module."""
     if excludedCombos is None:
         excludedCombos = []
@@ -195,7 +199,7 @@ def saveRExtra(cubes: list, excludedCombos: list = None):
 
     rExtra = {}
     for matCombo in matCombos:
-        print("Calculating RExtra for: ", matCombo)
+        print("Calculating rExtra for: ", matCombo)
         combo = allCombos[matCombo]
         mat1, mat2 = combo.keys()
         rExtra[matCombo] = ((np.array(theoryR[mat1][np.newaxis, np.newaxis, :]) * combo[mat2].data) - (
