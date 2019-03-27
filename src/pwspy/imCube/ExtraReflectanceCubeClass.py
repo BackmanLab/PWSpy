@@ -55,6 +55,12 @@ class ExtraReflectanceCube(ICBase):
             hf.attrs[self.mdTag] = np.string_(json.dumps(self.metadata))
 
     @classmethod
+    def getMetadata(cls,directory: str, name: str) -> dict:
+        with h5py.File(os.path.join(directory, f'{name}{cls.fileSuffix}')) as hf:
+            dset = hf[cls.dataSetTag]
+            return json.loads(dset.attr[cls.mdTag])
+
+    @classmethod
     def validPath(cls, path: str) -> Tuple[bool, Union[str, bytes], Union[str, bytes]]:
         if cls.fileSuffix in path:
             directory, fileName = os.path.split(path)
