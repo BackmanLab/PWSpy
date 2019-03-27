@@ -208,13 +208,13 @@ class ImCube(ICBase, ICMetaData):
         return ImCube(ret, self.metadata, filePath=self.filePath, fileFormat=self.fileFormat)
 
     @classmethod
-    def fromHdf(cls, d: h5py.Dataset):
+    def fromHdfDataset(cls, d: h5py.Dataset):
         data, index = cls._decodeHdf(d)
         md = cls._decodeHdfMetadata(d)
         return cls(data, md, fileFormat=ICFileFormats.Hdf)
 
     def toHDF(self, g: h5py.Group, name: str) -> None:
-        g = super().toHdf(g, name=name)
+        g = super().toHdfDataset(g, name=name)
         d = self._encodeHdfMetadata(g[name])
 
 

@@ -189,7 +189,7 @@ class ICBase:
             raise NotImplementedError(f"Division is not supported between {self.__class__} and {type(other)}")
         return ret
 
-    def toHdf(self, g: h5py.Group, name: str) -> h5py.Group:
+    def toHdfDataset(self, g: h5py.Group, name: str) -> h5py.Group:
         dset = g.create_dataset(name, data=self.data, compression=3)
         print(dset.chunks)
         dset.attrs['index'] = np.array(self.index)
@@ -206,5 +206,5 @@ class ICBase:
 
 
     @classmethod
-    def fromHdf(cls, d: h5py.Dataset):
+    def fromHdfDataset(cls, d: h5py.Dataset):
         return cls(*cls._decodeHdf(d))

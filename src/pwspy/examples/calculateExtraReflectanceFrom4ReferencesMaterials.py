@@ -48,9 +48,9 @@ if __name__ == '__main__':
     axes[1].set_ylabel('reflectance')
     axes[1].set_xlabel('nm')
     axes[1].set_title("Glass Interface Reflectance")
-    [axes[0].plot(reflectanceHelper.n.index, reflectanceHelper.n[mat]['n'], label=mat) for mat in materials] #Plot the refractive indices of our files.
+    [axes[0].plot(reflectanceHelper.n[mat]['n'], label=mat) for mat in materials] #Plot the refractive indices of our files.
     axes[0].legend()
-    [axes[1].plot(reflectanceHelper.getReflectance(mat, 'glass').index, reflectanceHelper.getReflectance(mat,'glass'), label=mat) for mat in materials] #Plot the expected glass interface reflections.
+    [axes[1].plot(reflectanceHelper.getReflectance(mat, 'glass'), label=mat) for mat in materials] #Plot the expected glass interface reflections.
     axes[1].legend()
     
     fileDict = {m: {s: glob(os.path.join(rootDir, f'Cell{mat2Cell[m]}')) for s in settings} for m in materials}
@@ -64,7 +64,7 @@ if __name__ == '__main__':
         with PdfPages(os.path.join(rootDir, "figs.pdf")) as pp:
             for i in plt.get_fignums():
                 f = plt.figure(i)
-                f.set_size_inches(9,9)
+                f.set_size_inches(9, 9)
                 pp.savefig(f)
     if produceRextraCube:
         rextras = {}
@@ -72,6 +72,6 @@ if __name__ == '__main__':
             rextras[setting] = saveRExtra([cube for cube in cubes if cube.setting == setting])
             plot = PlotNd(rextras[setting]['mean'].data, ['y', 'x', 'lambda'])
             with h5py.File() as hf:
-                rextras[setting]['mean'].toHdf(hf, setting)
+                rextras[setting]['mean'].toHdfDataset(hf, setting)
 
 #Todo: plot I0

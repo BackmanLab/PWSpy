@@ -11,6 +11,7 @@ if typing.TYPE_CHECKING:
     from pwspy import KCube
 from .analysisSettings import AnalysisSettings
 from abc import ABC, abstractmethod
+from pwspy.moduleConsts import dateTimeFormat
 
 
 class AbstractAnalysisResults(ABC):
@@ -110,7 +111,7 @@ class AnalysisResults(AbstractAnalysisResults):
     time: str = None
 
     def __post_init__(self):
-        self.__setattr__('time', datetime.now().strftime("%m-%d-%y %H:%M:%s"))
+        self.__setattr__('time', datetime.now().strftime(dateTimeFormat))
 
     def toHDF5(self, directory: str, name: str):
         fileName = osp.join(directory, f'analysisResults_{name}.hdf5')
@@ -124,7 +125,7 @@ class AnalysisResults(AbstractAnalysisResults):
                 if isinstance(v, str):
                     hf.create_dataset(k, data=np.string_(v)) #h5py recommends encoding strings this way for compatability.
                 elif isinstance(v, KCube): # Todo add support for extra reflection.
-                    hf = v.toHdf(hf, k)
+                    hf = v.toHdfDataset(hf, k)
                 elif isinstance(v, np.ndarray):
                     hf.create_dataset(k, data=v)
                 else:

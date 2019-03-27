@@ -130,7 +130,7 @@ class Analysis(LegacyAnalysis):
         ref.filterDust(4)  # Apply a blur to filter out dust particles
 
         theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, 'glass', index=ref.wavelengths)[None, None, :]
-        extraReflectance = ExtraReflectanceCube.load(settings.extraReflectionPath)
+        extraReflectance = ExtraReflectanceCube.fromHdfFile(settings.extraReflectionPath)
         I0 = ref.data / (theoryR + extraReflectance) # I0 is the intensity of the illumination source, reconstructed in units of `counts`. this is an inversion of our assumption that reference = I0*(referenceReflectance + extraReflectance)
         Iextra = extraReflectance * I0  # converting extraReflectance to the extra reflection in units of counts
         ref = ref - Iextra  # remove the extra reflection from our data
