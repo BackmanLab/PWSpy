@@ -36,7 +36,8 @@ class ICBase:
     def index(self) -> Tuple[float, ...]:
         return self._index
 
-    def plotMean(self):
+    def plotMean(self) -> Tuple[plt.Figure, plt.Axes]:
+        """return a figure and attached axes plotting the mean of the data along the index axis. corresponds to the mean reflectance in most cases."""
         fig, ax = plt.subplots()
         mean = np.mean(self.data, axis=2)
         im = ax.imshow(mean)
