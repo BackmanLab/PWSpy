@@ -1,7 +1,59 @@
+from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDialog, QTableWidget, QTableWidgetItem, QMessageBox, QWidget, QCheckBox, QVBoxLayout, \
-    QPushButton
+    QPushButton, QLineEdit, QComboBox, QGridLayout, QLabel, QDialogButtonBox
 
 from .manager import ERManager
+
+
+class LoginDialog(QDialog):
+    acceptLogin = QtCore.pyqtSignal(str, str)
+    def __init__(self, parent: QWidget):
+        super().__init__(parent)
+        self.setUpGUI()
+        self.setWindowTitle("User Login")
+        self.setModal(True)
+
+    def setUpGUI(self):
+        formGridLayout = QGridLayout()
+
+        self.editUsername = QLineEdit(self)
+        # initialize the password field so that it does not echo characters
+        self.editPassword = QLineEdit(self)
+        self.editPassword.setEchoMode( QLineEdit.Password )
+
+        # initialize the labels
+        labelUsername = QLabel(self)
+        labelPassword = QLabel(self)
+        labelUsername.setText("Username")
+        labelUsername.setBuddy(self.editUsername)
+        labelPassword.setText("Password")
+        labelPassword.setBuddy(self.editPassword)
+
+        # initialize buttons
+        buttons = QDialogButtonBox(self)
+        buttons.addButton( QDialogButtonBox.Ok )
+        buttons.addButton( QDialogButtonBox.Cancel )
+        buttons.button( QDialogButtonBox.Ok ).setText("Login")
+        buttons.button( QDialogButtonBox.Cancel ).setText("Abort")
+
+        # connects slots
+        buttons.button(QDialogButtonBox.Cancel).released.connect(self.close)
+        buttons.button(QDialogButtonBox.Ok).released.connect(self.slotAcceptLogin)
+
+        # place components into the dialog
+        formGridLayout.addWidget(labelUsername, 0, 0)
+        formGridLayout.addWidget(self.editUsername, 0, 1)
+        formGridLayout.addWidget(labelPassword, 1, 0)
+        formGridLayout.addWidget(self.editPassword, 1, 1)
+        formGridLayout.addWidget(buttons, 2, 0, 1, 2)
+        self.setLayout(formGridLayout)
+
+    def slotAcceptLogin(self):
+        username = self.editUsername.text()
+        password = self.editPassword.text()
+        self.acceptLogin.emit(username, password)
+        self.close()
+
 
 class ERTableWidgetItem(QTableWidgetItem):
     def __init__(self, fileName: str, description: str, idTag: str, name: str):
@@ -32,10 +84,10 @@ class explorerWindow(QDialog):
             self._addItem(item)
 
     def _addItem(self, item: dict):
-        item = ERTableWidgetItem(fileName=item['fileName'], description=item['description'], idTag=item['idTag'], name=item['name'])
-        self._items.append(item)
+        tableItem = ERTableWidgetItem(fileName=item['fileName'], description=item['description'], idTag=item['idTag'], name=item['name'])
+        self._items.append(tableItem)
         self.table.setRowCount(len(self._items))
-        self.table.setItem(self.table.rowCount()-1, 0, item)
+        self.table.setItem(self.table.rowCount()-1, 0, tableItem)
         checkBox = QCheckBox(self.table)
         checkBox.setCheckState(item['downloaded'])
         self.table.setCellWidget(self.table.rowCount()-1, 1, checkBox)
@@ -44,7 +96,9 @@ class explorerWindow(QDialog):
         message = QMessageBox.information(self, item.name, '\n'.join([item.fileName, item.idTag, item.description]))
 
     def attemptDownload(self, fileName: str):
-        try:
+        if self.manager.auth is None:
+            loginWindow = LoginDialog(self)
+            loginWindow.acceptLogin.connect(lambda u, p: [self.manager.setAuth(u, p), self.attemptDownload(fileName)]) # retry. This seems sketchy
+            return
+        else:
             self.manager.download(fileName)
-        except AttributeError: #  Authentication hasn't been set. #TODO should find a better exception for this. also need to catch wrong password situation.
-            
