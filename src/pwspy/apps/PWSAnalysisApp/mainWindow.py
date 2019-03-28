@@ -4,6 +4,7 @@ from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QMainWindow, QApplication
 
 from . import resources
+from pwspy.apps import resources as sharedresources
 from .dialogs import WorkingDirDialog
 from .dockWidgets import CellSelectorDock, AnalysisSettingsDock, ResultsTableDock, PlottingDock
 
@@ -32,7 +33,7 @@ class PWSWindow(QMainWindow):
         # view.addAction("Look at stuff")
         toolBar = self.addToolBar('tool')
         toolBar.setObjectName('mainToolBar()')
-        browseAction = toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'folder.png')), "Set Path")
+        browseAction = toolBar.addAction(QtGui.QIcon(os.path.join(sharedresources, 'folder.png')), "Set Path")
         browseAction.triggered.connect(self.fileDialog.show)
         action2 = toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'icon.png')), "Idea")
         action2.triggered.connect(self.cellSelector.clearCells)

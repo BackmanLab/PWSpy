@@ -48,7 +48,7 @@ def plotExtraReflection(cubes: list, selectMaskUsingSetting: str = None, plotRef
 
     matCombos = list(itertools.combinations(materials, 2))  # All the combinations of materials that can be compared
     matCombos = [(m1, m2) for m1, m2 in matCombos if
-                 not (((m1, m2) in excludedCombos) or ((m2, m1) in excludedCombos))]  # Remove excluded combinations.
+                 not (((m1, m 2) in excludedCombos) or ((m2, m1) in excludedCombos))]  # Remove excluded combinations.
     for i, (m1, m2) in enumerate(
             matCombos):  # Make sure to arrange materials so that our reflectance ratio is greater than 1
         if (reflectanceHelper.getReflectance(m1, 'glass') / reflectanceHelper.getReflectance(m2, 'glass')).mean() < 1:

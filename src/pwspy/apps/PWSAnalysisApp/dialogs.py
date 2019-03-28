@@ -6,7 +6,7 @@ Created on Wed Feb 13 18:04:57 2019
 """
 import os
 from glob import glob
-from . import resources
+from pwspy.apps import resources
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import (QGridLayout, QDialog,
                              QLineEdit, QPushButton, QFileDialog, QCheckBox,
