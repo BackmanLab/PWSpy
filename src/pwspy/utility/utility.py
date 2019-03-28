@@ -9,7 +9,7 @@ import queue
 import threading as th
 import typing
 from time import time
-from typing import Union
+from typing import Union, Optional
 
 import psutil
 from pwspy import ImCube
@@ -19,6 +19,9 @@ from pwspy.imCube.ICMetaDataClass import ICMetaData
 
 
 def _recursiveSearch(fileDict, specifierNames, specifiers: typing.List[str] = None):
+    """This function crawls through the nested dictionary of fileDict and provides a list of each filePath coupled
+    with a tuple of its specifiers. On the initial call `specifiers` should be left blank. As the function recursively
+    calls itself it will populate this variable with its search results so far."""
     if specifiers is None:
         specifiers = []
     results = []
@@ -38,6 +41,8 @@ def _recursiveSearch(fileDict, specifierNames, specifiers: typing.List[str] = No
 
 
 def _loadIms(qout, qin, lock):
+    """When not running in parallel this function is executed in a separate thread to load ImCubes and populate a Queue
+    with them."""
     while not qin.empty():
         specs, file = qin.get()
         print('starting', file)
@@ -54,6 +59,8 @@ def _loadIms(qout, qin, lock):
 
 
 def _loadThenProcess(procFunc, procFuncArgs, lock, fileAndSpecifiers):
+    """Handles loading the ImCubes from file and if needed then calling the processorFunc. This function will be executed
+     on each core when running in parallel. If not running in parallel then _loadIms will be used."""
     specs, file = fileAndSpecifiers
     if isinstance(file, str):
         im = ImCube.loadAny(file, lock=lock)
@@ -70,8 +77,38 @@ def _loadThenProcess(procFunc, procFuncArgs, lock, fileAndSpecifiers):
 '''User Functions'''
 
 
-def loadAndProcess(fileDict: Union[dict, list], processorFunc=None, specifierNames: list = None, parallel=False, procArgs=None) -> \
-        typing.List[ImCube]:
+def loadAndProcess(fileDict: Union[dict, list], processorFunc: Optional = None, specifierNames: typing.List[str] = None,
+                   parallel: Optional=False, procArgs: Optional = None) -> typing.List[typing.Any]:
+    """    A convenient function to load a series of ImCubes from a list or dictionary of file paths.
+
+    Parameters
+    ----------
+    fileDict
+        A nested dictionary where the end point of each dictionary is a list of ImCube file paths. If no specifiers are used this
+         can just be a list of file paths. The dictionary keys should be the specifiers for the corresponding item of
+         specifier names. e.g. if specifierNames is ['material', 'date'] then the fileDict might look like:
+         {'water':{ '20-3-2019': ['path1', 'path2'], '21-3-2019': ['path3', 'path4']}}
+    processorFunc
+        A function that each loaded cell should be passed to. The first argument of processorFunc should be the loaded
+        ImCube. Additional arguments can be passed to processorFunc using the procArgs variable.
+    specifierNames
+        a list of strings describing what parameter the keys at each level of the fileDict dictionary describe. Each
+        loaded ImCube will have the specifiersNames added as attributes. e.g. using the fileDict example, the ImCube for
+        'path1' would have an attribute material = 'water' and an attribute date = '20-3-2019'
+    parallel
+        default is False. If True then the loading and processing will be performed in parallel on multiple cores,
+        otherwise it will be done using multithreading on a single core. Setting this to true can result if big speedups
+        if the time to run processorFunc is greater than the time to load an ImCube from file.
+    procArgs
+        Optional arguments to pass to processorFunc
+
+    Returns
+    -------
+    list
+        If not using processorFunc a list of ImCubes will be returned. Otherwise a list of the return values from
+        processorFunc will be returned.
+
+    """
     if procArgs is None:
         procArgs = []
     # Error checking
