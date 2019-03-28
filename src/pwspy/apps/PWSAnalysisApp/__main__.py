@@ -29,8 +29,6 @@ if __name__ == '__main__':
             app = PWSApp(sys.argv)
         else:
             print("Not Ipython")
-            # app = QApplication(sys.argv)
-            # ex = App()
             app = PWSApp(sys.argv)
             sys.exit(app.exec_())
     except Exception as e:
