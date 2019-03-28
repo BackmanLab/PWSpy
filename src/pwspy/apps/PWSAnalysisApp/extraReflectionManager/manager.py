@@ -2,12 +2,8 @@ import json
 import os
 from glob import glob
 import jsonschema
-import pickle
-from googleapiclient.discovery import build
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
 
-from googleapiclient.http import MediaIoBaseDownload
+from pwspy.apps.PWSAnalysisApp.googleDriveDownloader import GoogleDriveDownloader
 
 from pwspy import ExtraReflectanceCube
 from pwspy.apps.PWSAnalysisApp import applicationVars
@@ -36,11 +32,10 @@ class ERManager:
             }
        }
     }
-    authPath = os.path.join(applicationVars.extraReflectionDirectory, 'driveToken.pickle')
 
     def __init__(self, filePath: str):
         self.directory = filePath
-        self.auth = None
+        self.downloader = GoogleDriveDownloader(applicationVars.googleDriveAuthPath)
         self._initialize()
 
     def _initialize(self):
@@ -58,41 +53,10 @@ class ERManager:
             i['downloaded'] = i['idTag'] in tags
 
     def download(self, fileName: str):
-        """Shows basic usage of the Drive v3 API.
-        Prints the names and ids of the first 10 files the user has access to.
-        """
-        creds = None
-        if os.path.exists(self.authPath):
-            with open(self.authPath, 'rb') as token:
-                creds = pickle.load(token)
-        # If there are no (valid) credentials available, let the user log in.
-        if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            else:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    'credentials.json', ['https://www.googleapis.com/auth/drive.readonly'])
-                creds = flow.run_local_server()
-            with open(self.authPath, 'wb') as token: # Save the credentials for the next run
-                pickle.dump(creds, token)
-
-        drive = build('drive', 'v3', credentials=creds) #this returns access to the drive api. see google documentation
-
-        # Call the Drive v3 API
-        results = drive.files().list(fields="nextPageToken, files(id, name, parents)").execute()
-        items = results.get('files', [])
-        mainFolderId = [item['id'] for item in items if item['name'] == 'PWSAnalysisAppHostedFiles'][0]
-        items = [item for item in items if 'parents' in item] #Any parentless files are just going to cause errors on the next line.
-        erFolderId = [item['id'] for item in items if (mainFolderId in item['parents']) and (item['name'] == 'ExtraReflectanceCubes')][0]
-        erItems = [item for item in items if erFolderId in item['parents']] #Now we have only the files under the extraReflectance Folder
-        fileId = [item['id'] for item in erItems if item['name'] == fileName][0]
-        fileRequest = drive.files().get_media(fileId=fileId)
-        with open(os.path.join(self.directory, fileName), 'wb') as f:
-            downloader = MediaIoBaseDownload(f, fileRequest)
-            done = False
-            while done is False:
-                status, done = downloader.next_chunk()
-                print("Download %d%%." % int(status.progress() * 100))
+        files = self.downloader.getFolderIdContents(self.downloader.getIdByName('PWSAnalysisAppHostedFiles'))
+        files = self.downloader.getFolderIdContents(self.downloader.getIdByName('ExtraReflectanceCubes', fileList=files))
+        fileId = self.downloader.getIdByName(fileName, fileList=files)
+        self.downloader.downloadFile(fileId, os.path.join(self.directory, fileName))
 
 if __name__ == '__main__':
     m = ERManager(applicationVars.extraReflectionDirectory)
