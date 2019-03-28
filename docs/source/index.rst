@@ -11,14 +11,20 @@ Welcome to pwspy's documentation!
    :caption: Contents:
 	
 pwspy main
-===========
+================================
 .. automodule:: pwspy
-	:members:
+   :members:
 
-pwspy ICBaseClass
-================
-.. automodule:: pwspy.imCube.ICBaseClass
-	:members:
+pwspy imCube
+===============================
+.. automodule:: pwspy.imCube
+   :members: ImCube, KCube, ICBase, ICMetaData, CameraCorrection, ExtraReflectanceCube
+
+pwspy.analysis
+===============================
+.. automodule:: pwspy.analysis
+   :members: AnalysisResults, AnalysisSettings
+
 
 Indices and tables
 ==================

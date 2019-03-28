@@ -1,3 +1,4 @@
 *.pyc
 src/pwspy.egg-info/
 .idea/
+docs/build/
