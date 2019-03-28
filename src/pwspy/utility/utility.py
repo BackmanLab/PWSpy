@@ -24,7 +24,7 @@ def _recursiveSearch(fileDict, specifierNames, specifiers: typing.List[str] = No
     results = []
     if isinstance(fileDict, dict):
         for k, v in fileDict.items():
-            results.extend(_recursiveSearch(v, specifiers + [k]))
+            results.extend(_recursiveSearch(v, specifierNames, specifiers + [k]))
     elif isinstance(fileDict, (list, tuple)):
         for file in fileDict:
             fileSpecifiers = specifiers
