@@ -61,11 +61,12 @@ class Roi:
             return Roi.fromMat(directory, name, number)
 
     def toHDF(self, directory):
+        #TODO why is this so slow
         savePath = os.path.join(directory, f'roi_{self.name}.h5')
         with h5py.File(savePath, 'a') as hf:
             if np.string_(str(self.number)) in hf.keys():
                 raise Exception(f"The Roi file {savePath} already contains a dataset {self.number}")
-            hf.create_dataset(np.string_(str(self.number)), data=self.data.astype(np.uint8), compression=None)
+            hf.create_dataset(np.string_(str(self.number)), data=self.data.astype(np.uint8))
 
     def deleteFile(self):
         if self.filePath is None:

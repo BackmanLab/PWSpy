@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List, Tuple, Iterable
 
 from pwspy import ImCube, ExtraReflectanceCube
 from pwspy.utility import reflectanceHelper
@@ -17,6 +17,38 @@ def _interpolateNans(arr):
 
     arr = np.apply_along_axis(interp1, 2, arr)
     return arr
+
+
+def getTheoreticalReflectances(materials: Iterable[str], index: Tuple[float]) -> Dict:
+    """Generate a dictionary containing a pandas series of the `material`-glass reflectance for each material in
+    `materials`. Index is in units of nanometers."""
+    theoryR = {}
+    for material in materials:  # For each unique material in the `cubes` list
+        theoryR[material] = reflectanceHelper.getReflectance(material, 'glass', index=index)
+    return theoryR
+
+
+def generateMaterialCombos(materials: Iterable[str], excludedCombos: Iterable[Tuple[str, str]]) -> List[Tuple[str, str]]:
+    """Given a list of material strings and a list of material combination tuples that should be skipped, this function returns
+    a list of all possible material combo tuples"""
+    matCombos = list(itertools.combinations(materials, 2))  # All the combinations of materials that can be compared
+    matCombos = [(m1, m2) for m1, m2 in matCombos if
+                 not (((m1, m2) in excludedCombos) or ((m2, m1) in excludedCombos))]  # Remove excluded combinations.
+    for i, (m1, m2) in enumerate(matCombos):  # Make sure to arrange materials so that our reflectance ratio is greater than 1
+        if (reflectanceHelper.getReflectance(m1, 'glass') / reflectanceHelper.getReflectance(m2, 'glass')).mean() < 1:
+            matCombos[i] = (m2, m1)
+    return matCombos
+
+
+def getAllCubeCombos(matCombos: Iterable[Tuple[str, str]], cubes: Iterable[ImCube]) -> Dict[Tuple[str, str], Iterable[Dict[str, ImCube]]]:
+    """Given a list of material combo tuples, return a dictionary whose keys are the material combo tuples and whose values are
+    lists of ImCube tuples which match the material combo tuple. `cubes` is a list of the ImCubes to include in the output,
+    each one must have a `material` attribute."""
+    allCombos = {}
+    for matCombo in matCombos:
+        matCubes = {material: [cube for cube in cubes if (cube.material == material)] for material in matCombo}  # The imcubes relevant to this loop.
+        allCombos[matCombo] = [dict(zip(matCubes.keys(), combo)) for combo in itertools.product(*matCubes.values())]
+    return allCombos
 
 
 def plotExtraReflection(cubes: list, selectMaskUsingSetting: str = None, plotReflectionImages: bool = False,
@@ -41,27 +73,19 @@ def plotExtraReflection(cubes: list, selectMaskUsingSetting: str = None, plotRef
     mask = mask[0].selectLassoROI()  # Select an ROI to analyze
 
     # load theory reflectance
-    theoryR = {}  # Theoretical reflectances
-    materials = set([i.material for i in cubes])
-    for material in materials:  # For each unique material in the `cubes` list
-        theoryR[material] = reflectanceHelper.getReflectance(material, 'glass', index=cubes[0].wavelengths)
-
-    matCombos = list(itertools.combinations(materials, 2))  # All the combinations of materials that can be compared
-    matCombos = [(m1, m2) for m1, m2 in matCombos if
-                 not (((m1, m 2) in excludedCombos) or ((m2, m1) in excludedCombos))]  # Remove excluded combinations.
-    for i, (m1, m2) in enumerate(
-            matCombos):  # Make sure to arrange materials so that our reflectance ratio is greater than 1
-        if (reflectanceHelper.getReflectance(m1, 'glass') / reflectanceHelper.getReflectance(m2, 'glass')).mean() < 1:
-            matCombos[i] = (m2, m1)
     settings = set([i.setting for i in cubes])  # Unique setting values
+    materials = set([i.material for i in cubes])
+
+    theoryR = getTheoreticalReflectances(materials, cubes[0].wavelengths)  # Theoretical reflectances
+    matCombos = generateMaterialCombos(materials, excludedCombos)
+
+
     allCombos = {}
     for sett in settings:
         allCombos[sett] = {}
-        for matCombo in matCombos:
-            matCubes = {material: [cube for cube in cubes if ((cube.material == material) and (cube.setting == sett))]
-                        for material in matCombo}  # The imcubes relevant to this loop.
-            allCombos[sett][matCombo] = [{'cubes': dict(zip(matCubes.keys(), combo))} for combo in
-                                         itertools.product(*matCubes.values())]
+        settingCombos = getAllCubeCombos(matCombos, [cube for cube in cubes if cube.setting == sett])
+        for matCombo, cubeCombos in settingCombos.items():
+            allCombos[sett][matCombo] = [{'cubes': combo} for combo in cubeCombos]
 
     meanValues = {}
     params = ['rextra', 'I0', 'mat1Spectra', 'mat2Spectra', 'cFactor']
@@ -177,25 +201,19 @@ def saveRExtra(cubes: list, excludedCombos: list = None) -> Dict[str, ExtraRefle
     assert hasattr(cubes[0], 'material')
 
     # load theory reflectance
-    theoryR = {}  # Theoretical reflectances
     materials = set([i.material for i in cubes])
-    avgdCubes = {}
+    theoryR = getTheoreticalReflectances(materials, cubes[0].wavelengths)
+    avgdCubes = []
     for material in materials:  # For each unique material in the `cubes` list
         print("Averaging cubes for: ", material)
-        theoryR[material] = reflectanceHelper.getReflectance(material, 'glass', index=cubes[
-            0].wavelengths)  # save the theoretical reflectance
         _ = [i for i in cubes if i.material == material]  # average all cubes of the same material
-        avgdCubes[material] = (reduce(lambda x, y: x + y, _) / len(_))
+        avgdCube = (reduce(lambda x, y: x + y, _) / len(_))
+        avgdCube.material = material
+        avgdCubes.append(avgdCube)
 
-    matCombos = list(itertools.combinations(materials, 2))  # All the combinations of materials that can be compared
-    matCombos = [(m1, m2) for m1, m2 in matCombos if
-                 not (((m1, m2) in excludedCombos) or ((m2, m1) in excludedCombos))]  # Remove excluded combinations.
+    matCombos = generateMaterialCombos(materials, excludedCombos)
 
-    allCombos = {}
-    for matCombo in matCombos:
-        matCubes = {material: avgdCubes[material] for material in matCombo}  # The imcubes relevant to this loop.
-        allCombos[matCombo] = matCubes
-    del avgdCubes
+    allCombos = getAllCubeCombos(matCombos, avgdCubes)
 
     rExtra = {}
     for matCombo in matCombos:
