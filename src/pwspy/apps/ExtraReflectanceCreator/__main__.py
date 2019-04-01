@@ -3,11 +3,13 @@ import os
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QLineEdit, QPushButton, QFileDialog
 from PyQt5 import (QtCore, QtGui)
 from pwspy.apps import resources
+from pwspy.apps.ExtraReflectanceCreator.ERWorkFlow import ERWorkFlow
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
+        self.workflow = ERWorkFlow()
         super().__init__()
         self.setWindowTitle("Extra Reflectance Creator")
         widg = QWidget()
@@ -18,12 +20,16 @@ class MainWindow(QMainWindow):
         self.directoryBrowseButton.released.connect(self.browseFile)
         self.compareDatesButton = QPushButton("Compare Dates")
         self.plotButton = QPushButton("Plot Corrections")
+        self.plotButton.released.connect(lambda: self.workflow.plot(False))
         layout.addWidget(self.directoryEdit, 0, 0, 1, 4)
         layout.addWidget(self.directoryBrowseButton, 0, 4, 1, 1)
         layout.addWidget(self.compareDatesButton, 1, 0, 1, 1)
         layout.addWidget(self.plotButton, 1, 1, 1, 1)
         widg.setLayout(layout)
         self.setCentralWidget(widg)
+        self.buttons = [self.compareDatesButton, self.plotButton]
+        for b in self.buttons:
+            b.setEnabled(False)
         self.show()
 
     def browseFile(self):
@@ -31,6 +37,12 @@ class MainWindow(QMainWindow):
         if _ != '':
             self.directory = _
             self.directoryEdit.setText(self.directory)
+            self.workflow.loadDirectory(self.directory)
+            for b in self.buttons:
+                b.setEnabled(True)
+        else:
+            for b in self.buttons:
+                b.setEnabled(False)
 
 class ERApp(QApplication):
     def __init__(self, args):

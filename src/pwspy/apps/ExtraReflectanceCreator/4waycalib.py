@@ -62,7 +62,7 @@ if __name__ == '__main__':
     
     fileDict = {m:{s:glob(os.path.join(rootDir,f'Cell{mat2Cell[m]}')) for s in settings} for m in materials}
     cubes = loadAndProcess(fileDict, processIm, specifierNames = ['material', 'setting'], parallel = True)
-    for i,c in enumerate(cubes):
+    for i, c in enumerate(cubes):
         print(f"Filtering {i+1}")
         c.filterDust(6)
     
