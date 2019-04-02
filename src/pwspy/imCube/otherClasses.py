@@ -4,11 +4,12 @@ Created on Sat Feb  9 15:57:52 2019
 
 @author: Nick
 """
+import json
 import os
 import re
 
 import typing
-from dataclasses import dataclass
+import dataclasses
 from enum import Enum, auto
 from glob import glob
 from typing import List, Tuple
@@ -21,11 +22,26 @@ class RoiFileFormats(Enum):
     HDF = auto()
     MAT = auto()
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class CameraCorrection:
     """linearityCorrection should be list of polynomial coefficients [a,b,c,etc...] in the order a*x + b*x^2 + c*x^3 + etc..."""
     darkCounts: float
     linearityPolynomial: typing.Optional[typing.Tuple[float, ...]] = None
+    def __post_init__(self):
+        #Force the linearity polynomial to be a tuple.
+        object.__setattr__(self, 'linearityPolynomial', tuple(self.linearityPolynomial))
+        assert isinstance(self.linearityPolynomial, tuple)
+
+    def toJsonFile(self, filePath):
+        if os.path.splitext(filePath)[-1] != '.json':
+            filePath = filePath + '.json'
+        with open(filePath, 'w') as f:
+            json.dump(dataclasses.asdict(self), f)
+
+    @classmethod
+    def fromJsonFile(cls, filePath):
+        with open(filePath, 'r') as f:
+            return cls(**json.load(f))
 
 
 class Roi:
