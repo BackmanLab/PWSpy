@@ -29,8 +29,9 @@ class CameraCorrection:
     linearityPolynomial: typing.Optional[typing.Tuple[float, ...]] = None
     def __post_init__(self):
         #Force the linearity polynomial to be a tuple.
-        object.__setattr__(self, 'linearityPolynomial', tuple(self.linearityPolynomial))
-        assert isinstance(self.linearityPolynomial, tuple)
+        if self.linearityPolynomial is not None:
+            object.__setattr__(self, 'linearityPolynomial', tuple(self.linearityPolynomial))
+            assert isinstance(self.linearityPolynomial, tuple)
 
     def toJsonFile(self, filePath):
         if os.path.splitext(filePath)[-1] != '.json':

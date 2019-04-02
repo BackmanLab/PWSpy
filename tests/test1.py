@@ -9,9 +9,7 @@ from pwspy import KCube, ImCube, CameraCorrection
 import unittest
 import os.path as osp
 import os
-from pwspy.utility.micromanagerPositions import PositionList, Position2d
-
-from pwspy.imCube.ICMetaDataClass import ICMetaData
+from pwspy.utility.micromanager.positions import PositionList, Position2d
 
 resources = osp.join(osp.split(__file__)[0], 'resources')
 testCellPath = osp.join(resources, 'Cell1')
