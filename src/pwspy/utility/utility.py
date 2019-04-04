@@ -69,7 +69,7 @@ def _loadThenProcess(procFunc, procFuncArgs, lock, fileAndSpecifiers):
     else:
         raise TypeError("files specified to the loader must be either str or ICMetaData")
     for k, v in specs.items():
-        setattr(im, k, v)
+        setattr(im, k, v)    # TODO would loading the objects into a dataframe make more sense than tagging them with attributes?
     print("Run", file)
     return procFunc(im, *procFuncArgs)
 

@@ -47,6 +47,7 @@ class CameraCorrection:
 
 class Roi:
     def __init__(self, name: str, number: int, data: np.ndarray, filePath: str = None, fileFormat: RoiFileFormats=None):
+        """A class representing a single ROI. consists of a name, a number, and a boolean mask array."""
         assert isinstance(data, np.ndarray), f"data is a {type(data)}"
         assert data.dtype==np.bool
         self.data = data
