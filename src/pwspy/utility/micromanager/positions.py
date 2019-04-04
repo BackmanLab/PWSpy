@@ -282,7 +282,7 @@ class PositionList(JsonAble):
         cmap = mpl.cm.get_cmap("gist_rainbow")
         colors = [cmap(i) for i in np.linspace(0, 1, num=len(self.positions))]
         names = [pos.label for pos in self.positions]
-        sc = plt.scatter([pos.x for pos in self.positions], [pos.y for pos in self.positions],
+        sc = plt.scatter([pos.getXYPosition().x for pos in self.positions], [pos.getXYPosition().y for pos in self.positions],
                          c=[colors[i] for i in range(len(self.positions))])
 
         def update_annot(ind):
