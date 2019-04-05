@@ -8,17 +8,17 @@ Created on Tue Nov 20 13:13:34 2018
 
 from pwspy import ImCube, CameraCorrection
 from pwspy.utility import loadAndProcess, reflectanceHelper, PlotNd
-from pwspy.utility.reflection import plotExtraReflection , saveRExtra
+from pwspy.apps.ExtraReflectanceCreator.extraReflectance import plotExtraReflection , saveRExtra, prepareData
 from glob import glob
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 from matplotlib.backends.backend_pdf import PdfPages
+import pandas as pd
 
 
 
-def processIm(q):
-    im = q.get()
+def processIm(im):
     im.correctCameraEffects(CameraCorrection(100))
 #    im.subtractDarkCounts(2000)
 #    im.data = np.polynomial.polynomial.polyval(im.data, [0, 0.977241216, 1.73E-06, 1.70E-11]) #LCPWS 1 linearization
@@ -36,14 +36,6 @@ if __name__ == '__main__':
     produceRextraCube = True
     plotResults = False
     settings = ['none']
-    mat2Cell = {'air':[5,6],
-                'water':[3,4],
-                'ethanol':[1,2],
-                'ipa':[7,8]}
-#    mat2Cell = {'air':[6],
-#                'water':[4],
-#                'ethanol':[2],
-#                'ipa':[8]}
     
     
     materials = ['air','water', 'ipa','ethanol']
@@ -60,26 +52,26 @@ if __name__ == '__main__':
     [axes[1].plot(reflectanceHelper.getReflectance(mat, 'glass').index, reflectanceHelper.getReflectance(mat,'glass'), label=mat) for mat in materials]
     axes[1].legend()
     
-    fileDict = {m:{s:glob(os.path.join(rootDir,f'Cell{mat2Cell[m]}')) for s in settings} for m in materials}
-    cubes = loadAndProcess(fileDict, processIm, specifierNames = ['material', 'setting'], parallel = True)
-    for i, c in enumerate(cubes):
+    fileFrame = pd.DataFrame([{'setting': None, 'material': m, 'cubes': cube} for m in materials for cube in glob(os.path.join(rootDir,m,'Cell*'))])
+    cubes = loadAndProcess(fileFrame, processIm, parallel=True)
+    for i, c in enumerate(cubes['cubes']):
         print(f"Filtering {i+1}")
         c.filterDust(6)
-    
 
+    meanValues, allCombos, theoryR, matCombos, settings = prepareData(cubes, excludedCombos=exclude)
     if plotResults:
-        means, allCombos = plotExtraReflection(cubes, plotReflectionImages=False, excludedCombos = exclude) 
+        means, allCombos = plotExtraReflection(allCombos, meanValues, theoryR, matCombos, settings, plotReflectionImages=False)
         with PdfPages(os.path.join(rootDir, "figs.pdf")) as pp:
             for i in plt.get_fignums():
                 f = plt.figure(i)
-                f.set_size_inches(9,9)
+                f.set_size_inches(9, 9)
                 pp.savefig(f)
     if produceRextraCube:
-        rextras = saveRExtra(cubes)
-        plot = PlotNd(rextras['mean'], ['y','x','lambda'])
-        np.save(os.path.join(rootDir,'rextra.npy'),rextras['mean'].astype(np.float32))
+        rextras = saveRExtra(allCombos, theoryR, matCombos)
+        plot = PlotNd(rextras['mean'], ['y', 'x', 'lambda'])
+        np.save(os.path.join(rootDir,'rextra.npy'), rextras['mean'].data.astype(np.float32))
 
-
+    plt.show(block=True)
 #            
 #            
 #Todo: plot I0

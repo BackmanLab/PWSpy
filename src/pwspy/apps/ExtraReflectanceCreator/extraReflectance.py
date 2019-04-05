@@ -7,6 +7,7 @@ import itertools
 import matplotlib.pyplot as plt
 import numpy as np
 from functools import reduce
+import pandas as pd
 
 
 def _interpolateNans(arr):
@@ -83,30 +84,29 @@ def calculateSpectraFromCombos(cubeCombos: Dict[Tuple[str,str], Any], theoryR: d
     return meanValues, allCombos
 
 
-def prepareData(cubes: List[ImCube], selectMaskUsingSetting: str = None, excludedCombos: list = None) -> Tuple[Dict, Dict, Dict, List[Tuple[str,str]], Iterable]:
+def prepareData(df: pd.DataFrame, selectMaskUsingSetting: str = None, excludedCombos: list = None) -> Tuple[Dict, Dict, Dict, List[Tuple[str, str]], Iterable]:
     # Error checking
-    assert isinstance(cubes[0], ImCube)
-    assert hasattr(cubes[0], 'material')
-    assert hasattr(cubes[0], 'setting')
+    for col in ['cubes', 'material', 'setting']:
+        assert col in df.columns
 
     if excludedCombos is None:
         excludedCombos = []
-    settings = set([i.setting for i in cubes])  # Unique setting values
-    materials = set([i.material for i in cubes])
-    theoryR = getTheoreticalReflectances(materials, cubes[0].wavelengths)  # Theoretical reflectances
+    settings = set(df['setting'])  # Unique setting values
+    materials = set(df['material'])
+    theoryR = getTheoreticalReflectances(materials, df['cubes'][0].wavelengths)  # Theoretical reflectances
     matCombos = generateMaterialCombos(materials, excludedCombos)
 
     if selectMaskUsingSetting is None:
-        mask = cubes
+        mask = df['cubes'][0]
     else:
-        mask = [i for i in cubes if (i.setting == selectMaskUsingSetting)]
+        mask = df[df['setting'] == selectMaskUsingSetting]['cubes'][0]
     print("Select an ROI")
-    mask = mask[0].selectLassoROI()  # Select an ROI to analyze
+    mask = mask.selectLassoROI()  # Select an ROI to analyze
 
     meanValues = {}
     allCombos = {}
     for sett in settings:
-        cubeCombos = getAllCubeCombos(matCombos, [cube for cube in cubes if cube.setting == sett])
+        cubeCombos = getAllCubeCombos(matCombos, df[df['setting']==sett]['cubes'])
         meanValues[sett], allCombos[sett] = calculateSpectraFromCombos(cubeCombos, theoryR, mask)
     return meanValues, allCombos, theoryR, matCombos, settings
 
