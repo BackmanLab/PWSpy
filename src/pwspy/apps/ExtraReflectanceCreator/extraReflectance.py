@@ -79,7 +79,9 @@ def calculateSpectraFromCombos(cubeCombos: Dict[Tuple[str,str], Any], theoryR: d
                     combo['mat1Spectra'] - combo['mat2Spectra'])
             combo['I0'] = combo['mat2Spectra'] / (theoryR[mat2] + combo['rextra'])
             combo['cFactor'] = (combo['rextra'].mean() + theoryR['water'].mean()) / theoryR['water'].mean()
-        meanValues[matCombo] = {param: np.array(list([combo[param] for combo in cubeCombos[matCombo]])).mean(axis=0) for param in params}
+        meanValues[matCombo] = {
+                param: np.array(list(
+                        [combo[param] for combo in cubeCombos[matCombo]])).mean(axis=0) for param in params}
     meanValues['mean'] = {param: np.array(list([meanValues[matCombo][param] for matCombo in cubeCombos.keys()])).mean(axis=0) for param in params}
     return meanValues, allCombos
 

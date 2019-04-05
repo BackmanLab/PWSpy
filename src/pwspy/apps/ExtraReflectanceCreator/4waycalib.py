@@ -29,7 +29,7 @@ def processIm(im):
 
 if __name__ == '__main__':
     __spec__ = None
-    
+    plt.interactive(True)
     
     exclude = []#[('water','ipa'),('water','ethanol'), ('ipa','ethanol'), ('ipa','air'), ('ethanol','air')]
     rootDir = r'G:\Calibrations\4matExtraReflection\LCPWS2_100xpfs\1_24_2019'
