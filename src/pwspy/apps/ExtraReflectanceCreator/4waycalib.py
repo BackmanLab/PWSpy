@@ -49,11 +49,11 @@ if __name__ == '__main__':
     axes[1].set_title("Glass Interface Reflectance")
     [axes[0].plot(reflectanceHelper.n.index,reflectanceHelper.n[mat]['n'], label = mat) for mat in materials]
     axes[0].legend()
-    [axes[1].plot(reflectanceHelper.getReflectance(mat, 'glass').index, reflectanceHelper.getReflectance(mat,'glass'), label=mat) for mat in materials]
+    [axes[1].plot(reflectanceHelper.getReflectance(mat, 'glass').index, reflectanceHelper.getReflectance(mat, 'glass'), label=mat) for mat in materials]
     axes[1].legend()
     
-    fileFrame = pd.DataFrame([{'setting': None, 'material': m, 'cubes': cube} for m in materials for cube in glob(os.path.join(rootDir,m,'Cell*'))])
-    cubes = loadAndProcess(fileFrame, processIm, parallel=True)
+    fileFrame = pd.DataFrame([{'setting': 'none', 'material': m, 'cubes': cube} for m in materials for cube in glob(os.path.join(rootDir,m,'Cell*'))])
+    cubes = loadAndProcess(fileFrame, processIm, parallel=False)
     for i, c in enumerate(cubes['cubes']):
         print(f"Filtering {i+1}")
         c.filterDust(6)
