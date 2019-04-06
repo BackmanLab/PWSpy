@@ -1,7 +1,7 @@
 import os
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QLineEdit, QPushButton, QFileDialog, \
-    QDialog, QCheckBox, QVBoxLayout, QComboBox
+    QDialog, QCheckBox, QVBoxLayout, QComboBox, QLabel
 from PyQt5 import (QtCore, QtGui)
 from pwspy.apps import resources
 from pwspy.apps.ExtraReflectanceCreator.ERWorkFlow import ERWorkFlow
@@ -17,8 +17,11 @@ class ParamsDialog(QDialog):
         self.binningCombo.addItems(['Auto', '1x1', '2x2', '3x3'])
         self.acceptButton = QPushButton("Accept")
         self.acceptButton.released.connect(self.accept)
+
+        layout.addWidget(QLabel("Settings"))
         for check in self.checks:
             layout.addWidget(check)
+        layout.addWidget(QLabel("Binning"))
         layout.addWidget(self.binningCombo)
         layout.addWidget(self.acceptButton)
         self.setLayout(layout)

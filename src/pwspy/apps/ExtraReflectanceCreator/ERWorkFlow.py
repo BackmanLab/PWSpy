@@ -7,6 +7,8 @@ from pwspy.utility import loadAndProcess
 from .extraReflectance import prepareData, plotExtraReflection, saveRExtra
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
+import pandas as pd
+
 
 class ERWorkFlow:
     def __init__(self):
@@ -43,16 +45,15 @@ class ERWorkFlow:
         self.cameraCorrection = CameraCorrection.fromJsonFile(os.path.join(self.directory, 'cameraCorrection.json'))
         # Generate the fileDict
         files = glob(os.path.join(directory, '*', '*', 'Cell*'))
-        fileDict = {}
+        rows = []
         for file in files:
             filelist = self._splitPath(file)
             s = filelist[2]
             m = filelist[1]
             if s in includeSettings:
-                if s not in fileDict: fileDict[s] = {}
-                if m not in fileDict[s]: fileDict[s][m] = []
-                fileDict[s][m].append(file)
-        cubes = loadAndProcess(fileDict, self._processIm, specifierNames=['setting', 'material'], parallel=True, procArgs=[self.cameraCorrection, binning])
+                rows.append({'setting': s, 'material': m, 'cube': file})
+        df = pd.DataFrame(rows)
+        cubes = loadAndProcess(df, self._processIm, parallel=True, procArgs=[self.cameraCorrection, binning])
         self.meanValues, self.allCombos, self.theoryR, self.matCombos, self.settings = prepareData(cubes)
 
     def plot(self, saveToPdf: bool = False):

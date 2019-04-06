@@ -53,7 +53,7 @@ if __name__ == '__main__':
     [axes[1].plot(reflectanceHelper.getReflectance(mat, 'glass').index, reflectanceHelper.getReflectance(mat, 'glass'), label=mat) for mat in materials]
     axes[1].legend()
     
-    fileFrame = pd.DataFrame([{'setting': 'none', 'material': m, 'cubes': cube} for m in materials for cube in glob(os.path.join(rootDir,m,'Cell*'))])
+    fileFrame = pd.DataFrame([{'setting': 'none', 'material': m, 'cube': cube} for m in materials for cube in glob(os.path.join(rootDir,m,'Cell*'))])
     cubes = loadAndProcess(fileFrame, processIm, parallel=True)
 
     meanValues, allCombos, theoryR, matCombos, settings = prepareData(cubes, excludedCombos=exclude)

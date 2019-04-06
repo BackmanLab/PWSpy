@@ -21,9 +21,9 @@ def _loadIms(qout, qin, lock):
     with them."""
     while not qin.empty():
         index, row = qin.get()
-        print('starting', row['cubes'])
-        im = ImCube.loadAny(row['cubes'], lock=lock)
-        row['cubes'] = im
+        print('starting', row['cube'])
+        im = ImCube.loadAny(row['cube'], lock=lock)
+        row['cube'] = im
         qout.put(row)
         perc = psutil.virtual_memory().percent
         print("Memory Usage: ", perc, '%')
@@ -33,12 +33,12 @@ def _loadIms(qout, qin, lock):
 
 def _procWrap(procFunc):
     def func(row, procFuncArgs=None):
-        im = row['cubes']
+        im = row['cube']
         if procFuncArgs:
             ret = procFunc(im, *procFuncArgs)
         else:
             ret = procFunc(im)
-        row['cubes'] = ret
+        row['cube'] = ret
         return row
     return func
 
@@ -46,15 +46,15 @@ def _loadThenProcess(procFunc, procFuncArgs, lock, row):
     """Handles loading the ImCubes from file and if needed then calling the processorFunc. This function will be executed
      on each core when running in parallel. If not running in parallel then _loadIms will be used."""
     index, row = row
-    if isinstance(row['cubes'], str):
-        im = ImCube.loadAny(row['cubes'], lock=lock)
-    elif isinstance(row['cubes'], ICMetaData):
-        im = ImCube.fromMetadata(row['cubes'], lock=lock)
+    if isinstance(row['cube'], str):
+        im = ImCube.loadAny(row['cube'], lock=lock)
+    elif isinstance(row['cube'], ICMetaData):
+        im = ImCube.fromMetadata(row['cube'], lock=lock)
     else:
         raise TypeError("files specified to the loader must be either str or ICMetaData")
-    print("Run", row['cubes'])
+    print("Run", row['cube'])
     ret = procFunc(im, *procFuncArgs)
-    row['cubes'] = ret
+    row['cube'] = ret
     return row
 
 
@@ -68,7 +68,7 @@ def loadAndProcess(fileFrame: pd.DataFrame, processorFunc: Optional = None,
     Parameters
     ----------
     fileFrame
-        A dataframe containing a column of ImCube file paths titled 'cubes' and other columns to act as specifiers for each cube.
+        A dataframe containing a column of ImCube file paths titled 'cube' and other columns to act as specifiers for each cube.
         If no specifiers are used this can just be a list of file paths.
     processorFunc
         A function that each loaded cell should be passed to. The first argument of processorFunc should be the loaded
@@ -89,8 +89,8 @@ def loadAndProcess(fileFrame: pd.DataFrame, processorFunc: Optional = None,
     if procArgs is None:
         procArgs = []
     # Error checking
-    if 'cubes' not in fileFrame.columns:
-        raise IndexError("The fileFrame must contain a 'cubes' column.")
+    if 'cube' not in fileFrame.columns:
+        raise IndexError("The fileFrame must contain a 'cube' column.")
     numThreads = 2  # even this might be unnecesary. don't bother going higher.
     print(f"Starting loading {len(fileFrame)} files.")
     sTime = time()
