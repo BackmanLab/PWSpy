@@ -123,7 +123,7 @@ def plotExtraReflection(allCombos: Dict, meanValues: Dict, theoryR: dict, matCom
             for combo in allCombos[sett][matCombo]:
                 cubes = combo['cubes']
                 ax.plot(cubes[mat1].wavelengths, combo['rextra'],
-                        label=f'{sett} {mat1}:{int(cubes[mat1].exposure)}ms {mat2}:{int(cubes[mat2].exposure)}ms')
+                        label=f'{sett} {mat1}:{int(cubes[mat1].metadata["exposure"])}ms {mat2}:{int(cubes[mat2].metadata["exposure"])}ms')
         ax.plot(cubes[mat1].wavelengths, meanValues[sett]['mean']['rextra'], color='k', label=f'{sett} mean')
     ax.legend()
 
@@ -140,7 +140,7 @@ def plotExtraReflection(allCombos: Dict, meanValues: Dict, theoryR: dict, matCom
             for combo in allCombos[sett][matCombo]:
                 cubes = combo['cubes']
                 ratioAxes[matCombo].plot(cubes[mat1].wavelengths, combo['mat1Spectra'] / combo['mat2Spectra'],
-                                         label=f'{sett} {mat1}:{int(cubes[mat1].exposure)}ms {mat2}:{int(cubes[mat2].exposure)}ms')
+                                         label=f'{sett} {mat1}:{int(cubes[mat1].metadata["exposure"])}ms {mat2}:{int(cubes[mat2].metadata["exposure"])}ms')
     [ratioAxes[combo].legend() for combo in matCombos]
 
     for sett in settings:
@@ -178,7 +178,7 @@ def plotExtraReflection(allCombos: Dict, meanValues: Dict, theoryR: dict, matCom
                 for combo in allCombos[sett][matCombo]:
                     cubes = combo['cubes']
                     plt.figure()
-                    plt.title(f"Reflectance %. {sett}, {mat1}:{int(cubes[mat2].exposure)}ms, {mat2}:{int(cubes[mat2].exposure)}ms")
+                    plt.title(f"Reflectance %. {sett}, {mat1}:{int(cubes[mat2].metadata['exposure'])}ms, {mat2}:{int(cubes[mat2].metadata['exposure'])}ms")
                 _ = ((theoryR[mat1][np.newaxis, np.newaxis, :] * cubes[mat2].data) - (
                         theoryR[mat2][np.newaxis, np.newaxis, :] * cubes[mat1].data)) / (
                             cubes[mat1].data - cubes[mat2].data)
@@ -194,13 +194,14 @@ def plotExtraReflection(allCombos: Dict, meanValues: Dict, theoryR: dict, matCom
 
 
 def saveRExtra(allCombos: Dict[Tuple[str, str], Dict], theoryR: dict, matCombos:List[Tuple[str,str]]) -> Dict[str, ExtraReflectanceCube]:
-    """Expects a list of ImCubes which each has a `material` property matching one of the materials in the `ReflectanceHelper` module."""
+    """No longer true: Expects a list of ImCubes which each has a `material` property matching one of the materials in the `ReflectanceHelper` module."""
 
     rExtra = {}
     for matCombo in matCombos:
         print("Calculating rExtra for: ", matCombo)
         rExtra[matCombo] = {'combos': []}
         for combo in allCombos[matCombo]:
+            combo = combo['cubes'] #Just select out the imcube data
             mat1, mat2 = combo.keys()
             _ = rExtra[matCombo]['combos']
             _.append(((np.array(theoryR[mat1][np.newaxis, np.newaxis, :]) * combo[mat2].data) - (

@@ -23,6 +23,7 @@ def processIm(im):
 #    im.subtractDarkCounts(2000)
 #    im.data = np.polynomial.polynomial.polyval(im.data, [0, 0.977241216, 1.73E-06, 1.70E-11]) #LCPWS 1 linearization
     im.normalizeByExposure()
+    im.filterDust(6)
     return im
 
 #%%
@@ -53,25 +54,24 @@ if __name__ == '__main__':
     axes[1].legend()
     
     fileFrame = pd.DataFrame([{'setting': 'none', 'material': m, 'cubes': cube} for m in materials for cube in glob(os.path.join(rootDir,m,'Cell*'))])
-    cubes = loadAndProcess(fileFrame, processIm, parallel=False)
-    for i, c in enumerate(cubes['cubes']):
-        print(f"Filtering {i+1}")
-        c.filterDust(6)
+    cubes = loadAndProcess(fileFrame, processIm, parallel=True)
 
     meanValues, allCombos, theoryR, matCombos, settings = prepareData(cubes, excludedCombos=exclude)
     if plotResults:
-        means, allCombos = plotExtraReflection(allCombos, meanValues, theoryR, matCombos, settings, plotReflectionImages=False)
+        plotExtraReflection(allCombos, meanValues, theoryR, matCombos, settings, plotReflectionImages=False)
         with PdfPages(os.path.join(rootDir, "figs.pdf")) as pp:
             for i in plt.get_fignums():
                 f = plt.figure(i)
                 f.set_size_inches(9, 9)
                 pp.savefig(f)
     if produceRextraCube:
-        rextras = saveRExtra(allCombos, theoryR, matCombos)
-        plot = PlotNd(rextras['mean'].data, ['y', 'x', 'lambda'])
-        np.save(os.path.join(rootDir, 'rextra.npy'), rextras['mean'].data.astype(np.float32))
+        for sett in settings:
+            rextras = saveRExtra(allCombos[sett], theoryR, matCombos)
+            plot = PlotNd(rextras['mean'].data, ['y', 'x', 'lambda'])
+            rextras['mean'].toHdfFile(rootDir, f'rextra_{sett}')
+            # np.save(os.path.join(rootDir, f'rextra_{sett}.npy'), rextras['mean'].data.astype(np.float32))
 
-    plt.show(block=True)
+    # plt.show(block=True)
 #            
 #            
 #Todo: plot I0
