@@ -68,8 +68,8 @@ if __name__ == '__main__':
                 pp.savefig(f)
     if produceRextraCube:
         rextras = saveRExtra(allCombos, theoryR, matCombos)
-        plot = PlotNd(rextras['mean'], ['y', 'x', 'lambda'])
-        np.save(os.path.join(rootDir,'rextra.npy'), rextras['mean'].data.astype(np.float32))
+        plot = PlotNd(rextras['mean'].data, ['y', 'x', 'lambda'])
+        np.save(os.path.join(rootDir, 'rextra.npy'), rextras['mean'].data.astype(np.float32))
 
     plt.show(block=True)
 #            

@@ -32,9 +32,12 @@ def _loadIms(qout, qin, lock):
             return
 
 def _procWrap(procFunc):
-    def func(row, procFuncArgs):
+    def func(row, procFuncArgs=None):
         im = row['cubes']
-        ret = procFunc(im, *procFuncArgs)
+        if procFuncArgs:
+            ret = procFunc(im, *procFuncArgs)
+        else:
+            ret = procFunc(im)
         row['cubes'] = ret
         return row
     return func

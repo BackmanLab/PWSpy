@@ -42,13 +42,13 @@ def generateMaterialCombos(materials: Iterable[str], excludedCombos: Iterable[Tu
     return matCombos
 
 
-def getAllCubeCombos(matCombos: Iterable[Tuple[str, str]], cubes: Iterable[ImCube]) -> Dict[Tuple[str, str], List[Dict[str, ImCube]]]:
+def getAllCubeCombos(matCombos: Iterable[Tuple[str, str]], df: pd.DataFrame) -> Dict[Tuple[str, str], List[Dict[str, pd.DataFrame]]]:
     """Given a list of material combo tuples, return a dictionary whose keys are the material combo tuples and whose values are
     lists of Dicts containing a cube keyed by a material name. `cubes` is a list of the ImCubes to include in the output,
     each one must have a `material` attribute."""
     allCombos = {}
     for matCombo in matCombos:
-        matCubes = {material: [cube for cube in cubes if (cube.material == material)] for material in matCombo}  # The imcubes relevant to this loop.
+        matCubes = {material: df[df['material'] == material] for material in matCombo}  # The imcubes relevant to this loop.
         allCombos[matCombo] = [dict(zip(matCubes.keys(), combo)) for combo in itertools.product(*matCubes.values())]
     return allCombos
 
@@ -103,12 +103,12 @@ def prepareData(df: pd.DataFrame, selectMaskUsingSetting: str = None, excludedCo
     else:
         mask = df[df['setting'] == selectMaskUsingSetting]['cubes'][0]
     print("Select an ROI")
-    mask = mask.selectLassoROI()  # Select an ROI to analyze
+    mask = np.ones(df['cubes'][0].data.shape).astype(np.bool)# mask = mask.selectLassoROI()  # Select an ROI to analyze
 
     meanValues = {}
     allCombos = {}
     for sett in settings:
-        cubeCombos = getAllCubeCombos(matCombos, df[df['setting']==sett]['cubes'])
+        cubeCombos = getAllCubeCombos(matCombos, df[df['setting'] == sett])
         meanValues[sett], allCombos[sett] = calculateSpectraFromCombos(cubeCombos, theoryR, mask)
     return meanValues, allCombos, theoryR, matCombos, settings
 
