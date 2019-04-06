@@ -32,9 +32,9 @@ if __name__ == '__main__':
     plt.interactive(True)
     
     exclude = []#[('water','ipa'),('water','ethanol'), ('ipa','ethanol'), ('ipa','air'), ('ethanol','air')]
-    rootDir = r'G:\Calibrations\4matExtraReflection\LCPWS2_100xpfs\1_24_2019'
+    rootDir = r'/home/nick/Desktop/4matExtraReflection/LCPWS1/1_23_2019'
     produceRextraCube = True
-    plotResults = False
+    plotResults = True
     settings = ['none']
     
     

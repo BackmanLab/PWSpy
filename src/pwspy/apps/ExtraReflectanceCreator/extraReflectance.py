@@ -48,7 +48,7 @@ def getAllCubeCombos(matCombos: Iterable[Tuple[str, str]], df: pd.DataFrame) -> 
     each one must have a `material` attribute."""
     allCombos = {}
     for matCombo in matCombos:
-        matCubes = {material: df[df['material'] == material] for material in matCombo}  # The imcubes relevant to this loop.
+        matCubes = {material: df[df['material'] == material]['cubes'] for material in matCombo}  # A dictionary sorted by material containing lists of the ImCubes that are relevant to this loop..
         allCombos[matCombo] = [dict(zip(matCubes.keys(), combo)) for combo in itertools.product(*matCubes.values())]
     return allCombos
 
@@ -62,8 +62,8 @@ def calculateSpectraFromCombos(cubeCombos: Dict[Tuple[str,str], Any], theoryR: d
     """
 
     allCombos = {}
-    for matCombo, cubeCombos in cubeCombos.items():
-        allCombos[matCombo] = [{'cubes': combo} for combo in cubeCombos]
+    for matCombo, matCubeCombos in cubeCombos.items():
+        allCombos[matCombo] = [{'cubes': combo} for combo in matCubeCombos]
 
     # Save the results of relevant calculations to a dictionary, this dictionary will be returned to the user along with
     # the raw data, `allCombos`
@@ -81,7 +81,7 @@ def calculateSpectraFromCombos(cubeCombos: Dict[Tuple[str,str], Any], theoryR: d
             combo['cFactor'] = (combo['rextra'].mean() + theoryR['water'].mean()) / theoryR['water'].mean()
         meanValues[matCombo] = {
                 param: np.array(list(
-                        [combo[param] for combo in cubeCombos[matCombo]])).mean(axis=0) for param in params}
+                        [combo[param] for combo in allCombos[matCombo]])).mean(axis=0) for param in params}
     meanValues['mean'] = {param: np.array(list([meanValues[matCombo][param] for matCombo in cubeCombos.keys()])).mean(axis=0) for param in params}
     return meanValues, allCombos
 
@@ -103,7 +103,7 @@ def prepareData(df: pd.DataFrame, selectMaskUsingSetting: str = None, excludedCo
     else:
         mask = df[df['setting'] == selectMaskUsingSetting]['cubes'][0]
     print("Select an ROI")
-    mask = np.ones(df['cubes'][0].data.shape).astype(np.bool)# mask = mask.selectLassoROI()  # Select an ROI to analyze
+    mask = mask.selectLassoROI()  # Select an ROI to analyze
 
     meanValues = {}
     allCombos = {}
@@ -193,7 +193,7 @@ def plotExtraReflection(allCombos: Dict, meanValues: Dict, theoryR: dict, matCom
         print(means['cFactor'])
 
 
-def saveRExtra(allCombos: Dict, theoryR: dict, matCombos:List[Tuple[str,str]]) -> Dict[str, ExtraReflectanceCube]:
+def saveRExtra(allCombos: Dict[Tuple[str, str], Dict], theoryR: dict, matCombos:List[Tuple[str,str]]) -> Dict[str, ExtraReflectanceCube]:
     """Expects a list of ImCubes which each has a `material` property matching one of the materials in the `ReflectanceHelper` module."""
 
     rExtra = {}
