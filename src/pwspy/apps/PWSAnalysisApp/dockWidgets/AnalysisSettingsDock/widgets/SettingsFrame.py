@@ -86,7 +86,7 @@ class SettingsFrame(QScrollArea):
         layout.setContentsMargins(1, 1, 1, 1)
         self.RSubtractionEdit = QLineEdit()
         self.RSubtractionBrowseButton = QPushButton(QtGui.QIcon(os.path.join(resources, 'folder.png')), '')
-        self.RSubtractionBrowseButton.released.connect(self._browseReflection)
+        self.RSubtractionBrowseButton.released.connect(self._browseReflection) #TODO switch to using the extrareflectance manager.
         self.refMaterialCombo = QComboBox()
         self.refMaterialCombo.addItems([
             k for k in reflectanceHelper.materials.keys() if k != 'glass'])

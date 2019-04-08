@@ -28,9 +28,10 @@ class PWSWindow(QMainWindow):
         self.fileDialog = WorkingDirDialog(self)
         self.fileDialog.directoryChanged.connect(lambda directory: self.setWindowTitle(f'PWS Analysis v2 - {directory}'))
 
-        # menuBar = self.menuBar()
-        # view = menuBar.addMenu("View")
-        # view.addAction("Look at stuff")
+        menuBar = self.menuBar()
+        view = menuBar.addMenu("View")
+        act = view.addAction("Set Default Layout")
+        act.triggered.connect(self._setDefaultLayout)
         toolBar = self.addToolBar('tool')
         toolBar.setObjectName('mainToolBar()')
         browseAction = toolBar.addAction(QtGui.QIcon(os.path.join(sharedresources, 'folder.png')), "Set Path")
@@ -44,6 +45,7 @@ class PWSWindow(QMainWindow):
             self.restoreState(settings.value("windowState"))
         except TypeError as e:  # Setting must not exist
             self.resize(1024, 768)
+            self._setDefaultLayout()
         self.show()
 
     def closeEvent(self, event):
@@ -52,3 +54,16 @@ class PWSWindow(QMainWindow):
         settings.setValue("windowState", self.saveState())
         self.cellSelector.clearCells() #This causes the current cell items to save their metadata.
         super().closeEvent(event)
+
+    def _setDefaultLayout(self):
+        #remove all docks then re add them
+        docks = [self.cellSelector, self.plots, self.analysisSettings, self.resultsTable]
+        for dock in docks:
+            self.removeDockWidget(dock)
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.cellSelector)
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.plots)
+        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.resultsTable)
+        self.tabifyDockWidget(self.plots, self.analysisSettings)
+        # self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.analysisSettings)
+        for dock in docks:
+            dock.setVisible(True)
