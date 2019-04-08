@@ -64,3 +64,9 @@ class ERWorkFlow:
                     f = plt.figure(i)
                     f.set_size_inches(9, 9)
                     pp.savefig(f)
+
+    def save(self):
+        pass
+
+    def compareDates(self):
+        pass

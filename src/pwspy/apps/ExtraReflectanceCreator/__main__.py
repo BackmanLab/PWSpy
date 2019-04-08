@@ -48,17 +48,21 @@ class MainWindow(QMainWindow):
         self.directoryBrowseButton = QPushButton(QtGui.QIcon(os.path.join(resources, 'folder.png')), '')
         self.directoryBrowseButton.released.connect(self.browseFile)
         self.compareDatesButton = QPushButton("Compare Dates")
+        self.compareDatesButton.released.connect(self.workflow.compareDates)
         self.plotButton = QPushButton("Plot Corrections")
         self.plotButton.released.connect(lambda: self.workflow.plot(False))
+        self.saveButton = QPushButton("Save")
+        self.plotButton.released.connect(self.workflow.save)
         row = 0
         layout.addWidget(self.directoryEdit, row, 0, 1, 4)
         layout.addWidget(self.directoryBrowseButton, row, 4, 1, 1)
         row += 1
         layout.addWidget(self.compareDatesButton, row, 0, 1, 1)
         layout.addWidget(self.plotButton, row, 1, 1, 1)
+        layout.addWidget(self.saveButton, row, 2, 1, 1)
         widg.setLayout(layout)
         self.setCentralWidget(widg)
-        self.buttons = [self.compareDatesButton, self.plotButton]
+        self.buttons = [self.compareDatesButton, self.plotButton, self.saveButton]
         for b in self.buttons:
             b.setEnabled(False)
         self.show()
