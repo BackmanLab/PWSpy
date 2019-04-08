@@ -13,6 +13,7 @@ from .AnalysisManager import AnalysisManager
 from pwspy.analysis import defaultSettingsPath
 from .mainWindow import PWSWindow
 from . import applicationVars
+from . import resources
 from glob import glob
 
 
@@ -41,3 +42,4 @@ class PWSApp(QApplication):
                 Download the index file and and any data cube you plan to use this this folder.""")
         if not os.path.exists(applicationVars.googleDriveAuthPath):
             os.mkdir(applicationVars.googleDriveAuthPath)
+            shutil.copyfile(os.path.join(resources, 'credentials.json'), os.path.join(applicationVars.googleDriveAuthPath, 'credentials.json'))
