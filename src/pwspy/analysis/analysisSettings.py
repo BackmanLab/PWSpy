@@ -27,8 +27,11 @@ class AnalysisSettings:
             json.dump(dataclasses.asdict(self), f, indent=4)
 
     def toJsonString(self):
-        return json.dumps(dataclasses.asdict(self), indent=4)
+        return json.dumps(self.asDict(), indent=4)
 
     @classmethod
     def fromJsonString(cls, string: str):
         return cls(**json.loads(string))
+
+    def asDict(self) -> dict:
+        return dataclasses.asdict(self)

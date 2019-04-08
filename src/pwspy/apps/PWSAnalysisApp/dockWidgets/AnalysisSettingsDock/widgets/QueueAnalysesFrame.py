@@ -41,12 +41,12 @@ class QueuedAnalysesFrame(QScrollArea):
         if reference is None:
             QMessageBox.information(self, '!', f'Please select a reference Cell.')
             return
-        item = AnalysisListItem(cameraCorrection, settings, reference, cells, analysisName, self.listWidget)
         for i in range(self.listWidget.count()):
-            if self.listWidget.item(i).name == item.name:
-                QMessageBox.information(self, '!', f'Analysis {item.name} already exists.')
+            if self.listWidget.item(i).name == analysisName:
+                QMessageBox.information(self, '!', f'Analysis {analysisName} already exists.')
                 return
-        self.listWidget.addItem(item)
+        item = AnalysisListItem(cameraCorrection, settings, reference, cells, analysisName, self.listWidget)
+        # self.listWidget.addItem(item)
 
     def showContextMenu(self, point: QPoint):
         menu = QMenu("ContextMenu", self)
@@ -60,6 +60,6 @@ class QueuedAnalysesFrame(QScrollArea):
             self.listWidget.takeItem(self.listWidget.row(i))
 
     def displayItemSettings(self, item: AnalysisListItem):
-        message = QMessageBox.information(self, item.name, json.dumps({'Cells': [i.filePath for i in item.cells], 'Reference': item.reference.filePath, 'Settings': item.settings.toJsonString()}, indent=4))
+        message = QMessageBox.information(self, item.name, json.dumps({'Cells': [i.filePath for i in item.cells], 'Reference': item.reference.filePath, 'Settings': item.settings.asDict()}, indent=4))
 
 
