@@ -6,13 +6,16 @@ Created on Wed Feb 13 18:04:57 2019
 """
 import os
 from glob import glob
-from typing import Optional
+from typing import Optional, List, Tuple
 
+from pwspy.analysis.warnings import AnalysisWarning
 from pwspy.apps import resources
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import (QGridLayout, QDialog,
                              QLineEdit, QPushButton, QFileDialog, QCheckBox,
-                             QMessageBox, QWidget, QVBoxLayout)
+                             QMessageBox, QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem)
+
+from pwspy.imCube import ICMetaData
 
 
 class WorkingDirDialog(QDialog):
@@ -75,7 +78,21 @@ class AnalysisSummaryDisplay(QWidget):
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent=parent)
         layout = QVBoxLayout
-        self.warnList = 
+        self.warnList = QTreeWidget(self)
+        layout.addWidget(self.warnList)
+        self.setLayout(layout)
+
+    def addWarnings(self, warnings: List[Tuple[List[AnalysisWarning], ICMetaData]]):
+        for cellWarns, cell in warnings:
+            item = QTreeWidgetItem(self.warnList)
+            item.setText(0, cell.filePath)
+            for warn in cellWarns:
+                subItem = QTreeWidgetItem(item)
+                subItem.setText(0, warn.shortMsg)
+                subItem.setToolTip(0, warn.longMsg)
+
+    def clearWarnings(self):
+        self.warnList.clear()
 
 
 if __name__ == '__main__':
