@@ -96,6 +96,9 @@ class ImCube(ICBase, ICMetaData):
         else:
             raise TypeError("Invalid FileFormat")
 
+    def toMetadata(self):
+        return ICMetaData(self.metadata, self.filePath, self.fileFormat)
+
     def toOldPWS(self, directory):
         if os.path.exists(directory):
             raise OSError("The specified directory already exists.")

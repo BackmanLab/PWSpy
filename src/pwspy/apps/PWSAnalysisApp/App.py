@@ -23,6 +23,7 @@ class PWSApp(QApplication):
         self.window = PWSWindow()
         self.anMan = AnalysisManager(self)
         self.window.runAction.triggered.connect(self.anMan.run)
+        self.anMan.analysisDone.connect(self.window.anDisplay.create())
 
     @staticmethod
     def _setupDataDirectories():

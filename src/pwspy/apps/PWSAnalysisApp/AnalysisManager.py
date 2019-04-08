@@ -1,19 +1,24 @@
 import os
-import typing
+from typing import Tuple, List
 
+from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox
 
 from pwspy import ImCube, CameraCorrection
 from pwspy.analysis.analysisClass import Analysis
+from pwspy.analysis.warnings import AnalysisWarning
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 from pwspy.utility import loadAndProcess
 
 
-class AnalysisManager:
+class AnalysisManager(QtCore.QObject):
+    analysisDone = QtCore.pyqtSignal(list)
+
     def __init__(self, app: 'PWSApp'):
+        super().__init__()
         self.app = app
 
-    def run(self):
+    def run(self) -> List[Tuple[List[AnalysisWarning], ICMetaData]]:
         refMeta = self.app.window.cellSelector.getSelectedReferenceMeta()
         cellMetas = self.app.window.cellSelector.getSelectedCellMetas()
         cameraCorrection, settings = self.app.window.analysisSettings.getSettings()
@@ -30,8 +35,10 @@ class AnalysisManager:
                 ref.correctCameraEffects(ref.cameraCorrection)
             analysis = Analysis(settings, ref)
             analysisName = self.app.window.analysisSettings.getAnalysisName()
-            loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[ref, analysis, analysisName],
-                            parallel=True)
+            warnings = loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[ref, analysis, analysisName], parallel=True) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
+            ret = [(warn, md) for warn, md in warnings if md is not None]
+            self.analysisDone.emit(ret)
+            return ret
 
     @staticmethod
     def _process(im: ImCube, analysis: Analysis, analysisName: str, cameraCorrection: CameraCorrection):
@@ -39,10 +46,15 @@ class AnalysisManager:
             im.correctCameraEffects(cameraCorrection)
         else:
             im.correctCameraEffects(im.cameraCorrection)
-        results = analysis.run(im)
+        results, warnings = analysis.run(im)
         im.saveAnalysis(results, analysisName)
+        if len(warnings) > 0:
+            md = im.toMetadata()
+        else:
+            md = None
+        return warnings, md
 
-    def _checkAutoCorrectionConsistency(self, cellMetas: typing.List[ICMetaData]) -> bool:
+    def _checkAutoCorrectionConsistency(self, cellMetas: List[ICMetaData]) -> bool:
         camCorrections = [i.cameraCorrection for i in cellMetas]
         names = [os.path.split(i.filePath)[-1] for i in cellMetas]
         missing, _ = zip(*[(name, cam) for name, cam in zip(names, camCorrections) if cam is None])

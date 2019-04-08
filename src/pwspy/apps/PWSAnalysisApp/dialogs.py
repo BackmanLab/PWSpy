@@ -6,11 +6,13 @@ Created on Wed Feb 13 18:04:57 2019
 """
 import os
 from glob import glob
+from typing import Optional
+
 from pwspy.apps import resources
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import (QGridLayout, QDialog,
                              QLineEdit, QPushButton, QFileDialog, QCheckBox,
-                             QMessageBox)
+                             QMessageBox, QWidget, QVBoxLayout)
 
 
 class WorkingDirDialog(QDialog):
@@ -67,6 +69,14 @@ class WorkingDirDialog(QDialog):
         if _ != '':
             self.directory = _
             self.textLine.setText(self.directory)
+
+
+class AnalysisSummaryDisplay(QWidget):
+    def __init__(self, parent: Optional[QWidget] = None):
+        super().__init__(parent=parent)
+        layout = QVBoxLayout
+        self.warnList = 
+
 
 if __name__ == '__main__':
     _ = WorkingDirDialog()
