@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupB
 from pwspy import CameraCorrection
 from pwspy.analysis import AnalysisSettings
 from pwspy.apps.PWSAnalysisApp import applicationVars, resources
-from pwspy.apps.PWSAnalysisApp.extraReflectionManager import explorerWindow
+from pwspy.apps.PWSAnalysisApp.extraReflectionManager.explorerWindow import ExplorerWindow
 from pwspy.apps.PWSAnalysisApp.sharedWidgets.collapsibleSection import CollapsibleSection
 from pwspy.utility import reflectanceHelper
 
@@ -19,7 +19,7 @@ from pwspy.utility import reflectanceHelper
 class SettingsFrame(QScrollArea):
     def __init__(self):
         super().__init__()
-        self.ERExplorer = explorerWindow(self, applicationVars.extraReflectionDirectory)
+        self.ERExplorer = ExplorerWindow(self, applicationVars.extraReflectionDirectory)
         self._frame = VerticallyCompressedWidget(self)
         self._layout = QGridLayout()
         self._frame.setLayout(self._layout)

@@ -103,3 +103,4 @@ class CellSelectorDock(QDockWidget):
         self.tableWidget.cellItems[0].setSelected()
         self.tableWidget.setSelection()
     def setSelectedReference(self, ref: ICMetaData):
+        pass #TODO

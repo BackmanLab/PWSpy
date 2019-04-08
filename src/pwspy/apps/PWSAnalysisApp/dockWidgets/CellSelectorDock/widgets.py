@@ -95,7 +95,7 @@ class CellTableWidgetItem:
 
     def setSelected(self):
         #do stuff
-
+        pass
     def close(self):
         with open(self.mdPath, 'w') as f:
             json.dump(self.md, f)

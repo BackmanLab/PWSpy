@@ -36,8 +36,6 @@ if __name__ == '__main__':
     rootDir = r'/home/nick/Desktop/4matExtraReflection/LCPWS1/1_23_2019'
     produceRextraCube = True
     plotResults = True
-    settings = ['none']
-    
     
     materials = ['air','water', 'ipa','ethanol']
     
