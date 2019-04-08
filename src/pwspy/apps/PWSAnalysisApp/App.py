@@ -22,7 +22,7 @@ class PWSApp(QApplication):
         self._setupDataDirectories()
         self.window = PWSWindow()
         self.anMan = AnalysisManager(self)
-        self.window.runAction.triggered.connect(self.anMan.run)
+        self.window.runAction.triggered.connect(self.anMan.runList)
         self.anMan.analysisDone.connect(lambda name, settings, warningList: AnalysisSummaryDisplay(self, name, settings, warningList))
 
     @staticmethod

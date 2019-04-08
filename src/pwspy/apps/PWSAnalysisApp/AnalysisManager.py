@@ -25,7 +25,7 @@ class AnalysisManager(QtCore.QObject):
 
     def runSingle(self, anName: str, anSettings: AnalysisSettings, cellMetas: List[ICMetaData], refMeta: ICMetaData,
                   cameraCorrection: CameraCorrection) -> Tuple[str, AnalysisSettings, List[Tuple[List[AnalysisWarning], ICMetaData]]]:
-        # refMeta = self.app.window.cellSelector.getSelectedReferenceMeta() #TODO change this to use the analysis list.
+        # refMeta = self.app.window.cellSelector.getSelectedReferenceMeta()
         # cellMetas = self.app.window.cellSelector.getSelectedCellMetas()
         # cameraCorrection, settings = self.app.window.analysisSettings.getSettings()
         if cameraCorrection is None: # This means that the user has selected automatic cameraCorrection

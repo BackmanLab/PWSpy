@@ -40,11 +40,11 @@ class CellTableWidgetItem:
         self._items = [self.pathLabel, self.numLabel, self.roiLabel, self.anLabel]
         self._updateHasNotes()
         self.mdPath = os.path.join(self.cube.filePath, 'AnAppPrefs.json')
-        with open(self.mdPath, 'r') as f:
-            try:
+        try:
+            with open(self.mdPath, 'r') as f:
                 self.md = json.load(f)
-            except JSONDecodeError:
-                self.md = {'invalid': False, 'reference': False}
+        except (JSONDecodeError, FileNotFoundError):
+            self.md = {'invalid': False, 'reference': False}
         self.setInvalid(self._invalid) #Update item color based on saved status. Since invalid status overrides reference status we must do this first.
         self.setReference(self._reference)
 

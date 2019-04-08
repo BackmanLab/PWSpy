@@ -20,7 +20,7 @@ from pwspy.imCube import ICMetaData
 
 
 class WorkingDirDialog(QDialog):
-    directoryChanged = QtCore.pyqtSignal()
+    directoryChanged = QtCore.pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent,
