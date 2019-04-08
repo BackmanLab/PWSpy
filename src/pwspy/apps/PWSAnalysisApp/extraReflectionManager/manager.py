@@ -35,7 +35,7 @@ class ERManager:
 
     def __init__(self, filePath: str):
         self.directory = filePath
-        self.downloader = GoogleDriveDownloader(applicationVars.googleDriveAuthPath)
+        self.downloader = None
         self._initialize()
 
     def _initialize(self):
@@ -53,6 +53,8 @@ class ERManager:
             i['downloaded'] = i['idTag'] in tags
 
     def download(self, fileName: str):
+        if self.downloader is None:
+            self.downloader = GoogleDriveDownloader(applicationVars.googleDriveAuthPath)
         files = self.downloader.getFolderIdContents(self.downloader.getIdByName('PWSAnalysisAppHostedFiles'))
         files = self.downloader.getFolderIdContents(self.downloader.getIdByName('ExtraReflectanceCubes', fileList=files))
         fileId = self.downloader.getIdByName(fileName, fileList=files)
