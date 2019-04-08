@@ -5,6 +5,7 @@ from typing import List
 from PyQt5.QtWidgets import QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineEdit, QGridLayout, QSplitter, \
     QSizePolicy, QMessageBox
 
+from pwspy.apps.PWSAnalysisApp.dockWidgets.CellSelectorDock.widgets import ReferencesTableItem
 from .widgets import CellTableWidgetItem, CellTableWidget, ReferencesTable
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 
@@ -100,7 +101,18 @@ class CellSelectorDock(QDockWidget):
         return self.refTableWidget.selectedReferenceMeta
 
     def setSelectedCells(self, cells: List[ICMetaData]):
-        self.tableWidget.cellItems[0].setSelected()
-        self.tableWidget.setSelection()
+        idTags = [i.idTag for i in cells]
+        for item in self.tableWidget.cellItems:
+            if item.cube.idTag in idTags:
+                item.setSelected(True)
+            else:
+                item.setSelected(False)
+
     def setSelectedReference(self, ref: ICMetaData):
-        pass #TODO
+        idTag = ref.idTag
+        for i in range(self.refTableWidget.rowCount()):
+            refitem: ReferencesTableItem = self.refTableWidget.item(i, 0)
+            if refitem.item.cube.idTag == idTag:
+                refitem.setSelected(True)
+            else:
+                refitem.setSelected(False)

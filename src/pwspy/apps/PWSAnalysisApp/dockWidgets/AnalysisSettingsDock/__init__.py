@@ -1,8 +1,9 @@
+import json
 from typing import Tuple, List
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, \
-    QVBoxLayout, QPushButton, QSplitter
+    QVBoxLayout, QPushButton, QSplitter, QMessageBox
 
 from pwspy import CameraCorrection
 from pwspy.analysis import AnalysisSettings
@@ -28,6 +29,7 @@ class AnalysisSettingsDock(QDockWidget):
         widg2 = QWidget()
         widg2.setLayout(QVBoxLayout())
         self.analysesQueue = QueuedAnalysesFrame()
+        self.analysesQueue.listWidget.itemDoubleClicked.connect(self.displayItemSettings)
         widg2.layout().addWidget(self.analysesQueue)
 
         self.addAnalysisButton.released.connect(
@@ -51,3 +53,11 @@ class AnalysisSettingsDock(QDockWidget):
 
     def getListedAnalyses(self) -> List[Tuple[str, AnalysisSettings, List[ICMetaData], ICMetaData, CameraCorrection]]:
         return self.analysesQueue.analyses
+
+    def displayItemSettings(self, item: AnalysisListItem):
+        #Highlight relevant cells
+        self.selector.setSelectedCells(item.cells) #todo finish line to set selection
+        self.selector.setSelectedReference(item.reference)
+        #Open a dialog
+        message = QMessageBox.information(self, item.name, json.dumps(item.settings.asDict(), indent=4))
+

@@ -30,7 +30,6 @@ class QueuedAnalysesFrame(QScrollArea):
         self.setWidget(self.listWidget)
         self.listWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.listWidget.customContextMenuRequested.connect(self.showContextMenu)
-        self.listWidget.itemDoubleClicked.connect(self.displayItemSettings)
         self.setWidgetResizable(True)
 
     @property
@@ -59,12 +58,4 @@ class QueuedAnalysesFrame(QScrollArea):
     def deleteSelected(self):
         for i in self.listWidget.selectedItems():
             self.listWidget.takeItem(self.listWidget.row(i))
-
-    def displayItemSettings(self, item: AnalysisListItem):
-        #Highlight relevant cells
-        parent: AnalysisSettingsDock = self.parent()
-        parent.selector.setSelectedCells #todo finish line to set selection
-        parent.selector.setSelectedReference
-        #Open a dialog
-        message = QMessageBox.information(self, item.name, json.dumps(item.settings.asDict(), indent=4))
 

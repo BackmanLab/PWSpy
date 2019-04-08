@@ -93,9 +93,10 @@ class CellTableWidgetItem:
     def isReference(self) -> bool:
         return self._reference
 
-    def setSelected(self):
-        #do stuff
-        pass
+    def setSelected(self, select: bool):
+        for i in self._items:
+            i.setSelected(select)
+
     def close(self):
         with open(self.mdPath, 'w') as f:
             json.dump(self.md, f)
