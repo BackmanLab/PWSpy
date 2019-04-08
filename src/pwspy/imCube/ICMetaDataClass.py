@@ -153,7 +153,7 @@ class ICMetaData:
         return AnalysisResultsLoader(os.path.join(self.filePath, 'analyses'), name)
 
     def editNotes(self):
-        filepath = os.path.join(self.filePath, 'notes.txt.')
+        filepath = os.path.join(self.filePath, 'notes.txt')
         if not os.path.exists(filepath):
             with open(filepath, 'w') as f:
                 pass
