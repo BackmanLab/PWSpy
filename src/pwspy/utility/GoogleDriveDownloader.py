@@ -29,7 +29,7 @@ class GoogleDriveDownloader:
                 flow = InstalledAppFlow.from_client_secrets_file(
                     credPath, ['https://www.googleapis.com/auth/drive.readonly'])
                 creds = flow.run_local_server()
-            with open(self.authPath, 'wb') as token: # Save the credentials for the next run
+            with open(tokenPath, 'wb') as token: # Save the credentials for the next run
                 pickle.dump(creds, token)
 
         self.api = build('drive', 'v3', credentials=creds) #this returns access to the drive api. see google documentation
