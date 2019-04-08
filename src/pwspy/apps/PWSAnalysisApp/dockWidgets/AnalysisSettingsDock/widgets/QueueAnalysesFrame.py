@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QListWidgetItem, QWidget, QScrollArea, QListWidget, 
 
 from pwspy import CameraCorrection
 from pwspy.analysis import AnalysisSettings
+from pwspy.apps.PWSAnalysisApp.dockWidgets import AnalysisSettingsDock
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 import json
 
@@ -60,6 +61,10 @@ class QueuedAnalysesFrame(QScrollArea):
             self.listWidget.takeItem(self.listWidget.row(i))
 
     def displayItemSettings(self, item: AnalysisListItem):
-        message = QMessageBox.information(self, item.name, json.dumps({'Cells': [i.filePath for i in item.cells], 'Reference': item.reference.filePath, 'Settings': item.settings.asDict()}, indent=4))
-
+        #Highlight relevant cells
+        parent: AnalysisSettingsDock = self.parent()
+        parent.selector.setSelectedCells #todo finish line to set selection
+        parent.selector.setSelectedReference
+        #Open a dialog
+        message = QMessageBox.information(self, item.name, json.dumps(item.settings.asDict(), indent=4))
 

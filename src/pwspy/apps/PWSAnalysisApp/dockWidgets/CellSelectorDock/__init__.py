@@ -1,5 +1,6 @@
 import os
 import re
+from typing import List
 
 from PyQt5.QtWidgets import QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineEdit, QGridLayout, QSplitter, \
     QSizePolicy, QMessageBox
@@ -97,3 +98,8 @@ class CellSelectorDock(QDockWidget):
 
     def getSelectedReferenceMeta(self):
         return self.refTableWidget.selectedReferenceMeta
+
+    def setSelectedCells(self, cells: List[ICMetaData]):
+        self.tableWidget.cellItems[0].setSelected()
+        self.tableWidget.setSelection()
+    def setSelectedReference(self, ref: ICMetaData):

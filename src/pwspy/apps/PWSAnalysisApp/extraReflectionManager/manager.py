@@ -3,7 +3,7 @@ import os
 from glob import glob
 import jsonschema
 
-from pwspy.apps.PWSAnalysisApp.googleDriveDownloader import GoogleDriveDownloader
+from pwspy.utility.GoogleDriveDownloader import GoogleDriveDownloader
 
 from pwspy import ExtraReflectanceCube
 from pwspy.apps.PWSAnalysisApp import applicationVars
