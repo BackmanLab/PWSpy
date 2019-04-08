@@ -5,6 +5,7 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox
 
 from pwspy import ImCube, CameraCorrection
+from pwspy.analysis import AnalysisSettings
 from pwspy.analysis.analysisClass import Analysis
 from pwspy.analysis.warnings import AnalysisWarning
 from pwspy.imCube.ICMetaDataClass import ICMetaData
@@ -12,17 +13,22 @@ from pwspy.utility import loadAndProcess
 
 
 class AnalysisManager(QtCore.QObject):
-    analysisDone = QtCore.pyqtSignal(list)
+    analysisDone = QtCore.pyqtSignal(str, AnalysisSettings, list)
 
     def __init__(self, app: 'PWSApp'):
         super().__init__()
         self.app = app
 
-    def run(self) -> List[Tuple[List[AnalysisWarning], ICMetaData]]:
-        refMeta = self.app.window.cellSelector.getSelectedReferenceMeta()
-        cellMetas = self.app.window.cellSelector.getSelectedCellMetas()
-        cameraCorrection, settings = self.app.window.analysisSettings.getSettings()
-        if cameraCorrection is None: # This means that we the user has selected automatic cameraCorrection
+    def runList(self):
+        for anName, anSettings, cellMetas, refMetas, camCorrection in self.app.window.analysisSettings.getListedAnalyses():
+            self.runSingle(anName, anSettings, cellMetas, refMetas, camCorrection)
+
+    def runSingle(self, anName: str, anSettings: AnalysisSettings, cellMetas: List[ICMetaData], refMeta: ICMetaData,
+                  cameraCorrection: CameraCorrection) -> Tuple[str, AnalysisSettings, List[Tuple[List[AnalysisWarning], ICMetaData]]]:
+        # refMeta = self.app.window.cellSelector.getSelectedReferenceMeta() #TODO change this to use the analysis list.
+        # cellMetas = self.app.window.cellSelector.getSelectedCellMetas()
+        # cameraCorrection, settings = self.app.window.analysisSettings.getSettings()
+        if cameraCorrection is None: # This means that the user has selected automatic cameraCorrection
             correctionsOk = self._checkAutoCorrectionConsistency(cellMetas + [refMeta])
         else:
             correctionsOk = True #We're using a user provided camera correction so we assume it's good to go.
@@ -33,11 +39,12 @@ class AnalysisManager(QtCore.QObject):
             else:
                 print("Using automatically detected camera corrections")
                 ref.correctCameraEffects(ref.cameraCorrection)
-            analysis = Analysis(settings, ref)
-            analysisName = self.app.window.analysisSettings.getAnalysisName()
-            warnings = loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[ref, analysis, analysisName], parallel=True) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
-            ret = [(warn, md) for warn, md in warnings if md is not None]
-            self.analysisDone.emit(ret)
+            analysis = Analysis(anSettings, ref)
+            # analysisName = self.app.window.analysisSettings.getAnalysisName()
+            warnings = loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[ref, analysis, anName], parallel=True) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
+            warnings = [(warn, md) for warn, md in warnings if md is not None]
+            ret = (anName, anSettings, warnings)
+            self.analysisDone.emit(*ret)
             return ret
 
     @staticmethod

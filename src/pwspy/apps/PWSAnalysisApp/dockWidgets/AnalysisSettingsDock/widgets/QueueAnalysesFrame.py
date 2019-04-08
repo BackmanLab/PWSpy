@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
@@ -31,6 +31,11 @@ class QueuedAnalysesFrame(QScrollArea):
         self.listWidget.customContextMenuRequested.connect(self.showContextMenu)
         self.listWidget.itemDoubleClicked.connect(self.displayItemSettings)
         self.setWidgetResizable(True)
+
+    @property
+    def analyses(self) -> List[Tuple[str, AnalysisSettings, List[ICMetaData], ICMetaData, CameraCorrection]]:
+        items: List[AnalysisListItem] = [self.listWidget.item(i) for i in range(self.listWidget.count())]
+        return [(item.name, item.settings, item.cells, item.reference, item.cameraCorrection)  for item in items]
 
     def addAnalysis(self, analysisName: str, cameraCorrection: CameraCorrection, settings: AnalysisSettings, reference: ICMetaData, cells: List[ICMetaData]):
         if reference is None:

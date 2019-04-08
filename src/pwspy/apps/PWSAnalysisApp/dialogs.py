@@ -8,6 +8,7 @@ import os
 from glob import glob
 from typing import Optional, List, Tuple
 
+from pwspy.analysis import AnalysisSettings
 from pwspy.analysis.warnings import AnalysisWarning
 from pwspy.apps import resources
 from PyQt5 import QtCore, QtGui
@@ -75,14 +76,22 @@ class WorkingDirDialog(QDialog):
 
 
 class AnalysisSummaryDisplay(QWidget):
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, parent: Optional[QWidget], analysisName: str, analysisSettings: AnalysisSettings, warnings: List[Tuple[List[AnalysisWarning], ICMetaData]]):
         super().__init__(parent=parent)
-        layout = QVBoxLayout
+        self.analysisName = analysisName
+        self.analysisSettings = analysisSettings
+        layout = QVBoxLayout()
+        self.settingsButton = QPushButton("Settings", self)
+        self.settingsButton.released.connect(self._displaySettings)
         self.warnList = QTreeWidget(self)
+        layout.addWidget(self.settingsButton)
         layout.addWidget(self.warnList)
         self.setLayout(layout)
+        self._addWarnings(warnings)
+        self.setWindowTitle(analysisName)
+        self.show()
 
-    def addWarnings(self, warnings: List[Tuple[List[AnalysisWarning], ICMetaData]]):
+    def _addWarnings(self, warnings: List[Tuple[List[AnalysisWarning], ICMetaData]]):
         for cellWarns, cell in warnings:
             item = QTreeWidgetItem(self.warnList)
             item.setText(0, cell.filePath)
@@ -93,6 +102,9 @@ class AnalysisSummaryDisplay(QWidget):
 
     def clearWarnings(self):
         self.warnList.clear()
+
+    def _displaySettings(self):
+        msgBox = QMessageBox.information(self, self.analysisName, self.analysisSettings.toJsonString())
 
 
 if __name__ == '__main__':

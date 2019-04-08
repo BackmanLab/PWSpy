@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, List
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, \
@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QDockWidget, QWidget, \
 from pwspy import CameraCorrection
 from pwspy.analysis import AnalysisSettings
 from pwspy.apps.PWSAnalysisApp.dockWidgets import CellSelectorDock
+from pwspy.imCube import ICMetaData
 from .widgets.QueueAnalysesFrame import AnalysisListItem, QueuedAnalysesFrame
 from .widgets.SettingsFrame import SettingsFrame
 
@@ -47,3 +48,6 @@ class AnalysisSettingsDock(QDockWidget):
 
     def getAnalysisName(self):
         return self.settingsFrame.analysisName
+
+    def getListedAnalyses(self) -> List[Tuple[str, AnalysisSettings, List[ICMetaData], ICMetaData, CameraCorrection]]:
+        return self.analysesQueue.analyses

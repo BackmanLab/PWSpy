@@ -8,7 +8,7 @@ import os
 import shutil
 
 from PyQt5.QtWidgets import QApplication
-
+from .dialogs import AnalysisSummaryDisplay
 from .AnalysisManager import AnalysisManager
 from pwspy.analysis import defaultSettingsPath
 from .mainWindow import PWSWindow
@@ -23,7 +23,7 @@ class PWSApp(QApplication):
         self.window = PWSWindow()
         self.anMan = AnalysisManager(self)
         self.window.runAction.triggered.connect(self.anMan.run)
-        self.anMan.analysisDone.connect(self.window.anDisplay.create())
+        self.anMan.analysisDone.connect(lambda name, settings, warningList: AnalysisSummaryDisplay(self, name, settings, warningList))
 
     @staticmethod
     def _setupDataDirectories():
