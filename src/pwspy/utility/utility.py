@@ -7,9 +7,8 @@ Created on Thu Oct 11 11:31:48 2018
 import multiprocessing as mp
 import queue
 import threading as th
-import typing
 from time import time
-from typing import Union, Optional
+from typing import Union, Optional, List, Tuple
 import pandas as pd
 import psutil
 from pwspy import ImCube
@@ -42,6 +41,7 @@ def _procWrap(procFunc):
         return row
     return func
 
+
 def _loadThenProcess(procFunc, procFuncArgs, lock, row):
     """Handles loading the ImCubes from file and if needed then calling the processorFunc. This function will be executed
      on each core when running in parallel. If not running in parallel then _loadIms will be used."""
@@ -61,7 +61,7 @@ def _loadThenProcess(procFunc, procFuncArgs, lock, row):
 '''User Functions'''
 
 
-def loadAndProcess(fileFrame: pd.DataFrame, processorFunc: Optional = None,
+def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: Optional = None,
                    parallel: Optional=False, procArgs: Optional = None) -> pd.DataFrame:
     """    A convenient function to load a series of ImCubes from a list or dictionary of file paths.
 
@@ -88,6 +88,13 @@ def loadAndProcess(fileFrame: pd.DataFrame, processorFunc: Optional = None,
     """
     if procArgs is None:
         procArgs = []
+    origClass = None
+    if not isinstance(fileFrame, pd.DataFrame):
+        try:
+            origClass = type(fileFrame)
+            fileFrame = pd.DataFrame({'cube': fileFrame})
+        except:
+            raise TypeError("fileFrame cannot be converted to a pandas dataframe")
     # Error checking
     if 'cube' not in fileFrame.columns:
         raise IndexError("The fileFrame must contain a 'cube' column.")
@@ -118,4 +125,8 @@ def loadAndProcess(fileFrame: pd.DataFrame, processorFunc: Optional = None,
             cubes = [qout.get() for i in range(len(fileFrame))]
         [thread.join() for thread in threads]
     print(f"Loading took {time() - sTime} seconds")
-    return pd.DataFrame(cubes)
+    ret = pd.DataFrame(cubes)
+    if origClass is None:
+        return ret
+    else:
+        return origClass(ret['cube'])

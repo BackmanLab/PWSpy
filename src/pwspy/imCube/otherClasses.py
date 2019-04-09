@@ -94,14 +94,14 @@ class Roi:
     @staticmethod
     def getValidRoisInPath(path: str) -> List[Tuple[str, int, RoiFileFormats]]:
         patterns = [('BW*_*.mat', RoiFileFormats.MAT), ('*_roi.h5', RoiFileFormats.HDF)]
-        files = {fformat: glob(os.path.join(path, p)) for p, fformat in patterns}
+        files = {fformat: glob(os.path.join(path, p)) for p, fformat in patterns} #Lists of the found files keyed by file format
         ret = []
-        for k, v in files.items():
-            if k == RoiFileFormats.HDF:
-                for i in v:
+        for fformat, fileNames in files.items():
+            if fformat == RoiFileFormats.HDF:
+                for i in fileNames:
                     raise NotImplementedError
-            elif k == RoiFileFormats.MAT:
-                for i in v: #list in files
+            elif fformat == RoiFileFormats.MAT:
+                for i in fileNames: #list in files
                     i = os.path.split(i)[-1]
                     num = int(i.split('_')[0][2:])
                     name = i.split('_')[1][:-4]
