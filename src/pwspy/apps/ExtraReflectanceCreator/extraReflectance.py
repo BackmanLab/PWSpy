@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, Iterable, Any, Sequence, Iterator, Union
+from typing import Dict, List, Tuple, Iterable, Any, Sequence, Iterator, Union, Optional
 
 from pwspy import ImCube, ExtraReflectanceCube
 from pwspy.imCube.otherClasses import Roi
@@ -120,35 +120,14 @@ def calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theory
     return meanValues, allCombos
 
 
-def prepareData(df: pd.DataFrame, selectMaskUsingSetting: str = None, excludedCombos: list = None) -> Tuple[Dict[str, Dict[Union[MCombo, str], Dict[str, Any]]],
-                                                                                                            Dict[str, Dict[MCombo, ComboSummary]],
-                                                                                                            Dict[Material, np.ndarray],
-                                                                                                            List[MCombo],
-                                                                                                            Iterable]:
-    # Error checking
-    for col in ['cube', 'material', 'setting']:
-        assert col in df.columns
-
-    if excludedCombos is None:
-        excludedCombos = []
-    settings: Iterable[str] = set(df['setting'])  # Unique setting values
-    materials: Iterable[Material] = set(df['material'])
-    theoryR = getTheoreticalReflectances(materials, df['cube'][0].wavelengths)  # Theoretical reflectances
-    matCombos = generateMaterialCombos(materials, excludedCombos)
-
-    if selectMaskUsingSetting is None:
-        mask = df['cube'][0]
-    else:
-        mask = df[df['setting'] == selectMaskUsingSetting]['cube'][0]
-    print("Select an ROI")
-    mask = mask.selectLassoROI()  # Select an ROI to analyze
-
+def prepareData(df: pd.DataFrame, settings: Iterable[str], matCombos: Iterable[MCombo], theoryR: Dict[Material, pd.Series], mask: Optional[Roi] = None) -> Tuple[Dict[str, Dict[Union[MCombo, str], Dict[str, Any]]],
+                                                                                                            Dict[str, Dict[MCombo, List[ComboSummary]]]]:
     meanValues = {}
     allCombos = {}
     for sett in settings:
         cubeCombos = getAllCubeCombos(matCombos, df[df['setting'] == sett])
         meanValues[sett], allCombos[sett] = calculateSpectraFromCombos(cubeCombos, theoryR, mask)
-    return meanValues, allCombos, theoryR, matCombos, settings
+    return meanValues, allCombos
 
 
 def plotExtraReflection(allCombos: Dict[str, Dict[MCombo, List[ComboSummary]]], meanValues: Dict, theoryR: dict, matCombos:List[MCombo], settings:Iterable, plotReflectionImages: bool = False):

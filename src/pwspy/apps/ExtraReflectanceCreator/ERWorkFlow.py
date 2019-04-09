@@ -5,13 +5,13 @@ import json
 from pwspy import ImCube, CameraCorrection
 from pwspy.utility import loadAndProcess
 from pwspy.utility.reflectanceHelper import Material
-from .extraReflectance import prepareData, plotExtraReflection, saveRExtra
+import pwspy.apps.ExtraReflectanceCreator.extraReflectance  as er #import prepareData, plotExtraReflection, saveRExtra
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from matplotlib import animation
-
+import random
 
 class ERWorkFlow:
     def __init__(self):
@@ -59,11 +59,18 @@ class ERWorkFlow:
                 rows.append({'setting': s, 'material': m, 'cube': file})
         df = pd.DataFrame(rows)
         self.cubes = loadAndProcess(df, self._processIm, parallel=True, procArgs=[self.cameraCorrection, binning])
-        self.mask =
-        self.meanValues, self.allCombos, self.theoryR, self.matCombos, self.settings = prepareData(self.cubes)
+
+        self.settings = set(df['setting'])  # Unique setting values
+        materials = set(df['material'])
+        self.theoryR = er.getTheoreticalReflectances(materials, df['cube'][0].wavelengths)  # Theoretical reflectances
+        self.matCombos = er.generateMaterialCombos(materials)
+
+        print("Select an ROI")
+        self.mask = random.choice(df['cube']).selectLassoROI()  # Select an ROI to analyze
+        self.meanValues, self.allCombos = er.prepareData(self.cubes, self.settings, self.matCombos, self.theoryR, self.mask)
 
     def plot(self, saveToPdf: bool = False):
-        plotExtraReflection(self.allCombos, self.meanValues, self.theoryR, self.matCombos, self.settings)
+        er.plotExtraReflection(self.allCombos, self.meanValues, self.theoryR, self.matCombos, self.settings)
         if saveToPdf:
             with PdfPages(os.path.join(self.directory, "figs.pdf")) as pp:
                 for i in plt.get_fignums():
@@ -85,7 +92,7 @@ class ERWorkFlow:
             anims = []
             for i, row in c.iterrows():
                 im = row['cube']
-                spectra = im.getMeanSpectra(mask)[0]
+                spectra = im.getMeanSpectra(self.mask)[0]
                 ax.plot(im.wavelengths, spectra, label=row['setting'])
                 anims.append((ax2.imshow(im.data.mean(axis=2), animated=True,
                                          clim=[np.percentile(im.data, .5), np.percentile(im.data, 99.5)]),
