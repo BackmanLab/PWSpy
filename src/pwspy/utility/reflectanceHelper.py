@@ -49,7 +49,7 @@ def _init():
     last = min(last)
     # Interpolate so we don't have any nan values.
     #    df = pd.DataFrame(ser)
-    df = pd.concat(ser, axis='columns')
+    df = pd.concat(ser, axis='columns', keys=materialFiles.keys())
     df = df.interpolate('index')
     n = df.loc[first:last]
     return n

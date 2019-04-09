@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from functools import reduce
 import pandas as pd
+from dataclasses import dataclass
 
 
 class CubeCombo:
@@ -23,7 +24,7 @@ class CubeCombo:
     def values(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
         return (self.data1, self.data2)
 
-    def items(self) -> Iterator[Tuple[Material, pd.DataFrame], ...]:
+    def items(self) -> Iterator[Tuple[Material, pd.DataFrame]]:
         return zip(self.keys(), self.values())
 
     def __getitem__(self, item: Material) -> pd.DataFrame:
@@ -34,6 +35,14 @@ class CubeCombo:
         else:
             raise KeyError("Key must be either mat1 or mat2.")
 
+@dataclass
+class ComboSummary:
+    mat1Spectra: np.ndarray
+    mat2Spectra: np.ndarray
+    combo: CubeCombo
+    rExtra: np.ndarray
+    I0: np.ndarray
+    cFactor: float
 
 def _interpolateNans(arr):
     def interp1(arr1):
@@ -84,27 +93,29 @@ def calculateSpectraFromCombos(cubeCombos: Dict[Tuple[Material, Material], List[
     Returns a dictionary containing
     """
 
-    allCombos: Dict[Tuple[Material, Material], List[Dict[str, Any]]] = {}
-    for matCombo, matCubeCombos in cubeCombos.items():
-        allCombos[matCombo] = [{'cube': combo} for combo in matCubeCombos]
-
     # Save the results of relevant calculations to a dictionary, this dictionary will be returned to the user along with
     # the raw data, `allCombos`
+    allCombos = {}
     meanValues = {}
-    params = ['rextra', 'I0', 'mat1Spectra', 'mat2Spectra', 'cFactor']
-    for matCombo in allCombos.keys():
-        for comboDict in allCombos[matCombo]:
-            cubes = comboDict['cube']
-            mat1, mat2 = cubes.keys()
-            comboDict['mat1Spectra'] = cubes[mat1]['cube'].getMeanSpectra(mask)[0]
-            comboDict['mat2Spectra'] = cubes[mat2]['cube'].getMeanSpectra(mask)[0]
-            comboDict['rextra'] = ((theoryR[mat1] * comboDict['mat2Spectra']) - (theoryR[mat2] * comboDict['mat1Spectra'])) / (
-                    comboDict['mat1Spectra'] - comboDict['mat2Spectra'])
-            comboDict['I0'] = comboDict['mat2Spectra'] / (theoryR[mat2] + comboDict['rextra'])
-            comboDict['cFactor'] = (comboDict['rextra'].mean() + theoryR['water'].mean()) / theoryR['water'].mean()
+    params = ['rExtra', 'I0', 'mat1Spectra', 'mat2Spectra', 'cFactor']
+    for matCombo in cubeCombos.keys():
+        allCombos[matCombo] = []
+        for combo in cubeCombos[matCombo]:
+            mat1, mat2 = combo.keys()
+            c = ComboSummary(mat1Spectra=combo[mat1]['cube'].getMeanSpectra(mask)[0],
+                             mat2Spectra=combo[mat2]['cube'].getMeanSpectra(mask)[0],
+                             rExtra=None,
+                             I0=None,
+                             cFactor=None,
+                             combo=combo)
+            c.rExtra = ((theoryR[mat1] * c.mat2Spectra) - (theoryR[mat2] * c.mat1Spectra)) / (c.mat1Spectra - c.mat2Spectra)
+            c.I0 = c.mat2Spectra / (theoryR[mat2] + c.rExtra)
+            c.cFactor = (c.rExtra.mean() + theoryR['water'].mean()) / theoryR['water'].mean()
+            allCombos[matCombo].append(c)
+
         meanValues[matCombo] = {
                 param: np.array(list(
-                        [combo[param] for combo in allCombos[matCombo]])).mean(axis=0) for param in params}
+                        [getattr(combo, param) for combo in allCombos[matCombo]])).mean(axis=0) for param in params}
     meanValues['mean'] = {param: np.array(list([meanValues[matCombo][param] for matCombo in cubeCombos.keys()])).mean(axis=0) for param in params}
     return meanValues, allCombos
 
