@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, Iterable, Any, Sequence, Iterator
+from typing import Dict, List, Tuple, Iterable, Any, Sequence, Iterator, Union
 
 from pwspy import ImCube, ExtraReflectanceCube
 from pwspy.imCube.otherClasses import Roi
@@ -8,8 +8,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from functools import reduce
 import pandas as pd
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
+MCombo = Tuple[Material, Material]
 
 class CubeCombo:
     def __init__(self, material1: Material, material2: Material, cube1: pd.DataFrame, cube2: pd):
@@ -18,7 +19,7 @@ class CubeCombo:
         self.data1 = cube1
         self.data2 = cube2
 
-    def keys(self) -> Tuple[Material, Material]:
+    def keys(self) -> MCombo:
         return (self.mat1, self.mat2)
 
     def values(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -64,7 +65,7 @@ def getTheoreticalReflectances(materials: Iterable[Material], index: Tuple[float
     return theoryR
 
 
-def generateMaterialCombos(materials: Iterable[Material], excludedCombos: Iterable[Tuple[Material, Material]]) -> List[Tuple[Material, Material]]:
+def generateMaterialCombos(materials: Iterable[Material], excludedCombos: Iterable[MCombo]) -> List[MCombo]:
     """Given a list of material strings and a list of material combination tuples that should be skipped, this function returns
     a list of all possible material combo tuples"""
     matCombos = list(itertools.combinations(materials, 2))  # All the combinations of materials that can be compared
@@ -76,7 +77,7 @@ def generateMaterialCombos(materials: Iterable[Material], excludedCombos: Iterab
     return matCombos
 
 
-def getAllCubeCombos(matCombos: Iterable[Tuple[Material, Material]], df: pd.DataFrame) -> Dict[Tuple[Material, Material], List[CubeCombo]]:
+def getAllCubeCombos(matCombos: Iterable[MCombo], df: pd.DataFrame) -> Dict[MCombo, List[CubeCombo]]:
     """Given a list of material combo tuples, return a dictionary whose keys are the material combo tuples and whose values are
     lists of CubeCombos."""
     allCombos = {}
@@ -86,7 +87,7 @@ def getAllCubeCombos(matCombos: Iterable[Tuple[Material, Material]], df: pd.Data
     return allCombos
 
 
-def calculateSpectraFromCombos(cubeCombos: Dict[Tuple[Material, Material], List[CubeCombo]], theoryR: dict, mask: Roi = None) -> Tuple[Dict, Dict]:
+def calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict, mask: Roi = None) -> Tuple[Dict[Union[MCombo, str], Dict[str, Any]], Dict[MCombo, List[ComboSummary]]]:
     """Expects a dictionary as created by `getAllCubeCombos` and a dictionary of theoretical reflections.
 
     This is used to examine the output of extra reflection calculation before using saveRExtra to save a cube for each setting.
@@ -102,17 +103,16 @@ def calculateSpectraFromCombos(cubeCombos: Dict[Tuple[Material, Material], List[
         allCombos[matCombo] = []
         for combo in cubeCombos[matCombo]:
             mat1, mat2 = combo.keys()
-            c = ComboSummary(mat1Spectra=combo[mat1]['cube'].getMeanSpectra(mask)[0],
-                             mat2Spectra=combo[mat2]['cube'].getMeanSpectra(mask)[0],
+            c = ComboSummary(mat1Spectra=combo[mat1].getMeanSpectra(mask)[0],
+                             mat2Spectra=combo[mat2].getMeanSpectra(mask)[0],
                              rExtra=None,
                              I0=None,
                              cFactor=None,
                              combo=combo)
             c.rExtra = ((theoryR[mat1] * c.mat2Spectra) - (theoryR[mat2] * c.mat1Spectra)) / (c.mat1Spectra - c.mat2Spectra)
             c.I0 = c.mat2Spectra / (theoryR[mat2] + c.rExtra)
-            c.cFactor = (c.rExtra.mean() + theoryR['water'].mean()) / theoryR['water'].mean()
+            c.cFactor = (c.rExtra.mean() + theoryR[Material.Water].mean()) / theoryR[Material.Water].mean()
             allCombos[matCombo].append(c)
-
         meanValues[matCombo] = {
                 param: np.array(list(
                         [getattr(combo, param) for combo in allCombos[matCombo]])).mean(axis=0) for param in params}
@@ -120,15 +120,19 @@ def calculateSpectraFromCombos(cubeCombos: Dict[Tuple[Material, Material], List[
     return meanValues, allCombos
 
 
-def prepareData(df: pd.DataFrame, selectMaskUsingSetting: str = None, excludedCombos: list = None) -> Tuple[Dict, Dict, Dict, List[Tuple[Material, Material]], Iterable]:
+def prepareData(df: pd.DataFrame, selectMaskUsingSetting: str = None, excludedCombos: list = None) -> Tuple[Dict[str, Dict[Union[MCombo, str], Dict[str, Any]]],
+                                                                                                            Dict[str, Dict[MCombo, ComboSummary]],
+                                                                                                            Dict[Material, np.ndarray],
+                                                                                                            List[MCombo],
+                                                                                                            Iterable]:
     # Error checking
     for col in ['cube', 'material', 'setting']:
         assert col in df.columns
 
     if excludedCombos is None:
         excludedCombos = []
-    settings = set(df['setting'])  # Unique setting values
-    materials = set(df['material'])
+    settings: Iterable[str] = set(df['setting'])  # Unique setting values
+    materials: Iterable[Material] = set(df['material'])
     theoryR = getTheoreticalReflectances(materials, df['cube'][0].wavelengths)  # Theoretical reflectances
     matCombos = generateMaterialCombos(materials, excludedCombos)
 
@@ -147,7 +151,7 @@ def prepareData(df: pd.DataFrame, selectMaskUsingSetting: str = None, excludedCo
     return meanValues, allCombos, theoryR, matCombos, settings
 
 
-def plotExtraReflection(allCombos: Dict, meanValues: Dict, theoryR: dict, matCombos:List[Tuple[Material, Material]], settings:Iterable, plotReflectionImages: bool = False):
+def plotExtraReflection(allCombos: Dict[str, Dict[MCombo, List[ComboSummary]]], meanValues: Dict, theoryR: dict, matCombos:List[MCombo], settings:Iterable, plotReflectionImages: bool = False):
     fig, ax = plt.subplots()  # For extra reflections
     fig.suptitle("Extra Reflection")
     ax.set_ylabel("%")
@@ -156,10 +160,10 @@ def plotExtraReflection(allCombos: Dict, meanValues: Dict, theoryR: dict, matCom
         for matCombo in matCombos:
             mat1, mat2 = matCombo
             for combo in allCombos[sett][matCombo]:
-                cubes = combo['cube']
-                ax.plot(cubes[mat1].wavelengths, combo['rextra'],
+                cubes = combo.combo
+                ax.plot(cubes[mat1].wavelengths, combo.rExtra,
                         label=f'{sett} {mat1}:{int(cubes[mat1].metadata["exposure"])}ms {mat2}:{int(cubes[mat2].metadata["exposure"])}ms')
-        ax.plot(cubes[mat1].wavelengths, meanValues[sett]['mean']['rextra'], color='k', label=f'{sett} mean')
+        ax.plot(cubes[mat1].wavelengths, meanValues[sett]['mean']['rExtra'], color='k', label=f'{sett} mean')
     ax.legend()
 
     fig2, ratioAxes = plt.subplots(nrows=len(matCombos))  # for correction factor
@@ -173,8 +177,8 @@ def plotExtraReflection(allCombos: Dict, meanValues: Dict, theoryR: dict, matCom
         for matCombo in matCombos:
             mat1, mat2 = matCombo
             for combo in allCombos[sett][matCombo]:
-                cubes = combo['cube']
-                ratioAxes[matCombo].plot(cubes[mat1].wavelengths, combo['mat1Spectra'] / combo['mat2Spectra'],
+                cubes = combo.combo
+                ratioAxes[matCombo].plot(cubes[mat1].wavelengths, combo.mat1Spectra / combo.mat2Spectra,
                                          label=f'{sett} {mat1}:{int(cubes[mat1].metadata["exposure"])}ms {mat2}:{int(cubes[mat2].metadata["exposure"])}ms')
     [ratioAxes[combo].legend() for combo in matCombos]
 
@@ -198,8 +202,8 @@ def plotExtraReflection(allCombos: Dict, meanValues: Dict, theoryR: dict, matCom
         scatterAx2.set_ylabel("Theoretical Ratio")
         scatterAx2.set_xlabel("Observed Ratio after Subtraction")
         scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in matCombos]
-        scatterPointsX = [((meanValues[sett][matCombo]['mat1Spectra'] - means['I0'] * means['rextra']) / (
-                meanValues[sett][matCombo]['mat2Spectra'] - means['I0'] * means['rextra'])).mean() for matCombo in
+        scatterPointsX = [((meanValues[sett][matCombo]['mat1Spectra'] - means['I0'] * means['rExtra']) / (
+                meanValues[sett][matCombo]['mat2Spectra'] - means['I0'] * means['rExtra'])).mean() for matCombo in
                           matCombos]
         [scatterAx2.scatter(x, y, label=f'{matCombo[0]}/{matCombo[1]}') for x, y, matCombo in
          zip(scatterPointsX, scatterPointsY, matCombos)]
@@ -211,7 +215,7 @@ def plotExtraReflection(allCombos: Dict, meanValues: Dict, theoryR: dict, matCom
             for matCombo in matCombos:
                 mat1, mat2 = matCombo
                 for combo in allCombos[sett][matCombo]:
-                    cubes = combo['cube']
+                    cubes = combo.combo
                     plt.figure()
                     plt.title(f"Reflectance %. {sett}, {mat1}:{int(cubes[mat2].metadata['exposure'])}ms, {mat2}:{int(cubes[mat2].metadata['exposure'])}ms")
                 _ = ((theoryR[mat1][np.newaxis, np.newaxis, :] * cubes[mat2].data) - (
@@ -228,7 +232,7 @@ def plotExtraReflection(allCombos: Dict, meanValues: Dict, theoryR: dict, matCom
         print(means['cFactor'])
 
 
-def saveRExtra(allCombos: Dict[Tuple[Material, Material], Dict], theoryR: dict, matCombos:List[Tuple[Material, Material]]) -> Dict[str, ExtraReflectanceCube]:
+def saveRExtra(allCombos: Dict[MCombo, Dict], theoryR: dict, matCombos:List[MCombo]) -> Dict[str, ExtraReflectanceCube]:
     """No longer true: Expects a list of ImCubes which each has a `material` property matching one of the materials in the `ReflectanceHelper` module."""
 
     rExtra = {}
@@ -236,7 +240,7 @@ def saveRExtra(allCombos: Dict[Tuple[Material, Material], Dict], theoryR: dict, 
         print("Calculating rExtra for: ", matCombo)
         rExtra[matCombo] = {'combos': []}
         for combo in allCombos[matCombo]:
-            combo = combo['cube'] #Just select out the imcube data
+            combo = combo.combo #Just select out the imcube data
             mat1, mat2 = combo.keys()
             _ = rExtra[matCombo]['combos']
             _.append(((np.array(theoryR[mat1][np.newaxis, np.newaxis, :]) * combo[mat2].data) - (

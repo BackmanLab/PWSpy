@@ -4,6 +4,7 @@ from typing import List
 import json
 from pwspy import ImCube, CameraCorrection
 from pwspy.utility import loadAndProcess
+from pwspy.utility.reflectanceHelper import Material
 from .extraReflectance import prepareData, plotExtraReflection, saveRExtra
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
@@ -47,16 +48,18 @@ class ERWorkFlow:
         # Check for a cameraCorrection
         self.cameraCorrection = CameraCorrection.fromJsonFile(os.path.join(self.directory, 'cameraCorrection.json'))
         # Generate the fileDict
+        matMap = {'air': Material.Air, 'water': Material.Water, 'ipa': Material.Ipa, 'ethanol': Material.Ethanol}
         files = glob(os.path.join(directory, '*', '*', 'Cell*'))
         rows = []
         for file in files:
             filelist = self._splitPath(file)
             s = filelist[2]
-            m = filelist[1]
+            m = matMap[filelist[1]]
             if s in includeSettings:
                 rows.append({'setting': s, 'material': m, 'cube': file})
         df = pd.DataFrame(rows)
         self.cubes = loadAndProcess(df, self._processIm, parallel=True, procArgs=[self.cameraCorrection, binning])
+        self.mask =
         self.meanValues, self.allCombos, self.theoryR, self.matCombos, self.settings = prepareData(self.cubes)
 
     def plot(self, saveToPdf: bool = False):

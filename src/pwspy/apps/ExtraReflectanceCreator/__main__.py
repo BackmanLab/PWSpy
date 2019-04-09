@@ -6,6 +6,7 @@ from PyQt5 import (QtCore, QtGui)
 from pwspy.apps import resources
 from pwspy.apps.ExtraReflectanceCreator.ERWorkFlow import ERWorkFlow
 from typing import List
+import matplotlib.pyplot as plt
 
 class ParamsDialog(QDialog):
     def __init__(self, parent, settings: List[str]):
@@ -69,6 +70,8 @@ class MainWindow(QMainWindow):
 
     def browseFile(self):
         _ = QFileDialog.getExistingDirectory(self, 'Working Directory', self.directory)
+        for b in self.buttons:
+            b.setEnabled(False)
         if _ != '':
             self.directory = _
             self.directoryEdit.setText(self.directory)
@@ -79,14 +82,12 @@ class MainWindow(QMainWindow):
                 self.workflow.loadDirectory(self.directory, a.getSettings(), a.getBinning())
                 for b in self.buttons:
                     b.setEnabled(True)
-        else:
-            for b in self.buttons:
-                b.setEnabled(False)
 
 
 class ERApp(QApplication):
     def __init__(self, args):
         super().__init__(args)
+        plt.interactive(True)
         self.window = MainWindow()
 
 
