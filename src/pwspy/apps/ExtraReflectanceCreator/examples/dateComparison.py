@@ -56,4 +56,3 @@ if __name__ == '__main__':
             anims.append((ax2.imshow(im.data.mean(axis=2), animated=True, clim=[np.percentile(im.data,.5),np.percentile(im.data,99.5)]), ax2.text(200,100,row['setting'])))
         ax.legend()
         anis.append(animation.ArtistAnimation(fig2, anims, interval=1000, blit=False))
-        

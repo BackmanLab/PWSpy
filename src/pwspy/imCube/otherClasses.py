@@ -99,7 +99,7 @@ class Roi:
         for fformat, fileNames in files.items():
             if fformat == RoiFileFormats.HDF:
                 for i in fileNames:
-                    raise NotImplementedError
+                    raise NotImplementedError #TODO implement this
             elif fformat == RoiFileFormats.MAT:
                 for i in fileNames: #list in files
                     i = os.path.split(i)[-1]

@@ -29,7 +29,7 @@ class ParamsDialog(QDialog):
 
     def getBinning(self) -> int:
         num = self.binningCombo.currentIndex()
-        ret = num if num!=0 else None
+        ret = num if num != 0 else None
         return ret
 
     def getSettings(self) -> List[str]:
