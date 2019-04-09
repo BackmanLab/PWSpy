@@ -8,12 +8,32 @@ Created on Wed Aug 22 11:05:40 2018
 import pandas as pd
 import numpy as np
 import os
+from enum import Enum, auto
 
+class Material(Enum):
+    Glass = auto()
+    Water = auto()
+    Air = auto()
+    Silicon = auto()
+    Oil_1_7 = auto()
+    Oil_1_4 = auto()
+    Ipa = auto()
+    Ethanol = auto()
+
+materialFiles = {
+    Material.Glass: 'N-BK7.csv',
+    Material.Water: 'Daimon-21.5C.csv',
+    Material.Air: 'Ciddor.csv',
+    Material.Silicon: 'Silicon.csv',
+    Material.Oil_1_7: 'CargilleOil1_7.csv',
+    Material.Oil_1_4: "CargilleOil1_4.csv",
+    Material.Ipa: 'Sani-DellOro-IPA.csv',
+    Material.Ethanol: 'Rheims.csv'}
 
 def _init():
     fileLocation = os.path.join(os.path.split(__file__)[0], 'refractiveIndexFiles')
     ser = {}  # a dictionary of the series by name
-    for name, file in materials.items():
+    for name, file in materialFiles.items():
         # create a series for each csv file
         arr = np.genfromtxt(os.path.join(fileLocation, file), skip_header=1, delimiter=',')
         _ = pd.DataFrame({'n': arr[:, 1], 'k': arr[:, 2]}, index=arr[:, 0].astype(np.float) * 1e3)
@@ -35,25 +55,13 @@ def _init():
     return n
 
 
-materials = {
-    'glass': 'N-BK7.csv',
-    'water': 'Daimon-21.5C.csv',
-    'air': 'Ciddor.csv',
-    'silicon': 'Silicon.csv',
-    'oil 1.7': 'CargilleOil1_7.csv',
-    'oil 1.4': "CargilleOil1_4.csv",
-    'ipa': 'Sani-DellOro-IPA.csv',
-    'ethanol': 'Rheims.csv'}
-n = _init()
+n = _init() #initialize the module and delete the initializer function.
 del _init
 
 
-def getReflectance(mat1: str, mat2: str, index=None):
+def getReflectance(mat1: Material, mat2: Material, index=None):
     """Given the names of two interfaces this provides the reflectance in units of percent.
     If given a series as index the data will be interpolated and reindexed to match the index."""
-    assert mat1 in materials, f'{mat1} is not a valid material. must be one of: {list(materials.keys())}'
-    assert mat2 in materials, f'{mat2} is not a valid material. must be one of: {list(materials.keys())}'
-
 
     nc1 = np.array([np.complex(i[0], i[1]) for idx, i in n[mat1].iterrows()])  # complex index for material 1
     nc2 = np.array([np.complex(i[0], i[1]) for idx, i in n[mat2].iterrows()])

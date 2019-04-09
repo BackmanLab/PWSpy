@@ -8,11 +8,14 @@ from .extraReflectance import prepareData, plotExtraReflection, saveRExtra
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
+from matplotlib import animation
 
 
 class ERWorkFlow:
     def __init__(self):
-        self.meanValues=self.allCombos=self.theoryR=self.matCombos=self.settings=self.directory=self.cameraCorrection=None
+        self.meanValues = self.allCombos = self.theoryR = self.matCombos = self.settings = self.directory = \
+            self.cameraCorrection = self.cubes = None
 
     @staticmethod
     def _splitPath(path: str) -> List[str]:
@@ -53,8 +56,8 @@ class ERWorkFlow:
             if s in includeSettings:
                 rows.append({'setting': s, 'material': m, 'cube': file})
         df = pd.DataFrame(rows)
-        cubes = loadAndProcess(df, self._processIm, parallel=True, procArgs=[self.cameraCorrection, binning])
-        self.meanValues, self.allCombos, self.theoryR, self.matCombos, self.settings = prepareData(cubes)
+        self.cubes = loadAndProcess(df, self._processIm, parallel=True, procArgs=[self.cameraCorrection, binning])
+        self.meanValues, self.allCombos, self.theoryR, self.matCombos, self.settings = prepareData(self.cubes)
 
     def plot(self, saveToPdf: bool = False):
         plotExtraReflection(self.allCombos, self.meanValues, self.theoryR, self.matCombos, self.settings)
@@ -69,4 +72,20 @@ class ERWorkFlow:
         pass
 
     def compareDates(self):
-        pass
+        anis = []
+        for mat in set(self.cubes['material']):
+            c = self.cubes[self.cubes['material'] == mat]
+            fig, ax = plt.subplots()
+            fig.suptitle(mat)
+            fig2, ax2 = plt.subplots()
+            fig2.suptitle(mat)
+            anims = []
+            for i, row in c.iterrows():
+                im = row['cube']
+                spectra = im.getMeanSpectra(mask)[0]
+                ax.plot(im.wavelengths, spectra, label=row['setting'])
+                anims.append((ax2.imshow(im.data.mean(axis=2), animated=True,
+                                         clim=[np.percentile(im.data, .5), np.percentile(im.data, 99.5)]),
+                              ax2.text(200, 100, row['setting'])))
+            ax.legend()
+            anis.append(animation.ArtistAnimation(fig2, anims, interval=1000, blit=False))

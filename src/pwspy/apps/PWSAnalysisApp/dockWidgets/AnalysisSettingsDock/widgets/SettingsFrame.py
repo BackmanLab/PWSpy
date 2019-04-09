@@ -91,7 +91,7 @@ class SettingsFrame(QScrollArea):
         self.RSubtractionBrowseButton.released.connect(self._browseReflection) #TODO switch to using the extrareflectance manager.
         self.refMaterialCombo = QComboBox()
         self.refMaterialCombo.addItems([
-            k for k in reflectanceHelper.materials.keys() if k != 'glass'])
+            k for k in reflectanceHelper.materialFiles.keys() if k != 'glass'])
         rLayout = QHBoxLayout()
         _ = rLayout.addWidget
         _(QLabel("R Subtraction"))
