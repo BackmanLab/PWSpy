@@ -17,16 +17,19 @@ import jsonschema
 import scipy.io as spio
 import tifffile as tf
 
+from pwspy.moduleConsts import dateTimeFormat
 from pwspy.analysis import AnalysisResults
 from pwspy.analysis.analysisResults import AnalysisResultsLoader
 from pwspy.imCube.otherClasses import Roi, RoiFileFormats
 from .otherClasses import CameraCorrection
 import numpy as np
+from datetime import datetime
 
 class ICFileFormats(Enum):
     RawBinary = auto()
     Tiff = auto()
     Hdf = auto()
+    NanoMat = auto()
 
 
 class ICMetaData:
@@ -87,6 +90,15 @@ class ICMetaData:
                   'systemId': info3[0], 'system': str(info3[0]),
                   'imgHeight': int(info3[2]), 'imgWidth': int(info3[3]), 'wavelengths': wv}
         return cls(md, filePath=directory, fileFormat=ICFileFormats.RawBinary)
+
+    @classmethod
+    def fromNano(cls, cubeParams: dict):
+        lam = cubeParams['lambda']
+        exp = cubeParams['exposure'] #TODO we don't support adaptive exposure.
+        md = {'startWv': lam['start'].value[0][0], 'stepWv': lam['step'].value[0][0], 'stopWv': lam['stop'].value[0][0],
+              'exposure': exp['base'].value[0][0], 'time': datetime.strptime(np.string_(cubeParams['metadata']['date'].value.astype(np.uint8)).decode(), '%Y%m%dT%H%M%S').strftime(dateTimeFormat),
+              'system': np.string_(cubeParams['metadata']['hardware']['system']['id'].value.astype(np.uint8)).decode(), 'wavelengths': list(lam['sequence'].value[0])}
+        return cls(md, filePath=None, fileFormat=ICFileFormats.NanoMat)
 
     @classmethod
     def fromTiff(cls, directory):

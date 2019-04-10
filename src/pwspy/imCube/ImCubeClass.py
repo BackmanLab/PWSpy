@@ -18,7 +18,7 @@ from .otherClasses import CameraCorrection
 from .ICBaseClass import ICBase
 from .ICMetaDataClass import ICMetaData, ICFileFormats
 import multiprocessing as mp
-
+import scipy.io as spio
 
 class ImCube(ICBase, ICMetaData):
     """ A class representing a single acquisition of PWS. Contains methods for loading and saving to multiple formats as well as common operations used in analysis."""
@@ -84,7 +84,16 @@ class ImCube(ICBase, ICMetaData):
                 lock.release()
         data = data.copy(order='C')
         return cls(data, metadata.metadata, filePath=directory, fileFormat=ICFileFormats.Tiff)
-    
+
+    @classmethod
+    def fromNano(cls, directory: str):
+        with h5py.File(os.path.join(directory, 'imageCube.mat')) as hf:
+            md = ICMetaData.fromNano(hf['cubeParameters'])
+            data = np.array(hf['imageCube'])
+            data = np.rollaxis(data, 0, 3)
+            data = data.copy(order='C')
+            return cls(data, md.metadata, filePath=directory, fileFormat=ICFileFormats.NanoMat)
+
     @classmethod
     def fromMetadata(cls, meta: ICMetaData,  lock: mp.Lock = None):
         if meta.fileFormat == ICFileFormats.Tiff:
