@@ -10,39 +10,12 @@ import matplotlib.pyplot as plt
 from glob import glob
 import pandas as pd
 
-class ParamsDialog(QDialog):
-    def __init__(self, parent, df: pd.DataFrame):
-        super().__init__(parent)
-        self.setModal(True)
-        layout = QVBoxLayout()
-        settings = set(df['setting'])
-        self.checks = [QCheckBox(sett) for sett in settings]
-        self.binningCombo = QComboBox()
-        self.binningCombo.addItems(['Auto', '1x1', '2x2', '3x3'])
-        self.acceptButton = QPushButton("Accept")
-        self.acceptButton.released.connect(self.accept)
-
-        layout.addWidget(QLabel("Settings"))
-        for check in self.checks:
-            layout.addWidget(check)
-        layout.addWidget(QLabel("Binning"))
-        layout.addWidget(self.binningCombo)
-        layout.addWidget(self.acceptButton)
-        self.setLayout(layout)
-        self.show()
-
-    def getBinning(self) -> int:
-        num = self.binningCombo.currentIndex()
-        ret = num if num != 0 else None
-        return ret
-
-    def getSettings(self) -> List[str]:
-        return [check.text() for check in self.checks if check.checkState() != 0]
 
 class MainWindow(QMainWindow):
     def __init__(self, fileStruct: Dict[str, pd.DataFrame]):
         QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
         self.fileStruct = fileStruct
+        self.cubes = None
         self.workflow = ERWorkFlow()
         super().__init__()
         self.setWindowTitle("Extra Reflectance Creator")
@@ -51,19 +24,26 @@ class MainWindow(QMainWindow):
         self.listWidg = QListWidget(self)
         for k, v in fileStruct.items():
             self.listWidg.addItem(k)
-        self.listWidg.itemDoubleClicked.connect(self.selectParams)
+        self.listWidg.currentItemChanged.connect(self.selectionChanged)
+        self.selListWidg = QListWidget(self)
+        self.selListWidg.itemChanged.connect(self.invalidateCubes)
+        self.binningCombo = QComboBox()
+        self.binningCombo.addItems(['Auto', '1x1', '2x2', '3x3'])
         self.compareDatesButton = QPushButton("Compare Dates")
-        self.compareDatesButton.released.connect(self.workflow.compareDates)
-        self.plotButton = QPushButton("Plot Corrections")
-        self.plotButton.released.connect(lambda: self.workflow.plot(False))
-        self.saveButton = QPushButton("Save")
+        self.compareDatesButton.released.connect(self.compareDates)
+        self.plotButton = QPushButton("Plot Details")
+        self.plotButton.released.connect(self.plot)
+        self.saveButton = QPushButton("Save Selected Date")
         self.plotButton.released.connect(self.workflow.save)
         row = 0
         layout.addWidget(self.listWidg, row, 0, 4, 4)
+        layout.addWidget(self.selListWidg, row, 4, 4, 4)
         row += 4
         layout.addWidget(self.compareDatesButton, row, 0, 1, 1)
         layout.addWidget(self.plotButton, row, 1, 1, 1)
-        layout.addWidget(self.saveButton, row, 2, 1, 1)
+        layout.addWidget(QLabel("Binning"), row, 4, 1, 1)
+        layout.addWidget(self.binningCombo, row, 5, 1, 1)
+        layout.addWidget(self.saveButton, row, 6, 1, 1)
         widg.setLayout(layout)
         self.setCentralWidget(widg)
         self.buttons = [self.compareDatesButton, self.plotButton, self.saveButton]
@@ -71,25 +51,37 @@ class MainWindow(QMainWindow):
             b.setEnabled(False)
         self.show()
 
-    def selectParams(self, item: QListWidgetItem):
-        df = self.fileStruct[item.text()]
-        a = ParamsDialog(self, df)
-        a.exec()
-    def browseFile(self):
-        _ = QFileDialog.getExistingDirectory(self, 'Working Directory', self.directory)
-        for b in self.buttons:
-            b.setEnabled(False)
-        if _ != '':
-            self.directory = _
-            self.directoryEdit.setText(self.directory)
-            settings = self.workflow.getDirectorySettings(self.directory)
-            a = ParamsDialog(self, settings)
-            a.exec()
-            if a.result() == QDialog.Accepted:
-                self.workflow.loadDirectory(self.directory, a.getSettings(), a.getBinning())
-                for b in self.buttons:
-                    b.setEnabled(True)
+    def selectionChanged(self, item: QListWidgetItem, oldItem: QListWidgetItem):
+        self.df = self.fileStruct[item.text()]
+        self.invalidateCubes()
+        self.selListWidg.clear()
+        for sett in set(self.df['setting']):
+            _ = QListWidgetItem(sett)
+            _.setFlags(_.flags() | QtCore.Qt.ItemIsUserCheckable)
+            _.setCheckState(QtCore.Qt.Unchecked)
+            self.selListWidg.addItem(_)
 
+    def invalidateCubes(self):
+        self.cubes = None
+
+    def plot(self):
+        if self.cubes is None:
+            dateItems = [self.selListWidg.item(i) for i in range(self.selListWidg.count())]
+            checkedSettings = [i.text() for i in dateItems if i.checkState()]
+            self.cubes = self.workflow.loadCubes(self.df, checkedSettings)
+        self.workflow.plot(self.cubes)
+
+    def compareDates(self):
+        if self.cubes is None:
+            dateItems = [self.selListWidg.item(i) for i in range(self.selListWidg.count())]
+            checkedSettings = [i.text() for i in dateItems if i.checkState()]
+            self.cubes = self.workflow.loadCubes(self.df, checkedSettings)
+        self.workflow.compareDates(self.cubes)
+
+    def getBinning(self) -> int:
+        num = self.binningCombo.currentIndex()
+        ret = num if num != 0 else None
+        return ret
 
 class ERApp(QApplication):
     def __init__(self, args):
