@@ -211,7 +211,7 @@ def plotExtraReflection(allCombos: Dict[str, Dict[MCombo, List[ComboSummary]]], 
         print(means['cFactor'])
 
 
-def saveRExtra(allCombos: Dict[MCombo, Dict], theoryR: dict) -> Dict[str, ExtraReflectanceCube]:
+def saveRExtra(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict) -> Dict[str, ExtraReflectanceCube]:
     """No longer true: Expects a list of ImCubes which each has a `material` property matching one of the materials in the `ReflectanceHelper` module."""
 
     rExtra = {}
@@ -219,7 +219,6 @@ def saveRExtra(allCombos: Dict[MCombo, Dict], theoryR: dict) -> Dict[str, ExtraR
         print("Calculating rExtra for: ", matCombo)
         rExtra[matCombo] = {'combos': []}
         for combo in combosList:
-            combo = combo.combo #Just select out the imcube data
             mat1, mat2 = combo.keys()
             _ = rExtra[matCombo]['combos']
             _.append(((np.array(theoryR[mat1][np.newaxis, np.newaxis, :]) * combo[mat2].data) - (

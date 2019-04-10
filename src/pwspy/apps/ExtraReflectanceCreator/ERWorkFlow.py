@@ -79,8 +79,14 @@ class ERWorkFlow:
                     pp.savefig(f)
 
     @staticmethod
-    def save():
-        pass
+    def save(cubes: pd.DataFrame):
+        settings = set(cubes['setting'])
+        materials = set(cubes['material'])
+        assert len(settings) == 1
+        theoryR = er.getTheoreticalReflectances(materials, cubes['cube'][0].wavelengths)  # Theoretical reflectances
+        matCombos = er.generateMaterialCombos(materials)
+        combos = er.getAllCubeCombos(matCombos, cubes)
+        ret = er.saveRExtra(combos, theoryR)
 
     @staticmethod
     def compareDates(cubes: pd.DataFrame):

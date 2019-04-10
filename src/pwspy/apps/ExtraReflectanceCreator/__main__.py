@@ -78,6 +78,10 @@ class MainWindow(QMainWindow):
             self.cubes = self.workflow.loadCubes(self.df, checkedSettings)
         self.workflow.compareDates(self.cubes)
 
+    def save(self):
+        cubes = self.workflow.loadCubes(self.df, [self.selListWidg.selectedItems()[0].text()])
+        self.workflow.save(cubes)
+
     def getBinning(self) -> int:
         num = self.binningCombo.currentIndex()
         ret = num if num != 0 else None
