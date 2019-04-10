@@ -5,14 +5,14 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QLi
 from PyQt5 import (QtCore, QtGui)
 from pwspy.apps import resources
 from pwspy.apps.ExtraReflectanceCreator.ERWorkFlow import ERWorkFlow
-from typing import Dict, List
+from typing import Dict, List, Any
 import matplotlib.pyplot as plt
 from glob import glob
 import pandas as pd
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, fileStruct: Dict[str, pd.DataFrame]):
+    def __init__(self, fileStruct: Dict[str, Dict[str, Any]]):
         QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
         self.fileStruct = fileStruct
         self.cubes = None
@@ -29,12 +29,13 @@ class MainWindow(QMainWindow):
         self.selListWidg.itemChanged.connect(self.invalidateCubes)
         self.binningCombo = QComboBox()
         self.binningCombo.addItems(['Auto', '1x1', '2x2', '3x3'])
+        self.binningCombo.currentIndexChanged.connect(self.invalidateCubes)
         self.compareDatesButton = QPushButton("Compare Dates")
         self.compareDatesButton.released.connect(self.compareDates)
         self.plotButton = QPushButton("Plot Details")
         self.plotButton.released.connect(self.plot)
-        self.saveButton = QPushButton("Save Selected Date")
-        self.plotButton.released.connect(self.workflow.save)
+        self.saveButton = QPushButton("Save Highlighted Date")
+        self.saveButton.released.connect(self.save)
         row = 0
         layout.addWidget(self.listWidg, row, 0, 4, 4)
         layout.addWidget(self.selListWidg, row, 4, 4, 4)
@@ -47,12 +48,12 @@ class MainWindow(QMainWindow):
         widg.setLayout(layout)
         self.setCentralWidget(widg)
         self.buttons = [self.compareDatesButton, self.plotButton, self.saveButton]
-        for b in self.buttons:
-            b.setEnabled(False)
         self.show()
 
     def selectionChanged(self, item: QListWidgetItem, oldItem: QListWidgetItem):
-        self.df = self.fileStruct[item.text()]
+        _ = self.fileStruct[item.text()]
+        self.df = _['dataFrame']
+        self.cameraCorrection = _['camCorrection']
         self.invalidateCubes()
         self.selListWidg.clear()
         for sett in set(self.df['setting']):
@@ -64,28 +65,34 @@ class MainWindow(QMainWindow):
     def invalidateCubes(self):
         self.cubes = None
 
-    def plot(self):
+    def loadIfNeeded(self):
         if self.cubes is None:
             dateItems = [self.selListWidg.item(i) for i in range(self.selListWidg.count())]
             checkedSettings = [i.text() for i in dateItems if i.checkState()]
-            self.cubes = self.workflow.loadCubes(self.df, checkedSettings)
+            num = self.binningCombo.currentIndex()
+            binning = num if num != 0 else None
+            self.cubes = self.workflow.loadCubes(self.df, checkedSettings, binning, self.cameraCorrection)
+
+    def plot(self):
+        self.setEnabled(False)
+        self.loadIfNeeded()
         self.workflow.plot(self.cubes)
+        self.setEnabled(True)
 
     def compareDates(self):
-        if self.cubes is None:
-            dateItems = [self.selListWidg.item(i) for i in range(self.selListWidg.count())]
-            checkedSettings = [i.text() for i in dateItems if i.checkState()]
-            self.cubes = self.workflow.loadCubes(self.df, checkedSettings)
+        self.setEnabled(False)
+        self.loadIfNeeded()
         self.workflow.compareDates(self.cubes)
+        self.setEnabled(True)
 
     def save(self):
+        self.setEnabled(False)
         cubes = self.workflow.loadCubes(self.df, [self.selListWidg.selectedItems()[0].text()])
         self.workflow.save(cubes)
+        self.setEnabled(True)
 
-    def getBinning(self) -> int:
-        num = self.binningCombo.currentIndex()
-        ret = num if num != 0 else None
-        return ret
+    def setEnabled(self, en: bool):
+        [i.setEnabled(en) for i in [self.binningCombo, self.saveButton, self.compareDatesButton, self.plotButton]]
 
 class ERApp(QApplication):
     def __init__(self, args):
@@ -95,7 +102,7 @@ class ERApp(QApplication):
         fileStruct = self.validateWorkingDir(wDir)
         self.window = MainWindow(fileStruct)
 
-    def validateWorkingDir(self, workingDir: str) -> Dict[str, pd.DataFrame]:
+    def validateWorkingDir(self, workingDir: str) -> Dict[str, Dict[str, Any]]:
         folders = [i for i in glob(os.path.join(workingDir, '*')) if os.path.isdir(i)]
         settings = [os.path.split(i)[-1] for i in folders]
         fileStruct = {}

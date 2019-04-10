@@ -34,7 +34,7 @@ if __name__ == '__main__':
     __spec__ = None
     plt.interactive(True)
     
-    exclude = []#[('water','ipa'),('water','ethanol'), ('ipa','ethanol'), ('ipa','air'), ('ethanol','air')]
+    exclude = [(Material.Water, Material.Ipa), (Material.Water, Material.Ethanol)]
     rootDir = r'/home/nick/Desktop/4matExtraReflection/LCPWS1/1_23_2019'
     produceRextraCube = True
     plotResults = True
@@ -48,7 +48,7 @@ if __name__ == '__main__':
     axes[1].set_ylabel('reflectance')
     axes[1].set_xlabel('nm')
     axes[1].set_title("Glass Interface Reflectance")
-    [axes[0].plot(reflectanceHelper.n.index,reflectanceHelper.n[mat]['n'], label = matName) for matName, mat in materials]
+    [axes[0].plot(reflectanceHelper.n.index,reflectanceHelper.n[mat]['n'], label=matName) for matName, mat in materials]
     axes[0].legend()
     [axes[1].plot(reflectanceHelper.getReflectance(mat, Material.Glass).index, reflectanceHelper.getReflectance(mat, Material.Glass), label=matName) for matName, mat in materials]
     axes[1].legend()
@@ -57,7 +57,7 @@ if __name__ == '__main__':
     cubes = loadAndProcess(fileFrame, processIm, parallel=True)
 
     theoryR = er.getTheoreticalReflectances(list(zip(*materials))[1], cubes['cube'][0].wavelengths)
-    matCombos = er.generateMaterialCombos(list(zip(*materials))[1], excludedCombos= )
+    matCombos = er.generateMaterialCombos(list(zip(*materials))[1], excludedCombos=exclude)
     if plotResults:
         mask = random.choice(cubes['cube']).selectLassoRoi()
         er.plotExtraReflection(cubes, theoryR, matCombos, mask, plotReflectionImages=False)

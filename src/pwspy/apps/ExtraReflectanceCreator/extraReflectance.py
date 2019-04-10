@@ -68,6 +68,8 @@ def getTheoreticalReflectances(materials: Iterable[Material], index: Tuple[float
 def generateMaterialCombos(materials: Iterable[Material], excludedCombos: Iterable[MCombo] = None) -> List[MCombo]:
     """Given a list of material strings and a list of material combination tuples that should be skipped, this function returns
     a list of all possible material combo tuples"""
+    if excludedCombos is None:
+        excludedCombos = []
     matCombos = list(itertools.combinations(materials, 2))  # All the combinations of materials that can be compared
     matCombos = [(m1, m2) for m1, m2 in matCombos if
                  not (((m1, m2) in excludedCombos) or ((m2, m1) in excludedCombos))]  # Remove excluded combinations.
@@ -87,7 +89,8 @@ def getAllCubeCombos(matCombos: Iterable[MCombo], df: pd.DataFrame) -> Dict[MCom
     return allCombos
 
 
-def calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict, mask: Roi = None) -> Tuple[Dict[Union[MCombo, str], Dict[str, Any]], Dict[MCombo, List[ComboSummary]]]:
+def calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict, mask: Roi = None) ->\
+        Tuple[Dict[Union[MCombo, str], Dict[str, Any]], Dict[MCombo, List[ComboSummary]]]:
     """Expects a dictionary as created by `getAllCubeCombos` and a dictionary of theoretical reflections.
 
     This is used to examine the output of extra reflection calculation before using saveRExtra to save a cube for each setting.
@@ -121,10 +124,11 @@ def calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theory
 
 
 def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo], mask: Optional[Roi] = None, plotReflectionImages: bool = False):
+
     settings = set(df['setting'])
 
-    meanValues = {}
-    allCombos = {}
+    meanValues: Dict[str, Dict[Union[MCombo, str], Dict[str, Any]]] = {}
+    allCombos: Dict[str, Dict[MCombo, List[ComboSummary]]] = {}
     for sett in settings:
         cubeCombos = getAllCubeCombos(matCombos, df[df['setting'] == sett])
         meanValues[sett], allCombos[sett] = calculateSpectraFromCombos(cubeCombos, theoryR, mask)
@@ -209,9 +213,8 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo],
         print(means['cFactor'])
 
 
-def saveRExtra(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict) -> Dict[str, ExtraReflectanceCube]:
-    """No longer true: Expects a list of ImCubes which each has a `material` property matching one of the materials in the `ReflectanceHelper` module."""
-
+def saveRExtra(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict) -> Dict[Union[str, MCombo], ExtraReflectanceCube]:
+    """Expects a dict of lists CubeCombos, each keyed by a 2-tuple of Materials. TheoryR is the theoretical reflectance for each material"""
     rExtra = {}
     for matCombo, combosList in allCombos.items():
         print("Calculating rExtra for: ", matCombo)

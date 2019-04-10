@@ -1,6 +1,6 @@
 import os
 from glob import glob
-from typing import List
+from typing import List, Any, Dict
 import json
 from pwspy import ImCube, CameraCorrection
 from pwspy.utility import loadAndProcess
@@ -36,7 +36,7 @@ class ERWorkFlow:
         return im
 
     @staticmethod
-    def scanDirectory(directory: str) -> pd.DataFrame:
+    def scanDirectory(directory: str) -> Dict[str, Any]:
         try:
             cam = CameraCorrection.fromJsonFile(os.path.join(directory, 'cameraCorrection.json'))
         except Exception as e:
@@ -51,12 +51,12 @@ class ERWorkFlow:
             m = matMap[filelist[1]]
             rows.append({'setting': s, 'material': m, 'cube': file})
         df = pd.DataFrame(rows)
-        return df
+        return {'dataFrame': df, 'camCorrection': cam}
 
     @staticmethod
-    def loadCubes(df: pd.DataFrame, includeSettings: List[str], binning: int):
+    def loadCubes(df: pd.DataFrame, includeSettings: List[str], binning: int, cameraCorrection: CameraCorrection):
         df = df[df['setting'].isin(includeSettings)]
-        cubes = loadAndProcess(df, ERWorkFlow._processIm, parallel=True, procArgs=[self.cameraCorrection, binning])
+        cubes = loadAndProcess(df, ERWorkFlow._processIm, parallel=True, procArgs=[cameraCorrection, binning])
         return cubes
 
     @staticmethod
