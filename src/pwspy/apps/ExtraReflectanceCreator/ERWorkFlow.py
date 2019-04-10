@@ -68,9 +68,7 @@ class ERWorkFlow:
 
         print("Select an ROI")
         mask = random.choice(cubes['cube']).selectLassoROI()  # Select an ROI to analyze
-        meanValues, allCombos = er.prepareData(cubes, settings, matCombos, theoryR, mask)
-
-        er.plotExtraReflection(allCombos, meanValues, theoryR, matCombos, settings)
+        er.plotExtraReflection(cubes, theoryR, matCombos, mask)
         if saveToPdf:
             with PdfPages(os.path.join(directory, "figs.pdf")) as pp:
                 for i in plt.get_fignums():

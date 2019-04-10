@@ -8,14 +8,16 @@ Created on Tue Nov 20 13:13:34 2018
 
 from pwspy import ImCube, CameraCorrection
 from pwspy.utility import loadAndProcess, reflectanceHelper, PlotNd
-from pwspy.apps.ExtraReflectanceCreator.extraReflectance import plotExtraReflection , saveRExtra, prepareData
+import pwspy.apps.ExtraReflectanceCreator.extraReflectance as er
 from glob import glob
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 from matplotlib.backends.backend_pdf import PdfPages
 import pandas as pd
+import random
 
+from pwspy.utility.reflectanceHelper import Material
 
 
 def processIm(im):
@@ -37,7 +39,7 @@ if __name__ == '__main__':
     produceRextraCube = True
     plotResults = True
     
-    materials = ['air','water', 'ipa','ethanol']
+    materials = [('air', Material.Air), ('water', Material.Water), ('ipa', Material.Ipa), ('ethanol', Material.Ethanol)]
     
     fig, axes = plt.subplots(ncols=2)
     axes[0].set_ylabel('n')
@@ -46,30 +48,30 @@ if __name__ == '__main__':
     axes[1].set_ylabel('reflectance')
     axes[1].set_xlabel('nm')
     axes[1].set_title("Glass Interface Reflectance")
-    [axes[0].plot(reflectanceHelper.n.index,reflectanceHelper.n[mat]['n'], label = mat) for mat in materials]
+    [axes[0].plot(reflectanceHelper.n.index,reflectanceHelper.n[mat]['n'], label = matName) for matName, mat in materials]
     axes[0].legend()
-    [axes[1].plot(reflectanceHelper.getReflectance(mat, 'glass').index, reflectanceHelper.getReflectance(mat, 'glass'), label=mat) for mat in materials]
+    [axes[1].plot(reflectanceHelper.getReflectance(mat, Material.Glass).index, reflectanceHelper.getReflectance(mat, Material.Glass), label=matName) for matName, mat in materials]
     axes[1].legend()
     
     fileFrame = pd.DataFrame([{'setting': 'none', 'material': m, 'cube': cube} for m in materials for cube in glob(os.path.join(rootDir,m,'Cell*'))])
     cubes = loadAndProcess(fileFrame, processIm, parallel=True)
 
-    meanValues, allCombos, theoryR, matCombos, settings = prepareData(cubes, excludedCombos=exclude)
+    theoryR = er.getTheoreticalReflectances(list(zip(*materials))[1], cubes['cube'][0].wavelengths)
+    matCombos = er.generateMaterialCombos(list(zip(*materials))[1], excludedCombos= )
     if plotResults:
-        plotExtraReflection(allCombos, meanValues, theoryR, matCombos, settings, plotReflectionImages=False)
+        mask = random.choice(cubes['cube']).selectLassoRoi()
+        er.plotExtraReflection(cubes, theoryR, matCombos, mask, plotReflectionImages=False)
         with PdfPages(os.path.join(rootDir, "figs.pdf")) as pp:
             for i in plt.get_fignums():
                 f = plt.figure(i)
                 f.set_size_inches(9, 9)
                 pp.savefig(f)
     if produceRextraCube:
-        for sett in settings:
-            rextras = saveRExtra(allCombos[sett], theoryR, matCombos)
+        for sett in set(cubes['setting']):
+            allCombos = er.getAllCubeCombos(matCombos, cubes[cubes['setting']==sett])
+            rextras = er.saveRExtra(allCombos, theoryR)
             plot = PlotNd(rextras['mean'].data, ['y', 'x', 'lambda'])
             rextras['mean'].toHdfFile(rootDir, f'rextra_{sett}')
             # np.save(os.path.join(rootDir, f'rextra_{sett}.npy'), rextras['mean'].data.astype(np.float32))
 
-    # plt.show(block=True)
-#            
-#            
 #Todo: plot I0

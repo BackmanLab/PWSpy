@@ -120,17 +120,15 @@ def calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theory
     return meanValues, allCombos
 
 
-def prepareData(df: pd.DataFrame, settings: Iterable[str], matCombos: Iterable[MCombo], theoryR: Dict[Material, pd.Series], mask: Optional[Roi] = None) -> Tuple[Dict[str, Dict[Union[MCombo, str], Dict[str, Any]]],
-                                                                                                            Dict[str, Dict[MCombo, List[ComboSummary]]]]:
+def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo], mask: Optional[Roi] = None, plotReflectionImages: bool = False):
+    settings = set(df['setting'])
+
     meanValues = {}
     allCombos = {}
     for sett in settings:
         cubeCombos = getAllCubeCombos(matCombos, df[df['setting'] == sett])
         meanValues[sett], allCombos[sett] = calculateSpectraFromCombos(cubeCombos, theoryR, mask)
-    return meanValues, allCombos
 
-
-def plotExtraReflection(allCombos: Dict[str, Dict[MCombo, List[ComboSummary]]], meanValues: Dict, theoryR: dict, matCombos:List[MCombo], settings:Iterable, plotReflectionImages: bool = False):
     fig, ax = plt.subplots()  # For extra reflections
     fig.suptitle("Extra Reflection")
     ax.set_ylabel("%")
