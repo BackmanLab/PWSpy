@@ -211,14 +211,14 @@ def plotExtraReflection(allCombos: Dict[str, Dict[MCombo, List[ComboSummary]]], 
         print(means['cFactor'])
 
 
-def saveRExtra(allCombos: Dict[MCombo, Dict], theoryR: dict, matCombos:List[MCombo]) -> Dict[str, ExtraReflectanceCube]:
+def saveRExtra(allCombos: Dict[MCombo, Dict], theoryR: dict) -> Dict[str, ExtraReflectanceCube]:
     """No longer true: Expects a list of ImCubes which each has a `material` property matching one of the materials in the `ReflectanceHelper` module."""
 
     rExtra = {}
-    for matCombo in matCombos:
+    for matCombo, combosList in allCombos.items():
         print("Calculating rExtra for: ", matCombo)
         rExtra[matCombo] = {'combos': []}
-        for combo in allCombos[matCombo]:
+        for combo in combosList:
             combo = combo.combo #Just select out the imcube data
             mat1, mat2 = combo.keys()
             _ = rExtra[matCombo]['combos']
@@ -231,7 +231,7 @@ def saveRExtra(allCombos: Dict[MCombo, Dict], theoryR: dict, matCombos:List[MCom
                 print(nans, " invalid values detected in " + str(matCombo) + ". Interpolating.")
                 _[-1] = _interpolateNans(_[-1])  # any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
         rExtra[matCombo]['mean'] = reduce(lambda x, y: x + y, rExtra[matCombo]['combos']) / len(rExtra[matCombo]['combos'])
-    _ = [rExtra[matCombo]['mean'] for matCombo in matCombos]
+    _ = [rExtra[matCombo]['mean'] for matCombo in allCombos.keys()]
     rExtra['mean'] = reduce(lambda x, y: x + y, _) / len(_)
     return rExtra
 
