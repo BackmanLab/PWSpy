@@ -15,10 +15,6 @@ import traceback
 import random
 
 class ERWorkFlow:
-    def __init__(self):
-        self.meanValues = self.allCombos = self.theoryR = self.matCombos = self.settings = self.directory = \
-            self.cameraCorrection = self.cubes = None
-
     @staticmethod
     def _splitPath(path: str) -> List[str]:
         folders = []
@@ -39,11 +35,6 @@ class ERWorkFlow:
         im.filterDust(6)  # TODO change units
         return im
 
-    def getDirectorySettings(self, directory: str) -> List[str]:
-        files = glob(os.path.join(directory, '*'))
-        settings = [os.path.split(file)[-1] for file in files if os.path.isdir(file)]
-        return settings
-
     @staticmethod
     def scanDirectory(directory: str) -> pd.DataFrame:
         try:
@@ -62,35 +53,41 @@ class ERWorkFlow:
         df = pd.DataFrame(rows)
         return df
 
-    def loadDirectory(self, df: pd.DataFrame, includeSettings: List[str], binning: int):
+    @staticmethod
+    def loadCubes(df: pd.DataFrame, includeSettings: List[str], binning: int):
         df = df[df['setting'].isin(includeSettings)]
-        self.cubes = loadAndProcess(df, self._processIm, parallel=True, procArgs=[self.cameraCorrection, binning])
+        cubes = loadAndProcess(df, ERWorkFlow._processIm, parallel=True, procArgs=[self.cameraCorrection, binning])
+        return cubes
 
-        self.settings = set(df['setting'])  # Unique setting values
-        materials = set(df['material'])
-        self.theoryR = er.getTheoreticalReflectances(materials, df['cube'][0].wavelengths)  # Theoretical reflectances
-        self.matCombos = er.generateMaterialCombos(materials)
+    @staticmethod
+    def plot(cubes: pd.DataFrame, saveToPdf: bool = False):
+        settings = set(cubes['setting'])  # Unique setting values
+        materials = set(cubes['material'])
+        theoryR = er.getTheoreticalReflectances(materials, cubes['cube'][0].wavelengths)  # Theoretical reflectances
+        matCombos = er.generateMaterialCombos(materials)
 
         print("Select an ROI")
-        self.mask = random.choice(df['cube']).selectLassoROI()  # Select an ROI to analyze
-        self.meanValues, self.allCombos = er.prepareData(self.cubes, self.settings, self.matCombos, self.theoryR, self.mask)
+        mask = random.choice(cubes['cube']).selectLassoROI()  # Select an ROI to analyze
+        meanValues, allCombos = er.prepareData(cubes, settings, matCombos, theoryR, mask)
 
-    def plot(self, saveToPdf: bool = False):
-        er.plotExtraReflection(self.allCombos, self.meanValues, self.theoryR, self.matCombos, self.settings)
+        er.plotExtraReflection(allCombos, meanValues, theoryR, matCombos, settings)
         if saveToPdf:
-            with PdfPages(os.path.join(self.directory, "figs.pdf")) as pp:
+            with PdfPages(os.path.join(directory, "figs.pdf")) as pp:
                 for i in plt.get_fignums():
                     f = plt.figure(i)
                     f.set_size_inches(9, 9)
                     pp.savefig(f)
 
-    def save(self):
+    @staticmethod
+    def save():
         pass
 
-    def compareDates(self):
+    @staticmethod
+    def compareDates(cubes: pd.DataFrame):
         anis = []
-        for mat in set(self.cubes['material']):
-            c = self.cubes[self.cubes['material'] == mat]
+        mask = random.choice(cubes['cube']).selectLassoRoi()
+        for mat in set(cubes['material']):
+            c = cubes[cubes['material'] == mat]
             fig, ax = plt.subplots()
             fig.suptitle(mat)
             fig2, ax2 = plt.subplots()
@@ -98,7 +95,7 @@ class ERWorkFlow:
             anims = []
             for i, row in c.iterrows():
                 im = row['cube']
-                spectra = im.getMeanSpectra(self.mask)[0]
+                spectra = im.getMeanSpectra(mask)[0]
                 ax.plot(im.wavelengths, spectra, label=row['setting'])
                 anims.append((ax2.imshow(im.data.mean(axis=2), animated=True,
                                          clim=[np.percentile(im.data, .5), np.percentile(im.data, 99.5)]),
