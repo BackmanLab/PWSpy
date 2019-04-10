@@ -1,18 +1,21 @@
 import os
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QLineEdit, QPushButton, QFileDialog, \
-    QDialog, QCheckBox, QVBoxLayout, QComboBox, QLabel
+    QDialog, QCheckBox, QVBoxLayout, QComboBox, QLabel, QListWidget, QListWidgetItem
 from PyQt5 import (QtCore, QtGui)
 from pwspy.apps import resources
 from pwspy.apps.ExtraReflectanceCreator.ERWorkFlow import ERWorkFlow
-from typing import List
+from typing import Dict, List
 import matplotlib.pyplot as plt
+from glob import glob
+import pandas as pd
 
 class ParamsDialog(QDialog):
-    def __init__(self, parent, settings: List[str]):
+    def __init__(self, parent, df: pd.DataFrame):
         super().__init__(parent)
         self.setModal(True)
         layout = QVBoxLayout()
+        settings = set(df['setting'])
         self.checks = [QCheckBox(sett) for sett in settings]
         self.binningCombo = QComboBox()
         self.binningCombo.addItems(['Auto', '1x1', '2x2', '3x3'])
@@ -37,17 +40,18 @@ class ParamsDialog(QDialog):
         return [check.text() for check in self.checks if check.checkState() != 0]
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, fileStruct: Dict[str, pd.DataFrame]):
         QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
+        self.fileStruct = fileStruct
         self.workflow = ERWorkFlow()
         super().__init__()
         self.setWindowTitle("Extra Reflectance Creator")
         widg = QWidget()
         layout = QGridLayout()
-        self.directory = os.path.expanduser('~')
-        self.directoryEdit = QLineEdit(self.directory, self)
-        self.directoryBrowseButton = QPushButton(QtGui.QIcon(os.path.join(resources, 'folder.png')), '')
-        self.directoryBrowseButton.released.connect(self.browseFile)
+        self.listWidg = QListWidget(self)
+        for k, v in fileStruct.items():
+            self.listWidg.addItem(k)
+        self.listWidg.itemDoubleClicked.connect(self.selectParams)
         self.compareDatesButton = QPushButton("Compare Dates")
         self.compareDatesButton.released.connect(self.workflow.compareDates)
         self.plotButton = QPushButton("Plot Corrections")
@@ -55,9 +59,8 @@ class MainWindow(QMainWindow):
         self.saveButton = QPushButton("Save")
         self.plotButton.released.connect(self.workflow.save)
         row = 0
-        layout.addWidget(self.directoryEdit, row, 0, 1, 4)
-        layout.addWidget(self.directoryBrowseButton, row, 4, 1, 1)
-        row += 1
+        layout.addWidget(self.listWidg, row, 0, 4, 4)
+        row += 4
         layout.addWidget(self.compareDatesButton, row, 0, 1, 1)
         layout.addWidget(self.plotButton, row, 1, 1, 1)
         layout.addWidget(self.saveButton, row, 2, 1, 1)
@@ -68,6 +71,10 @@ class MainWindow(QMainWindow):
             b.setEnabled(False)
         self.show()
 
+    def selectParams(self, item: QListWidgetItem):
+        df = self.fileStruct[item.text()]
+        a = ParamsDialog(self, df)
+        a.exec()
     def browseFile(self):
         _ = QFileDialog.getExistingDirectory(self, 'Working Directory', self.directory)
         for b in self.buttons:
@@ -88,8 +95,17 @@ class ERApp(QApplication):
     def __init__(self, args):
         super().__init__(args)
         plt.interactive(True)
-        self.window = MainWindow()
+        wDir = QFileDialog.getExistingDirectory(caption='Select Working Directory')
+        fileStruct = self.validateWorkingDir(wDir)
+        self.window = MainWindow(fileStruct)
 
+    def validateWorkingDir(self, workingDir: str) -> Dict[str, pd.DataFrame]:
+        folders = [i for i in glob(os.path.join(workingDir, '*')) if os.path.isdir(i)]
+        settings = [os.path.split(i)[-1] for i in folders]
+        fileStruct = {}
+        for f, s in zip(folders, settings):
+            fileStruct[s] = ERWorkFlow.scanDirectory(f)
+        return fileStruct
 
 def isIpython():
     try:

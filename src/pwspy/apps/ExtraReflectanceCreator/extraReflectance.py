@@ -65,7 +65,7 @@ def getTheoreticalReflectances(materials: Iterable[Material], index: Tuple[float
     return theoryR
 
 
-def generateMaterialCombos(materials: Iterable[Material], excludedCombos: Iterable[MCombo]) -> List[MCombo]:
+def generateMaterialCombos(materials: Iterable[Material], excludedCombos: Iterable[MCombo] = None) -> List[MCombo]:
     """Given a list of material strings and a list of material combination tuples that should be skipped, this function returns
     a list of all possible material combo tuples"""
     matCombos = list(itertools.combinations(materials, 2))  # All the combinations of materials that can be compared

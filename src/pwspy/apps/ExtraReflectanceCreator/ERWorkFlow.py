@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from matplotlib import animation
+import traceback
 import random
 
 class ERWorkFlow:
@@ -43,21 +44,26 @@ class ERWorkFlow:
         settings = [os.path.split(file)[-1] for file in files if os.path.isdir(file)]
         return settings
 
-    def loadDirectory(self, directory: str, includeSettings: List[str], binning: int):
-        self.directory = directory
-        # Check for a cameraCorrection
-        self.cameraCorrection = CameraCorrection.fromJsonFile(os.path.join(self.directory, 'cameraCorrection.json'))
-        # Generate the fileDict
-        matMap = {'air': Material.Air, 'water': Material.Water, 'ipa': Material.Ipa, 'ethanol': Material.Ethanol}
+    @staticmethod
+    def scanDirectory(directory: str) -> pd.DataFrame:
+        try:
+            cam = CameraCorrection.fromJsonFile(os.path.join(directory, 'cameraCorrection.json'))
+        except Exception as e:
+            print(e)
+            raise Exception(f"Could not load a camera correction at {directory}")
         files = glob(os.path.join(directory, '*', '*', 'Cell*'))
         rows = []
+        matMap = {'air': Material.Air, 'water': Material.Water, 'ipa': Material.Ipa, 'ethanol': Material.Ethanol}
         for file in files:
-            filelist = self._splitPath(file)
+            filelist = ERWorkFlow._splitPath(file)
             s = filelist[2]
             m = matMap[filelist[1]]
-            if s in includeSettings:
-                rows.append({'setting': s, 'material': m, 'cube': file})
+            rows.append({'setting': s, 'material': m, 'cube': file})
         df = pd.DataFrame(rows)
+        return df
+
+    def loadDirectory(self, df: pd.DataFrame, includeSettings: List[str], binning: int):
+        df = df[df['setting'].isin(includeSettings)]
         self.cubes = loadAndProcess(df, self._processIm, parallel=True, procArgs=[self.cameraCorrection, binning])
 
         self.settings = set(df['setting'])  # Unique setting values
