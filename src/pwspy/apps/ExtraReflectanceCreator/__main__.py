@@ -1,4 +1,5 @@
 import os
+import traceback
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QLineEdit, QPushButton, QFileDialog, \
     QDialog, QCheckBox, QVBoxLayout, QComboBox, QLabel, QListWidget, QListWidgetItem
@@ -74,25 +75,37 @@ class MainWindow(QMainWindow):
             self.cubes = self.workflow.loadCubes(self.df, checkedSettings, binning, self.cameraCorrection)
 
     def plot(self):
-        self.setEnabled(False)
-        self.loadIfNeeded()
-        self.workflow.plot(self.cubes)
-        self.setEnabled(True)
+        try:
+            self.setEnabled(False)
+            self.loadIfNeeded()
+            self.workflow.plot(self.cubes)
+        except:
+            traceback.print_exc()
+        finally:
+            self.setEnabled(True)
 
     def compareDates(self):
-        self.setEnabled(False)
-        self.loadIfNeeded()
-        self.workflow.compareDates(self.cubes)
-        self.setEnabled(True)
+        try:
+            self.setEnabled(False)
+            self.loadIfNeeded()
+            self.animations = self.workflow.compareDates(self.cubes)
+        except:
+            traceback.print_exc()
+        finally:
+            self.setEnabled(True)
 
     def save(self):
-        self.setEnabled(False)
-        cubes = self.workflow.loadCubes(self.df, [self.selListWidg.selectedItems()[0].text()])
-        self.workflow.save(cubes)
-        self.setEnabled(True)
+        try:
+            self.setEnabled(False)
+            cubes = self.workflow.loadCubes(self.df, [self.selListWidg.selectedItems()[0].text()])
+            self.workflow.save(cubes)
+        except:
+            traceback.print_exc()
+        finally:
+            self.setEnabled(True)
 
-    def setEnabled(self, en: bool):
-        [i.setEnabled(en) for i in [self.binningCombo, self.saveButton, self.compareDatesButton, self.plotButton]]
+    # def setEnabled(self, en: bool):
+    #     [i.setEnabled(en) for i in [self.binningCombo, self.saveButton, self.compareDatesButton, self.plotButton]]
 
 class ERApp(QApplication):
     def __init__(self, args):
