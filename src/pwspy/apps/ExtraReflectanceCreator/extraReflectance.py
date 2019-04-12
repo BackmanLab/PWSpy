@@ -244,7 +244,7 @@ def generateRExtraCubes(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict)
 
 def compareDates(cubes: pd.DataFrame) -> List[animation.ArtistAnimation]:
     anis = []
-    mask = cubes['cube'].sample(n=1).selectLassoROI()
+    mask = cubes['cube'].sample(n=1).iloc[0].selectLassoROI()
     for mat in set(cubes['material']):
         c = cubes[cubes['material'] == mat]
         fig, ax = plt.subplots()
