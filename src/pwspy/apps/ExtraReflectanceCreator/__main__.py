@@ -5,6 +5,7 @@ from pwspy.apps.ExtraReflectanceCreator.ERWorkFlow import ERWorkFlow
 import matplotlib.pyplot as plt
 
 from pwspy.apps.ExtraReflectanceCreator.widgets.mainWindow import MainWindow
+from pwspy.apps import appPath
 
 
 class ERApp(QApplication):
@@ -12,7 +13,7 @@ class ERApp(QApplication):
         super().__init__(args)
         plt.interactive(True)
         wDir = QFileDialog.getExistingDirectory(caption='Select Working Directory')
-        homeDir = os.path.expanduser('~/ExtraReflectanceCreatorData')
+        homeDir = os.path.join(appPath, 'ExtraReflectanceCreatorData')
         if not os.path.exists(homeDir):
             os.mkdir(homeDir)
         self.workflow = ERWorkFlow(wDir, homeDir)
