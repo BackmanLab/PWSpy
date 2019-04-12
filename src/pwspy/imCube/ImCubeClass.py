@@ -164,9 +164,7 @@ class ImCube(ICBase, ICMetaData):
             raise Exception("This ImCube has already had it's camera correction applied!")
         if binning is None:
             try:
-                binning = self.metadata['MicroManagerMetadata']['Binning']
-                if isinstance(binning, dict):  # This is due to a property map change from beta to gamma
-                    binning = binning['scalar']
+                binning = self.metadata['binning']
             except KeyError:
                 raise ValueError('Binning metadata not found. Binning must be specified in function argument.')
         count = correction.darkCounts * binning ** 2  # Account for the fact that binning multiplies the darkcount.
