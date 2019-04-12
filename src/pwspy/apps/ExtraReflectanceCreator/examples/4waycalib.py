@@ -69,7 +69,7 @@ if __name__ == '__main__':
     if produceRextraCube:
         for sett in set(cubes['setting']):
             allCombos = er.getAllCubeCombos(matCombos, cubes[cubes['setting']==sett])
-            rextras = er.saveRExtra(allCombos, theoryR)
+            rextras = er.generateRExtraCubes(allCombos, theoryR)
             plot = PlotNd(rextras['mean'].data, ['y', 'x', 'lambda'])
             rextras['mean'].toHdfFile(rootDir, f'rextra_{sett}')
             # np.save(os.path.join(rootDir, f'rextra_{sett}.npy'), rextras['mean'].data.astype(np.float32))

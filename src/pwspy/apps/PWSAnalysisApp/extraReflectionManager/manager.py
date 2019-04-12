@@ -45,7 +45,7 @@ class ERManager:
         with open(indexPath, 'r') as f:
             self.index = json.load(f)
         jsonschema.validate(self.index, schema=self._indexSchema)
-        files = glob(os.path.join(self.directory, f'*{ExtraReflectanceCube._fileSuffix}'))
+        files = glob(os.path.join(self.directory, f'*{ExtraReflectanceCube.FILESUFFIX}'))
         files = [(f, ExtraReflectanceCube.validPath(f)) for f in files]  # validPath returns whether the datacube was found.
         files = [(directory, name) for f, (valid, directory, name) in files if valid]
         tags = [ExtraReflectanceCube.getMetadata(directory, name)['idTag'] for directory, name in files]

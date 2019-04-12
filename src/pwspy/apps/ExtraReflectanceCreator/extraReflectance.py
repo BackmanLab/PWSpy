@@ -9,6 +9,7 @@ import numpy as np
 from functools import reduce
 import pandas as pd
 from dataclasses import dataclass, fields
+from matplotlib import animation
 
 MCombo = Tuple[Material, Material]
 
@@ -152,7 +153,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo],
         1)  # If there is only one axis we still want it to be a list for the rest of the code
     ratioAxes = dict(zip(matCombos, ratioAxes))
     for combo in matCombos:
-        ratioAxes[combo].set_title(f'{combo[0]}/{combo[1]} reflection ratio')
+        ratioAxes[combo].set_title(f'{combo[0].name}/{combo[1].name} reflection ratio')
         ratioAxes[combo].plot(theoryR[combo[0]] / theoryR[combo[1]], label='Theory')
     for sett in settings:
         for matCombo in matCombos:
@@ -160,33 +161,35 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo],
             for combo in allCombos[sett][matCombo]:
                 cubes = combo.combo
                 ratioAxes[matCombo].plot(cubes[mat1].wavelengths, combo.mat1Spectra / combo.mat2Spectra,
-                                         label=f'{sett} {mat1}:{int(cubes[mat1].metadata["exposure"])}ms {mat2}:{int(cubes[mat2].metadata["exposure"])}ms')
+                                         label=f'{sett} {mat1.name}:{int(cubes[mat1].metadata["exposure"])}ms {mat2.name}:{int(cubes[mat2].metadata["exposure"])}ms')
     [ratioAxes[combo].legend() for combo in matCombos]
 
     for sett in settings:
         means = meanValues[sett]['mean']
 
         fig3, scatterAx = plt.subplots()  # A scatter plot of the theoretical vs observed reflectance ratio.
+        fig3.suptitle(sett)
         scatterAx.set_ylabel("Theoretical Ratio")
         scatterAx.set_xlabel("Observed Ratio w/ cFactor")
         scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in matCombos]
         scatterPointsX = [means['cFactor'] * (
                 meanValues[sett][matCombo]['mat1Spectra'] / meanValues[sett][matCombo]['mat2Spectra']).mean() for
                           matCombo in matCombos]
-        [scatterAx.scatter(x, y, label=f'{matCombo[0]}/{matCombo[1]}') for x, y, matCombo in
+        [scatterAx.scatter(x, y, label=f'{matCombo[0].name}/{matCombo[1].name}') for x, y, matCombo in
          zip(scatterPointsX, scatterPointsY, matCombos)]
         x = np.array([0, max(scatterPointsX)])
         scatterAx.plot(x, x, label='1:1')
         scatterAx.legend()
 
         fig4, scatterAx2 = plt.subplots()  # A scatter plot of the theoretical vs observed reflectance ratio.
+        fig4.suptitle(sett)
         scatterAx2.set_ylabel("Theoretical Ratio")
         scatterAx2.set_xlabel("Observed Ratio after Subtraction")
         scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in matCombos]
         scatterPointsX = [((meanValues[sett][matCombo]['mat1Spectra'] - means['I0'] * means['rExtra']) / (
                 meanValues[sett][matCombo]['mat2Spectra'] - means['I0'] * means['rExtra'])).mean() for matCombo in
                           matCombos]
-        [scatterAx2.scatter(x, y, label=f'{matCombo[0]}/{matCombo[1]}') for x, y, matCombo in
+        [scatterAx2.scatter(x, y, label=f'{matCombo[0].name}/{matCombo[1].name}') for x, y, matCombo in
          zip(scatterPointsX, scatterPointsY, matCombos)]
         x = np.array([0, max(scatterPointsX)])
         scatterAx2.plot(x, x, label='1:1')
@@ -213,8 +216,9 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo],
         print(means['cFactor'])
 
 
-def saveRExtra(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict) -> Dict[Union[str, MCombo], ExtraReflectanceCube]:
-    """Expects a dict of lists CubeCombos, each keyed by a 2-tuple of Materials. TheoryR is the theoretical reflectance for each material"""
+def generateRExtraCubes(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict) -> Tuple[ExtraReflectanceCube, Dict[Union[str, MCombo], np.array]]:
+    """Expects a dict of lists CubeCombos, each keyed by a 2-tuple of Materials. TheoryR is the theoretical reflectance for each material.
+    Returns extra reflectance for each material combo as well as the mean of all extra reflectances. This is what gets used. Ideally all the cubes will be very similar."""
     rExtra = {}
     for matCombo, combosList in allCombos.items():
         print("Calculating rExtra for: ", matCombo)
@@ -233,6 +237,27 @@ def saveRExtra(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict) -> Dict[
         rExtra[matCombo]['mean'] = reduce(lambda x, y: x + y, rExtra[matCombo]['combos']) / len(rExtra[matCombo]['combos'])
     _ = [rExtra[matCombo]['mean'] for matCombo in allCombos.keys()]
     rExtra['mean'] = reduce(lambda x, y: x + y, _) / len(_)
-    return rExtra
+    sampleCube: ImCube = list(allCombos.values())[0][0].data1['cube']
+    erCube = ExtraReflectanceCube(rExtra, sampleCube.wavelengths, sampleCube.metadata)
+    return erCube, rExtra
 
 
+def compareDates(cubes: pd.DataFrame):
+    anis = []
+    mask = cubes['cube'].sample(n=1).selectLassoROI()
+    for mat in set(cubes['material']):
+        c = cubes[cubes['material'] == mat]
+        fig, ax = plt.subplots()
+        fig.suptitle(mat)
+        fig2, ax2 = plt.subplots()
+        fig2.suptitle(mat)
+        anims = []
+        for i, row in c.iterrows():
+            im = row['cube']
+            spectra = im.getMeanSpectra(mask)[0]
+            ax.plot(im.wavelengths, spectra, label=row['setting'])
+            anims.append((ax2.imshow(im.data.mean(axis=2), animated=True,
+                                     clim=[np.percentile(im.data, .5), np.percentile(im.data, 99.5)]),
+                          ax2.text(25, 25, row['setting'])))
+        ax.legend()
+        anis.append(animation.ArtistAnimation(fig2, anims, interval=1000, blit=False))

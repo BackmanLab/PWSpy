@@ -23,9 +23,9 @@ class ExtraReflectanceCube(ICBase):
                        'time': {'type': 'string'}
                         }
                    }
-    _fileSuffix = '_eReflectance.h5'
-    _dataSetTag = 'extraReflection'
-    _mdTag = 'metadata'
+    FILESUFFIX = '_eReflectance.h5'
+    DATASETTAG = 'extraReflection'
+    MDTAG = 'metadata'
 
     def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], metadata: dict):
         jsonschema.validate(instance=metadata, schema=self._jsonSchema)
@@ -45,41 +45,41 @@ class ExtraReflectanceCube(ICBase):
 
     @classmethod
     def fromHdfFile(cls, directory: str, name: str):
-        with h5py.File(os.path.join(directory, f'{name}{cls._fileSuffix}')) as hf:
-            dset = hf[cls._dataSetTag]
+        with h5py.File(os.path.join(directory, f'{name}{cls.FILESUFFIX}')) as hf:
+            dset = hf[cls.DATASETTAG]
             return cls.fromHdfDataset(dset)
 
     def toHdfFile(self, directory: str, name: str) -> None:
-        savePath = os.path.join(directory, f'{name}{self._fileSuffix}')
+        savePath = os.path.join(directory, f'{name}{self.FILESUFFIX}')
         if os.path.exists(savePath):
             raise OSError(f"The path {savePath} already exists.")
         with h5py.File(savePath, 'w') as hf:
             self.toHdfDataset(hf, name)
 
     def toHdfDataset(self, g: h5py.Group, name: str) -> h5py.Group:
-        g = super().toHdfDataset(g, self._dataSetTag)
-        g.attrs[self._mdTag] = np.string_(json.dumps(self.metadata))
+        g = super().toHdfDataset(g, self.DATASETTAG)
+        g.attrs[self.MDTAG] = np.string_(json.dumps(self.metadata))
         return g
 
     @classmethod
     def fromHdfDataset(cls, d: h5py.Dataset):
         data, index = ICBase._decodeHdf(d)
-        return cls(data, index, json.loads(d.attrs[cls._mdTag]))
+        return cls(data, index, json.loads(d.attrs[cls.MDTAG]))
 
     @classmethod
     def getMetadata(cls, directory: str, name: str) -> dict:
-        with h5py.File(os.path.join(directory, f'{name}{cls._fileSuffix}')) as hf:
-            dset = hf[cls._dataSetTag]
-            return json.loads(dset.attr[cls._mdTag])
+        with h5py.File(os.path.join(directory, f'{name}{cls.FILESUFFIX}')) as hf:
+            dset = hf[cls.DATASETTAG]
+            return json.loads(dset.attr[cls.MDTAG])
 
     @classmethod
     def validPath(cls, path: str) -> Tuple[bool, Union[str, bytes], Union[str, bytes]]:
-        if cls._fileSuffix in path:
+        if cls.FILESUFFIX in path:
             directory, fileName = os.path.split(path)
-            name = fileName.split(cls._fileSuffix)[0]
-            with h5py.File(os.path.join(directory, f'{name}{cls._fileSuffix}')) as hf:
+            name = fileName.split(cls.FILESUFFIX)[0]
+            with h5py.File(os.path.join(directory, f'{name}{cls.FILESUFFIX}')) as hf:
                 try:
-                    valid = cls._mdTag in hf[cls._dataSetTag].attrs
+                    valid = cls.MDTAG in hf[cls.DATASETTAG].attrs
                 except:
                     valid = False
             return valid, directory, name

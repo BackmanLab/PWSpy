@@ -2,7 +2,7 @@ import os
 from glob import glob
 from typing import List, Any, Dict
 import json
-from pwspy import ImCube, CameraCorrection
+from pwspy import ImCube, CameraCorrection, ExtraReflectanceCube
 from pwspy.utility import loadAndProcess
 from pwspy.utility.reflectanceHelper import Material
 import pwspy.apps.ExtraReflectanceCreator.extraReflectance  as er #import prepareData, plotExtraReflection, saveRExtra
@@ -12,7 +12,6 @@ import pandas as pd
 import numpy as np
 from matplotlib import animation
 import traceback
-import random
 
 class ERWorkFlow:
     @staticmethod
@@ -60,49 +59,33 @@ class ERWorkFlow:
         return cubes
 
     @staticmethod
-    def plot(cubes: pd.DataFrame, saveToPdf: bool = False):
+    def plot(cubes: pd.DataFrame, saveToPdf: bool = False, saveDir: str = None):
         settings = set(cubes['setting'])  # Unique setting values
         materials = set(cubes['material'])
         theoryR = er.getTheoreticalReflectances(materials, cubes['cube'][0].wavelengths)  # Theoretical reflectances
         matCombos = er.generateMaterialCombos(materials)
 
         print("Select an ROI")
-        mask = random.choice(cubes['cube']).selectLassoROI()  # Select an ROI to analyze
+        mask = cubes['cube'].sample(n=1).iloc[0].selectLassoROI()  # Select an ROI to analyze
         er.plotExtraReflection(cubes, theoryR, matCombos, mask)
         if saveToPdf:
-            with PdfPages(os.path.join(directory, "figs.pdf")) as pp:
+            with PdfPages(os.path.join(saveDir, "figs.pdf")) as pp:
                 for i in plt.get_fignums():
                     f = plt.figure(i)
                     f.set_size_inches(9, 9)
                     pp.savefig(f)
 
     @staticmethod
-    def save(cubes: pd.DataFrame):
+    def save(cubes: pd.DataFrame, saveDir: str, saveName: str):
         settings = set(cubes['setting'])
         materials = set(cubes['material'])
         assert len(settings) == 1
         theoryR = er.getTheoreticalReflectances(materials, cubes['cube'][0].wavelengths)  # Theoretical reflectances
         matCombos = er.generateMaterialCombos(materials)
         combos = er.getAllCubeCombos(matCombos, cubes)
-        ret = er.saveRExtra(combos, theoryR)
+        erCube, rExtraDict = er.generateRExtraCubes(combos, theoryR)
+        erCube.toHdfFile(saveDir, saveName)
 
     @staticmethod
     def compareDates(cubes: pd.DataFrame):
-        anis = []
-        mask = random.choice(cubes['cube']).selectLassoRoi()
-        for mat in set(cubes['material']):
-            c = cubes[cubes['material'] == mat]
-            fig, ax = plt.subplots()
-            fig.suptitle(mat)
-            fig2, ax2 = plt.subplots()
-            fig2.suptitle(mat)
-            anims = []
-            for i, row in c.iterrows():
-                im = row['cube']
-                spectra = im.getMeanSpectra(mask)[0]
-                ax.plot(im.wavelengths, spectra, label=row['setting'])
-                anims.append((ax2.imshow(im.data.mean(axis=2), animated=True,
-                                         clim=[np.percentile(im.data, .5), np.percentile(im.data, 99.5)]),
-                              ax2.text(200, 100, row['setting'])))
-            ax.legend()
-            anis.append(animation.ArtistAnimation(fig2, anims, interval=1000, blit=False))
+        er.compareDates(cubes)
