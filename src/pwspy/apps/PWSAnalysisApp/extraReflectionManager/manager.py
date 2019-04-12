@@ -12,25 +12,25 @@ from pwspy.apps.PWSAnalysisApp import applicationVars
 class ERManager:
     _indexSchema = {
         "$schema": "http://json-schema.org/schema#",
-       '$id': 'extraReflectionIndexSchema',
-       'title': 'extraReflectionIndexSchema',
-       'type': 'object',
-       'properties': {
-           'reflectanceCubes': {
-               'type': 'array',
-               'items': {
-                   'type': 'object',
-                   'properties': {
-                       'fileName': {'type': 'string'},
-                       'description': {'type': 'string'},
-                       'idTag': {'type': 'string'},
-                       'name': {'type': 'string'}
-                   },
-                   'required': ['fileName', 'description', 'idTag', 'name']
-               }
+        '$id': 'extraReflectionIndexSchema',
+        'title': 'extraReflectionIndexSchema',
+        'type': 'object',
+        'properties': {
+            'reflectanceCubes': {
+                'type': 'array',
+                'items': {
+                    'type': 'object',
+                    'properties': {
+                        'fileName': {'type': 'string'},
+                        'description': {'type': 'string'},
+                        'idTag': {'type': 'string'},
+                        'name': {'type': 'string'}
+                    },
+                    'required': ['fileName', 'description', 'idTag', 'name']
+                }
 
             }
-       }
+        }
     }
 
     def __init__(self, filePath: str):

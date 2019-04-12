@@ -21,10 +21,10 @@ class CubeCombo:
         self.data2 = cube2
 
     def keys(self) -> MCombo:
-        return (self.mat1, self.mat2)
+        return self.mat1, self.mat2
 
     def values(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        return (self.data1, self.data2)
+        return self.data1, self.data2
 
     def items(self) -> Iterator[Tuple[Material, pd.DataFrame]]:
         return zip(self.keys(), self.values())

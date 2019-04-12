@@ -6,12 +6,10 @@ from pwspy import ImCube, CameraCorrection, ExtraReflectanceCube
 from pwspy.imCube import ICMetaData
 from pwspy.utility import loadAndProcess
 from pwspy.utility.reflectanceHelper import Material
-import pwspy.apps.ExtraReflectanceCreator.extraReflectance  as er #import prepareData, plotExtraReflection, saveRExtra
+import pwspy.apps.ExtraReflectanceCreator.extraReflectance  as er
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 import pandas as pd
-import numpy as np
-from matplotlib import animation
 
 def _splitPath(path: str) -> List[str]:
     folders = []
@@ -49,16 +47,16 @@ def _processIm(im: ImCube, camCorrection: CameraCorrection, binning: int) -> ImC
     return im
 
 class ERWorkFlow:
-    def __init__(self):
-        self.cubes = self.fileStruct = None
-
-    def generateFileStruct(self, workingDir: str):
-            folders = [i for i in glob(os.path.join(workingDir, '*')) if os.path.isdir(i)]
-            settings = [os.path.split(i)[-1] for i in folders]
-            fileStruct = {}
-            for f, s in zip(folders, settings):
-                fileStruct[s] = scanDirectory(f)
-            self.fileStruct = fileStruct
+    def __init__(self, workingDir: str, homeDir: str):
+        self.cubes = self.fileStruct = self.df = self.cameraCorrection = None
+        self.homeDir = homeDir
+        # generateFileStruct:
+        folders = [i for i in glob(os.path.join(workingDir, '*')) if os.path.isdir(i)]
+        settings = [os.path.split(i)[-1] for i in folders]
+        fileStruct = {}
+        for f, s in zip(folders, settings):
+            fileStruct[s] = scanDirectory(f)
+        self.fileStruct = fileStruct
 
     def invalidateCubes(self):
         self.cubes = None
@@ -88,7 +86,7 @@ class ERWorkFlow:
                     f.set_size_inches(9, 9)
                     pp.savefig(f)
 
-    def save(self, saveDir: str, saveName: str):
+    def save(self, saveName: str):
         settings = set(self.cubes['setting'])
         for setting in settings:
             cubes = self.cubes[self.cubes['setting'] == setting]
@@ -97,12 +95,13 @@ class ERWorkFlow:
             matCombos = er.generateMaterialCombos(materials)
             combos = er.getAllCubeCombos(matCombos, cubes)
             erCube, rExtraDict = er.generateRExtraCubes(combos, theoryR)
-            erCube.toHdfFile(saveDir, saveName)
+            erCube.toHdfFile(self.homeDir, saveName)
+            self.updateIndex()
 
     def compareDates(self):
         self.anims = er.compareDates(self.cubes) #The animation objects must not be deleted for the animations to keep working
 
-    def selectionChanged(self, directory: str):
+    def directoryChanged(self, directory: str):
         _ = self.fileStruct[directory]
         self.df = _['dataFrame']
         self.cameraCorrection = _['camCorrection']
