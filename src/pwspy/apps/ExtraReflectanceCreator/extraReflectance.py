@@ -242,7 +242,7 @@ def generateRExtraCubes(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict)
     return erCube, rExtra
 
 
-def compareDates(cubes: pd.DataFrame):
+def compareDates(cubes: pd.DataFrame) -> List[animation.ArtistAnimation]:
     anis = []
     mask = cubes['cube'].sample(n=1).selectLassoROI()
     for mat in set(cubes['material']):
@@ -261,3 +261,4 @@ def compareDates(cubes: pd.DataFrame):
                           ax2.text(25, 25, row['setting'])))
         ax.legend()
         anis.append(animation.ArtistAnimation(fig2, anims, interval=1000, blit=False))
+    return anis

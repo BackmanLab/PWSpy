@@ -13,29 +13,27 @@ import pandas as pd
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, fileStruct: Dict[str, Dict[str, Any]]):
+    def __init__(self, workFlow: ERWorkFlow):
         QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
-        self.fileStruct = fileStruct
-        self.cubes = None
-        self.workflow = ERWorkFlow()
+        self.workflow = workFlow
         super().__init__()
         self.setWindowTitle("Extra Reflectance Creator")
         widg = QWidget()
         layout = QGridLayout()
         self.listWidg = QListWidget(self)
-        for k, v in fileStruct.items():
+        for k, v in self.workflow.fileStruct.items():
             self.listWidg.addItem(k)
         self.listWidg.currentItemChanged.connect(self.selectionChanged)
         self.selListWidg = QListWidget(self)
-        self.selListWidg.itemChanged.connect(self.invalidateCubes)
+        self.selListWidg.itemChanged.connect(self.workflow.invalidateCubes)
         self.binningCombo = QComboBox()
         self.binningCombo.addItems(['Auto', '1x1', '2x2', '3x3'])
-        self.binningCombo.currentIndexChanged.connect(self.invalidateCubes)
+        self.binningCombo.currentIndexChanged.connect(self.workflow.invalidateCubes)
         self.compareDatesButton = QPushButton("Compare Dates")
         self.compareDatesButton.released.connect(self.compareDates)
         self.plotButton = QPushButton("Plot Details")
         self.plotButton.released.connect(self.plot)
-        self.saveButton = QPushButton("Save Highlighted Date")
+        self.saveButton = QPushButton("Save Checked Dates")
         self.saveButton.released.connect(self.save)
         row = 0
         layout.addWidget(self.listWidg, row, 0, 4, 4)
@@ -52,33 +50,33 @@ class MainWindow(QMainWindow):
         self.show()
 
     def selectionChanged(self, item: QListWidgetItem, oldItem: QListWidgetItem):
-        _ = self.fileStruct[item.text()]
-        self.df = _['dataFrame']
-        self.cameraCorrection = _['camCorrection']
-        self.invalidateCubes()
+        self.workflow.selectionChanged(item.text())
         self.selListWidg.clear()
-        for sett in set(self.df['setting']):
+        for sett in set(self.workflow.df['setting']):
             _ = QListWidgetItem(sett)
             _.setFlags(_.flags() | QtCore.Qt.ItemIsUserCheckable)
             _.setCheckState(QtCore.Qt.Unchecked)
             self.selListWidg.addItem(_)
 
-    def invalidateCubes(self):
-        self.cubes = None
+    @property
+    def binning(self):
+        num = self.binningCombo.currentIndex()
+        return num if num != 0 else None
+
+    @property
+    def checkedSettings(self):
+        dateItems = [self.selListWidg.item(i) for i in range(self.selListWidg.count())]
+        return [i.text() for i in dateItems if i.checkState()]
 
     def loadIfNeeded(self):
-        if self.cubes is None:
-            dateItems = [self.selListWidg.item(i) for i in range(self.selListWidg.count())]
-            checkedSettings = [i.text() for i in dateItems if i.checkState()]
-            num = self.binningCombo.currentIndex()
-            binning = num if num != 0 else None
-            self.cubes = self.workflow.loadCubes(self.df, checkedSettings, binning, self.cameraCorrection)
+        if self.workflow.cubes is None:
+            self.workflow.loadCubes(self.checkedSettings, self.binning)
 
     def plot(self):
         try:
             self.setEnabled(False)
             self.loadIfNeeded()
-            self.workflow.plot(self.cubes)
+            self.workflow.plot()
         except:
             traceback.print_exc()
         finally:
@@ -88,7 +86,7 @@ class MainWindow(QMainWindow):
         try:
             self.setEnabled(False)
             self.loadIfNeeded()
-            self.animations = self.workflow.compareDates(self.cubes)
+            self.animations = self.workflow.compareDates()
         except:
             traceback.print_exc()
         finally:
@@ -97,8 +95,8 @@ class MainWindow(QMainWindow):
     def save(self):
         try:
             self.setEnabled(False)
-            cubes = self.workflow.loadCubes(self.df, [self.selListWidg.selectedItems()[0].text()])
-            self.workflow.save(cubes)
+            self.loadIfNeeded()
+            self.workflow.save(saveDir, saveName)
         except:
             traceback.print_exc()
         finally:
@@ -112,16 +110,10 @@ class ERApp(QApplication):
         super().__init__(args)
         plt.interactive(True)
         wDir = QFileDialog.getExistingDirectory(caption='Select Working Directory')
-        fileStruct = self.validateWorkingDir(wDir)
-        self.window = MainWindow(fileStruct)
+        self.workflow = ERWorkFlow()
+        self.workflow.generateFileStruct(wDir)
+        self.window = MainWindow(self.workflow)
 
-    def validateWorkingDir(self, workingDir: str) -> Dict[str, Dict[str, Any]]:
-        folders = [i for i in glob(os.path.join(workingDir, '*')) if os.path.isdir(i)]
-        settings = [os.path.split(i)[-1] for i in folders]
-        fileStruct = {}
-        for f, s in zip(folders, settings):
-            fileStruct[s] = ERWorkFlow.scanDirectory(f)
-        return fileStruct
 
 def isIpython():
     try:
