@@ -273,6 +273,7 @@ def generateOneRExtraCube(combo: CubeCombo, theoryR: dict, correctErrors: bool) 
     arr = (nominator1 - nominator2) / denominator
     if correctErrors:
         arr = recursiveClean(arr)
+    print("Done generating.")
     return arr
 
 
@@ -281,6 +282,7 @@ def generateRExtraCubes(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict)
     """Expects a dict of lists CubeCombos, each keyed by a 2-tuple of Materials. TheoryR is the theoretical reflectance for each material.
     Returns extra reflectance for each material combo as well as the mean of all extra reflectances. This is what gets used. Ideally all the cubes will be very similar.
     Additionally returns a list of plot objects. references to these must be kept alive for the plots to be responsive."""
+    #TODO instead of doing a bunch of blurring to to get rid of invalid values. use a weighted average to just ignore unwanted spots.
     rExtra = {}
     for matCombo, combosList in allCombos.items():
         print("Calculating rExtra for: ", matCombo)
@@ -298,8 +300,9 @@ def generateRExtraCubes(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict)
     return erCube, rExtra, plots
 
 
-def compareDates(cubes: pd.DataFrame) -> List[animation.ArtistAnimation]:
+def compareDates(cubes: pd.DataFrame) -> Tuple[List[animation.ArtistAnimation], List[plt.Figure]]:
     anis = []
+    figs = []
     mask = cubes['cube'].sample(n=1).iloc[0].selectLassoROI()
     for mat in set(cubes['material']):
         c = cubes[cubes['material'] == mat]
@@ -309,6 +312,7 @@ def compareDates(cubes: pd.DataFrame) -> List[animation.ArtistAnimation]:
         ax.set_ylabel("Counts/ms")
         fig2, ax2 = plt.subplots()
         fig2.suptitle(mat.name)
+        figs.extend([fig, fig2])
         anims = []
         for i, row in c.iterrows():
             im = row['cube']
@@ -319,4 +323,4 @@ def compareDates(cubes: pd.DataFrame) -> List[animation.ArtistAnimation]:
                           ax2.text(40, 40, row['setting'])))
         ax.legend()
         anis.append(animation.ArtistAnimation(fig2, anims, interval=1000, blit=False))
-    return anis
+    return anis, figs

@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QDialog, QTableWidget, QTableWidgetItem, QMessageBox
 from .manager import ERManager
 import numpy as np
 
+
 class ERTableWidgetItem(QTableWidgetItem):
     def __init__(self, fileName: str, description: str, idTag: str, name: str):
         super().__init__(name)
@@ -24,6 +25,7 @@ class ERTableWidgetItem(QTableWidgetItem):
 
     def isEnabled(self) -> bool:
         return bool(self.flags() & QtCore.Qt.ItemIsEnabled)
+
 
 class ExplorerWindow(QDialog):
     def __init__(self, parent: QWidget, filePath: str):

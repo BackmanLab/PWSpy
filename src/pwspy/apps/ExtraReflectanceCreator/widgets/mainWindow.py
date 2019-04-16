@@ -1,11 +1,13 @@
 import traceback
+from datetime import datetime
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QListWidget, QComboBox, QPushButton, \
     QLabel, QListWidgetItem
 
 from pwspy.apps.ExtraReflectanceCreator.ERWorkFlow import ERWorkFlow
-from importlib import reload
+from pwspy.moduleConsts import dateTimeFormat
+
 
 class MainWindow(QMainWindow):
     def __init__(self, workFlow: ERWorkFlow):
@@ -50,7 +52,9 @@ class MainWindow(QMainWindow):
     def selectionChanged(self, item: QListWidgetItem, oldItem: QListWidgetItem):
         self.workflow.directoryChanged(item.text())
         self.selListWidg.clear()
-        for sett in set(self.workflow.df['setting']):
+        settings = set(self.workflow.df['setting'])
+        _, settings = zip(*sorted(zip([datetime.strptime(sett, "%m_%d_%Y") for sett in settings], settings)))
+        for sett in settings:
             _ = QListWidgetItem(sett)
             _.setFlags(_.flags() | QtCore.Qt.ItemIsUserCheckable)
             _.setCheckState(QtCore.Qt.Unchecked)

@@ -24,9 +24,10 @@ class ERManager:
                         'fileName': {'type': 'string'},
                         'description': {'type': 'string'},
                         'idTag': {'type': 'string'},
-                        'name': {'type': 'string'}
+                        'name': {'type': 'string'},
+                        'md5': {'type': 'string'}
                     },
-                    'required': ['fileName', 'description', 'idTag', 'name']
+                    'required': ['fileName', 'description', 'idTag', 'name', 'md5']
                 }
 
             }

@@ -193,7 +193,7 @@ class ICBase:
 
     def toHdfDataset(self, g: h5py.Group, name: str) -> h5py.Group:
         dset = g.create_dataset(name, data=self.data, compression=3)
-        print(dset.chunks)
+        print(f"{self.__class__.__name__}chunking shape: {dset.chunks}")
         dset.attrs['index'] = np.array(self.index)
         dset.attrs['type'] = np.string_(self.__class__.__name__)
         return g
@@ -203,7 +203,7 @@ class ICBase:
         assert 'type' in d.attrs
         assert 'index' in d.attrs
         assert d.attrs['type'].encode() == cls.__name__, f"Got {d.attrs['type']} instead of {cls.__name__}"
-        print('chunks: ', d.chunks)
+        print(f'{cls.__name__} chunks: {d.chunks}')
         return np.array(d), tuple(d.attrs['index'])
 
 

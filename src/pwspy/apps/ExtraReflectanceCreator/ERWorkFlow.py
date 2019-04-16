@@ -1,3 +1,4 @@
+import hashlib
 import os
 from glob import glob
 from typing import List, Any, Dict
@@ -102,6 +103,7 @@ class ERWorkFlow:
             matCombos = er.generateMaterialCombos(materials)
             combos = er.getAllCubeCombos(matCombos, cubes)
             erCube, rExtraDict, self.plotnds = er.generateRExtraCubes(combos, theoryR)
+            self.figs.extend([i.fig for i in self.plotnds]) # keep track of opened figures.
             saveName = f'{self.currDir}-{setting}'
             dialog = IndexInfoForm(f'{self.currDir}-{setting}', erCube.idTag)
             dialog.exec()
@@ -112,18 +114,24 @@ class ERWorkFlow:
     def updateIndex(self, saveName: str, idTag: str, description: str, filePath: str):
         with open(os.path.join(self.homeDir, 'index.json'), 'r') as f:
             index = json.load(f)
+        hash = hashlib.md5()
+        with open(os.path.join(self.homeDir, filePath), 'rb') as f:
+            hash.update(f.read())
+        md5 = hash.hexdigest() #The md5 checksum as a string of hex.
         cubes = index['reflectanceCubes']
         newEntry = {'fileName': filePath,
                     'description': description,
                     'idTag': idTag,
-                    'name': saveName}
+                    'name': saveName,
+                    'md5': md5}
         cubes.append(newEntry)
         index['reflectanceCubes'] = cubes
         with open(os.path.join(self.homeDir, 'index.json'), 'w') as f:
             json.dump(index, f, indent=4)
 
     def compareDates(self):
-        self.anims = er.compareDates(self.cubes) #The animation objects must not be deleted for the animations to keep working
+        self.anims, figs = er.compareDates(self.cubes) #The animation objects must not be deleted for the animations to keep working
+        self.figs.extend(figs) #Keep track of opened figures.
 
     def directoryChanged(self, directory: str):
         self.currDir = directory
