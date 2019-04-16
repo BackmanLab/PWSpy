@@ -34,8 +34,10 @@ class ExplorerWindow(QDialog):
         self.setWindowTitle("Extra Reflectance Manager")
         self.setLayout(QVBoxLayout())
         self.table = QTableWidget(self)
+        # self.table.verticalHeader().hide()
+        self.table.horizontalHeader().hide()
         self.table.itemClicked.connect(self.toggleCheck)
-        # self.table.itemDoubleClicked.connect(self.displayInfo)
+        self.table.itemDoubleClicked.connect(self.displayInfo)
         self.table.setColumnCount(1)
         self.downloadButton = QPushButton("Download Checked Items")
         self.downloadButton.released.connect(self._downloadCheckedItems)
@@ -64,8 +66,10 @@ class ExplorerWindow(QDialog):
         else:
             tableItem.setCheckState(QtCore.Qt.Unchecked)
 
-    # def displayInfo(self, item: ERTableWidgetItem):
-    #     message = QMessageBox.information(self, item.name, '\n'.join([item.fileName, item.idTag, item.description]))
+    def displayInfo(self, item: ERTableWidgetItem):
+        message = QMessageBox.information(self, item.name, '\n\n'.join([f'FileName: {item.fileName}',
+                                                                      f'ID Tag: {item.idTag}',
+                                                                      f'Description: {item.description}']))
 
     def _downloadCheckedItems(self):
         for i in range(self.table.rowCount()):
