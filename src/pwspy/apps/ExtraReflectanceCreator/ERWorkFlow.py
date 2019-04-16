@@ -1,11 +1,13 @@
 import hashlib
 import os
+from datetime import datetime
 from glob import glob
 from typing import List, Any, Dict
 import json
 from pwspy import ImCube, CameraCorrection, ExtraReflectanceCube
 from pwspy.apps.ExtraReflectanceCreator.widgets.dialog import IndexInfoForm
 from pwspy.imCube import ICMetaData
+from pwspy.moduleConsts import dateTimeFormat
 from pwspy.utility import loadAndProcess
 from pwspy.utility.reflectanceHelper import Material
 import pwspy.apps.ExtraReflectanceCreator.extraReflectance  as er
@@ -126,6 +128,7 @@ class ERWorkFlow:
                     'md5': md5}
         cubes.append(newEntry)
         index['reflectanceCubes'] = cubes
+        index['creationDate'] = datetime.strftime(datetime.now(), dateTimeFormat)
         with open(os.path.join(self.homeDir, 'index.json'), 'w') as f:
             json.dump(index, f, indent=4)
 

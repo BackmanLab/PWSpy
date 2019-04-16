@@ -29,8 +29,8 @@ class ERManager:
                     },
                     'required': ['fileName', 'description', 'idTag', 'name', 'md5']
                 }
-
-            }
+            },
+            'creationDate': {'type': 'string'}
         }
     }
 

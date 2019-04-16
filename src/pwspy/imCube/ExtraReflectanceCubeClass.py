@@ -61,7 +61,7 @@ class ExtraReflectanceCube(ICBase):
 
     def toHdfDataset(self, g: h5py.Group, name: str) -> h5py.Group:
         g = super().toHdfDataset(g, self.DATASETTAG)
-        g.attrs[self.MDTAG] = np.string_(json.dumps(self.metadata))
+        g[self.DATASETTAG].attrs[self.MDTAG] = np.string_(json.dumps(self.metadata))
         return g
 
     @classmethod
