@@ -49,7 +49,8 @@ def _processIm(im: ImCube, camCorrection: CameraCorrection, binning: int) -> ImC
 
 class ERWorkFlow:
     def __init__(self, workingDir: str, homeDir: str):
-        self.cubes = self.fileStruct = self.df = self.cameraCorrection = self.currDir = None
+        self.cubes = self.fileStruct = self.df = self.cameraCorrection = self.currDir = self.plotnds = None
+        self.figs = []
         self.homeDir = homeDir
         # generateFileStruct:
         folders = [i for i in glob(os.path.join(workingDir, '*')) if os.path.isdir(i)]
@@ -61,6 +62,11 @@ class ERWorkFlow:
 
     def invalidateCubes(self):
         self.cubes = None
+
+    def deleteFigures(self):
+        for fig in self.figs:
+            plt.close(fig)
+        self.figs = []
 
     def loadCubes(self, includeSettings: List[str], binning: int):
         if binning is None:
@@ -74,12 +80,12 @@ class ERWorkFlow:
         cubes = self.cubes
         settings = set(cubes['setting'])  # Unique setting values
         materials = set(cubes['material'])
-        theoryR = er.getTheoreticalReflectances(materials, cubes['cube'][0].wavelengths)  # Theoretical reflectances
+        theoryR = er.getTheoreticalReflectances(materials, cubes['cube'].iloc[0].wavelengths)  # Theoretical reflectances
         matCombos = er.generateMaterialCombos(materials)
 
         print("Select an ROI")
         mask = cubes['cube'].sample(n=1).iloc[0].selectLassoROI()  # Select an ROI to analyze
-        er.plotExtraReflection(cubes, theoryR, matCombos, mask)
+        self.figs.extend(er.plotExtraReflection(cubes, theoryR, matCombos, mask, plotReflectionImages=True))
         if saveToPdf:
             with PdfPages(os.path.join(saveDir, "figs.pdf")) as pp:
                 for i in plt.get_fignums():
@@ -92,14 +98,15 @@ class ERWorkFlow:
         for setting in settings:
             cubes = self.cubes[self.cubes['setting'] == setting]
             materials = set(cubes['material'])
-            theoryR = er.getTheoreticalReflectances(materials, cubes['cube'][0].wavelengths)  # Theoretical reflectances
+            theoryR = er.getTheoreticalReflectances(materials, cubes['cube'].iloc[0].wavelengths)  # Theoretical reflectances
             matCombos = er.generateMaterialCombos(materials)
             combos = er.getAllCubeCombos(matCombos, cubes)
-            erCube, rExtraDict = er.generateRExtraCubes(combos, theoryR)
+            erCube, rExtraDict, self.plotnds = er.generateRExtraCubes(combos, theoryR)
             saveName = f'{self.currDir}-{setting}'
-            erCube.toHdfFile(self.homeDir, saveName)
             dialog = IndexInfoForm(f'{self.currDir}-{setting}', erCube.idTag)
             dialog.exec()
+            erCube.metadata['description'] = dialog.description
+            erCube.toHdfFile(self.homeDir, saveName)
             self.updateIndex(saveName, erCube.idTag, dialog.description, f'{saveName}{erCube.FILESUFFIX}')
 
     def updateIndex(self, saveName: str, idTag: str, description: str, filePath: str):
@@ -113,7 +120,7 @@ class ERWorkFlow:
         cubes.append(newEntry)
         index['reflectanceCubes'] = cubes
         with open(os.path.join(self.homeDir, 'index.json'), 'w') as f:
-            json.dump(index, f)
+            json.dump(index, f, indent=4)
 
     def compareDates(self):
         self.anims = er.compareDates(self.cubes) #The animation objects must not be deleted for the animations to keep working

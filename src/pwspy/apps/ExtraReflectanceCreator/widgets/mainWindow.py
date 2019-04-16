@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QLi
     QLabel, QListWidgetItem
 
 from pwspy.apps.ExtraReflectanceCreator.ERWorkFlow import ERWorkFlow
-
+from importlib import reload
 
 class MainWindow(QMainWindow):
     def __init__(self, workFlow: ERWorkFlow):
@@ -30,12 +30,15 @@ class MainWindow(QMainWindow):
         self.plotButton.released.connect(self._cb(self.workflow.plot))
         self.saveButton = QPushButton("Save Checked Dates")
         self.saveButton.released.connect(self._cb(self.workflow.save))
+        self.deleteFigsButton = QPushButton("Delete Figs")
+        self.deleteFigsButton.released.connect(self._cb(self.workflow.deleteFigures))
         row = 0
         layout.addWidget(self.listWidg, row, 0, 4, 4)
         layout.addWidget(self.selListWidg, row, 4, 4, 4)
         row += 4
         layout.addWidget(self.compareDatesButton, row, 0, 1, 1)
         layout.addWidget(self.plotButton, row, 1, 1, 1)
+        layout.addWidget(self.deleteFigsButton, row, 2, 1, 1)
         layout.addWidget(QLabel("Binning"), row, 4, 1, 1)
         layout.addWidget(self.binningCombo, row, 5, 1, 1)
         layout.addWidget(self.saveButton, row, 6, 1, 1)

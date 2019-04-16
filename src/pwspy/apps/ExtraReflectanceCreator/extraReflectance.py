@@ -10,11 +10,13 @@ from functools import reduce
 import pandas as pd
 from dataclasses import dataclass, fields
 from matplotlib import animation
-
+import scipy.signal as sps
+from pwspy.utility.PlotNd import PlotNd
 MCombo = Tuple[Material, Material]
 
+
 class CubeCombo:
-    def __init__(self, material1: Material, material2: Material, cube1: pd.DataFrame, cube2: pd):
+    def __init__(self, material1: Material, material2: Material, cube1: ImCube, cube2: ImCube):
         self.mat1 = material1
         self.mat2 = material2
         self.data1 = cube1
@@ -23,19 +25,20 @@ class CubeCombo:
     def keys(self) -> MCombo:
         return self.mat1, self.mat2
 
-    def values(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def values(self) -> Tuple[ImCube, ImCube]:
         return self.data1, self.data2
 
-    def items(self) -> Iterator[Tuple[Material, pd.DataFrame]]:
+    def items(self) -> Iterator[Tuple[Material, ImCube]]:
         return zip(self.keys(), self.values())
 
-    def __getitem__(self, item: Material) -> pd.DataFrame:
+    def __getitem__(self, item: Material) -> ImCube:
         if item == self.mat1:
             return self.data1
         elif item == self.mat2:
             return self.data2
         else:
             raise KeyError("Key must be either mat1 or mat2.")
+
 
 @dataclass
 class ComboSummary:
@@ -46,7 +49,10 @@ class ComboSummary:
     I0: np.ndarray
     cFactor: float
 
+
 def _interpolateNans(arr):
+    """Interpolate out nan values along the third axis of an array"""
+
     def interp1(arr1):
         nans = np.isnan(arr1)
         f = lambda z: z.nonzero()[0]
@@ -55,7 +61,6 @@ def _interpolateNans(arr):
 
     arr = np.apply_along_axis(interp1, 2, arr)
     return arr
-
 
 def getTheoreticalReflectances(materials: Iterable[Material], index: Tuple[float]) -> Dict:
     """Generate a dictionary containing a pandas series of the `material`-glass reflectance for each material in
@@ -124,7 +129,7 @@ def calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theory
     return meanValues, allCombos
 
 
-def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo], mask: Optional[Roi] = None, plotReflectionImages: bool = False):
+def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo], mask: Optional[Roi] = None, plotReflectionImages: bool = False) -> List[plt.Figure]:
 
     settings = set(df['setting'])
 
@@ -133,9 +138,10 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo],
     for sett in settings:
         cubeCombos = getAllCubeCombos(matCombos, df[df['setting'] == sett])
         meanValues[sett], allCombos[sett] = calculateSpectraFromCombos(cubeCombos, theoryR, mask)
-
+    figs = []
     fig, ax = plt.subplots()  # For extra reflections
     fig.suptitle("Extra Reflection")
+    figs.append(fig)
     ax.set_ylabel("%")
     ax.set_xlabel("nm")
     for sett in settings:
@@ -149,6 +155,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo],
     ax.legend()
 
     fig2, ratioAxes = plt.subplots(nrows=len(matCombos))  # for correction factor
+    figs.append(fig2)
     if not isinstance(ratioAxes, np.ndarray): ratioAxes = np.array(ratioAxes).reshape(
         1)  # If there is only one axis we still want it to be a list for the rest of the code
     ratioAxes = dict(zip(matCombos, ratioAxes))
@@ -169,6 +176,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo],
 
         fig3, scatterAx = plt.subplots()  # A scatter plot of the theoretical vs observed reflectance ratio.
         fig3.suptitle(sett)
+        figs.append(fig3)
         scatterAx.set_ylabel("Theoretical Ratio")
         scatterAx.set_xlabel("Observed Ratio w/ cFactor")
         scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in matCombos]
@@ -183,6 +191,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo],
 
         fig4, scatterAx2 = plt.subplots()  # A scatter plot of the theoretical vs observed reflectance ratio.
         fig4.suptitle(sett)
+        figs.append(fig4)
         scatterAx2.set_ylabel("Theoretical Ratio")
         scatterAx2.set_xlabel("Observed Ratio after Subtraction")
         scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in matCombos]
@@ -200,25 +209,78 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo],
                 mat1, mat2 = matCombo
                 for combo in allCombos[sett][matCombo]:
                     cubes = combo.combo
-                    plt.figure()
+                    fig5 = plt.figure()
+                    figs.append(fig5)
                     plt.title(f"Reflectance %. {sett}, {mat1}:{int(cubes[mat2].metadata['exposure'])}ms, {mat2}:{int(cubes[mat2].metadata['exposure'])}ms")
-                _ = ((theoryR[mat1][np.newaxis, np.newaxis, :] * cubes[mat2].data) - (
+                    _ = ((theoryR[mat1][np.newaxis, np.newaxis, :] * cubes[mat2].data) - (
                         theoryR[mat2][np.newaxis, np.newaxis, :] * cubes[mat1].data)) / (
                             cubes[mat1].data - cubes[mat2].data)
-                _[np.isinf(_)] = np.nan
-                if np.any(np.isnan(_)):
-                    _ = _interpolateNans(_)  # any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
-                refIm = _.mean(axis=2)
-                plt.imshow(refIm, vmin=np.percentile(refIm, .5), vmax=np.percentile(refIm, 99.5))
-                plt.colorbar()
+                    _[np.isinf(_)] = np.nan
+                    if np.any(np.isnan(_)):
+                        _ = _interpolateNans(_)  # any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
+                    refIm = _.mean(axis=2)
+                    plt.imshow(refIm, vmin=np.percentile(refIm, .5), vmax=np.percentile(refIm, 99.5))
+                    plt.colorbar()
 
         print(f"{sett} correction factor")
         print(means['cFactor'])
+    return figs
 
 
-def generateRExtraCubes(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict) -> Tuple[ExtraReflectanceCube, Dict[Union[str, MCombo], np.array]]:
+def generateOneRExtraCube(combo: CubeCombo, theoryR: dict, correctErrors: bool) -> np.ndarray:
+    def recursiveClean(arr: np.ndarray) -> np.array:
+        def getInvalids(arr: np.ndarray) -> int:
+            arr[np.isinf(arr)] = np.nan
+            nans = np.isnan(arr).sum()
+            nans += (arr > 1).sum()
+            arr[arr > 1] = 1
+            nans += (arr < 0).sum()
+            arr[arr < 0] = 0
+            return nans
+
+        def blur(arr: np.ndarray) -> np.ndarray:
+            """Blur a 3d array along the first two axes."""
+            def _gaussKernel(radius: int):
+                # A kernel that goes to 1 std. It would be better to go out to 2 or 3 std but then you need a larger kernel which greatly increases convolution time.
+                lenSide = 1 + 2 * radius
+                side = np.linspace(-1, 1, num=lenSide)
+                X, Y = np.meshgrid(side, side)
+                R = np.sqrt(X ** 2 + Y ** 2)
+                k = np.exp(-(R ** 2) / 2)
+                k = k / k.sum()  # normalize so the total is 1.
+                return k
+            kernel = _gaussKernel(6)
+            for i in range(arr.shape[2]):
+                m = arr[:, :,i].mean()  # By subtracting the mean and then adding it after convolution we are effectively padding the convolution with the mean.
+                arr[:, :, i] = sps.convolve(arr[:, :, i] - m, kernel, mode='same') + m
+            return arr
+
+        invlds = getInvalids(arr)
+        if invlds > 0:
+            print(f"{invlds} ({invlds / arr.size * 100}%) invalid values detected in ({combo.mat1.name}, {combo.mat2.name}). Interpolating and blurring")
+            if np.isnan(arr).sum() > 0:
+                arr = _interpolateNans(arr)
+            print("Done interpolating.")
+            arr = blur(arr)
+            print("Done blurring.")
+            return recursiveClean(arr)
+        else:
+            return arr
+
+    denominator = combo.data1.data - combo.data2.data
+    nominator1 = np.array(theoryR[combo.mat1][np.newaxis, np.newaxis, :]) * combo.data2.data
+    nominator2 = np.array(theoryR[combo.mat2][np.newaxis, np.newaxis, :]) * combo.data1.data
+    arr = (nominator1 - nominator2) / denominator
+    if correctErrors:
+        arr = recursiveClean(arr)
+    return arr
+
+
+
+def generateRExtraCubes(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict) -> Tuple[ExtraReflectanceCube, Dict[Union[str, MCombo], np.array], List[PlotNd]]:
     """Expects a dict of lists CubeCombos, each keyed by a 2-tuple of Materials. TheoryR is the theoretical reflectance for each material.
-    Returns extra reflectance for each material combo as well as the mean of all extra reflectances. This is what gets used. Ideally all the cubes will be very similar."""
+    Returns extra reflectance for each material combo as well as the mean of all extra reflectances. This is what gets used. Ideally all the cubes will be very similar.
+    Additionally returns a list of plot objects. references to these must be kept alive for the plots to be responsive."""
     rExtra = {}
     for matCombo, combosList in allCombos.items():
         print("Calculating rExtra for: ", matCombo)
@@ -226,20 +288,14 @@ def generateRExtraCubes(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict)
         for combo in combosList:
             mat1, mat2 = combo.keys()
             _ = rExtra[matCombo]['combos']
-            _.append(((np.array(theoryR[mat1][np.newaxis, np.newaxis, :]) * combo[mat2].data) - (
-                    np.array(theoryR[mat2][np.newaxis, np.newaxis, :]) * combo[mat1].data)) / (
-                                       combo[mat1].data - combo[mat2].data))
-            _[-1][np.isinf(_[-1])] = np.nan
-            nans = np.isnan(_[-1]).sum()
-            if nans > 0:
-                print(nans, " invalid values detected in " + str(matCombo) + ". Interpolating.")
-                _[-1] = _interpolateNans(_[-1])  # any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
+            _.append(generateOneRExtraCube(combo, theoryR, correctErrors=True))
         rExtra[matCombo]['mean'] = reduce(lambda x, y: x + y, rExtra[matCombo]['combos']) / len(rExtra[matCombo]['combos'])
     _ = [rExtra[matCombo]['mean'] for matCombo in allCombos.keys()]
     rExtra['mean'] = reduce(lambda x, y: x + y, _) / len(_)
-    sampleCube: ImCube = list(allCombos.values())[0][0].data1['cube']
-    erCube = ExtraReflectanceCube(rExtra, sampleCube.wavelengths, sampleCube.metadata)
-    return erCube, rExtra
+    plots = [PlotNd(rExtra[matCombo]['mean'], title=matCombo) for matCombo in allCombos.keys()] + [PlotNd(rExtra['mean'], title='Mean')]
+    sampleCube: ImCube = list(allCombos.values())[0][0].data1
+    erCube = ExtraReflectanceCube(rExtra['mean'], sampleCube.wavelengths, sampleCube.metadata)
+    return erCube, rExtra, plots
 
 
 def compareDates(cubes: pd.DataFrame) -> List[animation.ArtistAnimation]:
@@ -248,9 +304,11 @@ def compareDates(cubes: pd.DataFrame) -> List[animation.ArtistAnimation]:
     for mat in set(cubes['material']):
         c = cubes[cubes['material'] == mat]
         fig, ax = plt.subplots()
-        fig.suptitle(mat)
+        fig.suptitle(mat.name)
+        ax.set_xlabel("Wavelength (nm)")
+        ax.set_ylabel("Counts/ms")
         fig2, ax2 = plt.subplots()
-        fig2.suptitle(mat)
+        fig2.suptitle(mat.name)
         anims = []
         for i, row in c.iterrows():
             im = row['cube']
@@ -258,7 +316,7 @@ def compareDates(cubes: pd.DataFrame) -> List[animation.ArtistAnimation]:
             ax.plot(im.wavelengths, spectra, label=row['setting'])
             anims.append((ax2.imshow(im.data.mean(axis=2), animated=True,
                                      clim=[np.percentile(im.data, .5), np.percentile(im.data, 99.5)]),
-                          ax2.text(25, 25, row['setting'])))
+                          ax2.text(40, 40, row['setting'])))
         ax.legend()
         anis.append(animation.ArtistAnimation(fig2, anims, interval=1000, blit=False))
     return anis

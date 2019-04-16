@@ -15,11 +15,10 @@ class ExtraReflectanceCube(ICBase):
     _jsonSchema = {"$schema": "http://json-schema.org/schema#",
                    '$id': 'extraReflectionMetadataSchema',
                    'title': 'extraReflectionMetadataSchema',
-                   'required': ['system', 'description', 'time'],
+                   'required': ['system', 'time'],
                    'type': 'object',
                    'properties': {
                        'system': {'type': 'string'},
-                       'description': {'type': 'string'},
                        'time': {'type': 'string'}
                         }
                    }
@@ -27,11 +26,15 @@ class ExtraReflectanceCube(ICBase):
     DATASETTAG = 'extraReflection'
     MDTAG = 'metadata'
 
-    def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], metadata: dict):
+    def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], inheritedMetadata: dict):
+        """The metadata dictionary will often just be inherited information from one of the ImCubes that was used to create
+        this ER Cube. While this data can be useful it should be taken with a grain of salt. E.G. the metadata will contain
+        an `exposure` field. In reality this ER Cube will have been created from ImCubes at a variety of exposures."""
+        metadata = inheritedMetadata
+        metadata['time'] = datetime.now().strftime(dateTimeFormat) #Save the current time
         jsonschema.validate(instance=metadata, schema=self._jsonSchema)
         if data.max() > 1 or data.min() < 0:
             raise ValueError("Reflectance values must be between 0 and 1")
-        datetime.strftime(metadata['time'], dateTimeFormat)  # Make sure that the time can be parsed.
         super().__init__(data, wavelengths)
         self.metadata = metadata
 
