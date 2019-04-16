@@ -81,10 +81,7 @@ class ExtraReflectanceCube(ICBase):
             directory, fileName = os.path.split(path)
             name = fileName.split(cls.FILESUFFIX)[0]
             with h5py.File(os.path.join(directory, f'{name}{cls.FILESUFFIX}')) as hf:
-                try:
-                    valid = cls.MDTAG in hf[cls.DATASETTAG].attrs
-                except:
-                    valid = False
+                valid = cls.MDTAG in hf[cls.DATASETTAG].attrs
             return valid, directory, name
         else:
             return False, '', ''
