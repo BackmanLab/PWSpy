@@ -34,7 +34,7 @@ class ExtraReflectanceCube(ICBase):
         metadata['time'] = datetime.now().strftime(dateTimeFormat) #Save the current time
         jsonschema.validate(instance=metadata, schema=self._jsonSchema)
         if data.max() > 1 or data.min() < 0:
-            raise ValueError("Reflectance values must be between 0 and 1")
+            print("Warning!: Reflectance values must be between 0 and 1")
         super().__init__(data, wavelengths)
         self.metadata = metadata
 
