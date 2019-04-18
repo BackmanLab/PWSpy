@@ -115,13 +115,15 @@ class ICMetaData:
                 try:
                     metadata = json.loads(tif.pages[0].description)
                 except:
-                    metadata = json.loads(tif.imagej_metadata[
-                                              'Info'])  # The micromanager plugin saves metadata as the info property of the imagej imageplus object.
+                    metadata = json.loads(tif.imagej_metadata['Info'])  # The micromanager plugin saves metadata as the info property of the imagej imageplus object.
                 metadata['time'] = tif.pages[0].tags['DateTime'].value
+        # Get binning from the micromanager metadata
         binning = metadata['MicroManagerMetadata']['Binning']
         if isinstance(binning, dict):  # This is due to a property map change from beta to gamma
             binning = binning['scalar']
         metadata['binning'] = binning
+        # Get the pixel size from the micromanager metadata
+
         if 'waveLengths' in metadata:
             metadata['wavelengths'] = metadata['waveLengths']
             del metadata['waveLengths']

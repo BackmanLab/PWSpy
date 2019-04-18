@@ -236,12 +236,12 @@ def generateOneRExtraCube(combo: CubeCombo, theoryR: dict) -> Tuple[np.ndarray, 
     nominator = T1 * data2 - T2 * data1
     arr = nominator / denominator
     #calculate a confidence weighting for every point in the cube.
-    weight = (data1-data2)**4 / ((T1-T2)**2 * (data1**2 + data2**2))  # According to propagation of error if we assume that TheoryR has no error
+    # According to propagation of error if we assume that TheoryR has no error
     # and the data (camera counts) has a constant error of C then the error is C * sqrt((T1-T2)*data1^2 + (T2-T1)*data2^2) / (data1 - data2)^2
     # Since we are just looking for a relative measure of confidence we can ignore C. We use the `Variance weighted average'
     # (1/stddev^2)
     #Doing this calculation with noise in Theory instead of data gives us a variance of C^2 * (data1^2 + data2^2) / (data1 - data2)^2. this seems like a better equation to use.
-    #TODO this causes specks of dust to have higher weighting than their surroundings. Maybe the weight should just be a 1D spectrum based on the relationship between T1 and T2.
+    weight = (data1-data2)**2 / (data1**2 + data2**2)
     print("Done generating.")
     return arr, weight
 
@@ -251,7 +251,6 @@ def generateRExtraCubes(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict)
     """Expects a dict of lists CubeCombos, each keyed by a 2-tuple of Materials. TheoryR is the theoretical reflectance for each material.
     Returns extra reflectance for each material combo as well as the mean of all extra reflectances. This is what gets used. Ideally all the cubes will be very similar.
     Additionally returns a list of plot objects. references to these must be kept alive for the plots to be responsive."""
-    #TODO instead of doing a bunch of blurring to to get rid of invalid values. use a weighted average to just ignore unwanted spots.
     rExtra = {}
     for matCombo, combosList in allCombos.items():
         print("Calculating rExtra for: ", matCombo)
