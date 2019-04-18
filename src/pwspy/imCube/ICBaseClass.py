@@ -114,19 +114,25 @@ class ICBase:
     def __getitem__(self, slic):
         return self.data[slic]
 
-    def filterDust(self, kernelRadius: int) -> None:
+    def filterDust(self, kernelRadius: float, pixelSize: float) -> None:
+        """Both args are in microns. setting `pixelSize` to one will effectively mean that `kernelRadius` is in
+        units of pixels. This is useful if pixel size information is missing."""
         # TODO currently the radius is in units of pixels. change to be in units of microns. Need to make sure this information is saved with each acquisition.
-        def _gaussKernel(radius: int):
-            # A kernel that goes to 1 std. It would be better to go out to 2 or 3 std but then you need a larger kernel which greatly increases convolution time.
-            lenSide = 1 + 2 * radius
+        def _gaussKernel(stdDev: float, radius: int):
+            # A gaussian kernel that goes to `stdDev` at a radius of `radius` pixels.
+            lenSide = 1 + 2 * radius # The kernel is square. the length of a side will be the center pixel plus the radius twice.
             side = np.linspace(-1, 1, num=lenSide)
             X, Y = np.meshgrid(side, side)
             R = np.sqrt(X ** 2 + Y ** 2)
-            k = np.exp(-(R ** 2) / 2)
+            k = np.exp(-(R ** 2) / (2 * stdDev**2))
             k = k / k.sum()  # normalize so the total is 1.
             return k
 
-        kernel = _gaussKernel(kernelRadius)
+        kernelRadius = kernelRadius / pixelSize #convert from microns to pixels
+        cKernelRadius = np.ceil(kernelRadius) # Round up to nearest int. The kernel itself must be sized in units of int pixels
+        ratio = kernelRadius / cKernelRadius # The ratio between the desired radius and the rounded radius.
+        sigma = ratio # scaling sigma by the ratio ensures that regardless of the pixel dimensions of the kernell, it's sigma parameter will math the kernelRadius. If we wanted the kernel to go out to 2 sigma we would do sigma = 2*ratio
+        kernel = _gaussKernel(sigma, cKernelRadius)
         for i in range(self.data.shape[2]):
             m = self.data[:, :, i].mean()  # By subtracting the mean and then adding it after convolution we are effectively padding the convolution with the mean.
             self.data[:, :, i] = sps.convolve(self.data[:, :, i] - m, kernel, mode='same') + m

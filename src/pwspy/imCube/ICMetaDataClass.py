@@ -123,7 +123,7 @@ class ICMetaData:
             binning = binning['scalar']
         metadata['binning'] = binning
         # Get the pixel size from the micromanager metadata
-
+        metadata['pixelSizeUm'] = metadata['MicroManagerMetadata']['PixelSizeUm']
         if 'waveLengths' in metadata:
             metadata['wavelengths'] = metadata['waveLengths']
             del metadata['waveLengths']

@@ -130,7 +130,6 @@ def calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theory
 
 
 def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo], mask: Optional[Roi] = None, plotReflectionImages: bool = False) -> List[plt.Figure]:
-    #TODO add weighted average method here.
     settings = set(df['setting'])
 
     meanValues: Dict[str, Dict[Union[MCombo, str], Dict[str, Any]]] = {}
