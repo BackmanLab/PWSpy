@@ -5,7 +5,7 @@ Created on Sat Feb  9 16:47:22 2019
 @author: Nick
 """
 from __future__ import annotations
-from typing import Tuple, Union
+from typing import Tuple, Union, Iterable
 
 import h5py
 import numpy as np
@@ -141,15 +141,16 @@ class ICBase:
     def _indicesMatch(self, other: 'ICBase') -> bool:
         return self._index == other._index
 
-    def selIndex(self, start, stop) -> None:
+    def selIndex(self, start, stop) -> ICBase:
         wv = np.array(self.index)
         iStart = np.argmin(np.abs(wv - start))
         iStop = np.argmin(np.abs(wv - stop))
         iStop += 1  # include the end point
         if iStop >= len(wv):  # Include everything
             iStop = None
-        self.data = self.data[:, :, iStart:iStop]
-        self._index = self.index[iStart:iStop]
+        data = self.data[:, :, iStart:iStop]
+        index = self.index[iStart:iStop]
+        return ICBase(data, index)
         
     def _add(self, other: typing.Union['self.__class__', numbers.Real, np.ndarray]) -> 'self.__class__':
         if isinstance(other, self.__class__):

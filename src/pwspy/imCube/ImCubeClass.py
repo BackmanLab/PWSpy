@@ -194,9 +194,11 @@ class ImCube(ICBase, ICMetaData):
     def isExposureNormalized(self) -> bool:
         return self._hasBeenNormalized
 
-    def selIndex(self, start, stop):
-        super().selIndex(start, stop)
-        self.metadata["wavelengths"] = self.index
+    def selIndex(self, start, stop) -> 'ImCube':
+        ret = super().selIndex(start, stop)
+        md = self.metadata
+        md["wavelengths"] = self.index
+        return ImCube(ret.data, md)
 
     def isExtraReflectionSubtracted(self) -> bool:
         return self._hasExtraReflectionSubtracted

@@ -44,7 +44,7 @@ class LegacyAnalysis(AbstractAnalysis):
         interval = (max(cube.wavelengths) - min(cube.wavelengths)) / (len(cube.wavelengths) - 1)# Wavelength interval. We are assuming equally spaced wavelengths here
         cube.data = self._filterSignal(cube.data, 1/interval)
         # The rest of the analysis will be performed only on the selected wavelength range.
-        cube.selIndex(self.settings.wavelengthStart, self.settings.wavelengthStop)
+        cube = cube.selIndex(self.settings.wavelengthStart, self.settings.wavelengthStop)
         # Determine the mean-reflectance for each pixel in the cell.
         reflectance = cube.data.mean(axis=2)
         warns.append(warnings.checkMeanReflectance(reflectance))
