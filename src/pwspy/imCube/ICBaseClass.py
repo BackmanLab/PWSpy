@@ -219,7 +219,10 @@ class ICBase:
     def fromHdfDataset(cls, d: h5py.Dataset):
         return cls(*cls._decodeHdf(d))
 
-    def getTransform(self, other: Iterable['self.__class__'], debugPlots: bool = False) -> Iterable[Tuple[np.ndarray, float]]:
+    def getTransform(self, other: Iterable['self.__class__'], debugPlots: bool = False) -> Iterable[np.ndarray]:
+        """Given an array of other ICBase type objects this function will use OpenCV to calculate the transform from `self`
+        to each of the other objects. It will return a list of transforms. Each transform is a 3x3 array in the form returned
+        by opencv.findHomography."""
         def to8bit(arr: np.ndarray):
             m = np.percentile(arr, 0.1)
             arr -= m
@@ -229,7 +232,7 @@ class ICBase:
             arr[arr>255] = 255
             return arr.astype(np.uint8)
         midIdx = self.index[len(self.index)//2]
-        midPlane = self.selIndex(midIdx, midIdx).data.squeeze()
+        midPlane = to8bit(self.selIndex(midIdx, midIdx).data.squeeze())
 
         MIN_MATCH_COUNT = 10
         FLANN_INDEX_KDTREE = 0
@@ -239,6 +242,7 @@ class ICBase:
         sift = cv2.xfeatures2d.SIFT_create()
         kp1, des1 = sift.detectAndCompute(midPlane, None)
 
+        transforms = []
         for cube in other:
             midPlaneOther = to8bit(cube.selIndex(midIdx, midIdx).data.squeeze())
 
@@ -263,54 +267,25 @@ class ICBase:
                 dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
 
                 M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+                transforms.append(M)
                 matchesMask = mask.ravel().tolist()
-
-                h, w = midPlane.shape
-                pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
-                dst = cv2.perspectiveTransform(pts, M)
-
-                img2 = cv2.polylines(midPlaneOther, [np.int32(dst)], True, 255, 3, cv2.LINE_AA)
 
             else:
                 print("Not enough matches are found - %d/%d" % (len(good), MIN_MATCH_COUNT))
                 matchesMask = None
 
-            draw_params = dict(matchColor=(0, 255, 0),  # draw matches in green color
-                               singlePointColor=None,
-                               matchesMask=matchesMask,  # draw only inliers
-                               flags=2)
+            if debugPlots:
+                h, w = midPlane.shape
+                pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
+                dst = cv2.perspectiveTransform(pts, M)
+                draw_params = dict(matchColor=(0, 255, 0),  # draw matches in green color
+                                   singlePointColor=None,
+                                   matchesMask=matchesMask,  # draw only inliers
+                                   flags=2)
+                img2 = cv2.polylines(midPlaneOther, [np.int32(dst)], True, 255, 3, cv2.LINE_AA)
+                img3 = cv2.drawMatches(midPlane, kp1, img2, kp2, good, None, **draw_params)
+                plt.figure()
+                plt.imshow(img3, 'gray')
+                plt.show()
 
-            img3 = cv2.drawMatches(midPlane, kp1, img2, kp2, good, None, **draw_params)
-
-            plt.figure()
-            plt.imshow(img3, 'gray')
-            plt.show()
-
-        # regions = {}
-        # for i in range(2): #TODO allow selection of more than two points. do this once better interactive roi drawing is in.
-        #     regions[i]={}
-        #     print("Template")
-        #     regions[i]['kernel'] = midPlane.selectRectangleROI()[1] #save the slice that selects the user-selected range.
-        #     print("Analysis")
-        #     regions[i]['analysis'] = midPlane.selectRectangleROI()[1]
-        # strengths = [[], []]
-        # matches = [[], []]
-        # for i, region in regions.items():
-        #     ref = np.squeeze(midPlane[(*region['kernel'],)].data)
-        #     for cube in other:
-        #         midPlaneOther = cube.selIndex(midIdx, midIdx).data.squeeze()
-        #         an = midPlaneOther[(*region['analysis'],)]
-        #         p = patches.Rectangle((region['kernel'][1].start, region['kernel'][0].start),
-        #                           region['kernel'][1].stop - region['kernel'][1].start,
-        #                           region['kernel'][0].stop - region['kernel'][0].start, fill=False, color='y')
-        #         result = match_template(an, ref)
-        #
-        #         match = np.unravel_index(np.argmax(result), result.shape)
-        #         strengths[i].append(np.max(result))
-        #         matches[i].append(match)
-        #         if debugPlots:
-        #             fig, axs = plt.subplots(1, 2)
-        #             axs[0].imshow(midPlaneOther)
-        #             axs[0].add_patch(p)
-        #             axs[1].imshow(result)
-        # return matches, strengths
+        return transforms
