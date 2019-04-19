@@ -155,6 +155,9 @@ class ICMetaData:
         else:
             return Roi.loadAny(self.filePath, name, num)
 
+    def saveRoi(self, roi: Roi) -> None:
+        roi.toHDF(self.filePath)
+
     def getAnalyses(self):
         assert self.filePath is not None
         return self.getAnalysesAtPath(self.filePath)
