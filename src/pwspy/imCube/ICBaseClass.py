@@ -228,7 +228,7 @@ class ICBase:
 
 
         # Initiate SIFT detector
-        sift = cv2.SIFT()
+        sift = cv2.xfeatures2d.SIFT_create()
         kp1, des1 = sift.detectAndCompute(midPlane, None)
 
         for cube in other:
