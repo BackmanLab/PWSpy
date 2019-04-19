@@ -7,6 +7,7 @@ Created on Sat Feb  9 15:57:52 2019
 import json
 import os
 import re
+import cv2
 
 import typing
 import dataclasses
@@ -108,4 +109,8 @@ class Roi:
                     ret.append((name, num, RoiFileFormats.MAT))
         return ret
 
-
+    def transform(self, matrix: np.ndarray) -> 'Roi':
+        """return a copy of this Roi that has been transformed by a perspective transform matrix like the one returned by
+        opencv.findHomography. This can be obtained using ICBase's getTransform method."""
+        out = cv2.warpPerspective(self.data.astype(np.uint8), matrix).astype(np.bool)
+        return Roi(self.name, self.number, out)
