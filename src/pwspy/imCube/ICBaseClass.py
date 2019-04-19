@@ -220,8 +220,9 @@ class ICBase:
         return cls(*cls._decodeHdf(d))
 
     def getTransform(self, other: Iterable['self.__class__'], mask:np.ndarray = None, debugPlots: bool = False) -> Iterable[np.ndarray]:
-        """Given an array of other ICBase type objects this function will use OpenCV to calculate the transform from `self`
-        to each of the other objects. It will return a list of transforms. Each transform is a 3x3 array in the form returned
+        """Given an array of other ICBase type objects this function will use OpenCV to calculate the transform from
+        each of the other objects to self. The transforms can be inverted using numpy.linalg.inv().
+        It will return a list of transforms. Each transform is a 3x3 array in the form returned
         by opencv.findHomography(). a boolean mask can be used to select which areas will be searched for features to be used
         in calculating the transform
         This code is basically a copy of this example, it can probably be improved upon:
