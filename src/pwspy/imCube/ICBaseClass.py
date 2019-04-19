@@ -224,7 +224,7 @@ class ICBase:
         each of the other objects to self. The transforms can be inverted using numpy.linalg.inv().
         It will return a list of transforms. Each transform is a 3x3 array in the form returned
         by opencv.findHomography(). a boolean mask can be used to select which areas will be searched for features to be used
-        in calculating the transform
+        in calculating the transform. This seems to work much better for normalized images.
         This code is basically a copy of this example, it can probably be improved upon:
         https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_feature2d/py_feature_homography/py_feature_homography.html"""
         #TODO change from homography to affine transform. should be more efficient.
@@ -237,7 +237,8 @@ class ICBase:
             arr[arr>255] = 255
             return arr.astype(np.uint8)
         midIdx = self.index[len(self.index)//2]
-        midPlane = to8bit(self.selIndex(midIdx, midIdx).data.squeeze())
+        refImg = to8bit(self.data.mean(axis=2))
+
 
         MIN_MATCH_COUNT = 10
         FLANN_INDEX_KDTREE = 0
@@ -246,14 +247,14 @@ class ICBase:
         # Initiate SIFT detector
         sift = cv2.xfeatures2d.SIFT_create()
         mask = mask.astype(np.uint8)
-        kp1, des1 = sift.detectAndCompute(midPlane, mask=mask)
+        kp1, des1 = sift.detectAndCompute(refImg, mask=mask)
 
         transforms = []
         for cube in other:
-            midPlaneOther = to8bit(cube.selIndex(midIdx, midIdx).data.squeeze())
+            otherImg = to8bit(cube.data.mean(axis=2))
 
             # find the keypoints and descriptors with SIFT
-            kp2, des2 = sift.detectAndCompute(midPlaneOther, mask=mask)
+            kp2, des2 = sift.detectAndCompute(otherImg, mask=mask)
 
             index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
             search_params = dict(checks=50)
@@ -281,15 +282,15 @@ class ICBase:
                 matchesMask = None
 
             if debugPlots:
-                h, w = midPlane.shape
+                h, w = refImg.shape
                 pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
                 dst = cv2.perspectiveTransform(pts, M)
                 draw_params = dict(matchColor=(0, 255, 0),  # draw matches in green color
                                    singlePointColor=None,
                                    matchesMask=matchesMask,  # draw only inliers
                                    flags=2)
-                img2 = cv2.polylines(midPlaneOther, [np.int32(dst)], True, 255, 3, cv2.LINE_AA)
-                img3 = cv2.drawMatches(midPlane, kp1, img2, kp2, good, None, **draw_params)
+                img2 = cv2.polylines(otherImg, [np.int32(dst)], True, 255, 3, cv2.LINE_AA)
+                img3 = cv2.drawMatches(refImg, kp1, img2, kp2, good, None, **draw_params)
                 plt.figure()
                 plt.imshow(img3, 'gray')
                 plt.show()
