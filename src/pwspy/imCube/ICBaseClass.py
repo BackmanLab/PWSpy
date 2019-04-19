@@ -219,11 +219,14 @@ class ICBase:
     def fromHdfDataset(cls, d: h5py.Dataset):
         return cls(*cls._decodeHdf(d))
 
-    def getTransform(self, other: Iterable['self.__class__'], debugPlots: bool = False) -> Iterable[np.ndarray]:
+    def getTransform(self, other: Iterable['self.__class__'], mask:np.ndarray = None, debugPlots: bool = False) -> Iterable[np.ndarray]:
         """Given an array of other ICBase type objects this function will use OpenCV to calculate the transform from `self`
         to each of the other objects. It will return a list of transforms. Each transform is a 3x3 array in the form returned
-        by opencv.findHomography. This code is basically a copy of this example, it can probably be improved upon:
+        by opencv.findHomography(). a boolean mask can be used to select which areas will be searched for features to be used
+        in calculating the transform
+        This code is basically a copy of this example, it can probably be improved upon:
         https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_feature2d/py_feature_homography/py_feature_homography.html"""
+        #TODO change from homography to affine transform. should be more efficient.
         def to8bit(arr: np.ndarray):
             m = np.percentile(arr, 0.1)
             arr -= m
@@ -241,14 +244,15 @@ class ICBase:
 
         # Initiate SIFT detector
         sift = cv2.xfeatures2d.SIFT_create()
-        kp1, des1 = sift.detectAndCompute(midPlane, None)
+        mask = mask.astype(np.uint8)
+        kp1, des1 = sift.detectAndCompute(midPlane, mask=mask)
 
         transforms = []
         for cube in other:
             midPlaneOther = to8bit(cube.selIndex(midIdx, midIdx).data.squeeze())
 
             # find the keypoints and descriptors with SIFT
-            kp2, des2 = sift.detectAndCompute(midPlaneOther, None)
+            kp2, des2 = sift.detectAndCompute(midPlaneOther, mask=mask)
 
             index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
             search_params = dict(checks=50)
