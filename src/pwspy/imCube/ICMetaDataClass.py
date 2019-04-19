@@ -117,6 +117,9 @@ class ICMetaData:
                 except:
                     metadata = json.loads(tif.imagej_metadata['Info'])  # The micromanager plugin saves metadata as the info property of the imagej imageplus object.
                 metadata['time'] = tif.pages[0].tags['DateTime'].value
+        #For a while the micromanager metadata was getting saved weird this fixes it.
+        if 'major_version' in metadata['MicroManagerMetadata']:
+            metadata['MicroManagerMetadata'] = metadata['MicroManagerMetadata']['map']
         # Get binning from the micromanager metadata
         binning = metadata['MicroManagerMetadata']['Binning']
         if isinstance(binning, dict):  # This is due to a property map change from beta to gamma
