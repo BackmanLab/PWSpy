@@ -17,7 +17,7 @@ import typing, numbers
 
 from pwspy.imCube.otherClasses import Roi
 from skimage.feature import match_template
-
+from matplotlib import patches
 
 class ICBase:
     """A class to handle the data operations common to PWS related `image cubes`. Does not contain any file specific
@@ -30,8 +30,8 @@ class ICBase:
         assert isinstance(data, np.ndarray)
         self.data = data.astype(dtype)
         self._index = index
-        if self.data.shape[2] != len(self._index):
-            raise ValueError("The length of the index list doesn't match the index axis of the data array")
+        if self.data.shape[2] != len(self.index):
+            raise ValueError(f"The length of the index list doesn't match the index axis of the data array. Got {len(self.index)}, expected {self.data.shape[2]}.")
 
     @property
     def index(self) -> Tuple[float, ...]:
@@ -219,7 +219,7 @@ class ICBase:
     def fromHdfDataset(cls, d: h5py.Dataset):
         return cls(*cls._decodeHdf(d))
 
-    def getTransform(self, other: Iterable['self.__class__']) -> Iterable[Tuple[np.ndarray, float]]:
+    def getTransform(self, other: Iterable['self.__class__'], debugPlots: bool = False) -> Iterable[Tuple[np.ndarray, float]]:
         midIdx = self.index[len(self.index)//2]
         midPlane = self.selIndex(midIdx, midIdx)
 
@@ -233,12 +233,21 @@ class ICBase:
         strengths = [[], []]
         matches = [[], []]
         for i, region in regions.items():
-            ref = midPlane.data[(*region['kernel'],)]
+            ref = np.squeeze(midPlane[(*region['kernel'],)].data)
             for cube in other:
-                midPlaneOther = cube.selIndex(midIdx, midIdx)
+                midPlaneOther = cube.selIndex(midIdx, midIdx).data.squeeze()
                 an = midPlaneOther[(*region['analysis'],)]
+                p = patches.Rectangle((region['kernel'][1].start, region['kernel'][0].start),
+                                  region['kernel'][1].stop - region['kernel'][1].start,
+                                  region['kernel'][0].stop - region['kernel'][0].start, fill=False, color='y')
                 result = match_template(an, ref)
+
                 match = np.unravel_index(np.argmax(result), result.shape)
                 strengths[i].append(np.max(result))
                 matches[i].append(match)
+                if debugPlots:
+                    fig, axs = plt.subplots(1, 2)
+                    axs[0].imshow(midPlaneOther)
+                    axs[0].add_patch(p)
+                    axs[1].imshow(result)
         return matches, strengths
