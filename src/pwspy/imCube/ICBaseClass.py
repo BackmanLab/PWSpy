@@ -220,6 +220,14 @@ class ICBase:
         return cls(*cls._decodeHdf(d))
 
     def getTransform(self, other: Iterable['self.__class__'], debugPlots: bool = False) -> Iterable[Tuple[np.ndarray, float]]:
+        def to8bit(arr: np.ndarray):
+            m = np.percentile(arr, 0.1)
+            arr -= m
+            M = np.percentile(arr, 99.9)
+            arr = arr / M * 255
+            arr[arr<0] = 0
+            arr[arr>255] = 255
+            return arr.astype(np.uint8)
         midIdx = self.index[len(self.index)//2]
         midPlane = self.selIndex(midIdx, midIdx).data.squeeze()
 
@@ -232,7 +240,7 @@ class ICBase:
         kp1, des1 = sift.detectAndCompute(midPlane, None)
 
         for cube in other:
-            midPlaneOther = cube.selIndex(midIdx, midIdx).data.squeeze()
+            midPlaneOther = to8bit(cube.selIndex(midIdx, midIdx).data.squeeze())
 
             # find the keypoints and descriptors with SIFT
             kp2, des2 = sift.detectAndCompute(midPlaneOther, None)
