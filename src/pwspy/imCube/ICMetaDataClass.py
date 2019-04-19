@@ -49,7 +49,7 @@ class ICMetaData:
                    }
 
     def __init__(self, metadata: dict, filePath: str = None, fileFormat: ICFileFormats = None):
-        jsonschema.validate(instance=metadata, schema=self._jsonSchema)
+        jsonschema.validate(instance=metadata, schema=self._jsonSchema, types={'array': (list, tuple)})
         self.metadata: dict = metadata
         self.filePath: Optional[str] = filePath
         self.fileFormat: ICFileFormats = fileFormat
