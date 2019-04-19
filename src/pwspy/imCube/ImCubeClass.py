@@ -197,7 +197,7 @@ class ImCube(ICBase, ICMetaData):
     def selIndex(self, start, stop) -> 'ImCube':
         ret = super().selIndex(start, stop)
         md = self.metadata
-        md["wavelengths"] = self.index
+        md["wavelengths"] = ret.index
         return ImCube(ret.data, md)
 
     def isExtraReflectionSubtracted(self) -> bool:
