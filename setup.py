@@ -22,7 +22,7 @@ setup(name='pwspy',
                         'jsonschema',
                         'google-api-python-client',
                         'google-auth-httplib2',
-                        'google-auth-oauthlib'],
+                        'google-auth-oauthlib', 'scikit-image'],
       package_dir={'': 'src'},
       package_data={'': ['*.csv', '*.png', '*.svg']},
       packages=find_packages('src'))

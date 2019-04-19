@@ -16,6 +16,7 @@ from matplotlib import path
 import typing, numbers
 
 from pwspy.imCube.otherClasses import Roi
+from skimage.feature import match_template
 
 
 class ICBase:
@@ -216,3 +217,27 @@ class ICBase:
     @classmethod
     def fromHdfDataset(cls, d: h5py.Dataset):
         return cls(*cls._decodeHdf(d))
+
+    def getTransform(self, other: Iterable['self.__class__']) -> Iterable[Tuple[np.ndarray, float]]:
+        midIdx = self.index[len(self.index)//2]
+        midPlane = self.selIndex(midIdx, midIdx)
+
+        regions = {}
+        for i in range(2): #TODO allow selection of more than two points. do this once better interactive roi drawing is in.
+            regions[i]={}
+            print("Template")
+            regions[i]['kernel'] = midPlane.selectRectangleROI()[1] #save the slice that selects the user-selected range.
+            print("Analysis")
+            regions[i]['analysis'] = midPlane.selectRectangleROI()[1]
+        strengths = [[], []]
+        matches = [[], []]
+        for i, region in regions.items():
+            ref = midPlane.data[(*region['kernel'],)]
+            for cube in other:
+                midPlaneOther = cube.selIndex(midIdx, midIdx)
+                an = midPlaneOther[(*region['analysis'],)]
+                result = match_template(an, ref)
+                match = np.unravel_index(np.argmax(result), result.shape)
+                strengths[i].append(np.max(result))
+                matches[i].append(match)
+        return matches, strengths
