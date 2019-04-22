@@ -23,7 +23,7 @@ def _loadIms(qout, qin, lock):
         print('starting', row['cube'])
         im = ImCube.loadAny(row['cube'], lock=lock)
         row['cube'] = im
-        qout.put(row)
+        qout.put((index, row))
         perc = psutil.virtual_memory().percent
         print("Memory Usage: ", perc, '%')
         if perc >= 95:
@@ -31,14 +31,15 @@ def _loadIms(qout, qin, lock):
             return
 
 def _procWrap(procFunc):
-    def func(row, procFuncArgs=None):
+    def func(fromQueue, procFuncArgs=None):
+        index, row = fromQueue
         im = row['cube']
         if procFuncArgs:
             ret = procFunc(im, *procFuncArgs)
         else:
             ret = procFunc(im)
         row['cube'] = ret
-        return row
+        return index, row
     return func
 
 
@@ -118,14 +119,14 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
         lock = th.Lock()
         threads = [th.Thread(target=_loadIms, args=[qout, qin, lock]) for i in range(numThreads)]
         [thread.start() for thread in threads]
-        print('threads started')
         if processorFunc is not None:
             cubes = [_procWrap(processorFunc)(qout.get(), *procArgs) for i in range(len(fileFrame))]
         else:
-            cubes = [qout.get() for i in range(len(fileFrame))]
+            cubes = [qout.get() for i in range(len(fileFrame))] # A list of tuples of index, dataframe row
         [thread.join() for thread in threads]
+        indices, cubes = zip(*sorted(cubes)) #This ensures that the return value is in the same order as the input array.
     print(f"Loading took {time() - sTime} seconds")
-    ret = pd.DataFrame(cubes)
+    ret = pd.DataFrame(list(cubes))
     if origClass is None:
         return ret
     else:
