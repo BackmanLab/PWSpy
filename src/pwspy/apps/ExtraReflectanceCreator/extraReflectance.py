@@ -48,6 +48,7 @@ class ComboSummary:
     rExtra: np.ndarray
     I0: np.ndarray
     cFactor: float
+    weight: np.ndarray
 
 
 def _interpolateNans(arr):
@@ -107,25 +108,38 @@ def calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theory
     # the raw data, `allCombos`
     allCombos = {}
     meanValues = {}
-    params = ['rExtra', 'I0', 'mat1Spectra', 'mat2Spectra', 'cFactor']
+    params = ['rExtra', 'I0', 'mat1Spectra', 'mat2Spectra']
     for matCombo in cubeCombos.keys():
         allCombos[matCombo] = []
         for combo in cubeCombos[matCombo]:
             mat1, mat2 = combo.keys()
             c = ComboSummary(mat1Spectra=combo[mat1].getMeanSpectra(mask)[0],
                              mat2Spectra=combo[mat2].getMeanSpectra(mask)[0],
+                             weight=None,
                              rExtra=None,
                              I0=None,
                              cFactor=None,
                              combo=combo)
+            c.weight = (c.mat1Spectra - c.mat2Spectra) ** 2 / (c.mat1Spectra ** 2 + c.mat2Spectra ** 2)
             c.rExtra = ((theoryR[mat1] * c.mat2Spectra) - (theoryR[mat2] * c.mat1Spectra)) / (c.mat1Spectra - c.mat2Spectra)
             c.I0 = c.mat2Spectra / (theoryR[mat2] + c.rExtra)
             c.cFactor = (c.rExtra.mean() + theoryR[Material.Water].mean()) / theoryR[Material.Water].mean()
             allCombos[matCombo].append(c)
         meanValues[matCombo] = {
-                param: np.array(list(
-                        [getattr(combo, param) for combo in allCombos[matCombo]])).mean(axis=0) for param in params}
-    meanValues['mean'] = {param: np.array(list([meanValues[matCombo][param] for matCombo in cubeCombos.keys()])).mean(axis=0) for param in params}
+                param: np.average(np.array(list(
+                                    [getattr(combo, param) for combo in allCombos[matCombo]])),
+                                axis=0,
+                                weights=np.array([combo.weight for combo in allCombos[matCombo]])) for param in params}
+        meanValues[matCombo]['cFactor'] = np.average(np.array([combo.cFactor for combo in allCombos[matCombo]]),
+                                                     axis=0,
+                                                     weights=np.array([combo.weight.mean() for combo in allCombos[matCombo]]))
+        meanValues[matCombo]['weight'] = np.mean(np.array([combo.weight for combo in allCombos[matCombo]]))
+    meanValues['mean'] = {param: np.average(np.array(list([meanValues[matCombo][param] for matCombo in cubeCombos.keys()])),
+                                            axis=0,
+                                            weights=np.array([meanValues[matCombo]['weight'] for matCombo in cubeCombos.keys()])) for param in params}
+    meanValues['mean']['cFactor'] = np.average(np.array([meanValues[matCombo]['cFactor'] for matCombo in cubeCombos.keys()]),
+                                                 axis=0,
+                                                 weights=np.array([meanValues[matCombo]['weight'].mean() for matCombo in cubeCombos.keys()]))
     return meanValues, allCombos
 
 
@@ -155,8 +169,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo],
 
     fig2, ratioAxes = plt.subplots(nrows=len(matCombos))  # for correction factor
     figs.append(fig2)
-    if not isinstance(ratioAxes, np.ndarray): ratioAxes = np.array(ratioAxes).reshape(
-        1)  # If there is only one axis we still want it to be a list for the rest of the code
+    if not isinstance(ratioAxes, np.ndarray): ratioAxes = np.array(ratioAxes).reshape(1)  # If there is only one axis we still want it to be a list for the rest of the code
     ratioAxes = dict(zip(matCombos, ratioAxes))
     for combo in matCombos:
         ratioAxes[combo].set_title(f'{combo[0].name}/{combo[1].name} reflection ratio')
