@@ -228,7 +228,6 @@ class ICBase:
         in calculating the transform. This seems to work much better for normalized images.
         This code is basically a copy of this example, it can probably be improved upon:
         https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_feature2d/py_feature_homography/py_feature_homography.html"""
-        #TODO change from homography to affine transform. should be more efficient.
         def to8bit(arr: np.ndarray):
             m = np.percentile(arr, 0.1)
             arr -= m
