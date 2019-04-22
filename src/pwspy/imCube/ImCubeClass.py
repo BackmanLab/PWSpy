@@ -177,6 +177,14 @@ class ImCube(ICBase, ICMetaData):
         return
 
     def normalizeByReference(self, reference: 'ImCube'):
+        if not self._cameraCorrected:
+            print("Warning: This ImCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
+        if not self._hasBeenNormalized:
+            print("Warning: This ImCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
+        if not reference._cameraCorrected:
+            print("Warning: The reference ImCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
+        if not reference._hasBeenNormalized:
+            print("Warning: The reference ImCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
         self.data = self.data / reference.data
 
     def subtractExtraReflection(self, extraReflection: np.ndarray):
