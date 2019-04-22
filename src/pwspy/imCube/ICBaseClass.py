@@ -18,7 +18,6 @@ from matplotlib import animation
 
 from pwspy.imCube.otherClasses import Roi
 from matplotlib import patches
-import cv2
 
 class ICBase:
     """A class to handle the data operations common to PWS related `image cubes`. Does not contain any file specific
@@ -119,7 +118,6 @@ class ICBase:
     def filterDust(self, kernelRadius: float, pixelSize: float) -> None:
         """Both args are in microns. setting `pixelSize` to one will effectively mean that `kernelRadius` is in
         units of pixels. This is useful if pixel size information is missing."""
-        # TODO currently the radius is in units of pixels. change to be in units of microns. Need to make sure this information is saved with each acquisition.
         def _gaussKernel(stdDev: float, radius: int):
             # A gaussian kernel that goes to `stdDev` at a radius of `radius` pixels.
             lenSide = 1 + 2 * radius # The kernel is square. the length of a side will be the center pixel plus the radius twice.
@@ -228,6 +226,7 @@ class ICBase:
         in calculating the transform. This seems to work much better for normalized images.
         This code is basically a copy of this example, it can probably be improved upon:
         https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_feature2d/py_feature_homography/py_feature_homography.html"""
+        import cv2
         def to8bit(arr: np.ndarray):
             m = np.percentile(arr, 0.1)
             arr -= m

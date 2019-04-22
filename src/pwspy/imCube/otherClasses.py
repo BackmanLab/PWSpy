@@ -7,7 +7,6 @@ Created on Sat Feb  9 15:57:52 2019
 import json
 import os
 import re
-import cv2
 
 import typing
 import dataclasses
@@ -119,6 +118,7 @@ class Roi:
     def transform(self, matrix: np.ndarray) -> 'Roi':
         """return a copy of this Roi that has been transformed by an affine transform matrix like the one returned by
         opencv.estimateRigidTransform. This can be obtained using ICBase's getTransform method."""
+        import cv2
         out = cv2.warpAffine(self.data.astype(np.uint8), matrix, self.data.shape).astype(np.bool)
         return Roi(self.name, self.number, out)
 
