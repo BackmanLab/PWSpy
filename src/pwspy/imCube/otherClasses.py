@@ -14,6 +14,7 @@ import dataclasses
 from enum import Enum, auto
 from glob import glob
 from typing import List, Tuple
+import matplotlib.pyplot as plt
 
 import h5py
 import numpy as np
@@ -118,5 +119,11 @@ class Roi:
     def transform(self, matrix: np.ndarray) -> 'Roi':
         """return a copy of this Roi that has been transformed by a perspective transform matrix like the one returned by
         opencv.findHomography. This can be obtained using ICBase's getTransform method."""
-        out = cv2.warpPerspective(self.data.astype(np.uint8), matrix).astype(np.bool)
+        out = cv2.warpPerspective(self.data.astype(np.uint8), matrix, self.data.shape).astype(np.bool)
         return Roi(self.name, self.number, out)
+
+    def getImage(self, ax: plt.Axes):
+        arr = self.data.astype(np.uint8)*255
+        arr = np.ma.masked_array(arr, arr==0)
+        im = ax.imshow(arr, alpha=0.5, clim=[0, 400], cmap='Reds')
+        return im
