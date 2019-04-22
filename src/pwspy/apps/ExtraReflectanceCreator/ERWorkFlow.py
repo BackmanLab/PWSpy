@@ -47,7 +47,11 @@ def scanDirectory(directory: str) -> Dict[str, Any]:
 def _processIm(im: ImCube, camCorrection: CameraCorrection, binning: int) -> ImCube:
     im.correctCameraEffects(camCorrection, binning=binning)
     im.normalizeByExposure()
-    im.filterDust(6)  # TODO change units
+    try:
+        im.filterDust(0.8)  # in microns
+    except ValueError:
+        print("No pixel size metadata found. assuming a gaussian filter radius of 6 pixels = 1 sigma.")
+        im.filterDust(6, pixelSize=1) #Do the filtering in units of pixels if no auto pixelsize was found
     return im
 
 class ERWorkFlow:

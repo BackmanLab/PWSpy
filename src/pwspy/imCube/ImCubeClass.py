@@ -239,10 +239,9 @@ class ImCube(ICBase, ICMetaData):
 
     def filterDust(self, kernelRadius: float, pixelSize: float = None) -> None:
         if pixelSize is None:
-            try:
-                pixelSize = self.metadata['pixelSizeUm']
-            except:
-                raise KeyError("ImCube Metadata does not have a `pixelSizeUm` item. please manually specify pixel size. use pixelSize=1 to make `kernelRadius in units of pixels.")
+            pixelSize = self.metadata['pixelSizeUm']
+            if pixelSize is None:
+                raise ValueError("ImCube Metadata does not have a `pixelSizeUm` saved. please manually specify pixel size. use pixelSize=1 to make `kernelRadius in units of pixels.")
         super().filterDust(kernelRadius, pixelSize)
 
 

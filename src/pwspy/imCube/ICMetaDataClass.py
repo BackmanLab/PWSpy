@@ -37,15 +37,17 @@ class ICMetaData:
                    '$id': 'ICMetadataSchema',
                    'title': 'ICMetadataSchema',
                    'type': 'object',
-                   'required': ['system', 'time', 'exposure', 'wavelengths'],
+                   'required': ['system', 'time', 'exposure', 'wavelengths', 'pixelSizeUm', 'binning'],
                    'properties': {
                        'system': {'type': 'string'},
                        'time': {'type': 'string'},
                        'exposure': {'type': 'number'},
                        'wavelengths': {'type': 'array',
                                        'items': {'type': 'number'}
-                                       }
-                        }
+                                       },
+                       'pixelSizeUm': {'type': ['number', 'null']},
+                       'binning': {'type': ['integer', 'null']}
+                       }
                    }
 
     def __init__(self, metadata: dict, filePath: str = None, fileFormat: ICFileFormats = None):
@@ -88,7 +90,8 @@ class ICMetaData:
                   'exposure': info2[3], 'time': '{:d}-{:d}-{:d} {:d}:{:d}:{:d}'.format(
                     *[int(i) for i in [info3[8], info3[7], info3[6], info3[9], info3[10], info3[11]]]),
                   'systemId': info3[0], 'system': str(info3[0]),
-                  'imgHeight': int(info3[2]), 'imgWidth': int(info3[3]), 'wavelengths': wv}
+                  'imgHeight': int(info3[2]), 'imgWidth': int(info3[3]), 'wavelengths': wv,
+                  'binning': None, 'pixelSizeUm': None}
         return cls(md, filePath=directory, fileFormat=ICFileFormats.RawBinary)
 
     @classmethod
@@ -97,7 +100,8 @@ class ICMetaData:
         exp = cubeParams['exposure'] #TODO we don't support adaptive exposure.
         md = {'startWv': lam['start'].value[0][0], 'stepWv': lam['step'].value[0][0], 'stopWv': lam['stop'].value[0][0],
               'exposure': exp['base'].value[0][0], 'time': datetime.strptime(np.string_(cubeParams['metadata']['date'].value.astype(np.uint8)).decode(), '%Y%m%dT%H%M%S').strftime(dateTimeFormat),
-              'system': np.string_(cubeParams['metadata']['hardware']['system']['id'].value.astype(np.uint8)).decode(), 'wavelengths': list(lam['sequence'].value[0])}
+              'system': np.string_(cubeParams['metadata']['hardware']['system']['id'].value.astype(np.uint8)).decode(), 'wavelengths': list(lam['sequence'].value[0]),
+              'binning': None, 'pixelSizeUm': None}
         return cls(md, filePath=None, fileFormat=ICFileFormats.NanoMat)
 
     @classmethod
@@ -126,7 +130,8 @@ class ICMetaData:
             binning = binning['scalar']
         metadata['binning'] = binning
         # Get the pixel size from the micromanager metadata
-        metadata['pixelSizeUm'] = metadata['MicroManagerMetadata']['PixelSizeUm']
+        metadata['pixelSizeUm'] = metadata['MicroManagerMetadata']['PixelSizeUm']['scalar']
+        if metadata['pixelSizeUm'] == 0: metadata['pixelSizeUm'] = None
         if 'waveLengths' in metadata:
             metadata['wavelengths'] = metadata['waveLengths']
             del metadata['waveLengths']
