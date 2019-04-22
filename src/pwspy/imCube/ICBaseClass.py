@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from matplotlib import widgets
 from matplotlib import path
 import typing, numbers
+from matplotlib import animation
 
 from pwspy.imCube.otherClasses import Roi
 from matplotlib import patches
@@ -236,13 +237,9 @@ class ICBase:
             arr[arr<0] = 0
             arr[arr>255] = 255
             return arr.astype(np.uint8)
-        midIdx = self.index[len(self.index)//2]
         refImg = to8bit(self.data.mean(axis=2))
-
-
         MIN_MATCH_COUNT = 10
         FLANN_INDEX_KDTREE = 0
-
 
         # Initiate SIFT detector
         sift = cv2.xfeatures2d.SIFT_create()
@@ -250,38 +247,33 @@ class ICBase:
         kp1, des1 = sift.detectAndCompute(refImg, mask=mask)
 
         transforms = []
+        anFig, anAx = plt.subplots()
+        anims = []
         for cube in other:
             otherImg = to8bit(cube.data.mean(axis=2))
-
             # find the keypoints and descriptors with SIFT
             kp2, des2 = sift.detectAndCompute(otherImg, mask=mask)
-
             index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
             search_params = dict(checks=50)
-
             flann = cv2.FlannBasedMatcher(index_params, search_params)
-
             matches = flann.knnMatch(des1, des2, k=2)
-
             # store all the good matches as per Lowe's ratio test.
             good = []
             for m, n in matches:
                 if m.distance < 0.7 * n.distance:
                     good.append(m)
-
             if len(good) > MIN_MATCH_COUNT:
                 src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
                 dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
-
                 M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
                 transforms.append(M)
                 matchesMask = mask.ravel().tolist()
-
             else:
                 print("Not enough matches are found - %d/%d" % (len(good), MIN_MATCH_COUNT))
                 matchesMask = None
-
             if debugPlots:
+                plt.figure()
+                anims.append([anAx.imshow(cv2.warpPerspective(otherImg, np.linalg.inv(M), otherImg.shape), 'gray')])
                 h, w = refImg.shape
                 pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
                 dst = cv2.perspectiveTransform(pts, M)
@@ -291,8 +283,9 @@ class ICBase:
                                    flags=2)
                 img2 = cv2.polylines(otherImg, [np.int32(dst)], True, 255, 3, cv2.LINE_AA)
                 img3 = cv2.drawMatches(refImg, kp1, img2, kp2, good, None, **draw_params)
-                plt.figure()
                 plt.imshow(img3, 'gray')
                 plt.show()
-
-        return transforms
+        if debugPlots:
+            anFig.suptitle("If transforms worked cells should not appear to move.")
+            an = animation.ArtistAnimation(anFig, anims)
+        return transforms, an
