@@ -100,7 +100,7 @@ class Roi:
         for fformat, fileNames in files.items():
             if fformat == RoiFileFormats.HDF:
                 for i in fileNames:
-                    name = i.split('roi_')[0][:-2]
+                    name = i.split('roi_')[-1][:-3]
                     with h5py.File(i) as hf:
                         for dset in hf.keys():
                             try:
