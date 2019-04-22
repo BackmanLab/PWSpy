@@ -222,9 +222,9 @@ class ICBase:
 
     def getTransform(self, other: Iterable['self.__class__'], mask:np.ndarray = None, debugPlots: bool = False) -> Iterable[np.ndarray]:
         """Given an array of other ICBase type objects this function will use OpenCV to calculate the transform from
-        each of the other objects to self. The transforms can be inverted using numpy.linalg.inv().
-        It will return a list of transforms. Each transform is a 3x3 array in the form returned
-        by opencv.findHomography(). a boolean mask can be used to select which areas will be searched for features to be used
+        each of the other objects to self. The transforms can be inverted using cv2.invertAffineTransform().
+        It will return a list of transforms. Each transform is a 2x3 array in the form returned
+        by opencv.estimateAffinePartial2d(). a boolean mask can be used to select which areas will be searched for features to be used
         in calculating the transform. This seems to work much better for normalized images.
         This code is basically a copy of this example, it can probably be improved upon:
         https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_feature2d/py_feature_homography/py_feature_homography.html"""
@@ -265,7 +265,7 @@ class ICBase:
             if len(good) > MIN_MATCH_COUNT:
                 src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
                 dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
-                M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+                M, mask = cv2.estimateAffinePartial2D(src_pts, dst_pts)
                 transforms.append(M)
                 matchesMask = mask.ravel().tolist()
             else:
@@ -273,10 +273,10 @@ class ICBase:
                 matchesMask = None
             if debugPlots:
                 plt.figure()
-                anims.append([anAx.imshow(cv2.warpPerspective(otherImg, np.linalg.inv(M), otherImg.shape), 'gray')])
+                anims.append([anAx.imshow(cv2.warpAffine(otherImg, cv2.invertAffineTransform(M), otherImg.shape), 'gray')])
                 h, w = refImg.shape
                 pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
-                dst = cv2.perspectiveTransform(pts, M)
+                dst = cv2.transform(pts, M)
                 draw_params = dict(matchColor=(0, 255, 0),  # draw matches in green color
                                    singlePointColor=None,
                                    matchesMask=matchesMask,  # draw only inliers

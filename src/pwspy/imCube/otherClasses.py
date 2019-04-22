@@ -117,9 +117,9 @@ class Roi:
         return ret
 
     def transform(self, matrix: np.ndarray) -> 'Roi':
-        """return a copy of this Roi that has been transformed by a perspective transform matrix like the one returned by
-        opencv.findHomography. This can be obtained using ICBase's getTransform method."""
-        out = cv2.warpPerspective(self.data.astype(np.uint8), matrix, self.data.shape).astype(np.bool)
+        """return a copy of this Roi that has been transformed by an affine transform matrix like the one returned by
+        opencv.estimateRigidTransform. This can be obtained using ICBase's getTransform method."""
+        out = cv2.warpAffine(self.data.astype(np.uint8), matrix, self.data.shape).astype(np.bool)
         return Roi(self.name, self.number, out)
 
     def getImage(self, ax: plt.Axes):
