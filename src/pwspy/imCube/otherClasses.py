@@ -94,13 +94,19 @@ class Roi:
 
     @staticmethod
     def getValidRoisInPath(path: str) -> List[Tuple[str, int, RoiFileFormats]]:
-        patterns = [('BW*_*.mat', RoiFileFormats.MAT), ('*_roi.h5', RoiFileFormats.HDF)]
+        patterns = [('BW*_*.mat', RoiFileFormats.MAT), ('roi_*.h5', RoiFileFormats.HDF)]
         files = {fformat: glob(os.path.join(path, p)) for p, fformat in patterns} #Lists of the found files keyed by file format
         ret = []
         for fformat, fileNames in files.items():
             if fformat == RoiFileFormats.HDF:
                 for i in fileNames:
-                    raise NotImplementedError #TODO implement this
+                    name = i.split('roi_')[0][:-2]
+                    with h5py.File(i) as hf:
+                        for dset in hf.keys():
+                            try:
+                                ret.append((name, int(dset), RoiFileFormats.HDF))
+                            except ValueError:
+                                print(f"Warning: File {i} contains uninterpretable dataset named {dset}")
             elif fformat == RoiFileFormats.MAT:
                 for i in fileNames: #list in files
                     i = os.path.split(i)[-1]
