@@ -47,8 +47,7 @@ class ERMetadata:
     @classmethod
     def validPath(cls, path: str) -> Tuple[bool, Union[str, bytes], Union[str, bytes]]:
         if cls.FILESUFFIX in path:
-            directory, fileName = os.path.split(path)
-            name = fileName.split(cls.FILESUFFIX)[0]
+            directory, name = cls.directory2dirName(path)
             with h5py.File(os.path.join(directory, f'{name}{cls.FILESUFFIX}')) as hf:
                 valid = cls.MDTAG in hf[cls.DATASETTAG].attrs
             return valid, directory, name
@@ -57,7 +56,7 @@ class ERMetadata:
 
     @classmethod
     def fromHdfFile(cls, directory: str, name: str):
-        filePath = os.path.join(directory, f'{name}{cls.FILESUFFIX}')
+        filePath = cls.dirName2Directory(directory, name)
         with h5py.File(filePath) as hf:
             dset = hf[cls.DATASETTAG]
             return cls.fromHdfDataset(dset, filePath=filePath)
@@ -70,6 +69,16 @@ class ERMetadata:
         self.metadata['time'] = datetime.now().strftime(dateTimeFormat) #Save the current time
         g[self.DATASETTAG].attrs[self.MDTAG] = np.string_(json.dumps(self.metadata))
         return g
+
+    @classmethod
+    def directory2dirName(cls, path: str) -> Tuple[Union[bytes, str], Union[bytes, str]]:
+        directory, fileName = os.path.split(path)
+        name = fileName.split(cls.FILESUFFIX)[0]
+        return directory, name
+
+    @classmethod
+    def dirName2Directory(cls, directory: str, name: str):
+        return os.path.join(directory, f'{name}{cls.FILESUFFIX}')
 
 class ExtraReflectanceCube(ICBase, ERMetadata):
     """This class builds upon ERMetadata to add data array operations."""
@@ -100,12 +109,17 @@ class ExtraReflectanceCube(ICBase, ERMetadata):
         return g
 
     @classmethod
-    def fromHdfDataset(cls, d: h5py.Dataset):
+    def fromHdfDataset(cls, d: h5py.Dataset, filePath: str = None):
         data, index = ICBase._decodeHdf(d)
         md = ERMetadata.fromHdfDataset(d)
-        return cls(data, index, md.metadata)
+        return cls(data, index, md.metadata, filePath=filePath)
 
     @staticmethod
     def getMetadata(directory: str, name: str) -> ERMetadata:
         with h5py.File(os.path.join(directory, f'{name}{ERMetadata.FILESUFFIX}')) as hf:
             return ERMetadata.fromHdfDataset(hf[ERMetadata.DATASETTAG])
+
+    @classmethod
+    def fromMetadata(cls, md: ERMetadata):
+        directory, name = cls.directory2dirName(md.filePath)
+        return cls.fromHdfFile(directory, name)

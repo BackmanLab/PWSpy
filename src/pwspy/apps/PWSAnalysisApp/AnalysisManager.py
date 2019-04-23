@@ -4,10 +4,11 @@ from typing import Tuple, List
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox
 
-from pwspy import ImCube, CameraCorrection
+from pwspy import ImCube, CameraCorrection, ExtraReflectanceCube
 from pwspy.analysis import AnalysisSettings
 from pwspy.analysis.analysisClass import Analysis
 from pwspy.analysis.warnings import AnalysisWarning
+from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 from pwspy.utility import loadAndProcess
 
@@ -20,11 +21,11 @@ class AnalysisManager(QtCore.QObject):
         self.app = app
 
     def runList(self):
-        for anName, anSettings, cellMetas, refMetas, camCorrection in self.app.window.analysisSettings.getListedAnalyses():
-            self.runSingle(anName, anSettings, cellMetas, refMetas, camCorrection)
+        for anName, anSettings, cellMetas, refMeta, camCorrection, erMeta in self.app.window.analysisSettings.getListedAnalyses():
+            self.runSingle(anName, anSettings, cellMetas, refMeta, camCorrection, erMeta)
 
     def runSingle(self, anName: str, anSettings: AnalysisSettings, cellMetas: List[ICMetaData], refMeta: ICMetaData,
-                  cameraCorrection: CameraCorrection) -> Tuple[str, AnalysisSettings, List[Tuple[List[AnalysisWarning], ICMetaData]]]:
+                  cameraCorrection: CameraCorrection, erMeta: ERMetadata) -> Tuple[str, AnalysisSettings, List[Tuple[List[AnalysisWarning], ICMetaData]]]:
         # refMeta = self.app.window.cellSelector.getSelectedReferenceMeta()
         # cellMetas = self.app.window.cellSelector.getSelectedCellMetas()
         # cameraCorrection, settings = self.app.window.analysisSettings.getSettings()
@@ -39,7 +40,8 @@ class AnalysisManager(QtCore.QObject):
             else:
                 print("Using automatically detected camera corrections")
                 ref.correctCameraEffects(ref.cameraCorrection)
-            analysis = Analysis(anSettings, ref)
+            erCube = ExtraReflectanceCube.fromMetadata(erMeta)
+            analysis = Analysis(anSettings, ref, erCube)
             # analysisName = self.app.window.analysisSettings.getAnalysisName()
             warnings = loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[ref, analysis, anName], parallel=True) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
             warnings = [(warn, md) for warn, md in warnings if md is not None]

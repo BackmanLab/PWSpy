@@ -9,6 +9,7 @@ from pwspy import CameraCorrection
 from pwspy.analysis import AnalysisSettings
 from pwspy.apps.PWSAnalysisApp.dockWidgets import CellSelectorDock
 from pwspy.imCube import ICMetaData
+from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
 from .widgets.QueueAnalysesFrame import AnalysisListItem, QueuedAnalysesFrame
 from .widgets.SettingsFrame import SettingsFrame
 
@@ -32,16 +33,22 @@ class AnalysisSettingsDock(QDockWidget):
         self.analysesQueue.listWidget.itemDoubleClicked.connect(self.displayItemSettings)
         widg2.layout().addWidget(self.analysesQueue)
 
-        self.addAnalysisButton.released.connect(
-            lambda: self.analysesQueue.addAnalysis(self.settingsFrame.analysisName, *self.settingsFrame.getSettings(),
-                                                   self.selector.getSelectedReferenceMeta(),
-                                                   self.selector.getSelectedCellMetas()))
+        self.addAnalysisButton.released.connect(self.addAnalysis)
 
         splitter.addWidget(widg)
         splitter.addWidget(widg2)
         splitter.setChildrenCollapsible(False)
         self.setWidget(splitter)
 
+    def addAnalysis(self):
+        try:
+            camCorr, settings = self.settingsFrame.getSettings()
+        except Exception as e:
+            QMessageBox.information(self, 'Hold on', str(e))
+            return
+        self.analysesQueue.addAnalysis(self.settingsFrame.analysisName, camCorr, settings,
+                                       self.selector.getSelectedReferenceMeta(),
+                                       self.selector.getSelectedCellMetas(), self.settingsFrame.ERExplorer.selection)
     def loadFromSettings(self, settings: AnalysisSettings):
         self.settingsFrame.loadFromSettings(settings)
 
@@ -51,7 +58,7 @@ class AnalysisSettingsDock(QDockWidget):
     def getAnalysisName(self):
         return self.settingsFrame.analysisName
 
-    def getListedAnalyses(self) -> List[Tuple[str, AnalysisSettings, List[ICMetaData], ICMetaData, CameraCorrection]]:
+    def getListedAnalyses(self) -> List[Tuple[str, AnalysisSettings, List[ICMetaData], ICMetaData, CameraCorrection, ERMetadata]]:
         return self.analysesQueue.analyses
 
     def displayItemSettings(self, item: AnalysisListItem):

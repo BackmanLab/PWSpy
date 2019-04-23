@@ -207,12 +207,13 @@ class SettingsFrame(QScrollArea):
         self.hannWindowCheckBox.setCheckState(2 if settings.useHannWindow else 0)
 
     def getSettings(self) -> Tuple[CameraCorrection, AnalysisSettings]:
-        if self.linearityEdit.validator().state != QValidator.Acceptable:
-            QMessageBox.information(self, "Hold On", "The camera linearity correction input is not valid.")
-            raise ValueError("The camera linearity correction input is not valid.")
-        linText = self.linearityEdit.text()
-        linearityPoly = tuple(float(i) for i in linText.split(',')) if linText != '' else None
+        if self.ERExplorer.selection is None:
+            raise ValueError("An extra reflectance cube has not been selected.")
         if self.hardwareCorrections.checkState() == 0:
+            if self.linearityEdit.validator().state != QValidator.Acceptable:
+                raise ValueError("The camera linearity correction input is not valid.")
+            linText = self.linearityEdit.text()
+            linearityPoly = tuple(float(i) for i in linText.split(',')) if linText != '' else None
             cameraCorrection = CameraCorrection(self.darkCountBox.value(), linearityPoly)
         else:
             cameraCorrection = None

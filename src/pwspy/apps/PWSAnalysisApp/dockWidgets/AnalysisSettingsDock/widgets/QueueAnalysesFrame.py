@@ -8,19 +8,21 @@ from PyQt5.QtWidgets import QListWidgetItem, QWidget, QScrollArea, QListWidget, 
 from pwspy import CameraCorrection
 from pwspy.analysis import AnalysisSettings
 from pwspy.apps.PWSAnalysisApp.dockWidgets import AnalysisSettingsDock
+from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 import json
 
 
 class AnalysisListItem(QListWidgetItem):
     def __init__(self, cameraCorrection: CameraCorrection, settings: AnalysisSettings, reference: ICMetaData, cells: List[ICMetaData], analysisName: str,
-                 parent: Optional[QWidget] = None):
+                 extraReflectanceMeta: ERMetadata, parent: Optional[QWidget] = None):
         super().__init__(analysisName, parent)
         self.cameraCorrection = cameraCorrection
         self.settings = settings
         self.reference = reference
         self.cells = cells
         self.name = analysisName
+        self.extraReflectance = extraReflectanceMeta
 
 
 class QueuedAnalysesFrame(QScrollArea):
@@ -33,11 +35,12 @@ class QueuedAnalysesFrame(QScrollArea):
         self.setWidgetResizable(True)
 
     @property
-    def analyses(self) -> List[Tuple[str, AnalysisSettings, List[ICMetaData], ICMetaData, CameraCorrection]]:
+    def analyses(self) -> List[Tuple[str, AnalysisSettings, List[ICMetaData], ICMetaData, CameraCorrection, ERMetadata]]:
         items: List[AnalysisListItem] = [self.listWidget.item(i) for i in range(self.listWidget.count())]
-        return [(item.name, item.settings, item.cells, item.reference, item.cameraCorrection)  for item in items]
+        return [(item.name, item.settings, item.cells, item.reference, item.cameraCorrection, item.extraReflectance)  for item in items]
 
-    def addAnalysis(self, analysisName: str, cameraCorrection: CameraCorrection, settings: AnalysisSettings, reference: ICMetaData, cells: List[ICMetaData]):
+    def addAnalysis(self, analysisName: str, cameraCorrection: CameraCorrection, settings: AnalysisSettings,
+                    reference: ICMetaData, cells: List[ICMetaData], extraReflectance: ERMetadata):
         if reference is None:
             QMessageBox.information(self, '!', f'Please select a reference Cell.')
             return
@@ -45,7 +48,7 @@ class QueuedAnalysesFrame(QScrollArea):
             if self.listWidget.item(i).name == analysisName:
                 QMessageBox.information(self, '!', f'Analysis {analysisName} already exists.')
                 return
-        item = AnalysisListItem(cameraCorrection, settings, reference, cells, analysisName, self.listWidget)
+        item = AnalysisListItem(cameraCorrection, settings, reference, cells, analysisName, extraReflectance, self.listWidget)
         # self.listWidget.addItem(item)
 
     def showContextMenu(self, point: QPoint):
