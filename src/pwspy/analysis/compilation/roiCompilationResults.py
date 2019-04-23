@@ -1,12 +1,14 @@
+from __future__ import annotations
 from dataclasses import dataclass
 import numpy as np
-from pwspy.imCube.otherClasses import Roi
+import typing
+if typing.TYPE_CHECKING:
+        from pwspy.imCube.otherClasses import Roi
 
 
 @dataclass(frozen=True)
 class RoiAnalysisResults:
-        cellPath: str
-        cellNumber: int
+        cellIdTag: str
         analysisName: str
         roi: Roi
         reflectance: float

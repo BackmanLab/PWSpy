@@ -39,7 +39,7 @@ class RoiCompiler:
             warns.append(warnings.checkMeanSpectraRatio(varRatio))
         else:
             varRatio = None
-        results = RoiAnalysisResults( # TODO missing args here
+        results = RoiAnalysisResults(
                     roi=roi,
                     analysisName=results.analysisName,
                     reflectance=reflectance,
@@ -51,9 +51,7 @@ class RoiCompiler:
                     opd=opd,
                     opdIndex=opdIndex,
                     varRatio=varRatio,
-                    cellNumber=,
-                    cellPath=,
-                    )
+                    cellIdTag=results.imCubeIdTag)
         return results, warns
 
     @staticmethod

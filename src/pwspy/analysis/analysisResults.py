@@ -107,7 +107,6 @@ class AnalysisResults(AbstractAnalysisResults):
     imCubeIdTag: str
     referenceIdTag: str
     extraReflectionTag: Optional[str]
-    analysisName: str
     time: str = None
 
     def __post_init__(self):

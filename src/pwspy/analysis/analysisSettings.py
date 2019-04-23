@@ -1,8 +1,10 @@
+from __future__ import annotations
 import dataclasses
 import json
 import os.path as osp
-
-from pwspy.utility.reflectanceHelper import Material
+import typing
+if typing.TYPE_CHECKING:
+    from pwspy.utility.reflectanceHelper import Material
 
 
 @dataclasses.dataclass

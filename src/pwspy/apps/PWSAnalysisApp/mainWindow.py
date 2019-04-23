@@ -37,7 +37,7 @@ class PWSWindow(QMainWindow):
         browseAction = toolBar.addAction(QtGui.QIcon(os.path.join(sharedresources, 'folder.svg')), "Set Path")
         browseAction.triggered.connect(self.fileDialog.show)
         action2 = toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'icon.png')), "Idea")
-        action2.triggered.connect(self.cellSelector.clearCells)
+        # action2.triggered.connect(self.cellSelector.clearCells) #This was just for testing
         self.runAction = toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'playicon.svg')), 'Run')
         settings = QtCore.QSettings("BackmanLab", "PWSAnalysis2")
         try:

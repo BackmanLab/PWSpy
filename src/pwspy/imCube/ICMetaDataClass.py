@@ -4,6 +4,7 @@ Created on Tue Feb 12 19:17:14 2019
 
 @author: Nick
 """
+from __future__ import annotations
 import json
 import os
 import subprocess
@@ -18,7 +19,8 @@ import scipy.io as spio
 import tifffile as tf
 
 from pwspy.moduleConsts import dateTimeFormat
-from pwspy.analysis import AnalysisResults
+if typing.TYPE_CHECKING:
+    from pwspy.analysis import AnalysisResults
 from pwspy.analysis.analysisResults import AnalysisResultsLoader
 from pwspy.imCube.otherClasses import Roi, RoiFileFormats
 from .otherClasses import CameraCorrection
