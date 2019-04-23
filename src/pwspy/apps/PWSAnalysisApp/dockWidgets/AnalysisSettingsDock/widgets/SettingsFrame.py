@@ -20,6 +20,7 @@ class SettingsFrame(QScrollArea):
     def __init__(self):
         super().__init__()
         self.ERExplorer = ExplorerWindow(self, applicationVars.extraReflectionDirectory)
+        self.ERExplorer.accepted.connect(lambda: self.RSubtractionEdit.setText(self.ERExplorer.selection))
         self._frame = VerticallyCompressedWidget(self)
         self._layout = QGridLayout()
         self._frame.setLayout(self._layout)
@@ -88,7 +89,7 @@ class SettingsFrame(QScrollArea):
         layout.setContentsMargins(1, 1, 1, 1)
         self.RSubtractionEdit = QLineEdit()
         self.RSubtractionBrowseButton = QPushButton(QtGui.QIcon(os.path.join(resources, 'folder.png')), '')
-        self.RSubtractionBrowseButton.released.connect(self._browseReflection) #TODO switch to using the extrareflectance manager.
+        self.RSubtractionBrowseButton.released.connect(self._browseReflection)
         self.refMaterialCombo = QComboBox()
         self.refMaterialCombo.addItems([k.name for k in reflectanceHelper.materialFiles.keys() if k.name != 'Glass'])
         rLayout = QHBoxLayout()
@@ -223,11 +224,6 @@ class SettingsFrame(QScrollArea):
                                  autoCorrStopIndex=self.autoCorrStopIndex.value()))
 
     def _browseReflection(self):
-        # file, _filter = QFileDialog.getOpenFileName(self, 'Working Directory',
-        #                                             applicationVars.extraReflectionDirectory,
-        #                                             "HDF5 (*.h5 *.hdf5)")
-        # if file != '':
-        #     self.RSubtractionEdit.setText(file)
         self.ERExplorer.show()
 
 
