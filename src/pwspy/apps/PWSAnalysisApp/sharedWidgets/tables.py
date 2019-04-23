@@ -1,5 +1,10 @@
+from __future__ import annotations
+from datetime import datetime
+
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import QTableWidget, QAbstractItemView, QApplication, QTableWidgetItem
+
+from pwspy import moduleConsts
 
 
 class CopyableTable(QTableWidget):
@@ -46,3 +51,17 @@ class NumberTableWidgetItem(QTableWidgetItem):
         return self.number > other.number
 
 
+class DatetimeTableWidgetItem(QTableWidgetItem):
+    """This table widget item will be sorted chronologically rather than alphabetically."""
+    def __init__(self, dtime: datetime):
+        if isinstance(dtime, str):
+            dtime = datetime.strptime(dtime, moduleConsts.dateTimeFormat) #If constructor called with a string convert to datetime.
+        super().__init__(datetime.strftime(dtime, moduleConsts.dateTimeFormat))
+        self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)  # read only
+        self.dtime = dtime
+
+    def __lt__(self, other: DatetimeTableWidgetItem):
+        return self.dtime < other.dtime
+
+    def __gt__(self, other: DatetimeTableWidgetItem):
+        return self.dtime > other.dtime
