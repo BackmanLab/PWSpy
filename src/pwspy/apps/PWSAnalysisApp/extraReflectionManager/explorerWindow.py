@@ -1,16 +1,27 @@
+from datetime import datetime
 from typing import List
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDialog, QTableWidget, QTableWidgetItem, QMessageBox, QWidget, QCheckBox, QVBoxLayout, \
-    QPushButton, QLineEdit, QComboBox, QGridLayout, QLabel, QDialogButtonBox, QHBoxLayout
+    QPushButton, QLineEdit, QComboBox, QGridLayout, QLabel, QDialogButtonBox, QHBoxLayout, QAbstractItemView
 
+from pwspy import moduleConsts
+from pwspy.apps.PWSAnalysisApp.sharedWidgets.tables import DatetimeTableWidgetItem
 from .manager import ERManager
 import numpy as np
 
 
 class ERTableWidgetItem:
     def __init__(self, fileName: str, description: str, idTag: str, name: str, downloaded: bool):
-        self.item = QTableWidgetItem(name)
+        self.fileName = fileName
+        self.description = description
+        self.idTag = idTag
+        self.systemName = self.idTag.split('_')[1]
+        self.datetime = datetime.strptime(self.idTag.split('_')[2], moduleConsts.dateTimeFormat)
+        self.name = name
+
+        self.sysItem = QTableWidgetItem(self.systemName)
+        self.dateItem = DatetimeTableWidgetItem(self.datetime)
         self._checkBox = QCheckBox()
         self.checkBoxWidget = QWidget()
         l = QHBoxLayout()
@@ -18,14 +29,14 @@ class ERTableWidgetItem:
         l.setContentsMargins(0, 0, 0, 0)
         l.addWidget(self._checkBox)
         self.checkBoxWidget.setLayout(l)
-        self.fileName = fileName
-        self.description = description
-        self.idTag = idTag
-        self.name = name
-        self.item.setToolTip('\n'.join([f'File Name: {self.fileName}', f'ID: {self.idTag}', f'Description: {self.description}']))
+        self.sysItem.setToolTip('\n'.join([f'File Name: {self.fileName}', f'ID: {self.idTag}', f'Description: {self.description}']))
         if downloaded:
             self._checkBox.setCheckState(QtCore.Qt.Checked)
             self._checkBox.setEnabled(False)
+            self.sysItem.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+        else:
+            self.sysItem.setFlags(QtCore.Qt.NoItemFlags)
+            self.dateItem.setFlags(QtCore.Qt.NoItemFlags)
         self._downloaded = downloaded
 
     @property
@@ -37,24 +48,34 @@ class ERTableWidgetItem:
 
 class ExplorerWindow(QDialog):
     def __init__(self, parent: QWidget, filePath: str):
+        self.selection = None
         super().__init__(parent)
         self.filePath = filePath
         self.setWindowTitle("Extra Reflectance Manager")
         self.setLayout(QVBoxLayout())
         self.table = QTableWidget(self)
         self.table.verticalHeader().hide()
-        self.table.horizontalHeader().hide()
+        # self.table.horizontalHeader().hide()
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.itemDoubleClicked.connect(self.displayInfo)
-        self.table.setColumnCount(1)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.table.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.table.setRowCount(0)
+        self.table.setColumnCount(3)
+        self.table.setSortingEnabled(True)
+        self.table.setHorizontalHeaderLabels([" ", "System", "Date"])
+        self.table.setColumnWidth(0, 10)
+
         self.downloadButton = QPushButton("Download Checked Items")
-        self.downloadButton.released.connect(self._cb(self._downloadCheckedItems))
+        self.downloadButton.released.connect(self._downloadCheckedItems)
         self.updateButton = QPushButton('Update Index')
-        self.updateButton.released.connect(self._cb(self._updateIndex))
-        self.buttons = [self.updateButton, self.downloadButton]
+        self.updateButton.released.connect(self._updateIndex)
+        self.acceptSelectionButton = QPushButton("Accept Selection")
+        self.acceptSelectionButton.released.connect(self.accept)
         self.layout().addWidget(self.table)
         self.layout().addWidget(self.downloadButton)
         self.layout().addWidget(self.updateButton)
+        self.layout().addWidget(self.acceptSelectionButton)
         self._initialize(filePath)
 
     def _updateIndex(self):
@@ -63,9 +84,6 @@ class ExplorerWindow(QDialog):
 
     def _initialize(self, filePath: str):
         self.manager = ERManager(filePath)
-        self.table.setRowCount(0)
-        self.table.setColumnCount(2)
-        self.table.setColumnWidth(0, 10)
         self._items: List[ERTableWidgetItem] = []
         for item in self.manager.index['reflectanceCubes']:
             self._addItem(item)
@@ -75,10 +93,11 @@ class ExplorerWindow(QDialog):
         self._items.append(tableItem)
         self.table.setRowCount(len(self._items))
         self.table.setCellWidget(self.table.rowCount() - 1, 0, tableItem.checkBoxWidget)
-        self.table.setItem(self.table.rowCount() - 1, 1, tableItem.item)
+        self.table.setItem(self.table.rowCount() - 1, 1, tableItem.sysItem)
+        self.table.setItem(self.table.rowCount() - 1, 2, tableItem.dateItem)
 
     def displayInfo(self, item: QTableWidgetItem):
-        item = self._items[item.row()]
+        item = [i for i in self._items if i.sysItem is item][0]
         message = QMessageBox.information(self, item.name, '\n\n'.join([f'FileName: {item.fileName}',
                                                                       f'ID Tag: {item.idTag}',
                                                                       f'Description: {item.description}']))
@@ -90,11 +109,8 @@ class ExplorerWindow(QDialog):
                 self.manager.download(item.fileName)
         self._initialize(self.filePath)
 
-    def _cb(self, func):
-        def newfunc():
-            try:
-                [i.setEnabled(False) for i in self.buttons]
-                func()
-            finally:
-                [i.setEnabled(True) for i in self.buttons]
-        return newfunc
+    def accept(self) -> None:
+        rowIndex = [i.row() for i in self.table.selectedIndexes()[::self.table.columnCount()]][0] #  There should be only one.
+        self.selection = self._items[rowIndex].fileName
+        super().accept()
+
