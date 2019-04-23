@@ -128,7 +128,7 @@ class LegacyAnalysis(AbstractAnalysis):
 class Analysis(LegacyAnalysis):
     def __init__(self, settings: AnalysisSettings, ref: ImCube):
         super().__init__(settings, ref)
-        ref.filterDust(4)  # Apply a blur to filter out dust particles
+        ref.filterDust(.75)  # Apply a blur to filter out dust particles #TODO this is in microns. I have no idea what the radius should actually be.
 
         theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, index=ref.wavelengths)[None, None, :]
         extraReflectance = ExtraReflectanceCube.fromHdfFile(settings.extraReflectancePath, settings.extraReflectanceName) #TODO add the ER name here. Need to make a better ER selector first
