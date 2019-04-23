@@ -18,7 +18,6 @@ from .otherClasses import CameraCorrection
 from .ICBaseClass import ICBase
 from .ICMetaDataClass import ICMetaData, ICFileFormats
 import multiprocessing as mp
-import scipy.io as spio
 
 class ImCube(ICBase, ICMetaData):
     """ A class representing a single acquisition of PWS. Contains methods for loading and saving to multiple formats as well as common operations used in analysis."""

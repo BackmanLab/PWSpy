@@ -8,8 +8,9 @@ Created on Wed Aug 22 11:05:40 2018
 import pandas as pd
 import numpy as np
 import os
-from enum import Enum, auto
+from enum import Enum, auto, unique
 
+@unique
 class Material(Enum):
     Glass = auto()
     Water = auto()

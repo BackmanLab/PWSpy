@@ -21,7 +21,6 @@ import tifffile as tf
 from pwspy.moduleConsts import dateTimeFormat
 if typing.TYPE_CHECKING:
     from pwspy.analysis import AnalysisResults
-from pwspy.analysis.analysisResults import AnalysisResultsLoader
 from pwspy.imCube.otherClasses import Roi, RoiFileFormats
 from .otherClasses import CameraCorrection
 import numpy as np
@@ -218,3 +217,5 @@ class ICMetaData:
     def _encodeHdfMetadata(self, d: h5py.Dataset) -> h5py.Dataset:
         d.attrs['metadata'] = np.string_(json.dumps(self.metadata))
         return d
+
+from pwspy.analysis.analysisResults import AnalysisResultsLoader

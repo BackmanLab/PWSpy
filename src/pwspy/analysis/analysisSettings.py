@@ -25,18 +25,28 @@ class AnalysisSettings:
     @classmethod
     def fromJson(cls, filePath: str, name: str):
         with open(osp.join(filePath, f'{name}_analysis.json'), 'r') as f:
-            return cls(**json.load(f))
+            d=json.load(f)
+        return cls.fromDict(d)
 
     def toJson(self, filePath: str, name: str):
+        d = self.asDict()
         with open(osp.join(filePath, f'{name}_analysis.json'), 'w') as f:
-            json.dump(dataclasses.asdict(self), f, indent=4)
+            json.dump(d, f, indent=4)
 
     def toJsonString(self):
         return json.dumps(self.asDict(), indent=4)
 
     @classmethod
     def fromJsonString(cls, string: str):
-        return cls(**json.loads(string))
+        return cls.fromDict(json.loads(string))
 
     def asDict(self) -> dict:
-        return dataclasses.asdict(self)
+        d = dataclasses.asdict(self)
+        d['referenceMaterial'] = d['referenceMaterial'].name # Convert from enum to string
+        return d
+
+    @classmethod
+    def fromDict(cls, d: dict) -> AnalysisSettings:
+        from pwspy.utility.reflectanceHelper import Material
+        d['referenceMaterial'] = Material[d['referenceMaterial']]  # Convert from string to enum
+        return cls(**d)

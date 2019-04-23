@@ -4,7 +4,7 @@ Created on Tue Aug  7 13:20:25 2018
 
 @author: Nick
 """
-from .imCube.ImCubeClass import ImCube
-from .imCube.KCubeClass import KCube
-from .imCube.otherClasses import CameraCorrection
-from .imCube.ExtraReflectanceCubeClass import ExtraReflectanceCube
+from .imCube import ImCube
+from .imCube import KCube
+from .imCube import CameraCorrection
+from .imCube import ExtraReflectanceCube

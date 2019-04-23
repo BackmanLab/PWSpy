@@ -12,7 +12,7 @@ from typing import Union, Optional, List, Tuple
 import pandas as pd
 import psutil
 from pwspy import ImCube
-from pwspy.imCube.ICMetaDataClass import ICMetaData
+from pwspy.imCube import ICMetaData
 
 '''Local Functions'''
 def _loadIms(qout, qin, lock):
