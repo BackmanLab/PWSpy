@@ -7,9 +7,8 @@ import json
 from pwspy import ImCube, CameraCorrection, ExtraReflectanceCube
 from pwspy.apps.ExtraReflectanceCreator.widgets.dialog import IndexInfoForm
 from pwspy.imCube import ICMetaData
-from pwspy.moduleConsts import dateTimeFormat
+from pwspy.moduleConsts import dateTimeFormat, Material
 from pwspy.utility import loadAndProcess
-from pwspy.utility.reflectanceHelper import Material
 import pwspy.apps.ExtraReflectanceCreator.extraReflectance  as er
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt

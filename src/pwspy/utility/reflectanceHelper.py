@@ -8,18 +8,8 @@ Created on Wed Aug 22 11:05:40 2018
 import pandas as pd
 import numpy as np
 import os
-from enum import Enum, auto, unique
 
-@unique
-class Material(Enum):
-    Glass = auto()
-    Water = auto()
-    Air = auto()
-    Silicon = auto()
-    Oil_1_7 = auto()
-    Oil_1_4 = auto()
-    Ipa = auto()
-    Ethanol = auto()
+from pwspy.moduleConsts import Material
 
 materialFiles = {
     Material.Glass: 'N-BK7.csv',

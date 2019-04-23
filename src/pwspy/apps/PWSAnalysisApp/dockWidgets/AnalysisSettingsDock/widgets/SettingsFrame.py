@@ -15,6 +15,7 @@ from pwspy.apps import resources
 from pwspy.apps.PWSAnalysisApp.extraReflectionManager.explorerWindow import ExplorerWindow
 from pwspy.apps.PWSAnalysisApp.sharedWidgets.collapsibleSection import CollapsibleSection
 from pwspy.utility import reflectanceHelper
+from pwspy.moduleConsts import Material
 
 
 class SettingsFrame(QScrollArea):
@@ -215,8 +216,8 @@ class SettingsFrame(QScrollArea):
                 AnalysisSettings(filterOrder=self.filterOrder.value(),
                                  filterCutoff=self.filterCutoff.value(),
                                  polynomialOrder=self.polynomialOrder.value(),
-                                 extraReflectionPath=self.RSubtractionEdit.text(),
-                                 referenceMaterial=self.refMaterialCombo.currentText(),
+                                 extraReflectanceCube=self.ERExplorer.selection,
+                                 referenceMaterial=Material[self.refMaterialCombo.currentText()],
                                  wavelengthStart=self.wavelengthStart.value(),
                                  wavelengthStop=self.wavelengthStop.value(),
                                  skipAdvanced=self.advanced.checkState() != 0,

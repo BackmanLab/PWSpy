@@ -1,1 +1,1 @@
-{"filterOrder": 2, "filterCutoff": 0.2, "polynomialOrder": 0, "extraReflectancePath": "What?", "extraReflectanceName": "Who?", "referenceMaterial": "Ethanol", "wavelengthStart": 510, "wavelengthStop": 690, "skipAdvanced": false, "useHannWindow": true, "autoCorrStopIndex": 7, "autoCorrMinSub": true}
+{"filterOrder": 2, "filterCutoff": 0.2, "polynomialOrder": 0, "extraReflectanceId": null, "referenceMaterial": "Ethanol", "wavelengthStart": 510, "wavelengthStop": 690, "skipAdvanced": false, "useHannWindow": true, "autoCorrStopIndex": 7, "autoCorrMinSub": true}

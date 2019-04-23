@@ -13,7 +13,7 @@ from pwspy.utility import reflectanceHelper
 from glob import glob
 import os
 from pwspy.utility import loadAndProcess
-from pwspy.utility.reflectanceHelper import Material
+from pwspy.moduleConsts import Material
 
 plt.ion()
 

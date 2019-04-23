@@ -4,7 +4,8 @@ import json
 import os.path as osp
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.utility.reflectanceHelper import Material
+    from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
+from pwspy.moduleConsts import Material
 
 
 @dataclasses.dataclass
@@ -12,8 +13,7 @@ class AnalysisSettings:
     filterOrder: int
     filterCutoff: float
     polynomialOrder: int
-    extraReflectancePath: str
-    extraReflectanceName: str
+    extraReflectanceId: str
     referenceMaterial: Material
     wavelengthStart: int
     wavelengthStop: int
@@ -42,11 +42,10 @@ class AnalysisSettings:
 
     def asDict(self) -> dict:
         d = dataclasses.asdict(self)
-        d['referenceMaterial'] = d['referenceMaterial'].name # Convert from enum to string
+        d['referenceMaterial'] = self.referenceMaterial.name # Convert from enum to string
         return d
 
     @classmethod
     def fromDict(cls, d: dict) -> AnalysisSettings:
-        from pwspy.utility.reflectanceHelper import Material
         d['referenceMaterial'] = Material[d['referenceMaterial']]  # Convert from string to enum
         return cls(**d)

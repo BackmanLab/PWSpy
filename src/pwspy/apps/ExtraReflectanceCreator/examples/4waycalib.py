@@ -17,7 +17,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 import pandas as pd
 import random
 
-from pwspy.utility.reflectanceHelper import Material
+from pwspy.moduleConsts import Material
 
 
 def processIm(im):

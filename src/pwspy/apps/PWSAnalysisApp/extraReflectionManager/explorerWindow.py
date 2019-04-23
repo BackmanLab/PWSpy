@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QDialog, QTableWidget, QTableWidgetItem, QMessageBox
 
 from pwspy import moduleConsts
 from pwspy.apps.PWSAnalysisApp.sharedWidgets.tables import DatetimeTableWidgetItem
+from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
 from .manager import ERManager
 import numpy as np
 
@@ -50,7 +51,7 @@ class ERTableWidgetItem:
 
 class ExplorerWindow(QDialog):
     def __init__(self, parent: QWidget, filePath: str):
-        self.selection = None
+        self.selection: ERMetadata = None
         super().__init__(parent)
         self.filePath = filePath
         self.setWindowTitle("Extra Reflectance Manager")
@@ -119,6 +120,6 @@ class ExplorerWindow(QDialog):
 
     def accept(self) -> None:
         rowIndex = [i.row() for i in self.table.selectedIndexes()[::self.table.columnCount()]][0] #  There should be only one.
-        self.selection = self._items[rowIndex].fileName
+        self.selection = self._items[rowIndex].idTag
         super().accept()
 

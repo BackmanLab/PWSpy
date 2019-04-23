@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 from datetime import datetime
 from typing import Tuple, Union
@@ -54,6 +55,12 @@ class ERMetadata:
             return False, '', ''
 
     @classmethod
+    def fromHdfFile(cls, directory: str, name: str):
+        with h5py.File(os.path.join(directory, f'{name}{cls.FILESUFFIX}')) as hf:
+            dset = hf[cls.DATASETTAG]
+            return cls.fromHdfDataset(dset)
+
+    @classmethod
     def fromHdfDataset(cls, d: h5py.Dataset):
         return cls(json.loads(d.attrs[cls.MDTAG]))
 
@@ -75,10 +82,8 @@ class ExtraReflectanceCube(ICBase, ERMetadata):
         return self.index
 
     @classmethod
-    def fromHdfFile(cls, directory: str, name: str):
-        with h5py.File(os.path.join(directory, f'{name}{cls.FILESUFFIX}')) as hf:
-            dset = hf[cls.DATASETTAG]
-            return cls.fromHdfDataset(dset)
+    def fromHdfFile(cls, directory: str, name: str) -> ExtraReflectanceCube:
+        return super().fromHdfFile(directory, name)
 
     def toHdfFile(self, directory: str, name: str) -> None:
         savePath = os.path.join(directory, f'{name}{self.FILESUFFIX}')

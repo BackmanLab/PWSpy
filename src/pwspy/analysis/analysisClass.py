@@ -12,7 +12,7 @@ import scipy.signal as sps
 from pwspy import ImCube, KCube, ExtraReflectanceCube
 from pwspy.analysis import warnings
 from pwspy.utility import reflectanceHelper
-from pwspy.utility.reflectanceHelper import Material
+from pwspy.moduleConsts import Material
 from . import AnalysisSettings, AnalysisResults
 
 
