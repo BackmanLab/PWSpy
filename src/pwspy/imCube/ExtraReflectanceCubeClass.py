@@ -31,12 +31,13 @@ class ERMetadata:
     DATASETTAG = 'extraReflection'
     MDTAG = 'metadata'
 
-    def __init__(self, inheritedMetadata: dict):
+    def __init__(self, inheritedMetadata: dict, filePath: str=None):
         """The metadata dictionary will often just be inherited information from one of the ImCubes that was used to create
         this ER Cube. While this data can be useful it should be taken with a grain of salt. E.G. the metadata will contain
         an `exposure` field. In reality this ER Cube will have been created from ImCubes at a variety of exposures."""
         metadata = inheritedMetadata
         jsonschema.validate(instance=metadata, schema=self._jsonSchema)
+        self.filePath = filePath
         self.metadata = metadata
 
     @property
@@ -56,13 +57,14 @@ class ERMetadata:
 
     @classmethod
     def fromHdfFile(cls, directory: str, name: str):
-        with h5py.File(os.path.join(directory, f'{name}{cls.FILESUFFIX}')) as hf:
+        filePath = os.path.join(directory, f'{name}{cls.FILESUFFIX}')
+        with h5py.File(filePath) as hf:
             dset = hf[cls.DATASETTAG]
-            return cls.fromHdfDataset(dset)
+            return cls.fromHdfDataset(dset, filePath=filePath)
 
     @classmethod
-    def fromHdfDataset(cls, d: h5py.Dataset):
-        return cls(json.loads(d.attrs[cls.MDTAG]))
+    def fromHdfDataset(cls, d: h5py.Dataset, filePath: str = None):
+        return cls(json.loads(d.attrs[cls.MDTAG]), filePath=filePath)
 
     def toHdfDataset(self, g: h5py.Group) -> h5py.Group:
         self.metadata['time'] = datetime.now().strftime(dateTimeFormat) #Save the current time
@@ -71,10 +73,10 @@ class ERMetadata:
 
 class ExtraReflectanceCube(ICBase, ERMetadata):
     """This class builds upon ERMetadata to add data array operations."""
-    def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], inheritedMetadata: dict):
+    def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], inheritedMetadata: dict, filePath: str = None):
         if data.max() > 1 or data.min() < 0:
             print("Warning!: Reflectance values must be between 0 and 1")
-        ERMetadata.__init__(self, inheritedMetadata)
+        ERMetadata.__init__(self, inheritedMetadata, filePath=filePath)
         ICBase.__init__(self, data, wavelengths)
 
     @property

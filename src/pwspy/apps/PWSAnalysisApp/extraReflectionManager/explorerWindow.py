@@ -50,8 +50,9 @@ class ERTableWidgetItem:
 
 
 class ExplorerWindow(QDialog):
+    selectionChanged = QtCore.pyqtSignal(ERMetadata)
     def __init__(self, parent: QWidget, filePath: str):
-        self.selection: ERMetadata = None
+        self._selectedId: str = None
         super().__init__(parent)
         self.filePath = filePath
         self.setWindowTitle("Extra Reflectance Manager")
@@ -120,6 +121,15 @@ class ExplorerWindow(QDialog):
 
     def accept(self) -> None:
         rowIndex = [i.row() for i in self.table.selectedIndexes()[::self.table.columnCount()]][0] #  There should be only one.
-        self.selection = self._items[rowIndex].idTag
+        self.setSelection(self._items[rowIndex].idTag)
         super().accept()
+
+    @property
+    def selection(self):
+        return self.manager.getMetadataFromId(self._selectedId)
+
+    def setSelection(self, idTag: str):
+        md = self.manager.getMetadataFromId(idTag)
+        self._selectedId = idTag
+        self.selectionChanged.emit(md)
 

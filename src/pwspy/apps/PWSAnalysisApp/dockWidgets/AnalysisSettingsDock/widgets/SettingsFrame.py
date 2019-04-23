@@ -22,7 +22,7 @@ class SettingsFrame(QScrollArea):
     def __init__(self):
         super().__init__()
         self.ERExplorer = ExplorerWindow(self, applicationVars.extraReflectionDirectory)
-        self.ERExplorer.accepted.connect(lambda: self.RSubtractionEdit.setText(self.ERExplorer.selection))
+        self.ERExplorer.selectionChanged.connect(lambda md: self.RSubtractionNameLabel.setText(os.path.split(md.filePath)[-1]))
         self._frame = VerticallyCompressedWidget(self)
         self._layout = QGridLayout()
         self._frame.setLayout(self._layout)
@@ -89,7 +89,8 @@ class SettingsFrame(QScrollArea):
         self.extraReflection = QGroupBox("Extra Reflection")
         layout = QVBoxLayout()
         layout.setContentsMargins(5, 1, 5, 5)
-        self.RSubtractionEdit = QLineEdit()
+        self.RSubtractionNameLabel = QLineEdit()
+        self.RSubtractionNameLabel.setEnabled(False)
         self.RSubtractionBrowseButton = QPushButton(QtGui.QIcon(os.path.join(resources, 'folder.svg')), '')
         self.RSubtractionBrowseButton.released.connect(self._browseReflection)
         self.refMaterialCombo = QComboBox()
@@ -97,7 +98,7 @@ class SettingsFrame(QScrollArea):
         rLayout = QHBoxLayout()
         _ = rLayout.addWidget
         _(QLabel("R Subtraction"))
-        _(self.RSubtractionEdit)
+        _(self.RSubtractionNameLabel)
         _(self.RSubtractionBrowseButton)
         layout.addLayout(rLayout)
         rLayout = QHBoxLayout()
@@ -189,11 +190,14 @@ class SettingsFrame(QScrollArea):
         height += self.advanced.height()
         self._frame.setFixedHeight(height)
 
+    # noinspection PyTypeChecker
     def loadFromSettings(self, settings: AnalysisSettings):
         self.filterOrder.setValue(settings.filterOrder)
         self.filterCutoff.setValue(settings.filterCutoff)
         self.polynomialOrder.setValue(settings.polynomialOrder)
-        self.RSubtractionEdit.setText(settings.extraReflectancePath)
+        if settings.extraReflectanceId is not None:
+            ermd = self.ERExplorer.manager.getMetadataFromId(settings.extraReflectanceId)
+            self.ERExplorer.set
         self.refMaterialCombo.setCurrentIndex(self.refMaterialCombo.findText(settings.referenceMaterial.name))
         self.wavelengthStop.setValue(settings.wavelengthStop)
         self.wavelengthStart.setValue(settings.wavelengthStart)
@@ -216,7 +220,7 @@ class SettingsFrame(QScrollArea):
                 AnalysisSettings(filterOrder=self.filterOrder.value(),
                                  filterCutoff=self.filterCutoff.value(),
                                  polynomialOrder=self.polynomialOrder.value(),
-                                 extraReflectanceCube=self.ERExplorer.selection,
+                                 extraReflectanceId=self.ERExplorer.selection.idTag,
                                  referenceMaterial=Material[self.refMaterialCombo.currentText()],
                                  wavelengthStart=self.wavelengthStart.value(),
                                  wavelengthStop=self.wavelengthStop.value(),

@@ -3,6 +3,7 @@ import os
 from glob import glob
 import jsonschema
 
+from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
 from pwspy.utility.GoogleDriveDownloader import GoogleDriveDownloader
 
 from pwspy import ExtraReflectanceCube
@@ -60,6 +61,15 @@ class ERManager:
         files = self.downloader.getFolderIdContents(self.downloader.getIdByName('ExtraReflectanceCubes', fileList=files))
         fileId = self.downloader.getIdByName(fileName, fileList=files)
         self.downloader.downloadFile(fileId, os.path.join(self.directory, fileName))
+
+    def getMetadataFromId(self, Id: str) -> ERMetadata:
+        try:
+            match = [item for item in self.index['reflectanceCubes'] if item['idTag'] == Id][0]
+        except IndexError:
+            raise IndexError(f"An ExtraReflectanceCube with idTag {Id} was not found in the index.json file at {self.directory}.")
+        return ERMetadata.fromHdfFile(self.directory, match['name'])
+
+
 
 if __name__ == '__main__':
     m = ERManager(applicationVars.extraReflectionDirectory)
