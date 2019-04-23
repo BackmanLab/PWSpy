@@ -12,6 +12,7 @@ import scipy.signal as sps
 from pwspy import ImCube, KCube, ExtraReflectanceCube
 from pwspy.analysis import warnings
 from pwspy.utility import reflectanceHelper
+from pwspy.utility.reflectanceHelper import Material
 from . import AnalysisSettings, AnalysisResults
 
 
@@ -82,7 +83,9 @@ class LegacyAnalysis(AbstractAnalysis):
             settings=self.settings,
             imCubeIdTag=cube.idTag,
             referenceIdTag=self.ref.idTag,
-            extraReflectionTag=None)
+            extraReflectionTag=,
+            analysisName=,
+            )
 
         return results, warns
 
@@ -129,8 +132,8 @@ class Analysis(LegacyAnalysis):
         super().__init__(settings, ref)
         ref.filterDust(4)  # Apply a blur to filter out dust particles
 
-        theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, 'glass', index=ref.wavelengths)[None, None, :]
-        extraReflectance = ExtraReflectanceCube.fromHdfFile(settings.extraReflectionPath) #TODO add the ER name here. Need to make a better ER selector first
+        theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, index=ref.wavelengths)[None, None, :]
+        extraReflectance = ExtraReflectanceCube.fromHdfFile(settings.extraReflectancePath, settings.extraReflectanceName) #TODO add the ER name here. Need to make a better ER selector first
         I0 = ref.data / (theoryR + extraReflectance) # I0 is the intensity of the illumination source, reconstructed in units of `counts`. this is an inversion of our assumption that reference = I0*(referenceReflectance + extraReflectance)
         Iextra = extraReflectance * I0  # converting extraReflectance to the extra reflection in units of counts
         ref = ref - Iextra  # remove the extra reflection from our data

@@ -34,7 +34,7 @@ class PWSWindow(QMainWindow):
         act.triggered.connect(self._setDefaultLayout)
         toolBar = self.addToolBar('tool')
         toolBar.setObjectName('mainToolBar()')
-        browseAction = toolBar.addAction(QtGui.QIcon(os.path.join(sharedresources, 'folder.png')), "Set Path")
+        browseAction = toolBar.addAction(QtGui.QIcon(os.path.join(sharedresources, 'folder.svg')), "Set Path")
         browseAction.triggered.connect(self.fileDialog.show)
         action2 = toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'icon.png')), "Idea")
         action2.triggered.connect(self.cellSelector.clearCells)

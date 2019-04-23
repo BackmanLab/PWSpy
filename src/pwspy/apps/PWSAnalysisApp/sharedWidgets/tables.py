@@ -11,8 +11,6 @@ class CopyableTable(QTableWidget):
     def __init__(self):
         super().__init__()
         self.setSelectionMode(QAbstractItemView.ContiguousSelection)
-        self.setSelectionMode = lambda: (_ for _ in ()).throw(NotImplementedError("The CopyableTable class requires the selection mode to remain as `contiguous`"))
-
 
     def keyPressEvent(self, event):
         if event.matches(QtGui.QKeySequence.Copy):

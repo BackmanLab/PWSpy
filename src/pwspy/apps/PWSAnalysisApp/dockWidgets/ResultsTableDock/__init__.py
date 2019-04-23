@@ -6,6 +6,7 @@ from .widgets import ResultsTable
 
 
 class ResultsTableDock(QDockWidget):
+    # noinspection PyTypeChecker
     def __init__(self):
         super().__init__("Results")
         self.setStyleSheet("QDockWidget > QWidget { border: 1px solid lightgray; }")
@@ -20,7 +21,7 @@ class ResultsTableDock(QDockWidget):
         for i, n in enumerate(self.table.columns):
             c = QCheckBox(n)
             c.setCheckState(2)
-            f = lambda state, i=i: self.table.setColumnHidden(i, state == 0)
+            f = lambda state, j=i: self.table.setColumnHidden(j, state == 0)
             c.stateChanged.connect(f)
             self.checkBoxes.layout().addWidget(c)
 

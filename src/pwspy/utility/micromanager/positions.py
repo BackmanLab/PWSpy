@@ -4,6 +4,7 @@ Created on Mon Dec  3 17:53:24 2018
 
 @author: backman05
 """
+from __future__ import annotations
 import json
 import typing
 from dataclasses import dataclass
@@ -40,7 +41,7 @@ class Property(JsonAble):
 class PropertyMap(JsonAble):
     """Represents a propertyMap from micromanager. basically a list of properties."""
     name: str
-    properties: typing.List[Property]
+    properties: typing.List[Union[Property, MultiStagePosition, Position1d, Position2d]]
             
     def toDict(self):
         if isinstance(self.properties[0], Property):
@@ -139,7 +140,7 @@ class MultiStagePosition(JsonAble):
         self.xyStage = label
         self.getXYPosition().renameStage(label)
         
-    def __add__(self, other: 'Position2d') -> 'Position2d':
+    def __add__(self, other: Position2d) -> MultiStagePosition:
         if isinstance(other, Position2d):
             newPos = self.getXYPosition().__add__(other)
             positions = copy.copy(self.positions)
@@ -149,7 +150,7 @@ class MultiStagePosition(JsonAble):
         else:
             raise NotImplementedError
             
-    def __sub__(self, other: 'Position2d') -> 'Position2d':
+    def __sub__(self, other: Position2d) -> MultiStagePosition:
         if isinstance(other, Position2d):
             newPos = self.getXYPosition().__sub__(other)
             positions = copy.copy(self.positions)
@@ -159,7 +160,7 @@ class MultiStagePosition(JsonAble):
         else:
             raise NotImplementedError
     
-    def __eq__(self, other: 'MultiStagePosition'):
+    def __eq__(self, other: MultiStagePosition):
         return all([self.xyStage == other.xyStage,
                     self.zStage == other.zStage,
                     self.getXYPosition() == other.getXYPosition(),
@@ -262,7 +263,7 @@ class PositionList(JsonAble):
     def __len__(self):
         return len(self.positions)
 
-    def __getitem__(self, idx: slice):
+    def __getitem__(self, idx: Union[slice, int]):
         return self.positions[idx]
 
     def __eq__(self, other: 'PositionList'):

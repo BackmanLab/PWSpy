@@ -13,6 +13,7 @@ from pwspy.utility import reflectanceHelper
 from glob import glob
 import os
 from pwspy.utility import loadAndProcess
+from pwspy.utility.reflectanceHelper import Material
 
 plt.ion()
 
@@ -64,7 +65,7 @@ if __name__ == "__main__":
                          index_col=0)  # The theoretical reflectance for a 1um thin film. silica on silicon.
     theory = theory.loc[500:700:2]
     theory = theory * 100
-    sref = reflectanceHelper.getReflectance('air', 'silicon', index=range(500, 701, 2))
+    sref = reflectanceHelper.getReflectance(Material.Air, Material.Silicon, index=range(500, 701, 2))
 
     print("Select a mirror")
     mmask = ImCube.loadAny(files[0]).selectROI()

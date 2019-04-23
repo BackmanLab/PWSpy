@@ -29,7 +29,7 @@ class WorkingDirDialog(QDialog):
         layout = QGridLayout()
         self.setModal(True)
         self.textLine = QLineEdit()
-        self.browseButton = QPushButton(QtGui.QIcon(os.path.join(resources, 'folder.png')), '')
+        self.browseButton = QPushButton(QtGui.QIcon(os.path.join(resources, 'folder.svg')), '')
         self.scanButton = QPushButton('Scan!')
         self.recursiveCheckbox = QCheckBox("recursively scan subfolders")
         layout.addWidget(self.textLine, 0, 0, 1, 4)

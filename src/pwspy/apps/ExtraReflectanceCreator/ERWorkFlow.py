@@ -56,7 +56,7 @@ def _processIm(im: ImCube, camCorrection: CameraCorrection, binning: int) -> ImC
 
 class ERWorkFlow:
     def __init__(self, workingDir: str, homeDir: str):
-        self.cubes = self.fileStruct = self.df = self.cameraCorrection = self.currDir = self.plotnds = None
+        self.cubes = self.fileStruct = self.df = self.cameraCorrection = self.currDir = self.plotnds = self.anims = None
         self.figs = []
         self.homeDir = homeDir
         # generateFileStruct:
@@ -120,10 +120,10 @@ class ERWorkFlow:
     def updateIndex(self, saveName: str, idTag: str, description: str, filePath: str):
         with open(os.path.join(self.homeDir, 'index.json'), 'r') as f:
             index = json.load(f)
-        hash = hashlib.md5()
+        md5hash = hashlib.md5()
         with open(os.path.join(self.homeDir, filePath), 'rb') as f:
-            hash.update(f.read())
-        md5 = hash.hexdigest() #The md5 checksum as a string of hex.
+            md5hash.update(f.read())
+        md5 = md5hash.hexdigest() #The md5 checksum as a string of hex.
         cubes = index['reflectanceCubes']
         newEntry = {'fileName': filePath,
                     'description': description,

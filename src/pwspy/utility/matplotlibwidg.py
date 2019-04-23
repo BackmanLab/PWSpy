@@ -387,7 +387,7 @@ class PolygonInteractor(mySelectorWidget):
         return list(zip(xi,yi))
 
     def get_ind_under_point(self, event):
-        'get the index of the vertex under point if within epsilon tolerance'
+        """get the index of the vertex under point if within epsilon tolerance"""
         # display coords
         xy = np.asarray(list(zip(*self.line.get_data())))
         xyt = self.line.get_transform().transform(xy)
@@ -401,7 +401,7 @@ class PolygonInteractor(mySelectorWidget):
         return ind
 
     def _press(self, event):
-        'whenever a mouse button is pressed'
+        """whenever a mouse button is pressed"""
         if not self.showverts:
             return
         if event.inaxes is None:
@@ -411,7 +411,7 @@ class PolygonInteractor(mySelectorWidget):
         self._ind = self.get_ind_under_point(event)
 
     def _release(self, event):
-        'whenever a mouse button is released'
+        """whenever a mouse button is released"""
         if not self.showverts:
             return
         if event.button != 1:
@@ -419,7 +419,7 @@ class PolygonInteractor(mySelectorWidget):
         self._ind = None
 
     def _on_key_press(self, event):
-        'whenever a key is pressed'
+        """whenever a key is pressed"""
 #        if not event.inaxes:
 #            return
         if event.key == 't':
@@ -460,7 +460,7 @@ class PolygonInteractor(mySelectorWidget):
         self.axMan.update()
             
     def _ondrag(self, event):
-        'on mouse movement'
+        """on mouse movement"""
 
         if self._ind is None:
             return

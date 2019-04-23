@@ -2,14 +2,17 @@ import dataclasses
 import json
 import os.path as osp
 
+from pwspy.utility.reflectanceHelper import Material
+
 
 @dataclasses.dataclass
 class AnalysisSettings:
     filterOrder: int
     filterCutoff: float
     polynomialOrder: int
-    extraReflectionPath: str
-    referenceMaterial: str
+    extraReflectancePath: str
+    extraReflectanceName: str
+    referenceMaterial: Material
     wavelengthStart: int
     wavelengthStop: int
     skipAdvanced: bool

@@ -228,10 +228,10 @@ class ICBase:
         https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_feature2d/py_feature_homography/py_feature_homography.html"""
         import cv2
         def to8bit(arr: np.ndarray):
-            m = np.percentile(arr, 0.1)
-            arr -= m
-            M = np.percentile(arr, 99.9)
-            arr = arr / M * 255
+            Min = np.percentile(arr, 0.1)
+            arr -= Min
+            Max = np.percentile(arr, 99.9)
+            arr = arr / Max * 255
             arr[arr<0] = 0
             arr[arr>255] = 255
             return arr.astype(np.uint8)

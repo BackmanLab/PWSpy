@@ -10,7 +10,8 @@ from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupB
 
 from pwspy import CameraCorrection
 from pwspy.analysis import AnalysisSettings
-from pwspy.apps.PWSAnalysisApp import applicationVars, resources
+from pwspy.apps.PWSAnalysisApp import applicationVars
+from pwspy.apps import resources
 from pwspy.apps.PWSAnalysisApp.extraReflectionManager.explorerWindow import ExplorerWindow
 from pwspy.apps.PWSAnalysisApp.sharedWidgets.collapsibleSection import CollapsibleSection
 from pwspy.utility import reflectanceHelper
@@ -86,9 +87,9 @@ class SettingsFrame(QScrollArea):
         '''Extra Reflection'''
         self.extraReflection = QGroupBox("Extra Reflection")
         layout = QVBoxLayout()
-        layout.setContentsMargins(1, 1, 1, 1)
+        layout.setContentsMargins(5, 1, 5, 5)
         self.RSubtractionEdit = QLineEdit()
-        self.RSubtractionBrowseButton = QPushButton(QtGui.QIcon(os.path.join(resources, 'folder.png')), '')
+        self.RSubtractionBrowseButton = QPushButton(QtGui.QIcon(os.path.join(resources, 'folder.svg')), '')
         self.RSubtractionBrowseButton.released.connect(self._browseReflection)
         self.refMaterialCombo = QComboBox()
         self.refMaterialCombo.addItems([k.name for k in reflectanceHelper.materialFiles.keys() if k.name != 'Glass'])
@@ -111,7 +112,7 @@ class SettingsFrame(QScrollArea):
         self.signalPrep = QGroupBox("Signal Prep")
         self.signalPrep.setFixedSize(175, 75)
         layout = QGridLayout()
-        layout.setContentsMargins(1, 1, 1, 1)
+        layout.setContentsMargins(5, 1, 5, 5)
         _ = layout.addWidget
         self.filterOrder = QSpinBox()
         self.filterOrder.setRange(0,6)
@@ -128,7 +129,7 @@ class SettingsFrame(QScrollArea):
         self.cropping = QGroupBox("Wavelength Cropping")
         self.cropping.setFixedSize(125,75)
         layout = QGridLayout()
-        layout.setContentsMargins(1, 1, 1, 1)
+        layout.setContentsMargins(5, 1, 5, 5)
         _ = layout.addWidget
         self.wavelengthStart = QSpinBox()
         self.wavelengthStop = QSpinBox()
@@ -146,7 +147,7 @@ class SettingsFrame(QScrollArea):
         self.polySub = QGroupBox("Polynomial Subtraction")
         self.polySub.setFixedSize(150, 50)
         layout = QGridLayout()
-        layout.setContentsMargins(1, 1, 1, 1)
+        layout.setContentsMargins(5, 1, 5, 5)
         _ = layout.addWidget
         self.polynomialOrder = QSpinBox()
         _(QLabel("Order"), 0, 0, 1, 1)
@@ -191,8 +192,8 @@ class SettingsFrame(QScrollArea):
         self.filterOrder.setValue(settings.filterOrder)
         self.filterCutoff.setValue(settings.filterCutoff)
         self.polynomialOrder.setValue(settings.polynomialOrder)
-        self.RSubtractionEdit.setText(settings.extraReflectionPath)
-        self.refMaterialCombo.setCurrentIndex(self.refMaterialCombo.findText(settings.referenceMaterial))
+        self.RSubtractionEdit.setText(settings.extraReflectancePath)
+        self.refMaterialCombo.setCurrentIndex(self.refMaterialCombo.findText(settings.referenceMaterial.name))
         self.wavelengthStop.setValue(settings.wavelengthStop)
         self.wavelengthStart.setValue(settings.wavelengthStart)
         self.advanced.setCheckState(2 if settings.skipAdvanced else 0)

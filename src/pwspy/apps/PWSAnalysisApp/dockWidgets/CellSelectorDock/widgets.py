@@ -2,7 +2,7 @@ import json
 import os
 import typing
 from json import JSONDecodeError
-from typing import List
+from typing import List, Optional
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import QPalette
@@ -163,7 +163,7 @@ class CellTableWidget(QTableWidget):
         items = self.selectedCellItems
         changedItems = []
         for i in items:
-            if ((i.isReference() != state) and (not i.isInvalid())):
+            if (i.isReference() != state) and (not i.isInvalid()):
                 i.setReference(state)
                 changedItems.append(i)
         self.referencesChanged.emit(state, changedItems)
@@ -261,7 +261,7 @@ class ReferencesTable(QTableWidget):
         self._references = []
 
     @property
-    def selectedReferenceMeta(self) -> ICMetaData:
+    def selectedReferenceMeta(self) -> Optional[ICMetaData]:
         """Returns the ICMetadata that have been selected. Return None if nothing is selected."""
         items: List[ReferencesTableItem] = self.selectedItems()
         assert len(items) <= 1

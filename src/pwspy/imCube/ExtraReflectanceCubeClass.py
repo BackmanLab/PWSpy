@@ -63,12 +63,12 @@ class ERMetadata:
         return g
 
 class ExtraReflectanceCube(ICBase, ERMetadata):
-
+    """This class builds upon ERMetadata to add data array operations."""
     def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], inheritedMetadata: dict):
         if data.max() > 1 or data.min() < 0:
             print("Warning!: Reflectance values must be between 0 and 1")
-        ERMetadata.__init__(inheritedMetadata)
-        ICBase.__init__(data, wavelengths)
+        ERMetadata.__init__(self, inheritedMetadata)
+        ICBase.__init__(self, data, wavelengths)
 
     @property
     def wavelengths(self) -> Tuple[float, ...]:

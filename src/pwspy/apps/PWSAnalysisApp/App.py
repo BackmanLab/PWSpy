@@ -16,6 +16,7 @@ from . import applicationVars
 from . import resources
 from glob import glob
 
+#TODO add progress bar for analysis run
 
 class PWSApp(QApplication):
     def __init__(self, args):
@@ -24,7 +25,7 @@ class PWSApp(QApplication):
         self.window = PWSWindow()
         self.anMan = AnalysisManager(self)
         self.window.runAction.triggered.connect(self.anMan.runList)
-        self.anMan.analysisDone.connect(lambda name, settings, warningList: AnalysisSummaryDisplay(self, name, settings, warningList))
+        self.anMan.analysisDone.connect(lambda name, settings, warningList: AnalysisSummaryDisplay(self.window, name, settings, warningList))
 
     @staticmethod
     def _setupDataDirectories():

@@ -64,7 +64,10 @@ class AnalysisManager(QtCore.QObject):
     def _checkAutoCorrectionConsistency(self, cellMetas: List[ICMetaData]) -> bool:
         camCorrections = [i.cameraCorrection for i in cellMetas]
         names = [os.path.split(i.filePath)[-1] for i in cellMetas]
-        missing, _ = zip(*[(name, cam) for name, cam in zip(names, camCorrections) if cam is None])
+        missing = []
+        for name, cam in zip(names, camCorrections):
+            if cam is None:
+                missing.append(name)
         if len(missing) > 0:
             missingMessage = str(missing) if len(missing) <= 3 else 'Many cells are'
             QMessageBox.information(self.app.window, 'Hmm', f'{missingMessage} missing automatic camera correction')

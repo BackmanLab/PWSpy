@@ -50,7 +50,10 @@ class RoiCompiler:
                     ld=ld,
                     opd=opd,
                     opdIndex=opdIndex,
-                    varRatio=varRatio)
+                    varRatio=varRatio,
+                    cellNumber=,
+                    cellPath=,
+                    )
         return results, warns
 
     @staticmethod
