@@ -49,7 +49,7 @@ class ERManager:
         files = glob(os.path.join(self.directory, f'*{ExtraReflectanceCube.FILESUFFIX}'))
         files = [(f, ExtraReflectanceCube.validPath(f)) for f in files]  # validPath returns whether the datacube was found.
         files = [(directory, name) for f, (valid, directory, name) in files if valid]
-        tags = [ExtraReflectanceCube.getMetadata(directory, name)['idTag'] for directory, name in files]
+        tags = [ExtraReflectanceCube.getMetadata(directory, name).idTag for directory, name in files]
         for i in self.index['reflectanceCubes']:
             i['downloaded'] = i['idTag'] in tags
 
