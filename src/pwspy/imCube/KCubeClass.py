@@ -18,8 +18,8 @@ class KCube(ICBase):
     """A class representing an ImCube after being transformed from being described in terms of wavelength in to
     wavenumber (k-space)."""
 
-    def __init__(self, data: np.ndarray, wavenumbers: Tuple[float], imCube: ImCube=None):
-        self.imCube = imCube #Just saving a reference to the original imcube in case we want to reference it.
+    def __init__(self, data: np.ndarray, wavenumbers: Tuple[float], metadata: ICMetaData = None):
+        self.metadata = metadata #Just saving a reference to the original imcube in case we want to reference it.
         ICBase.__init__(self, data, wavenumbers, dtype=np.float32)
 
     @classmethod
@@ -33,7 +33,7 @@ class KCube(ICBase):
         # Interpolate to the evenly spaced wavenumbers
         interpFunc = spi.interp1d(wavenumbers, data, kind='linear', axis=2)
         data = interpFunc(evenWavenumbers)
-        return cls(data, tuple(evenWavenumbers.astype(np.float32)), imCube=cube)
+        return cls(data, tuple(evenWavenumbers.astype(np.float32)), metadata=cube.toMetadata())
 
     @property
     def wavenumbers(self):
@@ -170,16 +170,16 @@ class KCube(ICBase):
 
     def __add__(self, other):
         ret = self._add(other)
-        return KCube(ret, self.wavenumbers, imCube=self.imCube)
+        return KCube(ret, self.wavenumbers, metadata=self.metadata)
 
     def __sub__(self, other):
         ret = self._sub(other)
-        return KCube(ret, self.wavenumbers, imCube=self.imCube)
+        return KCube(ret, self.wavenumbers, metadata=self.metadata)
 
     def __mul__(self, other):
         ret = self._mul(other)
-        return KCube(ret, self.wavenumbers, imCube=self.imCube)
+        return KCube(ret, self.wavenumbers, metadata=self.metadata)
 
     def __truediv__(self, other):
         ret = self._truediv(other)
-        return KCube(ret, self.wavenumbers, imCube=self.imCube)
+        return KCube(ret, self.wavenumbers, metadata=self.metadata)

@@ -81,7 +81,7 @@ class LegacyAnalysis(AbstractAnalysis):
             opdIndex=xvalOpd,
             ld=ld,
             settings=self.settings,
-            imCubeIdTag=cube.idTag,
+            imCubeIdTag=cube.metadata.idTag,
             referenceIdTag=self.ref.idTag,
             extraReflectionTag=None,)
 
