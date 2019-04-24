@@ -170,7 +170,7 @@ class ImCube(ICBase):
                 raise ValueError('Binning metadata not found. Binning must be specified in function argument.')
         count = correction.darkCounts * binning ** 2  # Account for the fact that binning multiplies the darkcount.
         self.data = self.data - count
-        if correction.linearityPolynomial is None:
+        if correction.linearityPolynomial is None or correction.linearityPolynomial == (1.0,):
             pass
         else:
             self.data = np.polynomial.polynomial.polyval(self.data, (0.0,) + correction.linearityPolynomial)  # The [0] is the y-intercept (already handled by the darkcount)

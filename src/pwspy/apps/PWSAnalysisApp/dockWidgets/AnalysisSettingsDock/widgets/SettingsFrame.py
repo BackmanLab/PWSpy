@@ -1,6 +1,6 @@
 import os
 from glob import glob
-from typing import Tuple
+from typing import Tuple, Optional
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import QPalette, QValidator, QDoubleValidator
@@ -67,6 +67,10 @@ class SettingsFrame(QScrollArea):
                                      " e.g if using 2x2 binning and you measure 400 counts, then the value to put here is 100.")
         self.darkCountBox.setRange(0, 10000)
         self.linearityEdit = QLineEdit()
+        self.linearityEdit.setText("1")
+        self.linearityEdit.setToolTip("A comma-separated polynomial to linearize the counts from the camera."
+                                        "E.G an entry of A,B,C here will result in the data being transformed as newData = A * data + B * data^2 + C * data^3."
+                                      "Leaving this as '1' will result in no transformation (usually CMOS cameras are already linear)")
         self.linearityEdit.setValidator(CsvValidator())
         origPalette = self.linearityEdit.palette()
         palette = QPalette()
@@ -196,8 +200,7 @@ class SettingsFrame(QScrollArea):
         self.filterCutoff.setValue(settings.filterCutoff)
         self.polynomialOrder.setValue(settings.polynomialOrder)
         if settings.extraReflectanceId is not None:
-            ermd = self.ERExplorer.manager.getMetadataFromId(settings.extraReflectanceId)
-            self.ERExplorer.set
+            self.ERExplorer.setSelection(settings.extraReflectanceId)
         self.refMaterialCombo.setCurrentIndex(self.refMaterialCombo.findText(settings.referenceMaterial.name))
         self.wavelengthStop.setValue(settings.wavelengthStop)
         self.wavelengthStart.setValue(settings.wavelengthStart)
@@ -206,19 +209,21 @@ class SettingsFrame(QScrollArea):
         self.minSubCheckBox.setCheckState(2 if settings.autoCorrMinSub else 0)
         self.hannWindowCheckBox.setCheckState(2 if settings.useHannWindow else 0)
 
-    def getSettings(self) -> Tuple[CameraCorrection, AnalysisSettings]:
+    def loadCameraCorrection(self, camCorr: Optional[CameraCorrection] = None):
+        if camCorr is None: #Automatic camera corrections
+            self.hardwareCorrections.setCheckState(2)
+        else:
+            self.hardwareCorrections.setCheckState(0)
+            if camCorr.linearityPolynomial is None:
+                self.linearityEdit.setText("1")
+            else:
+                self.linearityEdit.setText(",".join((str(i) for i in camCorr.linearityPolynomial)))
+            self.darkCountBox.setValue(camCorr.darkCounts)
+
+    def getSettings(self) -> AnalysisSettings:
         if self.ERExplorer.selection is None:
             raise ValueError("An extra reflectance cube has not been selected.")
-        if self.hardwareCorrections.checkState() == 0:
-            if self.linearityEdit.validator().state != QValidator.Acceptable:
-                raise ValueError("The camera linearity correction input is not valid.")
-            linText = self.linearityEdit.text()
-            linearityPoly = tuple(float(i) for i in linText.split(',')) if linText != '' else None
-            cameraCorrection = CameraCorrection(self.darkCountBox.value(), linearityPoly)
-        else:
-            cameraCorrection = None
-        return (cameraCorrection,
-                AnalysisSettings(filterOrder=self.filterOrder.value(),
+        return AnalysisSettings(filterOrder=self.filterOrder.value(),
                                  filterCutoff=self.filterCutoff.value(),
                                  polynomialOrder=self.polynomialOrder.value(),
                                  extraReflectanceId=self.ERExplorer.selection.idTag,
@@ -228,7 +233,18 @@ class SettingsFrame(QScrollArea):
                                  skipAdvanced=self.advanced.checkState() != 0,
                                  useHannWindow=self.hannWindowCheckBox.checkState() != 0,
                                  autoCorrMinSub=self.minSubCheckBox.checkState() != 0,
-                                 autoCorrStopIndex=self.autoCorrStopIndex.value()))
+                                 autoCorrStopIndex=self.autoCorrStopIndex.value())
+
+    def getCameraCorrection(self) -> CameraCorrection:
+        if self.hardwareCorrections.checkState() == 0:
+            if self.linearityEdit.validator().state != QValidator.Acceptable:
+                raise ValueError("The camera linearity correction input is not valid.")
+            linText = self.linearityEdit.text()
+            linearityPoly = tuple(float(i) for i in linText.split(','))
+            cameraCorrection = CameraCorrection(self.darkCountBox.value(), linearityPoly)
+        else:
+            cameraCorrection = None
+        return cameraCorrection
 
     def _browseReflection(self):
         self.ERExplorer.show()

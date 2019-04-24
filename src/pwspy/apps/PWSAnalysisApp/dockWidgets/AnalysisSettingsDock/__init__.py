@@ -3,7 +3,7 @@ from typing import Tuple, List
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, \
-    QVBoxLayout, QPushButton, QSplitter, QMessageBox
+    QVBoxLayout, QPushButton, QSplitter, QMessageBox, QDialog, QGridLayout
 
 from pwspy import CameraCorrection
 from pwspy.analysis import AnalysisSettings
@@ -42,7 +42,8 @@ class AnalysisSettingsDock(QDockWidget):
 
     def addAnalysis(self):
         try:
-            camCorr, settings = self.settingsFrame.getSettings()
+            camCorr = self.settingsFrame.getCameraCorrection()
+            settings = self.settingsFrame.getSettings()
         except Exception as e:
             QMessageBox.information(self, 'Hold on', str(e))
             return
@@ -53,7 +54,7 @@ class AnalysisSettingsDock(QDockWidget):
         self.settingsFrame.loadFromSettings(settings)
 
     def getSettings(self) -> Tuple[CameraCorrection, AnalysisSettings]:
-        return self.settingsFrame.getSettings()
+        return self.settingsFrame.getCameraCorrection(), self.settingsFrame.getSettings()
 
     def getAnalysisName(self):
         return self.settingsFrame.analysisName
@@ -63,8 +64,28 @@ class AnalysisSettingsDock(QDockWidget):
 
     def displayItemSettings(self, item: AnalysisListItem):
         #Highlight relevant cells
-        self.selector.setSelectedCells(item.cells) #todo finish line to set selection
+        self.selector.setSelectedCells(item.cells)
         self.selector.setSelectedReference(item.reference)
         #Open a dialog
-        message = QMessageBox.information(self, item.name, json.dumps(item.settings.asDict(), indent=4))
+        # message = QMessageBox.information(self, item.name, json.dumps(item.settings.asDict(), indent=4))
+        d = QDialog(self, (QtCore.Qt.WindowTitleHint | QtCore.Qt.Window))
+        d.setModal(True)
+        d.setWindowTitle(item.name)
+        l = QGridLayout()
+        setFrame = SettingsFrame()
+        setFrame.loadFromSettings(item.settings)
+        setFrame.loadCameraCorrection(item.cameraCorrection)
+        setFrame._analysisNameEdit.setText(item.name)
+        setFrame._analysisNameEdit.setEnabled(False) # Don't allow changing the name.
+
+        okButton = QPushButton("OK")
+        okButton.released.connect(d.accept)
+
+        l.addWidget(setFrame, 0, 0, 1, 1)
+        l.addWidget(okButton, 1, 0, 1, 1)
+        d.setLayout(l)
+        d.show()
+        d.exec()
+        item.settings = setFrame.getSettings()
+        item.cameraCorrection = setFrame.getCameraCorrection()
 

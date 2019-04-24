@@ -184,7 +184,7 @@ class ICMetaData:
         if os.path.exists(anPath):
             return os.listdir(os.path.join(path, 'analyses'))
         else:
-            print(f"ImCube at {path} has no `analyses` folder.")
+            # print(f"ImCube at {path} has no `analyses` folder.")
             return []
 
     def saveAnalysis(self, analysis: AnalysisResults, name:str):
