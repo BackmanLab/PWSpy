@@ -82,7 +82,7 @@ class LegacyAnalysis(AbstractAnalysis):
             ld=ld,
             settings=self.settings,
             imCubeIdTag=cube.metadata.idTag,
-            referenceIdTag=self.ref.idTag,
+            referenceIdTag=self.ref.metadata.idTag,
             extraReflectionTag=None)
 
         return results, warns
