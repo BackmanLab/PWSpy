@@ -51,10 +51,10 @@ class ERTableWidgetItem:
 
 class ExplorerWindow(QDialog):
     selectionChanged = QtCore.pyqtSignal(ERMetadata)
-    def __init__(self, parent: QWidget, filePath: str):
+    def __init__(self, parent: QWidget, manager: ERManager):
+        self.manager = manager
         self._selectedId: str = None
         super().__init__(parent)
-        self.filePath = filePath
         self.setWindowTitle("Extra Reflectance Manager")
         self.setLayout(QVBoxLayout())
         self.table = QTableWidget(self)
@@ -86,14 +86,14 @@ class ExplorerWindow(QDialog):
         w.setLayout(l)
         self.layout().addWidget(w)
         self.layout().addWidget(self.acceptSelectionButton)
-        self._initialize(filePath)
+        self._initialize()
 
     def _updateIndex(self):
         self.manager.download("index.json")
-        self._initialize(self.filePath)
+        self._initialize()
 
-    def _initialize(self, filePath: str):
-        self.manager = ERManager(filePath)
+    def _initialize(self):
+        self.manager.reinitialize()
         self._items: List[ERTableWidgetItem] = []
         for item in self.manager.index['reflectanceCubes']:
             self._addItem(item)
@@ -117,7 +117,7 @@ class ExplorerWindow(QDialog):
             if item.isChecked() and not item.downloaded:
                 # If the checkbox is enabled then it hasn't been downloaded yet. if it is checked then it should be downloaded
                 self.manager.download(item.fileName)
-        self._initialize(self.filePath)
+        self._initialize()
 
     def accept(self) -> None:
         rowIndex = [i.row() for i in self.table.selectedIndexes()[::self.table.columnCount()]][0] #  There should be only one.

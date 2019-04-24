@@ -36,12 +36,12 @@ class AnalysisManager(QtCore.QObject):
 
 
     def runList(self):
-        for anName, anSettings, cellMetas, refMeta, camCorrection, erMeta in self.app.window.analysisSettings.getListedAnalyses():
-            self.runSingle(anName, anSettings, cellMetas, refMeta, camCorrection, erMeta)
+        for anName, anSettings, cellMetas, refMeta, camCorrection in self.app.window.analysisSettings.getListedAnalyses():
+            self.runSingle(anName, anSettings, cellMetas, refMeta, camCorrection)
 
     @safeCallback
     def runSingle(self, anName: str, anSettings: AnalysisSettings, cellMetas: List[ICMetaData], refMeta: ICMetaData,
-                  cameraCorrection: CameraCorrection, erMeta: ERMetadata) -> Tuple[str, AnalysisSettings, List[Tuple[List[AnalysisWarning], ICMetaData]]]:
+                  cameraCorrection: CameraCorrection) -> Tuple[str, AnalysisSettings, List[Tuple[List[AnalysisWarning], ICMetaData]]]:
         # refMeta = self.app.window.cellSelector.getSelectedReferenceMeta()
         # cellMetas = self.app.window.cellSelector.getSelectedCellMetas()
         # cameraCorrection, settings = self.app.window.analysisSettings.getSettings()
@@ -56,6 +56,7 @@ class AnalysisManager(QtCore.QObject):
             else:
                 print("Using automatically detected camera corrections")
                 ref.correctCameraEffects(ref.metadata.cameraCorrection)
+            erMeta = self.app.ERManager.getMetadataFromId(anSettings.extraReflectanceId)
             erCube = ExtraReflectanceCube.fromMetadata(erMeta)
             analysis = Analysis(anSettings, ref, erCube)
             warnings = loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[analysis, anName, cameraCorrection], parallel=True) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.

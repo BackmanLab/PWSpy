@@ -1,6 +1,10 @@
+from __future__ import annotations
 import os
 from glob import glob
 from typing import Tuple, Optional
+import typing
+if typing.TYPE_CHECKING:
+    from pwspy.apps.PWSAnalysisApp.extraReflectionManager.manager import ERManager
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import QPalette, QValidator, QDoubleValidator
@@ -19,9 +23,9 @@ from pwspy.moduleConsts import Material
 
 
 class SettingsFrame(QScrollArea):
-    def __init__(self):
+    def __init__(self, erManager: ERManager):
         super().__init__()
-        self.ERExplorer = ExplorerWindow(self, applicationVars.extraReflectionDirectory)
+        self.ERExplorer = ExplorerWindow(self, erManager)
         self.ERExplorer.selectionChanged.connect(lambda md: self.RSubtractionNameLabel.setText(os.path.split(md.filePath)[-1]))
         self._frame = VerticallyCompressedWidget(self)
         self._layout = QGridLayout()

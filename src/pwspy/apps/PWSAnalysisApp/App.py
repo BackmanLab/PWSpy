@@ -4,6 +4,7 @@ Created on Sun Feb 10 13:26:58 2019
 
 @author: Nick
 """
+from __future__ import annotations
 import os
 import shutil
 
@@ -14,6 +15,7 @@ from pwspy.analysis import defaultSettingsPath
 from .mainWindow import PWSWindow
 from . import applicationVars
 from . import resources
+from .extraReflectionManager.manager import ERManager
 from glob import glob
 
 #TODO add progress bar for analysis run
@@ -22,6 +24,7 @@ class PWSApp(QApplication):
     def __init__(self, args):
         super().__init__(args)
         self._setupDataDirectories()
+        self.ERManager = ERManager(applicationVars.extraReflectionDirectory)
         self.window = PWSWindow()
         self.anMan = AnalysisManager(self)
         self.window.runAction.triggered.connect(self.anMan.runList)

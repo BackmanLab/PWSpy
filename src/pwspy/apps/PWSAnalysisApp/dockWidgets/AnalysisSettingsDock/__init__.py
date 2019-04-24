@@ -1,13 +1,21 @@
+from __future__ import annotations
 import json
 from typing import Tuple, List
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, \
-    QVBoxLayout, QPushButton, QSplitter, QMessageBox, QDialog, QGridLayout
+    QVBoxLayout, QPushButton, QSplitter, QMessageBox, QDialog, QGridLayout, QApplication
 
 from pwspy import CameraCorrection
 from pwspy.analysis import AnalysisSettings
-from pwspy.apps.PWSAnalysisApp.dockWidgets import CellSelectorDock
+import typing
+
+
+if typing.TYPE_CHECKING:
+    from pwspy.apps.PWSAnalysisApp.App import PWSApp
+    from pwspy.apps.PWSAnalysisApp.dockWidgets import CellSelectorDock
+
+
 from pwspy.imCube import ICMetaData
 from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
 from .widgets.QueueAnalysesFrame import AnalysisListItem, QueuedAnalysesFrame
@@ -17,13 +25,14 @@ from .widgets.SettingsFrame import SettingsFrame
 class AnalysisSettingsDock(QDockWidget):
     def __init__(self, cellSelector: CellSelectorDock):
         super().__init__("Settings")
+        self.app = QApplication.instance()
         self.setStyleSheet("QDockWidget > QWidget { border: 1px solid lightgray; }")
         self.selector = cellSelector
         self.setObjectName('AnalysisSettingsDock')  # needed for restore state to work
         splitter = QSplitter(QtCore.Qt.Vertical, self)
         widg = QWidget()
         widg.setLayout(QVBoxLayout())
-        self.settingsFrame = SettingsFrame()
+        self.settingsFrame = SettingsFrame(self.app.ERManager)
         widg.layout().addWidget(self.settingsFrame)
         self.addAnalysisButton = QPushButton("Add Analysis")
         widg.layout().addWidget(self.addAnalysisButton)
@@ -49,7 +58,7 @@ class AnalysisSettingsDock(QDockWidget):
             return
         self.analysesQueue.addAnalysis(self.settingsFrame.analysisName, camCorr, settings,
                                        self.selector.getSelectedReferenceMeta(),
-                                       self.selector.getSelectedCellMetas(), self.settingsFrame.ERExplorer.selection)
+                                       self.selector.getSelectedCellMetas())
     def loadFromSettings(self, settings: AnalysisSettings):
         self.settingsFrame.loadFromSettings(settings)
 
@@ -72,7 +81,7 @@ class AnalysisSettingsDock(QDockWidget):
         d.setModal(True)
         d.setWindowTitle(item.name)
         l = QGridLayout()
-        setFrame = SettingsFrame()
+        setFrame = SettingsFrame(self.app.ERManager)
         setFrame.loadFromSettings(item.settings)
         setFrame.loadCameraCorrection(item.cameraCorrection)
         setFrame._analysisNameEdit.setText(item.name)

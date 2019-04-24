@@ -15,14 +15,13 @@ import json
 
 class AnalysisListItem(QListWidgetItem):
     def __init__(self, cameraCorrection: CameraCorrection, settings: AnalysisSettings, reference: ICMetaData, cells: List[ICMetaData], analysisName: str,
-                 extraReflectanceMeta: ERMetadata, parent: Optional[QWidget] = None):
+                 parent: Optional[QWidget] = None):
         super().__init__(analysisName, parent)
         self.cameraCorrection = cameraCorrection
         self.settings = settings
         self.reference = reference
         self.cells = cells
         self.name = analysisName
-        self.extraReflectance = extraReflectanceMeta
 
 
 class QueuedAnalysesFrame(QScrollArea):
@@ -35,12 +34,12 @@ class QueuedAnalysesFrame(QScrollArea):
         self.setWidgetResizable(True)
 
     @property
-    def analyses(self) -> List[Tuple[str, AnalysisSettings, List[ICMetaData], ICMetaData, CameraCorrection, ERMetadata]]:
+    def analyses(self) -> List[Tuple[str, AnalysisSettings, List[ICMetaData], ICMetaData, CameraCorrection]]:
         items: List[AnalysisListItem] = [self.listWidget.item(i) for i in range(self.listWidget.count())]
-        return [(item.name, item.settings, item.cells, item.reference, item.cameraCorrection, item.extraReflectance)  for item in items]
+        return [(item.name, item.settings, item.cells, item.reference, item.cameraCorrection)  for item in items]
 
     def addAnalysis(self, analysisName: str, cameraCorrection: CameraCorrection, settings: AnalysisSettings,
-                    reference: ICMetaData, cells: List[ICMetaData], extraReflectance: ERMetadata):
+                    reference: ICMetaData, cells: List[ICMetaData]):
         if reference is None:
             QMessageBox.information(self, '!', f'Please select a reference Cell.')
             return
@@ -51,8 +50,7 @@ class QueuedAnalysesFrame(QScrollArea):
             if self.listWidget.item(i).name == analysisName:
                 QMessageBox.information(self, '!', f'Analysis {analysisName} already exists.')
                 return
-        item = AnalysisListItem(cameraCorrection, settings, reference, cells, analysisName, extraReflectance, self.listWidget)
-        # self.listWidget.addItem(item)
+        item = AnalysisListItem(cameraCorrection, settings, reference, cells, analysisName, self.listWidget) #the item is automatically loaded ot the list here.
 
     def showContextMenu(self, point: QPoint):
         menu = QMenu("ContextMenu", self)

@@ -38,9 +38,9 @@ class ERManager:
     def __init__(self, filePath: str):
         self.directory = filePath
         self.downloader = None
-        self._initialize()
+        self.reinitialize()
 
-    def _initialize(self):
+    def reinitialize(self):
         indexPath = os.path.join(self.directory, 'index.json')
         if not os.path.exists(indexPath):
             self.download('index.json')
