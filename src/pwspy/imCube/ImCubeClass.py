@@ -176,13 +176,13 @@ class ImCube(ICBase, ICMetaData):
         return
 
     def normalizeByReference(self, reference: 'ImCube'):
-        if not self._cameraCorrected:
+        if not self.isCorrected():
             print("Warning: This ImCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
-        if not self._hasBeenNormalized:
+        if not self.isExposureNormalized():
             print("Warning: This ImCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
-        if not reference._cameraCorrected:
+        if not reference.isCorrected():
             print("Warning: The reference ImCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
-        if not reference._hasBeenNormalized:
+        if not reference.isExposureNormalized():
             print("Warning: The reference ImCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
         self.data = self.data / reference.data
 
@@ -210,6 +210,7 @@ class ImCube(ICBase, ICMetaData):
     def isExtraReflectionSubtracted(self) -> bool:
         return self._hasExtraReflectionSubtracted
 
+    # TODO these erase memory of if the cube was normalized.
     def __add__(self, other):
         ret = self._add(other)
         return ImCube(ret, self.metadata, filePath=self.filePath, fileFormat=self.fileFormat)
