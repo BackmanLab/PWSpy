@@ -1,6 +1,10 @@
+from __future__ import annotations
 import os
+import traceback
 from typing import Tuple, List
-
+import typing
+if typing.TYPE_CHECKING:
+    from .App import  PWSApp
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox
 
@@ -13,17 +17,29 @@ from pwspy.imCube.ICMetaDataClass import ICMetaData
 from pwspy.utility import loadAndProcess
 
 
+def safeCallback(func):
+    def newFunc(*args):
+        try:
+            func(*args)
+        except:
+            traceback.print_exc()
+
+    return newFunc
+
 class AnalysisManager(QtCore.QObject):
     analysisDone = QtCore.pyqtSignal(str, AnalysisSettings, list)
 
-    def __init__(self, app: 'PWSApp'):
+    def __init__(self, app: PWSApp):
         super().__init__()
         self.app = app
+
+
 
     def runList(self):
         for anName, anSettings, cellMetas, refMeta, camCorrection, erMeta in self.app.window.analysisSettings.getListedAnalyses():
             self.runSingle(anName, anSettings, cellMetas, refMeta, camCorrection, erMeta)
 
+    @safeCallback
     def runSingle(self, anName: str, anSettings: AnalysisSettings, cellMetas: List[ICMetaData], refMeta: ICMetaData,
                   cameraCorrection: CameraCorrection, erMeta: ERMetadata) -> Tuple[str, AnalysisSettings, List[Tuple[List[AnalysisWarning], ICMetaData]]]:
         # refMeta = self.app.window.cellSelector.getSelectedReferenceMeta()
@@ -42,8 +58,7 @@ class AnalysisManager(QtCore.QObject):
                 ref.correctCameraEffects(ref.cameraCorrection)
             erCube = ExtraReflectanceCube.fromMetadata(erMeta)
             analysis = Analysis(anSettings, ref, erCube)
-            # analysisName = self.app.window.analysisSettings.getAnalysisName()
-            warnings = loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[ref, analysis, anName], parallel=True) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
+            warnings = loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[analysis, anName, cameraCorrection], parallel=True) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
             warnings = [(warn, md) for warn, md in warnings if md is not None]
             ret = (anName, anSettings, warnings)
             self.analysisDone.emit(*ret)
