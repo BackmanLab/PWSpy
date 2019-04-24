@@ -140,7 +140,7 @@ class Analysis(LegacyAnalysis):
 
     def run(self, cube: ImCube) -> Tuple[AnalysisResults, List[warnings.AnalysisWarning]]:
         results, warns = super().run(cube)
-        results.extraReflectionTag = self.extraReflection.idTag
+        results.extraReflectionTag = self.extraReflection.metadata.idTag
         return results, warns
 
     def _normalizeImCube(self, cube: ImCube) -> ImCube:

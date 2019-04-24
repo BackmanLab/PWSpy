@@ -44,6 +44,9 @@ class QueuedAnalysesFrame(QScrollArea):
         if reference is None:
             QMessageBox.information(self, '!', f'Please select a reference Cell.')
             return
+        if analysisName == '':
+            QMessageBox.information(self, '!', "Please give your analysis a name.")
+            return
         for i in range(self.listWidget.count()):
             if self.listWidget.item(i).name == analysisName:
                 QMessageBox.information(self, '!', f'Analysis {analysisName} already exists.')
