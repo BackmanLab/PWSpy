@@ -20,7 +20,6 @@ class KCube(ICBase):
 
     def __init__(self, data: np.ndarray, wavenumbers: Tuple[float], metadata: ICMetaData = None):
         self.metadata = metadata #Just saving a reference to the original imcube in case we want to reference it.
-        data = data.astype(np.float32) #Make sure we have the right data type
         ICBase.__init__(self, data, wavenumbers, dtype=np.float32)
 
     @classmethod
@@ -50,7 +49,7 @@ class KCube(ICBase):
             w = np.ones((len(self.wavenumbers)))  # Create unity window
 
         # Calculate the Fourier Transform of the signal multiplied by Hann window
-        opd = np.fft.rfft(self.data * w[np.newaxis, np.newaxis, :], n=fftSize, axis=2)
+        opd = np.fft.rfft(self.data * w[np.newaxis, np.newaxis, :], n=fftSize, axis=2) #TODO should this fft operation be combined with the autocorrelation fft?
         # Normalize the OPD by the quantity of wavelengths.
         opd = opd / len(self.wavenumbers)
 
@@ -68,6 +67,9 @@ class KCube(ICBase):
         dOpd = maxOpd / len(self.wavenumbers)
         xVals = len(self.wavenumbers) / 2 * np.array(range(fftSize // 2 + 1)) * dOpd / (fftSize // 2 + 1)
         xVals = xVals[:indexOpdStop]
+
+        opd = opd.astype(self.data.dtype) #Make sure to upscale precision
+        xVals = xVals.astype(self.data.dtype)
         return opd, xVals
 
     def getAutoCorrelation(self, isAutocorrMinSub: bool, stopIndex: int):
@@ -154,6 +156,9 @@ class KCube(ICBase):
         # Obtain rSquared.
         rSquared = ssReg / ssTot
         rSquared = rSquared.reshape(self.data.shape[0], self.data.shape[1])
+
+        cubeSlope = cubeSlope.astype(self.data.dtype)#Make sure to to upscale precision
+        rSquared = rSquared.astype(self.data.dtype)
         return cubeSlope, rSquared
 
     # def toImCube(self) -> ImCube:

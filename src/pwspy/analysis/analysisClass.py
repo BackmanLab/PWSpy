@@ -104,7 +104,7 @@ class LegacyAnalysis(AbstractAnalysis):
         # Flatten the array to 2d and put the wavenumber axis first.
         flattenedData = np.rollaxis(flattenedData, 1)
         # make an empty array to hold the fit values.
-        cubePoly = np.zeros(flattenedData.shape)
+        cubePoly = np.zeros(flattenedData.shape, dtype=cube.data.dtype)
         # At this point polydata goes from holding the cube data to holding the polynomial values for each pixel. still 2d.
         polydata = np.polyfit(cube.wavenumbers, flattenedData, order)
         for i in range(order + 1):

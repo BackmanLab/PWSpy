@@ -75,7 +75,7 @@ class WorkingDirDialog(QDialog):
             self.textLine.setText(self.directory)
 
 
-class AnalysisSummaryDisplay(QWidget):
+class AnalysisSummaryDisplay(QDialog):
     def __init__(self, parent: Optional[QWidget], analysisName: str, analysisSettings: AnalysisSettings, warnings: List[Tuple[List[AnalysisWarning], ICMetaData]]):
         super().__init__(parent=parent)
         self.analysisName = analysisName
