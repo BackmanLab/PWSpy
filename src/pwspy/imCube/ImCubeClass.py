@@ -18,7 +18,7 @@ import typing
 import numbers
 from scipy.io import savemat
 if typing.TYPE_CHECKING:
-    from pwspy import ExtraReflectanceCube
+    from pwspy.imCube.ExtraReflectanceCubeClass import ExtraReflectionCube
 from .otherClasses import CameraCorrection
 from .ICBaseClass import ICBase
 from .ICMetaDataClass import ICMetaData, ICFileFormats
@@ -188,8 +188,8 @@ class ImCube(ICBase):
             print("Warning: The reference ImCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
         self.data = self.data / reference.data
 
-    def subtractExtraReflection(self, extraReflection: ExtraReflectanceCube):
-        assert isinstance(extraReflection, ExtraReflectanceCube)
+    def subtractExtraReflection(self, extraReflection: ExtraReflectionCube):
+        assert isinstance(extraReflection, ExtraReflectionCube)
         assert self.data.shape == extraReflection.data.shape
         if not self._hasBeenNormalized:
             raise Exception("This ImCube has not yet been normalized by exposure. are you sure you want to normalize by exposure?")
