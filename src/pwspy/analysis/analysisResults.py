@@ -88,7 +88,7 @@ class AbstractAnalysisResults(ABC):
 
 
 @dataclasses.dataclass
-class AnalysisResults(AbstractAnalysisResults):
+class AnalysisResults:
     """A saveable object to hold the results of an analysis. Also stored the creation time of the analysis."""
     settings: AnalysisSettings
     reflectance: KCube

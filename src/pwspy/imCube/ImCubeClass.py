@@ -5,6 +5,9 @@ Created on Thu Aug  9 11:41:32 2018
 @author: Nick
 """
 from __future__ import annotations
+
+import copy
+
 import h5py
 import numpy as np
 import tifffile as tf
@@ -209,22 +212,29 @@ class ImCube(ICBase):
     def isExtraReflectionSubtracted(self) -> bool:
         return self._hasExtraReflectionSubtracted
 
-    # TODO these erase memory of if the cube was normalized.
     def __add__(self, other):
         ret = self._add(other)
-        return ImCube(ret, self.metadata)
+        new = copy.deepcopy(self)
+        new.data = ret
+        return new
 
     def __sub__(self, other):
         ret = self._sub(other)
-        return ImCube(ret, self.metadata)
+        new = copy.deepcopy(self)
+        new.data = ret
+        return new
 
     def __mul__(self, other):
         ret = self._mul(other)
-        return ImCube(ret, self.metadata)
+        new = copy.deepcopy(self)
+        new.data = ret
+        return new
 
     def __truediv__(self, other):
         ret = self._truediv(other)
-        return ImCube(ret, self.metadata)
+        new = copy.deepcopy(self)
+        new.data = ret
+        return new
 
     @classmethod
     def fromHdfDataset(cls, d: h5py.Dataset):
@@ -242,6 +252,8 @@ class ImCube(ICBase):
             if pixelSize is None:
                 raise ValueError("ImCube Metadata does not have a `pixelSizeUm` saved. please manually specify pixel size. use pixelSize=1 to make `kernelRadius in units of pixels.")
         super().filterDust(kernelRadius, pixelSize)
+
+
 
 
 # class FakeCube(ImCube):
