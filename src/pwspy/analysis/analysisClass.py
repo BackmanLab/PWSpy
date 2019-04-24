@@ -131,8 +131,8 @@ class Analysis(LegacyAnalysis):
         ref.filterDust(.75)  # Apply a blur to filter out dust particles #TODO this is in microns. I have no idea what the radius should actually be.
 
         theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, index=ref.wavelengths)[None, None, :]
-        I0 = ref.data / (theoryR + extraReflectance) # I0 is the intensity of the illumination source, reconstructed in units of `counts`. this is an inversion of our assumption that reference = I0*(referenceReflectance + extraReflectance)
-        Iextra = extraReflectance * I0  # converting extraReflectance to the extra reflection in units of counts
+        I0 = ref.data / (theoryR + extraReflectance.data) # I0 is the intensity of the illumination source, reconstructed in units of `counts`. this is an inversion of our assumption that reference = I0*(referenceReflectance + extraReflectance)
+        Iextra = extraReflectance.data * I0  # converting extraReflectance to the extra reflection in units of counts
         ref = ref - Iextra  # remove the extra reflection from our data
         ref = ref / theoryR  # now when we normalize by our reference we will get a result in units of physical reflectrance rather than arbitrary units.
         self.ref = ref

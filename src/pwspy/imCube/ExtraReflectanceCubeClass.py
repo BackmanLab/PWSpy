@@ -110,7 +110,7 @@ class ExtraReflectanceCube(ICBase, ERMetadata):
 
     @classmethod
     def fromHdfDataset(cls, d: h5py.Dataset, filePath: str = None):
-        data, index = ICBase._decodeHdf(d)
+        data, index = cls._decodeHdf(d)
         md = ERMetadata.fromHdfDataset(d)
         return cls(data, index, md.metadata, filePath=filePath)
 

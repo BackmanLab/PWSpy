@@ -108,6 +108,8 @@ class ERWorkFlow:
             matCombos = er.generateMaterialCombos(materials)
             combos = er.getAllCubeCombos(matCombos, cubes)
             erCube, rExtraDict, self.plotnds = er.generateRExtraCubes(combos, theoryR)
+            print(f"Final data max is {erCube.data.max()}")
+            print(f"Final data min is {erCube.data.min()}")
             self.figs.extend([i.fig for i in self.plotnds]) # keep track of opened figures.
             saveName = f'{self.currDir}-{setting}'
             dialog = IndexInfoForm(f'{self.currDir}-{setting}', erCube.idTag)

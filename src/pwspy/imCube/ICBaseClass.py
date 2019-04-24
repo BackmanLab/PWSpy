@@ -209,7 +209,7 @@ class ICBase:
     def _decodeHdf(cls, d: h5py.Dataset):
         assert 'type' in d.attrs
         assert 'index' in d.attrs
-        assert d.attrs['type'].encode() == cls.__name__, f"Got {d.attrs['type']} instead of {cls.__name__}"
+        assert d.attrs['type'].decode() == cls.__name__, f"Got {d.attrs['type'].decod()} instead of {cls.__name__}"
         print(f'{cls.__name__} chunks: {d.chunks}')
         return np.array(d), tuple(d.attrs['index'])
 
