@@ -42,9 +42,7 @@ class AnalysisManager(QtCore.QObject):
     @safeCallback
     def runSingle(self, anName: str, anSettings: AnalysisSettings, cellMetas: List[ICMetaData], refMeta: ICMetaData,
                   cameraCorrection: CameraCorrection) -> Tuple[str, AnalysisSettings, List[Tuple[List[AnalysisWarning], ICMetaData]]]:
-        # refMeta = self.app.window.cellSelector.getSelectedReferenceMeta()
-        # cellMetas = self.app.window.cellSelector.getSelectedCellMetas()
-        # cameraCorrection, settings = self.app.window.analysisSettings.getSettings()
+        #TODO check if the analysis file already exists.
         if cameraCorrection is None: # This means that the user has selected automatic cameraCorrection
             correctionsOk = self._checkAutoCorrectionConsistency(cellMetas + [refMeta])
         else:
