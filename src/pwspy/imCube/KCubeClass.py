@@ -33,7 +33,7 @@ class KCube(ICBase):
         # Interpolate to the evenly spaced wavenumbers
         interpFunc = spi.interp1d(wavenumbers, data, kind='linear', axis=2)
         data = interpFunc(evenWavenumbers)
-        return cls(data, tuple(evenWavenumbers.astype(np.float32)), metadata=cube.toMetadata())
+        return cls(data, tuple(evenWavenumbers.astype(np.float32)), metadata=cube.metadata)
 
     @property
     def wavenumbers(self):

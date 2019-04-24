@@ -55,7 +55,7 @@ class AnalysisManager(QtCore.QObject):
                 ref.correctCameraEffects(cameraCorrection)
             else:
                 print("Using automatically detected camera corrections")
-                ref.correctCameraEffects(ref.cameraCorrection)
+                ref.correctCameraEffects(ref.metadata.cameraCorrection)
             erCube = ExtraReflectanceCube.fromMetadata(erMeta)
             analysis = Analysis(anSettings, ref, erCube)
             warnings = loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[analysis, anName, cameraCorrection], parallel=True) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
@@ -69,11 +69,11 @@ class AnalysisManager(QtCore.QObject):
         if cameraCorrection is not None:
             im.correctCameraEffects(cameraCorrection)
         else:
-            im.correctCameraEffects(im.cameraCorrection)
+            im.correctCameraEffects(im.metadata.cameraCorrection)
         results, warnings = analysis.run(im)
-        im.saveAnalysis(results, analysisName)
+        im.metadata.saveAnalysis(results, analysisName)
         if len(warnings) > 0:
-            md = im.toMetadata()
+            md = im.metadata
         else:
             md = None
         return warnings, md
