@@ -18,9 +18,9 @@ class ResultsTableDock(QDockWidget):
         self.checkBoxes.setLayout(QVBoxLayout())
         self.checkBoxes.layout().setContentsMargins(1, 1, 1, 1)
         self.checkBoxes.layout().setSpacing(1)
-        for i, n in enumerate(self.table.columns):
-            c = QCheckBox(n)
-            c.setCheckState(2)
+        for i, (name, default) in enumerate(zip(self.table.columns, self.table.defaultColumns)):
+            c = QCheckBox(name)
+            c.setCheckState(2) if default else c.setCheckState(0)
             f = lambda state, j=i: self.table.setColumnHidden(j, state == 0)
             c.stateChanged.connect(f)
             self.checkBoxes.layout().addWidget(c)

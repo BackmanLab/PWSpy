@@ -38,10 +38,14 @@ class ResultsTable(CopyableTable):
 
     def __init__(self):
         super().__init__()
-        self.columns = ("Path", 'Cell#', "Analysis", 'ROI', 'ROI#', "RMS", 'Reflectance', 'ld', "AutoCorr Slope", 'R^2', 'OPD')
+        self.columns, self.defaultColumns = zip(*(("Path", False), ('Cell#', True), ("Analysis", False), ('ROI', True),
+                                                  ('ROI#', True), ("RMS", True), ('Reflectance', True), ('ld', False),
+                                                  ("AutoCorr Slope", False), ('R^2', False), ('OPD', False)))
         self.setRowCount(0)
         self.setColumnCount(len(self.columns))
         self.setHorizontalHeaderLabels(self.columns)
+        for i, default in enumerate(self.defaultColumns):
+            self.setColumnHidden(i, not default)
         self.verticalHeader().hide()
         self.setSortingEnabled(True)
         self._items = []
