@@ -86,10 +86,6 @@ class AbstractAnalysisResults(ABC):
     def extraReflectionTag(self) -> str:
         pass
 
-    @property
-    @abstractmethod
-    def analysisName(self) -> str:
-        pass
 
 @dataclasses.dataclass
 class AnalysisResults(AbstractAnalysisResults):
@@ -107,7 +103,6 @@ class AnalysisResults(AbstractAnalysisResults):
     imCubeIdTag: str
     referenceIdTag: str
     extraReflectionTag: Optional[str]
-    analysisName: str
     time: str = None
 
     def __post_init__(self):
@@ -214,10 +209,6 @@ class AnalysisResultsLoader(AbstractAnalysisResults):
     @cached_property
     def extraReflectionTag(self) -> str:
         return self.file['extraReflectionTag'].encode()
-
-    @cached_property
-    def analysisName(self) -> str:
-        return self.file['analysisName'].encode()
 
     def loadAllFromDisk(self) -> None:
         """Access all cached properties in order to load them from disk"""
