@@ -4,6 +4,7 @@ Created on Thu Aug  9 11:41:32 2018
 
 @author: Nick
 """
+from __future__ import annotations
 import h5py
 import numpy as np
 import tifffile as tf
@@ -13,21 +14,22 @@ from glob import glob
 import typing
 import numbers
 from scipy.io import savemat
-
+if typing.TYPE_CHECKING:
+    from pwspy import ExtraReflectanceCube
 from .otherClasses import CameraCorrection
 from .ICBaseClass import ICBase
 from .ICMetaDataClass import ICMetaData, ICFileFormats
 import multiprocessing as mp
 
-class ImCube(ICBase, ICMetaData):
+class ImCube(ICBase):
     """ A class representing a single acquisition of PWS. Contains methods for loading and saving to multiple formats as well as common operations used in analysis."""
     _cameraCorrected: bool
     _hasBeenNormalized: bool
     _hasExtraReflectionSubtracted: bool
 
-    def __init__(self, data, metadata: dict, dtype=np.float32, filePath: str=None, fileFormat: ICFileFormats=None):
-        ICMetaData.__init__(self, metadata, filePath, fileFormat=fileFormat)
-        ICBase.__init__(self, data, tuple(np.array(self.metadata['wavelengths']).astype(np.float32)), dtype=dtype)
+    def __init__(self, data, metadata: ICMetaData, dtype = np.float32):
+        self.metadata = metadata
+        ICBase.__init__(self, data, self.metadata.wavelengths, dtype=dtype)
         self._hasBeenNormalized = False  # Keeps track of whether or not we have normalized by exposure so that we don't do it twice.
         self._cameraCorrected = False
         self._hasExtraReflectionSubtracted = False
@@ -55,13 +57,13 @@ class ImCube(ICBase, ICMetaData):
                 metadata = ICMetaData.fromOldPWS(directory)
             with open(os.path.join(directory, 'image_cube'), 'rb') as f:
                 data = np.frombuffer(f.read(), dtype=np.uint16)
-            data = data.reshape((metadata.metadata['imgHeight'], metadata.metadata['imgWidth'], len(metadata.metadata['wavelengths'])),
+            data = data.reshape((metadata._dict['imgHeight'], metadata._dict['imgWidth'], len(metadata.wavelengths)),
                                 order='F')
         finally:
             if lock is not None:
                 lock.release()
         data = data.copy(order='C')
-        return cls(data, metadata.metadata, filePath=metadata.filePath, fileFormat=ICFileFormats.RawBinary)
+        return cls(data, metadata)
 
     @classmethod
     def fromTiff(cls, directory, metadata: ICMetaData = None,  lock: mp.Lock = None):
@@ -82,7 +84,7 @@ class ImCube(ICBase, ICMetaData):
             if lock is not None:
                 lock.release()
         data = data.copy(order='C')
-        return cls(data, metadata.metadata, filePath=directory, fileFormat=ICFileFormats.Tiff)
+        return cls(data, metadata)
 
     @classmethod
     def fromNano(cls, directory: str):
@@ -91,7 +93,7 @@ class ImCube(ICBase, ICMetaData):
             data = np.array(hf['imageCube'])
             data = np.rollaxis(data, 0, 3)
             data = data.copy(order='C')
-            return cls(data, md.metadata, filePath=directory, fileFormat=ICFileFormats.NanoMat)
+            return cls(data, md.metadata)
 
     @classmethod
     def fromMetadata(cls, meta: ICMetaData,  lock: mp.Lock = None):
@@ -104,25 +106,22 @@ class ImCube(ICBase, ICMetaData):
         else:
             raise TypeError("Invalid FileFormat")
 
-    def toMetadata(self):
-        return ICMetaData(self.metadata, self.filePath, self.fileFormat)
-
     def toOldPWS(self, directory):
         if os.path.exists(directory):
             raise OSError("The specified directory already exists.")
         os.mkdir(directory)
         m = self.metadata
-        info2 = {'info2': np.array([m['wavelengths'][0], 0, m['wavelengths'][-1], m['exposure'], 0, 0, 0, 0, 0, 0],
+        info2 = {'info2': np.array([m.wavelengths[0], 0, m.wavelengths[-1], m.exposure, 0, 0, 0, 0, 0, 0],
                                    dtype=object)}
         try:
             info3 = {
-                'info3': np.array([m['systemId'], m['exposure'], m['imgHeight'], m['imgWidth'], 0, 0, 0, 0, 0, 0, 0, 0],
+                'info3': np.array([m._dict['systemId'], m.exposure, m._dict['imgHeight'], m._dict['imgWidth'], 0, 0, 0, 0, 0, 0, 0, 0],
                                   dtype=object)}  # the old way
         except:
             info3 = {'info3': np.array(
-                [m['system'], m['exposure'], self.data.shape[0], self.data.shape[1], 0, 0, 0, 0, 0, 0, 0, 0],
+                [m._dict['system'], m.exposure, self.data.shape[0], self.data.shape[1], 0, 0, 0, 0, 0, 0, 0, 0],
                 dtype=object)}  # The new way
-        wv = {"WV": [float(i) for i in m['wavelengths']]}
+        wv = {"WV": m.wavelengths}
         savemat(os.path.join(directory, 'info2'), info2)
         savemat(os.path.join(directory, 'info3'), info3)
         savemat(os.path.join(directory, 'WV'), wv)
@@ -145,14 +144,14 @@ class ImCube(ICBase, ICMetaData):
         os.mkdir(outpath)
         self._saveImBd(outpath)
         with tf.TiffWriter(open(os.path.join(outpath, 'pws.tif'), 'wb')) as w:
-            w.save(np.rollaxis(im, -1, 0), metadata=self.metadata)
+            w.save(np.rollaxis(im, -1, 0), metadata=self.metadata._dict)
 
     def normalizeByExposure(self):
         if not self._cameraCorrected:
             raise Exception(
                 "This ImCube has not yet been corrected for camera effects. are you sure you want to normalize by exposure?")
         if not self._hasBeenNormalized:
-            self.data = self.data / self.metadata['exposure']
+            self.data = self.data / self.metadata.exposure
         else:
             raise Exception("The ImCube has already been normalized by exposure.")
         self._hasBeenNormalized = True
@@ -163,7 +162,7 @@ class ImCube(ICBase, ICMetaData):
             raise Exception("This ImCube has already had it's camera correction applied!")
         if binning is None:
             try:
-                binning = self.metadata['binning']
+                binning = self.metadata.binning
             except KeyError:
                 raise ValueError('Binning metadata not found. Binning must be specified in function argument.')
         count = correction.darkCounts * binning ** 2  # Account for the fact that binning multiplies the darkcount.
@@ -175,7 +174,7 @@ class ImCube(ICBase, ICMetaData):
         self._cameraCorrected = True
         return
 
-    def normalizeByReference(self, reference: 'ImCube'):
+    def normalizeByReference(self, reference: ImCube):
         if not self.isCorrected():
             print("Warning: This ImCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
         if not self.isExposureNormalized():
@@ -186,12 +185,12 @@ class ImCube(ICBase, ICMetaData):
             print("Warning: The reference ImCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
         self.data = self.data / reference.data
 
-    def subtractExtraReflection(self, extraReflection: np.ndarray):
-        assert self.data.shape == extraReflection.shape
+    def subtractExtraReflection(self, extraReflection: ExtraReflectanceCube):
+        assert self.data.shape == extraReflection.data.shape
         if not self._hasBeenNormalized:
             raise Exception("This ImCube has not yet been normalized by exposure. are you sure you want to normalize by exposure?")
         if not self._hasExtraReflectionSubtracted:
-            self.data = self.data - extraReflection
+            self.data = self.data - extraReflection.data
         else:
             raise Exception("The ImCube has already has extra reflection subtracted.")
 
@@ -201,10 +200,10 @@ class ImCube(ICBase, ICMetaData):
     def isExposureNormalized(self) -> bool:
         return self._hasBeenNormalized
 
-    def selIndex(self, start, stop) -> 'ImCube':
+    def selIndex(self, start, stop) -> ImCube:
         ret = super().selIndex(start, stop)
         md = self.metadata
-        md["wavelengths"] = ret.index
+        md._dict['wavelengths'] = ret.index
         return ImCube(ret.data, md)
 
     def isExtraReflectionSubtracted(self) -> bool:
@@ -213,46 +212,46 @@ class ImCube(ICBase, ICMetaData):
     # TODO these erase memory of if the cube was normalized.
     def __add__(self, other):
         ret = self._add(other)
-        return ImCube(ret, self.metadata, filePath=self.filePath, fileFormat=self.fileFormat)
+        return ImCube(ret, self.metadata)
 
     def __sub__(self, other):
         ret = self._sub(other)
-        return ImCube(ret, self.metadata, filePath=self.filePath, fileFormat=self.fileFormat)
+        return ImCube(ret, self.metadata)
 
     def __mul__(self, other):
         ret = self._mul(other)
-        return ImCube(ret, self.metadata, filePath=self.filePath, fileFormat=self.fileFormat)
+        return ImCube(ret, self.metadata)
 
     def __truediv__(self, other):
         ret = self._truediv(other)
-        return ImCube(ret, self.metadata, filePath=self.filePath, fileFormat=self.fileFormat)
+        return ImCube(ret, self.metadata)
 
     @classmethod
     def fromHdfDataset(cls, d: h5py.Dataset):
         data, index = cls._decodeHdf(d)
-        md = cls._decodeHdfMetadata(d)
-        return cls(data, md, fileFormat=ICFileFormats.Hdf)
+        md = ICMetaData.fromHdf(d)
+        return cls(data, md)
 
     def toHDF(self, g: h5py.Group, name: str) -> None:
         g = super().toHdfDataset(g, name=name)
-        d = self._encodeHdfMetadata(g[name])
+        d = self.metadata.encodeHdfMetadata(g[name])
 
     def filterDust(self, kernelRadius: float, pixelSize: float = None) -> None:
         if pixelSize is None:
-            pixelSize = self.metadata['pixelSizeUm']
+            pixelSize = self.metadata.pixelSizeUm
             if pixelSize is None:
                 raise ValueError("ImCube Metadata does not have a `pixelSizeUm` saved. please manually specify pixel size. use pixelSize=1 to make `kernelRadius in units of pixels.")
         super().filterDust(kernelRadius, pixelSize)
 
 
-class FakeCube(ImCube):
-    def __init__(self, num: int):
-        x = y = np.arange(0, 256)
-        z = np.arange(0, 100)
-        Y, X, Z = np.meshgrid(y, x, z)
-        freq = np.random.random() / 4
-        freq2 = np.random.random() / 4
-        data = np.exp(-np.sqrt((X - X.max() / 2) ** 2 + (Y - Y.max() / 2) ** 2) / (x.max() / 4)) * (
-                .75 + 0.25 * np.cos(freq2 * 2 * np.pi * Z)) * (0.5 + 0.5 * np.sin(freq * 2 * np.pi * X))
-        md = {'wavelengths': z + 500, 'exposure': 100, 'time': '315'}
-        super().__init__(data, md, filePath=f'Cell{num}')
+# class FakeCube(ImCube):
+#     def __init__(self, num: int):
+#         x = y = np.arange(0, 256)
+#         z = np.arange(0, 100)
+#         Y, X, Z = np.meshgrid(y, x, z)
+#         freq = np.random.random() / 4
+#         freq2 = np.random.random() / 4
+#         data = np.exp(-np.sqrt((X - X.max() / 2) ** 2 + (Y - Y.max() / 2) ** 2) / (x.max() / 4)) * (
+#                 .75 + 0.25 * np.cos(freq2 * 2 * np.pi * Z)) * (0.5 + 0.5 * np.sin(freq * 2 * np.pi * X))
+#         md = {'wavelengths': z + 500, 'exposure': 100, 'time': '315'}
+#         super().__init__(data, md)

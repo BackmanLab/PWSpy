@@ -53,19 +53,36 @@ class ICMetaData:
 
     def __init__(self, metadata: dict, filePath: str = None, fileFormat: ICFileFormats = None):
         jsonschema.validate(instance=metadata, schema=self._jsonSchema, types={'array': (list, tuple)})
-        self.metadata: dict = metadata
+        self._dict: dict = metadata
         self.filePath: Optional[str] = filePath
         self.fileFormat: ICFileFormats = fileFormat
-        if all([i in self.metadata for i in ['darkCounts', 'linearityPoly']]):
-            self.cameraCorrection = CameraCorrection(darkCounts=self.metadata['darkCounts'],
-                                                     linearityPolynomial=self.metadata['linearityPoly'])
+        self._dict['wavelengths'] = tuple(np.array(self._dict['wavelengths']).astype(np.float32))
+        if all([i in self._dict for i in ['darkCounts', 'linearityPoly']]):
+            self.cameraCorrection = CameraCorrection(darkCounts=self._dict['darkCounts'],
+                                                     linearityPolynomial=self._dict['linearityPoly'])
         else:
             self.cameraCorrection = None
 
     @property
-    def idTag(self):
+    def idTag(self) -> str:
         #TODO math operations on the cube should mangle this somehow so that a modified cube wouldn't be saved with a duplicate id. Now I'm unsure about this.
-        return f"ImCube_{self.metadata['system']}_{self.metadata['time']}"
+        return f"ImCube_{self._dict['system']}_{self._dict['time']}"
+
+    @property
+    def binning(self) -> int:
+        return self._dict['binning']
+
+    @property
+    def pixelSizeUm(self) -> float:
+        return self._dict['pixelSizeUm']
+
+    @property
+    def wavelengths(self) -> Tuple[float, ...]:
+        return self._dict['wavelengths']
+
+    @property
+    def exposure(self) -> float:
+        return self._dict['exposure']
 
     @classmethod
     def loadAny(cls, directory):
@@ -138,16 +155,9 @@ class ICMetaData:
             del metadata['waveLengths']
         return cls(metadata, filePath=directory, fileFormat=ICFileFormats.Tiff)
 
-    @staticmethod
-    def _checkMetadata(metadata: dict):
-        required = {'time', 'exposure', 'wavelengths', 'system'}
-        for i in required:
-            if i not in metadata:
-                raise ValueError(f"Metadata does not have a '{i}' field.")
-
     def metadataToJson(self, directory):
         with open(os.path.join(directory, 'pwsmetadata.json'), 'w') as f:
-            json.dump(self.metadata, f)
+            json.dump(self._dict, f)
 
     def getRois(self) -> List[Tuple[str, int, RoiFileFormats]]:
         assert self.filePath is not None
@@ -206,16 +216,15 @@ class ICMetaData:
 
     @classmethod
     def _decodeHdfMetadata(cls, d: h5py.Dataset) -> dict:
-        assert d.attrs['type'].encode == cls.__name__
         assert 'metadata' in d.attrs
         return json.loads(d.attrs['metadata'])
 
     @classmethod
     def fromHdf(cls, d: h5py.Dataset):
-        return cls(cls._decodeHdfMetadata(d))
+        return cls(cls._decodeHdfMetadata(d), fileFormat=ICFileFormats.Hdf)
 
-    def _encodeHdfMetadata(self, d: h5py.Dataset) -> h5py.Dataset:
-        d.attrs['metadata'] = np.string_(json.dumps(self.metadata))
+    def encodeHdfMetadata(self, d: h5py.Dataset) -> h5py.Dataset:
+        d.attrs['metadata'] = np.string_(json.dumps(self._dict))
         return d
 
 from pwspy.analysis.analysisResults import AnalysisResultsLoader
