@@ -189,6 +189,7 @@ class ImCube(ICBase):
         self.data = self.data / reference.data
 
     def subtractExtraReflection(self, extraReflection: ExtraReflectanceCube):
+        assert isinstance(extraReflection, ExtraReflectanceCube)
         assert self.data.shape == extraReflection.data.shape
         if not self._hasBeenNormalized:
             raise Exception("This ImCube has not yet been normalized by exposure. are you sure you want to normalize by exposure?")

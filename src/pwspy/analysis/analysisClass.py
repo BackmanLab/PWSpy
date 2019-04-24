@@ -133,7 +133,7 @@ class Analysis(LegacyAnalysis):
         theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, index=ref.wavelengths)[None, None, :]
         I0 = ref.data / (theoryR + extraReflectance.data) # I0 is the intensity of the illumination source, reconstructed in units of `counts`. this is an inversion of our assumption that reference = I0*(referenceReflectance + extraReflectance)
         Iextra = extraReflectance.data * I0  # converting extraReflectance to the extra reflection in units of counts
-        ref = ref - Iextra  # remove the extra reflection from our data
+        ref.subtractExtraReflection(Iextra)  # remove the extra reflection from our data#
         ref = ref / theoryR  # now when we normalize by our reference we will get a result in units of physical reflectrance rather than arbitrary units.
         self.ref = ref
         self.extraReflection = Iextra
