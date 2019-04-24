@@ -184,10 +184,14 @@ class ICMetaData:
         if os.path.exists(anPath):
             return os.listdir(os.path.join(path, 'analyses'))
         else:
+            print(f"ImCube at {path} has no `analyses` folder.")
             return []
 
     def saveAnalysis(self, analysis: AnalysisResults, name:str):
-        analysis.toHDF5(os.path.join(self.filePath, 'analyses'), name)
+        path = os.path.join(self.filePath, 'analyses')
+        if not os.path.exists(path):
+            os.mkdir(path)
+        analysis.toHDF5(path, name)
 
     def loadAnalysis(self, name: str) -> AnalysisResultsLoader:
         return AnalysisResultsLoader(os.path.join(self.filePath, 'analyses'), name)
