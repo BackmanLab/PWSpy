@@ -20,6 +20,7 @@ class KCube(ICBase):
 
     def __init__(self, data: np.ndarray, wavenumbers: Tuple[float], metadata: ICMetaData = None):
         self.metadata = metadata #Just saving a reference to the original imcube in case we want to reference it.
+        data = data.astype(np.float32) #Make sure we have the right data type
         ICBase.__init__(self, data, wavenumbers, dtype=np.float32)
 
     @classmethod

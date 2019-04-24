@@ -132,6 +132,8 @@ class AnalysisResults: #TODO this should inherit from abstract class but it does
                     hf = v.toHdfDataset(hf, k)
                 elif isinstance(v, np.ndarray):
                     hf.create_dataset(k, data=v)
+                elif v is None:
+                    pass #Don't bother writing values that were skipped.
                 else:
                     raise TypeError(f"Analysis results type {k}, {type(v)} not supported or expected")
 
