@@ -174,7 +174,7 @@ class ICMetaData:
     def saveRoi(self, roi: Roi) -> None:
         roi.toHDF(self.filePath)
 
-    def getAnalyses(self):
+    def getAnalyses(self) -> typing.List[str]:
         assert self.filePath is not None
         return self.getAnalysesAtPath(self.filePath)
 
@@ -182,7 +182,8 @@ class ICMetaData:
     def getAnalysesAtPath(path: str) -> typing.List[str]:
         anPath = os.path.join(path, 'analyses')
         if os.path.exists(anPath):
-            return os.listdir(os.path.join(path, 'analyses'))
+            files = os.listdir(os.path.join(path, 'analyses'))
+            return [AnalysisResultsLoader.fileName2Name(f) for f in files]
         else:
             # print(f"ImCube at {path} has no `analyses` folder.")
             return []
@@ -195,6 +196,9 @@ class ICMetaData:
 
     def loadAnalysis(self, name: str) -> AnalysisResultsLoader:
         return AnalysisResultsLoader(os.path.join(self.filePath, 'analyses'), name)
+
+    def removeAnalysis(self, name: str):
+        os.remove(os.path.join(self.filePath, 'analyses', AnalysisResultsLoader.name2FileName(name)))
 
     def editNotes(self):
         filepath = os.path.join(self.filePath, 'notes.txt')

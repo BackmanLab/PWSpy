@@ -42,7 +42,16 @@ class AnalysisManager(QtCore.QObject):
     @safeCallback
     def runSingle(self, anName: str, anSettings: AnalysisSettings, cellMetas: List[ICMetaData], refMeta: ICMetaData,
                   cameraCorrection: CameraCorrection) -> Tuple[str, AnalysisSettings, List[Tuple[List[AnalysisWarning], ICMetaData]]]:
-        #TODO check if the analysis file already exists.
+        conflictCells = []
+        for cell in cellMetas:
+            if anName in cell.getAnalyses():
+                conflictCells.append(cell)
+        if len(conflictCells) > 0:
+            ret = QMessageBox.question(self.app.window, "File Conflict", f"The following cells already have an analysis named {anName}. Do you want to delete existing analyses and continue?: \n {', '.join([os.path.split(i.filePath)[-1] for i in conflictCells])}")
+            if ret == QMessageBox.Yes:
+                [cell.removeAnalysis(anName) for cell in conflictCells]
+            else:
+                return
         if cameraCorrection is None: # This means that the user has selected automatic cameraCorrection
             correctionsOk = self._checkAutoCorrectionConsistency(cellMetas + [refMeta])
         else:

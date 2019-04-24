@@ -86,9 +86,17 @@ class AbstractAnalysisResults(ABC):
     def extraReflectionTag(self) -> str:
         pass
 
+    @staticmethod
+    def name2FileName(name: str) -> str:
+        return f'analysisResults_{name}.h5'
+
+    @staticmethod
+    def fileName2Name(fileName: str) -> str:
+        return fileName.split('analysisResults_')[1][:-3]
+
 
 @dataclasses.dataclass
-class AnalysisResults:
+class AnalysisResults: #TODO this should inherit from abstract class but it doesn't work easily
     """A saveable object to hold the results of an analysis. Also stored the creation time of the analysis."""
     settings: AnalysisSettings
     reflectance: KCube
@@ -109,17 +117,18 @@ class AnalysisResults:
         self.__setattr__('time', datetime.now().strftime(dateTimeFormat))
 
     def toHDF5(self, directory: str, name: str):
-        fileName = osp.join(directory, f'analysisResults_{name}.hdf5')
+        from pwspy import KCube #Need this for instance checking
+        fileName = osp.join(directory, AbstractAnalysisResults.name2FileName(name))
         if osp.exists(fileName):
             raise OSError(f'{fileName} already exists.')
         # now save the stuff
         with h5py.File(fileName, 'w') as hf:
-            for k, v in dataclasses.asdict(self).items():
+            for k, v in self.__dict__.items():
                 if k == 'settings':
                     v = v.toJsonString()
                 if isinstance(v, str):
                     hf.create_dataset(k, data=np.string_(v)) #h5py recommends encoding strings this way for compatability.
-                elif isinstance(v, KCube): # Todo add support for extra reflection.
+                elif isinstance(v, KCube):
                     hf = v.toHdfDataset(hf, k)
                 elif isinstance(v, np.ndarray):
                     hf.create_dataset(k, data=v)
@@ -148,7 +157,7 @@ class cached_property(object):
 class AnalysisResultsLoader(AbstractAnalysisResults):
     """A read-only loader for analysis results that will only load them from hard disk as needed."""
     def __init__(self, directory: str, name: str):
-        self.file = h5py.File(osp.join(directory, f'analysisResults_{name}.hdf5'))
+        self.file = h5py.File(osp.join(directory, self.name2FileName(name)))
 
     def __del__(self):
         self.file.close()

@@ -85,7 +85,7 @@ class LegacyAnalysis(AbstractAnalysis):
             imCubeIdTag=cube.metadata.idTag,
             referenceIdTag=self.ref.metadata.idTag,
             extraReflectionTag=None)
-
+        warns = [warn for warn in warns if warn is not None] #Filter out null values.
         return results, warns
 
     def _normalizeImCube(self, cube: ImCube) -> ImCube:
