@@ -10,6 +10,9 @@ from pwspy.imCube.ICBaseClass import ICBase
 import numpy as np
 import os
 from pwspy.moduleConsts import dateTimeFormat
+import typing
+if typing.TYPE_CHECKING:
+    from pwspy.imCube import ImCube
 
 class ERMetadata:
     _jsonSchema = {"$schema": "http://json-schema.org/schema#",
@@ -35,14 +38,13 @@ class ERMetadata:
         """The metadata dictionary will often just be inherited information from one of the ImCubes that was used to create
         this ER Cube. While this data can be useful it should be taken with a grain of salt. E.G. the metadata will contain
         an `exposure` field. In reality this ER Cube will have been created from ImCubes at a variety of exposures."""
-        metadata = inheritedMetadata
-        jsonschema.validate(instance=metadata, schema=self._jsonSchema)
+        self.inheritedMetadata = inheritedMetadata
+        jsonschema.validate(instance=inheritedMetadata, schema=self._jsonSchema)
         self.filePath = filePath
-        self.metadata = metadata
 
     @property
     def idTag(self):
-        return f"ExtraReflection_{self.metadata['system']}_{self.metadata['time']}"
+        return f"ExtraReflection_{self.inheritedMetadata['system']}_{self.inheritedMetadata['time']}"
 
     @classmethod
     def validPath(cls, path: str) -> Tuple[bool, Union[str, bytes], Union[str, bytes]]:
@@ -66,8 +68,8 @@ class ERMetadata:
         return cls(json.loads(d.attrs[cls.MDTAG]), filePath=filePath)
 
     def toHdfDataset(self, g: h5py.Group) -> h5py.Group:
-        self.metadata['time'] = datetime.now().strftime(dateTimeFormat) #Save the current time
-        g[self.DATASETTAG].attrs[self.MDTAG] = np.string_(json.dumps(self.metadata))
+        self.inheritedMetadata['time'] = datetime.now().strftime(dateTimeFormat) #Save the current time
+        g[self.DATASETTAG].attrs[self.MDTAG] = np.string_(json.dumps(self.inheritedMetadata))
         return g
 
     @classmethod
@@ -80,12 +82,12 @@ class ERMetadata:
     def dirName2Directory(cls, directory: str, name: str):
         return os.path.join(directory, f'{name}{cls.FILESUFFIX}')
 
-class ExtraReflectanceCube(ICBase, ERMetadata):
+class ExtraReflectanceCube(ICBase):
     """This class builds upon ERMetadata to add data array operations."""
-    def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], inheritedMetadata: dict, filePath: str = None):
+    def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], metadata: ERMetadata):
         if data.max() > 1 or data.min() < 0:
             print("Warning!: Reflectance values must be between 0 and 1")
-        ERMetadata.__init__(self, inheritedMetadata, filePath=filePath)
+        self.metadata = metadata
         ICBase.__init__(self, data, wavelengths)
 
     @property
@@ -94,32 +96,36 @@ class ExtraReflectanceCube(ICBase, ERMetadata):
 
     @classmethod
     def fromHdfFile(cls, directory: str, name: str) -> ExtraReflectanceCube:
-        return super().fromHdfFile(directory, name)
+        filePath = ERMetadata.dirName2Directory(directory, name)
+        with h5py.File(filePath) as hf:
+            dset = hf[ERMetadata.DATASETTAG]
+            return cls.fromHdfDataset(dset, filePath=filePath)
 
     def toHdfFile(self, directory: str, name: str) -> None:
-        savePath = os.path.join(directory, f'{name}{self.FILESUFFIX}')
+        savePath = os.path.join(directory, f'{name}{ERMetadata.FILESUFFIX}')
         if os.path.exists(savePath):
             raise OSError(f"The path {savePath} already exists.")
         with h5py.File(savePath, 'w') as hf:
-            self.toHdfDataset(hf, name)
+            self.toHdfDataset(hf)
 
     def toHdfDataset(self, g: h5py.Group) -> h5py.Group:
-        g = ICBase.toHdfDataset(self, g, self.DATASETTAG)
-        g = ERMetadata.toHdfDataset(self, g)
+        g = super().toHdfDataset(g, ERMetadata.DATASETTAG)
+        g = self.metadata.toHdfDataset(g)
         return g
 
     @classmethod
     def fromHdfDataset(cls, d: h5py.Dataset, filePath: str = None):
         data, index = cls._decodeHdf(d)
-        md = ERMetadata.fromHdfDataset(d)
-        return cls(data, index, md.metadata, filePath=filePath)
-
-    @staticmethod
-    def getMetadata(directory: str, name: str) -> ERMetadata:
-        with h5py.File(os.path.join(directory, f'{name}{ERMetadata.FILESUFFIX}')) as hf:
-            return ERMetadata.fromHdfDataset(hf[ERMetadata.DATASETTAG])
+        md = ERMetadata.fromHdfDataset(d, filePath=filePath)
+        return cls(data, index, md)
 
     @classmethod
     def fromMetadata(cls, md: ERMetadata):
-        directory, name = cls.directory2dirName(md.filePath)
+        directory, name = ERMetadata.directory2dirName(md.filePath)
         return cls.fromHdfFile(directory, name)
+
+class ExtraReflectionCube:
+    def __init__(self, reflectance: ExtraReflectanceCube, theoryR: np.ndarray, reference: ImCube):
+        self.metadata = reflectance.metadata
+        I0 = reference.data / (theoryR + reflectance.data) # I0 is the intensity of the illumination source, reconstructed in units of `counts`. this is an inversion of our assumption that reference = I0*(referenceReflectance + extraReflectance)
+        self.data = reflectance.data * I0  # converting extraReflectance to the extra reflection in units of counts
