@@ -35,8 +35,8 @@ class CellTableWidgetItem:
         nameNums = [(name, num) for name, num, fformat in cube.getRois()]
         if len(nameNums) > 0:
             names = set(list(zip(*nameNums))[0])
-            d = {name: [num for nname, num in nameNums if nname==name] for name in names}
-            self.roiLabel.setToolTip("\n".join([f'{k}: {v}' for k,v in d.items()]))
+            d = {name: [num for nname, num in nameNums if nname == name] for name in names}
+            self.roiLabel.setToolTip("\n".join([f'{k}: {v}' for k, v in d.items()]))
 
         self.anLabel = NumberTableWidgetItem(0)
         self.anLabel.setToolTip(', '.join(cube.getAnalyses()))

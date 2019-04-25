@@ -7,8 +7,6 @@ import numpy as np
 import os.path as osp
 from datetime import datetime
 import typing
-if typing.TYPE_CHECKING:
-    from pwspy import KCube
 from .analysisSettings import AnalysisSettings
 from abc import ABC, abstractmethod
 from pwspy.moduleConsts import dateTimeFormat
@@ -140,11 +138,12 @@ class AnalysisResults: #TODO this should inherit from abstract class but it does
 
 
 def clearError(func):
-    def newFunc():
+    def newFunc(*args):
         try:
-            func()
+            return func(*args)
         except KeyError:
             raise KeyError(f"The analysis file does not contain a {func.__name__} item.")
+    newFunc.__name__ = func.__name__ # failing to do this renaming can mess with other decorators e.g. cached_property
     return newFunc
 
 class AnalysisResultsLoader(AbstractAnalysisResults):
@@ -179,15 +178,15 @@ class AnalysisResultsLoader(AbstractAnalysisResults):
     @cached_property
     @clearError
     def reflectance(self):
+        from pwspy.imCube import KCube
         with h5py.File(self.filePath) as file:
-            grp = file['reflectance']
-            return KCube(grp['data'], grp['wavenumbers'])
+            return KCube.fromHdfDataset(file['reflectance'])
 
     @cached_property
     @clearError
     def meanReflectance(self):
         with h5py.File(self.filePath) as file:
-            return np.ndarray(file['reflectance'])
+            return np.ndarray(file['meanReflectance'])
 
     @cached_property
     @clearError
