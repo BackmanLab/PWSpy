@@ -35,7 +35,7 @@ class ResultsTableDock(QDockWidget):
         sidebar.addWidget(scroll)
         self.compileButton = QPushButton("Compile")
         sidebar.addWidget(self.compileButton)
-        # sidebar.setSizeConstraint(QLayout.SetMinimumSize)
+        #TODO add compile button action
         self._widget.layout().addLayout(sidebar, 0, 0)
         self._widget.layout().addWidget(self.table, 0, 1)
         self.setWidget(self._widget)
