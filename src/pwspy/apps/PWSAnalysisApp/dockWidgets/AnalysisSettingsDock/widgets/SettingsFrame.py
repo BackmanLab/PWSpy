@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupB
     QFrame, QSpinBox, QVBoxLayout, QPushButton, QComboBox, QDoubleSpinBox, QCheckBox, QMessageBox, QFileDialog, \
     QSpacerItem, QSizePolicy, QLayout
 
-from pwspy import CameraCorrection
+from pwspy.imCube import CameraCorrection
 from pwspy.analysis import AnalysisSettings
 from pwspy.apps.PWSAnalysisApp import applicationVars
 from pwspy.apps import resources

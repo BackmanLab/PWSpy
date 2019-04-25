@@ -14,7 +14,7 @@ from pwspy.apps import resources
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import (QGridLayout, QDialog,
                              QLineEdit, QPushButton, QFileDialog, QCheckBox,
-                             QMessageBox, QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem)
+                             QMessageBox, QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QApplication)
 
 from pwspy.imCube import ICMetaData
 
@@ -62,10 +62,7 @@ class WorkingDirDialog(QDialog):
                 except ValueError:
                     pass
             nums, files = zip(*sorted(zip(nums, newFiles)))
-            self.parent().cellSelector.clearCells()
-            for i, (num, f) in enumerate(zip(nums, files)):
-                self.parent().cellSelector.addCell(f, self.directory)
-            self.parent().cellSelector.updateFilters()
+            QApplication.instance().loadCells(self.directory, files)
             self.accept()
 
     def browseFile(self):
@@ -73,6 +70,10 @@ class WorkingDirDialog(QDialog):
         if _ != '':
             self.directory = _
             self.textLine.setText(self.directory)
+
+    def show(self):
+        super().show()
+        self.browseFile()
 
 
 class AnalysisSummaryDisplay(QDialog):
@@ -92,7 +93,7 @@ class AnalysisSummaryDisplay(QDialog):
         self.show()
 
     def _addWarnings(self, warnings: List[Tuple[List[AnalysisWarning], ICMetaData]]):
-        for cellWarns, cell in warnings:
+         for cellWarns, cell in warnings:
             item = QTreeWidgetItem(self.warnList)
             item.setText(0, cell.filePath)
             for warn in cellWarns:

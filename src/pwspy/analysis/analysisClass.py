@@ -9,9 +9,8 @@ from typing import List, Tuple
 
 import numpy as np
 import scipy.signal as sps
-from pwspy import ImCube, KCube, ExtraReflectanceCube
+from pwspy.imCube import ImCube, KCube, ExtraReflectanceCube, ExtraReflectionCube
 from pwspy.analysis import warnings
-from pwspy.imCube.ExtraReflectanceCubeClass import ExtraReflectionCube
 from pwspy.utility import reflectanceHelper
 from pwspy.moduleConsts import Material
 from . import AnalysisSettings, AnalysisResults

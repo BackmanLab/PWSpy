@@ -6,7 +6,7 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, \
     QVBoxLayout, QPushButton, QSplitter, QMessageBox, QDialog, QGridLayout, QApplication
 
-from pwspy import CameraCorrection
+from pwspy.imCube import CameraCorrection
 from pwspy.analysis import AnalysisSettings
 import typing
 

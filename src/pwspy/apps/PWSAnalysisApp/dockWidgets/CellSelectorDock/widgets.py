@@ -24,8 +24,6 @@ class NotesButton(QPushButton):
 
 
 class CellTableWidgetItem:
-    cube: ICMetaData
-
     def __init__(self, cube: ICMetaData, label: str, num: int):
         self.cube = cube
         self.num = num
@@ -34,11 +32,11 @@ class CellTableWidgetItem:
         self.notesButton.setFixedSize(40, 30)
         self.pathLabel = QTableWidgetItem(self.path)
         self.numLabel = NumberTableWidgetItem(num)
-        self.roiLabel = NumberTableWidgetItem(len(cube.getRois()))
-        self.anLabel = NumberTableWidgetItem(len(cube.getAnalyses()))
+        self.roiLabel = NumberTableWidgetItem(0)
+        self.anLabel = NumberTableWidgetItem(0)
         self.notesButton.released.connect(self.cube.editNotes)
         self._items = [self.pathLabel, self.numLabel, self.roiLabel, self.anLabel]
-        self._updateHasNotes()
+        self.refresh()
         self.mdPath = os.path.join(self.cube.filePath, 'AnAppPrefs.json')
         try:
             with open(self.mdPath, 'r') as f:
@@ -77,12 +75,6 @@ class CellTableWidgetItem:
             self._setItemColor(QtCore.Qt.white)
         self._reference = reference
 
-    def _updateHasNotes(self):
-        if self.cube.getNotes() != '':
-            self.notesButton.setStyleSheet('QPushButton { background-color: lightgreen;}')
-        else:
-            self.notesButton.setStyleSheet('QPushButton { background-color: lightgrey;}')
-
     def _setItemColor(self, color):
         for i in self._items:
             i.setBackground(color)
@@ -103,6 +95,14 @@ class CellTableWidgetItem:
 
     def __del__(self):
         self.close() #This is here just in case. realistacally del rarely gets called, need to manually close each cell item.
+
+    def refresh(self):
+        self.roiLabel.setNumber(len(self.cube.getRois()))
+        self.anLabel.setNumber(len(self.cube.getAnalyses()))
+        if self.cube.getNotes() != '':
+            self.notesButton.setStyleSheet('QPushButton { background-color: lightgreen;}')
+        else:
+            self.notesButton.setStyleSheet('QPushButton { background-color: lightgrey;}')
 
 
 class CellTableWidget(QTableWidget):

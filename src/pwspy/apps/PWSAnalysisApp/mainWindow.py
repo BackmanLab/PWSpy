@@ -53,7 +53,6 @@ class PWSWindow(QMainWindow):
         settings.setValue("geometry", self.saveGeometry())
         settings.setValue("windowState", self.saveState())
         self.cellSelector.clearCells() #This causes the current cell items to save their metadata.
-        self
         super().closeEvent(event)
 
     def _setDefaultLayout(self):

@@ -5,11 +5,10 @@ from PyQt5.QtCore import QPoint
 
 from PyQt5.QtWidgets import QListWidgetItem, QWidget, QScrollArea, QListWidget, QMessageBox, QMenu, QAction
 
-from pwspy import CameraCorrection
 from pwspy.analysis import AnalysisSettings
 from pwspy.apps.PWSAnalysisApp.dockWidgets import AnalysisSettingsDock
 from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
-from pwspy.imCube.ICMetaDataClass import ICMetaData
+from pwspy.imCube import ICMetaData, CameraCorrection
 import json
 
 

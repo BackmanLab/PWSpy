@@ -47,3 +47,9 @@ class PWSApp(QApplication):
         if not os.path.exists(applicationVars.googleDriveAuthPath):
             os.mkdir(applicationVars.googleDriveAuthPath)
             shutil.copyfile(os.path.join(resources, 'credentials.json'), os.path.join(applicationVars.googleDriveAuthPath, 'credentials.json'))
+
+    def loadCells(self, directory, files):
+        self.window.cellSelector.clearCells()
+        for i, f in enumerate(files):
+            self.window.cellSelector.addCell(f, directory)
+        self.window.cellSelector.updateFilters()

@@ -1,6 +1,6 @@
 import os
 import re
-from typing import List
+from typing import List, Dict
 
 from PyQt5.QtWidgets import QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineEdit, QGridLayout, QSplitter, \
     QSizePolicy, QMessageBox
@@ -42,15 +42,16 @@ class CellSelectorDock(QDockWidget):
         layout.addWidget(self._filterWidget)
         self._widget.setLayout(layout)
         self.setWidget(self._widget)
-        self._cells = []
+        self.cellItems: Dict[str, CellTableWidgetItem] = {}
 
     def addCell(self, fileName: str, workingDir: str):
-        self._cells.append(ICMetaData.loadAny(fileName))
-        cell = CellTableWidgetItem(self._cells[-1], os.path.split(fileName)[0][len(workingDir) + 1:],
+        cell = ICMetaData.loadAny(fileName)
+        cellItem = CellTableWidgetItem(cell, os.path.split(fileName)[0][len(workingDir) + 1:],
                                    int(fileName.split('Cell')[-1]))
-        if cell.isReference():
-            self.refTableWidget.updateReferences(True, [cell])
-        self.tableWidget.addCellItem(cell)
+        if cellItem.isReference():
+            self.refTableWidget.updateReferences(True, [cellItem])
+        self.cellItems[cell.idTag] = cellItem
+        self.tableWidget.addCellItem(cellItem)
 
     def clearCells(self):
         self._cells = []

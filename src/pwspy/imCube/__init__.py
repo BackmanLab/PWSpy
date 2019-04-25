@@ -11,4 +11,4 @@ from .ICMetaDataClass import ICFileFormats
 from .ICMetaDataClass import ICMetaData
 from .otherClasses import CameraCorrection
 from .KCubeClass import KCube
-from .ExtraReflectanceCubeClass import ExtraReflectanceCube
+from .ExtraReflectanceCubeClass import ExtraReflectanceCube, ExtraReflectionCube

@@ -6,7 +6,7 @@ import jsonschema
 from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
 from pwspy.utility.GoogleDriveDownloader import GoogleDriveDownloader
 
-from pwspy import ExtraReflectanceCube
+from pwspy.imCube import ExtraReflectanceCube
 from pwspy.apps.PWSAnalysisApp import applicationVars
 
 

@@ -8,13 +8,13 @@ if typing.TYPE_CHECKING:
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox
 
-from pwspy import ImCube, CameraCorrection, ExtraReflectanceCube
+from pwspy.imCube import ImCube, CameraCorrection, ExtraReflectanceCube
 from pwspy.analysis import AnalysisSettings
 from pwspy.analysis.analysisClass import Analysis
 from pwspy.analysis.warnings import AnalysisWarning
 from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
 from pwspy.imCube.ICMetaDataClass import ICMetaData
-from pwspy.utility import loadAndProcess
+from pwspy.utility.io import loadAndProcess
 
 
 def safeCallback(func):
@@ -38,6 +38,7 @@ class AnalysisManager(QtCore.QObject):
     def runList(self):
         for anName, anSettings, cellMetas, refMeta, camCorrection in self.app.window.analysisSettings.getListedAnalyses():
             self.runSingle(anName, anSettings, cellMetas, refMeta, camCorrection)
+            [self.app.window.cellSelector.cellItems[cellMeta.idTag].refresh() for cellMeta in cellMetas]
 
     @safeCallback
     def runSingle(self, anName: str, anSettings: AnalysisSettings, cellMetas: List[ICMetaData], refMeta: ICMetaData,

@@ -48,6 +48,10 @@ class NumberTableWidgetItem(QTableWidgetItem):
     def __gt__(self, other: 'NumberTableWidgetItem'):
         return self.number > other.number
 
+    def setNumber(self, num: float):
+        self.number = num
+        self.setText(str(num))
+
 
 class DatetimeTableWidgetItem(QTableWidgetItem):
     """This table widget item will be sorted chronologically rather than alphabetically."""
