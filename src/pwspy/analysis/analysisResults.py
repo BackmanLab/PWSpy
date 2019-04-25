@@ -12,6 +12,7 @@ if typing.TYPE_CHECKING:
 from .analysisSettings import AnalysisSettings
 from abc import ABC, abstractmethod
 from pwspy.moduleConsts import dateTimeFormat
+from pwspy.utility.misc import cached_property
 
 
 class AbstractAnalysisResults(ABC):
@@ -117,7 +118,7 @@ class AnalysisResults: #TODO this should inherit from abstract class but it does
         self.__setattr__('time', datetime.now().strftime(dateTimeFormat))
 
     def toHDF5(self, directory: str, name: str):
-        from pwspy import KCube #Need this for instance checking
+        from pwspy.imCube import KCube #Need this for instance checking
         fileName = osp.join(directory, AbstractAnalysisResults.name2FileName(name))
         if osp.exists(fileName):
             raise OSError(f'{fileName} already exists.')
@@ -138,22 +139,6 @@ class AnalysisResults: #TODO this should inherit from abstract class but it does
                     raise TypeError(f"Analysis results type {k}, {type(v)} not supported or expected")
 
 
-class cached_property(object):
-    """ A property that is only computed once per instance and then replaces
-        itself with an ordinary attribute. Deleting the attribute resets the
-        property.
-        Source: https://github.com/bottlepy/bottle/commit/fa7733e075da0d790d809aa3d2f53071897e6f76
-        """
-
-    def __init__(self, func):
-        self.__doc__ = getattr(func, '__doc__')
-        self.func = func
-
-    def __get__(self, obj, cls):
-        if obj is None:
-            return self
-        value = obj.__dict__[self.func.__name__] = self.func(obj)
-        return value
 
 
 class AnalysisResultsLoader(AbstractAnalysisResults):

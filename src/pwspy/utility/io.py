@@ -11,8 +11,7 @@ from time import time
 from typing import Union, Optional, List, Tuple
 import pandas as pd
 import psutil
-from pwspy import ImCube
-from pwspy.imCube import ICMetaData
+from pwspy.imCube import ImCube, ICMetaData
 
 '''Local Functions'''
 def _loadIms(qout, qin, lock):

@@ -19,6 +19,7 @@ import scipy.io as spio
 import tifffile as tf
 
 from pwspy.moduleConsts import dateTimeFormat
+from pwspy.utility.misc import cached_property
 if typing.TYPE_CHECKING:
     from pwspy.analysis import AnalysisResults
 from pwspy.imCube.otherClasses import Roi, RoiFileFormats
@@ -63,9 +64,8 @@ class ICMetaData:
         else:
             self.cameraCorrection = None
 
-    @property
+    @cached_property
     def idTag(self) -> str:
-        #TODO math operations on the cube should mangle this somehow so that a modified cube wouldn't be saved with a duplicate id. Now I'm unsure about this.
         return f"ImCube_{self._dict['system']}_{self._dict['time']}"
 
     @property
