@@ -2,25 +2,24 @@ import json
 import os
 import typing
 from json import JSONDecodeError
-from typing import List, Optional
+from typing import List, Optional, Type
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import QPalette
-from PyQt5.QtWidgets import QPushButton, QTableWidgetItem, QTableWidget, QAbstractItemView, QMenu, QWidget
+from PyQt5.QtWidgets import QPushButton, QTableWidgetItem, QTableWidget, QAbstractItemView, QMenu, QWidget, QMessageBox
 
 from pwspy.apps.PWSAnalysisApp.sharedWidgets.tables import NumberTableWidgetItem
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 
-
-class NotesButton(QPushButton):
-    def __init__(self, label: str, method):
-        super().__init__(label)
-        self.toolTipMethod = method
-
-    def event(self, e: QtCore.QEvent):
-        if e.type() == QtCore.QEvent.ToolTip:
-            self.setToolTip(self.toolTipMethod())
-        return super().event(e)
+def evalToolTip(cls: Type[QWidget], method):
+    """Given a QWidget and a function that returns a string, this decorator returns a modified class that will evaluate
+    the function each time the tooltip is requested."""
+    class newClass(cls):
+        def event(self, e: QtCore.QEvent):
+            if e.type() == QtCore.QEvent.ToolTip:
+                self.setToolTip(method())
+            return super().event(e)
+    return newClass
 
 
 class CellTableWidgetItem:
@@ -28,12 +27,19 @@ class CellTableWidgetItem:
         self.cube = cube
         self.num = num
         self.path = label
-        self.notesButton = NotesButton("Open", cube.getNotes)
+        self.notesButton = evalToolTip(QPushButton, cube.getNotes)("Open")
         self.notesButton.setFixedSize(40, 30)
         self.pathLabel = QTableWidgetItem(self.path)
         self.numLabel = NumberTableWidgetItem(num)
         self.roiLabel = NumberTableWidgetItem(0)
+        nameNums = [(name, num) for name, num, fformat in cube.getRois()]
+        if len(nameNums) > 0:
+            names = set(list(zip(*nameNums))[0])
+            d = {name: [num for nname, num in nameNums if nname==name] for name in names}
+            self.roiLabel.setToolTip("\n".join([f'{k}: {v}' for k,v in d.items()]))
+
         self.anLabel = NumberTableWidgetItem(0)
+        self.anLabel.setToolTip(', '.join(cube.getAnalyses()))
         self.notesButton.released.connect(self.cube.editNotes)
         self._items = [self.pathLabel, self.numLabel, self.roiLabel, self.anLabel]
         self.refresh()
