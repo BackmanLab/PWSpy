@@ -139,72 +139,103 @@ class AnalysisResults: #TODO this should inherit from abstract class but it does
                     raise TypeError(f"Analysis results type {k}, {type(v)} not supported or expected")
 
 
-
+def clearError(func):
+    def newFunc():
+        try:
+            func()
+        except KeyError:
+            raise KeyError(f"The analysis file does not contain a {func.__name__} item.")
+    return newFunc
 
 class AnalysisResultsLoader(AbstractAnalysisResults):
     """A read-only loader for analysis results that will only load them from hard disk as needed."""
     def __init__(self, directory: str, name: str):
-        self.file = h5py.File(osp.join(directory, self.name2FileName(name)))
-
-    def __del__(self):
-        self.file.close()
+        self.filePath = osp.join(directory, self.name2FileName(name))
 
     @cached_property
+    @clearError
     def settings(self) -> AnalysisSettings:
-        return AnalysisSettings.fromJsonString(self.file['settings'])
+        with h5py.File(self.filePath) as file:
+            return AnalysisSettings.fromJsonString(file['settings'])
 
     @cached_property
+    @clearError
     def imCubeIdTag(self) -> str:
-        return self.file['imCubeIdTag'].encode()
+        with h5py.File(self.filePath) as file:
+            return file['imCubeIdTag'].encode()
 
     @cached_property
+    @clearError
     def referenceIdTag(self) -> str:
-        return self.file['referenceIdTag'].encode()
+        with h5py.File(self.filePath) as file:
+            return file['referenceIdTag'].encode()
 
     @cached_property
+    @clearError
     def time(self) -> str:
-        return self.file['time']
+        with h5py.File(self.filePath) as file:
+            return file['time']
 
     @cached_property
+    @clearError
     def reflectance(self):
-        grp = self.file['reflectance']
-        return KCube(grp['data'], grp['wavenumbers'])
+        with h5py.File(self.filePath) as file:
+            grp = file['reflectance']
+            return KCube(grp['data'], grp['wavenumbers'])
 
     @cached_property
+    @clearError
     def meanReflectance(self):
-        return np.ndarray(self.file['reflectance'])
+        with h5py.File(self.filePath) as file:
+            return np.ndarray(file['reflectance'])
 
     @cached_property
+    @clearError
     def rms(self) -> np.ndarray:
-        return np.array(self.file['rms'])
+        with h5py.File(self.filePath) as file:
+            return np.array(file['rms'])
 
     @cached_property
+    @clearError
     def polynomialRms(self) -> np.ndarray:
-        return np.array(self.file['polynomialRms'])
+        with h5py.File(self.filePath) as file:
+            return np.array(file['polynomialRms'])
 
     @cached_property
+    @clearError
     def autoCorrelationSlope(self) -> np.ndarray:
-        return np.array(self.file['autoCorrelationSlope'])
+        with h5py.File(self.filePath) as file:
+            return np.array(file['autoCorrelationSlope'])
 
     @cached_property
+    @clearError
     def rSquared(self) -> np.ndarray:
-        return np.array(self.file['rSquared'])
+        with h5py.File(self.filePath) as file:
+            return np.array(file['rSquared'])
 
     @cached_property
+    @clearError
     def ld(self) -> np.ndarray:
-        return np.array(self.file['ld'])
+        with h5py.File(self.filePath) as file:
+            return np.array(file['ld'])
 
     @cached_property
+    @clearError
     def opd(self) -> np.ndarray:
-        return np.array(self.file['opd'])
+        with h5py.File(self.filePath) as file:
+            return np.array(file['opd'])
 
     @cached_property
+    @clearError
     def opdIndex(self) -> np.ndarray:
-        return np.array(self.file['xvalOpd'])
+        with h5py.File(self.filePath) as file:
+            return np.array(file['xvalOpd'])
 
     @cached_property
+    @clearError
     def extraReflectionTag(self) -> str:
-        return self.file['extraReflectionTag'].encode()
+        with h5py.File(self.filePath) as file:
+            return file['extraReflectionTag'].encode()
 
     def loadAllFromDisk(self) -> None:
         """Access all cached properties in order to load them from disk"""
