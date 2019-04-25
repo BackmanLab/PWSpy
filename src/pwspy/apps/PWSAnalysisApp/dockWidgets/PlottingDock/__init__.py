@@ -2,7 +2,7 @@ from typing import List
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QScrollArea, QVBoxLayout, QPushButton, QMessageBox, \
-    QComboBox, QLabel
+    QComboBox, QLabel, QLineEdit
 
 from pwspy.apps.PWSAnalysisApp.dockWidgets import CellSelectorDock
 from pwspy.imCube.ICMetaDataClass import ICMetaData
@@ -28,19 +28,20 @@ class PlottingDock(QDockWidget):
         self.scrollContents.setLayout(QVBoxLayout())
         plotScroll.setWidget(self.arController)
         buttons = QWidget()
+        buttons.setMaximumWidth(60)
         buttons.setLayout(QVBoxLayout())
         _ = buttons.layout().addWidget
-        self.anNameComboBox = QComboBox(self)
-        self.updateAnalysisNames()
+        self.anNameEdit = QLineEdit(self)
         self.plotRMSButton = QPushButton("RMS")
         self.plotBFButton = QPushButton('BF')
         self.plot3dButton = QPushButton("3D")
         self.clearButton = QPushButton("Clear")
         self.plotRMSButton.released.connect(self.plotRMS)
         self.clearButton.released.connect(self.clearPlots)
-
-        _(QLabel("Analysis Name"))
-        _(self.anNameComboBox)
+        label = QLabel("Analysis Name")
+        label.setMaximumHeight(20)
+        _(label)
+        _(self.anNameEdit)
         _(self.plotRMSButton)
         _(self.plotBFButton)
         _(self.plot3dButton)
@@ -48,10 +49,6 @@ class PlottingDock(QDockWidget):
         self._widget.layout().addWidget(plotScroll)
         self._widget.layout().addWidget(buttons)
         self.setWidget(self._widget)
-
-    def updateAnalysisNames(self):
-        self.anNameComboBox.clear()
-        self.anNameComboBox.addItems([])  # TODO determine which analyses are present
 
     def addPlot(self, plot):
         self.plots.append(plot)
@@ -71,7 +68,7 @@ class PlottingDock(QDockWidget):
             self.arController.aspect = 1 / len(self.plots)
 
     def plotRMS(self):
-        analysisName = self.anNameComboBox.currentText()
+        analysisName = self.anNameEdit.text()
         cells: List[ICMetaData] = self.selector.getSelectedCellMetas()
         if len(cells) == 0:
             messageBox = QMessageBox(self)
