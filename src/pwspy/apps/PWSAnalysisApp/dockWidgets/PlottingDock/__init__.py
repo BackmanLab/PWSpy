@@ -23,10 +23,16 @@ class PlottingDock(QDockWidget):
         plotScroll = QScrollArea()
         plotScroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         plotScroll.setWidgetResizable(True)
-        self.scrollContents = QWidget()
-        self.arController = AspectRatioWidget(self.scrollContents, 1, self)
+        plotScroll.horizontalScrollBar().setEnabled(False)
+        plotScroll.horizontalScrollBar().setVisible(False)
+        self.scrollContents = AspectRatioWidget(1, self)
         self.scrollContents.setLayout(QVBoxLayout())
-        plotScroll.setWidget(self.arController)
+        a = QSizePolicy()
+        a.setHeightForWidth(True)
+        a.setHorizontalPolicy(QSizePolicy.Maximum)
+        self.scrollContents.setSizePolicy(a)
+
+        plotScroll.setWidget(self.scrollContents)
         buttons = QWidget()
         buttons.setMaximumWidth(60)
         buttons.setLayout(QVBoxLayout())
@@ -65,7 +71,8 @@ class PlottingDock(QDockWidget):
 
     def _plotsChanged(self):
         if len(self.plots) > 0:
-            self.arController.setAspect(1 / len(self.plots))
+            self.scrollContents.setAspect(1 / len(self.plots))
+
 
     def plotRMS(self):
         analysisName = self.anNameEdit.text()

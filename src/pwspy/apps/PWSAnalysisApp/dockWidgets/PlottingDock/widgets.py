@@ -12,35 +12,20 @@ from pwspy.utility.matplotlibwidg import myLasso, AxManager
 
 
 class AspectRatioWidget(QWidget):
-    def __init__(self, widget: QWidget, aspect: float, parent: QWidget = None):
+    def __init__(self, aspect: float, parent: QWidget = None):
         super().__init__(parent)
         self._aspect = aspect
-        self.layout = QBoxLayout(QBoxLayout.LeftToRight, self)
-        # add spacer, then your widget, then spacer
-        self.layout.addItem(QSpacerItem(0, 0))
-        self.layout.addWidget(widget)
-        self.layout.addItem(QSpacerItem(0, 0))
 
     def resizeEvent(self, event: QtGui.QResizeEvent):
-        thisAspectRatio = event.size().width() / event.size().height()
-        self._resize(thisAspectRatio)
+        self._resize(event.size().width())
 
-    def _resize(self, requestedAR):
-        if requestedAR > self._aspect:  # too wide
-            self.layout.setDirection(QBoxLayout.LeftToRight)
-            widgetStretch = self.height() * self._aspect  # i.e., my width
-            outerStretch = (self.width() - widgetStretch) / 2 + 0.5
-        else:  # too tall
-            self.layout.setDirection(QBoxLayout.TopToBottom)
-            widgetStretch = self.width() * (1 / self._aspect)  # i.e., my height
-            outerStretch = (self.height() - widgetStretch) / 2 + 0.5
-        self.layout.setStretch(0, outerStretch)
-        self.layout.setStretch(1, widgetStretch)
-        self.layout.setStretch(2, outerStretch)
+    def _resize(self, width):
+        newHeight = width / self._aspect
+        self.setMaximumHeight(newHeight)
 
     def setAspect(self, aspect: float):
         self._aspect = aspect
-        self._resize(self.width() / self.height())
+        self._resize(self.width())
 
 
 class LittlePlot(FigureCanvasQTAgg):
@@ -51,14 +36,13 @@ class LittlePlot(FigureCanvasQTAgg):
         self.cell = cell
         ax = self.fig.add_subplot(1, 1, 1)
         ax.imshow(self.data)
-        ax.set_title(osp.split(cell.filePath)[-1])
+        ax.set_title(osp.split(cell.filePath)[-1], fontsize=8)
         ax.yaxis.set_visible(False)
         ax.xaxis.set_visible(False)
         super().__init__(self.fig)
-        #        self.layout().addWidget(canvas)
-        #        self.setFixedSize(200,200)
         self.mpl_connect("button_release_event", self.mouseReleaseEvent)
-        self.setMaximumWidth(200)
+        self.setMinimumWidth(20)
+
 
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
