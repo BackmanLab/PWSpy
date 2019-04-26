@@ -13,24 +13,24 @@ build:
 
 requirements:
   build:
-    - python
+    - python >=3.7*
     - setuptools
 
   run:
     - python
     - numpy >=1.8*
     - scipy >=0.18*
-    - tifffile
+    - tifffile # -c conda-forge
     - psutil
     - shapely
     - h5py
     - pandas
     - matplotlib >=1.4*
     - jsonschema
-    - google-api-python-client
-    - google-auth-httplib2
-    - google-auth-oauthlib
-    - opencv
+    - google-api-python-client # -c conda-forge
+    - google-auth-httplib2 # -c conda-forge
+    - google-auth-oauthlib # -c conda-forge
+    - opencv # -c menpo
 
 about:
   home: data['url']
