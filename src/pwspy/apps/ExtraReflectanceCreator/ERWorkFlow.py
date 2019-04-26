@@ -77,8 +77,8 @@ class ERWorkFlow:
     def loadCubes(self, includeSettings: List[str], binning: int):
         if binning is None:
             md = ICMetaData.loadAny(self.df['cube'].loc[0])
-            if 'binning' not in md.metadata:
-                raise Exception("No binning metadata found. Please specify a binning setting.")
+            try: _ = int(md.binning)
+            except: raise Exception("No binning metadata found. Please specify a binning setting.")
         df = self.df[self.df['setting'].isin(includeSettings)]
         self.cubes = loadAndProcess(df, _processIm, parallel=True, procArgs=[self.cameraCorrection, binning])
 
@@ -112,11 +112,11 @@ class ERWorkFlow:
             print(f"Final data min is {erCube.data.min()}")
             self.figs.extend([i.fig for i in self.plotnds]) # keep track of opened figures.
             saveName = f'{self.currDir}-{setting}'
-            dialog = IndexInfoForm(f'{self.currDir}-{setting}', erCube.idTag)
+            dialog = IndexInfoForm(f'{self.currDir}-{setting}', erCube.metadata.idTag)
             dialog.exec()
-            erCube.metadata['description'] = dialog.description
+            erCube.metadata.inheritedMetadata['description'] = dialog.description
             erCube.toHdfFile(self.homeDir, saveName)
-            self.updateIndex(saveName, erCube.idTag, dialog.description, f'{saveName}{erCube.FILESUFFIX}')
+            self.updateIndex(saveName, erCube.metadata.idTag, dialog.description, erCube.metadata.dirName2Directory('', saveName))
 
     def updateIndex(self, saveName: str, idTag: str, description: str, filePath: str):
         with open(os.path.join(self.homeDir, 'index.json'), 'r') as f:
