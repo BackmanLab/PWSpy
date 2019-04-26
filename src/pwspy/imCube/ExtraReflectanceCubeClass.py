@@ -39,7 +39,7 @@ class ERMetadata:
         this ER Cube. While this data can be useful it should be taken with a grain of salt. E.G. the metadata will contain
         an `exposure` field. In reality this ER Cube will have been created from ImCubes at a variety of exposures."""
         self.inheritedMetadata = inheritedMetadata
-        jsonschema.validate(instance=inheritedMetadata, schema=self._jsonSchema)
+        jsonschema.validate(instance=inheritedMetadata, schema=self._jsonSchema, types={'array': (list, tuple)})
         self.filePath = filePath
 
     @property
@@ -85,6 +85,7 @@ class ERMetadata:
 class ExtraReflectanceCube(ICBase):
     """This class builds upon ERMetadata to add data array operations."""
     def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], metadata: ERMetadata):
+        assert isinstance(metadata, ERMetadata)
         if data.max() > 1 or data.min() < 0:
             print("Warning!: Reflectance values must be between 0 and 1")
         self.metadata = metadata
