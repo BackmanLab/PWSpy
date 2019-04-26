@@ -2,7 +2,7 @@ from typing import List
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QScrollArea, QVBoxLayout, QPushButton, QMessageBox, \
-    QComboBox, QLabel, QLineEdit
+    QComboBox, QLabel, QLineEdit, QSizePolicy
 
 from pwspy.apps.PWSAnalysisApp.dockWidgets import CellSelectorDock
 from pwspy.imCube.ICMetaDataClass import ICMetaData
