@@ -248,6 +248,12 @@ def generateOneRExtraCube(combo: CubeCombo, theoryR: dict) -> Tuple[np.ndarray, 
     denominator = data1 - data2
     nominator = T1 * data2 - T2 * data1
     arr = nominator / denominator
+
+    #Even when a weight is calculated as zero if we have weird values (np.nan, np.inf) in arr we will get a messed up end result.
+    arr[np.isinf(arr)] = 0
+    arr[np.isnan(arr)] = 0
+    arr[arr < 0] = 0
+    arr[arr > 1] = 1
     #calculate a confidence weighting for every point in the cube.
     # According to propagation of error if we assume that TheoryR has no error
     # and the data (camera counts) has a constant error of C then the error is C * sqrt((T1-T2)*data1^2 + (T2-T1)*data2^2) / (data1 - data2)^2
