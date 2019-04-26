@@ -14,7 +14,7 @@ from pwspy.utility.matplotlibwidg import myLasso, AxManager
 class AspectRatioWidget(QWidget):
     def __init__(self, widget: QWidget, aspect: float, parent: QWidget = None):
         super().__init__(parent)
-        self.aspect = aspect
+        self._aspect = aspect
         self.layout = QBoxLayout(QBoxLayout.LeftToRight, self)
         # add spacer, then your widget, then spacer
         self.layout.addItem(QSpacerItem(0, 0))
@@ -23,19 +23,24 @@ class AspectRatioWidget(QWidget):
 
     def resizeEvent(self, event: QtGui.QResizeEvent):
         thisAspectRatio = event.size().width() / event.size().height()
+        self._resize(thisAspectRatio)
 
-        if thisAspectRatio > self.aspect:  # too wide
+    def _resize(self, requestedAR):
+        if requestedAR > self._aspect:  # too wide
             self.layout.setDirection(QBoxLayout.LeftToRight)
-            widgetStretch = self.height() * self.aspect  # i.e., my width
+            widgetStretch = self.height() * self._aspect  # i.e., my width
             outerStretch = (self.width() - widgetStretch) / 2 + 0.5
         else:  # too tall
             self.layout.setDirection(QBoxLayout.TopToBottom)
-            widgetStretch = self.width() * (1 / self.aspect)  # i.e., my height
+            widgetStretch = self.width() * (1 / self._aspect)  # i.e., my height
             outerStretch = (self.height() - widgetStretch) / 2 + 0.5
-
         self.layout.setStretch(0, outerStretch)
         self.layout.setStretch(1, widgetStretch)
         self.layout.setStretch(2, outerStretch)
+
+    def setAspect(self, aspect: float):
+        self._aspect = aspect
+        self._resize(self.width() / self.height())
 
 
 class LittlePlot(FigureCanvasQTAgg):

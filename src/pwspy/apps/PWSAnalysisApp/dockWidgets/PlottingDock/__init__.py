@@ -65,7 +65,7 @@ class PlottingDock(QDockWidget):
 
     def _plotsChanged(self):
         if len(self.plots) > 0:
-            self.arController.aspect = 1 / len(self.plots)
+            self.arController.setAspect(1 / len(self.plots))
 
     def plotRMS(self):
         analysisName = self.anNameEdit.text()
