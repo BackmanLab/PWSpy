@@ -57,7 +57,7 @@ class ICMetaData:
         self._dict: dict = metadata
         self.filePath: Optional[str] = filePath
         self.fileFormat: ICFileFormats = fileFormat
-        self._dict['wavelengths'] = tuple(np.array(self._dict['wavelengths']).astype(np.float32))
+        self._dict['wavelengths'] = tuple(np.array(self._dict['wavelengths']).astype(float))
         if all([i in self._dict for i in ['darkCounts', 'linearityPoly']]):
             self.cameraCorrection = CameraCorrection(darkCounts=self._dict['darkCounts'],
                                                      linearityPolynomial=self._dict['linearityPoly'])
