@@ -3,12 +3,12 @@ from os import path as osp
 import numpy as np
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import QWidget, QBoxLayout, QSpacerItem, QGridLayout, QButtonGroup, QPushButton
-from matplotlib.backends.backend_qt5 import FigureCanvasQT, NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 from matplotlib.widgets import LassoSelector
 
 from pwspy.imCube.ICMetaDataClass import ICMetaData
-from pwspy.utility.matplotlibwidg import myLasso
+from pwspy.utility.matplotlibwidg import myLasso, AxManager
 
 
 class AspectRatioWidget(QWidget):
@@ -38,7 +38,7 @@ class AspectRatioWidget(QWidget):
         self.layout.setStretch(2, outerStretch)
 
 
-class LittlePlot(FigureCanvasQT):
+class LittlePlot(FigureCanvasQTAgg):
     def __init__(self, data: np.ndarray, cell: ICMetaData):
         assert len(data.shape) == 2
         self.fig = Figure()
@@ -57,20 +57,21 @@ class LittlePlot(FigureCanvasQT):
 
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
-            BigPlot(self, self.data)
+            BigPlot(self.data, self)
 
 
 class BigPlot(QWidget):
-    def __init__(self, parent, data):
+    def __init__(self, data, parent=None):
         super().__init__(parent, QtCore.Qt.Window)
         self.setWindowTitle("What?!")
         layout = QGridLayout()
         self.fig = Figure()
         self.ax = self.fig.add_subplot(1, 1, 1)
         self.ax.imshow(data)
-        self.canvas = FigureCanvasQT(self.fig)
+        self.canvas = FigureCanvasQTAgg(self.fig)
         self.canvas.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.canvas.setFocus()
+        self.axManager = AxManager(self.ax)
         self.buttonGroup = QButtonGroup(self)
         self.lassoButton = QPushButton("L")
         self.ellipseButton = QPushButton("O")
@@ -93,7 +94,7 @@ class BigPlot(QWidget):
     def handleButtons(self, button):
         if button != self.lastButton_:
             if button is self.lassoButton:
-                self.selector = myLasso(self.ax)
+                self.selector = myLasso(self.axManager)
             elif button is self.ellipseButton:
                 self.selector = LassoSelector(self.ax)
             self.lastButton_ = button

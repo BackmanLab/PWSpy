@@ -54,7 +54,7 @@ class AxManager:
         
 
 class mySelectorWidget(AxesWidget):
-    def __init__(self, axMan, button=None, state_modifier_keys=None):
+    def __init__(self, axMan: AxManager, button=None, state_modifier_keys=None):
         AxesWidget.__init__(self, axMan.ax)
 
         self.visible = True
@@ -255,7 +255,7 @@ class mySelectorWidget(AxesWidget):
         self.artists.append(artist)
 
 class myLasso(mySelectorWidget):
-    def __init__(self, axMan, onselect=None, button=None):
+    def __init__(self, axMan: AxManager, onselect=None, button=None):
         super().__init__(axMan, button=button)
         self.onselect = onselect
         self.verts = None
@@ -285,7 +285,7 @@ class myLasso(mySelectorWidget):
         self.axMan.update()
 
 class myEllipse(mySelectorWidget):
-    def __init__(self, axMan, onselect = None):
+    def __init__(self, axMan: AxManager, onselect = None):
         super().__init__(axMan)
         self.started = False
         self.onselect = onselect
