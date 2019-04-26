@@ -4,11 +4,11 @@ from datetime import datetime
 from glob import glob
 from typing import List, Any, Dict
 import json
-from pwspy import ImCube, CameraCorrection, ExtraReflectanceCube
+from pwspy.imCube import ImCube, CameraCorrection, ExtraReflectanceCube
 from pwspy.apps.ExtraReflectanceCreator.widgets.dialog import IndexInfoForm
 from pwspy.imCube import ICMetaData
 from pwspy.moduleConsts import dateTimeFormat, Material
-from pwspy.utility import loadAndProcess
+from pwspy.utility.io import loadAndProcess
 import pwspy.apps.ExtraReflectanceCreator.extraReflectance  as er
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt

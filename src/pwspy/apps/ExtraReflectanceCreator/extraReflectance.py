@@ -1,6 +1,6 @@
 from typing import Dict, List, Tuple, Iterable, Any, Sequence, Iterator, Union, Optional
 
-from pwspy import ImCube, ExtraReflectanceCube
+from pwspy.imCube import ImCube, ExtraReflectanceCube
 from pwspy.imCube.otherClasses import Roi
 from pwspy.utility.reflectanceHelper import getReflectance
 from pwspy.moduleConsts import Material
