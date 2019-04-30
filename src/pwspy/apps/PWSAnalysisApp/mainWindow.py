@@ -39,7 +39,6 @@ class PWSWindow(QMainWindow):
         action2 = toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'icon.png')), "Idea")
         # action2.triggered.connect(self.cellSelector.clearCells) #This was just for testing
         self.runAction = toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'playicon.svg')), 'Run').triggered
-        self.compileAction = self.resultsTable.compileButton.released
         settings = QtCore.QSettings("BackmanLab", "PWSAnalysis2")
         try:
             self.restoreGeometry(settings.value("geometry"))

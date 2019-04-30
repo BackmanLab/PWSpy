@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QTableWidgetItem, QFrame, QVBoxLayout, QCheckBox, \
-    QScrollArea, QPushButton, QLayout, QGridLayout
+    QScrollArea, QPushButton, QLayout, QGridLayout, QAction, QLineEdit, QLabel, QSizePolicy
 from PyQt5 import QtCore
 
 from pwspy.analysis.compilation import RoiCompilationResults, CompilerSettings
@@ -27,6 +27,9 @@ class ResultsTableDock(QDockWidget):
             c.stateChanged.connect(f)
             checkBoxFrame.layout().addWidget(c)
             self.checkBoxes.append(c)
+        self.roiNameEdit = QLineEdit()
+        self.analysisNameEdit = QLineEdit()
+        self.compileButton = QPushButton("Compile")
 
         scroll = QScrollArea()
         scroll.setWidget(checkBoxFrame)
@@ -34,13 +37,21 @@ class ResultsTableDock(QDockWidget):
         scroll.setMaximumWidth(checkBoxFrame.width() + 10)
         scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         scroll.horizontalScrollBar().setEnabled(False)
-        sidebar = QVBoxLayout()
-        sidebar.addWidget(scroll)
-        self.compileButton = QPushButton("Compile")
-        sidebar.addWidget(self.compileButton)
-        self._widget.layout().addLayout(sidebar, 0, 0)
+        sidebar = QWidget()
+        l = QGridLayout()
+        l.addWidget(scroll, 0, 0, 1, 2)
+        l.addWidget(QLabel('Analysis:'), 1, 0, 1, 1)
+        l.addWidget(self.analysisNameEdit, 1, 1, 1, 1)
+        l.addWidget(QLabel("Roi:"), 2, 0 ,1, 1)
+        l.addWidget(self.roiNameEdit, 2, 1, 1, 1)
+        l.addWidget(self.compileButton, 3, 0, 1, 2)
+        sidebar.setLayout(l)
+        sidebar.setMaximumWidth(scroll.width()+10)
+        self._widget.layout().addWidget(sidebar, 0, 0)
         self._widget.layout().addWidget(self.table, 0, 1)
         self.setWidget(self._widget)
+
+
 
     def addCompilationResult(self, result: RoiCompilationResults):
         self.table.addItem(ResultsTableItem(result))
@@ -49,6 +60,12 @@ class ResultsTableDock(QDockWidget):
         kwargs = {}
         for checkBox in self.checkBoxes:
             default, settingsName = self.table.columns[checkBox.text()]
-            kwargs[settingsName] = bool(checkBox.checkState())
+            if settingsName is not None:
+                kwargs[settingsName] = bool(checkBox.checkState())
         return CompilerSettings(**kwargs)
-            
+
+    def getRoiName(self) -> str:
+        return self.roiNameEdit.text()
+
+    def getAnalysisName(self) -> str:
+        return self.analysisNameEdit.text()
