@@ -77,7 +77,7 @@ class WorkingDirDialog(QDialog):
 
 
 class AnalysisSummaryDisplay(QDialog):
-    def __init__(self, parent: Optional[QWidget], analysisName: str, analysisSettings: AnalysisSettings, warnings: List[Tuple[List[AnalysisWarning], ICMetaData]]):
+    def __init__(self, parent: Optional[QWidget], warnings: List[Tuple[List[AnalysisWarning], ICMetaData]],  analysisName: str = '', analysisSettings: AnalysisSettings = None):
         super().__init__(parent=parent)
         self.analysisName = analysisName
         self.analysisSettings = analysisSettings
@@ -105,7 +105,8 @@ class AnalysisSummaryDisplay(QDialog):
         self.warnList.clear()
 
     def _displaySettings(self):
-        msgBox = QMessageBox.information(self, self.analysisName, self.analysisSettings.toJsonString())
+        if self.analysisSettings is not None:
+            msgBox = QMessageBox.information(self, self.analysisName, self.analysisSettings.toJsonString())
 
 
 if __name__ == '__main__':

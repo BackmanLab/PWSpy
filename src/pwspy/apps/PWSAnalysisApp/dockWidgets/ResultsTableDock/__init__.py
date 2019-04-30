@@ -2,7 +2,8 @@ from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QTableWidgetItem,
     QScrollArea, QPushButton, QLayout, QGridLayout
 from PyQt5 import QtCore
 
-from .widgets import ResultsTable
+from pwspy.analysis.compilation import RoiCompilationResults, CompilerSettings
+from .widgets import ResultsTable, ResultsTableItem
 
 
 class ResultsTableDock(QDockWidget):
@@ -14,28 +15,40 @@ class ResultsTableDock(QDockWidget):
         self._widget = QWidget()
         self._widget.setLayout(QGridLayout())
         self.table = ResultsTable()
-        self.checkBoxes = QFrame()
-        self.checkBoxes.setLayout(QVBoxLayout())
-        self.checkBoxes.layout().setContentsMargins(1, 1, 1, 1)
-        self.checkBoxes.layout().setSpacing(1)
-        for i, (name, default) in enumerate(zip(self.table.columns, self.table.defaultColumns)):
+        checkBoxFrame = QFrame()
+        checkBoxFrame.setLayout(QVBoxLayout())
+        checkBoxFrame.layout().setContentsMargins(1, 1, 1, 1)
+        checkBoxFrame.layout().setSpacing(1)
+        self.checkBoxes = []
+        for i, (name, (default, settingsName)) in enumerate(self.table.columns.items()):
             c = QCheckBox(name)
             c.setCheckState(2) if default else c.setCheckState(0)
             f = lambda state, j=i: self.table.setColumnHidden(j, state == 0)
             c.stateChanged.connect(f)
-            self.checkBoxes.layout().addWidget(c)
+            checkBoxFrame.layout().addWidget(c)
+            self.checkBoxes.append(c)
 
         scroll = QScrollArea()
-        scroll.setWidget(self.checkBoxes)
+        scroll.setWidget(checkBoxFrame)
         scroll.verticalScrollBar().setStyleSheet("QScrollBar:horizontal { height: 10px; }")
-        scroll.setMaximumWidth(self.checkBoxes.width() + 10)
+        scroll.setMaximumWidth(checkBoxFrame.width() + 10)
         scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         scroll.horizontalScrollBar().setEnabled(False)
         sidebar = QVBoxLayout()
         sidebar.addWidget(scroll)
         self.compileButton = QPushButton("Compile")
         sidebar.addWidget(self.compileButton)
-        #TODO add compile button action
         self._widget.layout().addLayout(sidebar, 0, 0)
         self._widget.layout().addWidget(self.table, 0, 1)
         self.setWidget(self._widget)
+
+    def addCompilationResult(self, result: RoiCompilationResults):
+        self.table.addItem(ResultsTableItem(result))
+
+    def getSettings(self):
+        kwargs = {}
+        for checkBox in self.checkBoxes:
+            default, settingsName = self.table.columns[checkBox.text()]
+            kwargs[settingsName] = bool(checkBox.checkState())
+        return CompilerSettings(**kwargs)
+            

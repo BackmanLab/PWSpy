@@ -9,7 +9,7 @@ from pwspy.imCube.ICMetaDataClass import ICMetaData
 
 
 class ResultsTableItem:
-    def __init__(self, results: RoiCompilationResults, meta: ICMetaData):
+    def __init__(self, results: RoiCompilationResults):
         self.results = results
         self.cellPathLabel = QTableWidgetItem(results.cellPath)
         self.cellNumLabel = NumberTableWidgetItem(results.cellNumber)
@@ -38,13 +38,15 @@ class ResultsTable(CopyableTable):
 
     def __init__(self):
         super().__init__()
-        self.columns, self.defaultColumns = zip(*(("Path", False), ('Cell#', True), ("Analysis", False), ('ROI', True),
-                                                  ('ROI#', True), ("RMS", True), ('Reflectance', True), ('ld', False),
-                                                  ("AutoCorr Slope", False), ('R^2', False), ('OPD', False)))
+        self.columns, self.defaultColumns, self.compilerSettingsName = \
+            {"Path": (False, None), 'Cell#': (True, None), "Analysis": (False, None), 'ROI': (True, None),
+            'ROI#': (True, None), "RMS": (True, 'rms'), 'Reflectance': (True, 'reflectance'), 'ld': (False, 'ld'),
+            "AutoCorr Slope": (False, 'autoCorrelationSlope'), 'R^2': (False, 'rSquared'), 'OPD': (False, 'opd'),
+            "Mean Spectra Ratio": (False, 'meanSigmaRatio')}
         self.setRowCount(0)
-        self.setColumnCount(len(self.columns))
-        self.setHorizontalHeaderLabels(self.columns)
-        for i, default in enumerate(self.defaultColumns):
+        self.setColumnCount(len(self.columns.keys()))
+        self.setHorizontalHeaderLabels(self.columns.keys())
+        for i, default, settingsName in enumerate(self.columns.values()):
             self.setColumnHidden(i, not default)
         self.verticalHeader().hide()
         self.setSortingEnabled(True)

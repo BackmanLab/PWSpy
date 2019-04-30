@@ -17,6 +17,11 @@ from . import applicationVars
 from . import resources
 from .extraReflectionManager.manager import ERManager
 from glob import glob
+from typing import List, Tuple, Optional
+import typing
+if typing.TYPE_CHECKING:
+    from pwspy.analysis.compilation import RoiCompilationResults
+    from pwspy.analysis.warnings import AnalysisWarning
 
 #TODO add progress bar for analysis run
 
@@ -27,10 +32,11 @@ class PWSApp(QApplication):
         self.ERManager = ERManager(applicationVars.extraReflectionDirectory)
         self.window = PWSWindow()
         self.anMan = AnalysisManager(self)
-        self.window.runAction.triggered.connect(self.anMan.runList)
-        self.anMan.analysisDone.connect(lambda name, settings, warningList: AnalysisSummaryDisplay(self.window, name, settings, warningList))
+        self.window.runAction.connect(self.anMan.runList)
+        self.anMan.analysisDone.connect(lambda name, settings, warningList: AnalysisSummaryDisplay(self.window, warningList, name, settings))
         self.compMan = CompilationManager(self)
-        self.window.compileAction.triggered.connect(self.compMan.run)
+        self.window.compileAction.connect(self.compMan.run)
+        self.window.compileAction.connect(self.compMan.run)
         self.compMan.compilationDone.connect(self.handleCompilationResults)
 
     @staticmethod
@@ -56,3 +62,9 @@ class PWSApp(QApplication):
         for i, f in enumerate(files):
             self.window.cellSelector.addCell(f, directory)
         self.window.cellSelector.updateFilters()
+
+    def handleCompilationResults(self, inVal: List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]):
+        warnings = [(warns, res.cellIdTag) for res, warns in inVal if res.cellIdTag is not None]
+        AnalysisSummaryDisplay(self.window, warnings)
+
+        results = list(zip(*inVal))[1]

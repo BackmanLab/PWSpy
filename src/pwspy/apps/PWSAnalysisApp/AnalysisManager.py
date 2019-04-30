@@ -128,11 +128,12 @@ class CompilationManager(QtCore.QObject):
 
     @safeCallback
     def run(self, roiName: str, analysisName: str, settings: CompilerSettings, cellMetas: List[ICMetaData])\
-            -> Tuple[str, CompilerSettings, List[Tuple[List[AnalysisWarning], ICMetaData]]]:
+            -> List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]:
 
             compiler = RoiCompiler(settings)
 
             results = loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[compiler, roiName, analysisName],
                                       parallel=True, metadataOnly=True, passLock=True) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
+            results = results['cube']
             self.compilationDone.emit(results)
             return results
