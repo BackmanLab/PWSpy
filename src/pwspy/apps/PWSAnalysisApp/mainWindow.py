@@ -26,7 +26,6 @@ class PWSWindow(QMainWindow):
         self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks | QMainWindow.AllowTabbedDocks)
 
         self.fileDialog = WorkingDirDialog(self)
-        self.fileDialog.directoryChanged.connect(lambda directory: self.setWindowTitle(f'PWS Analysis v2 - {directory}'))
 
         menuBar = self.menuBar()
         view = menuBar.addMenu("View")

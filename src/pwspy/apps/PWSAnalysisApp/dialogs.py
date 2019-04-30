@@ -20,7 +20,7 @@ from pwspy.imCube import ICMetaData
 
 
 class WorkingDirDialog(QDialog):
-    directoryChanged = QtCore.pyqtSignal(str)
+    directoryChanged = QtCore.pyqtSignal(str, list)
 
     def __init__(self, parent=None):
         super().__init__(parent,
@@ -44,7 +44,6 @@ class WorkingDirDialog(QDialog):
 
     def _scanButtonPushed(self):
         self.directory = self.textLine.text()
-        self.directoryChanged.emit(self.directory)
         recursive = self.recursiveCheckbox.checkState() != 0
         pattern = [os.path.join('**', 'Cell[0-9]*')] if recursive else ['Cell[0-9]*']
         files = []
@@ -62,7 +61,7 @@ class WorkingDirDialog(QDialog):
                 except ValueError:
                     pass
             nums, files = zip(*sorted(zip(nums, newFiles)))
-            QApplication.instance().loadCells(self.directory, files)
+            self.directoryChanged.emit(self.directory, list(files))
             self.accept()
 
     def browseFile(self):

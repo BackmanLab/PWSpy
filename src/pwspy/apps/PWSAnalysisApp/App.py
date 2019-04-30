@@ -39,6 +39,8 @@ class PWSApp(QApplication):
         self.compMan = CompilationManager(self)
         self.window.resultsTable.compileButton.released.connect(self.compMan.run)
         self.compMan.compilationDone.connect(self.handleCompilationResults)
+        self.window.fileDialog.directoryChanged.connect(self.changeDirectory)
+        self.workingDirectory = None
 
     @staticmethod
     def _setupDataDirectories():
@@ -58,12 +60,6 @@ class PWSApp(QApplication):
             os.mkdir(applicationVars.googleDriveAuthPath)
             shutil.copyfile(os.path.join(resources, 'credentials.json'), os.path.join(applicationVars.googleDriveAuthPath, 'credentials.json'))
 
-    def loadCells(self, directory, files):
-        self.window.cellSelector.clearCells()
-        for i, f in enumerate(files):
-            self.window.cellSelector.addCell(f, directory)
-        self.window.cellSelector.updateFilters()
-
     def handleCompilationResults(self, inVal: List[Tuple[ICMetaData, List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]]]):
         warnings = []
         for meta, (roiList) in inVal:
@@ -73,6 +69,18 @@ class PWSApp(QApplication):
                     metaWarnings.extend(warnList)
             if len(metaWarnings) > 0:
                 warnings.append((metaWarnings, meta))
-        AnalysisSummaryDisplay(self.window, warnings)
-        results = list(zip(*inVal))[1]
-        self.window.resultsTable.ad
+        if len(warnings) > 0:
+            AnalysisSummaryDisplay(self.window, warnings)
+        results = [(meta, result) for meta, roiList in inVal for result, warnings in roiList]
+        [self.window.resultsTable.addCompilationResult(r, md) for md, r in results]
+
+    def changeDirectory(self, directory: str, files: List[str]):
+        # Load Cells
+        self.window.cellSelector.clearCells()
+        for i, f in enumerate(files):
+            self.window.cellSelector.addCell(f, directory)
+        self.workingDirectory = directory
+        self.window.cellSelector.updateFilters()
+        #Change title
+        self.window.setWindowTitle(f'PWS Analysis v2 - {directory}')
+        self.workingDirectory = directory

@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QTableWidgetItem,
 from PyQt5 import QtCore
 
 from pwspy.analysis.compilation import RoiCompilationResults, CompilerSettings
+from pwspy.imCube import ICMetaData
 from .widgets import ResultsTable, ResultsTableItem
 
 
@@ -53,8 +54,8 @@ class ResultsTableDock(QDockWidget):
 
 
 
-    def addCompilationResult(self, result: RoiCompilationResults):
-        self.table.addItem(ResultsTableItem(result))
+    def addCompilationResult(self, result: RoiCompilationResults, metadata: ICMetaData):
+        self.table.addItem(ResultsTableItem(result, metadata))
 
     def getSettings(self):
         kwargs = {}

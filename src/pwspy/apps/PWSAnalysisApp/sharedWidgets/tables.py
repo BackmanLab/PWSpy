@@ -5,7 +5,7 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import QTableWidget, QAbstractItemView, QApplication, QTableWidgetItem
 
 from pwspy import moduleConsts
-
+import numpy as np
 
 class CopyableTable(QTableWidget):
     def __init__(self):
@@ -37,8 +37,12 @@ class CopyableTable(QTableWidget):
 class NumberTableWidgetItem(QTableWidgetItem):
     """This table widget item will be sorted numerically rather than alphabetically (1, 10, 11, 2, ...)"""
     def __init__(self, num: float):
-        super().__init__(str(num))
-        num = float(num)  # in case the constructor is called with a string.
+        if num is None:
+            super().__init__("None")
+            num = -np.inf
+        else:
+            super().__init__(str(num))
+            num = float(num)  # in case the constructor is called with a string.
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)  # read only
         self.number = num
 
