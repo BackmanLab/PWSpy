@@ -22,6 +22,7 @@ from pwspy.moduleConsts import dateTimeFormat
 from pwspy.utility.misc import cached_property
 if typing.TYPE_CHECKING:
     from pwspy.analysis import AnalysisResults
+    import multiprocessing as mp
 from pwspy.imCube.otherClasses import Roi, RoiFileFormats
 from .otherClasses import CameraCorrection
 import numpy as np
@@ -85,31 +86,37 @@ class ICMetaData:
         return self._dict['exposure']
 
     @classmethod
-    def loadAny(cls, directory):
+    def loadAny(cls, directory, lock: mp.Lock = None):
         try:
-            return ICMetaData.fromTiff(directory)
+            return ICMetaData.fromTiff(directory, lock=lock)
         except:
             try:
-                return ICMetaData.fromOldPWS(directory)
+                return ICMetaData.fromOldPWS(directory, lock=lock)
             except:
                 raise Exception(f"Could not find a valid PWS image cube file at {directory}.")
 
     @classmethod
-    def fromOldPWS(cls, directory):
+    def fromOldPWS(cls, directory, lock: mp.Lock = None):
+        if lock is not None:
+            lock.acquire()
         try:
-            md = json.load(open(os.path.join(directory, 'pwsmetadata.txt')))
-        except:  # have to use the old metadata
-            print("Json metadata not found")
-            info2 = list(spio.loadmat(os.path.join(directory, 'info2.mat'))['info2'].squeeze())
-            info3 = list(spio.loadmat(os.path.join(directory, 'info3.mat'))['info3'].squeeze())
-            wv = list(spio.loadmat(os.path.join(directory, 'WV.mat'))['WV'].squeeze())
-            wv = [int(i) for i in wv]  # We will have issues saving later if these are numpy int types.
-            md = {'startWv': info2[0], 'stepWv': info2[1], 'stopWv': info2[2],
-                  'exposure': info2[3], 'time': '{:d}-{:d}-{:d} {:d}:{:d}:{:d}'.format(
-                    *[int(i) for i in [info3[8], info3[7], info3[6], info3[9], info3[10], info3[11]]]),
-                  'systemId': info3[0], 'system': str(info3[0]),
-                  'imgHeight': int(info3[2]), 'imgWidth': int(info3[3]), 'wavelengths': wv,
-                  'binning': None, 'pixelSizeUm': None}
+            try:
+                md = json.load(open(os.path.join(directory, 'pwsmetadata.txt')))
+            except:  # have to use the old metadata
+                print("Json metadata not found")
+                info2 = list(spio.loadmat(os.path.join(directory, 'info2.mat'))['info2'].squeeze())
+                info3 = list(spio.loadmat(os.path.join(directory, 'info3.mat'))['info3'].squeeze())
+                wv = list(spio.loadmat(os.path.join(directory, 'WV.mat'))['WV'].squeeze())
+                wv = [int(i) for i in wv]  # We will have issues saving later if these are numpy int types.
+                md = {'startWv': info2[0], 'stepWv': info2[1], 'stopWv': info2[2],
+                      'exposure': info2[3], 'time': '{:d}-{:d}-{:d} {:d}:{:d}:{:d}'.format(
+                        *[int(i) for i in [info3[8], info3[7], info3[6], info3[9], info3[10], info3[11]]]),
+                      'systemId': info3[0], 'system': str(info3[0]),
+                      'imgHeight': int(info3[2]), 'imgWidth': int(info3[3]), 'wavelengths': wv,
+                      'binning': None, 'pixelSizeUm': None}
+        finally:
+            if lock is not None:
+                lock.release()
         return cls(md, filePath=directory, fileFormat=ICFileFormats.RawBinary)
 
     @classmethod
@@ -123,22 +130,28 @@ class ICMetaData:
         return cls(md, filePath=None, fileFormat=ICFileFormats.NanoMat)
 
     @classmethod
-    def fromTiff(cls, directory):
-        if os.path.exists(os.path.join(directory, 'MMStack.ome.tif')):
-            path = os.path.join(directory, 'MMStack.ome.tif')
-        elif os.path.exists(os.path.join(directory, 'pws.tif')):
-            path = os.path.join(directory, 'pws.tif')
-        else:
-            raise OSError("No Tiff file was found at:", directory)
-        if os.path.exists(os.path.join(directory, 'pwsmetadata.json')):
-            metadata = json.load(open(os.path.join(directory, 'pwsmetadata.json'), 'r'))
-        else:
-            with tf.TiffFile(path) as tif:
-                try:
-                    metadata = json.loads(tif.pages[0].description)
-                except:
-                    metadata = json.loads(tif.imagej_metadata['Info'])  # The micromanager plugin saves metadata as the info property of the imagej imageplus object.
-                metadata['time'] = tif.pages[0].tags['DateTime'].value
+    def fromTiff(cls, directory, lock: mp.Lock = None):
+        if lock is not None:
+            lock.acquire()
+        try:
+            if os.path.exists(os.path.join(directory, 'MMStack.ome.tif')):
+                path = os.path.join(directory, 'MMStack.ome.tif')
+            elif os.path.exists(os.path.join(directory, 'pws.tif')):
+                path = os.path.join(directory, 'pws.tif')
+            else:
+                raise OSError("No Tiff file was found at:", directory)
+            if os.path.exists(os.path.join(directory, 'pwsmetadata.json')):
+                metadata = json.load(open(os.path.join(directory, 'pwsmetadata.json'), 'r'))
+            else:
+                with tf.TiffFile(path) as tif:
+                    try:
+                        metadata = json.loads(tif.pages[0].description)
+                    except:
+                        metadata = json.loads(tif.imagej_metadata['Info'])  # The micromanager plugin saves metadata as the info property of the imagej imageplus object.
+                    metadata['time'] = tif.pages[0].tags['DateTime'].value
+        finally:
+            if lock is not None:
+                lock.release()
         #For a while the micromanager metadata was getting saved weird this fixes it.
         if 'major_version' in metadata['MicroManagerMetadata']:
             metadata['MicroManagerMetadata'] = metadata['MicroManagerMetadata']['map']
