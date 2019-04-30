@@ -3,13 +3,13 @@ from PyQt5.QtWidgets import QTableWidgetItem, QPushButton
 from matplotlib.backends.backend_qt5 import FigureCanvasQT
 from matplotlib.figure import Figure
 
-from pwspy.analysis.compilation.roiCompilationResults import RoiAnalysisResults
+from pwspy.analysis.compilation.roiCompilationResults import RoiCompilationResults
 from pwspy.apps.PWSAnalysisApp.sharedWidgets.tables import CopyableTable, NumberTableWidgetItem
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 
 
 class ResultsTableItem:
-    def __init__(self, results: RoiAnalysisResults, meta: ICMetaData ):
+    def __init__(self, results: RoiCompilationResults, meta: ICMetaData):
         self.results = results
         self.cellPathLabel = QTableWidgetItem(results.cellPath)
         self.cellNumLabel = NumberTableWidgetItem(results.cellNumber)

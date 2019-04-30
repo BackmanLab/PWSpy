@@ -7,7 +7,7 @@ if typing.TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
-class RoiAnalysisResults:
+class RoiCompilationResults:
         cellIdTag: str
         analysisName: str
         roi: Roi

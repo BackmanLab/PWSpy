@@ -5,6 +5,7 @@ from typing import Tuple, List
 import typing
 if typing.TYPE_CHECKING:
     from .App import  PWSApp
+    import multiprocessing as mp
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox
 
@@ -15,6 +16,7 @@ from pwspy.analysis.warnings import AnalysisWarning
 from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 from pwspy.utility.io import loadAndProcess
+from pwspy.analysis.compilation import CompilerSettings, RoiCompiler, RoiCompilationResults
 
 
 def safeCallback(func):
@@ -67,20 +69,22 @@ class AnalysisManager(QtCore.QObject):
             erMeta = self.app.ERManager.getMetadataFromId(anSettings.extraReflectanceId)
             erCube = ExtraReflectanceCube.fromMetadata(erMeta)
             analysis = Analysis(anSettings, ref, erCube)
-            warnings = loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[analysis, anName, cameraCorrection], parallel=True) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
+            warnings = loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[analysis, anName, cameraCorrection],
+                                      parallel=True, passLock=True) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
             warnings = [(warn, md) for warn, md in warnings if md is not None]
             ret = (anName, anSettings, warnings)
             self.analysisDone.emit(*ret)
             return ret
 
     @staticmethod
-    def _process(im: ImCube, analysis: Analysis, analysisName: str, cameraCorrection: CameraCorrection):
+    def _process(im: ImCube, lock: mp.Lock, analysis: Analysis, analysisName: str, cameraCorrection: CameraCorrection):
         if cameraCorrection is not None:
             im.correctCameraEffects(cameraCorrection)
         else:
             im.correctCameraEffects(im.metadata.cameraCorrection)
         results, warnings = analysis.run(im)
-        im.metadata.saveAnalysis(results, analysisName)
+        with lock:
+            im.metadata.saveAnalysis(results, analysisName)
         if len(warnings) > 0:
             md = im.metadata
         else:
@@ -102,3 +106,33 @@ class AnalysisManager(QtCore.QObject):
             QMessageBox.information(self.app.window, 'Hmm', "Multiple camera corrections are present in the set of selected cells.")
             return False
         return True
+
+
+class CompilationManager(QtCore.QObject):
+    compilationDone = QtCore.pyqtSignal(list)
+
+    def __init__(self, app: PWSApp):
+        super().__init__()
+        self.app = app
+
+    @staticmethod
+    def _process(md: ICMetaData, lock: mp.Lock, compiler: RoiCompiler, roiName: str, analysisName: str):
+        with lock:
+            rois = [md.loadRoi(name, num, fformat) for name, num, fformat in md.getRois() if name == roiName]
+            analysisResults = md.loadAnalysis(analysisName)
+        ret = []
+        for roi in rois:
+            cResults, warnings = compiler.run(analysisResults, roi)
+            ret.append((cResults, warnings))
+        return ret
+
+    @safeCallback
+    def run(self, roiName: str, analysisName: str, settings: CompilerSettings, cellMetas: List[ICMetaData])\
+            -> Tuple[str, CompilerSettings, List[Tuple[List[AnalysisWarning], ICMetaData]]]:
+
+            compiler = RoiCompiler(settings)
+
+            results = loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[compiler, roiName, analysisName],
+                                      parallel=True, metadataOnly=True, passLock=True) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
+            self.compilationDone.emit(results)
+            return results

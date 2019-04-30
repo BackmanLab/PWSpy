@@ -4,7 +4,7 @@ import numpy as np
 
 from pwspy.analysis.analysisResults import AbstractAnalysisResults
 from pwspy.analysis.compilation.compilerSettings import CompilerSettings
-from pwspy.analysis.compilation.roiCompilationResults import RoiAnalysisResults
+from pwspy.analysis.compilation.roiCompilationResults import RoiCompilationResults
 from pwspy.imCube.otherClasses import Roi
 from pwspy.analysis import warnings
 
@@ -13,7 +13,7 @@ class RoiCompiler:
     def __init__(self, settings: CompilerSettings):
         self._settings = settings
 
-    def run(self, results: AbstractAnalysisResults, roi: Roi) -> Tuple[RoiAnalysisResults, List[warnings.AnalysisWarning]]:
+    def run(self, results: AbstractAnalysisResults, roi: Roi) -> Tuple[RoiCompilationResults, List[warnings.AnalysisWarning]]:
         warns = []
         reflectance = self._avgOverRoi(roi, results.meanReflectance) if self._settings.reflectance else None
         rms = self._avgOverRoi(roi, results.rms) if self._settings.rms else None
@@ -39,7 +39,7 @@ class RoiCompiler:
             warns.append(warnings.checkMeanSpectraRatio(varRatio))
         else:
             varRatio = None
-        results = RoiAnalysisResults(
+        results = RoiCompilationResults(
                     roi=roi,
                     analysisName=results.analysisName,
                     reflectance=reflectance,

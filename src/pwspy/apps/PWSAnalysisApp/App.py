@@ -10,7 +10,7 @@ import shutil
 
 from PyQt5.QtWidgets import QApplication
 from .dialogs import AnalysisSummaryDisplay
-from .AnalysisManager import AnalysisManager
+from .AnalysisManager import AnalysisManager, CompilationManager
 from pwspy.analysis import defaultSettingsPath
 from .mainWindow import PWSWindow
 from . import applicationVars
@@ -29,6 +29,9 @@ class PWSApp(QApplication):
         self.anMan = AnalysisManager(self)
         self.window.runAction.triggered.connect(self.anMan.runList)
         self.anMan.analysisDone.connect(lambda name, settings, warningList: AnalysisSummaryDisplay(self.window, name, settings, warningList))
+        self.compMan = CompilationManager(self)
+        self.window.compileAction.triggered.connect(self.compMan.run)
+        self.compMan.compilationDone.connect(self.handleCompilationResults)
 
     @staticmethod
     def _setupDataDirectories():
