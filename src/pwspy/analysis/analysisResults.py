@@ -148,99 +148,115 @@ def clearError(func):
 
 class AnalysisResultsLoader(AbstractAnalysisResults):
     """A read-only loader for analysis results that will only load them from hard disk as needed."""
+    #TODO constantly opening and closing the file is probably slowing us down.
     def __init__(self, directory: str, name: str):
         self.filePath = osp.join(directory, self.name2FileName(name))
+        self.analysisName = name
+        if not osp.exists(self.filePath):
+            raise OSError("The analysis file does not exist.")
 
     @cached_property
     @clearError
     def settings(self) -> AnalysisSettings:
-        with h5py.File(self.filePath) as file:
+        with h5py.File(self.filePath, 'r') as file:
             return AnalysisSettings.fromJsonString(file['settings'])
 
     @cached_property
     @clearError
     def imCubeIdTag(self) -> str:
-        with h5py.File(self.filePath) as file:
-            return file['imCubeIdTag'].encode()
+        with h5py.File(self.filePath, 'r') as file:
+            return bytes(np.array(file['imCubeIdTag'])).decode()
 
     @cached_property
     @clearError
     def referenceIdTag(self) -> str:
-        with h5py.File(self.filePath) as file:
-            return file['referenceIdTag'].encode()
+        with h5py.File(self.filePath, 'r') as file:
+            return bytes(np.array(file['referenceIdTag'])).decode()
 
     @cached_property
     @clearError
     def time(self) -> str:
-        with h5py.File(self.filePath) as file:
+        with h5py.File(self.filePath, 'r') as file:
             return file['time']
 
     @cached_property
     @clearError
     def reflectance(self):
         from pwspy.imCube import KCube
-        with h5py.File(self.filePath) as file:
-            return KCube.fromHdfDataset(file['reflectance'])
+        with h5py.File(self.filePath, 'r') as file:
+            dset = file['reflectance']
+            return KCube.fromHdfDataset(dset)
 
     @cached_property
     @clearError
-    def meanReflectance(self):
-        with h5py.File(self.filePath) as file:
-            return np.ndarray(file['meanReflectance'])
+    def meanReflectance(self) -> np.ndarray:
+        with h5py.File(self.filePath, 'r') as file:
+            dset = file['meanReflectance']
+            return np.array(dset)
 
     @cached_property
     @clearError
     def rms(self) -> np.ndarray:
-        with h5py.File(self.filePath) as file:
-            return np.array(file['rms'])
+        with h5py.File(self.filePath, 'r') as file:
+            dset = file['rms']
+            return np.array(dset)
 
     @cached_property
     @clearError
     def polynomialRms(self) -> np.ndarray:
-        with h5py.File(self.filePath) as file:
-            return np.array(file['polynomialRms'])
+        with h5py.File(self.filePath, 'r') as file:
+            dset = file['polynomialRms']
+            return np.array(dset)
 
     @cached_property
     @clearError
     def autoCorrelationSlope(self) -> np.ndarray:
-        with h5py.File(self.filePath) as file:
-            return np.array(file['autoCorrelationSlope'])
+        with h5py.File(self.filePath, 'r') as file:
+            dset = file['autoCorrelationSlope']
+            return np.array(dset)
 
     @cached_property
     @clearError
     def rSquared(self) -> np.ndarray:
-        with h5py.File(self.filePath) as file:
-            return np.array(file['rSquared'])
+        with h5py.File(self.filePath, 'r') as file:
+            dset = file['rSquared']
+            return np.array(dset)
 
     @cached_property
     @clearError
     def ld(self) -> np.ndarray:
-        with h5py.File(self.filePath) as file:
-            return np.array(file['ld'])
+        with h5py.File(self.filePath, 'r') as file:
+            dset = file['ld']
+            return np.array(dset)
 
     @cached_property
     @clearError
     def opd(self) -> np.ndarray:
-        with h5py.File(self.filePath) as file:
-            return np.array(file['opd'])
+        with h5py.File(self.filePath, 'r') as file:
+            dset = file['opd']
+            return np.array(dset)
 
     @cached_property
     @clearError
     def opdIndex(self) -> np.ndarray:
-        with h5py.File(self.filePath) as file:
-            return np.array(file['xvalOpd'])
+        with h5py.File(self.filePath, 'r') as file:
+            dset = file['xvalOpd']
+            return np.array(dset)
 
     @cached_property
     @clearError
     def extraReflectionTag(self) -> str:
-        with h5py.File(self.filePath) as file:
-            return file['extraReflectionTag'].encode()
+        with h5py.File(self.filePath, 'r') as file:
+            return bytes(np.array(file['extraReflectionTag'])).decode()
 
-    def loadAllFromDisk(self) -> None:
-        """Access all cached properties in order to load them from disk"""
-        for i in [self.opdIndex, self.opd, self.ld, self.rSquared,
-                  self.autoCorrelationSlope, self.polynomialRms,
-                  self.rms, self.reflectance, self.time, self.referenceIdTag,
-                  self.imCubeIdTag, self.settings, self.extraReflectionTag]:
-            _ = i
+    # def loadAllFromDisk(self) -> None:
+    #     """Access all cached properties in order to load them from disk"""
+    #     for i in [self.opdIndex, self.opd, self.ld, self.rSquared,
+    #               self.autoCorrelationSlope, self.polynomialRms,
+    #               self.rms, self.reflectance, self.time, self.referenceIdTag,
+    #               self.imCubeIdTag, self.settings, self.extraReflectionTag]:
+    #         try:
+    #             _ = i
+    #         except KeyError:
+    #             print(f"Skipping nonexistent `{i.__name__}` field.")
 
