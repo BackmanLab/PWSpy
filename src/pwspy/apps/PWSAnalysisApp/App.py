@@ -9,6 +9,8 @@ import os
 import shutil
 
 from PyQt5.QtWidgets import QApplication
+
+from pwspy.imCube import ICMetaData
 from .dialogs import AnalysisSummaryDisplay
 from .AnalysisManager import AnalysisManager, CompilationManager
 from pwspy.analysis import defaultSettingsPath
@@ -35,8 +37,7 @@ class PWSApp(QApplication):
         self.window.runAction.connect(self.anMan.runList)
         self.anMan.analysisDone.connect(lambda name, settings, warningList: AnalysisSummaryDisplay(self.window, warningList, name, settings))
         self.compMan = CompilationManager(self)
-        self.window.compileAction.connect(self.compMan.run)
-        self.window.compileAction.connect(self.compMan.run)
+        self.window.resultsTable.compileButton.released.connect(self.compMan.run)
         self.compMan.compilationDone.connect(self.handleCompilationResults)
 
     @staticmethod
@@ -63,8 +64,15 @@ class PWSApp(QApplication):
             self.window.cellSelector.addCell(f, directory)
         self.window.cellSelector.updateFilters()
 
-    def handleCompilationResults(self, inVal: List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]):
-        warnings = [(warns, res.cellIdTag) for res, warns in inVal if res.cellIdTag is not None]
+    def handleCompilationResults(self, inVal: List[Tuple[ICMetaData, List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]]]):
+        warnings = []
+        for meta, (roiList) in inVal:
+            metaWarnings = []
+            for cResults, warnList in roiList:
+                if warnList is not None:
+                    metaWarnings.extend(warnList)
+            if len(metaWarnings) > 0:
+                warnings.append((metaWarnings, meta))
         AnalysisSummaryDisplay(self.window, warnings)
-
         results = list(zip(*inVal))[1]
+        self.window.resultsTable.ad
