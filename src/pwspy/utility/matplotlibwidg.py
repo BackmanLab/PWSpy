@@ -18,19 +18,17 @@ from typing import Type
 from matplotlib.pyplot import  Axes
 
 class AxManager:
-    def __init__(self, ax):
+    """An object to manage multiple selector tools on a single axes. only one of these should exist per Axes."""
+    def __init__(self, ax: Axes):
         self.artists = []
         self.ax = ax
         self.canvas = self.ax.figure.canvas
         self.useblit = self.canvas.supports_blit
-        self.canvas.mpl_connect('draw_event', self.update_background)
+        self.canvas.mpl_connect('draw_event', self._update_background)
         self.background = None
 
-    
     def update(self):
-        """draw using newfangled blit or oldfangled draw depending on
-        useblit
-        """
+        """Re-render the axes."""
         if not self.ax.get_visible():
             return False
         if self.useblit:
@@ -43,10 +41,8 @@ class AxManager:
         else:
             self.canvas.draw_idle()
         return False
-    def draw(self):
-        self.canvas.draw_idle()
     
-    def update_background(self, event):
+    def _update_background(self, event):
         """force an update of the background"""
         # If you add a call to `ignore` here, you'll want to check edge case:
         # `release` can call a draw event even when `ignore` is True.
@@ -55,12 +51,16 @@ class AxManager:
         
 
 class mySelectorWidget(AxesWidget):
+    """Base class for other selection widgets in this file. Requires to be managed by an AxManager. Inherited classes
+    can implement a number of action handlers like mouse actions and keyboard presses.
+    button allows the user to specify which mouse buttons are valid to trigger an event. This can be an int or list of ints.
+    state_modifier_keys should be a dict {state: keyName}, the default is {move=' ', clear='escape', square='shift', center='control'}"""
     def __init__(self, axMan: AxManager, button=None, state_modifier_keys=None):
         AxesWidget.__init__(self, axMan.ax)
 
         self.visible = True
         self.axMan = axMan
-        self.artists=[]
+        self.artists = []
         self.connect_event('motion_notify_event', self.onmove)
         self.connect_event('button_press_event', self.press)
         self.connect_event('button_release_event', self.release)
@@ -68,9 +68,8 @@ class mySelectorWidget(AxesWidget):
         self.connect_event('key_release_event', self.on_key_release)
         self.connect_event('scroll_event', self.on_scroll)
 
-        self.state_modifier_keys = dict(move=' ', clear='escape',
-                                        square='shift', center='control')
-        self.state_modifier_keys.update(state_modifier_keys or {})
+        self.state_modifier_keys = dict(move=' ', clear='escape', square='shift', center='control')
+        # self.state_modifier_keys.update(state_modifier_keys or {})
 
         if isinstance(button, int):
             self.validButtons = [button]
@@ -87,56 +86,40 @@ class mySelectorWidget(AxesWidget):
     def set_active(self, active):
         AxesWidget.set_active(self, active)
         if active:
-            self.axMan.update_background(None)
+            self.axMan._update_background(None)
 
     def ignore(self, event):
         """return *True* if *event* should be ignored"""
-        if not self.active or not self.ax.get_visible():
+        if not self.active or not self.axMan.ax.get_visible():
             return True
-
-        # If canvas was locked
-        if not self.canvas.widgetlock.available(self):
+        if not self.canvas.widgetlock.available(self): # If canvas was locked
             return True
-
         if not hasattr(event, 'button'):
             event.button = None
-
-        # Only do rectangle selection if event was triggered
-        # with a desired button
-        if self.validButtons is not None:
+        if self.validButtons is not None:  # Only do rectangle selection if event was triggered with a desired button
             if event.button not in self.validButtons:
                 return True
-
-        # If no button was pressed yet ignore the event if it was out
-        # of the axes
-        if self.eventpress is None:
+        if self.eventpress is None: # If no button was pressed yet ignore the event if it was out of the axes
             return event.inaxes != self.ax
-
-        # If a button was pressed, check if the release-button is the
-        # same.
-        if event.button == self.eventpress.button:
+        if event.button == self.eventpress.button: # If a button was pressed, check if the release-button is the same.
             return False
+        # If a button was pressed, check if the release-button is the same.
+        return (event.inaxes != self.ax or event.button != self.eventpress.button)
 
-        # If a button was pressed, check if the release-button is the
-        # same.
-        return (event.inaxes != self.ax or
-                event.button != self.eventpress.button)
-
-    def _get_data(self, event):
+    def __get_data(self, event):
         """Get the xdata and ydata for event, with limits"""
         if event.xdata is None:
             return None, None
-        x0, x1 = self.ax.get_xbound()
-        y0, y1 = self.ax.get_ybound()
+        x0, x1 = self.axMan.ax.get_xbound()
+        y0, y1 = self.axMan.ax.get_ybound()
         xdata = max(x0, event.xdata)
         xdata = min(x1, xdata)
         ydata = max(y0, event.ydata)
         ydata = min(y1, ydata)
         return xdata, ydata
 
-    def _clean_event(self, event):
+    def __clean_event(self, event):
         """Clean up an event
-
         Use prev event if there is no xdata
         Limit the xdata and ydata to the axes limits
         Set the prev event
@@ -145,17 +128,15 @@ class mySelectorWidget(AxesWidget):
             event = self._prev_event
         else:
             event = copy.copy(event)
-        event.xdata, event.ydata = self._get_data(event)
-
+        event.xdata, event.ydata = self.__get_data(event)
         self._prev_event = event
         return event
 
     def press(self, event):
         """Button press handler and validator"""
         if not self.ignore(event):
-            event = self._clean_event(event)
+            event = self.__clean_event(event)
             self.eventpress = event
-            self._prev_event = event
             key = event.key or ''
             key = key.replace('ctrl', 'control')
             # move state is locked in on a button press
@@ -165,14 +146,10 @@ class mySelectorWidget(AxesWidget):
             return True
         return False
 
-    def _press(self, event):
-        """Button press handler"""
-        pass
-
     def release(self, event):
         """Button release event handler and validator"""
         if not self.ignore(event) and self.eventpress:
-            event = self._clean_event(event)
+            event = self.__clean_event(event)
             self.eventrelease = event
             self._release(event)
             self.eventpress = None
@@ -181,14 +158,10 @@ class mySelectorWidget(AxesWidget):
             return True
         return False
 
-    def _release(self, event):
-        """Button release event handler"""
-        pass
-
     def onmove(self, event):
         """Cursor move event handler and validator"""
         if not self.ignore(event):
-            event = self._clean_event(event)
+            event = self.__clean_event(event)
             if self.eventpress:
                 self._ondrag(event)
             else:
@@ -196,20 +169,10 @@ class mySelectorWidget(AxesWidget):
             return True
         return False
 
-    def _ondrag(self, event):
-        """Cursor move event handler"""
-        pass
-    def _onhover(self, event):
-        pass
-
     def on_scroll(self, event):
         """Mouse scroll event handler and validator"""
         if not self.ignore(event):
             self._on_scroll(event)
-
-    def _on_scroll(self, event):
-        """Mouse scroll event handler"""
-        pass
 
     def on_key_press(self, event):
         """Key press event handler and validator for all selection widgets"""
@@ -217,19 +180,12 @@ class mySelectorWidget(AxesWidget):
             key = event.key or ''
             key = key.replace('ctrl', 'control')
             if key == self.state_modifier_keys['clear']:
-                for artist in self.artists:
-                    artist.set_visible(False)
-                self.update()
+                self.set_visible(False)
                 return
             for (state, modifier) in self.state_modifier_keys.items():
                 if modifier in key:
                     self.state.add(state)
             self._on_key_press(event)
-
-    def _on_key_press(self, event):
-        """Key press event handler - use for widget-specific key press actions.
-        """
-        pass
 
     def on_key_release(self, event):
         """Key release event handler and validator"""
@@ -240,34 +196,53 @@ class mySelectorWidget(AxesWidget):
                     self.state.discard(state)
             self._on_key_release(event)
 
-    def _on_key_release(self, event):
-        """Key release event handler"""
-        pass
-
     def set_visible(self, visible):
         """ Set the visibility of our artists """
         self.visible = visible
         for artist in self.artists:
             artist.set_visible(visible)
-        self.axMan.draw()
+        self.axMan.update()
         
     def addArtist(self, artist):
+        """Add a matplotlib artist to be managed."""
         self.axMan.artists.append(artist)
         self.artists.append(artist)
+
+    # Overridable events
+    def _on_key_release(self, event):
+        """Key release event handler"""
+        pass
+    def _on_key_press(self, event):
+        """Key press event handler - use for widget-specific key press actions."""
+        pass
+    def _on_scroll(self, event):
+        """Mouse scroll event handler"""
+        pass
+    def _ondrag(self, event):
+        """Cursor move event handler"""
+        pass
+    def _onhover(self, event):
+        pass
+    def _release(self, event):
+        """Button release event handler"""
+        pass
+    def _press(self, event):
+        """Button press handler"""
+        pass
 
 class MyLasso(mySelectorWidget):
     def __init__(self, axMan: AxManager, onselect=None, button=None):
         super().__init__(axMan, button=button)
         self.onselect = onselect
         self.verts = None
-        self.polygon = Polygon([[0,0]], facecolor=(0,0,1,.1), animated=True, edgecolor=(0,0,1,.8))
+        self.polygon = Polygon([[0,0]], facecolor=(0, 0, 1, .1), animated=True, edgecolor=(0, 0, 1, .8))
         self.polygon.set_visible(False)
-        self.ax.add_patch(self.polygon)
+        self.axMan.ax.add_patch(self.polygon)
         self.addArtist(self.polygon)
 #        self.set_active(True) #needed for blitting to work
         
     def _press(self, event):
-        self.verts = [self._get_data(event)]
+        self.verts = [(event.xdata, event.ydata)]
         self.set_visible(True)
 
     def _release(self, event):
@@ -281,12 +256,12 @@ class MyLasso(mySelectorWidget):
     def _ondrag(self, event):
         if self.verts is None:
             return
-        self.verts.append(self._get_data(event))
+        self.verts.append((event.xdata, event.ydata))
         self.polygon.set_xy(self.verts)
         self.axMan.update()
 
 class MyEllipse(mySelectorWidget):
-    def __init__(self, axMan: AxManager, onselect = None):
+    def __init__(self, axMan: AxManager, onselect=None):
         super().__init__(axMan)
         self.started = False
         self.onselect = onselect
@@ -359,37 +334,37 @@ class PolygonInteractor(mySelectorWidget):
     def __init__(self, axMan, onselect = None):
         super().__init__(axMan, None)    
         self.onselect = onselect
-        self.line = Line2D([0], [0], ls="",
-                           marker='o', markerfacecolor='r',
-                           animated=True)
-        self.ax.add_line(self.line)
+        self.markers = Line2D([0], [0], ls="", marker='o', markerfacecolor='r', animated=True)
+        self.axMan.ax.add_line(self.markers)
         self._ind = None  # the active vert
         self._hoverInd = None
 
-        self.line2 = Polygon([[0,0]], animated=True, facecolor=(0,0,1,.1), edgecolor=(0,0,1,.9))
-        self.ax.add_patch(self.line2)
-        self.addArtist(self.line2)
-        self.addArtist(self.line)
+        self.poly = Polygon([[0, 0]], animated=True, facecolor=(0, 1, 0, .1), edgecolor=(0, 0, 1, .9))
+        self.axMan.ax.add_patch(self.poly)
+        self.addArtist(self.poly)
+        self.addArtist(self.markers)
         self.set_visible(False)
         
     def initialize(self, verts):
+        """Given a set of points this will initialize the artists to them"""
         x, y = zip(*verts)
-        self.line.set_data(x,y)
-        self.interpolate()
+        self.markers.set_data(x, y)
+        self._interpolate()
         self.set_visible(True)
         
-    def interpolate(self):
-        x, y = self.line.get_data()
+    def _interpolate(self):
+        """update the polygon to match the marker vertices."""
+        x, y = self.markers.get_data()
         tck, u = interpolate.splprep([x, y], s=0, per=True)   
         # evaluate the spline fits for 1000 evenly spaced distance values
         xi, yi = interpolate.splev(np.linspace(0, 1, 1000), tck)
-        self.line2.set_xy(list(zip(xi, yi)))
+        self.poly.set_xy(list(zip(xi, yi)))
 
-    def get_ind_under_point(self, event):
+    def _get_ind_under_point(self, event):
         """get the index of the vertex under point if within epsilon tolerance"""
         # display coords
-        xy = np.asarray(list(zip(*self.line.get_data())))
-        xyt = self.line.get_transform().transform(xy)
+        xy = np.asarray(list(zip(*self.markers.get_data())))
+        xyt = self.markers.get_transform().transform(xy)
         xt, yt = xyt[:, 0], xyt[:, 1]
         d = np.hypot(xt - event.x, yt - event.y)
         indseq, = np.nonzero(d == d.min())
@@ -402,7 +377,7 @@ class PolygonInteractor(mySelectorWidget):
         """whenever a mouse button is pressed"""
         if (not self.showverts) or (event.inaxes is None) or (event.button != 1):
             return
-        self._ind = self.get_ind_under_point(event)
+        self._ind = self._get_ind_under_point(event)
 
     def _release(self, event):
         """whenever a mouse button is released"""
@@ -416,43 +391,43 @@ class PolygonInteractor(mySelectorWidget):
 #            return
         if event.key == 't':
             self.showverts = not self.showverts
-            self.line.set_visible(self.showverts)
+            self.markers.set_visible(self.showverts)
             if not self.showverts:
                 self._ind = None
         elif event.key == 'd':
-            ind = self.get_ind_under_point(event)
+            ind = self._get_ind_under_point(event)
             if ind is not None:
-                x, y = self.line.get_data()
-                self.line.set_data(np.delete(x, ind), np.delete(y, ind))
-                self.interpolate()
+                x, y = self.markers.get_data()
+                self.markers.set_data(np.delete(x, ind), np.delete(y, ind))
+                self._interpolate()
         elif event.key == 'i':
-            xys = list(self.line.get_transform().transform(np.array(self.line.get_data()).T))
+            xys = list(self.markers.get_transform().transform(np.array(self.markers.get_data()).T))
             p = np.array([event.x, event.y])  # display coords
             for i in range(len(xys) - 1):
                 s0 = xys[i]
                 s1 = xys[i + 1]
                 d = np.linalg.norm(np.cross(s0-s1, s1-p))/np.linalg.norm(s0-s1) #distance from line to click point
                 if d <= self.epsilon:
-                    x, y = self.line.get_data()
-                    self.line.set_data(np.insert(x, i+1, event.xdata), np.insert(y, i+1, event.ydata))
-                    self.interpolate()
+                    x, y = self.markers.get_data()
+                    self.markers.set_data(np.insert(x, i + 1, event.xdata), np.insert(y, i + 1, event.ydata))
+                    self._interpolate()
                     print(f"Insert at {i+1}")
                     break
             print("No Insert")
         elif event.key == 'enter':
-            self.onselect(self.line2.xy, self.line.get_data())
+            self.onselect(self.poly.xy, self.markers.get_data())
             return
         self.axMan.update()
 
     def _onhover(self, event):
         lastHoverInd = self._hoverInd
-        self._hoverInd = self.get_ind_under_point(event)
+        self._hoverInd = self._get_ind_under_point(event)
         if lastHoverInd != self._hoverInd:
             print(f"Hover {self._hoverInd}")
             if self._hoverInd is not None:
-                self.line.set_markerfacecolor((0, .9, 1, 1))
+                self.markers.set_markerfacecolor((0, .9, 1, 1))
             else:
-                self.line.set_markerfacecolor('r')
+                self.markers.set_markerfacecolor('r')
         self.axMan.update()
             
     def _ondrag(self, event):
@@ -460,15 +435,15 @@ class PolygonInteractor(mySelectorWidget):
         if self._ind is None:
             return
         x, y = event.xdata, event.ydata
-        d = list(zip(*self.line.get_data()))
+        d = list(zip(*self.markers.get_data()))
         d[self._ind] = (x, y)
         if self._ind == 0:
             d[-1] = (x, y)
         elif self._ind == len(d) - 1:
             d[0] = (x, y)
-        self.line.set_data(list(zip(*d)))
+        self.markers.set_data(list(zip(*d)))
 
-        self.interpolate()
+        self._interpolate()
         self.axMan.update()
             
 class AdjustableSelector:
@@ -502,7 +477,6 @@ class AdjustableSelector:
         self.p.initialize(handles)
         self.p.active=True
 
-        
     def finish(self, verts, handles):
         self.axMan.ax.add_patch(Polygon(verts, facecolor=(1,0,0,.4)))
         self.p.active = False
