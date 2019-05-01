@@ -133,7 +133,7 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
         qin = queue.Queue()
         [qin.put(f) for f in fileFrame.iterrows()]
         lock = th.Lock()
-        threads = [th.Thread(target=_loadIms, args=[qout, qin, metadataOnly, lock, passLock]) for i in range(numThreads)]
+        threads = [th.Thread(target=_loadIms, args=[qout, qin, metadataOnly, lock]) for i in range(numThreads)]
         [thread.start() for thread in threads]
         if processorFunc is not None:
             wrappedFunc = _procWrap(processorFunc, passLock, lock)
