@@ -401,7 +401,7 @@ class PolygonInteractor(mySelectorWidget):
 
     def _press(self, event):
         """whenever a mouse button is pressed"""
-        if (not self.showverts) or (event.inaxes is None) or (event.inaxes != 1):
+        if (not self.showverts) or (event.inaxes is None) or (event.button != 1):
             return
         self._ind = self.get_ind_under_point(event)
 
