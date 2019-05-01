@@ -28,7 +28,7 @@ class RoiFileFormats(Enum):
 class CameraCorrection:
     """linearityCorrection should be list of polynomial coefficients [a,b,c,etc...] in the order a*x + b*x^2 + c*x^3 + etc..."""
     darkCounts: float
-    linearityPolynomial: typing.Tuple[float, ...]
+    linearityPolynomial: typing.Tuple[float, ...] = None
     def __post_init__(self):
         #Force the linearity polynomial to be a tuple.
         if self.linearityPolynomial is not None:
