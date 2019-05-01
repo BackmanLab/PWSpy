@@ -85,6 +85,10 @@ class ICMetaData:
     def exposure(self) -> float:
         return self._dict['exposure']
 
+    @property
+    def time(self) -> str:
+        return self._dict['time']
+
     @classmethod
     def loadAny(cls, directory, lock: mp.Lock = None):
         try:

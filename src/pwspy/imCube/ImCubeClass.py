@@ -29,6 +29,7 @@ class ImCube(ICBase):
     _cameraCorrected: bool
     _hasBeenNormalized: bool
     _hasExtraReflectionSubtracted: bool
+    _hasBeenNormalizedByReference: bool
 
     def __init__(self, data, metadata: ICMetaData, dtype = np.float32):
         assert isinstance(metadata, ICMetaData)
@@ -37,6 +38,7 @@ class ImCube(ICBase):
         self._hasBeenNormalized = False  # Keeps track of whether or not we have normalized by exposure so that we don't do it twice.
         self._cameraCorrected = False
         self._hasExtraReflectionSubtracted = False
+        self._hasBeenNormalizedByReference = False
 
     @property
     def wavelengths(self):
@@ -179,6 +181,8 @@ class ImCube(ICBase):
         return
 
     def normalizeByReference(self, reference: ImCube):
+        if self._hasBeenNormalizedByReference:
+            raise("This ImCube has already been normalized by a reference.")
         if not self.isCorrected():
             print("Warning: This ImCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
         if not self.isExposureNormalized():
@@ -188,6 +192,7 @@ class ImCube(ICBase):
         if not reference.isExposureNormalized():
             print("Warning: The reference ImCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
         self.data = self.data / reference.data
+        self._hasBeenNormalizedByReference = True
 
     def subtractExtraReflection(self, extraReflection: ExtraReflectionCube):
         assert self.data.shape == extraReflection.data.shape
