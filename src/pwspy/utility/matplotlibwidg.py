@@ -423,9 +423,8 @@ class PolygonInteractor(mySelectorWidget):
         elif event.key == 'd':
             ind = self.get_ind_under_point(event)
             if ind is not None:
-                self.poly.xy = np.delete(self.poly.xy,
-                                         ind, axis=0)
-                self.line.set_data(zip(*self.poly.xy))
+                x, y = self.line.get_data()
+                self.line.set_data(np.delete(x, ind), np.delete(y, ind))
         elif event.key == 'i':
             xys = self.poly.get_transform().transform(self.poly.xy)
             p = np.array([event.x, event.y])  # display coords
@@ -447,7 +446,7 @@ class PolygonInteractor(mySelectorWidget):
         self._hoverInd = self.get_ind_under_point(event)
         if lastHoverInd != self._hoverInd:
             if self._hoverInd is not None:
-                self.line.set_markerfacecolor((0,.9,1,1))
+                self.line.set_markerfacecolor((0, .9, 1, 1))
             else:
                 self.line.set_markerfacecolor('r')
         self.axMan.update()
@@ -458,7 +457,7 @@ class PolygonInteractor(mySelectorWidget):
             return
         x, y = event.xdata, event.ydata
         d = list(zip(*self.line.get_data()))
-        d[self._ind] = (x,y)
+        d[self._ind] = (x, y)
         if self._ind == 0:
             d[-1] = (x, y)
         elif self._ind == len(d) - 1:
