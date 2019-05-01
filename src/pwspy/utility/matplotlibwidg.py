@@ -10,7 +10,7 @@ import copy
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.lines import Line2D
-from matplotlib.patches import Polygon, Ellipse
+from matplotlib.patches import Patch, Polygon, Ellipse
 from matplotlib.widgets import AxesWidget
 from scipy import interpolate
 from shapely.geometry import LinearRing, Polygon as shapelyPolygon
@@ -41,6 +41,9 @@ class AxManager:
         else:
             self.canvas.draw_idle()
         return False
+
+    def draw(self):
+        self.canvas.draw_idle()
     
     def _update_background(self, event):
         """force an update of the background"""
@@ -48,7 +51,7 @@ class AxManager:
         # `release` can call a draw event even when `ignore` is True.
         if self.useblit:
             self.background = self.canvas.copy_from_bbox(self.ax.bbox)
-        
+
 
 class mySelectorWidget(AxesWidget):
     """Base class for other selection widgets in this file. Requires to be managed by an AxManager. Inherited classes
@@ -201,12 +204,25 @@ class mySelectorWidget(AxesWidget):
         self.visible = visible
         for artist in self.artists:
             artist.set_visible(visible)
-        self.axMan.update()
+        self.axMan.draw()
         
     def addArtist(self, artist):
         """Add a matplotlib artist to be managed."""
         self.axMan.artists.append(artist)
         self.artists.append(artist)
+        if isinstance(artist, Patch):
+            self.axMan.ax.add_patch(artist)
+        elif isinstance(artist, Line2D):
+            self.axMan.ax.add_line(artist)
+        else:
+            self.axMan.ax.add_artist(artist)
+
+    def removeArtists(self):
+        for artist in self.artists:
+            self.axMan.artists.remove(artist)
+            artist.remove()
+        self.artists = []
+        self.axMan.draw()
 
     # Overridable events
     def _on_key_release(self, event):
@@ -237,7 +253,6 @@ class MyLasso(mySelectorWidget):
         self.verts = None
         self.polygon = Polygon([[0,0]], facecolor=(0, 0, 1, .1), animated=True, edgecolor=(0, 0, 1, .8))
         self.polygon.set_visible(False)
-        self.axMan.ax.add_patch(self.polygon)
         self.addArtist(self.polygon)
 #        self.set_active(True) #needed for blitting to work
         
@@ -260,6 +275,7 @@ class MyLasso(mySelectorWidget):
         self.polygon.set_xy(self.verts)
         self.axMan.update()
 
+
 class MyEllipse(mySelectorWidget):
     def __init__(self, axMan: AxManager, onselect=None):
         super().__init__(axMan)
@@ -268,8 +284,8 @@ class MyEllipse(mySelectorWidget):
         self.settingWidth = False
         self.startPoint = None
         self.patch = Ellipse((0, 0), 0, 0, 0, facecolor=(0, 0, 1, .1), animated=True, edgecolor=(0,0,1,.8))
-        self.axMan.ax.add_patch(self.patch)
         self.addArtist(self.patch)
+
     def _press(self, event):
         if event.button!=1:
             return
@@ -335,12 +351,9 @@ class PolygonInteractor(mySelectorWidget):
         super().__init__(axMan, None)    
         self.onselect = onselect
         self.markers = Line2D([0], [0], ls="", marker='o', markerfacecolor='r', animated=True)
-        self.axMan.ax.add_line(self.markers)
         self._ind = None  # the active vert
         self._hoverInd = None
-
         self.poly = Polygon([[0, 0]], animated=True, facecolor=(0, 1, 0, .1), edgecolor=(0, 0, 1, .9))
-        self.axMan.ax.add_patch(self.poly)
         self.addArtist(self.poly)
         self.addArtist(self.markers)
         self.set_visible(False)
@@ -468,6 +481,7 @@ class AdjustableSelector:
             self.s.onselect = self.finish
 
     def setSelector(self, selectorClass: Type):
+        self.s.removeArtists()
         self.s = selectorClass(self.axMan)
         self.adjustable = self.adjustable
 
