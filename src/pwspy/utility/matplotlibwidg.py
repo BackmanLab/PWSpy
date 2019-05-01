@@ -496,7 +496,7 @@ class AdjustableSelector:
         self.p.active = False
         self.p.set_visible(False)
         self.s.set_visible(True)
-        self.s.active=True
+        self.s.active = True
 
         
 if __name__ == '__main__':

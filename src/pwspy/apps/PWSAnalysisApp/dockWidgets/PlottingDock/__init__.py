@@ -2,7 +2,7 @@ from typing import List
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QScrollArea, QVBoxLayout, QPushButton, QMessageBox, \
-    QComboBox, QLabel, QLineEdit, QSizePolicy
+    QComboBox, QLabel, QLineEdit, QSizePolicy, QButtonGroup
 
 from pwspy.apps.PWSAnalysisApp.dockWidgets import CellSelectorDock
 from pwspy.imCube.ICMetaDataClass import ICMetaData
@@ -38,20 +38,24 @@ class PlottingDock(QDockWidget):
         buttons.setLayout(QVBoxLayout())
         _ = buttons.layout().addWidget
         self.anNameEdit = QLineEdit(self)
+        self.buttonGroup = QButtonGroup()
+        self._lastButton = None
+        self.buttonGroup.buttonReleased.connect(self.handleButtons)
         self.plotRMSButton = QPushButton("RMS")
         self.plotBFButton = QPushButton('BF')
-        self.plot3dButton = QPushButton("3D")
-        self.clearButton = QPushButton("Clear")
-        self.plotRMSButton.released.connect(self.plotRMS)
-        self.clearButton.released.connect(self.clearPlots)
+        self.buttonGroup.addButton(self.plotRMSButton, 1)
+        self.buttonGroup.addButton(self.plotBFButton)
+        [i.setCheckable(True) for i in self.buttonGroup.buttons()]
+        self.refreshButton = QPushButton("Refresh")
+        # self.plotRMSButton.released.connect(self.plotRMS)
+        self.refreshButton.released.connect(self.generatePlots)
         label = QLabel("Analysis Name")
         label.setMaximumHeight(20)
         _(label)
         _(self.anNameEdit)
         _(self.plotRMSButton)
         _(self.plotBFButton)
-        _(self.plot3dButton)
-        _(self.clearButton)
+        _(self.refreshButton)
         self._widget.layout().addWidget(plotScroll)
         self._widget.layout().addWidget(buttons)
         self.setWidget(self._widget)
@@ -61,20 +65,17 @@ class PlottingDock(QDockWidget):
         self.scrollContents.layout().addWidget(plot)
         self._plotsChanged()
 
-    def clearPlots(self):
+    def _plotsChanged(self):
+        if len(self.plots) > 0:
+            self.scrollContents.setAspect(1 / len(self.plots))
+
+    def generatePlots(self):
+        #clear Plots
         for i in self.plots:
             self.scrollContents.layout().removeWidget(i)
             i.deleteLater()
             i = None
         self.plots = []
-        self._plotsChanged()
-
-    def _plotsChanged(self):
-        if len(self.plots) > 0:
-            self.scrollContents.setAspect(1 / len(self.plots))
-
-
-    def plotRMS(self):
         analysisName = self.anNameEdit.text()
         cells: List[ICMetaData] = self.selector.getSelectedCellMetas()
         if len(cells) == 0:
@@ -84,8 +85,18 @@ class PlottingDock(QDockWidget):
         for cell in cells:
             try:
                 if analysisName in cell.getAnalyses():
-                    self.addPlot(LittlePlot(cell.loadAnalysis(analysisName).rms, cell))
+                    self.addPlot(LittlePlot(cell.loadAnalysis(analysisName), f"{analysisName} {os.path.split(cell.filePath)[-1]}"))
                 else:
                     print(f'{os.path.split(cell.filePath)[-1]} does not have a "{analysisName}" analysis.')
             except KeyError:
                 print(f'{os.path.split(cell.filePath)[-1]} does not have an RMS field for analysis "{analysisName}"')
+        self._plotsChanged()
+
+    def handleButtons(self, button: QPushButton):
+        if button != self._lastButton:
+            for plot in self.plots:
+                if button is self.plotRMSButton:
+                    plot.changeActiveAnalysisField('rms')
+                elif button is self.plotBFButton:
+                    plot.changeActiveAnalysisField('meanReflectance')
+            self._lastButton = button

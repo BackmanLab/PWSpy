@@ -7,6 +7,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationTool
 from matplotlib.figure import Figure
 from matplotlib.widgets import LassoSelector
 
+from pwspy.analysis.analysisResults import AnalysisResultsLoader
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 from pwspy.utility.matplotlibwidg import MyLasso, AxManager, MyEllipse, mySelectorWidget, AdjustableSelector
 
@@ -28,35 +29,51 @@ class AspectRatioWidget(QWidget):
         self._resize(self.width())
 
 
-class LittlePlot(FigureCanvasQTAgg):
-    def __init__(self, data: np.ndarray, cell: ICMetaData):
-        assert len(data.shape) == 2
+class AnalysisPlotter:
+    def __init__(self, analysis: AnalysisResultsLoader):
+        self.analysis = analysis
+        self.data = None
+        self.analysisField = None
+
+    def changeActiveAnalysisField(self, field):
+        self.analysisField = field
+        self.data = getattr(self.analysis, field)
+        assert len(self.data.shape) == 2
+
+
+class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
+    def __init__(self, analysis: AnalysisResultsLoader, title: str, initialField='rms'):
+        AnalysisPlotter.__init__(self, analysis)
         self.fig = Figure()
-        self.data = data
-        self.cell = cell
         ax = self.fig.add_subplot(1, 1, 1)
-        ax.imshow(self.data)
-        ax.set_title(osp.split(cell.filePath)[-1], fontsize=8)
+        self.im = ax.imshow(np.zeros((100,100)))
+        ax.set_title(title, fontsize=8)
         ax.yaxis.set_visible(False)
         ax.xaxis.set_visible(False)
-        super().__init__(self.fig)
+        FigureCanvasQTAgg.__init__(self, self.fig)
         self.mpl_connect("button_release_event", self.mouseReleaseEvent)
         self.setMinimumWidth(20)
-
+        self.changeActiveAnalysisField(initialField)
 
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
-            BigPlot(self.data, self)
+            BigPlot(self.analysis, self)
 
+    def changeActiveAnalysisField(self, field):
+        AnalysisPlotter.changeActiveAnalysisField(self, field)
+        self.im.set_data(self.data)
+        self.im.set_clim((np.percentile(self.data, 0.1), np.percentile(self.data, 99.9)))
+        self.draw_idle()
 
-class BigPlot(QWidget):
-    def __init__(self, data, parent=None):
-        super().__init__(parent, QtCore.Qt.Window)
+class BigPlot(AnalysisPlotter, QWidget):
+    def __init__(self, analysis: AnalysisResultsLoader, parent=None, initialField='rms'):
+        QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
+        AnalysisPlotter.__init__(self, analysis)
         self.setWindowTitle("What?!")
         layout = QGridLayout()
         self.fig = Figure()
         self.ax = self.fig.add_subplot(1, 1, 1)
-        self.ax.imshow(data)
+        self.im = self.ax.imshow(np.zeros((100, 100)))
         self.canvas = FigureCanvasQTAgg(self.fig)
         self.canvas.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.canvas.setFocus()
@@ -79,8 +96,9 @@ class BigPlot(QWidget):
         layout.addWidget(self.canvas, 1, 0, 8, 8)
         layout.addWidget(NavigationToolbar(self.canvas, self), 10, 0, 8, 8)
         self.setLayout(layout)
-
         self.selector: AdjustableSelector = AdjustableSelector(self.ax, MyLasso)
+
+        self.changeActiveAnalysisField(initialField)
 
         self.show()
 
@@ -95,3 +113,9 @@ class BigPlot(QWidget):
     def handleAdjustButton(self, checkstate: bool):
         if self.selector is not None:
             self.selector.adjustable = checkstate
+
+    def changeActiveAnalysisField(self, field):
+        AnalysisPlotter.changeActiveAnalysisField(self, field)
+        self.im.set_data(self.data)
+        self.im.set_clim((np.percentile(self.data, 0.1), np.percentile(self.data, 99.9)))
+        self.canvas.draw_idle()
