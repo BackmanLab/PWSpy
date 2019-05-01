@@ -8,7 +8,7 @@ from matplotlib.figure import Figure
 from matplotlib.widgets import LassoSelector
 
 from pwspy.imCube.ICMetaDataClass import ICMetaData
-from pwspy.utility.matplotlibwidg import myLasso, AxManager
+from pwspy.utility.matplotlibwidg import MyLasso, AxManager, MyEllipse, mySelectorWidget, AdjustableSelector
 
 
 class AspectRatioWidget(QWidget):
@@ -60,7 +60,7 @@ class BigPlot(QWidget):
         self.canvas = FigureCanvasQTAgg(self.fig)
         self.canvas.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.canvas.setFocus()
-        self.axManager = AxManager(self.ax)
+        # self.axManager = AxManager(self.ax)
         self.buttonGroup = QButtonGroup(self)
         self.lassoButton = QPushButton("L")
         self.ellipseButton = QPushButton("O")
@@ -69,21 +69,29 @@ class BigPlot(QWidget):
         self.buttonGroup.addButton(self.ellipseButton)
         self.buttonGroup.buttonReleased.connect(self.handleButtons)
         [i.setCheckable(True) for i in self.buttonGroup.buttons()]
+        self.adjustButton = QPushButton("Adj")
+        self.adjustButton.setCheckable(True)
+        self.adjustButton.toggled.connect(self.handleAdjustButton)
 
         layout.addWidget(self.lassoButton, 0, 0, 1, 1)
         layout.addWidget(self.ellipseButton, 0, 1, 1, 1)
+        layout.addWidget(self.adjustButton, 0, 2, 1, 1)
         layout.addWidget(self.canvas, 1, 0, 8, 8)
         layout.addWidget(NavigationToolbar(self.canvas, self), 10, 0, 8, 8)
         self.setLayout(layout)
 
-        self.selector = None
+        self.selector: AdjustableSelector = AdjustableSelector(self.ax, MyLasso)
 
         self.show()
 
     def handleButtons(self, button):
         if button != self.lastButton_:
             if button is self.lassoButton:
-                self.selector = myLasso(self.axManager)
+                self.selector.setSelector(MyLasso)
             elif button is self.ellipseButton:
-                self.selector = LassoSelector(self.ax)
+                self.selector.setSelector(MyEllipse)
             self.lastButton_ = button
+
+    def handleAdjustButton(self, checkstate: bool):
+        if self.selector is not None:
+            self.selector.adjustable = checkstate

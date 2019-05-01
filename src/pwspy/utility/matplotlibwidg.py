@@ -14,7 +14,8 @@ from matplotlib.patches import Polygon, Ellipse
 from matplotlib.widgets import AxesWidget
 from scipy import interpolate
 from shapely.geometry import LinearRing, Polygon as shapelyPolygon
-
+from typing import Type
+from matplotlib.pyplot import  Axes
 
 class AxManager:
     def __init__(self, ax):
@@ -254,7 +255,7 @@ class mySelectorWidget(AxesWidget):
         self.axMan.artists.append(artist)
         self.artists.append(artist)
 
-class myLasso(mySelectorWidget):
+class MyLasso(mySelectorWidget):
     def __init__(self, axMan: AxManager, onselect=None, button=None):
         super().__init__(axMan, button=button)
         self.onselect = onselect
@@ -284,7 +285,7 @@ class myLasso(mySelectorWidget):
         self.polygon.set_xy(self.verts)
         self.axMan.update()
 
-class myEllipse(mySelectorWidget):
+class MyEllipse(mySelectorWidget):
     def __init__(self, axMan: AxManager, onselect = None):
         super().__init__(axMan)
         self.started = False
@@ -319,7 +320,7 @@ class myEllipse(mySelectorWidget):
             self.patch.width = 2*h*np.cos(theta)
             self.axMan.update()
     def _release(self, event):
-        if event.button!=1:
+        if event.button != 1:
             return
         if self.started:
             if not self.settingWidth:
@@ -337,8 +338,8 @@ class myEllipse(mySelectorWidget):
                     y = x_ * s + y_ * c
                     x += self.patch.center[0] #translate ellipse
                     y += self.patch.center[1]
-                    verts = list(zip(x,y))
-                    handles =[verts[0], verts[len(verts)//4], verts[len(verts)//2], verts[3*len(verts)//4], verts[0]]
+                    verts = list(zip(x, y))
+                    handles = [verts[0], verts[len(verts)//4], verts[len(verts)//2], verts[3*len(verts)//4], verts[0]]
                     self.onselect(verts, handles)
 
 class PolygonInteractor(mySelectorWidget):
@@ -358,7 +359,7 @@ class PolygonInteractor(mySelectorWidget):
     def __init__(self, axMan, onselect = None):
         super().__init__(axMan, None)    
         self.onselect = onselect
-        self.line = Line2D([0],[0], ls="",
+        self.line = Line2D([0], [0], ls="",
                            marker='o', markerfacecolor='r',
                            animated=True)
         self.ax.add_line(self.line)
@@ -372,7 +373,6 @@ class PolygonInteractor(mySelectorWidget):
         self.set_visible(False)
         
     def initialize(self, verts):
-
         x, y = zip(*verts)
         self.line.set_data(x,y)
         xy = self.interpolate()
@@ -380,11 +380,11 @@ class PolygonInteractor(mySelectorWidget):
         self.set_visible(True)
         
     def interpolate(self):
-        x,y = self.line.get_data()
+        x, y = self.line.get_data()
         tck, u = interpolate.splprep([x, y], s=0, per=True)   
         # evaluate the spline fits for 1000 evenly spaced distance values
         xi, yi = interpolate.splev(np.linspace(0, 1, 1000), tck)
-        return list(zip(xi,yi))
+        return list(zip(xi, yi))
 
     def get_ind_under_point(self, event):
         """get the index of the vertex under point if within epsilon tolerance"""
@@ -397,24 +397,17 @@ class PolygonInteractor(mySelectorWidget):
         ind = indseq[0]
         if d[ind] >= self.epsilon:
             ind = None
-
         return ind
 
     def _press(self, event):
         """whenever a mouse button is pressed"""
-        if not self.showverts:
-            return
-        if event.inaxes is None:
-            return
-        if event.button != 1:
+        if (not self.showverts) or (event.inaxes is None) or (event.inaxes != 1):
             return
         self._ind = self.get_ind_under_point(event)
 
     def _release(self, event):
         """whenever a mouse button is released"""
-        if not self.showverts:
-            return
-        if event.button != 1:
+        if (not self.showverts) or (event.button != 1):
             return
         self._ind = None
 
@@ -461,7 +454,6 @@ class PolygonInteractor(mySelectorWidget):
             
     def _ondrag(self, event):
         """on mouse movement"""
-
         if self._ind is None:
             return
         x, y = event.xdata, event.ydata
@@ -478,32 +470,50 @@ class PolygonInteractor(mySelectorWidget):
         self.axMan.update()
             
 class AdjustableSelector:
-    def __init__(self, ax, selectorClass):
+    def __init__(self, ax: Axes, selectorClass):
         self.axMan = AxManager(ax)
         self.s = selectorClass(self.axMan, onselect=self.goPoly)
         self.s.active = True
-        self.p = PolygonInteractor(self.axMan, onselect=self.andSet)
+        self.p = PolygonInteractor(self.axMan, onselect=self.finish)
         self.p.active = False
-        
+        self.adjustable = False
+
+    @property
+    def adjustable(self):
+        return self._adjustable
+
+    @adjustable.setter
+    def adjustable(self, enabled: bool):
+        self._adjustable = enabled
+        if enabled:
+            self.s.onselect = self.goPoly
+        else:
+            self.s.onselect = self.finish
+
+    def setSelector(self, selectorClass: Type):
+        self.s = selectorClass(self.axMan)
+        self.adjustable = self.adjustable
+
     def goPoly(self, verts, handles):
         self.s.active = False
         self.s.set_visible(False)
-
         self.p.initialize(handles)
         self.p.active=True
+
         
-    def andSet(self, verts):
+    def finish(self, verts, handles):
         self.axMan.ax.add_patch(Polygon(verts, facecolor=(1,0,0,.4)))
         self.p.active = False
         self.p.set_visible(False)
         self.s.set_visible(True)
         self.s.active=True
+
         
 if __name__ == '__main__':
 
     fig, ax = plt.subplots()
     ax.set_aspect('equal')
 
-    a= AdjustableSelector(ax, myEllipse)
-    # a = AdjustableSelector(ax, myLasso)
+    a= AdjustableSelector(ax, MyEllipse)
+    # a = AdjustableSelector(ax, MyLasso)
     plt.show()
