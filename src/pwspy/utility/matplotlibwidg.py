@@ -354,7 +354,7 @@ class PolygonInteractor(mySelectorWidget):
           line connecting two existing vertices
     """
     showverts = True
-    epsilon = 5  # max pixel distance to count as a vertex hit
+    epsilon = 15  # max pixel distance to count as a vertex hit
 
     def __init__(self, axMan, onselect = None):
         super().__init__(axMan, None)    
@@ -375,8 +375,7 @@ class PolygonInteractor(mySelectorWidget):
     def initialize(self, verts):
         x, y = zip(*verts)
         self.line.set_data(x,y)
-        xy = self.interpolate()
-        self.line2.set_xy(xy)
+        self.interpolate()
         self.set_visible(True)
         
     def interpolate(self):
@@ -384,7 +383,7 @@ class PolygonInteractor(mySelectorWidget):
         tck, u = interpolate.splprep([x, y], s=0, per=True)   
         # evaluate the spline fits for 1000 evenly spaced distance values
         xi, yi = interpolate.splev(np.linspace(0, 1, 1000), tck)
-        return list(zip(xi, yi))
+        self.line2.set_xy(list(zip(xi, yi)))
 
     def get_ind_under_point(self, event):
         """get the index of the vertex under point if within epsilon tolerance"""
@@ -425,26 +424,31 @@ class PolygonInteractor(mySelectorWidget):
             if ind is not None:
                 x, y = self.line.get_data()
                 self.line.set_data(np.delete(x, ind), np.delete(y, ind))
+                self.interpolate()
         elif event.key == 'i':
-            xys = self.poly.get_transform().transform(self.poly.xy)
+            xys = list(self.line.get_transform().transform(np.array(self.line.get_data()).T))
             p = np.array([event.x, event.y])  # display coords
             for i in range(len(xys) - 1):
                 s0 = xys[i]
                 s1 = xys[i + 1]
                 d = np.linalg.norm(np.cross(s0-s1, s1-p))/np.linalg.norm(s0-s1) #distance from line to click point
                 if d <= self.epsilon:
-                    self.line.set_data(np.insert(self.line.get_data, i+1, [event.ydata, event.xdata], axis=0))
+                    x, y = self.line.get_data()
+                    self.line.set_data(np.insert(x, i+1, event.xdata), np.insert(y, i+1, event.ydata))
+                    self.interpolate()
+                    print(f"Insert at {i+1}")
                     break
+            print("No Insert")
         elif event.key == 'enter':
-            self.onselect(self.line2.xy)
+            self.onselect(self.line2.xy, self.line.get_data())
             return
-        if self.line.stale:
-            self.canvas.draw_idle()
+        self.axMan.update()
 
     def _onhover(self, event):
         lastHoverInd = self._hoverInd
         self._hoverInd = self.get_ind_under_point(event)
         if lastHoverInd != self._hoverInd:
+            print(f"Hover {self._hoverInd}")
             if self._hoverInd is not None:
                 self.line.set_markerfacecolor((0, .9, 1, 1))
             else:
@@ -464,8 +468,7 @@ class PolygonInteractor(mySelectorWidget):
             d[0] = (x, y)
         self.line.set_data(list(zip(*d)))
 
-        xy = self.interpolate()
-        self.line2.set_xy(xy)
+        self.interpolate()
         self.axMan.update()
             
 class AdjustableSelector:
