@@ -26,6 +26,7 @@ if typing.TYPE_CHECKING:
     from pwspy.analysis.warnings import AnalysisWarning
 
 #TODO add progress bar for analysis run
+#TODO add tooltips for everything!!!
 
 class PWSApp(QApplication):
     def __init__(self, args):

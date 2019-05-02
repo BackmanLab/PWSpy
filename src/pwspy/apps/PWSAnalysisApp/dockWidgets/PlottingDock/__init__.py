@@ -8,6 +8,7 @@ from pwspy.apps.PWSAnalysisApp.dockWidgets import CellSelectorDock
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 from .widgets import AspectRatioWidget, LittlePlot
 import os
+import re
 # TODO add blinded roi drawing
 
 
@@ -38,6 +39,8 @@ class PlottingDock(QDockWidget):
         buttons.setLayout(QVBoxLayout())
         _ = buttons.layout().addWidget
         self.anNameEdit = QLineEdit(self)
+        self._oldPattern = ''
+        self.anNameEdit.editingFinished.connect(self.anNameEditFinished)
         self.buttonGroup = QButtonGroup()
         self._lastButton = None
         self.buttonGroup.buttonReleased.connect(self.handleButtons)
@@ -69,6 +72,13 @@ class PlottingDock(QDockWidget):
         if len(self.plots) > 0:
             self.scrollContents.setAspect(1 / len(self.plots))
 
+    def anNameEditFinished(self):
+        #Sometimes the signal gets sent twice. only generate plots if the string has changed.
+        pattern = self.anNameEdit.text()
+        if pattern != self._oldPattern:
+            self.generatePlots()
+        self._oldPattern = pattern
+
     def generatePlots(self):
         #clear Plots
         for i in self.plots:
@@ -76,20 +86,19 @@ class PlottingDock(QDockWidget):
             i.deleteLater()
             i = None
         self.plots = []
-        analysisName = self.anNameEdit.text()
+        analysisNamePattern = self.anNameEdit.text()
         cells: List[ICMetaData] = self.selector.getSelectedCellMetas()
         if len(cells) == 0:
             messageBox = QMessageBox(self)
             messageBox.information(self, "Oops!", "Please select the cells you would like to plot.")
             messageBox.setFixedSize(500, 200)
         for cell in cells:
-            try:
-                if analysisName in cell.getAnalyses():
-                    self.addPlot(LittlePlot(cell.loadAnalysis(analysisName), f"{analysisName} {os.path.split(cell.filePath)[-1]}"))
-                else:
-                    print(f'{os.path.split(cell.filePath)[-1]} does not have a "{analysisName}" analysis.')
-            except KeyError:
-                print(f'{os.path.split(cell.filePath)[-1]} does not have an RMS field for analysis "{analysisName}"')
+            for anName in cell.getAnalyses():
+                try:
+                    if re.fullmatch(analysisNamePattern, anName):
+                        self.addPlot(LittlePlot(cell.loadAnalysis(anName), cell, f"{anName} {os.path.split(cell.filePath)[-1]}"))
+                except re.error as e:
+                    print(e)
         self._plotsChanged()
 
     def handleButtons(self, button: QPushButton):
