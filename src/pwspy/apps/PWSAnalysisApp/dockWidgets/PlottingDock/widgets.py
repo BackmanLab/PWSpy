@@ -2,13 +2,16 @@ from os import path as osp
 
 import numpy as np
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtWidgets import QWidget, QBoxLayout, QSpacerItem, QGridLayout, QButtonGroup, QPushButton
+from PyQt5.QtCore import QPoint
+from PyQt5.QtWidgets import QWidget, QBoxLayout, QSpacerItem, QGridLayout, QButtonGroup, QPushButton, QMenu, QAction
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 from matplotlib.widgets import LassoSelector
 
 from pwspy.analysis.analysisResults import AnalysisResultsLoader
+from pwspy.imCube import ImCube
 from pwspy.imCube.ICMetaDataClass import ICMetaData
+from pwspy.utility import PlotNd
 from pwspy.utility.matplotlibwidg import MyLasso, AxManager, MyEllipse, mySelectorWidget, AdjustableSelector
 
 
@@ -30,8 +33,9 @@ class AspectRatioWidget(QWidget):
 
 
 class AnalysisPlotter:
-    def __init__(self, analysis: AnalysisResultsLoader):
+    def __init__(self, analysis: AnalysisResultsLoader, metadata: ICMetaData):
         self.analysis = analysis
+        self.metadata = metadata
         self.data = None
         self.analysisField = None
 
@@ -42,8 +46,8 @@ class AnalysisPlotter:
 
 
 class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
-    def __init__(self, analysis: AnalysisResultsLoader, title: str, initialField='rms'):
-        AnalysisPlotter.__init__(self, analysis)
+    def __init__(self, analysis: AnalysisResultsLoader, metadata: ICMetaData, title: str, initialField='rms'):
+        AnalysisPlotter.__init__(self, analysis, metadata)
         self.fig = Figure()
         ax = self.fig.add_subplot(1, 1, 1)
         self.im = ax.imshow(np.zeros((100,100)))
@@ -54,10 +58,13 @@ class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
         self.mpl_connect("button_release_event", self.mouseReleaseEvent)
         self.setMinimumWidth(20)
         self.changeActiveAnalysisField(initialField)
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.showContextMenu)
+        self.plotnd = None
 
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
-            BigPlot(self.analysis, self)
+            BigPlot(self.analysis, self.metadata, self)
 
     def changeActiveAnalysisField(self, field):
         AnalysisPlotter.changeActiveAnalysisField(self, field)
@@ -65,10 +72,27 @@ class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
         self.im.set_clim((np.percentile(self.data, 0.1), np.percentile(self.data, 99.9)))
         self.draw_idle()
 
+    def showContextMenu(self, point: QPoint):
+        menu = QMenu("ContextMenu", self)
+        anPlotAction = QAction("Plot3d Analyzed Reflectance", self)
+        anPlotAction.triggered.connect(self.plotAn3d)
+        rawPlotAction = QAction("Plot3d Raw Counts", self)
+        rawPlotAction.triggered.connect(self.plotRaw3d)
+        menu.addAction(anPlotAction)
+        menu.addAction(rawPlotAction)
+        menu.exec(self.mapToGlobal(point))
+
+    def plotAn3d(self):
+        self.plotnd = PlotNd(self.analysis.reflectance.data)
+
+    def plotRaw3d(self):
+        self.plotnd = PlotNd(ImCube.fromMetadata(self.metadata).data)
+
+
 class BigPlot(AnalysisPlotter, QWidget):
-    def __init__(self, analysis: AnalysisResultsLoader, parent=None, initialField='rms'):
+    def __init__(self, analysis: AnalysisResultsLoader, metadata: ICMetaData, parent=None, initialField='rms'):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
-        AnalysisPlotter.__init__(self, analysis)
+        AnalysisPlotter.__init__(self, analysis, metadata)
         self.setWindowTitle("What?!")
         layout = QGridLayout()
         self.fig = Figure()
@@ -119,3 +143,6 @@ class BigPlot(AnalysisPlotter, QWidget):
         self.im.set_data(self.data)
         self.im.set_clim((np.percentile(self.data, 0.1), np.percentile(self.data, 99.9)))
         self.canvas.draw_idle()
+
+class RoiDrawer:
+    pass
