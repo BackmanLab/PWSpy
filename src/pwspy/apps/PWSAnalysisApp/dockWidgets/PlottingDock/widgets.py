@@ -158,6 +158,7 @@ class BigPlot(AnalysisPlotter, QWidget):
         self.im.set_clim((self.slider.start(), self.slider.end()))
         self.canvas.draw_idle()
 
+
 class RoiDrawer(AnalysisPlotter, QWidget):
     def __init__(self, analysis: AnalysisResultsLoader, metadata: ICMetaData, parent=None, initialField='rms'):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)

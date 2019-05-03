@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QScrollArea, QVBo
     QComboBox, QLabel, QLineEdit, QSizePolicy, QButtonGroup
 
 from pwspy.apps.PWSAnalysisApp.dockWidgets import CellSelectorDock
+from pwspy.apps.PWSAnalysisApp.dockWidgets.PlottingDock.widgets import RoiDrawer
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 from .widgets import AspectRatioWidget, LittlePlot
 import os
@@ -51,14 +52,16 @@ class PlottingDock(QDockWidget):
         self.buttonGroup.addButton(self.plotBFButton)
         [i.setCheckable(True) for i in self.buttonGroup.buttons()]
         self.refreshButton = QPushButton("Refresh")
-        # self.plotRMSButton.released.connect(self.plotRMS)
         self.refreshButton.released.connect(self.generatePlots)
+        self.roiButton = QPushButton("Draw Roi's")
+        self.roiButton.released.connect(self.startRoiDrawing)
         label = QLabel("Analysis Name")
         label.setMaximumHeight(20)
         _(label)
         _(self.anNameEdit)
         _(self.plotRMSButton)
         _(self.plotBFButton)
+        _(self.roiButton)
         _(self.refreshButton)
         self._widget.layout().addWidget(plotScroll)
         self._widget.layout().addWidget(buttons)
@@ -72,6 +75,9 @@ class PlottingDock(QDockWidget):
     def _plotsChanged(self):
         if len(self.plots) > 0:
             self.scrollContents.setAspect(1 / len(self.plots))
+
+    def startRoiDrawing(self):
+        RoiDrawer(self.plots[0].analysis, self.plots[0].metadata) #This is just placeholder
 
     def anNameEditFinished(self):
         #Sometimes the signal gets sent twice. only generate plots if the string has changed.
