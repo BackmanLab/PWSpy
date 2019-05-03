@@ -134,6 +134,7 @@ class PlotNd(object):
         fig.canvas.mpl_connect('button_press_event', self.onclick)
         fig.canvas.mpl_connect('motion_notify_event', self.ondrag)
         fig.canvas.mpl_connect('draw_event', self._update_background)
+        fig.canvas.mpl_connect('resize_event', self.resize)
         self.timer = fig.canvas.new_timer(interval=100)
         self.timer.add_callback(self.increment)
         self.timerRunning = False
@@ -183,10 +184,14 @@ class PlotNd(object):
 
     def _update_background(self, event):
         """force an update of the background"""
-        print('a')
-        for artistManager in [self.spX, self.spY, self.cp] + self.extra:
+        for artistManager in [self.spY, self.cp, self.spX] + self.extra:
             artistManager.updateBackground()
         self.cbar.draw()
+
+    def resize(self, event):
+        size = min([event.width, event.height])
+        size = size / self.fig.get_dpi()
+        self.fig.set_size_inches(size, size)
 
     def updateLimits(self):
         self.cp.setRange(self.min, self.max)
