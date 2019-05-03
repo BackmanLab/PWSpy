@@ -40,6 +40,7 @@ class PlottingDock(QDockWidget):
         _ = buttons.layout().addWidget
         self.anNameEdit = QLineEdit(self)
         self._oldPattern = ''
+        self._oldCells = None
         self.anNameEdit.editingFinished.connect(self.anNameEditFinished)
         self.buttonGroup = QButtonGroup()
         self._lastButton = None
@@ -75,9 +76,11 @@ class PlottingDock(QDockWidget):
     def anNameEditFinished(self):
         #Sometimes the signal gets sent twice. only generate plots if the string has changed.
         pattern = self.anNameEdit.text()
-        if pattern != self._oldPattern:
+        cells = self.selector.getSelectedCellMetas()
+        if pattern != self._oldPattern or cells != self._oldCells:
             self.generatePlots()
         self._oldPattern = pattern
+        self._oldCells = cells
 
     def generatePlots(self):
         #clear Plots
