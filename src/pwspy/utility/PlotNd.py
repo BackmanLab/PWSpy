@@ -11,17 +11,31 @@ from matplotlib.animation import FuncAnimation
 
 lw = 0.5
 
-class SidePlot:
+class Base:
+    def __init__(self, ax):
+        self.ax = ax
+        self.artists = None
+        self.background = None
+
+    def updateBackground(self):
+        self.background = self.ax.figure.canvas.copy_from_bbox(self.ax.bbox)
+
+    def draw(self):
+        for artist in self.artists:
+            self.ax.draw_artist(artist)
+
+class SidePlot(Base):
     def __init__(self, ax: plt.Axes, dimLength: int, vertical: bool):
+        super().__init__(ax)
         self.vertical = vertical
         self.dimLength = dimLength
-        self.ax = ax
         self.range = (0, 1)
         markerData = (self.range, (0, dimLength))
         if self.vertical:
             markerData = markerData[1] + markerData[0]
         self.plot = ax.plot([0], [0])[0]
         self.markerLine = ax.plot(*markerData, color='r', linewidth=lw)[0]
+        self.artists = [self.plot, self.markerLine]
 
 
     def setMarker(self, pos: float):
@@ -46,18 +60,17 @@ class SidePlot:
             data = (ind, data)
         self.plot.set_data(*data)
 
-
-class CenterPlot:
+class CenterPlot(Base):
     def __init__(self, ax: plt.Axes, shape):
-        self.ax = ax
+        super().__init__(ax)
         self.shape = shape
         self.vLine = ax.plot([100, 100], [0, shape[0]], 'r', linewidth=lw)[0]
         self.hLine = ax.plot([0, shape[1]], [100, 100], 'r', linewidth=lw)[0]
         self.im = ax.imshow(np.zeros(shape), aspect='auto')
         ax.set_xlim((0, shape[1]))
         ax.set_ylim((0, shape[0]))
-
         self.range = (0, 1)
+        self.artists = [self.im, self.hLine, self.vLine]
 
     def setRange(self, Min, Max):
         self.range = (Min, Max)
@@ -70,11 +83,12 @@ class CenterPlot:
     def setData(self, data):
         self.im.set_data(data)
 
-class CBar:
+class CBar(Base):
     def __init__(self, ax: plt.Axes, im):
-        self.ax = ax
+        super().__init__(ax)
         self.cbar = plt.colorbar(im, cax=self.ax, orientation='horizontal')
         self.ax.xaxis.set_ticks_position("top")
+        self.artists = [None]
 
 
 #TODO use blitting
@@ -117,6 +131,7 @@ class PlotNd(object):
         fig.canvas.mpl_connect('scroll_event', self.onscroll)
         fig.canvas.mpl_connect('button_press_event', self.onclick)
         fig.canvas.mpl_connect('motion_notify_event', self.ondrag)
+        fig.canvas.mpl_connect('draw_event', self._update_background)
         self.timer = fig.canvas.new_timer(interval=100)
         self.timer.add_callback(self.increment)
         self.timerRunning = False
@@ -128,7 +143,7 @@ class PlotNd(object):
         self.coords = tuple(i // 2 for i in X.shape) if initialCoords is None else initialCoords
 
 
-        self.update()
+        self.update(blit=False)
         self.updateLimits()
         plt.pause(0.1)
 
@@ -141,7 +156,7 @@ class PlotNd(object):
         ani.save(path)
         return ani
 
-    def update(self):
+    def update(self, blit=True):
         self.cp.setData(np.squeeze(self.X[(slice(None), slice(None)) + self.coords[2:]]))
         self.spY.setData(self.X[(slice(None),) + tuple(i for i in self.coords[1:])])
         self.spX.setData(self.X[(self.coords[0], slice(None)) + self.coords[2:]])
@@ -151,7 +166,23 @@ class PlotNd(object):
         self.cp.setMarker(self.coords[1], self.coords[0])
         self.spX.setMarker(self.coords[1])
         self.spY.setMarker(self.coords[0])
-        self.fig.canvas.draw()
+        if blit:
+            self.blit()
+        else:
+            self.fig.canvas.draw()
+
+    def blit(self):
+        """Re-render the axes."""
+        for artistManager in [self.spX, self.spY, self.cp] + self.extra:
+            if artistManager.background is not None:
+                self.fig.canvas.restore_region(artistManager.background)
+            artistManager.draw() #Draw the artists
+            self.fig.canvas.blit(artistManager.ax.bbox)
+
+    def _update_background(self, event):
+        """force an update of the background"""
+        for artistManager in [self.spX, self.spY, self.cp] + self.extra:
+            artistManager.updateBackground()
 
     def updateLimits(self):
         self.cp.setRange(self.min, self.max)
@@ -245,10 +276,10 @@ class PlotNd(object):
 
 
 if __name__ == '__main__':
-    x = np.linspace(-1, 1, num=100)
-    y = np.linspace(-1, 1, num=100)
+    x = np.linspace(-1, 1, num=1000)
+    y = np.linspace(-1, 1, num=1000)
     z = np.linspace(-1, 1, num=80)
-    t = np.linspace(0, 20, num=30)
+    t = np.linspace(0, 20, num=1)
     Y, X, Z, T = np.meshgrid(y, x, z, t)
     names = ['y', 'x', 'z', 't']
     R = np.sqrt(X ** 2 + Y ** 2 + Z ** 2)
