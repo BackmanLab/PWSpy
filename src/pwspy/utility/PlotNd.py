@@ -33,8 +33,8 @@ class SidePlot(Base):
         markerData = (self.range, (0, dimLength))
         if self.vertical:
             markerData = markerData[1] + markerData[0]
-        self.plot = ax.plot([0], [0])[0]
-        self.markerLine = ax.plot(*markerData, color='r', linewidth=lw)[0]
+        self.plot = ax.plot([0], [0], animated=True)[0]
+        self.markerLine = ax.plot(*markerData, color='r', linewidth=lw, animated=True)[0]
         self.artists = [self.plot, self.markerLine]
 
 
@@ -64,9 +64,9 @@ class CenterPlot(Base):
     def __init__(self, ax: plt.Axes, shape):
         super().__init__(ax)
         self.shape = shape
-        self.vLine = ax.plot([100, 100], [0, shape[0]], 'r', linewidth=lw)[0]
-        self.hLine = ax.plot([0, shape[1]], [100, 100], 'r', linewidth=lw)[0]
-        self.im = ax.imshow(np.zeros(shape), aspect='auto')
+        self.vLine = ax.plot([100, 100], [0, shape[0]], 'r', linewidth=lw, animated=True)[0]
+        self.hLine = ax.plot([0, shape[1]], [100, 100], 'r', linewidth=lw, animated=True)[0]
+        self.im = ax.imshow(np.zeros(shape), aspect='auto', animated=True)
         ax.set_xlim((0, shape[1]))
         ax.set_ylim((0, shape[0]))
         self.range = (0, 1)
