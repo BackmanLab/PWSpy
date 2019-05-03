@@ -83,15 +83,17 @@ class CenterPlot(Base):
     def setData(self, data):
         self.im.set_data(data)
 
-class CBar(Base):
+class CBar:
     def __init__(self, ax: plt.Axes, im):
-        super().__init__(ax)
+        self.ax = ax
         self.cbar = plt.colorbar(im, cax=self.ax, orientation='horizontal')
         self.ax.xaxis.set_ticks_position("top")
         self.artists = [None]
 
+    def draw(self):
+        self.ax.xaxis.set_ticks_position("top")
 
-#TODO use blitting
+
 class PlotNd(object):
     """A class to conveniently view 3d or greater data."""
     def __init__(self, X: np.ndarray, names=('y', 'x', 'lambda'), initialCoords=None, title=''):
@@ -173,7 +175,7 @@ class PlotNd(object):
 
     def blit(self):
         """Re-render the axes."""
-        for artistManager in [self.spX, self.spY, self.cp] + self.extra:
+        for artistManager in [self.spX, self.spY, self.cp] + self.extra: # The fact that spX is first here makes it not render on click. sometimes not sure why.
             if artistManager.background is not None:
                 self.fig.canvas.restore_region(artistManager.background)
             artistManager.draw() #Draw the artists
@@ -181,8 +183,10 @@ class PlotNd(object):
 
     def _update_background(self, event):
         """force an update of the background"""
+        print('a')
         for artistManager in [self.spX, self.spY, self.cp] + self.extra:
             artistManager.updateBackground()
+        self.cbar.draw()
 
     def updateLimits(self):
         self.cp.setRange(self.min, self.max)
@@ -190,6 +194,7 @@ class PlotNd(object):
         self.spX.setRange(self.min, self.max)
         for sp in self.extra:
             sp.setRange(self.min, self.max)
+        self.cbar.draw()
 
     def resetColor(self):
         self.max = np.percentile(self.X[np.logical_not(np.isnan(self.X))], 99.99)
@@ -248,7 +253,6 @@ class PlotNd(object):
                 elif button == 3:
                     self.min = x
                 self.updateLimits()
-                return
         if ax == self.cp.ax:
             self.coords = (int(y), int(x)) + self.coords[2:]
         elif ax == self.spY.ax:
