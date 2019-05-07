@@ -14,6 +14,7 @@ import copy
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from abc import ABC, abstractmethod
+import scipy.io as spio
 
 class JsonAble(ABC):
     
@@ -210,32 +211,43 @@ class PositionList(JsonAble):
             json.dump(self, f, cls=PositionList.Encoder)
 
     @classmethod
-    def load(cls, filePath: str) -> 'PositionList':
+    def load(cls, filePath: str) -> PositionList:
         def _decode(dct):
             if 'format' in dct:
-                if dct['format'] == 'Micro-Manager Property Map' and int(dct['major_version']) == 2:
+                if dct['format'] != 'Micro-Manager Property Map' or int(dct['major_version']) != 2:
+                    raise Exception("The file format does not appear to be supported.")
                     positions = []
-                    for i in dct['map']['StagePositions']['array']:
-                        label = i['Label']['scalar']
-                        xyStage = i["DefaultXYStage"]['scalar']
-                        zStage = i["DefaultZStage"]['scalar']
-                        xyDict = [j for j in i["DevicePositions"]['array'] if j['Device']['scalar'] == xyStage][0]
-                        xyCoords = xyDict["Position_um"]['array']
-                        mspPositions = [Position2d(*xyCoords, xyStage)]
-                        try:
-                            zDict = [j for j in i["DevicePositions"]['array'] if j['Device']['scalar'] == zStage][0]
-                            zCoord = zDict['Position_um']['array'][0]
-                            mspPositions.append(Position1d(zCoord, zStage))
-                        except IndexError:
-                            pass
-                        positions.append(MultiStagePosition(label, xyStage, zStage,
-                                                            positions=mspPositions))
+                for i in dct['map']['StagePositions']['array']:
+                    label = i['Label']['scalar']
+                    xyStage = i["DefaultXYStage"]['scalar']
+                    zStage = i["DefaultZStage"]['scalar']
+                    xyDict = [j for j in i["DevicePositions"]['array'] if j['Device']['scalar'] == xyStage][0]
+                    xyCoords = xyDict["Position_um"]['array']
+                    mspPositions = [Position2d(*xyCoords, xyStage)]
+                    try:
+                        zDict = [j for j in i["DevicePositions"]['array'] if j['Device']['scalar'] == zStage][0]
+                        zCoord = zDict['Position_um']['array'][0]
+                        mspPositions.append(Position1d(zCoord, zStage))
+                    except IndexError:
+                        pass
+                    positions.append(MultiStagePosition(label, xyStage, zStage, positions=mspPositions))
             else:
                 return dct
             return PositionList(positions)
-
         with open(filePath, 'r') as f:
             return json.load(f, object_hook=_decode)
+
+    @classmethod
+    def fromNanoMatFile(cls, path: str, xyStageName: str):
+        mat = spio.loadmat(path)
+        l = mat['list']
+        positions = []
+        for i in range(l.shape[0]):
+            coordString: str = l[i][0][0]
+            x, y = coordString[1:-1].split(',')
+            pos = Position2d(x, y, xyStageName)
+            positions.append(MultiStagePosition(str(i), xyStageName, '', [pos]))
+        return PositionList(positions)
 
     def __repr__(self):
         s = "PositionList(\n["
