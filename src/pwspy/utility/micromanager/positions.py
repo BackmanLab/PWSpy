@@ -259,6 +259,33 @@ class PositionList(JsonAble):
             positions.append(MultiStagePosition(str(i), xyStageName, '', [pos]))
         return PositionList(positions)
 
+    def getAffineTransform(self, other: PositionList):
+        """Calculate the partial affine transformation between this position list and another position list. Must have the same length"""
+        import cv2
+        assert len(other) == len(self)
+        selfXY = [pos.getXYPosition() for pos in self.positions]
+        otherXY = [pos.getXYPosition() for pos in other.positions]
+        selfArr = np.array([(pos.x, pos.y) for pos in selfXY], dtype=np.float32)
+        otherArr = np.array([(pos.x, pos.y) for pos in otherXY], dtype=np.float32)
+        transform, inliers = cv2.estimateAffinePartial2D(selfArr, otherArr)
+        return transform
+
+    def applyAffineTransform(self, t: np.ndarray):
+        import cv2
+        assert isinstance(t, np.ndarray)
+        assert t.shape == (2, 3)
+        selfXY = [pos.getXYPosition() for pos in self.positions]
+        selfArr = np.array([[pos.x, pos.y] for pos in selfXY], dtype=np.float32)
+        selfArr = selfArr[None, :, :] # This is needed for opencv transform to work
+        ret = cv2.transform(selfArr, t)
+        positions = []
+        for i in range(len(self)):
+            pos = copy.deepcopy(self[i].getXYPosition())
+            pos.x = ret[0, i, 0]
+            pos.y = ret[0, i, 1]
+            positions.append(MultiStagePosition(self[i].label, self[i].xyStage, '', [pos]))
+        return PositionList(positions)
+
     def __repr__(self):
         s = "PositionList(\n["
         for i in self.positions:
