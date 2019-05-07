@@ -225,7 +225,7 @@ class PositionList(JsonAble):
             if 'format' in dct:
                 if dct['format'] != 'Micro-Manager Property Map' or int(dct['major_version']) != 2:
                     raise Exception("The file format does not appear to be supported.")
-                    positions = []
+                positions = []
                 for i in dct['map']['StagePositions']['array']:
                     label = i['Label']['scalar']
                     xyStage = i["DefaultXYStage"]['scalar']
