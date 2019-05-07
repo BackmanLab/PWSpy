@@ -306,8 +306,10 @@ class PositionList(JsonAble):
         def default(self, obj):
             if isinstance(obj, JsonAble):
                 return obj.toDict()
+            elif type(obj) == np.float32:
+                return float(obj)
             else:
-                return json.JSONEncoder(ensure_ascii=False).default(self, obj)
+                return json.JSONEncoder(ensure_ascii=False).default(obj)
 
     def __len__(self):
         return len(self.positions)
