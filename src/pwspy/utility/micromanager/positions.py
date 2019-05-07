@@ -58,7 +58,11 @@ class PropertyMap(JsonAble):
 @dataclass   
 class Position1d(JsonAble):  
     z: float    
-    zStage: str  = ''  
+    zStage: str  = ''
+
+    def __post_init__(self):
+        assert isinstance(self.z, float)
+        assert isinstance(self.zStage, str)
     
     def toDict(self):
         contents = [Property("Device", "STRING", self.zStage),
@@ -74,6 +78,11 @@ class Position2d(JsonAble):
     x: float
     y: float
     xyStage: str = ''
+
+    def __post_init__(self):
+        assert isinstance(self.x, float)
+        assert isinstance(self.y, float)
+        assert isinstance(self.xyStage, str)
 
     def toDict(self):
         contents = [Property("Device", "STRING", self.xyStage),
@@ -245,6 +254,7 @@ class PositionList(JsonAble):
         for i in range(l.shape[0]):
             coordString: str = l[i][0][0]
             x, y = coordString[1:-1].split(',')
+            x, y = float(x), float(y)
             pos = Position2d(x, y, xyStageName)
             positions.append(MultiStagePosition(str(i), xyStageName, '', [pos]))
         return PositionList(positions)
