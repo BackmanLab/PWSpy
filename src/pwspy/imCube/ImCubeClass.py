@@ -144,13 +144,14 @@ class ImCube(ICBase):
         im.save(nimbd)
         im.close()
 
-    def toTiff(self, outpath, dtype=np.uint16):
+    def toTiff(self, outpath: str, dtype=np.uint16):
         im = self.data
         im = im.astype(dtype)
         os.mkdir(outpath)
         self._saveImBd(outpath)
         with tf.TiffWriter(open(os.path.join(outpath, 'pws.tif'), 'wb')) as w:
             w.save(np.rollaxis(im, -1, 0), metadata=self.metadata._dict)
+        self.metadata.metadataToJson(outpath)
 
     def normalizeByExposure(self):
         if not self._cameraCorrected:
