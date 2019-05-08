@@ -259,6 +259,15 @@ class PositionList(JsonAble):
             positions.append(MultiStagePosition(str(i), xyStageName, '', [pos]))
         return PositionList(positions)
 
+    def toNanoMatFile(self, path: str):
+        matPositions = []
+        for pos in self.positions:
+            pos = pos.getXYPosition()
+            matPositions.append(f"({pos.x}, {pos.y})")
+        matPositions = np.asarray(matPositions, dtype=np.object)
+        print(matPositions.shape)
+        spio.savemat(path, {'list': matPositions[:,None]})
+    
     def getAffineTransform(self, other: PositionList):
         """Calculate the partial affine transformation between this position list and another position list. Must have the same length"""
         import cv2
