@@ -59,6 +59,14 @@ class ICMetaData:
         self.filePath: Optional[str] = filePath
         self.fileFormat: ICFileFormats = fileFormat
         self._dict['wavelengths'] = tuple(np.array(self._dict['wavelengths']).astype(float))
+        try:
+            datetime.strptime(self._dict['time'], dateTimeFormat)
+        except ValueError:
+            try:
+                print("Detected a non-compliant timestamp. attempting to correct.")
+                self._dict['time'] = datetime.strftime(datetime.strptime(self._dict['time'], "%d-%m-%y %H:%M:%S"), dateTimeFormat)
+            except ValueError:
+                raise ValueError("The time stamp could not be parsed.")
         if all([i in self._dict for i in ['darkCounts', 'linearityPoly']]):
             self.cameraCorrection = CameraCorrection(darkCounts=self._dict['darkCounts'],
                                                      linearityPolynomial=self._dict['linearityPoly'])
@@ -107,7 +115,7 @@ class ICMetaData:
             try:
                 md = json.load(open(os.path.join(directory, 'pwsmetadata.txt')))
             except:  # have to use the old metadata
-                print("Json metadata not found")
+                print("Json metadata not found. Using backup metadata.")
                 info2 = list(spio.loadmat(os.path.join(directory, 'info2.mat'))['info2'].squeeze())
                 info3 = list(spio.loadmat(os.path.join(directory, 'info3.mat'))['info3'].squeeze())
                 wv = list(spio.loadmat(os.path.join(directory, 'WV.mat'))['WV'].squeeze())

@@ -12,7 +12,7 @@ import os
 import re
 # TODO add blinded roi drawing
 
-
+#TODO allow plotting of files even if analysis isn't present.
 class PlottingDock(QDockWidget):
     def __init__(self, cellSelectorTable: CellSelectorDock):
         super().__init__("Plotting")
