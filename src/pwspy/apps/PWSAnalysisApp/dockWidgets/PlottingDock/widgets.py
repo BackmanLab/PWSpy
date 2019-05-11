@@ -139,8 +139,8 @@ class BigPlot(AnalysisPlotter, QWidget):
 
         def show(self):
             for b in [self.minBox, self.maxBox]:
-                b.setMaximum(self.parent().slider.maximum())
-                b.setMinimum(self.parent().slider.minimum())
+                b.setMaximum(self.parent().slider.max())
+                b.setMinimum(self.parent().slider.min())
             self.minBox.setValue(self.parent().slider.start())
             self.maxBox.setValue(self.parent().slider.end())
             super().show()
