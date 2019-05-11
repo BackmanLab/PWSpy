@@ -12,7 +12,6 @@ import os
 import re
 # TODO add blinded roi drawing
 
-#TODO allow plotting of files even if analysis isn't present.
 class PlottingDock(QDockWidget):
     def __init__(self, cellSelectorTable: CellSelectorDock):
         super().__init__("Plotting")
@@ -36,7 +35,7 @@ class PlottingDock(QDockWidget):
 
         plotScroll.setWidget(self.scrollContents)
         buttons = QWidget()
-        buttons.setMaximumWidth(60)
+        buttons.setMaximumWidth(100)
         buttons.setLayout(QVBoxLayout())
         _ = buttons.layout().addWidget
         self.anNameEdit = QLineEdit(self)
@@ -102,19 +101,23 @@ class PlottingDock(QDockWidget):
             messageBox.information(self, "Oops!", "Please select the cells you would like to plot.")
             messageBox.setFixedSize(500, 200)
         for cell in cells:
-            for anName in cell.getAnalyses():
-                try:
-                    if re.fullmatch(analysisNamePattern, anName):
-                        self.addPlot(LittlePlot(cell.loadAnalysis(anName), cell, f"{anName} {os.path.split(cell.filePath)[-1]}"))
-                except re.error as e:
-                    print(e)
+            if analysisNamePattern.strip() == '': #No analysis name was entered. don't load an analysis
+                self.addPlot(LittlePlot(cell, None, f"{os.path.split(cell.filePath)[-1]}"))
+            else:
+                for anName in cell.getAnalyses():
+                    try:
+                        if re.fullmatch(analysisNamePattern, anName):
+                            analysis = cell.loadAnalysis(anName)
+                            self.addPlot(LittlePlot(cell, analysis, f"{anName} {os.path.split(cell.filePath)[-1]}"))
+                    except re.error as e:
+                        print(e)
         self._plotsChanged()
 
     def handleButtons(self, button: QPushButton):
         if button != self._lastButton:
             for plot in self.plots:
                 if button is self.plotRMSButton:
-                    plot.changeActiveAnalysisField('rms')
+                    plot.changeData('rms')
                 elif button is self.plotBFButton:
-                    plot.changeActiveAnalysisField('meanReflectance')
+                    plot.changeData('meanReflectance')
             self._lastButton = button

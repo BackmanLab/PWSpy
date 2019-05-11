@@ -260,4 +260,8 @@ class ICMetaData:
         d.attrs['metadata'] = np.string_(json.dumps(self._dict))
         return d
 
+    def getImBd(self) -> np.ndarray:
+        with tf.TiffFile(os.path.join(self.filePath, 'image_bd.tif')) as f:
+            return f.asarray()
+
 from pwspy.analysis.analysisResults import AnalysisResultsLoader

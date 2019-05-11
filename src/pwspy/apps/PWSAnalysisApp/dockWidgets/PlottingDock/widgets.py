@@ -4,7 +4,7 @@ import numpy as np
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QWidget, QBoxLayout, QSpacerItem, QGridLayout, QButtonGroup, QPushButton, QMenu, QAction, \
-    QSlider, QApplication, QLabel, QDialog, QVBoxLayout, QSpinBox, QDoubleSpinBox
+    QSlider, QApplication, QLabel, QDialog, QVBoxLayout, QSpinBox, QDoubleSpinBox, QAbstractSpinBox
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 from matplotlib.widgets import LassoSelector
@@ -36,24 +36,30 @@ class AspectRatioWidget(QWidget):
 
 
 class AnalysisPlotter:
-    def __init__(self, analysis: AnalysisResultsLoader, metadata: ICMetaData):
+    def __init__(self, metadata: ICMetaData, analysis: AnalysisResultsLoader = None):
         self.analysis = analysis
         self.metadata = metadata
         self.data = None
         self.analysisField = None
 
-    def changeActiveAnalysisField(self, field):
-        self.analysisField = field
-        self.data = getattr(self.analysis, field)
-        assert len(self.data.shape) == 2
+    def changeData(self, field):
+        if field != self.analysisField:
+            self.analysisField = field
+            if field == 'imbd': #Load the imbd from the ICMetadata object
+                self.data = self.metadata.getImBd()
+            else:
+                if self.analysis is None:
+                    raise ValueError(f"Analysis Plotter for ImCube {self.metadata.filePath} does not have an analysis file.")
+                self.data = getattr(self.analysis, field)
+            assert len(self.data.shape) == 2
 
 
 class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
-    def __init__(self, analysis: AnalysisResultsLoader, metadata: ICMetaData, title: str, initialField='rms'):
-        AnalysisPlotter.__init__(self, analysis, metadata)
+    def __init__(self, metadata: ICMetaData, analysis: AnalysisResultsLoader, title: str, initialField='imbd'):
+        AnalysisPlotter.__init__(self, metadata, analysis)
         self.fig = Figure()
         ax = self.fig.add_subplot(1, 1, 1)
-        self.im = ax.imshow(np.zeros((100,100)))
+        self.im = ax.imshow(np.zeros((100, 100)))
         ax.set_title(title, fontsize=8)
         self.title = title
         ax.yaxis.set_visible(False)
@@ -61,7 +67,7 @@ class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
         FigureCanvasQTAgg.__init__(self, self.fig)
         self.mpl_connect("button_release_event", self.mouseReleaseEvent)
         self.setMinimumWidth(20)
-        self.changeActiveAnalysisField(initialField)
+        self.changeData(initialField)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.showContextMenu)
         self.plotnd = None
@@ -70,8 +76,8 @@ class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
         if event.button() == QtCore.Qt.LeftButton:
             BigPlot(self.data, self.title, self)
 
-    def changeActiveAnalysisField(self, field):
-        AnalysisPlotter.changeActiveAnalysisField(self, field)
+    def changeData(self, field):
+        AnalysisPlotter.changeData(self, field)
         self.im.set_data(self.data)
         self.im.set_clim((np.percentile(self.data, 0.1), np.percentile(self.data, 99.9)))
         self.draw_idle()
@@ -96,7 +102,8 @@ class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
 class BigPlot(AnalysisPlotter, QWidget):
     class SaturationDialog(QDialog):
         def __init__(self, parent):
-            super().__init__(parent=parent)
+            super().__init__(parent=parent, flags=QtCore.Qt.FramelessWindowHint)
+            self.setModal(True)
             l = QVBoxLayout()
             self.numBox = QDoubleSpinBox()
             self.numBox.setValue(0.1)
@@ -113,6 +120,37 @@ class BigPlot(AnalysisPlotter, QWidget):
         def value(self):
             return self.numBox.value()
 
+    class RangeDialog(QDialog):
+        def __init__(self, parent):
+            super().__init__(parent=parent, flags = QtCore.Qt.FramelessWindowHint)
+            self.setModal(True)
+            l = QGridLayout()
+            self.minBox = QDoubleSpinBox()
+
+            self.maxBox = QDoubleSpinBox()
+            self.okButton = QPushButton("Ok")
+            self.okButton.released.connect(self.accept)
+            l.addWidget(QLabel("Min"), 0, 0, 1, 1)
+            l.addWidget(QLabel("Max"), 0, 1, 1, 1)
+            l.addWidget(self.minBox, 1, 0, 1, 1)
+            l.addWidget(self.maxBox, 1, 1, 1, 1)
+            l.addWidget(self.okButton, 2, 1, 1, 1)
+            self.setLayout(l)
+
+        def show(self):
+            for b in [self.minBox, self.maxBox]:
+                b.setMaximum(self.parent().slider.maximum())
+                b.setMinimum(self.parent().slider.minimum())
+            self.minBox.setValue(self.parent().slider.start())
+            self.maxBox.setValue(self.parent().slider.end())
+            super().show()
+
+        @property
+        def minimum(self): return self.minBox.value()
+
+        @property
+        def maximum(self): return self.maxBox.value()
+
     def __init__(self,  data: np.ndarray, title: str, parent=None):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         self.setWindowTitle(title)
@@ -121,21 +159,26 @@ class BigPlot(AnalysisPlotter, QWidget):
         self.fig = Figure()
         self.ax = self.fig.add_subplot(1, 1, 1)
         self.im = self.ax.imshow(data)
-        plt.colorbar(self.im, ax=self.ax)
+        self.fig.colorbar(self.im, ax=self.ax)
         self.canvas = FigureCanvasQTAgg(self.fig)
         self.canvas.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.canvas.setFocus()
         self.slider = QRangeSlider(self)
         self.slider.endValueChanged.connect(self.climImage)
         self.slider.startValueChanged.connect(self.climImage)
-        self.dlg = BigPlot.SaturationDialog(self)
-        self.dlg.accepted.connect(self.setSaturation)
+        self.autoDlg = BigPlot.SaturationDialog(self)
+        self.autoDlg.accepted.connect(self.setSaturation)
+        self.rangeDlg = BigPlot.RangeDialog(self)
+        self.rangeDlg.accepted.connect(self.setRange)
         self.saturationButton = QPushButton("Auto")
-        self.saturationButton.released.connect(self.dlg.show)
+        self.saturationButton.released.connect(self.autoDlg.show)
+        self.manualRangeButton = QPushButton("Range")
+        self.manualRangeButton.released.connect(self.rangeDlg.show)
         layout.addWidget(self.canvas, 0, 0, 8, 8)
         layout.addWidget(QLabel("Color Range"), 9, 0, 1, 1)
         layout.addWidget(self.slider, 9, 1, 1, 6)
         layout.addWidget(self.saturationButton, 9, 7, 1, 1)
+        layout.addWidget(self.manualRangeButton, 9, 8, 1, 1)
         layout.addWidget(NavigationToolbar(self.canvas, self), 10, 0, 8, 8)
         self.setLayout(layout)
 
@@ -148,11 +191,15 @@ class BigPlot(AnalysisPlotter, QWidget):
         self.setSaturation()
 
     def setSaturation(self):
-        percentage = self.dlg.value
+        percentage = self.autoDlg.value
         m = np.percentile(self.data, percentage)
         M = np.percentile(self.data, 100 - percentage)
         self.slider.setStart(m)
         self.slider.setEnd(M)
+
+    def setRange(self):
+        self.slider.setStart(self.rangeDlg.minimum)
+        self.slider.setEnd(self.rangeDlg.maximum)
 
     def climImage(self):
         self.im.set_clim((self.slider.start(), self.slider.end()))
@@ -160,9 +207,9 @@ class BigPlot(AnalysisPlotter, QWidget):
 
 
 class RoiDrawer(AnalysisPlotter, QWidget):
-    def __init__(self, analysis: AnalysisResultsLoader, metadata: ICMetaData, parent=None, initialField='rms'):
+    def __init__(self, metadata: ICMetaData, analysis: AnalysisResultsLoader = None, parent=None, initialField='imbd'):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
-        AnalysisPlotter.__init__(self, analysis, metadata)
+        AnalysisPlotter.__init__(self, metadata, analysis)
         self.setWindowTitle("What?!")
         layout = QGridLayout()
         self.fig = Figure()
@@ -192,7 +239,7 @@ class RoiDrawer(AnalysisPlotter, QWidget):
         self.setLayout(layout)
         self.selector: AdjustableSelector = AdjustableSelector(self.ax, MyLasso)
 
-        self.changeActiveAnalysisField(initialField)
+        self.changeData(initialField)
 
         self.show()
 
@@ -208,8 +255,8 @@ class RoiDrawer(AnalysisPlotter, QWidget):
         if self.selector is not None:
             self.selector.adjustable = checkstate
 
-    def changeActiveAnalysisField(self, field):
-        AnalysisPlotter.changeActiveAnalysisField(self, field)
+    def changeData(self, field):
+        AnalysisPlotter.changeData(self, field)
         self.im.set_data(self.data)
         self.im.set_clim((np.percentile(self.data, 0.1), np.percentile(self.data, 99.9)))
         self.canvas.draw_idle()
