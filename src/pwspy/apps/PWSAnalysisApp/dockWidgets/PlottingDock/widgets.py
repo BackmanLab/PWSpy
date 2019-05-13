@@ -222,6 +222,37 @@ class BigPlot(QWidget):
         self.show()
         self.setSaturation()
 
+        self.annot = self.ax.annotate("", xy=(0, 0), xytext=(20, 20), textcoords="offset points",
+                            bbox=dict(boxstyle="round", fc="w"),
+                            arrowprops=dict(arrowstyle="->"))
+
+
+
+
+        self.fig.canvas.mpl_connect("motion_notify_event", self.hover)
+
+
+    def hover(self, event):
+        def update_annot(roi, poly):
+            self.annot.xy = poly.xy.mean(axis=0) # Set the location to the center of the polygon.
+            text = f"{roi.name}, {roi.number}"
+            self.annot.set_text(text)
+            #            self.annot.get_bbox_patch().set_facecolor(cmap(norm(c[ind["ind"][0]])))
+            self.annot.get_bbox_patch().set_alpha(0.4)
+        vis = self.annot.get_visible()
+        if event.inaxes == self.ax:
+            for roi, overlay, poly in self._rois:
+                contained, _ = poly.contains(event)
+                if contained:
+                    if not vis:
+                        update_annot(roi, poly)
+                        self.annot.set_visible(True)
+                        self.fig.canvas.draw_idle()
+                    return
+            if vis: #If we got here then not hover actions were found.
+                self.annot.set_visible(False)
+                self.fig.canvas.draw_idle()
+
     def showRois(self):
         pattern = self.roiFilter.currentText()
         self.clearRois()
@@ -231,13 +262,17 @@ class BigPlot(QWidget):
         self.canvas.draw_idle()
 
     def clearRois(self):
-        for roi, overlay in self._rois:
+        for roi, overlay, poly in self._rois:
             overlay.remove()
+            poly.remove()
         self._rois = []
 
     def addRoi(self, roi: Roi):
-        overlay = roi.getImage(self.ax)
-        self._rois.append((roi, overlay))
+        overlay = roi.getImage(self.ax) # an image showing the exact shape of the ROI
+        poly = roi.getBoundingPolygon() # A polygon used for mouse event handling
+        poly.set_visible(False)#poly.set_facecolor((0,0,0,0)) # Make polygon invisible
+        self.ax.add_patch(poly)
+        self._rois.append((roi, overlay, poly))
 
 
     def setSaturation(self):

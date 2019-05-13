@@ -7,7 +7,7 @@ Created on Sat Feb  9 15:57:52 2019
 import json
 import os
 import re
-
+from matplotlib import patches
 import typing
 import dataclasses
 from enum import Enum, auto
@@ -18,6 +18,8 @@ import matplotlib.pyplot as plt
 import h5py
 import numpy as np
 from scipy import io as spio
+from shapely import geometry
+
 
 class RoiFileFormats(Enum):
     HDF = auto()
@@ -127,3 +129,13 @@ class Roi:
         arr = np.ma.masked_array(arr, arr==0)
         im = ax.imshow(arr, alpha=0.5, clim=[0, 400], cmap='Reds')
         return im
+
+    def getBoundingPolygon(self):
+        x = np.arange(self.data.shape[1])
+        y = np.arange(self.data.shape[0])
+        X, Y = np.meshgrid(x, y)
+        X = X[self.data]
+        Y = Y[self.data]
+        coords = list(zip(X, Y))
+        g = geometry.Polygon(coords)
+        return patches.Polygon(list(g.convex_hull.exterior.coords), facecolor=(1, 0, 0, 0.5))
