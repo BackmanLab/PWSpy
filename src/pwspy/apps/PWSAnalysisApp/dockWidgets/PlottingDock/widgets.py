@@ -80,7 +80,7 @@ class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
         AnalysisPlotter.changeData(self, field)
         t = self.title.split(' ')
         t[-1] = field
-        self.title = t.join(' ')
+        self.title = ' '.join(t)
         self.ax.set_title(self.title, fontsize=8)
         self.im.set_data(self.data)
         self.im.set_clim((np.percentile(self.data, 0.1), np.percentile(self.data, 99.9)))
