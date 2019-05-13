@@ -17,6 +17,7 @@ class PlottingDock(QDockWidget):
         super().__init__("Plotting")
         self.setStyleSheet("QDockWidget > QWidget { border: 1px solid lightgray; }")
         self.selector = cellSelectorTable
+        self.roiDrawer = None
         self.setObjectName('PlottingWidget')
         self.plots = []
         self._widget = QWidget()
@@ -70,7 +71,6 @@ class PlottingDock(QDockWidget):
         _(self.roiButton)
         _(frame)
 
-
         self._widget.layout().addWidget(plotScroll)
         self._widget.layout().addWidget(buttons)
         self.setWidget(self._widget)
@@ -85,7 +85,7 @@ class PlottingDock(QDockWidget):
             self.scrollContents.setAspect(1 / len(self.plots))
 
     def startRoiDrawing(self):
-        RoiDrawer(self.plots[0].metadata, self.plots[0].analysis) #This is just placeholder
+        self.roiDrawer = RoiDrawer([(self.plots[0].metadata, self.plots[0].analysis)]) #This is just placeholder
 
     def anNameEditFinished(self):
         #Sometimes the signal gets sent twice. only generate plots if the string has changed.
