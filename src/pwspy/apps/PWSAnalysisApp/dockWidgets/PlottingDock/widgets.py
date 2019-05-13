@@ -1,10 +1,12 @@
+import re
 from os import path as osp
 
 import numpy as np
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QWidget, QBoxLayout, QSpacerItem, QGridLayout, QButtonGroup, QPushButton, QMenu, QAction, \
-    QSlider, QApplication, QLabel, QDialog, QVBoxLayout, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QComboBox
+    QSlider, QApplication, QLabel, QDialog, QVBoxLayout, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QComboBox, \
+    QLineEdit
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 from matplotlib.widgets import LassoSelector
@@ -13,6 +15,7 @@ from pwspy.analysis.analysisResults import AnalysisResultsLoader
 from pwspy.apps.PWSAnalysisApp.sharedWidgets.rangeSlider import QRangeSlider
 from pwspy.imCube import ImCube
 from pwspy.imCube.ICMetaDataClass import ICMetaData
+from pwspy.imCube.otherClasses import Roi
 from pwspy.utility import PlotNd
 from pwspy.utility.matplotlibwidg import MyLasso, AxManager, MyEllipse, mySelectorWidget, AdjustableSelector
 import matplotlib.pyplot as plt
@@ -75,7 +78,7 @@ class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
 
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
-            BigPlot(self.data, self.title, self)
+            BigPlot(self.metadata, self.data, self.title, self)
 
     def changeData(self, field):
         AnalysisPlotter.changeData(self, field)
@@ -157,11 +160,13 @@ class BigPlot(QWidget):
         @property
         def maximum(self): return self.maxBox.value()
 
-    def __init__(self,  data: np.ndarray, title: str, parent=None):
+    def __init__(self, metadata: ICMetaData, data: np.ndarray, title: str, parent=None):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         self.setWindowTitle(title)
         layout = QGridLayout()
         self.data = data
+        self.metadata = metadata
+        self._rois = []
         self.fig = Figure()
         self.ax = self.fig.add_subplot(1, 1, 1)
         self.ax.get_yaxis().set_visible(False)
@@ -183,6 +188,15 @@ class BigPlot(QWidget):
         self.saturationButton.released.connect(self.autoDlg.show)
         self.manualRangeButton = QPushButton("Range")
         self.manualRangeButton.released.connect(self.rangeDlg.show)
+        self.roiFilter = QComboBox(self)
+        self.roiFilter.setEditable(True)
+        # updateFilter
+        self.roiFilter.addItem(' ')
+        self.roiFilter.addItem('.*')
+        roiNames = set(list(zip(*self.metadata.getRois()))[0])
+        self.roiFilter.addItems(roiNames)
+        self.roiFilter.currentIndexChanged.connect(self.showRois)
+
         self.cmapCombo = QComboBox(self)
         self.cmapCombo.addItems(['gray', 'jet', 'plasma', 'Reds'])
         self.cmapCombo.currentTextChanged.connect(self.changeCmap)
@@ -193,6 +207,8 @@ class BigPlot(QWidget):
         layout.addWidget(self.saturationButton, 9, 6, 1, 1)
         layout.addWidget(self.manualRangeButton, 9, 7, 1, 1)
         layout.addWidget(NavigationToolbar(self.canvas, self), 10, 0, 1, 4)
+        layout.addWidget(QLabel("Roi"), 10, 4, 1, 1)
+        layout.addWidget(self.roiFilter, 10, 5, 1, 1)
         layout.addWidget(QLabel("Color Map"), 10, 6, 1, 1)
         layout.addWidget(self.cmapCombo, 10, 7, 1, 1)
         layout.setRowStretch(0, 1)  # This causes the plot to take up all the space that isn't needed by the other widgets.
@@ -205,6 +221,23 @@ class BigPlot(QWidget):
 
         self.show()
         self.setSaturation()
+
+    def showRois(self):
+        pattern = self.roiFilter.currentText()
+        self.clearRois()
+        for name, num, fformat in self.metadata.getRois():
+            if re.match(pattern, name):
+                self.addRoi(self.metadata.loadRoi(name, num, fformat))
+        self.canvas.draw_idle()
+
+    def clearRois(self):
+        for roi, overlay in self._rois:
+            overlay.remove()
+        self._rois = []
+
+    def addRoi(self, roi: Roi):
+        overlay = roi.getImage(self.ax)
+        self._rois.append((roi, overlay))
 
 
     def setSaturation(self):
@@ -226,14 +259,14 @@ class BigPlot(QWidget):
         self.im.set_cmap(map)
         self.canvas.draw_idle()
 
-
+#TODO all these classes deal with ICMetadata with an optional Analysis. make a class to conveniently package them.
 class RoiDrawer(QWidget):
     def __init__(self, metadatas: List[Tuple[ICMetaData, Optional[AnalysisResultsLoader]]], parent=None, initialField='imbd'):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         self.setWindowTitle("What?!")
         self.metadatas = metadatas
         layout = QGridLayout()
-        self.plotWidg = BigPlot(np.random.rand(100, 100), 'title')
+        self.plotWidg = BigPlot(metadatas[0][0], np.random.rand(100, 100), 'title')
         self.buttonGroup = QButtonGroup(self)
         self.lassoButton = QPushButton("L")
         self.ellipseButton = QPushButton("O")

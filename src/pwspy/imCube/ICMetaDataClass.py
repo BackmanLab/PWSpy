@@ -104,7 +104,7 @@ class ICMetaData:
         except:
             try:
                 return ICMetaData.fromOldPWS(directory, lock=lock)
-            except:
+            except: #TODO add support for Nano Files
                 raise Exception(f"Could not find a valid PWS image cube file at {directory}.")
 
     @classmethod
