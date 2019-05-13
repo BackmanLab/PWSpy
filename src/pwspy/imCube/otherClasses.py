@@ -81,7 +81,6 @@ class Roi:
             return Roi.fromMat(directory, name, number)
 
     def toHDF(self, directory):
-        #TODO why is this so slow
         savePath = os.path.join(directory, f'roi_{self.name}.h5')
         with h5py.File(savePath, 'a') as hf:
             if np.string_(str(self.number)) in hf.keys():
