@@ -99,7 +99,6 @@ class PlotNd(object):
     def __init__(self, X: np.ndarray, names=('y', 'x', 'lambda'), initialCoords=None, title=''):
         self.max = self.min = None
         fig = plt.figure(figsize=(6, 6))
-        self.fig = fig
         fig.suptitle(title)
         h, w = X.shape[:2]
         self.names = names
