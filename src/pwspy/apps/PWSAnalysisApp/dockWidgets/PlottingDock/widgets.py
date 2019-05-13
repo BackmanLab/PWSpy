@@ -58,12 +58,12 @@ class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
     def __init__(self, metadata: ICMetaData, analysis: AnalysisResultsLoader, title: str, initialField='imbd'):
         AnalysisPlotter.__init__(self, metadata, analysis)
         self.fig = Figure()
-        ax = self.fig.add_subplot(1, 1, 1)
-        self.im = ax.imshow(np.zeros((100, 100)))
-        ax.set_title(title, fontsize=8)
-        self.title = title
-        ax.yaxis.set_visible(False)
-        ax.xaxis.set_visible(False)
+        self.ax = self.fig.add_subplot(1, 1, 1)
+        self.im = self.ax.imshow(np.zeros((100, 100)))
+        self.title = f"{title} {initialField}"
+        self.ax.set_title(self.title, fontsize=8)
+        self.ax.yaxis.set_visible(False)
+        self.ax.xaxis.set_visible(False)
         FigureCanvasQTAgg.__init__(self, self.fig)
         self.mpl_connect("button_release_event", self.mouseReleaseEvent)
         self.setMinimumWidth(20)
@@ -78,17 +78,22 @@ class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
 
     def changeData(self, field):
         AnalysisPlotter.changeData(self, field)
+        t = self.title.split(' ')
+        t[-1] = field
+        self.title = t.join(' ')
+        self.ax.set_title(self.title, fontsize=8)
         self.im.set_data(self.data)
         self.im.set_clim((np.percentile(self.data, 0.1), np.percentile(self.data, 99.9)))
         self.draw_idle()
 
     def showContextMenu(self, point: QPoint):
         menu = QMenu("ContextMenu", self)
-        anPlotAction = QAction("Plot3d Analyzed Reflectance", self)
-        anPlotAction.triggered.connect(self.plotAn3d)
-        rawPlotAction = QAction("Plot3d Raw Counts", self)
+        if self.analysis is not None:
+            anPlotAction = QAction("Plot3d Analyzed Reflectance", self)
+            anPlotAction.triggered.connect(self.plotAn3d)
+            menu.addAction(anPlotAction)
+        rawPlotAction = QAction("Plot3d Raw Data", self)
         rawPlotAction.triggered.connect(self.plotRaw3d)
-        menu.addAction(anPlotAction)
         menu.addAction(rawPlotAction)
         menu.exec(self.mapToGlobal(point))
 
@@ -180,6 +185,7 @@ class BigPlot(AnalysisPlotter, QWidget):
         layout.addWidget(self.saturationButton, 9, 7, 1, 1)
         layout.addWidget(self.manualRangeButton, 9, 8, 1, 1)
         layout.addWidget(NavigationToolbar(self.canvas, self), 10, 0, 8, 8)
+        layout.setRowStretch(0, 1) #  This causes the plot to take up all the space that isn't needed by the other widgets.
         self.setLayout(layout)
 
         M = self.data.max()

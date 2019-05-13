@@ -2,7 +2,7 @@ from typing import List
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QScrollArea, QVBoxLayout, QPushButton, QMessageBox, \
-    QComboBox, QLabel, QLineEdit, QSizePolicy, QButtonGroup
+    QComboBox, QLabel, QLineEdit, QSizePolicy, QButtonGroup, QFrame
 
 from pwspy.apps.PWSAnalysisApp.dockWidgets import CellSelectorDock
 from pwspy.apps.PWSAnalysisApp.dockWidgets.PlottingDock.widgets import RoiDrawer
@@ -45,11 +45,19 @@ class PlottingDock(QDockWidget):
         self.buttonGroup = QButtonGroup()
         self._lastButton = None
         self.buttonGroup.buttonReleased.connect(self.handleButtons)
+        self.plotImBdButton = QPushButton("ImBd")
         self.plotRMSButton = QPushButton("RMS")
-        self.plotBFButton = QPushButton('BF')
-        self.buttonGroup.addButton(self.plotRMSButton, 1)
-        self.buttonGroup.addButton(self.plotBFButton)
+        self.plotRButton = QPushButton('R')
+        self.buttonGroup.addButton(self.plotImBdButton)
+        self.buttonGroup.addButton(self.plotRMSButton)
+        self.buttonGroup.addButton(self.plotRButton)
         [i.setCheckable(True) for i in self.buttonGroup.buttons()]
+        self.buttonGroup.buttons()[0].setChecked(True)
+        frame = QFrame()
+        frame.setFrameStyle(QFrame.StyledPanel | QFrame.Plain)
+        l = QVBoxLayout()
+        [l.addWidget(i) for i in self.buttonGroup.buttons()]
+        frame.setLayout(l)
         self.refreshButton = QPushButton("Refresh")
         self.refreshButton.released.connect(self.generatePlots)
         self.roiButton = QPushButton("Draw Roi's")
@@ -58,10 +66,11 @@ class PlottingDock(QDockWidget):
         label.setMaximumHeight(20)
         _(label)
         _(self.anNameEdit)
-        _(self.plotRMSButton)
-        _(self.plotBFButton)
-        _(self.roiButton)
         _(self.refreshButton)
+        _(self.roiButton)
+        _(frame)
+
+
         self._widget.layout().addWidget(plotScroll)
         self._widget.layout().addWidget(buttons)
         self.setWidget(self._widget)
@@ -115,9 +124,14 @@ class PlottingDock(QDockWidget):
 
     def handleButtons(self, button: QPushButton):
         if button != self._lastButton:
-            for plot in self.plots:
-                if button is self.plotRMSButton:
-                    plot.changeData('rms')
-                elif button is self.plotBFButton:
-                    plot.changeData('meanReflectance')
+            for plot in self.plots: #TODO handle errors for missing analyses.
+                try:
+                    if button is self.plotImBdButton:
+                        plot.changeData('imbd')
+                    elif button is self.plotRMSButton:
+                        plot.changeData('rms')
+                    elif button is self.plotRButton:
+                        plot.changeData('meanReflectance')
+                except ValueError: #The analysis field wasn't found
+                    plot.changeData('imbd')
             self._lastButton = button
