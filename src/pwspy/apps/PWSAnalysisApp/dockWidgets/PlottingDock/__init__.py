@@ -86,7 +86,10 @@ class PlottingDock(QDockWidget):
 
     def startRoiDrawing(self):
         metadatas = [(p.metadata, p.analysis) for p in self.plots]
-        self.roiDrawer = RoiDrawer(metadatas) #TODO This is just placeholder
+        if len(metadatas) > 0: # Otherwise we crash
+            self.roiDrawer = RoiDrawer(metadatas)
+        else:
+            QMessageBox.information(self, "Oops", "Please select which cells to plot.")
 
     def anNameEditFinished(self):
         #Sometimes the signal gets sent twice. only generate plots if the string has changed.
