@@ -138,6 +138,7 @@ class PlotNd(object):
         self.timer.add_callback(self.increment)
         self.timerRunning = False
         self.fig = fig
+        plt.tight_layout()
         '''Scroll to navigate stacks.\n\nPress "a" to automatically scroll.\n\nLeft click the color bar to set the max color range.\n\nRight click to set the mininum.\n\nPress "r" to reset the color range.\n\nPress 't' to swap the two primary axes.\n\nPress 'y' to rotate the order of the secondary axes.\n\nPress 'u' to rotate the order of all axes, allowing\n\a secondary axis to become a primary axis\n\n\n'''
         self.X = X
         self.resetColor()
