@@ -81,7 +81,7 @@ class ResultsTable(CopyableTable):
         self._items.append(item)
 
     def clearCellItems(self) -> None:
-        self.clear()
+        self.clearContents()
         self.setRowCount(0)
         self._items = []
         self.itemsCleared.emit()
