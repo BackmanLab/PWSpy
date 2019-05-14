@@ -127,12 +127,13 @@ class CompilationSummaryDisplay(QDialog):
             item = QTreeWidgetItem(self.warningTree)
             item.setText(0, meta.filePath)
             for roiResult, roiWarnList in roiList:
-                subItem = QTreeWidgetItem(item)
-                subItem.setText(0, f"{len(roiWarnList)} warnings: {roiResult.roi.name} {roiResult.roi.number}")
-                for warn in roiWarnList:
-                    subItem2 = QTreeWidgetItem(subItem)
-                    subItem2.setText(0, warn.shortMsg)
-                    subItem2.setToolTip(0, warn.longMsg)
+                if len(roiWarnList) > 0:
+                    subItem = QTreeWidgetItem(item)
+                    subItem.setText(0, f"{len(roiWarnList)} warnings: {roiResult.roi.name} {roiResult.roi.number}")
+                    for warn in roiWarnList:
+                        subItem2 = QTreeWidgetItem(subItem)
+                        subItem2.setText(0, warn.shortMsg)
+                        subItem2.setToolTip(0, warn.longMsg)
 
     def clearWarnings(self):
         self.warningTree.clear()
