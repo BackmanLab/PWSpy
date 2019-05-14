@@ -240,7 +240,7 @@ class AnalysisResultsLoader(AbstractAnalysisResults):
     @clearError
     def opdIndex(self) -> np.ndarray:
         with h5py.File(self.filePath, 'r') as file:
-            dset = file['xvalOpd']
+            dset = file['opdIndex']
             return np.array(dset)
 
     @cached_property
