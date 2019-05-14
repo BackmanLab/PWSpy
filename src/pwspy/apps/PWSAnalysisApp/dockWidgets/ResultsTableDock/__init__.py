@@ -57,6 +57,9 @@ class ResultsTableDock(QDockWidget):
     def addCompilationResult(self, result: RoiCompilationResults, metadata: ICMetaData):
         self.table.addItem(ResultsTableItem(result, metadata))
 
+    def clearCompilationResults(self):
+        self.table.clearCellItems()
+
     def getSettings(self):
         kwargs = {}
         for checkBox in self.checkBoxes:

@@ -65,6 +65,7 @@ class PWSApp(QApplication):
         if len(inVal) > 0:
             CompilationSummaryDisplay(self.window, inVal)
         results = [(meta, result) for meta, roiList in inVal for result, warnings in roiList]
+        self.window.resultsTable.clearCompilationResults()
         [self.window.resultsTable.addCompilationResult(r, md) for md, r in results]
 
     def changeDirectory(self, directory: str, files: List[str]):

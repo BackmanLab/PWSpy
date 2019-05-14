@@ -79,7 +79,6 @@ class WorkingDirDialog(QDialog):
 class AnalysisSummaryDisplay(QDialog):
     def __init__(self, parent: Optional[QWidget], warnings: List[Tuple[List[AnalysisWarning], ICMetaData]],  analysisName: str = '', analysisSettings: AnalysisSettings = None):
         super().__init__(parent=parent)
-        self.setWindowTitle("Analysis Summary")
         self.analysisName = analysisName
         self.analysisSettings = analysisSettings
         layout = QVBoxLayout()
@@ -91,7 +90,7 @@ class AnalysisSummaryDisplay(QDialog):
         layout.addWidget(self.warnList)
         self.setLayout(layout)
         self._addWarnings(warnings)
-        self.setWindowTitle(analysisName)
+        self.setWindowTitle(f"Analysis Summary: {analysisName}")
         self.show()
 
     def _addWarnings(self, warnings: List[Tuple[List[AnalysisWarning], ICMetaData]]):
@@ -111,7 +110,7 @@ class AnalysisSummaryDisplay(QDialog):
             msgBox = QMessageBox.information(self, self.analysisName, self.analysisSettings.toJsonString())
 
 
-class CompilationSummaryDisplay(QDialog): #TODO this is just a copy of the analysis summary right now. get rid of the settings button and make is display ROI information.
+class CompilationSummaryDisplay(QDialog):
     def __init__(self, parent: Optional[QWidget], warnings: List[Tuple[ICMetaData, List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]]],  analysisName: str = '', analysisSettings: AnalysisSettings = None):
         super().__init__(parent=parent)
         self.setWindowTitle("Compilation Summary")
@@ -121,7 +120,6 @@ class CompilationSummaryDisplay(QDialog): #TODO this is just a copy of the analy
         layout.addWidget(self.warningTree)
         self.setLayout(layout)
         self._addWarnings(warnings)
-        self.setWindowTitle(analysisName)
         self.show()
 
     def _addWarnings(self, warnings: List[Tuple[ICMetaData, List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]]]):

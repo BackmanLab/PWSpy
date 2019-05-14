@@ -1,7 +1,6 @@
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QTableWidgetItem, QPushButton, QApplication
-from matplotlib.backends.backend_qt5 import FigureCanvasQT
-from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 
 from pwspy.analysis.compilation.roiCompilationResults import RoiCompilationResults
 from pwspy.apps.PWSAnalysisApp.sharedWidgets.tables import CopyableTable, NumberTableWidgetItem
@@ -32,11 +31,10 @@ class ResultsTableItem:
         self.meanSigmaRatioLabel = NumberTableWidgetItem(results.varRatio)
 
     def _plotOpd(self):
-        fig = Figure()
-        ax = fig.add_subplot(1, 1, 1)
-        canvas = FigureCanvasQT(fig)
+        fig, ax = plt.subplots()
         ax.plot(self.results.opdIndex, self.results.opd)
-        canvas.show()
+        fig.suptitle(f"{self.cellPathLabel.text()}/Cell{self.cellNumLabel.text()}")
+        fig.show()
 
 
 class ResultsTable(CopyableTable):
@@ -83,6 +81,7 @@ class ResultsTable(CopyableTable):
         self._items.append(item)
 
     def clearCellItems(self) -> None:
+        self.clear()
         self.setRowCount(0)
         self._items = []
         self.itemsCleared.emit()
