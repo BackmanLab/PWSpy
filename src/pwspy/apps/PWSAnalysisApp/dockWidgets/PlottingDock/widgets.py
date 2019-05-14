@@ -164,8 +164,6 @@ class BigPlot(QWidget):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         self.setWindowTitle(title)
         layout = QGridLayout()
-        self.data = data
-        self.metadata = metadata
         self._rois = []
         self.fig = Figure()
         self.ax = self.fig.add_subplot(1, 1, 1)
@@ -190,12 +188,7 @@ class BigPlot(QWidget):
         self.manualRangeButton.released.connect(self.rangeDlg.show)
         self.roiFilter = QComboBox(self)
         self.roiFilter.setEditable(True)
-        # updateFilter
-        self.roiFilter.addItem(' ')
-        self.roiFilter.addItem('.*')
-        roiNames = set(list(zip(*self.metadata.getRois()))[0])
-        self.roiFilter.addItems(roiNames)
-        self.roiFilter.currentIndexChanged.connect(self.showRois)
+
 
         self.cmapCombo = QComboBox(self)
         self.cmapCombo.addItems(['gray', 'jet', 'plasma', 'Reds'])
@@ -214,10 +207,8 @@ class BigPlot(QWidget):
         layout.setRowStretch(0, 1)  # This causes the plot to take up all the space that isn't needed by the other widgets.
         self.setLayout(layout)
 
-        M = self.data.max()
-        self.slider.setMax(M)
-        m = self.data.min()
-        self.slider.setMin(m)
+        self.setMetadata(metadata)
+        self.setImageData(data)
 
         self.show()
         self.setSaturation()
@@ -226,10 +217,35 @@ class BigPlot(QWidget):
                             bbox=dict(boxstyle="round", fc="w"),
                             arrowprops=dict(arrowstyle="->"))
 
-
-
-
         self.fig.canvas.mpl_connect("motion_notify_event", self.hover)
+
+    def setImageData(self, data: np.ndarray):
+        self.data = data
+        self.im.set_data(data)
+        self.slider.setMax(self.data.max())
+        self.slider.setMin(self.data.min())
+        self.canvas.draw_idle()
+
+    def setMetadata(self, metadata: ICMetaData):
+        self.metadata = metadata
+        self.clearRois()
+        currentSel = self.roiFilter.currentText()
+        # updateFilter
+        try:
+            self.roiFilter.currentIndexChanged.disconnect() # Without this line the roiFilter.clear() line is very slow.
+        except:
+            pass #if the signal hasn't yet been connected we'll get an error. ignore it.
+        self.roiFilter.clear()
+        self.roiFilter.addItem(' ')
+        self.roiFilter.addItem('.*')
+        rois = self.metadata.getRois()
+        roiNames = set(list(zip(*rois))[0]) if len(rois) > 0 else []
+        self.roiFilter.addItems(roiNames)
+        self.roiFilter.currentIndexChanged.connect(self.showRois)
+        for i in range(self.roiFilter.count()):
+            if currentSel == self.roiFilter.itemText(i):
+                self.roiFilter.setCurrentIndex(i)
+                break
 
 
     def hover(self, event):
@@ -237,7 +253,6 @@ class BigPlot(QWidget):
             self.annot.xy = poly.xy.mean(axis=0) # Set the location to the center of the polygon.
             text = f"{roi.name}, {roi.number}"
             self.annot.set_text(text)
-            #            self.annot.get_bbox_patch().set_facecolor(cmap(norm(c[ind["ind"][0]])))
             self.annot.get_bbox_patch().set_alpha(0.4)
         vis = self.annot.get_visible()
         if event.inaxes == self.ax:
@@ -249,7 +264,7 @@ class BigPlot(QWidget):
                         self.annot.set_visible(True)
                         self.fig.canvas.draw_idle()
                     return
-            if vis: #If we got here then not hover actions were found.
+            if vis: #If we got here then no hover actions were found.
                 self.annot.set_visible(False)
                 self.fig.canvas.draw_idle()
 
@@ -274,7 +289,6 @@ class BigPlot(QWidget):
         self.ax.add_patch(poly)
         self._rois.append((roi, overlay, poly))
 
-
     def setSaturation(self):
         percentage = self.autoDlg.value
         m = np.percentile(self.data, percentage)
@@ -298,10 +312,11 @@ class BigPlot(QWidget):
 class RoiDrawer(QWidget):
     def __init__(self, metadatas: List[Tuple[ICMetaData, Optional[AnalysisResultsLoader]]], parent=None, initialField='imbd'):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
-        self.setWindowTitle("What?!")
+        self.setWindowTitle("Roi Drawer 3000")
         self.metadatas = metadatas
         layout = QGridLayout()
-        self.plotWidg = BigPlot(metadatas[0][0], np.random.rand(100, 100), 'title')
+        self.mdIndex = 0
+        self.plotWidg = BigPlot(metadatas[self.mdIndex][0], metadatas[self.mdIndex][0].getImBd(), 'title')
         self.buttonGroup = QButtonGroup(self)
         self.lassoButton = QPushButton("L")
         self.ellipseButton = QPushButton("O")
@@ -315,6 +330,8 @@ class RoiDrawer(QWidget):
         self.adjustButton.toggled.connect(self.handleAdjustButton)
         self.previousButton = QPushButton('←') #TODO add functionality
         self.nextButton = QPushButton('→')
+        self.previousButton.released.connect(self.showPreviousCell)
+        self.nextButton.released.connect(self.showNextCell)
 
         layout.addWidget(self.lassoButton, 0, 0, 1, 1)
         layout.addWidget(self.ellipseButton, 0, 1, 1, 1)
@@ -338,6 +355,23 @@ class RoiDrawer(QWidget):
     def handleAdjustButton(self, checkstate: bool):
         if self.selector is not None:
             self.selector.adjustable = checkstate
+
+    def showNextCell(self):
+        self.mdIndex += 1
+        if self.mdIndex >= len(self.metadatas):
+            self.mdIndex = 0
+        self._updateDisplayedCell()
+
+    def showPreviousCell(self):
+        self.mdIndex -= 1
+        if self.mdIndex < 0:
+            self.mdIndex = len(self.metadatas) - 1
+        self._updateDisplayedCell()
+
+    def _updateDisplayedCell(self):
+        md = self.metadatas[self.mdIndex][0]
+        self.plotWidg.setMetadata(md)
+        self.plotWidg.setImageData(md.getImBd())
 
 
 if __name__ == '__main__':

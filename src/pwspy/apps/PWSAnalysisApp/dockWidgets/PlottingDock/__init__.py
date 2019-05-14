@@ -85,7 +85,8 @@ class PlottingDock(QDockWidget):
             self.scrollContents.setAspect(1 / len(self.plots))
 
     def startRoiDrawing(self):
-        self.roiDrawer = RoiDrawer([(self.plots[0].metadata, self.plots[0].analysis)]) #This is just placeholder
+        metadatas = [(p.metadata, p.analysis) for p in self.plots]
+        self.roiDrawer = RoiDrawer(metadatas) #TODO This is just placeholder
 
     def anNameEditFinished(self):
         #Sometimes the signal gets sent twice. only generate plots if the string has changed.
