@@ -77,6 +77,7 @@ class RoiCompiler:
                     opdIndex=opdIndex,
                     varRatio=varRatio,
                     cellIdTag=results.imCubeIdTag)
+        warns = [w for w in warns if w is not None]  # Strip None from warns list
         return results, warns
 
     @staticmethod
@@ -88,4 +89,3 @@ class RoiCompiler:
             return arr[np.logical_and(roi.data, condition)].mean()
         else:
             return arr[roi.data].mean()
-        

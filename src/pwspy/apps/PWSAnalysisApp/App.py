@@ -11,7 +11,7 @@ import shutil
 from PyQt5.QtWidgets import QApplication
 
 from pwspy.imCube import ICMetaData
-from .dialogs import AnalysisSummaryDisplay
+from .dialogs import AnalysisSummaryDisplay, CompilationSummaryDisplay
 from .AnalysisManager import AnalysisManager, CompilationManager
 from pwspy.analysis import defaultSettingsPath
 from .mainWindow import PWSWindow
@@ -62,16 +62,8 @@ class PWSApp(QApplication):
             shutil.copyfile(os.path.join(resources, 'credentials.json'), os.path.join(applicationVars.googleDriveAuthPath, 'credentials.json'))
 
     def handleCompilationResults(self, inVal: List[Tuple[ICMetaData, List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]]]):
-        warnings = []
-        for meta, (roiList) in inVal:
-            metaWarnings = []
-            for cResults, warnList in roiList:
-                if warnList is not None:
-                    metaWarnings.extend(warnList)
-            if len(metaWarnings) > 0:
-                warnings.append((metaWarnings, meta))
-        if len(warnings) > 0:
-            AnalysisSummaryDisplay(self.window, warnings)
+        if len(inVal) > 0:
+            CompilationSummaryDisplay(self.window, inVal)
         results = [(meta, result) for meta, roiList in inVal for result, warnings in roiList]
         [self.window.resultsTable.addCompilationResult(r, md) for md, r in results]
 

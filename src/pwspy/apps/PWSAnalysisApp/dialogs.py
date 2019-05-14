@@ -9,6 +9,7 @@ from glob import glob
 from typing import Optional, List, Tuple
 
 from pwspy.analysis import AnalysisSettings
+from pwspy.analysis.compilation import RoiCompilationResults
 from pwspy.analysis.warnings import AnalysisWarning
 from pwspy.apps import resources
 from PyQt5 import QtCore, QtGui
@@ -78,12 +79,14 @@ class WorkingDirDialog(QDialog):
 class AnalysisSummaryDisplay(QDialog):
     def __init__(self, parent: Optional[QWidget], warnings: List[Tuple[List[AnalysisWarning], ICMetaData]],  analysisName: str = '', analysisSettings: AnalysisSettings = None):
         super().__init__(parent=parent)
+        self.setWindowTitle("Analysis Summary")
         self.analysisName = analysisName
         self.analysisSettings = analysisSettings
         layout = QVBoxLayout()
         self.settingsButton = QPushButton("Settings", self)
         self.settingsButton.released.connect(self._displaySettings)
         self.warnList = QTreeWidget(self)
+        self.warnList.setHeaderHidden(True)
         layout.addWidget(self.settingsButton)
         layout.addWidget(self.warnList)
         self.setLayout(layout)
@@ -107,6 +110,34 @@ class AnalysisSummaryDisplay(QDialog):
         if self.analysisSettings is not None:
             msgBox = QMessageBox.information(self, self.analysisName, self.analysisSettings.toJsonString())
 
+
+class CompilationSummaryDisplay(QDialog): #TODO this is just a copy of the analysis summary right now. get rid of the settings button and make is display ROI information.
+    def __init__(self, parent: Optional[QWidget], warnings: List[Tuple[ICMetaData, List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]]],  analysisName: str = '', analysisSettings: AnalysisSettings = None):
+        super().__init__(parent=parent)
+        self.setWindowTitle("Compilation Summary")
+        layout = QVBoxLayout()
+        self.warningTree = QTreeWidget(self)
+        self.warningTree.setHeaderHidden(True)
+        layout.addWidget(self.warningTree)
+        self.setLayout(layout)
+        self._addWarnings(warnings)
+        self.setWindowTitle(analysisName)
+        self.show()
+
+    def _addWarnings(self, warnings: List[Tuple[ICMetaData, List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]]]):
+        for meta, roiList in warnings:
+            item = QTreeWidgetItem(self.warningTree)
+            item.setText(0, meta.filePath)
+            for roiResult, roiWarnList in roiList:
+                subItem = QTreeWidgetItem(item)
+                subItem.setText(0, f"{len(roiWarnList)} warnings: {roiResult.roi.name} {roiResult.roi.number}")
+                for warn in roiWarnList:
+                    subItem2 = QTreeWidgetItem(subItem)
+                    subItem2.setText(0, warn.shortMsg)
+                    subItem2.setToolTip(0, warn.longMsg)
+
+    def clearWarnings(self):
+        self.warningTree.clear()
 
 if __name__ == '__main__':
     _ = WorkingDirDialog()
