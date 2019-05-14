@@ -53,7 +53,7 @@ class AxManager:
             self.background = self.canvas.copy_from_bbox(self.ax.bbox)
 
 
-class mySelectorWidget(AxesWidget):
+class MySelectorWidget(AxesWidget):
     """Base class for other selection widgets in this file. Requires to be managed by an AxManager. Inherited classes
     can implement a number of action handlers like mouse actions and keyboard presses.
     button allows the user to specify which mouse buttons are valid to trigger an event. This can be an int or list of ints.
@@ -246,7 +246,7 @@ class mySelectorWidget(AxesWidget):
         """Button press handler"""
         pass
 
-class MyLasso(mySelectorWidget):
+class MyLasso(MySelectorWidget):
     def __init__(self, axMan: AxManager, onselect=None, button=None):
         super().__init__(axMan, button=button)
         self.onselect = onselect
@@ -276,7 +276,7 @@ class MyLasso(mySelectorWidget):
         self.axMan.update()
 
 
-class MyEllipse(mySelectorWidget):
+class MyEllipse(MySelectorWidget):
     def __init__(self, axMan: AxManager, onselect=None):
         super().__init__(axMan)
         self.started = False
@@ -333,7 +333,7 @@ class MyEllipse(mySelectorWidget):
                     handles = [verts[0], verts[len(verts)//4], verts[len(verts)//2], verts[3*len(verts)//4], verts[0]]
                     self.onselect(verts, handles)
 
-class PolygonInteractor(mySelectorWidget):
+class PolygonInteractor(MySelectorWidget):
     """
     A polygon editor.
     https://matplotlib.org/gallery/event_handling/poly_editor.html
@@ -460,13 +460,22 @@ class PolygonInteractor(mySelectorWidget):
         self.axMan.update()
             
 class AdjustableSelector:
-    def __init__(self, ax: Axes, selectorClass):
+    """This class manager an roi selector. By setting `adjustable` true then when the selector calls its `onselect` function
+    the results will be passed on to a PolygonInteractor for further tweaking. Tweaking can be confirmed by pressing enter.
+    at the end the selector will pass an 2d boolean array and a polygon patch to the `onfinished` function if it has been set."""
+    def __init__(self, ax: Axes, selectorClass: Type[MySelectorWidget], onfinished = None):
         self.axMan = AxManager(ax)
-        self.s = selectorClass(self.axMan, onselect=self.goPoly)
-        self.s.active = True
-        self.p = PolygonInteractor(self.axMan, onselect=self.finish)
-        self.p.active = False
+        self.selector = selectorClass(self.axMan, onselect=self.goPoly)
+        self.selector.active = False
+        self.adjuster = PolygonInteractor(self.axMan, onselect=self.finish)
+        self.adjuster.active = False
         self.adjustable = False
+        self.onfinished = onfinished
+
+    def begin(self):
+        """This activated the selector. for a looping selection you should call this method from the onfinished function."""
+        self.selector.active = True
+        self.selector.set_visible(True)
 
     @property
     def adjustable(self):
@@ -476,27 +485,28 @@ class AdjustableSelector:
     def adjustable(self, enabled: bool):
         self._adjustable = enabled
         if enabled:
-            self.s.onselect = self.goPoly
+            self.selector.onselect = self.goPoly
         else:
-            self.s.onselect = self.finish
+            self.selector.onselect = self.finish
 
     def setSelector(self, selectorClass: Type):
-        self.s.removeArtists()
-        self.s = selectorClass(self.axMan)
+        self.selector.removeArtists()
+        self.selector = selectorClass(self.axMan)
         self.adjustable = self.adjustable
 
     def goPoly(self, verts, handles):
-        self.s.active = False
-        self.s.set_visible(False)
-        self.p.initialize(handles)
-        self.p.active=True
+        self.selector.active = False
+        self.selector.set_visible(False)
+        self.adjuster.initialize(handles)
+        self.adjuster.active = True
 
     def finish(self, verts, handles):
-        self.axMan.ax.add_patch(Polygon(verts, facecolor=(1,0,0,.4)))
-        self.p.active = False
-        self.p.set_visible(False)
-        self.s.set_visible(True)
-        self.s.active = True
+        self.adjuster.active = False
+        self.adjuster.set_visible(False)
+        self.selector.set_visible(False)
+        self.selector.active = False
+        if self.onfinished is not None:
+            self.onfinished(verts)
 
         
 if __name__ == '__main__':
