@@ -48,7 +48,7 @@ class RoiCompiler:
             ld = None
         if self.settings.opd:
             try:
-                opd = results.opd[roi.data].mean(axis=(0, 1))
+                opd = results.opd[roi.data].mean(axis=0)
                 opdIndex = results.opdIndex
             except KeyError:
                 opd = opdIndex = None
