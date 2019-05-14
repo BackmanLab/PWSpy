@@ -105,7 +105,6 @@ class PlottingDock(QDockWidget):
         for i in self.plots:
             self.scrollContents.layout().removeWidget(i)
             i.deleteLater()
-            i = None
         self.plots = []
         analysisNamePattern = self.anNameEdit.text()
         cells: List[ICMetaData] = self.selector.getSelectedCellMetas()
@@ -128,7 +127,7 @@ class PlottingDock(QDockWidget):
 
     def handleButtons(self, button: QPushButton):
         if button != self._lastButton:
-            for plot in self.plots: #TODO handle errors for missing analyses.
+            for plot in self.plots:
                 try:
                     if button is self.plotImBdButton:
                         plot.changeData('imbd')
@@ -136,6 +135,6 @@ class PlottingDock(QDockWidget):
                         plot.changeData('rms')
                     elif button is self.plotRButton:
                         plot.changeData('meanReflectance')
-                except ValueError: #The analysis field wasn't found
+                except ValueError:  # The analysis field wasn't found
                     plot.changeData('imbd')
             self._lastButton = button
