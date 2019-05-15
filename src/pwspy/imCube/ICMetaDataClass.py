@@ -205,7 +205,10 @@ class ICMetaData:
             return Roi.loadAny(self.filePath, name, num)
 
     def saveRoi(self, roi: Roi) -> None:
-        roi.toHDF(self.filePath)
+        if roi.dataAreVerts:
+            roi.toHDFOutline(self.filePath)
+        else:
+            raise TypeError("Only `outline` ROI's are supported.")
 
     def getAnalyses(self) -> typing.List[str]:
         assert self.filePath is not None

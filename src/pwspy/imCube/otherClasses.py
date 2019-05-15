@@ -69,6 +69,7 @@ class Roi:
         self.data = data
         self.name = name
         self.number = number
+        self._mask = None  # A variable to cache the mask as calculated from the outline.
         self.filePath = filePath
         self.fileFormat = fileFormat
         self.dataAreVerts = dataAreVerts
@@ -183,12 +184,14 @@ class Roi:
 
     def getMask(self):
         if self.dataAreVerts:
-            x = np.arange(self.dataShape[1])
-            y = np.arange(self.dataShape[0])
-            X, Y = np.meshgrid(x, y)
-            coords = list(zip(X.flatten(), Y.flatten()))
-            matches = path.Path(self.data).contains_points(coords)
-            return matches.reshape(self.dataShape)
+            if self._mask is None:
+                x = np.arange(self.dataShape[1])
+                y = np.arange(self.dataShape[0])
+                X, Y = np.meshgrid(x, y)
+                coords = list(zip(X.flatten(), Y.flatten()))
+                matches = path.Path(self.data).contains_points(coords)
+                self._mask = matches.reshape(self.dataShape)
+            return self._mask
         else:
             return self.data
 
