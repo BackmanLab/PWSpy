@@ -93,13 +93,16 @@ class ImCube(ICBase):
         return cls(data, metadata)
 
     @classmethod
-    def fromNano(cls, directory: str):
-        with h5py.File(os.path.join(directory, 'imageCube.mat')) as hf:
-            md = ICMetaData.fromNano(hf['cubeParameters'])
-            data = np.array(hf['imageCube'])
-            data = np.rollaxis(data, 0, 3)
-            data = data.copy(order='C')
-            return cls(data, md.metadata)
+    def fromNano(cls, directory: str, metadata: ICMetaData = None, lock: mp.Lock = None):
+        path = os.path.join(directory, 'imageCube.mat')
+        with lock:
+            if metadata is None:
+                metadata = ICMetaData.fromNano(path)
+            with h5py.File(path) as hf:
+                data = np.array(hf['imageCube'])
+                data = np.rollaxis(data, 0, 3)
+                data = data.copy(order='C')
+        return cls(data, metadata)
 
     @classmethod
     def fromMetadata(cls, meta: ICMetaData,  lock: mp.Lock = None):
@@ -107,6 +110,8 @@ class ImCube(ICBase):
             return cls.fromTiff(meta.filePath, metadata=meta, lock=lock)
         elif meta.fileFormat == ICFileFormats.RawBinary:
             return cls.fromOldPWS(meta.filePath, metadata=meta, lock=lock)
+        elif meta.fileFormat == ICFileFormats.NanoMat:
+            return cls.fromNano(meta.filePath, metadata=meta, lock=lock)
         elif meta.fileFormat is None:
             return cls.loadAny(meta.filePath, metadata=meta, lock=lock)
         else:

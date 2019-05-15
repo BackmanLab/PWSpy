@@ -104,8 +104,11 @@ class ICMetaData:
         except:
             try:
                 return ICMetaData.fromOldPWS(directory, lock=lock)
-            except: #TODO add support for Nano Files
-                raise Exception(f"Could not find a valid PWS image cube file at {directory}.")
+            except:
+                try:
+                    return ICMetaData.fromNano(directory, lock=lock)
+                except:
+                    raise Exception(f"Could not find a valid PWS image cube file at {directory}.")
 
     @classmethod
     def fromOldPWS(cls, directory, lock: mp.Lock = None):
@@ -132,7 +135,10 @@ class ICMetaData:
         return cls(md, filePath=directory, fileFormat=ICFileFormats.RawBinary)
 
     @classmethod
-    def fromNano(cls, cubeParams: dict):
+    def fromNano(cls, directory: str, lock: mp.Lock = None):
+        with lock:
+            with h5py.File(os.path.join(directory, 'imageCube.mat')) as hf:
+                cubeParams = ICMetaData.fromNano(hf['cubeParameters'])
         lam = cubeParams['lambda']
         exp = cubeParams['exposure'] #TODO we don't support adaptive exposure.
         md = {'startWv': lam['start'].value[0][0], 'stepWv': lam['step'].value[0][0], 'stopWv': lam['stop'].value[0][0],
