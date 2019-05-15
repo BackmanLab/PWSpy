@@ -2,7 +2,9 @@ import re
 
 import numpy as np
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QWidget, QDialog, QVBoxLayout, QDoubleSpinBox, QPushButton, QLabel, QGridLayout, QComboBox
+from PyQt5.QtGui import QCursor
+from PyQt5.QtWidgets import QWidget, QDialog, QVBoxLayout, QDoubleSpinBox, QPushButton, QLabel, QGridLayout, QComboBox, \
+    QAction, QMenu
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -10,6 +12,7 @@ from matplotlib.figure import Figure
 from pwspy.apps.PWSAnalysisApp.sharedWidgets.rangeSlider import QRangeSlider
 from pwspy.imCube import ICMetaData
 from pwspy.imCube.otherClasses import Roi, RoiFileFormats
+import os
 
 
 class BigPlot(QWidget):
@@ -69,7 +72,7 @@ class BigPlot(QWidget):
                             bbox=dict(boxstyle="round", fc="w"),
                             arrowprops=dict(arrowstyle="->"))
 
-        self._hoverCid = None
+        self._toggleCids = None
         self.enableHoverAnnotation(True)
 
     def setImageData(self, data: np.ndarray):
@@ -121,12 +124,29 @@ class BigPlot(QWidget):
                 self.annot.set_visible(False)
                 self.fig.canvas.draw_idle()
 
+    def _roiPickCallback(self, event):
+        if event.mouseevent.button == 3:  # "3" is the right button
+            delAction = QAction("Delete ROI", self, triggered=lambda checked, art=event.artist: self.deleteRoiFromPolygon(art))
+            popMenu = QMenu(self)
+            popMenu.addAction(delAction)
+
+            cursor = QCursor()
+            # self.connect(self.figure_canvas, SIGNAL("clicked()"), self.context_menu)
+            # self.popMenu.exec_(self.mapToGlobal(event.globalPos()))
+            popMenu.popup(cursor.pos())
+
+    def deleteRoiFromPolygon(self, artist):
+        for roi, overlay, poly in self._rois:
+            if artist is poly:
+                roi.deleteRoi(os.path.split(roi.filePath)[0], roi.name, roi.number)
+        self.showRois()
+
     def enableHoverAnnotation(self, enable: bool):
         if enable:
-            self._hoverCid = self.canvas.mpl_connect('motion_notify_event', self._hoverCallback)
+            self._toggleCids = [self.canvas.mpl_connect('motion_notify_event', self._hoverCallback), self.canvas.mpl_connect('pick_event', self._roiPickCallback)]
         else:
-            if self._hoverCid:
-                self.canvas.mpl_disconnect(self._hoverCid)
+            if self._toggleCids:
+                [self.canvas.mpl_disconnect(cid) for cid in self._toggleCids]
 
     def showRois(self):
         pattern = self.roiFilter.currentText()
@@ -146,12 +166,14 @@ class BigPlot(QWidget):
     def addRoi(self, roi: Roi):
         if roi.dataAreVerts:
             poly = roi.getBoundingPolygon()
+            poly.set_picker(0) # allow the polygon to trigger a pickevent
             self.ax.add_patch(poly)
             self._rois.append((roi, None, poly))
         else:
             overlay = roi.getImage(self.ax) # an image showing the exact shape of the ROI
             poly = roi.getBoundingPolygon() # A polygon used for mouse event handling
             poly.set_visible(False)#poly.set_facecolor((0,0,0,0)) # Make polygon invisible
+            poly.set_picker(0) # allow the polygon to trigger a pickevent
             self.ax.add_patch(poly)
             self._rois.append((roi, overlay, poly))
 

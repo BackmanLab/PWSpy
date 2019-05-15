@@ -210,6 +210,10 @@ class ICMetaData:
         else:
             raise TypeError("Only `outline` ROI's are supported.")
 
+    def deleteRoi(self, name: str, num: int):
+        Roi.deleteRoi(self.filePath, name, num)
+
+
     def getAnalyses(self) -> typing.List[str]:
         assert self.filePath is not None
         return self.getAnalysesAtPath(self.filePath)

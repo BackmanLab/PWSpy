@@ -130,10 +130,22 @@ class Roi:
             g.create_dataset(np.string_("verts"), data=self.data.astype(np.float32))
             g.create_dataset(np.string_('dataShape'), data=self.dataShape)
 
-    def deleteFile(self):
-        if self.filePath is None:
-            raise Exception("There is no filepath variable pointing to a file")
-        os.remove(self.filePath)
+    # def deleteFile(self): #this sort of functionality has been moved to ICMetadata
+    #     if self.filePath is None:
+    #         raise Exception("There is no filepath variable pointing to a file")
+    #     os.remove(self.filePath)
+
+    def deleteRoi(self, directory: str, name: str, num: int):
+        path = os.path.join(directory, f"roiV_{name}.h5")
+        if not os.path.exists(path):
+            raise OSError(f"The file {path} does not exist.")
+        with h5py.File(path, 'a') as hf:
+            if np.string_(str(num)) not in hf.keys():
+                raise ValueError(f"The file {path} does not contain ROI number {num}.")
+            del hf[np.string_(str(num))]
+            remaining = len(list(hf.keys()))
+        if remaining == 0: #  If the file is empty then remove it.
+            os.remove(path)
 
     @staticmethod
     def getValidRoisInPath(path: str) -> List[Tuple[str, int, RoiFileFormats]]:
