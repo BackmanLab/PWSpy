@@ -4,6 +4,7 @@ Created on Sat Feb  9 15:57:52 2019
 
 @author: Nick
 """
+from __future__ import annotations
 import json
 import os
 import re
@@ -23,6 +24,7 @@ from shapely import geometry
 
 class RoiFileFormats(Enum):
     HDF = auto()
+    HDFOutline = auto()
     MAT = auto()
 
 
@@ -50,15 +52,26 @@ class CameraCorrection:
 
 
 class Roi:
-    def __init__(self, name: str, number: int, data: np.ndarray, filePath: str = None, fileFormat: RoiFileFormats=None):
+    def __init__(self, name: str, number: int, data: np.ndarray, dataAreVerts: bool, dataShape: np.ndarray = None, filePath: str = None, fileFormat: RoiFileFormats = None):
         """A class representing a single ROI. consists of a name, a number, and a boolean mask array."""
-        assert isinstance(data, np.ndarray), f"data is a {type(data)}"
-        assert data.dtype==np.bool
+        if not dataAreVerts:
+            assert isinstance(data, np.ndarray), f"data is a {type(data)}"
+            assert data.dtype == np.bool
+            assert dataShape is None
+            self.dataShape = data.shape
+        else:
+            assert isinstance(data, np.ndarray)
+            assert isinstance(dataShape, np.ndarray)
+            assert len(dataShape.shape) == 1
+            assert data.shape[0] == 2
+            assert len(data.shape) == 2
+            self.dataShape = dataShape
         self.data = data
         self.name = name
         self.number = number
         self.filePath = filePath
         self.fileFormat = fileFormat
+        self.dataAreVerts = dataAreVerts
 
     @classmethod
     def fromHDF(cls, directory: str, name: str, number: int):
@@ -66,28 +79,51 @@ class Roi:
         if not os.path.exists(path):
             raise OSError(f"File {path} does not exist.")
         with h5py.File(path, 'r') as hf:
-            return cls(name, number, np.array(hf[str(number)]).astype(np.bool), filePath=path, fileFormat=RoiFileFormats.HDF)
+            return cls(name, number, data=np.array(hf[str(number)]).astype(np.bool), dataAreVerts=False, filePath=path, fileFormat=RoiFileFormats.HDF)
+
+    @classmethod
+    def fromHDFOutline(cls, directory: str, name: str, number: int):
+        path = os.path.join(directory, f'roiV_{name}.h5')
+        if not os.path.exists(path):
+            raise OSError(f"File {path} does not exist.")
+        with h5py.File(path, 'r') as hf:
+            return cls(name, number, data=np.array(hf[str(number)]['verts']), dataAreVerts=True, dataShape=np.array(hf[str(number)]['dataShape']), filePath=path, fileFormat=RoiFileFormats.HDFOutline)
 
     @classmethod
     def fromMat(cls, directory: str, name: str, number: int):
         filePath = os.path.join(directory, f'BW{number}_{name}.mat')
         return cls(name, number,
-                   spio.loadmat(filePath)['BW'].astype(np.bool),
+                   data=spio.loadmat(filePath)['BW'].astype(np.bool),
+                   dataAreVerts=False,
                    filePath=filePath, fileFormat=RoiFileFormats.MAT)
 
     @classmethod
     def loadAny(cls, directory: str, name: str, number: int):
         try:
-            return Roi.fromHDF(directory, name, number)
-        except OSError: #For backwards compatibility purposes
-            return Roi.fromMat(directory, name, number)
+            return Roi.fromHDFOutline(directory, name, number)
+        except:
+            try:
+                return Roi.fromHDF(directory, name, number)
+            except OSError: #For backwards compatibility purposes
+                return Roi.fromMat(directory, name, number)
 
     def toHDF(self, directory):
+        assert self.dataAreVerts is False
         savePath = os.path.join(directory, f'roi_{self.name}.h5')
         with h5py.File(savePath, 'a') as hf:
             if np.string_(str(self.number)) in hf.keys():
                 raise Exception(f"The Roi file {savePath} already contains a dataset {self.number}")
             hf.create_dataset(np.string_(str(self.number)), data=self.data.astype(np.uint8))
+
+    def toHDFOutline(self, directory):
+        assert self.dataAreVerts is True
+        savePath = os.path.join(directory, f'roiV_{self.name}.h5')
+        with h5py.File(savePath, 'a') as hf:
+            if np.string_(str(self.number)) in hf.keys():
+                raise Exception(f"The Roi file {savePath} already contains a dataset {self.number}")
+            g = hf.create_group(np.string_(str(self.number)))
+            g.create_dataset(np.string_("verts"), data=self.data.astype(np.float32))
+            g.create_dataset(np.string_('dataShape'), data=self.dataShape)
 
     def deleteFile(self):
         if self.filePath is None:
@@ -96,7 +132,7 @@ class Roi:
 
     @staticmethod
     def getValidRoisInPath(path: str) -> List[Tuple[str, int, RoiFileFormats]]:
-        patterns = [('BW*_*.mat', RoiFileFormats.MAT), ('roi_*.h5', RoiFileFormats.HDF)]
+        patterns = [('BW*_*.mat', RoiFileFormats.MAT), ('roi_*.h5', RoiFileFormats.HDF), ('roiV_*.h5', RoiFileFormats.HDFOutline)]
         files = {fformat: glob(os.path.join(path, p)) for p, fformat in patterns} #Lists of the found files keyed by file format
         ret = []
         for fformat, fileNames in files.items():
@@ -109,6 +145,17 @@ class Roi:
                                 ret.append((name, int(dset), RoiFileFormats.HDF))
                             except ValueError:
                                 print(f"Warning: File {i} contains uninterpretable dataset named {dset}")
+            elif fformat == RoiFileFormats.HDFOutline:
+                for i in fileNames:
+                    name = i.split('roiV_')[-1][:-3]
+                    with h5py.File(i) as hf:
+                        for g in hf.keys():
+                            if 'verts' in hf[g]:
+                                try:
+                                    ret.append((name, int(g), RoiFileFormats.HDFOutline))
+                                except ValueError:
+                                    print(f"Warning: File {i} contains uninterpretable dataset named {dset}")
+
             elif fformat == RoiFileFormats.MAT:
                 for i in fileNames: #list in files
                     i = os.path.split(i)[-1]
@@ -117,25 +164,43 @@ class Roi:
                     ret.append((name, num, RoiFileFormats.MAT))
         return ret
 
-    def transform(self, matrix: np.ndarray) -> 'Roi':
+    def transform(self, matrix: np.ndarray) -> Roi:
         """return a copy of this Roi that has been transformed by an affine transform matrix like the one returned by
         opencv.estimateRigidTransform. This can be obtained using ICBase's getTransform method."""
         import cv2
-        out = cv2.warpAffine(self.data.astype(np.uint8), matrix, self.data.shape).astype(np.bool)
-        return Roi(self.name, self.number, out)
+        if self.dataAreVerts is False:
+            out = cv2.warpAffine(self.data.astype(np.uint8), matrix, self.dataShape).astype(np.bool)
+            return Roi(self.name, self.number, data=out, dataAreVerts=False)
+        elif self.dataAreVerts:
+            out = cv2.transform(self.data, matrix)
+            return Roi(self.name, self.number, data=out, dataAreVerts=True)
 
     def getImage(self, ax: plt.Axes):
-        arr = self.data.astype(np.uint8)*255
-        arr = np.ma.masked_array(arr, arr==0)
+        arr = self.getMask().astype(np.uint8)*255
+        arr = np.ma.masked_array(arr, arr == 0)
         im = ax.imshow(arr, alpha=0.5, clim=[0, 400], cmap='Reds')
         return im
 
+    def getMask(self):
+        if self.dataAreVerts:
+            x = np.arange(self.dataShape[1])
+            y = np.arange(self.dataShape[0])
+            X, Y = np.meshgrid(x, y)
+            coords = list(zip(Y.flatten(), X.flatten()))
+            matches = self.getBoundingPolygon().contains_points(coords)
+            return matches.reshape(self.dataShape)
+        else:
+            return self.data
+
     def getBoundingPolygon(self):
-        x = np.arange(self.data.shape[1])
-        y = np.arange(self.data.shape[0])
-        X, Y = np.meshgrid(x, y)
-        X = X[self.data]
-        Y = Y[self.data]
-        coords = list(zip(X, Y))
-        g = geometry.Polygon(coords)
-        return patches.Polygon(list(g.convex_hull.exterior.coords), facecolor=(1, 0, 0, 0.5))
+        if not self.dataAreVerts: # calculate convex hull
+            x = np.arange(self.dataShape[1])
+            y = np.arange(self.dataShape[0])
+            X, Y = np.meshgrid(x, y)
+            X = X[self.data]
+            Y = Y[self.data]
+            coords = list(zip(X, Y))
+            g = geometry.Polygon(coords)
+            return patches.Polygon(list(g.convex_hull.exterior.coords), facecolor=(1, 0, 0, 0.5))
+        else:
+            return patches.Polygon(self.data, facecolor=(1, 0, 0, 0.5))
