@@ -97,9 +97,35 @@ class PlottingDock(QDockWidget):
         pattern = self.anNameEdit.text()
         cells = self.selector.getSelectedCellMetas()
         if pattern != self._oldPattern or cells != self._oldCells:
+            # Determine if a name has been entered
+            # if self.anNameEdit.text().strip() == '':
+            #     self.enableAnalysisPlottingButtons(False)
+            # else:
+            #     self.enableAnalysisPlottingButtons(True)
             self.generatePlots(pattern)
         self._oldPattern = pattern
         self._oldCells = cells
+
+    def enableAnalysisPlottingButtons(self, enable: str):
+        enable = enable.lower()
+        if enable == 'false':
+            for button in self.buttonGroup.buttons():
+                button.setEnabled(False)
+            self.roiButton.setEnabled(False)
+        elif enable == 'partial':
+            for button in self.buttonGroup.buttons():
+                if not button is self.plotImBdButton:
+                    button.setEnabled(False)
+            self.plotImBdButton.setEnabled(True)
+            self.roiButton.setEnabled(True)
+        elif enable == 'true':
+            for button in self.buttonGroup.buttons():
+                if not button is self.plotImBdButton:
+                    button.setEnabled(True)
+            self.plotImBdButton.setEnabled(True)
+            self.roiButton.setEnabled(True)
+        else:
+            raise ValueError("`enable` string not recognized.")
 
     def generatePlots(self, analysisName: str):
         #clear Plots
@@ -112,13 +138,17 @@ class PlottingDock(QDockWidget):
             messageBox = QMessageBox(self)
             messageBox.information(self, "Oops!", "Please select the cells you would like to plot.")
             messageBox.setFixedSize(500, 200)
+        buttonState = 'false'
         for cell in cells:
             if analysisName.strip() == '': #No analysis name was entered. don't load an analysis
                 self.addPlot(LittlePlot(cell, None, f"{os.path.split(cell.filePath)[-1]}"))
+                buttonState = 'partial'
             else:
                 if analysisName in cell.getAnalyses():
                     analysis = cell.loadAnalysis(analysisName)
                     self.addPlot(LittlePlot(cell, analysis, f"{analysisName} {os.path.split(cell.filePath)[-1]}"))
+                    buttonState = 'true'
+        self.enableAnalysisPlottingButtons(buttonState)
         self._plotsChanged()
 
     def handleButtons(self, button: QPushButton):
