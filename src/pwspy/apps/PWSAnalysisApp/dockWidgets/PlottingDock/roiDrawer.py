@@ -61,7 +61,7 @@ class RoiDrawer(QWidget):
         self.newRoiDlg.exec()
         poly.remove()
         if self.newRoiDlg.result() == QDialog.Accepted:
-            r = Roi(self.newRoiDlg.name, self.newRoiDlg.number, data=np.array(verts), dataAreVerts=True, dataShape=shape)
+            r = Roi(self.plotWidg.roiFilter.currentText(), self.newRoiDlg.number, data=np.array(verts), dataAreVerts=True, dataShape=shape)
             md = self.metadatas[self.mdIndex][0]
             try:
                 md.saveRoi(r)
@@ -70,7 +70,8 @@ class RoiDrawer(QWidget):
                 ans = QMessageBox.question(self, 'Overwrite?', f"Roi {r.name}:{r.number} already exists. Overwrite?")
                 if ans == QMessageBox.Yes:
                     md.saveRoi(r, overwrite=True)
-                    self.plotWidg.addRoi(r)
+                    self.plotWidg.showRois() #Refresh all rois since we just deleted one as well.
+                    # self.plotWidg.addRoi(r)
         self.plotWidg.canvas.draw_idle()
         self.selector.setActive(True)  # Start the next roi.
 
@@ -120,31 +121,27 @@ class NewRoiDlg(QDialog):
         super().__init__(parent=parent, flags=QtCore.Qt.FramelessWindowHint)
         self.setModal(True)
 
-        self.number = self.name = None
+        self.number = None
 
         l = QGridLayout()
         self.numBox = QSpinBox()
         self.numBox.setMaximum(100000)
         self.numBox.setMinimum(0)
-        self.nameEdit = QLineEdit()
         self.okButton = QPushButton("Ok")
         self.okButton.released.connect(self.accept)
         self.cancelButton = QPushButton("Cancel")
         self.cancelButton.released.connect(self.reject)
-        l.addWidget(QLabel("Name"), 0, 0, 1, 1)
-        l.addWidget(QLabel("#"), 0, 1, 1, 1)
-        l.addWidget(self.nameEdit, 1, 0, 1, 1)
-        l.addWidget(self.numBox, 1, 1, 1, 1)
-        l.addWidget(self.okButton, 2, 1, 1, 1)
-        l.addWidget(self.cancelButton, 2, 2, 1, 1)
+        l.addWidget(QLabel("#"), 0, 0, 1, 1, alignment=QtCore.Qt.AlignRight)
+        l.addWidget(self.numBox, 0, 1, 1, 1)
+        l.addWidget(self.okButton, 1, 0, 1, 1)
+        l.addWidget(self.cancelButton, 1, 1, 1, 1)
         self.setLayout(l)
 
     def accept(self) -> None:
         self.number = self.numBox.value()
-        self.name = self.nameEdit.text()
         self.numBox.setValue(self.numBox.value()+1)  # Increment the value.
         super().accept()
 
     def reject(self) -> None:
-        self.number = self.name = None
+        self.number = None
         super().reject()
