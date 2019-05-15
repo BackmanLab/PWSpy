@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 import os
 import re
-from matplotlib import patches
+from matplotlib import patches, path
 import typing
 import dataclasses
 from enum import Enum, auto
@@ -187,7 +187,7 @@ class Roi:
             y = np.arange(self.dataShape[0])
             X, Y = np.meshgrid(x, y)
             coords = list(zip(X.flatten(), Y.flatten()))
-            matches = self.getBoundingPolygon().contains_points(coords)
+            matches = path.Path(self.data).contains_points(coords)
             return matches.reshape(self.dataShape)
         else:
             return self.data
