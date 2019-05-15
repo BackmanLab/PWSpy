@@ -52,7 +52,7 @@ class CameraCorrection:
 
 
 class Roi:
-    def __init__(self, name: str, number: int, data: np.ndarray, dataAreVerts: bool, dataShape: np.ndarray = None, filePath: str = None, fileFormat: RoiFileFormats = None):
+    def __init__(self, name: str, number: int, data: np.ndarray, dataAreVerts: bool, dataShape: tuple = None, filePath: str = None, fileFormat: RoiFileFormats = None):
         """A class representing a single ROI. consists of a name, a number, and a boolean mask array."""
         if not dataAreVerts:
             assert isinstance(data, np.ndarray), f"data is a {type(data)}"
@@ -61,9 +61,9 @@ class Roi:
             self.dataShape = data.shape
         else:
             assert isinstance(data, np.ndarray)
-            assert isinstance(dataShape, np.ndarray)
-            assert len(dataShape.shape) == 1
-            assert data.shape[0] == 2
+            assert isinstance(dataShape, tuple)
+            assert len(dataShape) == 2
+            assert data.shape[1] == 2
             assert len(data.shape) == 2
             self.dataShape = dataShape
         self.data = data
@@ -87,7 +87,7 @@ class Roi:
         if not os.path.exists(path):
             raise OSError(f"File {path} does not exist.")
         with h5py.File(path, 'r') as hf:
-            return cls(name, number, data=np.array(hf[str(number)]['verts']), dataAreVerts=True, dataShape=np.array(hf[str(number)]['dataShape']), filePath=path, fileFormat=RoiFileFormats.HDFOutline)
+            return cls(name, number, data=np.array(hf[str(number)]['verts']), dataAreVerts=True, dataShape=tuple(hf[str(number)]['dataShape']), filePath=path, fileFormat=RoiFileFormats.HDFOutline)
 
     @classmethod
     def fromMat(cls, directory: str, name: str, number: int):
@@ -186,7 +186,7 @@ class Roi:
             x = np.arange(self.dataShape[1])
             y = np.arange(self.dataShape[0])
             X, Y = np.meshgrid(x, y)
-            coords = list(zip(Y.flatten(), X.flatten()))
+            coords = list(zip(X.flatten(), Y.flatten()))
             matches = self.getBoundingPolygon().contains_points(coords)
             return matches.reshape(self.dataShape)
         else:
