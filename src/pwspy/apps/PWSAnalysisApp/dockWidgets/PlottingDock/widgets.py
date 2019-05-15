@@ -346,15 +346,15 @@ class RoiDrawer(QWidget):
 
     def finalizeRoi(self, verts: np.ndarray):
         poly = patches.Polygon(verts, facecolor=(1, 0, 0, 0.4))
-        path = poly.get_path()
+        # path = poly.get_path()
         shape = self.plotWidg.data.shape
-        Y, X = np.meshgrid(np.arange(shape[0]), np.arange(shape[1]))
-        coords = list(zip(Y.flatten(), X.flatten()))
-        matches = path.contains_points(coords)
-        mask = matches.reshape(shape)
+        # Y, X = np.meshgrid(np.arange(shape[0]), np.arange(shape[1]))
+        # coords = list(zip(Y.flatten(), X.flatten()))
+        # matches = path.contains_points(coords)
+        # mask = matches.reshape(shape)
         self.plotWidg.ax.add_patch(poly) #TODO tie all this in the BigPlot addRoi method. change how rois are saved. Disable onhover when roi drawing is active.
-        r = Roi(self.plotWidg.roiFilter.currentText(), 1, mask)#TODO placeholder
-        r.toHDF(self.metadatas[self.mdIndex][0].filePath)
+        r = Roi(self.plotWidg.roiFilter.currentText(), 1, data=np.array(verts), dataAreVerts=True, dataShape=shape)#TODO placeholder
+        r.toHDFOutline(self.metadatas[self.mdIndex][0].filePath)
 
 
     def handleButtons(self, button):

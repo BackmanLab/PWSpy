@@ -193,6 +193,8 @@ class ICMetaData:
             return Roi.fromMat(self.filePath, name, num)
         elif fformat == RoiFileFormats.HDF:
             return Roi.fromHDF(self.filePath, name, num)
+        elif fformat == RoiFileFormats.HDFOutline:
+            return Roi.fromHDFOutline(self.filePath, name, num)
         else:
             return Roi.loadAny(self.filePath, name, num)
 
