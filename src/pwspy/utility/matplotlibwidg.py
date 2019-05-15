@@ -472,11 +472,6 @@ class AdjustableSelector:
         self.adjustable = False
         self.onfinished = onfinished
 
-    def begin(self):
-        """This activated the selector. for a looping selection you should call this method from the onfinished function."""
-        self.selector.active = True
-        self.selector.set_visible(True)
-
     @property
     def adjustable(self):
         return self._adjustable
@@ -488,6 +483,16 @@ class AdjustableSelector:
             self.selector.onselect = self.goPoly
         else:
             self.selector.onselect = self.finish
+
+    def setActive(self, active: bool):
+        if active: #This activates the selector. for a looping selection you should call this method from the onfinished function.
+            self.selector.active = True
+            self.selector.set_visible(True)
+        else:
+            self.adjuster.active = False
+            self.adjuster.set_visible(False)
+            self.selector.set_visible(False)
+            self.selector.active = False
 
     def setSelector(self, selectorClass: Type):
         self.selector.removeArtists()
@@ -501,10 +506,7 @@ class AdjustableSelector:
         self.adjuster.active = True
 
     def finish(self, verts, handles):
-        self.adjuster.active = False
-        self.adjuster.set_visible(False)
-        self.selector.set_visible(False)
-        self.selector.active = False
+        self.setActive(False)
         if self.onfinished is not None:
             self.onfinished(verts)
 
