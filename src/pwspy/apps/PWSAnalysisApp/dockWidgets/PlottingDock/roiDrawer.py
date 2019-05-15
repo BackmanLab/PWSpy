@@ -2,7 +2,7 @@ from typing import List, Tuple, Optional
 
 import numpy as np
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QWidget, QGridLayout, QButtonGroup, QPushButton
+from PyQt5.QtWidgets import QWidget, QGridLayout, QButtonGroup, QPushButton, QDialog, QLineEdit, QSpinBox, QLabel
 from matplotlib import patches
 
 from pwspy.analysis.analysisResults import AnalysisResultsLoader
@@ -19,6 +19,7 @@ class RoiDrawer(QWidget):
         self.metadatas = metadatas
         layout = QGridLayout()
         self.mdIndex = 0
+        self.newRoiDlg = NewRoiDlg(self)
         self.plotWidg = BigPlot(metadatas[self.mdIndex][0], metadatas[self.mdIndex][0].getImBd(), 'title')
         self.buttonGroup = QButtonGroup(self)
         self.noneButton = QPushButton("None")
@@ -51,16 +52,21 @@ class RoiDrawer(QWidget):
         self.show()
 
     def finalizeRoi(self, verts: np.ndarray):
-        poly = patches.Polygon(verts, facecolor=(1, 0, 0, 0.4))
-        # path = poly.get_path()
+        poly = patches.Polygon(verts, facecolor=(0, .5, 0.5, 0.4))
         shape = self.plotWidg.data.shape
-        # Y, X = np.meshgrid(np.arange(shape[0]), np.arange(shape[1]))
-        # coords = list(zip(Y.flatten(), X.flatten()))
-        # matches = path.contains_points(coords)
-        # mask = matches.reshape(shape)
-        self.plotWidg.ax.add_patch(poly) #TODO tie all this in the BigPlot addRoi method. change how rois are saved. Disable onhover when roi drawing is active.
-        r = Roi(self.plotWidg.roiFilter.currentText(), 1, data=np.array(verts), dataAreVerts=True, dataShape=shape)#TODO placeholder
-        r.toHDFOutline(self.metadatas[self.mdIndex][0].filePath)
+        self.plotWidg.ax.add_patch(poly)
+        self.plotWidg.canvas.draw_idle()
+        self.newRoiDlg.show()
+        self.newRoiDlg.exec()
+        poly.remove()
+        if self.newRoiDlg.result() == QDialog.Accepted:
+            r = Roi(self.newRoiDlg.name, self.newRoiDlg.number, data=np.array(verts), dataAreVerts=True, dataShape=shape)
+            md = self.metadatas[self.mdIndex][0] #TODO Implement overwriting
+            md.saveRoi(r)
+            self.plotWidg.addRoi(r)
+        self.plotWidg.canvas.draw_idle()
+        self.selector.setActive(True)  # Start the next roi.
+
 
 
     def handleButtons(self, button):
@@ -101,3 +107,37 @@ class RoiDrawer(QWidget):
         md = self.metadatas[self.mdIndex][0]
         self.plotWidg.setMetadata(md)
         self.plotWidg.setImageData(md.getImBd())
+
+class NewRoiDlg(QDialog):
+    def __init__(self, parent: QWidget):
+        super().__init__(parent=parent, flags=QtCore.Qt.FramelessWindowHint)
+        self.setModal(True)
+
+        self.number = self.name = None
+
+        l = QGridLayout()
+        self.numBox = QSpinBox()
+        self.numBox.setMaximum(100000)
+        self.numBox.setMinimum(0)
+        self.nameEdit = QLineEdit()
+        self.okButton = QPushButton("Ok")
+        self.okButton.released.connect(self.accept)
+        self.cancelButton = QPushButton("Cancel")
+        self.cancelButton.released.connect(self.reject)
+        l.addWidget(QLabel("Name"), 0, 0, 1, 1)
+        l.addWidget(QLabel("#"), 0, 1, 1, 1)
+        l.addWidget(self.nameEdit, 1, 0, 1, 1)
+        l.addWidget(self.numBox, 1, 1, 1, 1)
+        l.addWidget(self.okButton, 2, 1, 1, 1)
+        l.addWidget(self.cancelButton, 2, 2, 1, 1)
+        self.setLayout(l)
+
+    def accept(self) -> None:
+        self.number = self.numBox.value()
+        self.name = self.nameEdit.text()
+        self.numBox.setValue(self.numBox.value()+1)  # Increment the value.
+        super().accept()
+
+    def reject(self) -> None:
+        self.number = self.name = None
+        super().reject()
