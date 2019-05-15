@@ -204,9 +204,9 @@ class ICMetaData:
         else:
             return Roi.loadAny(self.filePath, name, num)
 
-    def saveRoi(self, roi: Roi) -> None:
+    def saveRoi(self, roi: Roi, overwrite: bool = False) -> None:
         if roi.dataAreVerts:
-            roi.toHDFOutline(self.filePath)
+            roi.toHDFOutline(self.filePath, overwrite=overwrite)
         else:
             raise TypeError("Only `outline` ROI's are supported.")
 

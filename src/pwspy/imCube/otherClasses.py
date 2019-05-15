@@ -116,12 +116,16 @@ class Roi:
                 raise Exception(f"The Roi file {savePath} already contains a dataset {self.number}")
             hf.create_dataset(np.string_(str(self.number)), data=self.data.astype(np.uint8))
 
-    def toHDFOutline(self, directory):
+    def toHDFOutline(self, directory: str, overwrite: bool = False):
         assert self.dataAreVerts is True
         savePath = os.path.join(directory, f'roiV_{self.name}.h5')
         with h5py.File(savePath, 'a') as hf:
             if np.string_(str(self.number)) in hf.keys():
-                raise Exception(f"The Roi file {savePath} already contains a dataset {self.number}")
+                if overwrite:
+                    del hf[np.string_(str(self.number))]
+
+                else:
+                    raise OSError(f"The Roi file {savePath} already contains a dataset {self.number}")
             g = hf.create_group(np.string_(str(self.number)))
             g.create_dataset(np.string_("verts"), data=self.data.astype(np.float32))
             g.create_dataset(np.string_('dataShape'), data=self.dataShape)

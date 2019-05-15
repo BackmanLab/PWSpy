@@ -2,7 +2,8 @@ from typing import List, Tuple, Optional
 
 import numpy as np
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QWidget, QGridLayout, QButtonGroup, QPushButton, QDialog, QLineEdit, QSpinBox, QLabel
+from PyQt5.QtWidgets import QWidget, QGridLayout, QButtonGroup, QPushButton, QDialog, QLineEdit, QSpinBox, QLabel, \
+    QMessageBox
 from matplotlib import patches
 
 from pwspy.analysis.analysisResults import AnalysisResultsLoader
@@ -61,9 +62,15 @@ class RoiDrawer(QWidget):
         poly.remove()
         if self.newRoiDlg.result() == QDialog.Accepted:
             r = Roi(self.newRoiDlg.name, self.newRoiDlg.number, data=np.array(verts), dataAreVerts=True, dataShape=shape)
-            md = self.metadatas[self.mdIndex][0] #TODO Implement overwriting
-            md.saveRoi(r)
-            self.plotWidg.addRoi(r)
+            md = self.metadatas[self.mdIndex][0]
+            try:
+                md.saveRoi(r)
+                self.plotWidg.addRoi(r)
+            except OSError: #We must already have this roi saved
+                ans = QMessageBox.question(self, 'Overwrite?', f"Roi {r.name}:{r.number} already exists. Overwrite?")
+                if ans == QMessageBox.Yes:
+                    md.saveRoi(r, overwrite=True)
+                    self.plotWidg.addRoi(r)
         self.plotWidg.canvas.draw_idle()
         self.selector.setActive(True)  # Start the next roi.
 
