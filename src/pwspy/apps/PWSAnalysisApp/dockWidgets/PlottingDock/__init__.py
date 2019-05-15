@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QScrollArea, QVBo
     QComboBox, QLabel, QLineEdit, QSizePolicy, QButtonGroup, QFrame
 
 from pwspy.apps.PWSAnalysisApp.dockWidgets import CellSelectorDock
-from pwspy.apps.PWSAnalysisApp.dockWidgets.PlottingDock.widgets import RoiDrawer
+from pwspy.apps.PWSAnalysisApp.dockWidgets.PlottingDock.roiDrawer import RoiDrawer
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 from .widgets import AspectRatioWidget, LittlePlot
 import os
@@ -75,6 +75,8 @@ class PlottingDock(QDockWidget):
         self._widget.layout().addWidget(buttons)
         self.setWidget(self._widget)
 
+        self.enableAnalysisPlottingButtons('false')
+
     def addPlot(self, plot):
         self.plots.append(plot)
         self.scrollContents.layout().addWidget(plot)
@@ -85,7 +87,7 @@ class PlottingDock(QDockWidget):
             self.scrollContents.setAspect(1 / len(self.plots))
 
     def startRoiDrawing(self):
-        self.generatePlots(self.anNameEdit.text())
+        # self.generatePlots(self.anNameEdit.text())
         metadatas = [(p.metadata, p.analysis) for p in self.plots]
         if len(metadatas) > 0: # Otherwise we crash
             self.roiDrawer = RoiDrawer(metadatas)
