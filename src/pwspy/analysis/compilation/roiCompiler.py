@@ -24,6 +24,7 @@ class RoiCompiler:
                 polynomialRms = None
         else:
             polynomialRms = None
+
         if self.settings.autoCorrelationSlope:
             try:
                 autoCorrelationSlope = self._avgOverRoi(roi, results.autoCorrelationSlope,
@@ -33,6 +34,7 @@ class RoiCompiler:
                 autoCorrelationSlope = None
         else:
             autoCorrelationSlope = None
+
         if self.settings.rSquared:
             try:
                 warns.append(warnings.checkRSquared(results.rSquared[roi.data]))
@@ -41,11 +43,13 @@ class RoiCompiler:
                 rSquared = None
         else:
             rSquared = None
+
         if self.settings.ld:
             try: ld = self._avgOverRoi(roi, results.ld)
             except KeyError: ld = None
         else:
             ld = None
+
         if self.settings.opd:
             try:
                 opd = results.opd[roi.data].mean(axis=0)
@@ -54,6 +58,7 @@ class RoiCompiler:
                 opd = opdIndex = None
         else:
             opd = opdIndex = None
+
         if self.settings.meanSigmaRatio:
             try:
                 spectra = results.reflectance.getMeanSpectra(roi)[0]
@@ -64,6 +69,12 @@ class RoiCompiler:
                 varRatio = None
         else:
             varRatio = None
+
+        if self.settings.roiArea:
+            roiArea = np.sum(roi.getMask())
+        else:
+            roiArea = None
+
         results = RoiCompilationResults(
                     roi=roi,
                     analysisName=results.analysisName,
@@ -76,7 +87,8 @@ class RoiCompiler:
                     opd=opd,
                     opdIndex=opdIndex,
                     varRatio=varRatio,
-                    cellIdTag=results.imCubeIdTag)
+                    cellIdTag=results.imCubeIdTag,
+                    roiArea=roiArea)
         warns = [w for w in warns if w is not None]  # Strip None from warns list
         return results, warns
 

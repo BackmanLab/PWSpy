@@ -29,6 +29,7 @@ class ResultsTableItem:
         if results.opd is None:
             self.opdButton.setEnabled(False)
         self.meanSigmaRatioLabel = NumberTableWidgetItem(results.varRatio)
+        self.roiAreaLabel = NumberTableWidgetItem(results.roiArea)
 
     def _plotOpd(self):
         fig, ax = plt.subplots()
@@ -46,7 +47,8 @@ class ResultsTable(CopyableTable):
             {"Path": (False, None), 'Cell#': (True, None), "Analysis": (False, None), 'ROI Name': (True, None),
             'ROI#': (True, None), "RMS": (True, 'rms'), 'Reflectance': (True, 'reflectance'), 'ld': (False, 'ld'),
             "AutoCorr Slope": (False, 'autoCorrelationSlope'), 'R^2': (False, 'rSquared'), 'OPD': (False, 'opd'),
-            "Mean Spectra Ratio": (False, 'meanSigmaRatio'), "Poly RMS": (False, 'polynomialRms')}
+            "Mean Spectra Ratio": (False, 'meanSigmaRatio'), "Poly RMS": (False, 'polynomialRms'),
+            "Roi Area": (False, 'roiArea')}
         self.setRowCount(0)
         self.setColumnCount(len(self.columns.keys()))
         self.setHorizontalHeaderLabels(self.columns.keys())
@@ -75,6 +77,7 @@ class ResultsTable(CopyableTable):
         self.setCellWidget(row, 10, item.opdButton)
         self.setItem(row, 11, item.meanSigmaRatioLabel)
         self.setItem(row, 12, item.polynomialRmsLabel)
+        self.setItem(row, 13, item.roiAreaLabel)
 
 
         self.setSortingEnabled(True)

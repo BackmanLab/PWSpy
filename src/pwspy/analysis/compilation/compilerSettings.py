@@ -12,3 +12,4 @@ class CompilerSettings:
     ld: bool
     opd: bool
     meanSigmaRatio: bool
+    roiArea: bool
