@@ -66,7 +66,7 @@ class Roi:
             assert data.shape[1] == 2
             assert len(data.shape) == 2
             self.dataShape = dataShape
-        self.data = data
+        self._data = data
         self.name = name
         self.number = number
         self._mask = None  # A variable to cache the mask as calculated from the outline.
@@ -114,7 +114,7 @@ class Roi:
         with h5py.File(savePath, 'a') as hf:
             if np.string_(str(self.number)) in hf.keys():
                 raise Exception(f"The Roi file {savePath} already contains a dataset {self.number}")
-            hf.create_dataset(np.string_(str(self.number)), data=self.data.astype(np.uint8))
+            hf.create_dataset(np.string_(str(self.number)), data=self._data.astype(np.uint8))
 
     def toHDFOutline(self, directory: str, overwrite: bool = False):
         assert self.dataAreVerts is True
@@ -127,7 +127,7 @@ class Roi:
                 else:
                     raise OSError(f"The Roi file {savePath} already contains a dataset {self.number}")
             g = hf.create_group(np.string_(str(self.number)))
-            g.create_dataset(np.string_("verts"), data=self.data.astype(np.float32))
+            g.create_dataset(np.string_("verts"), data=self._data.astype(np.float32))
             g.create_dataset(np.string_('dataShape'), data=self.dataShape)
 
     # def deleteFile(self): #this sort of functionality has been moved to ICMetadata
@@ -186,10 +186,10 @@ class Roi:
         opencv.estimateRigidTransform. This can be obtained using ICBase's getTransform method."""
         import cv2
         if self.dataAreVerts is False:
-            out = cv2.warpAffine(self.data.astype(np.uint8), matrix, self.dataShape).astype(np.bool)
+            out = cv2.warpAffine(self._data.astype(np.uint8), matrix, self.dataShape).astype(np.bool)
             return Roi(self.name, self.number, data=out, dataAreVerts=False)
         elif self.dataAreVerts:
-            out = cv2.transform(self.data, matrix)
+            out = cv2.transform(self._data, matrix)
             return Roi(self.name, self.number, data=out, dataAreVerts=True)
 
     def getImage(self, ax: plt.Axes):
@@ -205,21 +205,21 @@ class Roi:
                 y = np.arange(self.dataShape[0])
                 X, Y = np.meshgrid(x, y)
                 coords = list(zip(X.flatten(), Y.flatten()))
-                matches = path.Path(self.data).contains_points(coords)
+                matches = path.Path(self._data).contains_points(coords)
                 self._mask = matches.reshape(self.dataShape)
             return self._mask
         else:
-            return self.data
+            return self._data
 
     def getBoundingPolygon(self):
         if not self.dataAreVerts: # calculate convex hull
             x = np.arange(self.dataShape[1])
             y = np.arange(self.dataShape[0])
             X, Y = np.meshgrid(x, y)
-            X = X[self.data]
-            Y = Y[self.data]
+            X = X[self._data]
+            Y = Y[self._data]
             coords = list(zip(X, Y))
             g = geometry.Polygon(coords)
             return patches.Polygon(list(g.convex_hull.exterior.coords), facecolor=(1, 0, 0, 0.5))
         else:
-            return patches.Polygon(self.data, facecolor=(1, 0, 0, 0.5))
+            return patches.Polygon(self._data, facecolor=(1, 0, 0, 0.5))

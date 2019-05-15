@@ -37,7 +37,7 @@ class RoiCompiler:
 
         if self.settings.rSquared:
             try:
-                warns.append(warnings.checkRSquared(results.rSquared[roi.data]))
+                warns.append(warnings.checkRSquared(results.rSquared[roi.getMask()]))
                 rSquared = self._avgOverRoi(roi, results.rSquared)
             except KeyError:
                 rSquared = None
@@ -52,7 +52,7 @@ class RoiCompiler:
 
         if self.settings.opd:
             try:
-                opd = results.opd[roi.data].mean(axis=0)
+                opd = results.opd[roi.getMask()].mean(axis=0)
                 opdIndex = results.opdIndex
             except KeyError:
                 opd = opdIndex = None
@@ -63,7 +63,7 @@ class RoiCompiler:
             try:
                 spectra = results.reflectance.getMeanSpectra(roi)[0]
                 meanRms = spectra.std()
-                varRatio = meanRms**2 / (results.rms[roi.data]**2).mean()
+                varRatio = meanRms**2 / (results.rms[roi.getMask()] ** 2).mean()
                 warns.append(warnings.checkMeanSpectraRatio(varRatio))
             except KeyError:
                 varRatio = None
@@ -98,6 +98,6 @@ class RoiCompiler:
         if condition is provided then only value of arr where the condition is satisfied are included."""
         assert len(arr.shape) == 2
         if condition is not None:
-            return arr[np.logical_and(roi.data, condition)].mean()
+            return arr[np.logical_and(roi.getMask(), condition)].mean()
         else:
-            return arr[roi.data].mean()
+            return arr[roi.getMask()].mean()
