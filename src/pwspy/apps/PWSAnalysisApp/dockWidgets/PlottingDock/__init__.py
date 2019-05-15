@@ -60,7 +60,7 @@ class PlottingDock(QDockWidget):
         [l.addWidget(i) for i in self.buttonGroup.buttons()]
         frame.setLayout(l)
         self.refreshButton = QPushButton("Refresh")
-        self.refreshButton.released.connect(self.generatePlots)
+        self.refreshButton.released.connect(lambda: self.generatePlots(self.anNameEdit.text()))
         self.roiButton = QPushButton("Draw Roi's")
         self.roiButton.released.connect(self.startRoiDrawing)
         label = QLabel("Analysis Name")
@@ -85,6 +85,7 @@ class PlottingDock(QDockWidget):
             self.scrollContents.setAspect(1 / len(self.plots))
 
     def startRoiDrawing(self):
+        self.generatePlots(self.anNameEdit.text())
         metadatas = [(p.metadata, p.analysis) for p in self.plots]
         if len(metadatas) > 0: # Otherwise we crash
             self.roiDrawer = RoiDrawer(metadatas)
@@ -96,33 +97,28 @@ class PlottingDock(QDockWidget):
         pattern = self.anNameEdit.text()
         cells = self.selector.getSelectedCellMetas()
         if pattern != self._oldPattern or cells != self._oldCells:
-            self.generatePlots()
+            self.generatePlots(pattern)
         self._oldPattern = pattern
         self._oldCells = cells
 
-    def generatePlots(self):
+    def generatePlots(self, analysisName: str):
         #clear Plots
         for i in self.plots:
             self.scrollContents.layout().removeWidget(i)
             i.deleteLater()
         self.plots = []
-        analysisNamePattern = self.anNameEdit.text()
         cells: List[ICMetaData] = self.selector.getSelectedCellMetas()
         if len(cells) == 0:
             messageBox = QMessageBox(self)
             messageBox.information(self, "Oops!", "Please select the cells you would like to plot.")
             messageBox.setFixedSize(500, 200)
         for cell in cells:
-            if analysisNamePattern.strip() == '': #No analysis name was entered. don't load an analysis
+            if analysisName.strip() == '': #No analysis name was entered. don't load an analysis
                 self.addPlot(LittlePlot(cell, None, f"{os.path.split(cell.filePath)[-1]}"))
             else:
-                for anName in cell.getAnalyses():
-                    try:
-                        if re.fullmatch(analysisNamePattern, anName):
-                            analysis = cell.loadAnalysis(anName)
-                            self.addPlot(LittlePlot(cell, analysis, f"{anName} {os.path.split(cell.filePath)[-1]}"))
-                    except re.error as e:
-                        print(e)
+                if analysisName in cell.getAnalyses():
+                    analysis = cell.loadAnalysis(analysisName)
+                    self.addPlot(LittlePlot(cell, analysis, f"{analysisName} {os.path.split(cell.filePath)[-1]}"))
         self._plotsChanged()
 
     def handleButtons(self, button: QPushButton):
