@@ -72,39 +72,26 @@ class ICBase:
             fig.canvas.flush_events()
         return Verts
 
-    def selectRectangleROI(self, displayIndex=None, xSlice=None, ySlice=None):
+    def selectRectangleROI(self, displayIndex=None):
         # display index is used to display a particular z-slice for mask drawing. If None then the mean along Z is displayed.
         # X and Y slice allow manual selection of the range.
         verts = None
-        slices = {'y': ySlice, 'x': xSlice}
-        if (slices['x'] is not None) and (slices['y'] is not None):
-            if not hasattr(slices['x'], '__iter__'):
-                slices['x'] = (slices['x'],)
-            if not hasattr(slices['y'], '__iter__'):
-                slices['y'] = (slices['y'],)
-            slices['x'] = slice(*slices['x'])
-            slices['y'] = slice(*slices['y'])
-            mask[slices['y'], slices['x']] = True
+
+        if displayIndex is None:
+            fig, ax = self.plotMean()
         else:
-            if displayIndex is None:
-                fig, ax = self.plotMean()
-            else:
-                fig, ax = plt.subplots()
-                ax.imshow(self.data[:, :, displayIndex])
-            fig.suptitle("Close to accept ROI")
+            fig, ax = plt.subplots()
+            ax.imshow(self.data[:, :, displayIndex])
+        fig.suptitle("Close to accept ROI")
 
-            def rectSelect(mins, maxes):
-                y = [int(mins.ydata), int(maxes.ydata)]
-                x = [int(mins.xdata), int(maxes.xdata)]
-                slices['y'] = slice(min(y), max(y))
-                slices['x'] = slice(min(x), max(x))
-                verts = ((mins.ydata, mins.xdata), (maxes.ydata, mins.xdata), (maxes.ydata, maxes.xdata), (mins.ydata, maxes.xdata))
+        def rectSelect(mins, maxes):
+            verts = ((mins.ydata, mins.xdata), (maxes.ydata, mins.xdata), (maxes.ydata, maxes.xdata), (mins.ydata, maxes.xdata))
 
-            r = widgets.RectangleSelector(ax, rectSelect)
+        r = widgets.RectangleSelector(ax, rectSelect)
 
-            while plt.fignum_exists(fig.number):
-                fig.canvas.flush_events()
-        return verts, (slices['y'], slices['x'])
+        while plt.fignum_exists(fig.number):
+            fig.canvas.flush_events()
+        return verts
 
     def __getitem__(self, slic):
         return self.data[slic]
