@@ -201,9 +201,9 @@ class BigPlot(QWidget):
         layout.addWidget(self.saturationButton, 9, 6, 1, 1)
         layout.addWidget(self.manualRangeButton, 9, 7, 1, 1)
         layout.addWidget(NavigationToolbar(self.canvas, self), 10, 0, 1, 4)
-        layout.addWidget(QLabel("Roi"), 10, 4, 1, 1)
+        layout.addWidget(QLabel("Roi"), 10, 4, 1, 1, alignment=QtCore.Qt.AlignRight)
         layout.addWidget(self.roiFilter, 10, 5, 1, 1)
-        layout.addWidget(QLabel("Color Map"), 10, 6, 1, 1)
+        layout.addWidget(QLabel("Color Map"), 10, 6, 1, 1, alignment=QtCore.Qt.AlignRight)
         layout.addWidget(self.cmapCombo, 10, 7, 1, 1)
         layout.setRowStretch(0, 1)  # This causes the plot to take up all the space that isn't needed by the other widgets.
         self.setLayout(layout)
