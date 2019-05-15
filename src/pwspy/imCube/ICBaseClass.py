@@ -56,32 +56,26 @@ class ICBase:
 
     def selectLassoROI(self, displayIndex=None):
         # display index is used to display a particular z-slice for mask drawing. If None then the mean along Z is displayed.
-        mask = np.zeros((self.data.shape[0], self.data.shape[1]), dtype=np.bool)
-
+        Verts = None
         if displayIndex is None:
             fig, ax = self.plotMean()
         else:
             fig, ax = plt.subplots()
             ax.imshow(self.data[:, :, displayIndex])
         fig.suptitle("Close to accept ROI")
-        x, y = np.meshgrid(np.arange(self.data.shape[0]), np.arange(self.data.shape[1]))
-        coords = np.vstack((y.flatten(), x.flatten())).T
 
         def onSelect(verts):
-            p = path.Path(verts)
-            ind = p.contains_points(coords, radius=0)
-            mask[coords[ind, 1], coords[ind, 0]] = True
+            Verts = verts
 
         l = widgets.LassoSelector(ax, onSelect, lineprops={'color': 'r'})
-
         while plt.fignum_exists(fig.number):
             fig.canvas.flush_events()
-        return mask
+        return Verts
 
     def selectRectangleROI(self, displayIndex=None, xSlice=None, ySlice=None):
         # display index is used to display a particular z-slice for mask drawing. If None then the mean along Z is displayed.
         # X and Y slice allow manual selection of the range.
-        mask = np.zeros((self.data.shape[0], self.data.shape[1]), dtype=np.bool)
+        verts = None
         slices = {'y': ySlice, 'x': xSlice}
         if (slices['x'] is not None) and (slices['y'] is not None):
             if not hasattr(slices['x'], '__iter__'):
@@ -104,13 +98,13 @@ class ICBase:
                 x = [int(mins.xdata), int(maxes.xdata)]
                 slices['y'] = slice(min(y), max(y))
                 slices['x'] = slice(min(x), max(x))
-                mask[slices['y'], slices['x']] = True
+                verts = ((mins.ydata, mins.xdata), (maxes.ydata, mins.xdata), (maxes.ydata, maxes.xdata), (mins.ydata, maxes.xdata))
 
             r = widgets.RectangleSelector(ax, rectSelect)
 
             while plt.fignum_exists(fig.number):
                 fig.canvas.flush_events()
-        return mask, (slices['y'], slices['x'])
+        return verts, (slices['y'], slices['x'])
 
     def __getitem__(self, slic):
         return self.data[slic]
@@ -286,6 +280,6 @@ class ICBase:
                 plt.imshow(img3, 'gray')
                 plt.show()
         if debugPlots:
-            anFig.suptitle("If transforms worked cells should not appear to move.")
+            anFig.suptitle("If transforms worked, cells should not appear to move.")
             an = animation.ArtistAnimation(anFig, anims)
         return transforms, an
