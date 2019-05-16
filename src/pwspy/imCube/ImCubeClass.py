@@ -51,8 +51,11 @@ class ImCube(ICBase):
         except:
             try:
                 return ImCube.fromOldPWS(directory, metadata=metadata, lock=lock)
-            except OSError:
-                raise OSError(f"Could not find a valid PWS image cube file at {directory}.")
+            except:
+                try:
+                    return ImCube.fromNano(directory, metadata=metadata, lock=lock)
+                except:
+                    raise OSError(f"Could not find a valid PWS image cube file at {directory}.")
 
     @classmethod
     def fromOldPWS(cls, directory, metadata: ICMetaData = None,  lock: mp.Lock = None):

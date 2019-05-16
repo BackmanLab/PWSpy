@@ -136,16 +136,21 @@ class ICMetaData:
 
     @classmethod
     def fromNano(cls, directory: str, lock: mp.Lock = None):
-        with lock:
+        if lock is not None:
+            lock.acquire()
+        try:
             with h5py.File(os.path.join(directory, 'imageCube.mat')) as hf:
-                cubeParams = ICMetaData.fromNano(hf['cubeParameters'])
-        lam = cubeParams['lambda']
-        exp = cubeParams['exposure'] #TODO we don't support adaptive exposure.
-        md = {'startWv': lam['start'].value[0][0], 'stepWv': lam['step'].value[0][0], 'stopWv': lam['stop'].value[0][0],
-              'exposure': exp['base'].value[0][0], 'time': datetime.strptime(np.string_(cubeParams['metadata']['date'].value.astype(np.uint8)).decode(), '%Y%m%dT%H%M%S').strftime(dateTimeFormat),
-              'system': np.string_(cubeParams['metadata']['hardware']['system']['id'].value.astype(np.uint8)).decode(), 'wavelengths': list(lam['sequence'].value[0]),
-              'binning': None, 'pixelSizeUm': None}
-        return cls(md, filePath=None, fileFormat=ICFileFormats.NanoMat)
+                cubeParams = hf['cubeParameters']
+                lam = cubeParams['lambda']
+                exp = cubeParams['exposure'] #TODO we don't support adaptive exposure.
+                md = {'startWv': lam['start'].value[0][0], 'stepWv': lam['step'].value[0][0], 'stopWv': lam['stop'].value[0][0],
+                      'exposure': exp['base'].value[0][0], 'time': datetime.strptime(np.string_(cubeParams['metadata']['date'].value.astype(np.uint8)).decode(), '%Y%m%dT%H%M%S').strftime(dateTimeFormat),
+                      'system': np.string_(cubeParams['metadata']['hardware']['system']['id'].value.astype(np.uint8)).decode(), 'wavelengths': list(lam['sequence'].value[0]),
+                      'binning': None, 'pixelSizeUm': None}
+        finally:
+            if lock is not None:
+                lock.release()
+        return cls(md, filePath=directory, fileFormat=ICFileFormats.NanoMat)
 
     @classmethod
     def fromTiff(cls, directory, lock: mp.Lock = None):
