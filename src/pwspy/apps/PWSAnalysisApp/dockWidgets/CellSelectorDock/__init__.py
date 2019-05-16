@@ -22,6 +22,12 @@ class CellSelectorDock(QDockWidget):
         self._filterWidget = QWidget(self._widget)
         self.pathFilter = QComboBox(self._filterWidget)
         self.pathFilter.setEditable(True)
+        self.pathFilter.setStyleSheet('''*     
+        QComboBox QAbstractItemView 
+            {
+            min-width: 200px;
+            }
+        ''') #This makes the dropdown wider so we can actually read.
         width = self.pathFilter.minimumSizeHint().width()
         self.pathFilter.view().setMinimumWidth(width)
         self.expressionFilter = QLineEdit(self._filterWidget)
