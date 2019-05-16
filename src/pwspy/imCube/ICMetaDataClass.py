@@ -108,7 +108,7 @@ class ICMetaData:
                 try:
                     return ICMetaData.fromNano(directory, lock=lock)
                 except:
-                    raise Exception(f"Could not find a valid PWS image cube file at {directory}.")
+                    raise OSError(f"Could not find a valid PWS image cube file at {directory}.")
 
     @classmethod
     def fromOldPWS(cls, directory, lock: mp.Lock = None):
