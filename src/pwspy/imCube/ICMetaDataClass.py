@@ -281,7 +281,11 @@ class ICMetaData:
         return d
 
     def getImBd(self) -> np.ndarray:
-        with tf.TiffFile(os.path.join(self.filePath, 'image_bd.tif')) as f:
-            return f.asarray()
+        if self.fileFormat == ICFileFormats.NanoMat:
+            with h5py.File(os.path.join(self.filePath, 'image_bd.mat')) as hf:
+                return np.array(hf['image_bd'])
+        else:
+            with tf.TiffFile(os.path.join(self.filePath, 'image_bd.tif')) as f:
+                return f.asarray()
 
 from pwspy.analysis.analysisResults import AnalysisResultsLoader

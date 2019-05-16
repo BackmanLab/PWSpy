@@ -98,13 +98,18 @@ class ImCube(ICBase):
     @classmethod
     def fromNano(cls, directory: str, metadata: ICMetaData = None, lock: mp.Lock = None):
         path = os.path.join(directory, 'imageCube.mat')
-        with lock:
+        if lock is not None:
+            lock.acquire()
+        try:
             if metadata is None:
                 metadata = ICMetaData.fromNano(path)
             with h5py.File(path) as hf:
                 data = np.array(hf['imageCube'])
                 data = np.rollaxis(data, 0, 3)
                 data = data.copy(order='C')
+        finally:
+            if lock is not None:
+                lock.release()
         return cls(data, metadata)
 
     @classmethod
