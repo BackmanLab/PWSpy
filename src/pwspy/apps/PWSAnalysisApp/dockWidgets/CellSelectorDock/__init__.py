@@ -45,7 +45,11 @@ class CellSelectorDock(QDockWidget):
         self.cellItems: Dict[str, CellTableWidgetItem] = {}
 
     def addCell(self, fileName: str, workingDir: str):
-        cell = ICMetaData.loadAny(fileName)
+        try:
+            cell = ICMetaData.loadAny(fileName)
+        except OSError as e: # Could not find a valid file
+            print(e)
+            return
         cellItem = CellTableWidgetItem(cell, os.path.split(fileName)[0][len(workingDir) + 1:],
                                    int(fileName.split('Cell')[-1]))
         if cellItem.isReference():
