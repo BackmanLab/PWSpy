@@ -62,9 +62,6 @@ class AnalysisSettingsDock(QDockWidget):
     def loadFromSettings(self, settings: AnalysisSettings):
         self.settingsFrame.loadFromSettings(settings)
 
-    def getSettings(self) -> Tuple[CameraCorrection, AnalysisSettings]:
-        return self.settingsFrame.getCameraCorrection(), self.settingsFrame.getSettings()
-
     def getAnalysisName(self):
         return self.settingsFrame.analysisName
 
