@@ -71,21 +71,20 @@ class AnalysisManager(QtCore.QObject):
                 erCube = ExtraReflectanceCube.fromMetadata(erMeta)
             analysis = Analysis(anSettings, ref, erCube)
             warnings = loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[analysis, anName, cameraCorrection],
-                                      parallel=True, passLock=True) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
+                                      parallel=True) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
             warnings = [(warn, md) for warn, md in warnings if md is not None]
             ret = (anName, anSettings, warnings)
             self.analysisDone.emit(*ret)
             return ret
 
     @staticmethod
-    def _process(im: ImCube, lock: mp.Lock, analysis: Analysis, analysisName: str, cameraCorrection: CameraCorrection):
+    def _process(im: ImCube, analysis: Analysis, analysisName: str, cameraCorrection: CameraCorrection):
         if cameraCorrection is not None:
             im.correctCameraEffects(cameraCorrection)
         else:
             im.correctCameraEffects(auto=True)
         results, warnings = analysis.run(im)
-        with lock:
-            im.metadata.saveAnalysis(results, analysisName)
+        im.metadata.saveAnalysis(results, analysisName)
         if len(warnings) > 0:
             md = im.metadata
         else:
@@ -119,9 +118,8 @@ class CompilationManager(QtCore.QObject):
     @staticmethod
     def _process(md: ICMetaData, lock: mp.Lock, compiler: RoiCompiler, roiName: str, analysisName: str)\
             -> Tuple[ICMetaData, List[Tuple[RoiCompilationResults, List[AnalysisWarning]]]]:
-        with lock:
-            rois = [md.loadRoi(name, num, fformat) for name, num, fformat in md.getRois() if name == roiName]
-            analysisResults = md.loadAnalysis(analysisName)
+        rois = [md.loadRoi(name, num, fformat) for name, num, fformat in md.getRois() if name == roiName]
+        analysisResults = md.loadAnalysis(analysisName)
         ret = []
         for roi in rois:
             cResults, warnings = compiler.run(analysisResults, roi)
@@ -137,7 +135,7 @@ class CompilationManager(QtCore.QObject):
         compiler = RoiCompiler(settings)
 
         results: List[Tuple[ICMetaData, List[Tuple[RoiCompilationResults, List[AnalysisWarning]]]]] = loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[compiler, roiName, analysisName],
-                                  parallel=True, metadataOnly=True, passLock=True) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
+                                  parallel=True, metadataOnly=True) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
         # newresults = []
         # for i in results:
         #     newresults.extend(i)# Convert from list of lists to just a long list
