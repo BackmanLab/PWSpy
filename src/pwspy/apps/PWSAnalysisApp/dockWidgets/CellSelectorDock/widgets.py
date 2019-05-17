@@ -8,6 +8,7 @@ from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import QPalette
 from PyQt5.QtWidgets import QPushButton, QTableWidgetItem, QTableWidget, QAbstractItemView, QMenu, QWidget, QMessageBox
 
+from pwspy.apps.PWSAnalysisApp.sharedWidgets.dictDisplayTree import DictDisplayTree, DictDisplayTreeDialog
 from pwspy.apps.PWSAnalysisApp.sharedWidgets.tables import NumberTableWidgetItem
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 
@@ -154,7 +155,14 @@ class CellTableWidget(QTableWidget):
             invalidAction.triggered.connect(lambda: self.toggleSelectedCellsInvalid(state))
             refAction = menu.addAction(refStateString)
             refAction.triggered.connect(lambda: self.toggleSelectedCellsReference(refState))
+            mdAction = menu.addAction("Display Metadata")
+            mdAction.triggered.connect(self.displayCellMetadata)
             menu.exec(self.mapToGlobal(point))
+
+    def displayCellMetadata(self):
+        for i in self.selectedCellItems:
+            d = DictDisplayTreeDialog(self, i.cube._dict, title=os.path.join(i.path, f"Cell{i.num}"))
+            d.show()
 
     def toggleSelectedCellsInvalid(self, state: bool):
         changedItems = []

@@ -13,7 +13,7 @@ from pwspy.imCube.otherClasses import Roi
 from pwspy.utility.matplotlibwidg import AdjustableSelector, MyLasso, MyEllipse
 
 
-class RoiDrawer(QWidget):
+class RoiDrawer(QWidget): #TODO display cell number
     def __init__(self, metadatas: List[Tuple[ICMetaData, Optional[AnalysisResultsLoader]]], parent=None, initialField='imbd'):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         self.setWindowTitle("Roi Drawer 3000")
