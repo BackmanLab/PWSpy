@@ -63,8 +63,8 @@ class AnalysisManager(QtCore.QObject):
                 ref.correctCameraEffects(cameraCorrection)
             else:
                 print("Using automatically detected camera corrections")
-                ref.correctCameraEffects(ref.metadata.cameraCorrection)
-            if anSettings.extraReflectanceId == "Ignore":
+                ref.correctCameraEffects(auto=True)
+            if anSettings.extraReflectanceId is None:
                 erCube = None
             else:
                 erMeta = self.app.ERManager.getMetadataFromId(anSettings.extraReflectanceId)

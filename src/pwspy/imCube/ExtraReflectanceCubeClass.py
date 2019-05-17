@@ -11,6 +11,7 @@ import numpy as np
 import os
 from pwspy.moduleConsts import dateTimeFormat
 import typing
+import pandas as pd
 if typing.TYPE_CHECKING:
     from pwspy.imCube import ImCube
 
@@ -126,7 +127,7 @@ class ExtraReflectanceCube(ICBase):
         return cls.fromHdfFile(directory, name)
 
 class ExtraReflectionCube:
-    def __init__(self, reflectance: ExtraReflectanceCube, theoryR: np.ndarray, reference: ImCube):
+    def __init__(self, reflectance: ExtraReflectanceCube, theoryR: pd.Series, reference: ImCube):
         self.metadata = reflectance.metadata
-        I0 = reference.data / (theoryR + reflectance.data) # I0 is the intensity of the illumination source, reconstructed in units of `counts`. this is an inversion of our assumption that reference = I0*(referenceReflectance + extraReflectance)
+        I0 = reference.data / (theoryR[None, None, :] + reflectance.data) # I0 is the intensity of the illumination source, reconstructed in units of `counts`. this is an inversion of our assumption that reference = I0*(referenceReflectance + extraReflectance)
         self.data = reflectance.data * I0  # converting extraReflectance to the extra reflection in units of counts

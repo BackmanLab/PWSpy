@@ -42,10 +42,14 @@ class AnalysisSettings:
 
     def asDict(self) -> dict:
         d = dataclasses.asdict(self)
-        d['referenceMaterial'] = self.referenceMaterial.name # Convert from enum to string
+        if self.referenceMaterial is None:
+            d['referenceMaterial'] = None
+        else:
+            d['referenceMaterial'] = self.referenceMaterial.name # Convert from enum to string
         return d
 
     @classmethod
     def fromDict(cls, d: dict) -> AnalysisSettings:
-        d['referenceMaterial'] = Material[d['referenceMaterial']]  # Convert from string to enum
+        if d['referenceMaterial'] is not None:
+            d['referenceMaterial'] = Material[d['referenceMaterial']]  # Convert from string to enum
         return cls(**d)
