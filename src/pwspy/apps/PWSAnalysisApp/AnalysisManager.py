@@ -116,7 +116,7 @@ class CompilationManager(QtCore.QObject):
         self.app = app
 
     @staticmethod
-    def _process(md: ICMetaData, lock: mp.Lock, compiler: RoiCompiler, roiName: str, analysisName: str)\
+    def _process(md: ICMetaData, compiler: RoiCompiler, roiName: str, analysisName: str)\
             -> Tuple[ICMetaData, List[Tuple[RoiCompilationResults, List[AnalysisWarning]]]]:
         rois = [md.loadRoi(name, num, fformat) for name, num, fformat in md.getRois() if name == roiName]
         analysisResults = md.loadAnalysis(analysisName)
