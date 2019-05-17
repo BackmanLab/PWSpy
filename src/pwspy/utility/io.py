@@ -66,7 +66,7 @@ def _loadThenProcess(procFunc, procFuncArgs, metadataOnly: bool, lock: mp.Lock, 
      on each core when running in parallel. If not running in parallel then _loadIms will be used."""
     index, row = row
     im = _load(row['cube'], metadataOnly=metadataOnly, lock=lock)
-    print("Run", row['cube'])
+    print("Run", row['cube'], mp.current_process())
     if passLock:
         ret = procFunc(im, lock, *procFuncArgs)
     else:
@@ -96,6 +96,11 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
         if the time to run processorFunc is greater than the time to load an ImCube from file.
     procArgs
         Optional arguments to pass to processorFunc
+    metadataOnly:
+        Instead of passing an ImCube object to the first argument of processorFunc, pass the ICMetadata object
+    passLock:
+        If true then pass the multiprocessing lock object to the second argument fo processorFunc. this can be used to
+        synchronize hard disk activity.
 
     Returns
     -------
