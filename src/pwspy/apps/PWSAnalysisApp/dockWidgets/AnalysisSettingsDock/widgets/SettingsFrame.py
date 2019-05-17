@@ -206,7 +206,10 @@ class SettingsFrame(QScrollArea):
         self.polynomialOrder.setValue(settings.polynomialOrder)
         if settings.extraReflectanceId is not None:
             self.ERExplorer.setSelection(settings.extraReflectanceId)
-        self.refMaterialCombo.setCurrentIndex(self.refMaterialCombo.findText(settings.referenceMaterial.name))
+        if settings.referenceMaterial is None:
+            self.refMaterialCombo.setCurrentText("Ignore")
+        else:
+            self.refMaterialCombo.setCurrentIndex(self.refMaterialCombo.findText(settings.referenceMaterial.name))
         self.wavelengthStop.setValue(settings.wavelengthStop)
         self.wavelengthStart.setValue(settings.wavelengthStart)
         self.advanced.setCheckState(2 if settings.skipAdvanced else 0)
@@ -227,12 +230,18 @@ class SettingsFrame(QScrollArea):
 
     def getSettings(self) -> AnalysisSettings:
         if self.ERExplorer.getSelectedId() is None:
-            raise ValueError("An extra reflectance cube has not been selected.")
+            ans = QMessageBox.question(self, "Uh", "An extra reflectance cube has not been selected. Do you want to ignore this important correction?")
+            if ans == QMessageBox.Yes:
+                erId = None
+            else:
+                raise ValueError("An extra reflectance cube has not been selected.")
+        else:
+            erId = self.ERExplorer.getSelectedId()
         refMaterial = None if self.refMaterialCombo.currentText() == "Ignore" else Material[self.refMaterialCombo.currentText()]
         return AnalysisSettings(filterOrder=self.filterOrder.value(),
                                  filterCutoff=self.filterCutoff.value(),
                                  polynomialOrder=self.polynomialOrder.value(),
-                                 extraReflectanceId=self.ERExplorer.getSelectedId(),
+                                 extraReflectanceId=erId,
                                  referenceMaterial=refMaterial,
                                  wavelengthStart=self.wavelengthStart.value(),
                                  wavelengthStop=self.wavelengthStop.value(),
