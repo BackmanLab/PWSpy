@@ -147,7 +147,7 @@ class Analysis(LegacyAnalysis):
         self.ref = ref
         self.extraReflection = Iextra
 
-    def run(self, cube: ImCube) -> Tuple[AnalysisResults, List[warnings.AnalysisWarning]]:
+    def run(self, cube: ImCube) -> Tuple[AnalysisResults, List[warnings.AnalysisWarning]]: #TODO this uses tons of memory
         results, warns = super().run(cube)
         results.extraReflectionTag = self.extraReflection.metadata.idTag
         return results, warns
