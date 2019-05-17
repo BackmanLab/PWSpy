@@ -82,7 +82,7 @@ class AnalysisManager(QtCore.QObject):
         if cameraCorrection is not None:
             im.correctCameraEffects(cameraCorrection)
         else:
-            im.correctCameraEffects(im.metadata.cameraCorrection)
+            im.correctCameraEffects(auto=True)
         results, warnings = analysis.run(im)
         with lock:
             im.metadata.saveAnalysis(results, analysisName)
