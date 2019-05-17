@@ -50,7 +50,7 @@ n = _init() #initialize the module and delete the initializer function.
 del _init
 
 
-def getReflectance(mat1: Material, mat2: Material, index=None):
+def getReflectance(mat1: Material, mat2: Material, index=None) -> pd.Series:
     """Given the names of two interfaces this provides the reflectance in units of percent.
     If given a series as index the data will be interpolated and reindexed to match the index."""
 

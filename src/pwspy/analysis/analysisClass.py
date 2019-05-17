@@ -14,6 +14,7 @@ from pwspy.analysis import warnings
 from pwspy.utility import reflectanceHelper
 from pwspy.moduleConsts import Material
 from . import AnalysisSettings, AnalysisResults
+import pandas as pd
 
 
 class AbstractAnalysis(ABC):
@@ -129,9 +130,17 @@ class Analysis(LegacyAnalysis):
     def __init__(self, settings: AnalysisSettings, ref: ImCube, extraReflectance: ExtraReflectanceCube):
         super().__init__(settings, ref)
         ref.filterDust(.75)  # Apply a blur to filter out dust particles #TODO this is in microns. I have no idea what the radius should actually be.
-
-        theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, index=ref.wavelengths)[None, None, :]
-        Iextra = ExtraReflectionCube(extraReflectance, theoryR, ref) #Convert from reflectance to predicted counts/ms.
+        if settings.referenceMaterial is None:
+            theoryR = pd.Series(np.ones((len(ref.wavelengths),)), index=ref.wavelengths) # Having this as all ones effectively ignores it.
+            print("Warning: Analysis ignoring reference material correction")
+        else:
+            theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, index=ref.wavelengths)[None, None, :]
+        if extraReflectance is None:
+            Iextra = ExtraReflectionCube(ExtraReflectanceCube(np.zeros(ref.data.shape), ref.wavelengths, ref.metadata), theoryR, ref) # a bogus reflection that is all zeros
+            print("Warning: Analysis ignoring extra reflection")
+            assert np.all(Iextra.data == 0)
+        else:
+            Iextra = ExtraReflectionCube(extraReflectance, theoryR, ref) #Convert from reflectance to predicted counts/ms.
         ref.subtractExtraReflection(Iextra)  # remove the extra reflection from our data#
         ref = ref / theoryR  # now when we normalize by our reference we will get a result in units of physical reflectrance rather than arbitrary units.
         self.ref = ref

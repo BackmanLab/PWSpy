@@ -103,6 +103,7 @@ class SettingsFrame(QScrollArea):
         self.RSubtractionBrowseButton.released.connect(self._browseReflection)
         self.refMaterialCombo = QComboBox()
         self.refMaterialCombo.addItems([k.name for k in reflectanceHelper.materialFiles.keys() if k.name != 'Glass'])
+        self.refMaterialCombo.addItem("Ignore")
         rLayout = QHBoxLayout()
         _ = rLayout.addWidget
         _(QLabel("R Subtraction"))
@@ -225,13 +226,14 @@ class SettingsFrame(QScrollArea):
             self.darkCountBox.setValue(camCorr.darkCounts)
 
     def getSettings(self) -> AnalysisSettings:
-        if self.ERExplorer.selection is None:
+        if self.ERExplorer.getSelectedId() is None:
             raise ValueError("An extra reflectance cube has not been selected.")
+        refMaterial = None if self.refMaterialCombo.currentText() == "Ignore" else Material[self.refMaterialCombo.currentText()]
         return AnalysisSettings(filterOrder=self.filterOrder.value(),
                                  filterCutoff=self.filterCutoff.value(),
                                  polynomialOrder=self.polynomialOrder.value(),
-                                 extraReflectanceId=self.ERExplorer.selection.idTag,
-                                 referenceMaterial=Material[self.refMaterialCombo.currentText()],
+                                 extraReflectanceId=self.ERExplorer.getSelectedId(),
+                                 referenceMaterial=refMaterial,
                                  wavelengthStart=self.wavelengthStart.value(),
                                  wavelengthStop=self.wavelengthStop.value(),
                                  skipAdvanced=self.advanced.checkState() != 0,

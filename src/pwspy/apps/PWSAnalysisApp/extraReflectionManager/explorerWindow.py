@@ -124,9 +124,8 @@ class ExplorerWindow(QDialog):
         self.setSelection(self._items[rowIndex].idTag)
         super().accept()
 
-    @property
-    def selection(self):
-        return self.manager.getMetadataFromId(self._selectedId)
+    def getSelectedId(self):
+        return self._selectedId
 
     def setSelection(self, idTag: str):
         md = self.manager.getMetadataFromId(idTag)

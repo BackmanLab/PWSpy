@@ -35,8 +35,6 @@ class AnalysisManager(QtCore.QObject):
         super().__init__()
         self.app = app
 
-
-
     def runList(self):
         for anName, anSettings, cellMetas, refMeta, camCorrection in self.app.window.analysisSettings.getListedAnalyses():
             self.runSingle(anName, anSettings, cellMetas, refMeta, camCorrection)
@@ -66,8 +64,11 @@ class AnalysisManager(QtCore.QObject):
             else:
                 print("Using automatically detected camera corrections")
                 ref.correctCameraEffects(ref.metadata.cameraCorrection)
-            erMeta = self.app.ERManager.getMetadataFromId(anSettings.extraReflectanceId)
-            erCube = ExtraReflectanceCube.fromMetadata(erMeta)
+            if anSettings.extraReflectanceId == "Ignore":
+                erCube = None
+            else:
+                erMeta = self.app.ERManager.getMetadataFromId(anSettings.extraReflectanceId)
+                erCube = ExtraReflectanceCube.fromMetadata(erMeta)
             analysis = Analysis(anSettings, ref, erCube)
             warnings = loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[analysis, anName, cameraCorrection],
                                       parallel=True, passLock=True) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
