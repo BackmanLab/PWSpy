@@ -11,7 +11,7 @@ from pwspy.apps.PWSAnalysisApp.dockWidgets.PlottingDock.bigPlot import BigPlot
 from pwspy.imCube import ImCube
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 from pwspy.utility import PlotNd
-
+import os
 
 class AspectRatioWidget(QWidget):
     def __init__(self, aspect: float, parent: QWidget = None):
@@ -87,17 +87,23 @@ class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
             anPlotAction = QAction("Plot3d Analyzed Reflectance", self)
             anPlotAction.triggered.connect(self.plotAn3d)
             menu.addAction(anPlotAction)
+            if 'opd' in self.analysis.file.keys():
+                opdAction = QAction("Plot3d OPD", self)
+                opdAction.triggered.connect(self.plotOpd3d)
+                menu.addAction(opdAction)
         rawPlotAction = QAction("Plot3d Raw Data", self)
         rawPlotAction.triggered.connect(self.plotRaw3d)
         menu.addAction(rawPlotAction)
         menu.exec(self.mapToGlobal(point))
 
     def plotAn3d(self):
-        self.plotnd = PlotNd(self.analysis.reflectance.data)
+        self.plotnd = PlotNd(self.analysis.reflectance.data, title=os.path.split(self.metadata.filePath)[-1])
 
     def plotRaw3d(self):
-        self.plotnd = PlotNd(ImCube.fromMetadata(self.metadata).data)
+        self.plotnd = PlotNd(ImCube.fromMetadata(self.metadata).data, title=os.path.split(self.metadata.filePath)[-1])
 
+    def plotOpd3d(self):
+        self.plotnd = PlotNd(self.analysis.opd, names = ('y', 'x', 'k'), title=os.path.split(self.metadata.filePath)[-1])
 
 
 if __name__ == '__main__':

@@ -95,7 +95,7 @@ class CBar:
 
 
 class PlotNd(object):
-    """A class to conveniently view 3d or greater data."""
+    """A class to conveniently view 3d or greater data.""" #TODO allow Z to be provided an index. Invert Y axis
     def __init__(self, X: np.ndarray, names=('y', 'x', 'lambda'), initialCoords=None, title=''):
         self.max = self.min = None
         fig = plt.figure(figsize=(6, 6))
@@ -200,6 +200,7 @@ class PlotNd(object):
         for sp in self.extra:
             sp.setRange(self.min, self.max)
         self.cbar.draw()
+        self.fig.canvas.draw_idle()
 
     def resetColor(self):
         self.max = np.percentile(self.X[np.logical_not(np.isnan(self.X))], 99.99)
