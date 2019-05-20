@@ -10,7 +10,7 @@ import copy
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.lines import Line2D
-from matplotlib.patches import Patch, Polygon, Ellipse, Circle
+from matplotlib.patches import Patch, Polygon, Ellipse, Rectangle
 from matplotlib.widgets import AxesWidget
 from scipy import interpolate
 from shapely.geometry import LinearRing, Polygon as shapelyPolygon
@@ -334,45 +334,47 @@ class MyEllipse(MySelectorWidget):
                     self.onselect(verts, handles)
 
 class MyPoint(MySelectorWidget):
-    def __init__(self, axMan: AxManager, onselect = None, radius: int = 3):
+    def __init__(self, axMan: AxManager, onselect = None, side: int = 3):
         super().__init__(axMan)
         self.onselect = onselect
-        self.radius = radius
-        self.patch = Circle((0, 0), facecolor=(1, 0, 0, 0.5), animated=True, radius=self.radius)
+        self.side = side
+        self.patch = Rectangle((0, 0), 1, 1, facecolor=(1, 0, 0, 0.5), animated=True)
         self.patch.set_visible(False)
-        self.ghostPatch = Circle((0, 0), facecolor=(1, 0, 0, 0.2), animated=True, radius=self.radius)
+        self.ghostPatch = Rectangle((0, 0), 1, 1, facecolor=(1, 0, 0, 0.2), animated=True)
+        self.ghostPatch.set_width(self.side)
+        self.ghostPatch.set_height(self.side)                                  
         self.addArtist(self.patch)
         self.addArtist(self.ghostPatch)
 
     def _onhover(self, event):
-        self.ghostPatch.set_center((event.xdata, event.ydata))
+        self.ghostPatch.set_xy((event.xdata - self.side / 2, event.ydata - self.side / 2))
         self.axMan.update()
 
     def _press(self, event):
         if event.button != 1:
             return
-        self.point = [event.xdata, event.ydata]
-        self.patch.set_center(self.point)
-        self.patch.set_radius(self.radius)
+        self.point = [event.xdata - self.side / 2, event.ydata - self.side / 2]
+        self.patch.set_xy(self.point)
+        self.patch.set_width(self.side)
+        self.patch.set_height(self.side)
         self.patch.set_visible(True)
         if self.onselect:
-            angle = np.linspace(0, 2 * np.pi, num=100)
-            x = self.patch.radius * np.cos(angle)  # unrotated ellipse centered at origin
-            y = self.patch.radius * np.sin(angle)
-            x += self.patch.center[0]  # translate ellipse
-            y += self.patch.center[1]
+            x, y = self.patch.get_xy()
+            x = [x, x, x + self.side, x + self.side]
+            y = [y, y + self.side, y + self.side, y]
             verts = list(zip(x, y))
-            handles = [verts[0], verts[len(verts) // 4], verts[len(verts) // 2], verts[3 * len(verts) // 4], verts[0]]
+            handles = verts
             self.onselect(verts, handles)
 
     def _on_scroll(self, event):
         delta = event.step
         # if event.button == 'down':
         #     delta = -delta
-        self.radius += delta
-        if self.radius < 0:
-            self.radius = 0
-        self.ghostPatch.set_radius(self.radius)
+        self.side += delta
+        if self.side < 1:
+            self.side = 1
+        self.ghostPatch.set_width(self.side)
+        self.ghostPatch.set_height(self.side)
         self.axMan.update()
 
 

@@ -94,7 +94,7 @@ class ICBase:
             fig.canvas.flush_events()
         return verts[0]
 
-    def selectPointROI(self, radius: int = 1, displayIndex: int = None):
+    def selectPointROI(self, side: int = 3, displayIndex: int = None):
         verts = [None]
         if displayIndex is None:
            displayIndex = self.data.shape[2]//2
@@ -102,14 +102,13 @@ class ICBase:
         ax.imshow(self.data[:, :, displayIndex])
         fig.suptitle("Close to accept ROI")
         def select(Verts, handles):
-            print('s', Verts)
             verts[0] = Verts
         axMan = AxManager(ax)
-        sel = MyPoint(axMan, onselect=select, radius=radius)
+        sel = MyPoint(axMan, onselect=select, side=side)
         sel.set_active(True)
         while plt.fignum_exists(fig.number):
             fig.canvas.flush_events()
-        return verts[0]
+        return np.array(verts[0])
 
     def __getitem__(self, slic):
         return self.data[slic]
