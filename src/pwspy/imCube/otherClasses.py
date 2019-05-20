@@ -108,13 +108,16 @@ class Roi:
             except OSError: #For backwards compatibility purposes
                 return Roi.fromMat(directory, name, number)
 
-    def toHDF(self, directory):
+    def toHDF(self, directory, overwrite: bool = False):
         assert self.dataAreVerts is False
         savePath = os.path.join(directory, f'roi_{self.name}.h5')
         with h5py.File(savePath, 'a') as hf:
             if np.string_(str(self.number)) in hf.keys():
-                raise Exception(f"The Roi file {savePath} already contains a dataset {self.number}")
-            hf.create_dataset(np.string_(str(self.number)), data=self._data.astype(np.uint8))
+                if overwrite:
+                    del hf[np.string_(str(self.number))]
+                else:
+                    raise Exception(f"The Roi file {savePath} already contains a dataset {self.number}")
+            hf.create_dataset(np.string_(str(self.number)), data=self._data.astype(np.uint8), compression=5)
 
     def toHDFOutline(self, directory: str, overwrite: bool = False):
         assert self.dataAreVerts is True
@@ -123,7 +126,6 @@ class Roi:
             if np.string_(str(self.number)) in hf.keys():
                 if overwrite:
                     del hf[np.string_(str(self.number))]
-
                 else:
                     raise OSError(f"The Roi file {savePath} already contains a dataset {self.number}")
             g = hf.create_group(np.string_(str(self.number)))

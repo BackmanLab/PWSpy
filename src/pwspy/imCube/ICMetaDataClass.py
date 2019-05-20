@@ -213,7 +213,7 @@ class ICMetaData:
         if roi.dataAreVerts:
             roi.toHDFOutline(self.filePath, overwrite=overwrite)
         else:
-            raise TypeError("Only `outline` ROI's are supported.")
+            roi.toHDF(self.filePath, overwrite=overwrite)
 
     def deleteRoi(self, name: str, num: int):
         Roi.deleteRoi(self.filePath, name, num)
