@@ -39,7 +39,7 @@ class KCube(ICBase):
     def wavenumbers(self):
         return self.index
 
-    def getOpd(self, isHannWindow, indexOpdStop=None, mask=None):
+    def getOpd(self, isHannWindow: bool, indexOpdStop: int = None, mask=None):
         fftSize = int(2 ** (np.ceil(np.log2((2 * len(
             self.wavenumbers)) - 1))))  # %This is the next size of fft that is  at least 2x greater than is needed but is a power of two. Results in interpolation, helps amplitude accuracy and fft efficiency.
         fftSize *= 2  # We double the fftsize for even more iterpolation. Not sure why, but that's how it was done in matlab.

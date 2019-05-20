@@ -14,7 +14,7 @@ from pwspy.analysis import warnings
 from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
 from pwspy.utility import reflectanceHelper
 from pwspy.moduleConsts import Material
-from . import AnalysisSettings, AnalysisResults
+from . import AnalysisSettings, AnalysisResultsSaver
 import pandas as pd
 
 
@@ -25,23 +25,21 @@ class AbstractAnalysis(ABC):
         self.settings = settings
 
     @abstractmethod
-    def run(self, cube) -> AnalysisResults:
-        """Given an ImCube to analyze this function returns an instanse of AnalysisResults. In the PWSAnalysisApp this function is run in parallel by the AnalysisManager."""
+    def run(self, cube) -> AnalysisResultsSaver:
+        """Given an ImCube to analyze this function returns an instanse of AnalysisResultsSaver. In the PWSAnalysisApp this function is run in parallel by the AnalysisManager."""
         pass
 
 
 class LegacyAnalysis(AbstractAnalysis):
     """An analysis without Extra reflection subtraction."""
-    indexOpdStop = 100
-
     def __init__(self, settings: AnalysisSettings, ref: ImCube):
         assert ref.isCorrected()
         super().__init__(settings)
         ref.normalizeByExposure()
         self.ref = ref
 
-    def run(self, cube: ImCube) -> Tuple[AnalysisResults, List[warnings.AnalysisWarning]]:
-        assert cube.isCorrected()
+    def run(self, cube: ImCube) -> Tuple[AnalysisResultsSaver, List[warnings.AnalysisWarning]]:
+        assert cube.isCorrected() #TODO make it so we can save to harddrive and delete from memory as we go.
         warns = []
         cube = self._normalizeImCube(cube)
         interval = (max(cube.wavelengths) - min(cube.wavelengths)) / (len(cube.wavelengths) - 1)# Wavelength interval. We are assuming equally spaced wavelengths here
@@ -51,6 +49,7 @@ class LegacyAnalysis(AbstractAnalysis):
         # Determine the mean-reflectance for each pixel in the cell.
         reflectance = cube.data.mean(axis=2)
         warns.append(warnings.checkMeanReflectance(reflectance))
+        #TODO save and delete refelectance here
         cube = KCube.fromImCube(cube)  # -- Convert to K-Space
         cubePoly = self._fitPolynomial(cube)
         # Remove the polynomial fit from filtered cubeCell.
@@ -59,28 +58,26 @@ class LegacyAnalysis(AbstractAnalysis):
         # -- RMS
         # Obtain the RMS of each signal in the cube.
         rms = cube.data.std(axis=2)
-
+        #TODO save and delete RMS here.
         if not self.settings.skipAdvanced:
             # RMS - POLYFIT
             # The RMS should be calculated on the mean-subtracted polyfit. This may
             # also be accomplished by calculating the standard-deviation.
             rmsPoly = cubePoly.std(axis=2)
+            #TODO Save and delete cubePoly Here
 
             slope, rSquared = cube.getAutoCorrelation(self.settings.autoCorrMinSub, self.settings.autoCorrStopIndex)
-            opd, xvalOpd = cube.getOpd(self.settings.useHannWindow, self.indexOpdStop)
             ld = self._calculateLd(rms, slope)
         else:
-            rmsPoly = slope = rSquared = opd = xvalOpd = ld = None
+            rmsPoly = slope = rSquared = ld = None
 
-        results = AnalysisResults(
+        results = AnalysisResultsSaver(
             meanReflectance=reflectance,
             reflectance=cube,
             rms=rms,
             polynomialRms=rmsPoly,
             autoCorrelationSlope=slope,
             rSquared=rSquared,
-            opd=opd,
-            opdIndex=xvalOpd,
             ld=ld,
             settings=self.settings,
             imCubeIdTag=cube.metadata.idTag,
@@ -147,7 +144,7 @@ class Analysis(LegacyAnalysis):
         self.ref = ref
         self.extraReflection = Iextra
 
-    def run(self, cube: ImCube) -> Tuple[AnalysisResults, List[warnings.AnalysisWarning]]: #TODO this uses tons of memory
+    def run(self, cube: ImCube) -> Tuple[AnalysisResultsSaver, List[warnings.AnalysisWarning]]: #TODO this uses tons of memory
         results, warns = super().run(cube)
         results.extraReflectionTag = self.extraReflection.metadata.idTag
         return results, warns

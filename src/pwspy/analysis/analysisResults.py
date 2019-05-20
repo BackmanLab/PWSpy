@@ -1,6 +1,6 @@
 from __future__ import annotations
 import dataclasses
-from typing import Optional
+from typing import Optional, Tuple
 
 import h5py
 import numpy as np
@@ -58,12 +58,7 @@ class AbstractAnalysisResults(ABC):
 
     @property
     @abstractmethod
-    def opd(self) -> np.ndarray:
-        pass
-
-    @property
-    @abstractmethod
-    def opdIndex(self) -> np.ndarray:
+    def opd(self) -> Tuple[np.ndarray, np.ndarray]:
         pass
 
     @property
@@ -96,7 +91,7 @@ class AbstractAnalysisResults(ABC):
 
 
 @dataclasses.dataclass
-class AnalysisResults: #TODO this should inherit from abstract class but it doesn't work easily
+class AnalysisResultsSaver: #TODO this should inherit from abstract class but it doesn't work easily
     """A saveable object to hold the results of an analysis. Also stored the creation time of the analysis."""
     settings: AnalysisSettings
     reflectance: KCube
@@ -106,8 +101,6 @@ class AnalysisResults: #TODO this should inherit from abstract class but it does
     autoCorrelationSlope: np.ndarray
     rSquared: np.ndarray
     ld: np.ndarray
-    opd: np.ndarray
-    opdIndex: np.ndarray
     imCubeIdTag: str
     referenceIdTag: str
     extraReflectionTag: Optional[str]
@@ -149,7 +142,6 @@ def clearError(func):
 
 class AnalysisResultsLoader(AbstractAnalysisResults):
     """A read-only loader for analysis results that will only load them from hard disk as needed."""
-    #TODO constantly opening and closing the file is probably slowing us down.
     def __init__(self, directory: str, name: str):
         self.filePath = osp.join(directory, self.name2FileName(name))
         self.analysisName = name
@@ -225,15 +217,12 @@ class AnalysisResultsLoader(AbstractAnalysisResults):
 
     @cached_property
     @clearError
-    def opd(self) -> np.ndarray:
-        dset = self.file['opd']
-        return np.array(dset)
-
-    @cached_property
-    @clearError
-    def opdIndex(self) -> np.ndarray:
-        dset = self.file['opdIndex']
-        return np.array(dset)
+    def opd(self) -> Tuple[np.ndarray, np.ndarray]:
+        from pwspy.imCube import KCube
+        dset = self.file['reflectance']
+        cube = KCube.fromHdfDataset(dset)
+        opd, opdIndex = cube.getOpd(isHannWindow=True, indexOpdStop=100)
+        return opd, opdIndex
 
     @cached_property
     @clearError

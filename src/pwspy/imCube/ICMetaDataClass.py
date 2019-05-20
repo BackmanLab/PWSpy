@@ -21,7 +21,7 @@ import tifffile as tf
 from pwspy.moduleConsts import dateTimeFormat
 from pwspy.utility.misc import cached_property
 if typing.TYPE_CHECKING:
-    from pwspy.analysis import AnalysisResults
+    from pwspy.analysis import AnalysisResultsSaver
     import multiprocessing as mp
 from pwspy.imCube.otherClasses import Roi, RoiFileFormats
 from .otherClasses import CameraCorrection
@@ -233,7 +233,7 @@ class ICMetaData:
             # print(f"ImCube at {path} has no `analyses` folder.")
             return []
 
-    def saveAnalysis(self, analysis: AnalysisResults, name:str):
+    def saveAnalysis(self, analysis: AnalysisResultsSaver, name:str):
         path = os.path.join(self.filePath, 'analyses')
         if not os.path.exists(path):
             os.mkdir(path)

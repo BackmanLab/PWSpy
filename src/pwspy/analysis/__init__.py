@@ -6,7 +6,7 @@ Created on Tue Feb 12 21:44:31 2019
 """
 import os
 
-from .analysisResults import AnalysisResults
+from .analysisResults import AnalysisResultsSaver
 from .analysisSettings import AnalysisSettings
 
 # TODO add Dynamics analysis and DynCube

@@ -172,13 +172,11 @@ class SettingsFrame(QScrollArea):
         self.advanced.stateChanged.connect(self._updateSize)
         self.autoCorrStopIndex = QSpinBox()
         self.minSubCheckBox = QCheckBox("MinSub")
-        self.hannWindowCheckBox = QCheckBox("Hanning Window")
         layout = QGridLayout()
         _ = layout.addWidget
         _(QLabel("AutoCorr Stop Index"), 0, 0, 1, 1)
         _(self.autoCorrStopIndex, 0, 1, 1, 1)
         _(self.minSubCheckBox, 1, 0, 1, 1)
-        _(self.hannWindowCheckBox, 1, 1, 1, 1)
         self.advanced.setLayout(layout)
         self._layout.addWidget(self.advanced, row, 0, 1, 4)
         row += 1
@@ -215,7 +213,6 @@ class SettingsFrame(QScrollArea):
         self.advanced.setCheckState(2 if settings.skipAdvanced else 0)
         self.autoCorrStopIndex.setValue(settings.autoCorrStopIndex)
         self.minSubCheckBox.setCheckState(2 if settings.autoCorrMinSub else 0)
-        self.hannWindowCheckBox.setCheckState(2 if settings.useHannWindow else 0)
 
     def loadCameraCorrection(self, camCorr: Optional[CameraCorrection] = None):
         if camCorr is None: #Automatic camera corrections
@@ -246,7 +243,6 @@ class SettingsFrame(QScrollArea):
                                  wavelengthStart=self.wavelengthStart.value(),
                                  wavelengthStop=self.wavelengthStop.value(),
                                  skipAdvanced=self.advanced.checkState() != 0,
-                                 useHannWindow=self.hannWindowCheckBox.checkState() != 0,
                                  autoCorrMinSub=self.minSubCheckBox.checkState() != 0,
                                  autoCorrStopIndex=self.autoCorrStopIndex.value())
 

@@ -9,7 +9,7 @@ import copy
 import scipy.signal as sps
 import numpy as np
 
-from pwspy.analysis import AnalysisResults
+from pwspy.analysis import AnalysisResultsSaver
 
 
 def analyzeCube(cubeCell: ImCube, darkCount: int, mirror: ImCube, orderFilter: int,
@@ -86,7 +86,7 @@ def analyzeCube(cubeCell: ImCube, darkCount: int, mirror: ImCube, orderFilter: i
     A2 = 4
     ld = ((A2 / A1) * fact) * (rms / (-1 * slope.reshape(rms.shape)))
     ## Outputs
-    results = AnalysisResults(
+    results = AnalysisResultsSaver(
         reflectance=reflectance,
         rms=rms,
         polynomialRms=rmsPoly,
