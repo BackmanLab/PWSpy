@@ -17,6 +17,7 @@ from matplotlib import widgets
 from matplotlib import path
 import typing, numbers
 from matplotlib import animation
+from pwspy.utility.matplotlibwidg import AxManager, MyPoint
 
 from pwspy.imCube.otherClasses import Roi
 from matplotlib import patches
@@ -58,42 +59,57 @@ class ICBase:
 
     def selectLassoROI(self, displayIndex=None):
         # display index is used to display a particular z-slice for mask drawing. If None then the mean along Z is displayed.
-        Verts = None
+        Verts = [None]
         if displayIndex is None:
-            fig, ax = self.plotMean()
-        else:
-            fig, ax = plt.subplots()
-            ax.imshow(self.data[:, :, displayIndex])
+            displayIndex = self.data.shape[2]//2
+        fig, ax = plt.subplots()
+        ax.imshow(self.data[:, :, displayIndex])
         fig.suptitle("Close to accept ROI")
 
         def onSelect(verts):
-            Verts = verts
+            Verts[0] = verts
 
         l = widgets.LassoSelector(ax, onSelect, lineprops={'color': 'r'})
         while plt.fignum_exists(fig.number):
             fig.canvas.flush_events()
-        return Verts
+        return Verts[0]
 
     def selectRectangleROI(self, displayIndex=None):
         # display index is used to display a particular z-slice for mask drawing. If None then the mean along Z is displayed.
         # X and Y slice allow manual selection of the range.
-        verts = None
+        verts = [None]
 
         if displayIndex is None:
-            fig, ax = self.plotMean()
-        else:
-            fig, ax = plt.subplots()
-            ax.imshow(self.data[:, :, displayIndex])
+           displayIndex = self.data.shape[2]//2
+        fig, ax = plt.subplots()
+        ax.imshow(self.data[:, :, displayIndex])
         fig.suptitle("Close to accept ROI")
 
         def rectSelect(mins, maxes):
-            verts = ((mins.ydata, mins.xdata), (maxes.ydata, mins.xdata), (maxes.ydata, maxes.xdata), (mins.ydata, maxes.xdata))
+            verts[0] = ((mins.ydata, mins.xdata), (maxes.ydata, mins.xdata), (maxes.ydata, maxes.xdata), (mins.ydata, maxes.xdata))
 
         r = widgets.RectangleSelector(ax, rectSelect)
 
         while plt.fignum_exists(fig.number):
             fig.canvas.flush_events()
-        return verts
+        return verts[0]
+
+    def selectPointROI(self, radius: int = 1, displayIndex: int = None):
+        verts = [None]
+        if displayIndex is None:
+           displayIndex = self.data.shape[2]//2
+        fig, ax = plt.subplots()
+        ax.imshow(self.data[:, :, displayIndex])
+        fig.suptitle("Close to accept ROI")
+        def select(Verts, handles):
+            print('s', Verts)
+            verts[0] = Verts
+        axMan = AxManager(ax)
+        sel = MyPoint(axMan, onselect=select, radius=radius)
+        sel.set_active(True)
+        while plt.fignum_exists(fig.number):
+            fig.canvas.flush_events()
+        return verts[0]
 
     def __getitem__(self, slic):
         return self.data[slic]
