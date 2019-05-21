@@ -24,7 +24,6 @@ from shapely import geometry
 
 class RoiFileFormats(Enum):
     HDF = auto()
-    HDFOutline = auto()
     MAT = auto()
     HDF2 = auto()
 
@@ -97,16 +96,6 @@ class Roi:
                        fileFormat=RoiFileFormats.HDF)
 
     @classmethod
-    def fromHDFOutline(cls, directory: str, name: str, number: int):
-        path = os.path.join(directory, f'roiV_{name}.h5')
-        if not os.path.exists(path):
-            raise OSError(f"File {path} does not exist.")
-        with h5py.File(path, 'r') as hf:
-            data = np.array(hf[str(number)]['verts'])
-            shape = tuple(hf[str(number)]['dataShape'])
-            return cls.fromVerts(name, number, data, shape, path, RoiFileFormats.HDFOutline)
-
-    @classmethod
     def fromMat(cls, directory: str, name: str, number: int):
         filePath = os.path.join(directory, f'BW{number}_{name}.mat')
         return cls(name, number, mask=spio.loadmat(filePath)['BW'].astype(np.bool), verts=None, filePath=filePath, fileFormat=RoiFileFormats.MAT)
@@ -117,12 +106,9 @@ class Roi:
             return Roi.fromHDF2(directory, name, number)
         except:
             try:
-                return Roi.fromHDFOutline(directory, name, number)
-            except:
-                try:
-                    return Roi.fromHDF(directory, name, number)
-                except OSError: #For backwards compatibility purposes
-                    return Roi.fromMat(directory, name, number)
+                return Roi.fromHDF(directory, name, number)
+            except OSError: #For backwards compatibility purposes
+                return Roi.fromMat(directory, name, number)
 
     def toHDF(self, directory: str, overwrite: bool = False):
         savePath = os.path.join(directory, f'ROI_{self.name}.h5')
@@ -152,7 +138,7 @@ class Roi:
 
     @staticmethod
     def getValidRoisInPath(path: str) -> List[Tuple[str, int, RoiFileFormats]]:
-        patterns = [('BW*_*.mat', RoiFileFormats.MAT), ('roi_*.h5', RoiFileFormats.HDF), ('roiV_*.h5', RoiFileFormats.HDFOutline)]
+        patterns = [('BW*_*.mat', RoiFileFormats.MAT), ('roi_*.h5', RoiFileFormats.HDF)]
         files = {fformat: glob(os.path.join(path, p)) for p, fformat in patterns} #Lists of the found files keyed by file format
         ret = []
         for fformat, fileNames in files.items():
@@ -173,16 +159,6 @@ class Roi:
                                 name = i.split('roi_')[-1][:-3]
                                 try:
                                     ret.append((name, int(g), RoiFileFormats.HDF))
-                                except ValueError:
-                                    print(f"Warning: File {i} contains uninterpretable dataset named {g}")
-            elif fformat == RoiFileFormats.HDFOutline:
-                for i in fileNames:
-                    name = i.split('roiV_')[-1][:-3]
-                    with h5py.File(i) as hf:
-                        for g in hf.keys():
-                            if 'verts' in hf[g]:
-                                try:
-                                    ret.append((name, int(g), RoiFileFormats.HDFOutline))
                                 except ValueError:
                                     print(f"Warning: File {i} contains uninterpretable dataset named {g}")
 
