@@ -88,7 +88,9 @@ class Roi:
         if not os.path.exists(path):
             raise OSError(f"File {path} does not exist.")
         with h5py.File(path, 'r') as hf:
-            return cls(name, number, data=np.array(hf[str(number)]['verts']), dataAreVerts=True, dataShape=tuple(hf[str(number)]['dataShape']), filePath=path, fileFormat=RoiFileFormats.HDFOutline)
+            data = np.array(hf[str(number)]['verts'])
+            shape = tuple(hf[str(number)]['dataShape'])
+            return cls(name, number, data=data, dataAreVerts=True, dataShape=shape, filePath=path, fileFormat=RoiFileFormats.HDFOutline)
 
     @classmethod
     def fromMat(cls, directory: str, name: str, number: int):
@@ -118,6 +120,8 @@ class Roi:
                 else:
                     raise Exception(f"The Roi file {savePath} already contains a dataset {self.number}")
             hf.create_dataset(np.string_(str(self.number)), data=self._data.astype(np.uint8), compression=5)
+        self.fileFormat = RoiFileFormats.HDF
+        self.filePath = savePath
 
     def toHDFOutline(self, directory: str, overwrite: bool = False):
         assert self.dataAreVerts is True
@@ -131,6 +135,8 @@ class Roi:
             g = hf.create_group(np.string_(str(self.number)))
             g.create_dataset(np.string_("verts"), data=self._data.astype(np.float32))
             g.create_dataset(np.string_('dataShape'), data=self.dataShape)
+        self.filePath = savePath
+        self.fileFormat = RoiFileFormats.HDFOutline
 
     # def deleteFile(self): #this sort of functionality has been moved to ICMetadata
     #     if self.filePath is None:
