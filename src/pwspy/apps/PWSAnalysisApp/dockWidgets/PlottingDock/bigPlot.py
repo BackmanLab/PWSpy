@@ -2,7 +2,7 @@ import re
 
 import numpy as np
 from PyQt5 import QtCore
-from PyQt5.QtGui import QCursor
+from PyQt5.QtGui import QCursor, QValidator
 from PyQt5.QtWidgets import QWidget, QDialog, QVBoxLayout, QDoubleSpinBox, QPushButton, QLabel, QGridLayout, QComboBox, \
     QAction, QMenu
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationToolbar
@@ -44,6 +44,7 @@ class BigPlot(QWidget):
         self.manualRangeButton.released.connect(self.rangeDlg.show)
         self.roiFilter = QComboBox(self)
         self.roiFilter.setEditable(True)
+        self.roiFilter.setValidator(WhiteSpaceValidator())
 
         self.cmapCombo = QComboBox(self)
         self.cmapCombo.addItems(['gray', 'jet', 'plasma', 'Reds'])
@@ -248,3 +249,21 @@ class RangeDialog(QDialog):
 
     @property
     def maximum(self): return self.maxBox.value()
+
+
+class WhiteSpaceValidator(QValidator):
+    stateChanged = QtCore.pyqtSignal(QValidator.State)
+
+    def __init__(self):
+        super().__init__()
+        self.state = QValidator.Acceptable
+
+    def validate(self, inp: str, pos: int):
+        oldState = self.state
+        inp = self.fixup(inp)
+        self.state = QValidator.Acceptable
+        if self.state != oldState: self.stateChanged.emit(self.state)
+        return self.state, inp, pos
+
+    def fixup(self, a0: str) -> str:
+        return a0.strip()
