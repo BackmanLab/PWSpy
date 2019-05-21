@@ -118,7 +118,7 @@ class Roi:
                 if overwrite:
                     del hf[np.string_(str(self.number))]
                 else:
-                    raise Exception(f"The Roi file {savePath} already contains a dataset {self.number}")
+                    raise OSError(f"The Roi file {savePath} already contains a dataset {self.number}")
             hf.create_dataset(np.string_(str(self.number)), data=self._data.astype(np.uint8), compression=5)
         self.fileFormat = RoiFileFormats.HDF
         self.filePath = savePath

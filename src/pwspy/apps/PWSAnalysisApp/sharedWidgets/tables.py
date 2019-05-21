@@ -18,7 +18,7 @@ class CopyableTable(QTableWidget):
         else:
             super().keyPressEvent(event)
 
-    def copy(self):
+    def copy(self): #TODO this copies stuff that isn't visible
         try:
             sel = self.selectedRanges()[0]
             t = '\t'.join(
