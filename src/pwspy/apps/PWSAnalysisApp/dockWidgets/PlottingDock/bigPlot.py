@@ -153,7 +153,7 @@ class BigPlot(QWidget):
         pattern = self.roiFilter.currentText()
         self.clearRois()
         for name, num, fformat in self.metadata.getRois():
-            if re.match(pattern, name):
+            if re.fullmatch(pattern, name):
                 self.addRoi(self.metadata.loadRoi(name, num, fformat))
         self.canvas.draw_idle()
 

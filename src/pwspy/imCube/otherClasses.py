@@ -152,19 +152,29 @@ class Roi:
 
     @staticmethod
     def getValidRoisInPath(path: str) -> List[Tuple[str, int, RoiFileFormats]]:
-        patterns = [('BW*_*.mat', RoiFileFormats.MAT), ('roi_*.h5', RoiFileFormats.HDF), ('roiV_*.h5', RoiFileFormats.HDFOutline), ("ROI_*.h5", RoiFileFormats.HDF2)]
+        patterns = [('BW*_*.mat', RoiFileFormats.MAT), ('roi_*.h5', RoiFileFormats.HDF), ('roiV_*.h5', RoiFileFormats.HDFOutline)]
         files = {fformat: glob(os.path.join(path, p)) for p, fformat in patterns} #Lists of the found files keyed by file format
         ret = []
         for fformat, fileNames in files.items():
             if fformat == RoiFileFormats.HDF:
                 for i in fileNames:
-                    name = i.split('roi_')[-1][:-3]
                     with h5py.File(i) as hf:
-                        for dset in hf.keys():
-                            try:
-                                ret.append((name, int(dset), RoiFileFormats.HDF))
-                            except ValueError:
-                                print(f"Warning: File {i} contains uninterpretable dataset named {dset}")
+                        for g in hf.keys():
+                            if isinstance(hf[g], h5py.Group): #Current file format
+                                if 'mask' in hf[g] and 'verts' in hf[g]:
+                                    name = i.split("ROI_")[-1][:-3]
+                                    try:
+                                        ret.append((name, int(g), RoiFileFormats.HDF2))
+                                    except ValueError:
+                                        print(f"Warning: File {i} contains uninterpretable dataset named {g}")
+                                else:
+                                    raise ValueError("File is missing datasets")
+                            elif isinstance(hf[g], h5py.Dataset): #Legacy format
+                                name = i.split('roi_')[-1][:-3]
+                                try:
+                                    ret.append((name, int(g), RoiFileFormats.HDF))
+                                except ValueError:
+                                    print(f"Warning: File {i} contains uninterpretable dataset named {g}")
             elif fformat == RoiFileFormats.HDFOutline:
                 for i in fileNames:
                     name = i.split('roiV_')[-1][:-3]
@@ -174,7 +184,7 @@ class Roi:
                                 try:
                                     ret.append((name, int(g), RoiFileFormats.HDFOutline))
                                 except ValueError:
-                                    print(f"Warning: File {i} contains uninterpretable dataset named {dset}")
+                                    print(f"Warning: File {i} contains uninterpretable dataset named {g}")
 
             elif fformat == RoiFileFormats.MAT:
                 for i in fileNames: #list in files
@@ -182,17 +192,6 @@ class Roi:
                     num = int(i.split('_')[0][2:])
                     name = i.split('_')[1][:-4]
                     ret.append((name, num, RoiFileFormats.MAT))
-            elif fformat == RoiFileFormats.HDF2:
-                for i in fileNames:
-                    name = i.split("ROI_")[-1][:-3]
-                    with h5py.File(i) as hf:
-                        for g in hf.keys():
-                            if isinstance(hf[g], h5py.Group):
-                                if 'mask' in hf[g] and 'verts' in hf[g]:
-                                    try:
-                                        ret.append((name, int(g), RoiFileFormats.HDF2))
-                                    except ValueError:
-                                        print(f"Warning: File {i} contains uninterpretable dataset named {dset}")
         return ret
 
     def transform(self, matrix: np.ndarray) -> Roi:
@@ -211,7 +210,7 @@ class Roi:
         return im
 
     def getBoundingPolygon(self):
-        if not self.verts: # calculate convex hull
+        if self.verts is None: # calculate convex hull
             x = np.arange(self.mask.shape[1])
             y = np.arange(self.mask.shape[0])
             X, Y = np.meshgrid(x, y)
