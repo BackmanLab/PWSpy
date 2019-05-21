@@ -210,10 +210,7 @@ class ICMetaData:
             return Roi.loadAny(self.filePath, name, num)
 
     def saveRoi(self, roi: Roi, overwrite: bool = False) -> None:
-        if roi.dataAreVerts:
-            roi.toHDFOutline(self.filePath, overwrite=overwrite)
-        else:
-            roi.toHDF(self.filePath, overwrite=overwrite)
+        roi.toHDF(self.filePath, overwrite=overwrite)
 
     def deleteRoi(self, name: str, num: int):
         Roi.deleteRoi(self.filePath, name, num)

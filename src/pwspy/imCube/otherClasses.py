@@ -187,11 +187,12 @@ class Roi:
                     name = i.split("ROI_")[-1][:-3]
                     with h5py.File(i) as hf:
                         for g in hf.keys():
-                            if 'mask' in hf[g] and 'verts' in hf[g]:
-                                try:
-                                    ret.append((name, int(g), RoiFileFormats.HDF2))
-                                except ValueError:
-                                    print(f"Warning: File {i} contains uninterpretable dataset named {dset}")
+                            if isinstance(hf[g], h5py.Group):
+                                if 'mask' in hf[g] and 'verts' in hf[g]:
+                                    try:
+                                        ret.append((name, int(g), RoiFileFormats.HDF2))
+                                    except ValueError:
+                                        print(f"Warning: File {i} contains uninterpretable dataset named {dset}")
         return ret
 
     def transform(self, matrix: np.ndarray) -> Roi:

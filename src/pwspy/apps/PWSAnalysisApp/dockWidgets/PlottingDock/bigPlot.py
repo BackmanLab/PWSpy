@@ -165,7 +165,7 @@ class BigPlot(QWidget):
         self._rois = []
 
     def addRoi(self, roi: Roi):
-        if roi.dataAreVerts:
+        if roi.verts is not None:
             poly = roi.getBoundingPolygon()
             poly.set_picker(0) # allow the polygon to trigger a pickevent
             self.ax.add_patch(poly)
