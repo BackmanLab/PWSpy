@@ -261,12 +261,13 @@ class MyLasso(MySelectorWidget):
         self.set_visible(True)
 
     def _release(self, event):
-        if (self.verts is not None) and (self.onselect is not None):
-            l = shapelyPolygon(LinearRing(self.verts))
-            l = l.buffer(0)
-            l = l.simplify(l.length / 2e2, preserve_topology=False)
-            handles = l.exterior.coords
-            self.onselect(self.verts, handles)
+        if event.button == 1: #Left click
+            if (self.verts is not None) and (self.onselect is not None):
+                l = shapelyPolygon(LinearRing(self.verts))
+                l = l.buffer(0)
+                l = l.simplify(l.length / 2e2, preserve_topology=False)
+                handles = l.exterior.coords
+                self.onselect(self.verts, handles)
 
     def _ondrag(self, event):
         if self.verts is None:

@@ -5,7 +5,7 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QWidget, QGridLayout, QButtonGroup, QPushButton, QDialog, QLineEdit, QSpinBox, QLabel, \
     QMessageBox
 from matplotlib import patches
-
+import os
 from pwspy.analysis.analysisResults import AnalysisResultsLoader
 from pwspy.apps.PWSAnalysisApp.dockWidgets.PlottingDock.bigPlot import BigPlot
 from pwspy.imCube import ICMetaData
@@ -13,7 +13,7 @@ from pwspy.imCube.otherClasses import Roi
 from pwspy.utility.matplotlibwidg import AdjustableSelector, MyLasso, MyEllipse
 
 
-class RoiDrawer(QWidget): #TODO display cell number
+class RoiDrawer(QWidget):
     def __init__(self, metadatas: List[Tuple[ICMetaData, Optional[AnalysisResultsLoader]]], parent=None, initialField='imbd'):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         self.setWindowTitle("Roi Drawer 3000")
@@ -23,7 +23,7 @@ class RoiDrawer(QWidget): #TODO display cell number
         self.newRoiDlg = NewRoiDlg(self)
         self.plotWidg = BigPlot(metadatas[self.mdIndex][0], metadatas[self.mdIndex][0].getImBd(), 'title')
         self.buttonGroup = QButtonGroup(self)
-        self.noneButton = QPushButton("None")
+        self.noneButton = QPushButton("Inspect")
         self.lassoButton = QPushButton("Lasso")
         self.ellipseButton = QPushButton("Ellipse")
         self.lastButton_ = None
@@ -36,7 +36,7 @@ class RoiDrawer(QWidget): #TODO display cell number
         self.adjustButton = QPushButton("Adj")
         self.adjustButton.setCheckable(True)
         self.adjustButton.toggled.connect(self.handleAdjustButton)
-        self.previousButton = QPushButton('←') #TODO add functionality
+        self.previousButton = QPushButton('←')
         self.nextButton = QPushButton('→')
         self.previousButton.released.connect(self.showPreviousCell)
         self.nextButton.released.connect(self.showNextCell)
@@ -45,8 +45,8 @@ class RoiDrawer(QWidget): #TODO display cell number
         layout.addWidget(self.lassoButton, 0, 1, 1, 1)
         layout.addWidget(self.ellipseButton, 0, 2, 1, 1)
         layout.addWidget(self.adjustButton, 0, 3, 1, 1)
-        layout.addWidget(self.previousButton, 0, 4, 1, 1)
-        layout.addWidget(self.nextButton, 0, 5, 1, 1)
+        layout.addWidget(self.previousButton, 0, 5, 1, 1)
+        layout.addWidget(self.nextButton, 0, 6, 1, 1)
         layout.addWidget(self.plotWidg, 1, 0, 8, 8)
         self.setLayout(layout)
         self.selector: AdjustableSelector = AdjustableSelector(self.plotWidg.ax, MyLasso, onfinished=self.finalizeRoi)
@@ -112,9 +112,12 @@ class RoiDrawer(QWidget): #TODO display cell number
         self._updateDisplayedCell()
 
     def _updateDisplayedCell(self):
+        currRoi = self.plotWidg.roiFilter.currentText()
         md = self.metadatas[self.mdIndex][0]
         self.plotWidg.setMetadata(md)
         self.plotWidg.setImageData(md.getImBd())
+        self.plotWidg.roiFilter.setEditText(currRoi)
+        self.setWindowTitle(f"Roi Drawer - {os.path.split(md.filePath)[-1]}")
 
 class NewRoiDlg(QDialog):
     def __init__(self, parent: QWidget):
@@ -145,3 +148,12 @@ class NewRoiDlg(QDialog):
     def reject(self) -> None:
         self.number = None
         super().reject()
+
+    def show(self) -> None:
+        if len(self.parent().plotWidg._rois) > 0:
+            rois, ims, polys = zip(*self.parent().plotWidg._rois)
+            newNum = max([r.number for r in rois]) + 1 #Set the box 1 number abox the maximum found
+            self.numBox.setValue(newNum)
+        else:
+            self.numBox.setValue(0) #start at 0
+        super().show()
