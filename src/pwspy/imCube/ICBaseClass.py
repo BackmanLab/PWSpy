@@ -50,7 +50,7 @@ class ICBase:
 
     def getMeanSpectra(self, mask: Union[Roi, np.ndarray] = None) ->Tuple[np.ndarray, np.ndarray]:
         if isinstance(mask, Roi):
-            mask = mask.getMask()
+            mask = mask.mask
         if mask is None:
             mask = np.ones(self.data.shape[:-1], dtype=np.bool)
         mean = self.data[mask].mean(axis=0)

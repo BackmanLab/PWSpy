@@ -71,7 +71,7 @@ class AnalysisManager(QtCore.QObject):
                 erCube = ExtraReflectanceCube.fromMetadata(erMeta)
             analysis = Analysis(anSettings, ref, erCube)
             warnings = loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[analysis, anName, cameraCorrection],
-                                      parallel=True) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
+                                      parallel=self.app.parallelProcessing) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
             warnings = [(warn, md) for warn, md in warnings if md is not None]
             ret = (anName, anSettings, warnings)
             self.analysisDone.emit(*ret)
@@ -135,7 +135,7 @@ class CompilationManager(QtCore.QObject):
         compiler = RoiCompiler(settings)
 
         results: List[Tuple[ICMetaData, List[Tuple[RoiCompilationResults, List[AnalysisWarning]]]]] = loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[compiler, roiName, analysisName],
-                                  parallel=True, metadataOnly=True) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
+                                  parallel=self.app.parallelProcessing, metadataOnly=True) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
         # newresults = []
         # for i in results:
         #     newresults.extend(i)# Convert from list of lists to just a long list

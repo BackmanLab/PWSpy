@@ -36,6 +36,8 @@ class PWSApp(QApplication):
         self.window = PWSWindow()
         self.anMan = AnalysisManager(self)
         self.window.runAction.connect(self.anMan.runList)
+        self.parallelProcessing: bool = True #Determines if analysis and compilation should be run in parallel or not.
+        self.window.parallelAction.toggled.connect(lambda checked: setattr(self, 'parallelProcessing', checked))
         self.anMan.analysisDone.connect(lambda name, settings, warningList: AnalysisSummaryDisplay(self.window, warningList, name, settings))
         self.compMan = CompilationManager(self)
         self.window.resultsTable.compileButton.released.connect(self.compMan.run)
