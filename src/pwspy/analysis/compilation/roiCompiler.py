@@ -37,7 +37,7 @@ class RoiCompiler:
 
         if self.settings.rSquared:
             try:
-                warns.append(warnings.checkRSquared(results.rSquared[roi.getMask()]))
+                warns.append(warnings.checkRSquared(results.rSquared[roi.mask]))
                 rSquared = self._avgOverRoi(roi, results.rSquared)
             except KeyError:
                 rSquared = None
@@ -52,8 +52,8 @@ class RoiCompiler:
 
         if self.settings.opd:
             try:
-                opd = results.opd[roi.getMask()].mean(axis=0)
-                opdIndex = results.opdIndex
+                opd, opdIndex = results.opd
+                opd = opd[roi.mask].mean(axis=0)
             except KeyError:
                 opd = opdIndex = None
         else:
@@ -63,7 +63,7 @@ class RoiCompiler:
             try:
                 spectra = results.reflectance.getMeanSpectra(roi)[0]
                 meanRms = spectra.std()
-                varRatio = meanRms**2 / (results.rms[roi.getMask()] ** 2).mean()
+                varRatio = meanRms**2 / (results.rms[roi.mask] ** 2).mean()
                 warns.append(warnings.checkMeanSpectraRatio(varRatio))
             except KeyError:
                 varRatio = None
@@ -71,7 +71,7 @@ class RoiCompiler:
             varRatio = None
 
         if self.settings.roiArea:
-            roiArea = np.sum(roi.getMask())
+            roiArea = np.sum(roi.mask)
         else:
             roiArea = None
 
