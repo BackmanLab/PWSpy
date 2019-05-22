@@ -64,7 +64,7 @@ class Roi:
         self.fileFormat = fileFormat
 
     @classmethod
-    def fromVerts(cls, name: str, number: int, verts: np.ndarray, dataShape: tuple, filePath: str, fileFormat: RoiFileFormats):
+    def fromVerts(cls, name: str, number: int, verts: np.ndarray, dataShape: tuple, filePath: str = None, fileFormat: RoiFileFormats = None):
         assert isinstance(verts, np.ndarray)
         assert isinstance(dataShape, tuple)
         assert len(dataShape) == 2
@@ -92,7 +92,9 @@ class Roi:
         if not os.path.exists(path):
             raise OSError(f"File {path} does not exist.")
         with h5py.File(path, 'r') as hf:
-            return cls(name, number, mask=np.array(hf[str(number)]['mask']).astype(np.bool), verts=np.array(hf[str(number)]['verts']), filePath=path,
+            verts = hf[str(number)]['verts']
+            verts = None if verts.shape is None else np.array(verts)
+            return cls(name, number, mask=np.array(hf[str(number)]['mask']).astype(np.bool), verts=verts, filePath=path,
                        fileFormat=RoiFileFormats.HDF)
 
     @classmethod
@@ -119,7 +121,10 @@ class Roi:
                 else:
                     raise OSError(f"The Roi file {savePath} already contains a dataset {self.number}")
             g = hf.create_group(np.string_(str(self.number)))
-            g.create_dataset(np.string_("verts"), data=self.verts.astype(np.float32))
+            if self.verts is None:
+                g.create_dataset(np.string_('verts'), data=h5py.Empty('f'))
+            else:
+                g.create_dataset(np.string_("verts"), data=self.verts.astype(np.float32))
             g.create_dataset(np.string_("mask"), data=self.mask.astype(np.uint8), compression=5)
         self.filePath = savePath
         self.fileFormat = RoiFileFormats.HDF2

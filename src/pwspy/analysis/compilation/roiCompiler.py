@@ -98,6 +98,6 @@ class RoiCompiler:
         if condition is provided then only value of arr where the condition is satisfied are included."""
         assert len(arr.shape) == 2
         if condition is not None:
-            return arr[np.logical_and(roi.getMask(), condition)].mean()
+            return arr[np.logical_and(roi.mask, condition)].mean()
         else:
-            return arr[roi.getMask()].mean()
+            return arr[roi.mask].mean()
