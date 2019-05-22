@@ -213,7 +213,6 @@ class ICBase:
         assert 'type' in d.attrs
         assert 'index' in d.attrs
         assert d.attrs['type'].decode() == cls.__name__, f"Got {d.attrs['type'].decode()} instead of {cls.__name__}"
-        print(f'{cls.__name__} chunks: {d.chunks}')
         return np.array(d), tuple(d.attrs['index'])
 
 
