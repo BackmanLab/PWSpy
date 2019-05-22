@@ -145,7 +145,7 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
         [thread.start() for thread in threads]
         if processorFunc is not None:
             wrappedFunc = _procWrap(processorFunc, passLock, lock)
-            cubes = [wrappedFunc(qout.get(), *procArgs) for i in range(len(fileFrame))]
+            cubes = [wrappedFunc(qout.get(), procArgs) for i in range(len(fileFrame))]
         else:
             cubes = [qout.get() for i in range(len(fileFrame))] # A list of tuples of index, dataframe row
         [thread.join() for thread in threads]
