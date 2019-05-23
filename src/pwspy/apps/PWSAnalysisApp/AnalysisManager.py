@@ -135,7 +135,7 @@ class CompilationManager(QtCore.QObject):
         compiler = RoiCompiler(settings)
 
         results: List[Tuple[ICMetaData, List[Tuple[RoiCompilationResults, List[AnalysisWarning]]]]] = loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[compiler, roiName, analysisName],
-                                  parallel=self.app.parallelProcessing, metadataOnly=True) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
+                                  parallel=False, metadataOnly=True) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
         # newresults = []
         # for i in results:
         #     newresults.extend(i)# Convert from list of lists to just a long list

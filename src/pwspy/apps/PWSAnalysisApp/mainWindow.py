@@ -31,7 +31,7 @@ class PWSWindow(QMainWindow):
         menu = menuBar.addMenu("Menu")
         defaultLayoutAction = menu.addAction("Set Default Layout")
         defaultLayoutAction.triggered.connect(self._setDefaultLayout)
-        self.parallelAction = menu.addAction("Use Parallel Processing")
+        self.parallelAction = menu.addAction("Multi-Core Analysis")
         self.parallelAction.setCheckable(True)
         self.parallelAction.setChecked(True)
         toolBar = self.addToolBar('tool')
