@@ -66,6 +66,5 @@ class PWSWindow(QMainWindow):
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.plots)
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.resultsTable)
         self.tabifyDockWidget(self.plots, self.analysisSettings)
-        # self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.analysisSettings)
         for dock in docks:
             dock.setVisible(True)
