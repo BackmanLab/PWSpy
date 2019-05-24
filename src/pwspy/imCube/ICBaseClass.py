@@ -72,7 +72,7 @@ class ICBase:
         l = widgets.LassoSelector(ax, onSelect, lineprops={'color': 'r'})
         while plt.fignum_exists(fig.number):
             fig.canvas.flush_events()
-        return Verts[0]
+        return np.array(Verts[0])
 
     def selectRectangleROI(self, displayIndex=None):
         # display index is used to display a particular z-slice for mask drawing. If None then the mean along Z is displayed.
@@ -92,7 +92,7 @@ class ICBase:
 
         while plt.fignum_exists(fig.number):
             fig.canvas.flush_events()
-        return verts[0]
+        return np.array(verts[0])
 
     def selectPointROI(self, side: int = 3, displayIndex: int = None):
         verts = [None]
