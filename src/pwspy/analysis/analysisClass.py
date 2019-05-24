@@ -39,7 +39,7 @@ class LegacyAnalysis(AbstractAnalysis):
         self.ref = ref
 
     def run(self, cube: ImCube) -> Tuple[AnalysisResultsSaver, List[warnings.AnalysisWarning]]:
-        assert cube.isCorrected() #TODO make it so we can save to harddrive and delete from memory as we go.
+        assert cube.isCorrected()
         warns = []
         cube = self._normalizeImCube(cube)
         interval = (max(cube.wavelengths) - min(cube.wavelengths)) / (len(cube.wavelengths) - 1)# Wavelength interval. We are assuming equally spaced wavelengths here
@@ -49,7 +49,6 @@ class LegacyAnalysis(AbstractAnalysis):
         # Determine the mean-reflectance for each pixel in the cell.
         reflectance = cube.data.mean(axis=2)
         warns.append(warnings.checkMeanReflectance(reflectance))
-        #TODO save and delete refelectance here
         cube = KCube.fromImCube(cube)  # -- Convert to K-Space
         cubePoly = self._fitPolynomial(cube)
         # Remove the polynomial fit from filtered cubeCell.
@@ -58,13 +57,11 @@ class LegacyAnalysis(AbstractAnalysis):
         # -- RMS
         # Obtain the RMS of each signal in the cube.
         rms = cube.data.std(axis=2)
-        #TODO save and delete RMS here.
         if not self.settings.skipAdvanced:
             # RMS - POLYFIT
             # The RMS should be calculated on the mean-subtracted polyfit. This may
             # also be accomplished by calculating the standard-deviation.
             rmsPoly = cubePoly.std(axis=2)
-            #TODO Save and delete cubePoly Here
 
             slope, rSquared = cube.getAutoCorrelation(self.settings.autoCorrMinSub, self.settings.autoCorrStopIndex)
             ld = self._calculateLd(rms, slope)
@@ -83,7 +80,6 @@ class LegacyAnalysis(AbstractAnalysis):
             imCubeIdTag=cube.metadata.idTag,
             referenceIdTag=self.ref.metadata.idTag,
             extraReflectionTag=None)
-        del reflectance, cube, rms, rmsPoly, slope, rSquared, ld #Delete these just in case they're hanging around.
         warns = [warn for warn in warns if warn is not None] #Filter out null values.
         return results, warns
 
