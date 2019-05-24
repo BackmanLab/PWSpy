@@ -44,7 +44,7 @@ class KCube(ICBase):
             self.wavenumbers)) - 1))))  # %This is the next size of fft that is  at least 2x greater than is needed but is a power of two. Results in interpolation, helps amplitude accuracy and fft efficiency.
         fftSize *= 2  # We double the fftsize for even more iterpolation. Not sure why, but that's how it was done in matlab.
         if isHannWindow:  # if hann window checkbox is selected, create hann window
-            w = np.hanning(len(self.wavenumbers))  # Hann window for one vector
+            w = np.hanning(len(self.wavenumbers))  # Hanning window
         else:
             w = np.ones((len(self.wavenumbers)))  # Create unity window
 
