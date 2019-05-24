@@ -205,16 +205,51 @@ class ICBase:
         print(f"Data type is {self.data.dtype}")
         dset.attrs['index'] = np.array(self.index)
         dset.attrs['type'] = np.string_(self.__class__.__name__)
-        print(f"Saving kcube HDF took {time()-tim} seconds.")
+        print(f"Saving {self.__class__.__name__} HDF took {time()-tim} seconds.")
+        return g
+
+    def toFixedPointHdfDataset(self, g: h5py.Group, name: str) -> h5py.Group:
+        """Scale data to span the full range of an unsigned 16bit integer. save as integer and save the min and max
+        needed to scale back to the original data. Testing has shown that this has a maximum conversion error of 2e-7.
+        Saving is ~10% faster but requires only 50% the hard drive space. Time can be traded for space by using compression
+        when creating the dataset"""
+        tim = time()
+        m = self.data.min()
+        M = self.data.max()
+        fpData = self.data - m
+        fpData = fpData / (M - m)
+        fpData *= (2 ** 16 - 1)
+        fpData = fpData.astype(np.uint16)
+        dset = g.create_dataset(name, data=fpData)#, chunks=(64,64,self.data.shape[2]), compression=2)
+        print(f"{self.__class__.__name__} chunking shape: {dset.chunks}")
+        print(f"Data type is {fpData.dtype}")
+        dset.attrs['index'] = np.array(self.index)
+        dset.attrs['type'] = np.string_(f"{self.__class__.__name__}_fp")
+        dset.attrs['min'] = m
+        dset.attrs['max'] = M
+        print(f"Saving {self.__class__.__name__} HDF took {time() - tim} seconds.")
         return g
 
     @classmethod
     def _decodeHdf(cls, d: h5py.Dataset):
         assert 'type' in d.attrs
         assert 'index' in d.attrs
-        assert d.attrs['type'].decode() == cls.__name__, f"Got {d.attrs['type'].decode()} instead of {cls.__name__}"
-        return np.array(d), tuple(d.attrs['index'])
+        if d.attrs['type'].decode() == cls.__name__: #standard decoding
+            return np.array(d), tuple(d.attrs['index'])
+        elif d.attrs['type'].decode() == f"{cls.__name__}_fp": #Fixed point decoding
+            print("Decoding fixed point")
+            M = d.attrs['max']
+            m = d.attrs['min']
+            arr = np.array(d)
+            arr = arr.astype(np.float32) / (2 ** 16 - 1)
+            arr *= (M - m)
+            arr += m
+            return arr, tuple(d.attrs['index'])
+        else:
+            raise TypeError(f"Got {d.attrs['type'].decode()} instead of {cls.__name__}")
 
+    def _decodeFixedPointHdf(self, d: h5py.Dataset):
+        pass
 
     @classmethod
     def fromHdfDataset(cls, d: h5py.Dataset):

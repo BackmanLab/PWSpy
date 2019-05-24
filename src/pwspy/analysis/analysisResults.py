@@ -122,7 +122,7 @@ class AnalysisResultsSaver: #TODO this should inherit from abstract class but it
                 if isinstance(v, str):
                     hf.create_dataset(k, data=np.string_(v)) #h5py recommends encoding strings this way for compatability.
                 elif isinstance(v, KCube):
-                    hf = v.toHdfDataset(hf, k)
+                    hf = v.toFixedPointHdfDataset(hf, k)
                 elif isinstance(v, np.ndarray):
                     hf.create_dataset(k, data=v)
                 elif v is None:
