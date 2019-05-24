@@ -210,7 +210,7 @@ class ICBase:
 
     def toFixedPointHdfDataset(self, g: h5py.Group, name: str) -> h5py.Group:
         """Scale data to span the full range of an unsigned 16bit integer. save as integer and save the min and max
-        needed to scale back to the original data. Testing has shown that this has a maximum conversion error of 2e-7.
+        needed to scale back to the original data. Testing has shown that this has a maximum conversion error of 1.4e-3 percent.
         Saving is ~10% faster but requires only 50% the hard drive space. Time can be traded for space by using compression
         when creating the dataset"""
         tim = time()
