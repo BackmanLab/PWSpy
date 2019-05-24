@@ -79,7 +79,7 @@ def _loadThenProcess(procFunc, procFuncArgs, metadataOnly: bool, lock: mp.Lock, 
 
 
 def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: Optional = None, parallel: Optional=None,
-                   procArgs: Optional = None, metadataOnly: bool = False, passLock: bool = False) -> Union[pd.DataFrame, List, Tuple]:
+                   procArgs: Optional = None, metadataOnly: bool = False, passLock: bool = False, initializer = None, initArgs = None) -> Union[pd.DataFrame, List, Tuple]:
     """    A convenient function to load a series of ImCubes from a list or dictionary of file paths.
 
     Parameters
@@ -131,11 +131,12 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
             raise Exception("Running in parallel with no processorFunc is a bad idea.")
         m = mp.Manager()
         lock = m.Lock()
-        po = mp.Pool(processes=psutil.cpu_count(logical=False) - 1)
+        po = mp.Pool(processes=psutil.cpu_count(logical=False) - 1, initializer=initializer, initargs=initArgs)
         try:
             cubes = po.starmap(_loadThenProcess, zip(*zip(*[[processorFunc, procArgs, metadataOnly, lock, passLock]] * len(fileFrame)), fileFrame.iterrows()))
         finally:
             po.close()
+            po.join()
     else:
         qout = queue.Queue()
         qin = queue.Queue()
