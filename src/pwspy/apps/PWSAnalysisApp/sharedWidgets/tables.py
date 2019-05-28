@@ -19,6 +19,7 @@ class CopyableTable(QTableWidget):
             super().keyPressEvent(event)
 
     def copy(self):
+        try:
             sel = self.selectedRanges()[0]
             t = '\t'.join(
                 [self.horizontalHeaderItem(i).text() for i in range(sel.leftColumn(), sel.rightColumn() + 1) if not self.isColumnHidden(i)]) + '\n'
