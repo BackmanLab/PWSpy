@@ -187,5 +187,6 @@ class AnalysisManager(QtCore.QObject):
                 return self
 
             def __exit__(self):
-                self.thread.start()
-                self.thread.join()
+                if self.thread:
+                    self.thread.start()
+                    self.thread.join()
