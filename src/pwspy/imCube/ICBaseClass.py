@@ -197,7 +197,6 @@ class ICBase:
         return ret
 
     def toHdfDataset(self, g: h5py.Group, name: str) -> h5py.Group:
-        #TODO look into conversion to fixed point.
         tim = time()
         # dset = g.create_dataset(name, data=self.data, chunks=(64, 64, self.data.shape[2]), compression=3)
         dset = g.create_dataset(name, data=self.data)

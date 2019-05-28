@@ -1,11 +1,10 @@
 from __future__ import annotations
 import os
 import traceback
-from typing import Tuple, List, Optional
+from typing import Tuple, List
 import typing
 if typing.TYPE_CHECKING:
-    from .App import  PWSApp
-    import multiprocessing as mp
+    from pwspy.apps.PWSAnalysisApp.App import  PWSApp
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox
 
@@ -13,13 +12,10 @@ from pwspy.imCube import ImCube, CameraCorrection, ExtraReflectanceCube
 from pwspy.analysis import AnalysisSettings
 from pwspy.analysis.analysisClass import Analysis
 from pwspy.analysis.warnings import AnalysisWarning
-from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
 from pwspy.imCube.ICMetaDataClass import ICMetaData
 from pwspy.utility.io import loadAndProcess
-from pwspy.analysis.compilation import CompilerSettings, RoiCompiler, RoiCompilationResults
 import threading
 from multiprocessing.util import Finalize
-import multiprocessing
 from multiprocessing.sharedctypes import RawArray
 import numpy as np
 
@@ -159,35 +155,3 @@ class AnalysisManager(QtCore.QObject):
         return True
 
 
-class CompilationManager(QtCore.QObject):
-    compilationDone = QtCore.pyqtSignal(list)
-
-    def __init__(self, app: PWSApp):
-        super().__init__()
-        self.app = app
-
-    @staticmethod
-    def _process(md: ICMetaData, compiler: RoiCompiler, roiName: str, analysisName: str) -> Tuple[ICMetaData, List[Tuple[RoiCompilationResults, List[AnalysisWarning]]]]:
-        rois = [md.loadRoi(name, num, fformat) for name, num, fformat in md.getRois() if name == roiName]
-        analysisResults = md.loadAnalysis(analysisName)
-        ret = []
-        for roi in rois:
-            cResults, warnings = compiler.run(analysisResults, roi)
-            ret.append((cResults, warnings))
-        return md, ret
-
-    @safeCallback
-    def run(self) -> List[Tuple[ICMetaData, List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]]]:
-        roiName: str = self.app.window.resultsTable.getRoiName()
-        analysisName: str = self.app.window.resultsTable.getAnalysisName()
-        settings: CompilerSettings = self.app.window.resultsTable.getSettings()
-        cellMetas: List[ICMetaData] = self.app.window.cellSelector.getSelectedCellMetas()
-        compiler = RoiCompiler(settings)
-
-        results: List[Tuple[ICMetaData, List[Tuple[RoiCompilationResults, List[AnalysisWarning]]]]] = loadAndProcess(cellMetas, processorFunc=self._process, procArgs=[compiler, roiName, analysisName],
-                                  parallel=False, metadataOnly=True) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
-        # newresults = []
-        # for i in results:
-        #     newresults.extend(i)# Convert from list of lists to just a long list
-        self.compilationDone.emit(results)
-        return results

@@ -49,7 +49,7 @@ class KCube(ICBase):
             w = np.ones((len(self.wavenumbers)))  # Create unity window
 
         # Calculate the Fourier Transform of the signal multiplied by Hann window
-        opd = np.fft.rfft(self.data * w[np.newaxis, np.newaxis, :], n=fftSize, axis=2) #TODO should this fft operation be combined with the autocorrelation fft?
+        opd = np.fft.rfft(self.data * w[np.newaxis, np.newaxis, :], n=fftSize, axis=2)
         # Normalize the OPD by the quantity of wavelengths.
         opd = opd / len(self.wavenumbers)
 

@@ -12,7 +12,8 @@ from PyQt5.QtWidgets import QApplication
 
 from pwspy.imCube import ICMetaData
 from .dialogs import AnalysisSummaryDisplay, CompilationSummaryDisplay
-from .AnalysisManager import AnalysisManager, CompilationManager
+from pwspy.apps.PWSAnalysisApp.taskManagers.analysisManager import AnalysisManager
+from pwspy.apps.PWSAnalysisApp.taskManagers.compilationManager import CompilationManager
 from pwspy.analysis import defaultSettingsPath
 from .mainWindow import PWSWindow
 from . import applicationVars
