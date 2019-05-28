@@ -18,16 +18,16 @@ class CopyableTable(QTableWidget):
         else:
             super().keyPressEvent(event)
 
-    def copy(self): #TODO this copies stuff that isn't visible
-        try:
+    def copy(self):
             sel = self.selectedRanges()[0]
             t = '\t'.join(
-                [self.horizontalHeaderItem(i).text() for i in range(sel.leftColumn(), sel.rightColumn() + 1)]) + '\n'
+                [self.horizontalHeaderItem(i).text() for i in range(sel.leftColumn(), sel.rightColumn() + 1) if not self.isColumnHidden(i)]) + '\n'
             for i in range(sel.topRow(), sel.bottomRow() + 1):
                 for j in range(sel.leftColumn(), sel.rightColumn() + 1):
-                    if t[-1] != '\n': t += '\t'
-                    item = self.item(i, j)
-                    t += ' ' if item is None else item.text()
+                    if not self.isColumnHidden(j):
+                        if t[-1] != '\n': t += '\t'
+                        item = self.item(i, j)
+                        t += ' ' if item is None else item.text()
                 t += '\n'
             QApplication.clipboard().setText(t)
         except Exception as e:
