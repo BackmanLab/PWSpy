@@ -120,8 +120,11 @@ class ExplorerWindow(QDialog):
         self._initialize()
 
     def accept(self) -> None:
-        rowIndex = [i.row() for i in self.table.selectedIndexes()[::self.table.columnCount()]][0] #  There should be only one.
-        self.setSelection(self._items[rowIndex].idTag)
+        try:
+            rowIndex = [i.row() for i in self.table.selectedIndexes()[::self.table.columnCount()]][0] #  There should be only one.
+            self.setSelection(self._items[rowIndex].idTag)
+        except IndexError: # Nothing was selected
+            pass
         super().accept()
 
     def getSelectedId(self):

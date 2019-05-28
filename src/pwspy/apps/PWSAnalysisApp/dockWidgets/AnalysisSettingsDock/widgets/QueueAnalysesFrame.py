@@ -46,6 +46,9 @@ class QueuedAnalysesFrame(QScrollArea):
         if analysisName == '':
             QMessageBox.information(self, '!', "Please give your analysis a name.")
             return
+        if len(cells) == 0:
+            QMessageBox.information(self, '!', f'Please select cells to analyse.')
+            return
         for i in range(self.listWidget.count()):
             if self.listWidget.item(i).name == analysisName:
                 QMessageBox.information(self, '!', f'Analysis {analysisName} already exists.')

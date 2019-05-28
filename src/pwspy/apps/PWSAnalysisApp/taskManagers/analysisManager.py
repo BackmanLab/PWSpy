@@ -3,6 +3,12 @@ import os
 import traceback
 from typing import Tuple, List
 import typing
+
+from PyQt5.QtCore import QThread
+
+from pwspy.apps.PWSAnalysisApp.sharedWidgets.dialogs import BusyDialog
+from pwspy.utility.misc import profileDec
+
 if typing.TYPE_CHECKING:
     from pwspy.apps.PWSAnalysisApp.App import  PWSApp
 from PyQt5 import QtCore
@@ -84,58 +90,17 @@ class AnalysisManager(QtCore.QObject):
             np.copyto(iedata, analysis.extraReflection.data)
             analysis.extraReflection.data = iedata
             #Run parallel processing
-            warnings = loadAndProcess(cellMetas, processorFunc=self._process, initArgs=[analysis, anName, cameraCorrection],
-                                      parallel=self.app.parallelProcessing, initializer=self._initializer) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
+            t = self.AnalysisThread(cellMetas, analysis, anName, cameraCorrection, self.app.parallelProcessing)
+            b = BusyDialog(self.app.window, "Processing. Please Wait...")
+            t.finished.connect(b.accept)
+            t.errorOccurred.connect(lambda e: QMessageBox.information(self.app.window, 'Uh Oh', str(e)))
+            t.start()
+            b.exec()
+            warnings = t.warnings
             warnings = [(warn, md) for warn, md in warnings if md is not None]
             ret = (anName, anSettings, warnings)
             self.analysisDone.emit(*ret)
             return ret
-
-    @staticmethod
-    def _process(im: ImCube):
-        """This method is run in parallel. once for each imCube that we want to analyze."""
-        global pwspyAnalysisAppParallelGlobals
-        global saveThreadResource
-        if saveThreadResource.thread:
-            saveThreadResource.thread.start()
-        analysis = pwspyAnalysisAppParallelGlobals['analysis']
-        analysisName = pwspyAnalysisAppParallelGlobals['analysisName']
-        cameraCorrection = pwspyAnalysisAppParallelGlobals['cameraCorrection']
-        if cameraCorrection is not None:
-            im.correctCameraEffects(cameraCorrection)
-        else:
-            im.correctCameraEffects(auto=True)
-        results, warnings = analysis.run(im)
-        if len(warnings) > 0:
-            md = im.metadata
-        else:
-            md = None
-        if saveThreadResource.thread:
-            saveThreadResource.thread.join()
-        saveThreadResource.thread = threading.Thread(target=lambda: im.metadata.saveAnalysis(results, analysisName))
-        return warnings, md
-
-    class ThreadResource:
-        """This hacky thing is used in _initializer and _process, it allows us to save to harddisk in a separate thread
-        and make sure that the process doesn't quit before the last file is saved. This is needed since Pool doesn't allow
-        a deinitializer method"""
-        def __init__(self):
-            self.thread = None
-        def __enter__(self):
-            return self
-        def __exit__(self):
-            self.thread.start()
-            self.thread.join()
-
-    @staticmethod
-    def _initializer(analysis: Analysis, analysisName: str, cameraCorrection: CameraCorrection):
-        """This method is run once for each process that is spawned. it initialized resources that are shared between each iteration of _process."""
-        global pwspyAnalysisAppParallelGlobals
-        global saveThreadResource
-        saveThreadResource = AnalysisManager.ThreadResource().__enter__()
-        Finalize(saveThreadResource, saveThreadResource.__exit__, exitpriority=16)
-        print('initializing!')
-        pwspyAnalysisAppParallelGlobals = {'analysis': analysis, 'analysisName':  analysisName, 'cameraCorrection': cameraCorrection}
 
     def _checkAutoCorrectionConsistency(self, cellMetas: List[ICMetaData]) -> bool:
         """Confirm that all metadatas in cellMetas have identical camera corrections. otherwise we can't proceed"""
@@ -155,3 +120,72 @@ class AnalysisManager(QtCore.QObject):
         return True
 
 
+    class AnalysisThread(QThread):
+        errorOccurred = QtCore.pyqtSignal(Exception)
+
+        def __init__(self, cellMetas, analysis, anName, cameraCorrection, parallel):
+            super().__init__()
+            self.cellMetas = cellMetas
+            self.analysis = analysis
+            self.anName = anName
+            self.cameraCorrection = cameraCorrection
+            self.warnings = None
+            self.parallel = parallel
+
+        def run(self):
+            try:
+                self.warnings = loadAndProcess(self.cellMetas, processorFunc=self._process, initArgs=[self.analysis, self.anName, self.cameraCorrection],
+                                     parallel=self.parallel, initializer=self._initializer) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
+            except Exception as e:
+                self.errorOccurred.emit(e)
+
+
+        @staticmethod
+        def _initializer(analysis: Analysis, analysisName: str, cameraCorrection: CameraCorrection):
+            """This method is run once for each process that is spawned. it initialized resources that are shared between each iteration of _process."""
+            global pwspyAnalysisAppParallelGlobals
+            global saveThreadResource
+            saveThreadResource = AnalysisManager.AnalysisThread.ThreadResource().__enter__()
+            Finalize(saveThreadResource, saveThreadResource.__exit__, exitpriority=16)
+            print('initializing!')
+            pwspyAnalysisAppParallelGlobals = {'analysis': analysis, 'analysisName': analysisName,
+                                               'cameraCorrection': cameraCorrection}
+
+        @staticmethod
+        def _process(im: ImCube):
+            """This method is run in parallel. once for each imCube that we want to analyze."""
+            global pwspyAnalysisAppParallelGlobals
+            global saveThreadResource
+            if saveThreadResource.thread:
+                saveThreadResource.thread.start()
+            analysis = pwspyAnalysisAppParallelGlobals['analysis']
+            analysisName = pwspyAnalysisAppParallelGlobals['analysisName']
+            cameraCorrection = pwspyAnalysisAppParallelGlobals['cameraCorrection']
+            if cameraCorrection is not None:
+                im.correctCameraEffects(cameraCorrection)
+            else:
+                im.correctCameraEffects(auto=True)
+            results, warnings = analysis.run(im)
+            if len(warnings) > 0:
+                md = im.metadata
+            else:
+                md = None
+            if saveThreadResource.thread:
+                saveThreadResource.thread.join()
+            saveThreadResource.thread = threading.Thread(target=lambda: im.metadata.saveAnalysis(results, analysisName))
+            return warnings, md
+
+        class ThreadResource:
+            """This hacky thing is used in _initializer and _process, it allows us to save to harddisk in a separate thread
+            and make sure that the process doesn't quit before the last file is saved. This is needed since Pool doesn't allow
+            a deinitializer method"""
+
+            def __init__(self):
+                self.thread = None
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self):
+                self.thread.start()
+                self.thread.join()
