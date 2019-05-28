@@ -21,6 +21,8 @@ import numpy as np
 from scipy import io as spio
 from shapely import geometry
 
+from pwspy.utility.misc import profileDec
+
 
 class RoiFileFormats(Enum):
     HDF = auto()
@@ -149,7 +151,7 @@ class Roi:
         for fformat, fileNames in files.items():
             if fformat == RoiFileFormats.HDF:
                 for i in fileNames:
-                    with h5py.File(i) as hf:
+                    with h5py.File(i, 'r') as hf: # making sure to open this file in read mode make the function way faster!
                         for g in hf.keys():
                             if isinstance(hf[g], h5py.Group): #Current file format
                                 if 'mask' in hf[g] and 'verts' in hf[g]:
