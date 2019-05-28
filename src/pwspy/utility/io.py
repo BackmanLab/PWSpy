@@ -138,6 +138,8 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
             po.close()
             po.join()
     else:
+        if initializer:
+            initializer(*initArgs)
         qout = queue.Queue()
         qin = queue.Queue()
         [qin.put(f) for f in fileFrame.iterrows()]
