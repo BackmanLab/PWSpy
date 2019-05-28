@@ -145,12 +145,15 @@ class AnalysisResultsLoader(AbstractAnalysisResults):
     def __init__(self, directory: str, name: str):
         self.filePath = osp.join(directory, self.name2FileName(name))
         self.analysisName = name
-        self.file = h5py.File(self.filePath, 'r')
+        self.file = None
         if not osp.exists(self.filePath):
             raise OSError("The analysis file does not exist.")
+        self.file = h5py.File(self.filePath, 'r')
+
 
     def __del__(self):
-        self.file.close()
+        if self.file:
+            self.file.close()
 
     @cached_property
     @clearError
