@@ -25,10 +25,16 @@ class Base:
             self.ax.draw_artist(artist)
 
 class SidePlot(Base):
-    def __init__(self, ax: plt.Axes, dimLength: int, vertical: bool):
+    """A line plot meant to sit on the side of the image plot."""
+    def __init__(self, ax: plt.Axes, dimLength: int, vertical: bool, invertAxis: bool = False):
         super().__init__(ax)
         self.vertical = vertical
         self.dimLength = dimLength
+        if invertAxis: #Change the data direction. this can be used to make the image orientation match the orientation of other images.
+            if vertical:
+                ax.set_ylim(dimLength, 0)
+            else:
+                ax.set_xlim(dimLength, 0)
         self.range = (0, 1)
         markerData = (self.range, (0, dimLength))
         if self.vertical:
@@ -95,7 +101,7 @@ class CBar:
 
 
 class PlotNd(object):
-    """A class to conveniently view 3d or greater data.""" #TODO allow Z to be provided an index. Invert Y axis
+    """A class to conveniently view 3d or greater data.""" #TODO allow Z to be provided an index.
     def __init__(self, X: np.ndarray, names=('y', 'x', 'lambda'), initialCoords=None, title=''):
         self.max = self.min = None
         fig = plt.figure(figsize=(6, 6))
@@ -114,7 +120,7 @@ class PlotNd(object):
         ax: plt.Axes = plt.subplot(gs[1, self.extraDims + 2], sharey=self.cp.ax)
         ax.set_title(names[0])
         ax.yaxis.set_ticks_position('right')
-        self.spY = SidePlot(ax, X.shape[0], True)
+        self.spY = SidePlot(ax, X.shape[0], True, invertAxis=True)
 
         ax: plt.Axes = plt.subplot(gs[2, self.extraDims + 1], sharex=self.cp.ax)
         ax.set_xlabel(names[1])
