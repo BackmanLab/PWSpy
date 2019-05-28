@@ -51,7 +51,7 @@ class ERMetadata:
     def validPath(cls, path: str) -> Tuple[bool, Union[str, bytes], Union[str, bytes]]:
         if cls.FILESUFFIX in path:
             directory, name = cls.directory2dirName(path)
-            with h5py.File(os.path.join(directory, f'{name}{cls.FILESUFFIX}')) as hf:
+            with h5py.File(os.path.join(directory, f'{name}{cls.FILESUFFIX}'), 'r') as hf:
                 valid = cls.MDTAG in hf[cls.DATASETTAG].attrs
             return valid, directory, name
         else:
@@ -60,7 +60,7 @@ class ERMetadata:
     @classmethod
     def fromHdfFile(cls, directory: str, name: str):
         filePath = cls.dirName2Directory(directory, name)
-        with h5py.File(filePath) as hf:
+        with h5py.File(filePath, 'r') as hf:
             dset = hf[cls.DATASETTAG]
             return cls.fromHdfDataset(dset, filePath=filePath)
 
@@ -99,7 +99,7 @@ class ExtraReflectanceCube(ICBase):
     @classmethod
     def fromHdfFile(cls, directory: str, name: str) -> ExtraReflectanceCube:
         filePath = ERMetadata.dirName2Directory(directory, name)
-        with h5py.File(filePath) as hf:
+        with h5py.File(filePath, 'r') as hf:
             dset = hf[ERMetadata.DATASETTAG]
             return cls.fromHdfDataset(dset, filePath=filePath)
 

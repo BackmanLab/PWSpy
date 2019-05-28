@@ -139,7 +139,7 @@ class ICMetaData:
         if lock is not None:
             lock.acquire()
         try:
-            with h5py.File(os.path.join(directory, 'imageCube.mat')) as hf:
+            with h5py.File(os.path.join(directory, 'imageCube.mat'), 'r') as hf:
                 cubeParams = hf['cubeParameters']
                 lam = cubeParams['lambda']
                 exp = cubeParams['exposure'] #TODO we don't support adaptive exposure.
@@ -277,7 +277,7 @@ class ICMetaData:
 
     def getImBd(self) -> np.ndarray:
         if self.fileFormat == ICFileFormats.NanoMat:
-            with h5py.File(os.path.join(self.filePath, 'image_bd.mat')) as hf:
+            with h5py.File(os.path.join(self.filePath, 'image_bd.mat'), 'r') as hf:
                 return np.array(hf['image_bd'])
         else:
             with tf.TiffFile(os.path.join(self.filePath, 'image_bd.tif')) as f:
