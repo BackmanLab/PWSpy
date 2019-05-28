@@ -30,6 +30,7 @@ class QueuedAnalysesFrame(QScrollArea):
         self.setWidget(self.listWidget)
         self.listWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.listWidget.customContextMenuRequested.connect(self.showContextMenu)
+        self.listWidget.setMinimumHeight(30)
         self.setWidgetResizable(True)
 
     @property

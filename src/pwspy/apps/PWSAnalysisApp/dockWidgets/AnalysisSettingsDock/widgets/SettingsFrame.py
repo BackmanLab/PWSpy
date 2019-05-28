@@ -31,6 +31,8 @@ class SettingsFrame(QScrollArea):
         self._layout = QGridLayout()
         self._frame.setLayout(self._layout)
         self._frame.setFixedWidth(350)
+        self.setMinimumWidth(self._frame.width()+5)
+        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.setWidget(self._frame)
 
         """Set up Frame"""
@@ -182,6 +184,10 @@ class SettingsFrame(QScrollArea):
         row += 1
 
         self._updateSize()
+
+    def showEvent(self, a0: QtGui.QShowEvent) -> None:
+        super().showEvent(a0)
+        self._updateSize() #For some reason this must be done here and in the __init__ for it to start up properly.
 
     @property
     def analysisName(self) -> str:

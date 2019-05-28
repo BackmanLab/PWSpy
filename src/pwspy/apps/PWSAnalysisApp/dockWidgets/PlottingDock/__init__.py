@@ -27,6 +27,8 @@ class PlottingDock(QDockWidget):
         plotScroll.setWidgetResizable(True)
         plotScroll.horizontalScrollBar().setEnabled(False)
         plotScroll.horizontalScrollBar().setVisible(False)
+        plotScroll.setMinimumWidth(75)
+        plotScroll.setMaximumWidth(600)
         self.scrollContents = AspectRatioWidget(1, self)
         self.scrollContents.setLayout(QVBoxLayout())
         a = QSizePolicy()
@@ -73,6 +75,7 @@ class PlottingDock(QDockWidget):
 
         self._widget.layout().addWidget(plotScroll)
         self._widget.layout().addWidget(buttons)
+        self._widget.setMaximumWidth(plotScroll.maximumWidth()+buttons.maximumWidth()+10)
         self.setWidget(self._widget)
 
         self.enableAnalysisPlottingButtons('false')

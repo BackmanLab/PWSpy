@@ -45,10 +45,9 @@ class CollapsibleSection(QWidget):
 
         self._toggleButton.toggled.connect(
             lambda checked:
-            [  # self.toggleButton.setArrowType(QtCore.Qt.DownArrow if checked else QtCore.Qt.RightArrow),
-                self._toggleAnimation.setDirection(
+            [self._toggleAnimation.setDirection(
                     QtCore.QAbstractAnimation.Forward if not checked else QtCore.QAbstractAnimation.Backward),
-                self._toggleAnimation.start()])
+            self._toggleAnimation.start()])
         self._toggleAnimation.finished.connect(lambda: self.stateChanged.emit(self._toggleButton.isChecked()))
 
     def checkState(self):

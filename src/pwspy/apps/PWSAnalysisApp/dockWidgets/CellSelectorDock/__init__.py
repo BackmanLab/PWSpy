@@ -44,6 +44,7 @@ class CellSelectorDock(QDockWidget):
         _.setCollapsible(0, False)
         _.setCollapsible(1, False)
         _.setSizes([300, 100])
+        _.setStretchFactor(1, 0); _.setStretchFactor(0, 1) # Make the references column so it doesn't resize on stretching.
         layout.addWidget(_)
         layout.addWidget(self._filterWidget)
         self._widget.setLayout(layout)

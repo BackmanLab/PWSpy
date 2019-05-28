@@ -1,7 +1,7 @@
 import os
 
 from PyQt5 import QtCore, QtGui
-from PyQt5.QtWidgets import QMainWindow, QApplication
+from PyQt5.QtWidgets import QMainWindow, QApplication, QToolBar
 
 from . import resources
 from pwspy.apps import resources as sharedresources
@@ -34,8 +34,10 @@ class PWSWindow(QMainWindow):
         self.parallelAction = menu.addAction("Multi-Core Analysis")
         self.parallelAction.setCheckable(True)
         self.parallelAction.setChecked(True)
-        toolBar = self.addToolBar('tool')
+        toolBar = QToolBar("Tool Bar", self)
+        toolBar.setFloatable(False)
         toolBar.setObjectName('mainToolBar()')
+        self.addToolBar(QtCore.Qt.LeftToolBarArea, toolBar)
         browseAction = toolBar.addAction(QtGui.QIcon(os.path.join(sharedresources, 'folder.svg')), "Set Path")
         browseAction.triggered.connect(self.fileDialog.show)
         action2 = toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'icon.png')), "Idea")
