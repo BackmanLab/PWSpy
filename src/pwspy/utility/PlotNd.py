@@ -2,14 +2,17 @@
 """
 Created on Fri Feb  1 19:37:35 2019
 
-@author: Nick
+@author: Nick Anthony
 """
+from __future__ import annotations
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
+from typing import Tuple
 from matplotlib.animation import FuncAnimation
 
 lw = 0.5
+
 
 class Base:
     def __init__(self, ax):
@@ -23,6 +26,7 @@ class Base:
     def draw(self):
         for artist in self.artists:
             self.ax.draw_artist(artist)
+
 
 class SidePlot(Base):
     """A line plot meant to sit on the side of the image plot."""
@@ -42,7 +46,6 @@ class SidePlot(Base):
         self.plot = ax.plot([0], [0], animated=True)[0]
         self.markerLine = ax.plot(*markerData, color='r', linewidth=lw, animated=True)[0]
         self.artists = [self.plot, self.markerLine]
-
 
     def setMarker(self, pos: float):
         data = ((pos, pos), self.range)
@@ -65,6 +68,7 @@ class SidePlot(Base):
         else:
             data = (ind, data)
         self.plot.set_data(*data)
+
 
 class CenterPlot(Base):
     def __init__(self, ax: plt.Axes, shape):
@@ -89,6 +93,7 @@ class CenterPlot(Base):
     def setData(self, data):
         self.im.set_data(data)
 
+
 class CBar:
     def __init__(self, ax: plt.Axes, im):
         self.ax = ax
@@ -101,14 +106,24 @@ class CBar:
 
 
 class PlotNd(object):
-    """A class to conveniently view 3d or greater data.""" #TODO allow Z to be provided an index.
-    def __init__(self, X: np.ndarray, names=('y', 'x', 'lambda'), initialCoords=None, title=''):
-        self.max = self.min = None
+    """A class to conveniently view 3d or greater data.
+       Scroll to navigate stacks.
+       Press "a" to automatically scroll.
+       Left click the color bar to set the max color range.
+       Right click to set the mininum.
+       Press "r" to reset the color range.
+       Press 't' to swap the two primary axes.
+       Press 'y' to rotate the order of the secondary axes.
+       Press 'u' to rotate the order of all axes, allowing.
+       secondary axis to become a primary axis"""
+     #TODO allow Z to be provided an index.
+    def __init__(self, X: np.ndarray, names: Tuple[str,...]=('y', 'x', 'lambda'), initialCoords: Tuple[int,...]=None, title: str='', indices: Tuple[np.ndarray]=(None, None, None)):
+        self.max = self.min = None #  The minimum and maximum for the color scaling
+        self.names = names # The labels for each axis
+        self.extraDims = len(X.shape[2:]) # the first two axes are the image dimensions. Any axes after that are extra dimensions that can be scanned through
         fig = plt.figure(figsize=(6, 6))
         fig.suptitle(title)
         h, w = X.shape[:2]
-        self.names = names
-        self.extraDims = len(X.shape[2:])
         gs = gridspec.GridSpec(3, 2 + self.extraDims + 1, hspace=0,
                                width_ratios=[w * .2 / (self.extraDims + 1)] * (self.extraDims + 1) + [w, w * .2],
                                height_ratios=[h * .1, h, h * .2], wspace=0)
@@ -145,7 +160,6 @@ class PlotNd(object):
         self.timerRunning = False
         self.fig = fig
         plt.tight_layout()
-        '''Scroll to navigate stacks.\n\nPress "a" to automatically scroll.\n\nLeft click the color bar to set the max color range.\n\nRight click to set the mininum.\n\nPress "r" to reset the color range.\n\nPress 't' to swap the two primary axes.\n\nPress 'y' to rotate the order of the secondary axes.\n\nPress 'u' to rotate the order of all axes, allowing\n\a secondary axis to become a primary axis\n\n\n'''
         self.X = X
         self.resetColor()
 
