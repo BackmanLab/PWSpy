@@ -2,7 +2,7 @@
 """
 Created on Wed Feb 13 18:04:57 2019
 
-@author: backman05
+@author: Nick Anthony
 """
 import os
 from glob import glob

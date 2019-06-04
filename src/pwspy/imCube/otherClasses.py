@@ -2,7 +2,7 @@
 """
 Created on Sat Feb  9 15:57:52 2019
 
-@author: Nick
+@author: Nick Anthony
 """
 from __future__ import annotations
 import json

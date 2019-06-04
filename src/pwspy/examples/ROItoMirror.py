@@ -2,7 +2,7 @@
 """
 Created on Wed Jan  9 15:00:39 2019
 
-@author: backman05
+@author: Nick Anthony
 """
 
 from pwspy import ImCube

@@ -2,7 +2,7 @@
 """
 Created on Sun Feb 10 13:26:58 2019
 
-@author: Nick
+@author: Nick Anthony
 """
 from __future__ import annotations
 import os
@@ -26,7 +26,6 @@ if typing.TYPE_CHECKING:
     from pwspy.analysis.compilation import RoiCompilationResults
     from pwspy.analysis.warnings import AnalysisWarning
 
-#TODO add progress bar for analysis run
 #TODO add tooltips for everything!!!
 
 class PWSApp(QApplication):

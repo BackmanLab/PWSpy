@@ -2,7 +2,7 @@
 """
 Created on Fri Dec  7 15:44:57 2018
 
-@author: backman05
+@author: Nick Anthony
 """
 
 import copy

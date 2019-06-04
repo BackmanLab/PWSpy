@@ -2,7 +2,7 @@
 """
 Created on Thu Oct 11 11:31:48 2018
 
-@author: backman05
+@author: Nick Anthony
 """
 import multiprocessing as mp
 import queue

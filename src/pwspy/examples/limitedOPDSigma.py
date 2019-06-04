@@ -2,7 +2,7 @@
 """
 Created on Tue Jan  8 10:07:20 2019
 
-@author: backman05
+@author: Nick Anthony
 """
 
 from pwspy import ImCube, KCube, CameraCorrection

@@ -2,7 +2,7 @@
 """
 Created on Tue Feb 12 23:10:35 2019
 
-@author: Nick
+@author: Nick Anthony
 """
 from abc import ABC, abstractmethod
 from typing import List, Tuple

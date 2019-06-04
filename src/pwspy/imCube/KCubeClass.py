@@ -2,7 +2,7 @@
 """
 Created on Sat Feb  9 15:54:29 2019
 
-@author: Nick
+@author: Nick Anthony
 """
 from typing import Tuple
 

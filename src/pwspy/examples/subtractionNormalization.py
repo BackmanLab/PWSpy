@@ -2,7 +2,7 @@
 """
 Created on Fri Feb  8 14:10:12 2019
 
-@author: backman05
+@author: Nick Anthony
 """
 import numpy as np
 from pwspy import ImCube, CameraCorrection

@@ -2,7 +2,7 @@
 """
 Created on Tue Feb 12 19:17:14 2019
 
-@author: Nick
+@author: Nick Anthony
 """
 from __future__ import annotations
 import json
@@ -142,7 +142,7 @@ class ICMetaData:
             with h5py.File(os.path.join(directory, 'imageCube.mat'), 'r') as hf:
                 cubeParams = hf['cubeParameters']
                 lam = cubeParams['lambda']
-                exp = cubeParams['exposure'] #TODO we don't support adaptive exposure.
+                exp = cubeParams['exposure'] #we don't support adaptive exposure.
                 md = {'startWv': lam['start'].value[0][0], 'stepWv': lam['step'].value[0][0], 'stopWv': lam['stop'].value[0][0],
                       'exposure': exp['base'].value[0][0], 'time': datetime.strptime(np.string_(cubeParams['metadata']['date'].value.astype(np.uint8)).decode(), '%Y%m%dT%H%M%S').strftime(dateTimeFormat),
                       'system': np.string_(cubeParams['metadata']['hardware']['system']['id'].value.astype(np.uint8)).decode(), 'wavelengths': list(lam['sequence'].value[0]),

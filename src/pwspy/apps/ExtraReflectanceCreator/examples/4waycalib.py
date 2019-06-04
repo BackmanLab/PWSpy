@@ -2,7 +2,9 @@
 """
 Created on Tue Nov 20 13:13:34 2018
 
-@author: backman05
+@author: Nick Anthony
+
+This functionality has now been replaced in the ExtraREflectanceCreator application. This is just an example script.
 """
 
 
@@ -71,5 +73,3 @@ if __name__ == '__main__':
             allCombos = er.getAllCubeCombos(matCombos, cubes[cubes['setting']==sett])
             erCube, rextras, plots = er.generateRExtraCubes(allCombos, theoryR)
             erCube.toHdfFile(rootDir, f'rextra_{sett}')
-
-#Todo: plot I0

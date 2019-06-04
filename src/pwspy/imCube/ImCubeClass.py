@@ -2,7 +2,7 @@
 """
 Created on Thu Aug  9 11:41:32 2018
 
-@author: Nick
+@author: Nick Anthony
 """
 from __future__ import annotations
 

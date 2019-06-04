@@ -2,7 +2,7 @@
 """
 Created on Tue Aug  7 13:20:25 2018
 
-@author: Nick
+@author: Nick Anthony
 """
 # from .imCube import ImCube
 # from .imCube import KCube

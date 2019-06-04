@@ -2,7 +2,7 @@
 """
 Created on Sat Feb  9 20:14:25 2019
 
-@author: Nick
+@author: Nick Anthony
 """
 from setuptools import setup, find_packages
 
