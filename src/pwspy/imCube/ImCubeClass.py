@@ -31,7 +31,7 @@ class ImCube(ICBase):
     _hasExtraReflectionSubtracted: bool
     _hasBeenNormalizedByReference: bool
 
-    def __init__(self, data, metadata: ICMetaData, dtype = np.float32):
+    def __init__(self, data, metadata: ICMetaData, dtype=np.float32):
         assert isinstance(metadata, ICMetaData)
         self.metadata = metadata
         ICBase.__init__(self, data, self.metadata.wavelengths, dtype=dtype)
