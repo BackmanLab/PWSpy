@@ -8,7 +8,6 @@ from pwspy.analysis.compilation.roiCompilationResults import RoiCompilationResul
 from pwspy.imCube.otherClasses import Roi
 from pwspy.analysis import warnings
 
-#TODO add ROI Area
 class RoiCompiler:
     def __init__(self, settings: CompilerSettings):
         self.settings = settings

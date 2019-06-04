@@ -116,7 +116,6 @@ class PlotNd(object):
        Press 'y' to rotate the order of the secondary axes.
        Press 'u' to rotate the order of all axes, allowing.
        secondary axis to become a primary axis"""
-     #TODO allow Z to be provided an index.
     def __init__(self, X: np.ndarray, names: Tuple[str,...]=('y', 'x', 'lambda'), initialCoords: Tuple[int,...]=None, title: str='', indices: Tuple[np.ndarray]=(None, None, None)):
         self.max = self.min = None #  The minimum and maximum for the color scaling
         self.names = names # The labels for each axis

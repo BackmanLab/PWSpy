@@ -12,7 +12,6 @@ from abc import ABC, abstractmethod
 from pwspy.moduleConsts import dateTimeFormat
 from pwspy.utility.misc import cached_property
 
-#TODO get chunked reading working.
 
 class AbstractAnalysisResults(ABC):
     """Enforce that derived classes will have the following properties."""
@@ -140,7 +139,7 @@ def clearError(func):
     newFunc.__name__ = func.__name__ # failing to do this renaming can mess with other decorators e.g. cached_property
     return newFunc
 
-class AnalysisResultsLoader(AbstractAnalysisResults):
+class AnalysisResultsLoader(AbstractAnalysisResults):#TODO get chunked reading working.
     """A read-only loader for analysis results that will only load them from hard disk as needed."""
     def __init__(self, directory: str, name: str):
         self.filePath = osp.join(directory, self.name2FileName(name))
@@ -149,7 +148,6 @@ class AnalysisResultsLoader(AbstractAnalysisResults):
         if not osp.exists(self.filePath):
             raise OSError("The analysis file does not exist.")
         self.file = h5py.File(self.filePath, 'r')
-
 
     def __del__(self):
         if self.file:
