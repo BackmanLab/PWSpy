@@ -193,7 +193,7 @@ class CellTableWidget(QTableWidget):
         """Returns the rows that have been selected."""
         rowIndices = [i.row() for i in self.selectedIndexes()[::self.columnCount()]]
         rowIndices.sort()
-        return [self._cellItems[i] for i in rowIndices]
+        return [[item for item in self._cellItems if item.row==i][0] for i in rowIndices]
 
     @property
     def analyzableCells(self) -> typing.List[CellTableWidgetItem]:
