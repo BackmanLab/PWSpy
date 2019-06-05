@@ -31,7 +31,7 @@ class CellSelectorDock(QDockWidget):
         width = self.pathFilter.minimumSizeHint().width()
         self.pathFilter.view().setMinimumWidth(width)
         self.expressionFilter = QLineEdit(self._filterWidget)
-        self.expressionFilter.setPlaceholderText("Python boolean expression. Cell#: {num}")
+        self.expressionFilter.setPlaceholderText("Python boolean expression. Cell#: {num}, Analysis names: {analyses}, ROI names: {rois}")
         self.expressionFilter.returnPressed.connect(self.executeFilter)
         _ = QGridLayout()
         _.addWidget(self.pathFilter, 0, 0, 1, 1)
@@ -49,7 +49,6 @@ class CellSelectorDock(QDockWidget):
         layout.addWidget(self._filterWidget)
         self._widget.setLayout(layout)
         self.setWidget(self._widget)
-        self.cellItems: Dict[str, CellTableWidgetItem] = {}
 
     def addCell(self, fileName: str, workingDir: str):
         try:
@@ -61,7 +60,6 @@ class CellSelectorDock(QDockWidget):
                                    int(fileName.split('Cell')[-1]))
         if cellItem.isReference():
             self.refTableWidget.updateReferences(True, [cellItem])
-        self.cellItems[cell.idTag] = cellItem
         self.tableWidget.addCellItem(cellItem)
 
     def clearCells(self):
@@ -84,27 +82,26 @@ class CellSelectorDock(QDockWidget):
     def executeFilter(self):
         path = self.pathFilter.currentText()
         path = path.replace('\\', '\\\\')
-        for i in range(self.tableWidget.rowCount()):
-            text = self.tableWidget.item(i, 0).text()
-            text = text.replace(r'\\', r'\\\\')
+        for item in self.tableWidget.cellItems:
+            text = item.path.replace(r'\\', r'\\\\')
             try:
                 match = re.match(path, text)
             except re.error:
-                QMessageBox.information(self, 'Hmm', f'{text} is not a valid regex expression.')
+                QMessageBox.information(self, 'Hmm', f'{path} is not a valid regex expression.')
                 return
             expr = self.expressionFilter.text()
             if expr.strip() != '':
                 try:
-                    ret = bool(eval(expr.format(num=self.tableWidget.item(i, 1).number)))
+                    ret = bool(eval(expr.format(num=item.num, analyses=item.cube.getAnalyses(), rois=[i[0] for i in item.cube.getRois()])))
                 except Exception:
                     QMessageBox.information(self, 'Hmm', f'{expr} is not a valid boolean expression.')
                     return
             else:
                 ret = True
             if match and ret:
-                self.tableWidget.setRowHidden(i, False)
+                self.tableWidget.setRowHidden(item.row, False)
             else:
-                self.tableWidget.setRowHidden(i, True)
+                self.tableWidget.setRowHidden(item.row, True)
 
     def getSelectedCellMetas(self):
         return [i.cube for i in self.tableWidget.selectedCellItems]

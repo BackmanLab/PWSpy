@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QDialog, QWidget, QGridLayout, QLabel
-from qtpy import QtCore
+from PyQt5 import QtCore
 
 
 class BusyDialog(QDialog):

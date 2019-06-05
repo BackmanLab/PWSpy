@@ -54,6 +54,12 @@ class CellTableWidgetItem:
         self.setReference(self._reference)
 
     @property
+    def row(self):
+        """Since this can be added to a table that uses sorting we can't know that the row number will remain constant.
+        This should return the correct row number."""
+        return self.numLabel.row()
+
+    @property
     def _invalid(self): return self.md['invalid']
 
     @_invalid.setter
@@ -195,8 +201,7 @@ class CellTableWidget(QTableWidget):
 
     def addCellItem(self, item: CellTableWidgetItem) -> None:
         row = len(self._cellItems)
-        self.setSortingEnabled(
-            False)  # The fact that we are adding items assuming its the last row is a problem is sorting is on.
+        self.setSortingEnabled(False)  # The fact that we are adding items assuming its the last row is a problem if sorting is on.
         self.setRowCount(row + 1)
         self.setItem(row, 0, item.pathLabel)
         self.setItem(row, 1, item.numLabel)
