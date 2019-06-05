@@ -2,7 +2,11 @@ import json
 import os
 from glob import glob
 import jsonschema
+from PyQt5 import QtCore
+from PyQt5.QtCore import QObject, QThread
+from PyQt5.QtWidgets import QMessageBox, QApplication
 
+from pwspy.apps.PWSAnalysisApp.sharedWidgets.dialogs import BusyDialog
 from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
 from pwspy.utility.GoogleDriveDownloader import GoogleDriveDownloader
 
@@ -57,10 +61,30 @@ class ERManager:
     def download(self, fileName: str):
         if self.downloader is None:
             self.downloader = GoogleDriveDownloader(applicationVars.googleDriveAuthPath)
-        files = self.downloader.getFolderIdContents(self.downloader.getIdByName('PWSAnalysisAppHostedFiles'))
-        files = self.downloader.getFolderIdContents(self.downloader.getIdByName('ExtraReflectanceCubes', fileList=files))
-        fileId = self.downloader.getIdByName(fileName, fileList=files)
-        self.downloader.downloadFile(fileId, os.path.join(self.directory, fileName))
+        t = self.DownloadThread(self.downloader, fileName, self.directory)
+        b = BusyDialog(QApplication.instance().window, "Processing. Please Wait...")
+        t.finished.connect(b.accept)
+        t.errorOccurred.connect(lambda e: QMessageBox.information(QApplication.instance().window, 'Uh Oh', str(e)))
+        t.start()
+        b.exec()
+
+    class DownloadThread(QThread):
+        errorOccurred = QtCore.pyqtSignal(Exception)
+
+        def __init__(self, downloader, fileName, directory):
+            super().__init__()
+            self.downloader = downloader
+            self.fileName = fileName
+            self.directory = directory
+
+        def run(self):
+            try:
+                files = self.downloader.getFolderIdContents(self.downloader.getIdByName('PWSAnalysisAppHostedFiles'))
+                files = self.downloader.getFolderIdContents(self.downloader.getIdByName('ExtraReflectanceCubes', fileList=files))
+                fileId = self.downloader.getIdByName(self.fileName, fileList=files)
+                self.downloader.downloadFile(fileId, os.path.join(self.directory, self.fileName))
+            except Exception as e:
+                self.errorOccurred.emit(e)
 
     def getMetadataFromId(self, Id: str) -> ERMetadata:
         try:
