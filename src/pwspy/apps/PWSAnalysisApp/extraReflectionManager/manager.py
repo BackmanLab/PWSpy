@@ -5,6 +5,7 @@ import jsonschema
 from PyQt5 import QtCore
 from PyQt5.QtCore import QObject, QThread
 from PyQt5.QtWidgets import QMessageBox, QApplication
+from googleapiclient.http import MediaIoBaseDownload
 
 from pwspy.apps.PWSAnalysisApp.sharedWidgets.dialogs import BusyDialog
 from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
@@ -60,10 +61,11 @@ class ERManager:
 
     def download(self, fileName: str):
         if self.downloader is None:
-            self.downloader = GoogleDriveDownloader(applicationVars.googleDriveAuthPath)
+            self.downloader = QtGoogleDriveDownloader(applicationVars.googleDriveAuthPath)
         t = self.DownloadThread(self.downloader, fileName, self.directory)
-        b = BusyDialog(QApplication.instance().window, "Processing. Please Wait...")
+        b = BusyDialog(QApplication.instance().window, f"Downloading {fileName}. Please Wait...", progressBar=True)
         t.finished.connect(b.accept)
+        self.downloader.progress.connect(b.setProgress)
         t.errorOccurred.connect(lambda e: QMessageBox.information(QApplication.instance().window, 'Uh Oh', str(e)))
         t.start()
         b.exec()
@@ -94,6 +96,22 @@ class ERManager:
         return ERMetadata.fromHdfFile(self.directory, match['name'])
 
 
+class QtGoogleDriveDownloader(GoogleDriveDownloader, QObject):
+    """Same as the standard google drive downloader except it emits a progress signal after each chunk downloaded."""
+    progress = QtCore.pyqtSignal(int)
+    def __init__(self, authPath: str):
+        GoogleDriveDownloader.__init__(self, authPath)
+        QObject.__init__(self)
+
+    def downloadFile(self, Id: int, savePath: str):
+        """Save the file with `id` to `savePath`"""
+        fileRequest = self.api.files().get_media(fileId=Id)
+        with open(savePath, 'wb') as f:
+            downloader = MediaIoBaseDownload(f, fileRequest)
+            done = False
+            while done is False:
+                status, done = downloader.next_chunk()
+                self.progress.emit(int(status.progress() * 100))
 
 if __name__ == '__main__':
     m = ERManager(applicationVars.extraReflectionDirectory)
