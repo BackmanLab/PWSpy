@@ -11,7 +11,7 @@ from .widgets import AspectRatioWidget, LittlePlot
 import os
 import re
 # TODO add blinded roi drawing
-
+#TODO get rid of refresh button. Just draw when requested with the 'imbd' buttons etc. rename imbd. even if analysis isn't present create a placeholder widget.
 class PlottingDock(QDockWidget):
     def __init__(self, cellSelectorTable: CellSelectorDock):
         super().__init__("Plotting")
