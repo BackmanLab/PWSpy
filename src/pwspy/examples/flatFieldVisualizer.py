@@ -8,14 +8,13 @@ This is a temporary script file.
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from pwspy import ImCube
+from pwspy.imCube import ImCube
 from pwspy.utility import reflectanceHelper
 from glob import glob
 import os
-from pwspy.utility import loadAndProcess
+from pwspy.utility.io import loadAndProcess
 from pwspy.moduleConsts import Material
 
-plt.ion()
 
 __spec__ = None
 
