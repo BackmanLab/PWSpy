@@ -7,6 +7,7 @@ import json
 from pwspy.imCube import ImCube, CameraCorrection, ExtraReflectanceCube
 from pwspy.apps.ExtraReflectanceCreator.widgets.dialog import IndexInfoForm
 from pwspy.imCube import ICMetaData
+from pwspy.imCube.otherClasses import Roi
 from pwspy.moduleConsts import dateTimeFormat, Material
 from pwspy.utility.io import loadAndProcess
 import pwspy.apps.ExtraReflectanceCreator.extraReflectance  as er
@@ -43,8 +44,8 @@ def scanDirectory(directory: str) -> Dict[str, Any]:
     df = pd.DataFrame(rows)
     return {'dataFrame': df, 'camCorrection': cam}
 
-def _processIm(im: ImCube, camCorrection: CameraCorrection, binning: int) -> ImCube:
-    im.correctCameraEffects(camCorrection, binning=binning)
+def _processIm(im: ImCube, args) -> ImCube:
+    im.correctCameraEffects(**args)
     im.normalizeByExposure()
     try:
         im.filterDust(0.8)  # in microns
@@ -75,12 +76,18 @@ class ERWorkFlow:
         self.figs = []
 
     def loadCubes(self, includeSettings: List[str], binning: int):
-        if binning is None:
-            md = ICMetaData.loadAny(self.df['cube'].loc[0])
-            try: _ = int(md.binning)
-            except: raise Exception("No binning metadata found. Please specify a binning setting.")
         df = self.df[self.df['setting'].isin(includeSettings)]
-        self.cubes = loadAndProcess(df, _processIm, parallel=True, procArgs=[self.cameraCorrection, binning])
+        if binning is None:
+            args = {'correction': None, 'binning': None, 'auto': True}
+            for cube in df['cube']:
+                md = ICMetaData.loadAny(cube)
+                if md.binning is None:
+                    raise Exception("No binning metadata found. Please specify a binning setting.")
+                elif md.cameraCorrection is None:
+                    raise Exception("No camera correction metadata found. Please specify a binning setting, in this case the application will use the camera correction stored in the cameraCorrection.json file of the calibration folder")
+        else:
+            args = {'correction': self.cameraCorrection, 'binning': binning, 'auto': False}
+        self.cubes = loadAndProcess(df, _processIm, parallel=True, procArgs=[args])
 
     def plot(self, saveToPdf: bool = False, saveDir: str = None):
         cubes = self.cubes
@@ -90,7 +97,8 @@ class ERWorkFlow:
         matCombos = er.generateMaterialCombos(materials)
 
         print("Select an ROI")
-        mask = cubes['cube'].sample(n=1).iloc[0].selectLassoROI()  # Select an ROI to analyze
+        verts = cubes['cube'].sample(n=1).iloc[0].selectLassoROI()  # Select an ROI to analyze
+        mask = Roi.fromVerts('doesntmatter', 1, verts, cubes['cube'].sample(n=1).iloc[0].data.shape[:-1])
         self.figs.extend(er.plotExtraReflection(cubes, theoryR, matCombos, mask, plotReflectionImages=True))
         if saveToPdf:
             with PdfPages(os.path.join(saveDir, "figs.pdf")) as pp:

@@ -165,7 +165,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo],
             for combo in allCombos[sett][matCombo]:
                 cubes = combo.combo
                 ax.plot(cubes[mat1].wavelengths, combo.rExtra,
-                        label=f'{sett} {mat1}:{int(cubes[mat1].metadata["exposure"])}ms {mat2}:{int(cubes[mat2].metadata["exposure"])}ms')
+                        label=f'{sett} {mat1}:{int(cubes[mat1].metadata.exposure)}ms {mat2}:{int(cubes[mat2].metadata.exposure)}ms')
         ax.plot(cubes[mat1].wavelengths, meanValues[sett]['mean']['rExtra'], color='k', label=f'{sett} mean')
     ax.legend()
 
@@ -182,7 +182,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo],
             for combo in allCombos[sett][matCombo]:
                 cubes = combo.combo
                 ratioAxes[matCombo].plot(cubes[mat1].wavelengths, combo.mat1Spectra / combo.mat2Spectra,
-                                         label=f'{sett} {mat1.name}:{int(cubes[mat1].metadata["exposure"])}ms {mat2.name}:{int(cubes[mat2].metadata["exposure"])}ms')
+                                         label=f'{sett} {mat1.name}:{int(cubes[mat1].metadata.exposure)}ms {mat2.name}:{int(cubes[mat2].metadata.exposure)}ms')
     [ratioAxes[combo].legend() for combo in matCombos]
 
     for sett in settings:
@@ -225,7 +225,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo],
                     cubes = combo.combo
                     fig5 = plt.figure()
                     figs.append(fig5)
-                    plt.title(f"Reflectance %. {sett}, {mat1}:{int(cubes[mat2].metadata['exposure'])}ms, {mat2}:{int(cubes[mat2].metadata['exposure'])}ms")
+                    plt.title(f"Reflectance %. {sett}, {mat1}:{int(cubes[mat2].metadata.exposure)}ms, {mat2}:{int(cubes[mat2].metadata.exposure)}ms")
                     _ = ((theoryR[mat1][np.newaxis, np.newaxis, :] * cubes[mat2].data) - (
                         theoryR[mat2][np.newaxis, np.newaxis, :] * cubes[mat1].data)) / (
                             cubes[mat1].data - cubes[mat2].data)
@@ -293,7 +293,8 @@ def generateRExtraCubes(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict)
 def compareDates(cubes: pd.DataFrame) -> Tuple[List[animation.ArtistAnimation], List[plt.Figure]]:
     anis = []
     figs = []
-    mask = cubes['cube'].sample(n=1).iloc[0].selectLassoROI()
+    verts = cubes['cube'].sample(n=1).iloc[0].selectLassoROI()
+    mask = Roi.fromVerts('doesntmatter', 1, verts=verts, dataShape=cubes['cube'].sample(n=1).iloc[0].data.shape[:-1])
     for mat in set(cubes['material']):
         c = cubes[cubes['material'] == mat]
         fig, ax = plt.subplots()
