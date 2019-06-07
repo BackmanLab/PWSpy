@@ -51,7 +51,7 @@ class ICBase:
     def getMeanSpectra(self, mask: Union[Roi, np.ndarray] = None) ->Tuple[np.ndarray, np.ndarray]:
         if isinstance(mask, Roi):
             mask = mask.mask
-        if mask is None:
+        if mask is None: #Make a mask that includes everything
             mask = np.ones(self.data.shape[:-1], dtype=np.bool)
         mean = self.data[mask].mean(axis=0)
         std = self.data[mask].std(axis=0)
