@@ -27,6 +27,7 @@ def _splitPath(path: str) -> List[str]:
             break
     return folders
 
+
 def scanDirectory(directory: str) -> Dict[str, Any]:
     try:
         cam = CameraCorrection.fromJsonFile(os.path.join(directory, 'cameraCorrection.json'))
@@ -43,6 +44,7 @@ def scanDirectory(directory: str) -> Dict[str, Any]:
         rows.append({'setting': s, 'material': m, 'cube': file})
     df = pd.DataFrame(rows)
     return {'dataFrame': df, 'camCorrection': cam}
+
 
 def _processIm(im: ImCube, args) -> ImCube:
     im.correctCameraEffects(**args)
