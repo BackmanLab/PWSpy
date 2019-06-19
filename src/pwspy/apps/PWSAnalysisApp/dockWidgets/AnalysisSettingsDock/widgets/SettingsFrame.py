@@ -91,6 +91,8 @@ class SettingsFrame(QScrollArea):
         _(self.linearityEdit, 1, 1)
         self.hardwareCorrections = CollapsibleSection('Automatic Correction', 200, self)
         self.hardwareCorrections.stateChanged.connect(self._updateSize)
+        self.hardwareCorrections.setToolTip("The relationship between camera counts and light intensity is not always linear."
+                                            "The correction parameters can usually be found automatically in the image metadata.")
         self.hardwareCorrections.setLayout(layout)
         self._layout.addWidget(self.hardwareCorrections, row, 0, 1, 4)
         row += 1
@@ -128,7 +130,9 @@ class SettingsFrame(QScrollArea):
         layout.setContentsMargins(5, 1, 5, 5)
         _ = layout.addWidget
         self.filterOrder = QSpinBox()
-        self.filterOrder.setRange(0,6)
+        self.filterOrder.setRange(0, 6)
+        self.filterOrder.setToolTip("A lowpass filter is applied to the spectral signal to reduce noise. This determines the `order` of the digital filter.")
+        self.filterCutoff.setToolTip("The frequency in units of 1/wavelength for the filter cutoff.")
         self.filterCutoff = QDoubleSpinBox()
         _(QLabel("Filter Order"), 0, 0, 1, 1)
         _(self.filterOrder, 0, 1, 1, 1)
@@ -146,6 +150,8 @@ class SettingsFrame(QScrollArea):
         _ = layout.addWidget
         self.wavelengthStart = QSpinBox()
         self.wavelengthStop = QSpinBox()
+        self.wavelengthStart.setToolTip("Sometimes the beginning and end of the spectrum can have very high noise. For this reason we crop the data before analysis.")
+        self.wavelengthStop.setToolTip("Sometimes the beginning and end of the spectrum can have very high noise. For this reason we crop the data before analysis.")
         self.wavelengthStart.setRange(300, 800)
         self.wavelengthStop.setRange(300, 800)
         _(QLabel("Start"), 0, 0)
@@ -163,6 +169,8 @@ class SettingsFrame(QScrollArea):
         layout.setContentsMargins(5, 1, 5, 5)
         _ = layout.addWidget
         self.polynomialOrder = QSpinBox()
+        self.polynomialOrder.setToolTip("A polynomial is fit to each spectrum and then it is subtracted from the spectrum."
+                                        "This is so that we remove effects of absorbtion and our final signal is only due to interference")
         _(QLabel("Order"), 0, 0, 1, 1)
         _(self.polynomialOrder, 0, 1, 1, 1)
         self.polySub.setLayout(layout)
