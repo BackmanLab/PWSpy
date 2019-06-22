@@ -107,7 +107,7 @@ class PlottingDock(QDockWidget):
             #     self.enableAnalysisPlottingButtons(True)
             self.generatePlots(pattern)
         self._oldPattern = pattern
-        self._oldCells = cells
+        self._oldCells = self.cellMetas
 
     def enableAnalysisPlottingButtons(self, enable: str):
         enable = enable.lower()
