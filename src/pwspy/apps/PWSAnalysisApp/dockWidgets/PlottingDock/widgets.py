@@ -54,7 +54,7 @@ class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
         AnalysisPlotter.__init__(self, metadata, analysis)
         self.fig = Figure()
         self.ax = self.fig.add_subplot(1, 1, 1)
-        self.im = self.ax.imshow(np.zeros((100, 100)))
+        self.im = self.ax.imshow(np.zeros((100, 100)), cmap='gray')
         self.title = f"{title} {initialField}"
         self.ax.set_title(self.title, fontsize=8)
         self.ax.yaxis.set_visible(False)

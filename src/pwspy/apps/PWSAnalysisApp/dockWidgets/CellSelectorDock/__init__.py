@@ -2,6 +2,7 @@ import os
 import re
 from typing import List, Dict
 
+from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineEdit, QGridLayout, QSplitter, \
     QSizePolicy, QMessageBox
 
@@ -11,6 +12,7 @@ from pwspy.imCube.ICMetaDataClass import ICMetaData
 
 
 class CellSelectorDock(QDockWidget):
+    selectionChanged = QtCore.pyqtSignal(list)
     def __init__(self):
         super().__init__("Cell Selector")
         self.setStyleSheet("QDockWidget > QWidget { border: 1px solid lightgray; }")
@@ -18,6 +20,12 @@ class CellSelectorDock(QDockWidget):
         self._widget = QWidget(self)
         layout = QVBoxLayout()
         self.tableWidget = CellTableWidget(self._widget)
+        self.selectionChangeDebounce = QtCore.QTimer() #This timer prevents the selectionChanged signal from firing too rapidly.
+        self.selectionChangeDebounce.setInterval(500)
+        self.selectionChangeDebounce.setSingleShot(True)
+        self.selectionChangeDebounce.timeout.connect(lambda: self.selectionChanged.emit(self.getSelectedCellMetas()))
+
+        self.tableWidget.itemSelectionChanged.connect(self.selectionChangeDebounce.start)
         self.refTableWidget = ReferencesTable(self._widget, self.tableWidget)
         self._filterWidget = QWidget(self._widget)
         self.pathFilter = QComboBox(self._filterWidget)

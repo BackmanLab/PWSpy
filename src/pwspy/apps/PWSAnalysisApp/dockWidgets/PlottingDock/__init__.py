@@ -13,10 +13,9 @@ import re
 # TODO add blinded roi drawing
 #TODO get rid of refresh button. Just draw when requested with the 'imbd' buttons etc. rename imbd. even if analysis isn't present create a placeholder widget.
 class PlottingDock(QDockWidget):
-    def __init__(self, cellSelectorTable: CellSelectorDock):
+    def __init__(self):
         super().__init__("Plotting")
         self.setStyleSheet("QDockWidget > QWidget { border: 1px solid lightgray; }")
-        self.selector = cellSelectorTable
         self.roiDrawer = None
         self.setObjectName('PlottingWidget')
         self.plots = []
@@ -62,7 +61,7 @@ class PlottingDock(QDockWidget):
         [l.addWidget(i) for i in self.buttonGroup.buttons()]
         frame.setLayout(l)
         self.refreshButton = QPushButton("Refresh")
-        self.refreshButton.released.connect(lambda: self.generatePlots(self.anNameEdit.text()))
+        self.refreshButton.released.connect(lambda: self.generatePlots())
         self.roiButton = QPushButton("Draw Roi's")
         self.roiButton.released.connect(self.startRoiDrawing)
         label = QLabel("Analysis Name")
@@ -100,8 +99,7 @@ class PlottingDock(QDockWidget):
     def anNameEditFinished(self):
         #Sometimes the signal gets sent twice. only generate plots if the string has changed.
         pattern = self.anNameEdit.text()
-        cells = self.selector.getSelectedCellMetas()
-        if pattern != self._oldPattern or cells != self._oldCells:
+        if pattern != self._oldPattern or self.cellMetas != self._oldCells:
             # Determine if a name has been entered
             # if self.anNameEdit.text().strip() == '':
             #     self.enableAnalysisPlottingButtons(False)
@@ -132,14 +130,15 @@ class PlottingDock(QDockWidget):
         else:
             raise ValueError("`enable` string not recognized.")
 
-    def generatePlots(self, analysisName: str):
+    def generatePlots(self, cells: List[ICMetaData]):
+        self.cellMetas = cells
+        analysisName = self.anNameEdit.text()
         #clear Plots
         for i in self.plots:
             self.scrollContents.layout().removeWidget(i)
             i.deleteLater()
         self.plots = []
-        cells: List[ICMetaData] = self.selector.getSelectedCellMetas()
-        if len(cells) == 0:
+        if len(self.cellMetas) == 0:
             messageBox = QMessageBox(self)
             messageBox.information(self, "Oops!", "Please select the cells you would like to plot.")
             messageBox.setFixedSize(500, 200)
