@@ -61,7 +61,7 @@ class RoiDrawer(QWidget):
         self.newRoiDlg.exec()
         poly.remove()
         if self.newRoiDlg.result() == QDialog.Accepted:
-            r = Roi(self.plotWidg.roiFilter.currentText(), self.newRoiDlg.number, data=np.array(verts), dataAreVerts=True, dataShape=shape)
+            r = Roi.fromVerts(self.plotWidg.roiFilter.currentText(), self.newRoiDlg.number, verts=np.array(verts), dataShape=shape)
             md = self.metadatas[self.mdIndex][0]
             try:
                 md.saveRoi(r)
@@ -74,7 +74,6 @@ class RoiDrawer(QWidget):
                     # self.plotWidg.addRoi(r)
         self.plotWidg.canvas.draw_idle()
         self.selector.setActive(True)  # Start the next roi.
-
 
 
     def handleButtons(self, button):
