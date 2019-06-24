@@ -18,14 +18,13 @@ class PWSWindow(QMainWindow):
         self.cellSelector = CellSelectorDock()
         self.analysisSettings = AnalysisSettingsDock(self.cellSelector)
         self.resultsTable = ResultsTableDock()
-        self.plots = PlottingDock()
+        self.plots = PlottingDock(self.cellSelector)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.cellSelector)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.plots)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.analysisSettings)
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.resultsTable)
         self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks | QMainWindow.AllowTabbedDocks)
 
-        self.cellSelector.selectionChanged.connect(self.plots.generatePlots)
 
         self.fileDialog = WorkingDirDialog(self)
 

@@ -13,8 +13,9 @@ import re
 # TODO add blinded roi drawing
 #TODO get rid of refresh button. Just draw when requested with the 'imbd' buttons etc. rename imbd. even if analysis isn't present create a placeholder widget.
 class PlottingDock(QDockWidget):
-    def __init__(self):
+    def __init__(self, selector: CellSelectorDock):
         super().__init__("Plotting")
+        self.selector = selector
         self.setStyleSheet("QDockWidget > QWidget { border: 1px solid lightgray; }")
         self.roiDrawer = None
         self.setObjectName('PlottingWidget')
@@ -61,7 +62,7 @@ class PlottingDock(QDockWidget):
         [l.addWidget(i) for i in self.buttonGroup.buttons()]
         frame.setLayout(l)
         self.refreshButton = QPushButton("Refresh")
-        self.refreshButton.released.connect(lambda: self.generatePlots())
+        self.refreshButton.released.connect(lambda: self.generatePlots(self.selector.getSelectedCellMetas()))
         self.roiButton = QPushButton("Draw Roi's")
         self.roiButton.released.connect(self.startRoiDrawing)
         label = QLabel("Analysis Name")

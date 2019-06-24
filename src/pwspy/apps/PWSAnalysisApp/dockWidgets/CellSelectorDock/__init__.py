@@ -20,12 +20,12 @@ class CellSelectorDock(QDockWidget):
         self._widget = QWidget(self)
         layout = QVBoxLayout()
         self.tableWidget = CellTableWidget(self._widget)
-        self.selectionChangeDebounce = QtCore.QTimer() #This timer prevents the selectionChanged signal from firing too rapidly.
-        self.selectionChangeDebounce.setInterval(500)
-        self.selectionChangeDebounce.setSingleShot(True)
-        self.selectionChangeDebounce.timeout.connect(lambda: self.selectionChanged.emit(self.getSelectedCellMetas()))
+        self._selectionChangeDebounce = QtCore.QTimer() #This timer prevents the selectionChanged signal from firing too rapidly.
+        self._selectionChangeDebounce.setInterval(500)
+        self._selectionChangeDebounce.setSingleShot(True)
+        self._selectionChangeDebounce.timeout.connect(lambda: self.selectionChanged.emit(self.getSelectedCellMetas()))
 
-        self.tableWidget.itemSelectionChanged.connect(self.selectionChangeDebounce.start)
+        self.tableWidget.itemSelectionChanged.connect(self._selectionChangeDebounce.start)
         self.refTableWidget = ReferencesTable(self._widget, self.tableWidget)
         self._filterWidget = QWidget(self._widget)
         self.pathFilter = QComboBox(self._filterWidget)

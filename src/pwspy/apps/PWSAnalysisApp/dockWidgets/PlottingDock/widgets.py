@@ -65,7 +65,7 @@ class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
         self.changeData(initialField)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.showContextMenu)
-        self.plotnd = None
+        self.plotnd = None #Just a reference to a plotND class instance so it isn't deleted.
 
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
