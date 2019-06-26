@@ -99,6 +99,7 @@ class SettingsFrame(QScrollArea):
 
         '''Extra Reflection'''
         self.extraReflection = QGroupBox("Extra Reflection")
+        self.extraReflection.setToolTip("The fact that some light captured by the camera is scattered off surfaces inside the objective without ever reaching the sample means that the light intensity captured by the camera is not proportional to the reflectance of the sample. This extra reflectance varies spatially and spectrally and must be subtracted from our data in order for the analysis to be accurate. Calibration measurements of the extra reflectance are periodically uploaded to a google drive account which this software can download from. Click the folder icon to view and download the available calibration data cubes. Make sure to select one for the correct system and a date that is close to the acquisition date of your data. The `reference material` should be selected to match the material that was imaged in your reference image cube (usually Water).")
         layout = QVBoxLayout()
         layout.setContentsMargins(5, 1, 5, 5)
         self.RSubtractionNameLabel = QLineEdit()
@@ -126,6 +127,7 @@ class SettingsFrame(QScrollArea):
         '''SignalPreparations'''
         self.signalPrep = QGroupBox("Signal Prep")
         self.signalPrep.setFixedSize(175, 75)
+        self.signalPrep.setToolTip("In order to reduce the effects of measurement noise we filter out the high frequencies from our signal. We do this using a Buttersworth low-pass filter. Best to stick with the defaults on this one.")
         layout = QGridLayout()
         layout.setContentsMargins(5, 1, 5, 5)
         _ = layout.addWidget
@@ -144,7 +146,8 @@ class SettingsFrame(QScrollArea):
 
         '''Cropping'''
         self.cropping = QGroupBox("Wavelength Cropping")
-        self.cropping.setFixedSize(125,75)
+        self.cropping.setFixedSize(125, 75)
+        self.cropping.setToolTip("In the past it was found that there was exceptionally high noise at the very beginning and end of an acquisition. For this reason we would exclude the first and last wavelengths of the image cube. While it is likely that the noise issue has now been fixed we still do this for consistency's sake.")
         layout = QGridLayout()
         layout.setContentsMargins(5, 1, 5, 5)
         _ = layout.addWidget
@@ -165,12 +168,12 @@ class SettingsFrame(QScrollArea):
         '''Polynomial subtraction'''
         self.polySub = QGroupBox("Polynomial Subtraction")
         self.polySub.setFixedSize(150, 50)
+        self.polySub.setToolTip("A polynomial is fit to each spectrum and then it is subtracted from the spectrum."
+                                        "This is so that we remove effects of absorbtion and our final signal is only due to interference")
         layout = QGridLayout()
         layout.setContentsMargins(5, 1, 5, 5)
         _ = layout.addWidget
         self.polynomialOrder = QSpinBox()
-        self.polynomialOrder.setToolTip("A polynomial is fit to each spectrum and then it is subtracted from the spectrum."
-                                        "This is so that we remove effects of absorbtion and our final signal is only due to interference")
         _(QLabel("Order"), 0, 0, 1, 1)
         _(self.polynomialOrder, 0, 1, 1, 1)
         self.polySub.setLayout(layout)
@@ -180,8 +183,11 @@ class SettingsFrame(QScrollArea):
         '''Advanced Calculations'''
         self.advanced = CollapsibleSection('Skip Advanced Analysis', 200, self)
         self.advanced.stateChanged.connect(self._updateSize)
+        self.advanced.setToolTip("If this box is ticked then some of the less common analyses will be skipped. This saves time and harddrive space.")
         self.autoCorrStopIndex = QSpinBox()
+        self.autoCorrStopIndex.setToolTip("Autocorrelation slope is determined by fitting a line to the first values of the autocorrelation function. This value determines how many values to include in this linear fit.")
         self.minSubCheckBox = QCheckBox("MinSub")
+        self.minSubCheckBox.setToolTip("The calculation of autocorrelation decay slope involves taking the natural logarithm of of the autocorrelation. However noise often causes the autocorrelation to have negative values which causes problems for the logarithm. Checking this box adds an offset to the autocorrelation so that no values are negative.")
         layout = QGridLayout()
         _ = layout.addWidget
         _(QLabel("AutoCorr Stop Index"), 0, 0, 1, 1)
