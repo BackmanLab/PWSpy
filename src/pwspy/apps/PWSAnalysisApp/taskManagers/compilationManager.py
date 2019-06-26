@@ -18,6 +18,7 @@ from pwspy.apps.PWSAnalysisApp.sharedWidgets.dialogs import BusyDialog
 from pwspy.apps.PWSAnalysisApp.taskManagers.analysisManager import safeCallback
 from pwspy.imCube import ICMetaData
 from pwspy.utility.io import loadAndProcess
+import re
 
 
 class CompilationManager(QtCore.QObject):
@@ -53,28 +54,29 @@ class CompilationManager(QtCore.QObject):
     class CompilationThread(QThread):
         errorOccurred = QtCore.pyqtSignal(Exception)
 
-        def __init__(self, cellMetas: List[ICMetaData], compiler: RoiCompiler, roiName: str, analysisName: str):
+        def __init__(self, cellMetas: List[ICMetaData], compiler: RoiCompiler, roiNamePattern: str, analysisNamePattern: str):
             super().__init__()
             self.cellMetas = cellMetas
-            self.roiName = roiName
-            self.analysisName = analysisName
+            self.roiNamePattern = roiNamePattern
+            self.analysisNamePattern = analysisNamePattern
             self.compiler = compiler
             self.result = None
 
         def run(self):
             try:
-                self.result = loadAndProcess(self.cellMetas, processorFunc=self._process, procArgs=[self.compiler, self.roiName, self.analysisName],
-                           parallel=False,
-                           metadataOnly=True)  # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
+                self.result = loadAndProcess(self.cellMetas, processorFunc=self._process, procArgs=[self.compiler, self.roiNamePattern, self.analysisNamePattern],
+                                             parallel=False,
+                                             metadataOnly=True)  # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
             except Exception as e:
                 self.errorOccurred.emit(e)
 
         @staticmethod
-        def _process(md: ICMetaData, compiler: RoiCompiler, roiName: str, analysisName: str) -> Tuple[ICMetaData, List[Tuple[RoiCompilationResults, List[AnalysisWarning]]]]:
-            rois = [md.loadRoi(name, num, fformat) for name, num, fformat in md.getRois() if name == roiName]
-            analysisResults = md.loadAnalysis(analysisName)
+        def _process(md: ICMetaData, compiler: RoiCompiler, roiNamePattern: str, analysisNamePattern: str) -> Tuple[ICMetaData, List[Tuple[RoiCompilationResults, List[AnalysisWarning]]]]:
+            rois = [md.loadRoi(name, num, fformat) for name, num, fformat in md.getRois() if re.match(roiNamePattern, name)]
+            analysisResults = [md.loadAnalysis(name) for name in md.getAnalyses() if re.match(analysisNamePattern, name)]
             ret = []
-            for roi in rois:
-                cResults, warnings = compiler.run(analysisResults, roi)
-                ret.append((cResults, warnings))
+            for analysisResult in analysisResults:
+                for roi in rois:
+                    cResults, warnings = compiler.run(analysisResult, roi)
+                    ret.append((cResults, warnings))
             return md, ret

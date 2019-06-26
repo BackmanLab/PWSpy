@@ -28,8 +28,10 @@ class ResultsTableDock(QDockWidget):
             c.stateChanged.connect(f)
             checkBoxFrame.layout().addWidget(c)
             self.checkBoxes.append(c)
-        self.roiNameEdit = QLineEdit() #TODO allow regex or other way of including multiple rois and analyses
-        self.analysisNameEdit = QLineEdit()
+        self.roiNameEdit = QLineEdit('.*', self._widget)
+        self.roiNameEdit.setToolTip("ROIs matching this RegEx pattern will be compiled.")
+        self.analysisNameEdit = QLineEdit('.*', self._widget)
+        self.analysisNameEdit.setToolTip("Analyses matching this RegEx pattern will be compiled.")
         self.compileButton = QPushButton("Compile")
 
         scroll = QScrollArea()
@@ -63,7 +65,7 @@ class ResultsTableDock(QDockWidget):
     def getSettings(self):
         kwargs = {}
         for checkBox in self.checkBoxes:
-            default, settingsName = self.table.columns[checkBox.text()]
+            defaultVisible, settingsName, tooltip = self.table.columns[checkBox.text()]
             if settingsName is not None:
                 kwargs[settingsName] = bool(checkBox.checkState())
         return CompilerSettings(**kwargs)
