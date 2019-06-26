@@ -21,7 +21,7 @@ class ResultsTableDock(QDockWidget):
         checkBoxFrame.layout().setContentsMargins(1, 1, 1, 1)
         checkBoxFrame.layout().setSpacing(1)
         self.checkBoxes = []
-        for i, (name, (default, settingsName)) in enumerate(self.table.columns.items()):
+        for i, (name, (default, settingsName, tooltip)) in enumerate(self.table.columns.items()):
             c = QCheckBox(name)
             c.setCheckState(2) if default else c.setCheckState(0)
             f = lambda state, j=i: self.table.setColumnHidden(j, state == 0)
