@@ -28,7 +28,7 @@ class ResultsTableDock(QDockWidget):
             c.stateChanged.connect(f)
             checkBoxFrame.layout().addWidget(c)
             self.checkBoxes.append(c)
-        self.roiNameEdit = QLineEdit()
+        self.roiNameEdit = QLineEdit() #TODO allow regex or other way of including multiple rois and analyses
         self.analysisNameEdit = QLineEdit()
         self.compileButton = QPushButton("Compile")
 

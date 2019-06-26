@@ -2,14 +2,16 @@ from typing import List
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QScrollArea, QVBoxLayout, QPushButton, QMessageBox, \
-    QComboBox, QLabel, QLineEdit, QSizePolicy, QButtonGroup, QFrame
+    QLabel, QLineEdit, QSizePolicy, QButtonGroup, QFrame
 
 from pwspy.apps.PWSAnalysisApp.dockWidgets import CellSelectorDock
-from pwspy.apps.PWSAnalysisApp.dockWidgets.PlottingDock.roiDrawer import RoiDrawer
+from pwspy.apps.PWSAnalysisApp.dockWidgets.PlottingDock.widgets.roiDrawer import RoiDrawer
 from pwspy.imCube.ICMetaDataClass import ICMetaData
-from .widgets import AspectRatioWidget, LittlePlot
+from .widgets.widgets import AspectRatioWidget
+from .widgets.littlePlot import LittlePlot
 import os
-import re
+
+
 # TODO add blinded roi drawing
 #TODO get rid of refresh button. Just draw when requested with the 'imbd' buttons etc. rename imbd. even if analysis isn't present create a placeholder widget.
 class PlottingDock(QDockWidget):
@@ -106,7 +108,7 @@ class PlottingDock(QDockWidget):
             #     self.enableAnalysisPlottingButtons(False)
             # else:
             #     self.enableAnalysisPlottingButtons(True)
-            self.generatePlots(pattern)
+            self.generatePlots(self.selector.getSelectedCellMetas())
         self._oldPattern = pattern
         self._oldCells = self.cellMetas
 
@@ -145,7 +147,7 @@ class PlottingDock(QDockWidget):
             messageBox.setFixedSize(500, 200)
         buttonState = 'false'
         for cell in cells:
-            if analysisName.strip() == '': #No analysis name was entered. don't load an analysis
+            if analysisName.strip() == '': #No analysis name was entered. don't load an analysis, just the thumbnail
                 self.addPlot(LittlePlot(cell, None, f"{os.path.split(cell.filePath)[-1]}"))
                 buttonState = 'partial'
             else:
@@ -153,6 +155,8 @@ class PlottingDock(QDockWidget):
                     analysis = cell.loadAnalysis(analysisName)
                     self.addPlot(LittlePlot(cell, analysis, f"{analysisName} {os.path.split(cell.filePath)[-1]}"))
                     buttonState = 'true'
+                else: #Specified analysis was not found, load a dummy widget
+                    self.addPlot(LittlePlot(cell, None, f"{analysisName} {os.path.split(cell.filePath)[-1]}", "Analysis Not Found!"))
         self.enableAnalysisPlottingButtons(buttonState)
         self._plotsChanged()
 
