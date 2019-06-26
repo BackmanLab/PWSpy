@@ -2,19 +2,19 @@ from typing import List, Tuple, Optional
 
 import numpy as np
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QWidget, QGridLayout, QButtonGroup, QPushButton, QDialog, QLineEdit, QSpinBox, QLabel, \
+from PyQt5.QtWidgets import QWidget, QGridLayout, QButtonGroup, QPushButton, QDialog, QSpinBox, QLabel, \
     QMessageBox
 from matplotlib import patches
 import os
 from pwspy.analysis.analysisResults import AnalysisResultsLoader
-from pwspy.apps.PWSAnalysisApp.dockWidgets.PlottingDock.bigPlot import BigPlot
+from pwspy.apps.PWSAnalysisApp.dockWidgets.PlottingDock.widgets.bigPlot import BigPlot
 from pwspy.imCube import ICMetaData
 from pwspy.imCube.otherClasses import Roi
 from pwspy.utility.matplotlibwidg import AdjustableSelector, MyLasso, MyEllipse
 
 
 class RoiDrawer(QWidget):
-    def __init__(self, metadatas: List[Tuple[ICMetaData, Optional[AnalysisResultsLoader]]], parent=None, initialField='imbd'):
+    def __init__(self, metadatas: List[Tuple[ICMetaData, Optional[AnalysisResultsLoader]]], parent=None):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         self.setWindowTitle("Roi Drawer 3000")
         self.metadatas = metadatas
