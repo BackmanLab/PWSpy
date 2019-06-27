@@ -4,8 +4,6 @@ from glob import glob
 
 wDir = r''
 refPath = r''
-frameAverage = False
-sizeAverage = 3
 
 ref = DynCube.loadAny(refPath)
 ref.correctCameraEffects(auto=True)
@@ -17,3 +15,10 @@ for f in files:
     dyn.correctCameraEffects(auto=True)
     dyn.normalizeByExposure()
     dyn.normalizeByReference(ref)
+
+    #TODO the original script optionally uses 3 frame frame-averaging here as a lowpass
+
+    #This is equivalent to subtracting the mean from each spectra and taking the RMS
+    rms = dyn.data.std(axis=2)
+
+    #TODO save the RMS
