@@ -18,7 +18,7 @@ from pwspy.analysis import defaultSettingsPath
 from .mainWindow import PWSWindow
 from . import applicationVars
 from . import resources
-from .extraReflectionManager.manager import ERManager
+from pwspy.apps.sharedWidgets.extraReflectionManager.manager import ERManager
 from glob import glob
 from typing import List, Tuple, Optional
 import typing

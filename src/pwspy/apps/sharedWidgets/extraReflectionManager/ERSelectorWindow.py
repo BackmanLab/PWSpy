@@ -1,5 +1,6 @@
+from __future__ import annotations
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDialog, QTableWidget, QTableWidgetItem, QMessageBox, QWidget, QCheckBox, QVBoxLayout, \
@@ -8,8 +9,11 @@ from PyQt5.QtWidgets import QDialog, QTableWidget, QTableWidgetItem, QMessageBox
 from pwspy import moduleConsts
 from pwspy.apps.PWSAnalysisApp.sharedWidgets.tables import DatetimeTableWidgetItem
 from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
-from .manager import ERManager
 import numpy as np
+
+# import typing
+# if typing.TYPE_CHECKING:
+#     import
 
 
 class ERTableWidgetItem:
@@ -49,17 +53,17 @@ class ERTableWidgetItem:
         return self._checkBox.isChecked()
 
 
-class ExplorerWindow(QDialog):
+class ERSelectorWindow(QDialog):
     selectionChanged = QtCore.pyqtSignal(ERMetadata)
-    def __init__(self, parent: QWidget, manager: ERManager):
-        self.manager = manager
+    def __init__(self, manager: ERManager, parent: Optional[QWidget] = None):
+        self._manager = manager
         self._selectedId: str = None
         super().__init__(parent)
-        self.setWindowTitle("Extra Reflectance Manager")
+        self.setModal(True)
+        self.setWindowTitle("Extra Reflectance Selector")
         self.setLayout(QVBoxLayout())
         self.table = QTableWidget(self)
         self.table.verticalHeader().hide()
-        # self.table.horizontalHeader().hide()
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.itemDoubleClicked.connect(self.displayInfo)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -89,13 +93,13 @@ class ExplorerWindow(QDialog):
         self._initialize()
 
     def _updateIndex(self):
-        self.manager.download("index.json")
+        self._manager.download("index.json")
         self._initialize()
 
     def _initialize(self):
-        self.manager.reinitialize()
+        self._manager.reinitialize()
         self._items: List[ERTableWidgetItem] = []
-        for item in self.manager.index['reflectanceCubes']:
+        for item in self._manager.index['reflectanceCubes']:
             self._addItem(item)
 
     def _addItem(self, item: dict):
@@ -107,7 +111,7 @@ class ExplorerWindow(QDialog):
         self.table.setItem(self.table.rowCount() - 1, 2, tableItem.dateItem)
 
     def displayInfo(self, item: QTableWidgetItem):
-        item = [i for i in self._items if i.sysItem is item][0]
+        item = [i for i in self._items if i.sysItem.row() == item.row()][0]
         message = QMessageBox.information(self, item.name, '\n\n'.join([f'FileName: {item.fileName}',
                                                                       f'ID Tag: {item.idTag}',
                                                                       f'Description: {item.description}']))
@@ -116,7 +120,7 @@ class ExplorerWindow(QDialog):
         for item in self._items:
             if item.isChecked() and not item.downloaded:
                 # If the checkbox is enabled then it hasn't been downloaded yet. if it is checked then it should be downloaded
-                self.manager.download(item.fileName)
+                self._manager.download(item.fileName)
         self._initialize()
 
     def accept(self) -> None:
@@ -131,7 +135,7 @@ class ExplorerWindow(QDialog):
         return self._selectedId
 
     def setSelection(self, idTag: str):
-        md = self.manager.getMetadataFromId(idTag)
+        md = self._manager.getMetadataFromId(idTag)
         self._selectedId = idTag
         self.selectionChanged.emit(md)
 

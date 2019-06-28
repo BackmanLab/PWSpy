@@ -6,14 +6,16 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QLi
     QLabel, QListWidgetItem
 
 from pwspy.apps.ExtraReflectanceCreator.ERWorkFlow import ERWorkFlow
+from pwspy.apps.sharedWidgets import ERManager
 from pwspy.moduleConsts import dateTimeFormat
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, workFlow: ERWorkFlow):
+    def __init__(self, workFlow: ERWorkFlow, manager: ERManager):
         QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
-        self.workflow = workFlow
         super().__init__()
+        self.workflow = workFlow
+        self.explorerWindow = manager.createExplorerWindow(self)
         self.setWindowTitle("Extra Reflectance Creator")
         widg = QWidget()
         layout = QGridLayout()
@@ -34,6 +36,8 @@ class MainWindow(QMainWindow):
         self.saveButton.released.connect(self._cb(self.workflow.save))
         self.deleteFigsButton = QPushButton("Delete Figs")
         self.deleteFigsButton.released.connect(self._cb(self.workflow.deleteFigures))
+        self.viewFilesButton = QPushButton("View Files")
+        self.viewFilesButton.released.connect(self.viewFiles)
         row = 0
         layout.addWidget(self.listWidg, row, 0, 4, 4)
         layout.addWidget(self.selListWidg, row, 4, 4, 4)
@@ -44,6 +48,8 @@ class MainWindow(QMainWindow):
         layout.addWidget(QLabel("Binning"), row, 4, 1, 1)
         layout.addWidget(self.binningCombo, row, 5, 1, 1)
         layout.addWidget(self.saveButton, row, 6, 1, 1)
+        row += 1
+        layout.addWidget(self.viewFilesButton, row, 0, 1, 1)
         widg.setLayout(layout)
         self.setCentralWidget(widg)
         self.buttons = [self.compareDatesButton, self.plotButton, self.saveButton]
@@ -90,3 +96,6 @@ class MainWindow(QMainWindow):
 
     def setEnabled(self, en: bool):
         [i.setEnabled(en) for i in [self.binningCombo, self.saveButton, self.compareDatesButton, self.plotButton]]
+
+    def viewFiles(self):
+        self.explorerWindow.show()

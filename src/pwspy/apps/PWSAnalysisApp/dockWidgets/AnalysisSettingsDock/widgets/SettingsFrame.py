@@ -1,22 +1,20 @@
 from __future__ import annotations
 import os
 from glob import glob
-from typing import Tuple, Optional
+from typing import Optional
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.apps.PWSAnalysisApp.extraReflectionManager.manager import ERManager
+    from pwspy.apps.sharedWidgets.extraReflectionManager.manager import ERManager
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import QPalette, QValidator, QDoubleValidator
 from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupBox, QHBoxLayout, QWidget, QRadioButton, \
-    QFrame, QSpinBox, QVBoxLayout, QPushButton, QComboBox, QDoubleSpinBox, QCheckBox, QMessageBox, QFileDialog, \
-    QSpacerItem, QSizePolicy, QLayout
+    QFrame, QSpinBox, QVBoxLayout, QPushButton, QComboBox, QDoubleSpinBox, QCheckBox, QMessageBox, QSpacerItem, QSizePolicy, QLayout
 
 from pwspy.imCube import CameraCorrection
 from pwspy.analysis import AnalysisSettings
 from pwspy.apps.PWSAnalysisApp import applicationVars
 from pwspy.apps import resources
-from pwspy.apps.PWSAnalysisApp.extraReflectionManager.explorerWindow import ExplorerWindow
 from pwspy.apps.PWSAnalysisApp.sharedWidgets.collapsibleSection import CollapsibleSection
 from pwspy.utility import reflectanceHelper
 from pwspy.moduleConsts import Material
@@ -25,7 +23,7 @@ from pwspy.moduleConsts import Material
 class SettingsFrame(QScrollArea):
     def __init__(self, erManager: ERManager):
         super().__init__()
-        self.ERExplorer = ExplorerWindow(self, erManager)
+        self.ERExplorer = erManager.createExplorerWindow(self)
         self.ERExplorer.selectionChanged.connect(lambda md: self.RSubtractionNameLabel.setText(os.path.split(md.filePath)[-1]))
         self._frame = VerticallyCompressedWidget(self)
         self._layout = QGridLayout()

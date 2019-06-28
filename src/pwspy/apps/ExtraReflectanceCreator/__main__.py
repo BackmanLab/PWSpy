@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 
 from pwspy.apps.ExtraReflectanceCreator.widgets.mainWindow import MainWindow
 from pwspy.apps import appPath
+from pwspy.apps.sharedWidgets import ERManager
 
 
 class ERApp(QApplication):
@@ -23,8 +24,10 @@ class ERApp(QApplication):
         homeDir = os.path.join(appPath, 'ExtraReflectanceCreatorData')
         if not os.path.exists(homeDir):
             os.mkdir(homeDir)
+
         self.workflow = ERWorkFlow(wDir, homeDir)
-        self.window = MainWindow(self.workflow)
+        self.erManager = ERManager(homeDir)
+        self.window = MainWindow(self.workflow, self.erManager)
 
 
 def isIpython():

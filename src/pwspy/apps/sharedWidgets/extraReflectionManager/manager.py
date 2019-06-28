@@ -4,10 +4,11 @@ from glob import glob
 import jsonschema
 from PyQt5 import QtCore
 from PyQt5.QtCore import QObject, QThread
-from PyQt5.QtWidgets import QMessageBox, QApplication
+from PyQt5.QtWidgets import QMessageBox, QApplication, QWidget
 from googleapiclient.http import MediaIoBaseDownload
 
 from pwspy.apps.PWSAnalysisApp.sharedWidgets.dialogs import BusyDialog
+from .ERSelectorWindow import ERSelectorWindow
 from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
 from pwspy.utility.GoogleDriveDownloader import GoogleDriveDownloader
 
@@ -44,6 +45,9 @@ class ERManager:
         self.directory = filePath
         self.downloader = None
         self.reinitialize()
+
+    def createExplorerWindow(self, parent: QWidget):
+        return ERSelectorWindow(self, parent)
 
     def reinitialize(self):
         indexPath = os.path.join(self.directory, 'index.json')
