@@ -60,9 +60,29 @@ class ERManager:
             i['downloaded'] = i['idTag'] in tags
 
     def download(self, fileName: str):
+        """Begin downloading `fileName` in a separate thread. Use the main thread to update a progress bar"""
+        class DownloadThread(QThread):
+            """A QThread to download from google drive"""
+            errorOccurred = QtCore.pyqtSignal(Exception)
+            def __init__(self, downloader, fileName, directory):
+                super().__init__()
+                self.downloader = downloader
+                self.fileName = fileName
+                self.directory = directory
+            def run(self):
+                try:
+                    files = self.downloader.getFolderIdContents(
+                        self.downloader.getIdByName('PWSAnalysisAppHostedFiles'))
+                    files = self.downloader.getFolderIdContents(
+                        self.downloader.getIdByName('ExtraReflectanceCubes', fileList=files))
+                    fileId = self.downloader.getIdByName(self.fileName, fileList=files)
+                    self.downloader.downloadFile(fileId, os.path.join(self.directory, self.fileName))
+                except Exception as e:
+                    self.errorOccurred.emit(e)
+
         if self.downloader is None:
             self.downloader = QtGoogleDriveDownloader(applicationVars.googleDriveAuthPath)
-        t = self.DownloadThread(self.downloader, fileName, self.directory)
+        t = DownloadThread(self.downloader, fileName, self.directory)
         b = BusyDialog(QApplication.instance().window, f"Downloading {fileName}. Please Wait...", progressBar=True)
         t.finished.connect(b.accept)
         self.downloader.progress.connect(b.setProgress)
@@ -70,25 +90,9 @@ class ERManager:
         t.start()
         b.exec()
 
-    class DownloadThread(QThread):
-        errorOccurred = QtCore.pyqtSignal(Exception)
-
-        def __init__(self, downloader, fileName, directory):
-            super().__init__()
-            self.downloader = downloader
-            self.fileName = fileName
-            self.directory = directory
-
-        def run(self):
-            try:
-                files = self.downloader.getFolderIdContents(self.downloader.getIdByName('PWSAnalysisAppHostedFiles'))
-                files = self.downloader.getFolderIdContents(self.downloader.getIdByName('ExtraReflectanceCubes', fileList=files))
-                fileId = self.downloader.getIdByName(self.fileName, fileList=files)
-                self.downloader.downloadFile(fileId, os.path.join(self.directory, self.fileName))
-            except Exception as e:
-                self.errorOccurred.emit(e)
 
     def getMetadataFromId(self, Id: str) -> ERMetadata:
+        """Given the Id string for ExtraReflectanceCube this will search the index.json and return the ERMetadata file"""
         try:
             match = [item for item in self.index['reflectanceCubes'] if item['idTag'] == Id][0]
         except IndexError:

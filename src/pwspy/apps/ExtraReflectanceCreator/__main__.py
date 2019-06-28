@@ -1,5 +1,6 @@
 import os
 
+from PyQt5 import QtCore
 from PyQt5.QtWidgets import QApplication, QFileDialog
 from pwspy.apps.ExtraReflectanceCreator.ERWorkFlow import ERWorkFlow
 import matplotlib.pyplot as plt
@@ -12,7 +13,13 @@ class ERApp(QApplication):
     def __init__(self, args):
         super().__init__(args)
         plt.interactive(True)
-        wDir = QFileDialog.getExistingDirectory(caption='Select Working Directory')
+        settings = QtCore.QSettings("BackmanLab", "ERCreator")
+        try:
+            initialDir = settings.value('workingDirectory')
+        except TypeError: #Setting not found
+            initialDir = None
+        wDir = QFileDialog.getExistingDirectory(caption='Select Working Directory', directory=initialDir)
+        settings.setValue("workingDirectory", wDir)
         homeDir = os.path.join(appPath, 'ExtraReflectanceCreatorData')
         if not os.path.exists(homeDir):
             os.mkdir(homeDir)
