@@ -5,7 +5,7 @@ from typing import Optional, List
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
-from googleapiclient.http import MediaIoBaseDownload
+from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
 
 
 class GoogleDriveDownloader:
@@ -28,7 +28,7 @@ class GoogleDriveDownloader:
                 creds.refresh(Request())
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
-                    credPath, ['https://www.googleapis.com/auth/drive.readonly'])
+                    credPath, ['https://www.googleapis.com/auth/drive.file'])
                 creds = flow.run_local_server()
             with open(tokenPath, 'wb') as token: # Save the credentials for the next run
                 pickle.dump(creds, token)
@@ -48,12 +48,12 @@ class GoogleDriveDownloader:
         if fileList is None: fileList = self.allFiles
         return [i['id'] for i in fileList if i['name'] == name][0]
 
-    def getFolderIdContents(self, Id: int) -> List:
+    def getFolderIdContents(self, Id: str) -> List:
         """Return the api metadata for all files contained within the folder associated with `id`."""
         files = [i for i in self.allFiles if 'parents' in i] # Get rid of parentless files. they will cause errors.
         return [i for i in files if Id in i['parents']]
 
-    def downloadFile(self, Id: int, savePath: str):
+    def downloadFile(self, Id: str, savePath: str):
         """Save the file with `id` to `savePath`"""
         fileRequest = self.api.files().get_media(fileId=Id)
         with open(savePath, 'wb') as f:
@@ -62,3 +62,28 @@ class GoogleDriveDownloader:
             while done is False:
                 status, done = downloader.next_chunk()
                 print("Download %d%%." % int(status.progress() * 100))
+
+    def createFolder(self, name: str, parentId: Optional[str] = None) -> str:
+        """Creates a folder with name `name` and returns the id number of the folder
+        If parentId is provided then the folder will be created inside the parent folder"""
+        folderMetadata = {'name': name, 'mimeType': 'application/vnd.google-apps.folder'}
+        if parentId: folderMetadata['parents'] = [parentId]
+        folder = self.api.files().create(body=folderMetadata, fields='id').execute()
+        return folder.get('id')
+
+    def uploadFile(self, filePath: str, parentId: str) -> str:
+        """upload the file at `filePath` to the folder with `parentId`. keeping the original file name.
+        Return the new file's id."""
+        fileMetadata = {'name': os.path.split(filePath)[-1], 'parents': [parentId]}
+        media = MediaFileUpload(filePath)
+        file = self.api.files().create(body=fileMetadata, media_body=media, fields='id').execute()
+        return file.get('id')
+
+    def moveFile(self, fileId: str, newFolderId: str):
+        file = self.api.files().get(fileId=fileId, fields='parents').execute()
+        oldParents = ','.join(file.get('parents'))
+        file = self.api.files().update(fileId=fileId, addParents=newFolderId, removeParents=oldParents, fields='id, parents').execute()
+
+
+if __name__ == '__main__':
+    g = GoogleDriveDownloader(r'C:\Users\backman05\PwspyApps\PWSAnalysisData\GoogleDrive')
