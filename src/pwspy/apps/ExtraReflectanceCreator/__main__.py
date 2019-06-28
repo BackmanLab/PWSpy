@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 from pwspy.apps.ExtraReflectanceCreator.widgets.mainWindow import MainWindow
 from pwspy.apps import appPath
-from pwspy.apps.sharedWidgets import ERManager
+from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 
 
 class ERApp(QApplication):

@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QLi
     QLabel, QListWidgetItem
 
 from pwspy.apps.ExtraReflectanceCreator.ERWorkFlow import ERWorkFlow
-from pwspy.apps.sharedWidgets import ERManager
+from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 from pwspy.moduleConsts import dateTimeFormat
 
 
@@ -15,7 +15,7 @@ class MainWindow(QMainWindow):
         QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
         super().__init__()
         self.workflow = workFlow
-        self.explorerWindow = manager.createExplorerWindow(self)
+        self.explorerWindow = manager.createManagerWindow(self)
         self.setWindowTitle("Extra Reflectance Creator")
         widg = QWidget()
         layout = QGridLayout()

@@ -1,4 +1,7 @@
-from PyQt5.QtWidgets import QDialog
+from __future__ import annotations
+from typing import Optional
+
+from PyQt5.QtWidgets import QDialog, QWidget, QHBoxLayout, QPushButton, QAbstractItemView, QTableWidget, QVBoxLayout
 
 
 class ERUploaderWindow(QDialog):
@@ -7,7 +10,7 @@ class ERUploaderWindow(QDialog):
         self._selectedId: str = None
         super().__init__(parent)
         self.setModal(True)
-        self.setWindowTitle("Extra Reflectance Selector")
+        self.setWindowTitle("Extra Reflectance File Manager")
         self.setLayout(QVBoxLayout())
         self.table = QTableWidget(self)
         self.table.verticalHeader().hide()
@@ -21,21 +24,26 @@ class ERUploaderWindow(QDialog):
         self.table.setHorizontalHeaderLabels([" ", "System", "Date"])
         self.table.setColumnWidth(0, 10)
 
-        self.downloadButton = QPushButton("Download Checked Items")
-        self.downloadButton.released.connect(self._downloadCheckedItems)
-        self.updateButton = QPushButton('Update Index')
-        self.updateButton.setToolTip(
-            "Update the index containing information about which Extra Reflectance Cubes are available for download.")
-        self.updateButton.released.connect(self._updateIndex)
-        self.acceptSelectionButton = QPushButton("Accept Selection")
-        self.acceptSelectionButton.released.connect(self.accept)
+        self.uploadButton = QPushButton("Upload to Drive")
+        self.uploadButton.released.connect(self._updateGDrive)
+        self.refreshButton = QPushButton('Refresh')
+        self.refreshButton.setToolTip("Rescan the files in the applications data directory.")
+        self.refreshButton.released.connect(self._rescan)
         self.layout().addWidget(self.table)
         l = QHBoxLayout()
         l.setContentsMargins(0, 0, 0, 0)
-        l.addWidget(self.downloadButton)
-        l.addWidget(self.updateButton)
+        l.addWidget(self.uploadButton)
+        l.addWidget(self.refreshButton)
         w = QWidget()
         w.setLayout(l)
         self.layout().addWidget(w)
-        self.layout().addWidget(self.acceptSelectionButton)
         self._initialize()
+
+    def displayInfo(self):
+        pass
+    def _updateGDrive(self):
+        pass
+    def _rescan(self):
+        pass
+    def _initialize(self):
+        pass

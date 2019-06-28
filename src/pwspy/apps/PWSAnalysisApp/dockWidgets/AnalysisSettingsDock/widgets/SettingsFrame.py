@@ -23,7 +23,7 @@ from pwspy.moduleConsts import Material
 class SettingsFrame(QScrollArea):
     def __init__(self, erManager: ERManager):
         super().__init__()
-        self.ERExplorer = erManager.createExplorerWindow(self)
+        self.ERExplorer = erManager.createSelectorWindow(self)
         self.ERExplorer.selectionChanged.connect(lambda md: self.RSubtractionNameLabel.setText(os.path.split(md.filePath)[-1]))
         self._frame = VerticallyCompressedWidget(self)
         self._layout = QGridLayout()
