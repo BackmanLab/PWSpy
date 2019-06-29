@@ -11,9 +11,9 @@ from pwspy.apps.PWSAnalysisApp.sharedWidgets.tables import DatetimeTableWidgetIt
 from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
 import numpy as np
 
-# import typing
-# if typing.TYPE_CHECKING:
-#     import
+import typing
+if typing.TYPE_CHECKING:
+    from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 
 
 class ERTableWidgetItem:
