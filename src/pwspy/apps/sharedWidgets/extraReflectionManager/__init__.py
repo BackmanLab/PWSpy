@@ -1,11 +1,13 @@
+from __future__ import annotations
 from datetime import datetime
 import hashlib
 import json
 import os
 from glob import glob
-from typing import Optional
+from typing import Optional, List
 
 import jsonschema
+import pandas
 from PyQt5 import QtCore
 from PyQt5.QtCore import QObject, QThread
 from PyQt5.QtWidgets import QMessageBox, QApplication, QWidget
@@ -130,7 +132,7 @@ class ERIndex:
             'creationDate': {'type': 'string'}
         }
     }
-    def __init__(self, cubes: ERIndexCube, creationDate: Optional[str] = None):
+    def __init__(self, cubes: List[ERIndexCube], creationDate: Optional[str] = None):
         self.cubes = cubes
         if creationDate is None:
             self.creationDate = datetime.strftime(datetime.now(), dateTimeFormat)
@@ -165,12 +167,25 @@ class ERIndexCube:
 class ERDataDirectory:
     def __init__(self, directory: str):
         self._directory = directory
-        self.index = ERIndex(os.path.join(self._directory, 'index.json'))
+        self.index = ERIndex.loadFromFile(os.path.join(self._directory, 'index.json'))
         files = glob(os.path.join(self._directory, f'*{ERMetadata.FILESUFFIX}'))
         files = [(f, ERMetadata.validPath(f)) for f in files]  # validPath returns True/False in awhether the datacube was found.
         files = [(directory, name) for f, (valid, directory, name) in files if valid]
         self.files = [ERMetadata.fromHdfFile(directory, name) for directory, name in files]
         calculatedIndex = self.buildIndexFromFiles()
+
+        status = {}
+        for cube in calculatedIndex.cubes:
+            for indexCube in self.index.cubes:
+                status[cube] = {}
+                if cube.idTag == indexCube.idTag:
+                    status[cube]['match'] = indexCube.idTag
+                if cube.md5 == indexCube.md5:
+                    status[cube]['md5match'] = indexCube.idTag
+        status = pandas.DataFrame(status)
+        status['ok'] = status['match'] and status['md5match']
+
+
         for i in self.index.cubes:
             i['downloaded'] = i.idTag in [cube.idTag for cube in calculatedIndex.cubes] #Replace this with code to indicate either `matches`, `md5` conflict, 'not indexed', or 'missing`
 
