@@ -23,7 +23,7 @@ setup(name='pwspy',
                         'google-api-python-client',
                         'google-auth-httplib2',
                         'google-auth-oauthlib',
-                        'opencv-contrib-python', 'python-qt5'],
+                        'opencv-contrib-python'],
       package_dir={'': 'src'},
       package_data={'': ['*.csv', '*.png', '*.svg']},
       packages=find_packages('src'))
