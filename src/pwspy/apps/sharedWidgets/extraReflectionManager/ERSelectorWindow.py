@@ -13,7 +13,8 @@ import numpy as np
 
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager, ERIndexCube
+    from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
+    from pwspy.apps.sharedWidgets.extraReflectionManager.ERIndex import ERIndexCube
 
 
 class ERTableWidgetItem:
