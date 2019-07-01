@@ -13,7 +13,7 @@ import numpy as np
 
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
+    from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager, ERIndexCube
 
 
 class ERTableWidgetItem:
@@ -97,13 +97,13 @@ class ERSelectorWindow(QDialog):
         self._initialize()
 
     def _initialize(self):
-        self._manager.reinitialize()
+        self._manager.rescan()
         self._items: List[ERTableWidgetItem] = []
-        for item in self._manager.index['reflectanceCubes']:
+        for item in self._manager.dataDir.index.cubes:
             self._addItem(item)
 
-    def _addItem(self, item: dict):
-        tableItem = ERTableWidgetItem(fileName=item['fileName'], description=item['description'], idTag=item['idTag'], name=item['name'], downloaded=item['downloaded'])
+    def _addItem(self, item: ERIndexCube):
+        tableItem = ERTableWidgetItem(fileName=item.fileName, description=item.description, idTag=item.idTag, name=item.name, downloaded=self._manager.dataDir.status.loc[item.idTag]['match'])
         self._items.append(tableItem)
         self.table.setRowCount(len(self._items))
         self.table.setCellWidget(self.table.rowCount() - 1, 0, tableItem.checkBoxWidget)

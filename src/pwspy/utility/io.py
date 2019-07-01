@@ -101,6 +101,10 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
     passLock:
         If true then pass the multiprocessing lock object to the second argument fo processorFunc. this can be used to
         synchronize hard disk activity.
+    initializer:
+        A function that is run once at the beginning of each spawned process. Can be used for copying shared memory.
+    initArgs:
+        A tuple of arguments to pass to the `initializer` function.
 
     Returns
     -------

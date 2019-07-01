@@ -58,9 +58,9 @@ class MySelectorWidget(AxesWidget):
     can implement a number of action handlers like mouse actions and keyboard presses.
     button allows the user to specify which mouse buttons are valid to trigger an event. This can be an int or list of ints.
     state_modifier_keys should be a dict {state: keyName}, the default is {move=' ', clear='escape', square='shift', center='control'}"""
-    def __init__(self, axMan: AxManager, button=None, state_modifier_keys=None):
+    def __init__(self, axMan: AxManager, onselect=None, button=None, state_modifier_keys=None):
         AxesWidget.__init__(self, axMan.ax)
-
+        self.onselect = onselect
         self.visible = True
         self.axMan = axMan
         self.artists = []
@@ -107,7 +107,7 @@ class MySelectorWidget(AxesWidget):
         if event.button == self.eventpress.button: # If a button was pressed, check if the release-button is the same.
             return False
         # If a button was pressed, check if the release-button is the same.
-        return (event.inaxes != self.ax or event.button != self.eventpress.button)
+        return event.inaxes != self.ax or event.button != self.eventpress.button
 
     def __get_data(self, event):
         """Get the xdata and ydata for event, with limits"""

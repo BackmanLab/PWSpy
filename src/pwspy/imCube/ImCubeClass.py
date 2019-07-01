@@ -197,7 +197,7 @@ class ImCube(ICBase):
 
     def normalizeByReference(self, reference: ImCube):
         if self._hasBeenNormalizedByReference:
-            raise("This ImCube has already been normalized by a reference.")
+            raise Exception("This ImCube has already been normalized by a reference.")
         if not self.isCorrected():
             print("Warning: This ImCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
         if not self.isExposureNormalized():

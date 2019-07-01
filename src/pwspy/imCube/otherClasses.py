@@ -131,7 +131,8 @@ class Roi:
         self.filePath = savePath
         self.fileFormat = RoiFileFormats.HDF2
 
-    def deleteRoi(self, directory: str, name: str, num: int):
+    @staticmethod
+    def deleteRoi(directory: str, name: str, num: int):
         path = os.path.join(directory, f"ROI_{name}.h5")
         if not os.path.exists(path):
             raise OSError(f"The file {path} does not exist.")

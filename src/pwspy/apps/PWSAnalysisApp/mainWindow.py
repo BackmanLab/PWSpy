@@ -1,7 +1,7 @@
 import os
 
 from PyQt5 import QtCore, QtGui
-from PyQt5.QtWidgets import QMainWindow, QApplication, QToolBar
+from PyQt5.QtWidgets import QMainWindow, QApplication, QToolBar, QMessageBox
 
 from . import resources
 from pwspy.apps import resources as sharedresources
@@ -41,8 +41,8 @@ class PWSWindow(QMainWindow):
         self.addToolBar(QtCore.Qt.LeftToolBarArea, toolBar)
         browseAction = toolBar.addAction(QtGui.QIcon(os.path.join(sharedresources, 'folder.svg')), "Set Path")
         browseAction.triggered.connect(self.fileDialog.show)
-        action2 = toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'icon.png')), "Idea")
-        # action2.triggered.connect(self.cellSelector.clearCells) #This was just for testing
+        action2 = toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'icon.png')), "Info")
+        action2.triggered.connect(self.openInfoPane)
         self.runAction = toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'playicon.svg')), 'Run').triggered
         settings = QtCore.QSettings("BackmanLab", "PWSAnalysis2")
         try:
@@ -59,6 +59,9 @@ class PWSWindow(QMainWindow):
         settings.setValue("windowState", self.saveState())
         self.cellSelector.clearCells() #This causes the current cell items to save their metadata.
         super().closeEvent(event)
+
+    def openInfoPane(self):
+        msgBox = QMessageBox.information(self, "About", "This software blah blah blah.")
 
     def _setDefaultLayout(self):
         #remove all docks then re add them

@@ -30,7 +30,6 @@ def processIm(im):
     im.filterDust(6)
     return im
 
-#%%
 
 if __name__ == '__main__':
     __spec__ = None
@@ -50,12 +49,12 @@ if __name__ == '__main__':
     axes[1].set_ylabel('reflectance')
     axes[1].set_xlabel('nm')
     axes[1].set_title("Glass Interface Reflectance")
-    [axes[0].plot(reflectanceHelper.n.index,reflectanceHelper.n[mat]['n'], label=matName) for matName, mat in materials]
+    [axes[0].plot(reflectanceHelper.n.index, reflectanceHelper.n[mat]['n'], label=matName) for matName, mat in materials]
     axes[0].legend()
     [axes[1].plot(reflectanceHelper.getReflectance(mat, Material.Glass).index, reflectanceHelper.getReflectance(mat, Material.Glass), label=matName) for matName, mat in materials]
     axes[1].legend()
     
-    fileFrame = pd.DataFrame([{'setting': 'none', 'material': m, 'cube': cube} for m in materials for cube in glob(os.path.join(rootDir,m,'Cell*'))])
+    fileFrame = pd.DataFrame([{'setting': 'none', 'material': m, 'cube': cube} for m in materials for cube in glob(os.path.join(rootDir, m, 'Cell*'))])
     cubes = loadAndProcess(fileFrame, processIm, parallel=True)
 
     theoryR = er.getTheoreticalReflectances(list(zip(*materials))[1], cubes['cube'][0].wavelengths)
@@ -70,6 +69,6 @@ if __name__ == '__main__':
                 pp.savefig(f)
     if produceRextraCube:
         for sett in set(cubes['setting']):
-            allCombos = er.getAllCubeCombos(matCombos, cubes[cubes['setting']==sett])
+            allCombos = er.getAllCubeCombos(matCombos, cubes[cubes['setting'] == sett])
             erCube, rextras, plots = er.generateRExtraCubes(allCombos, theoryR)
             erCube.toHdfFile(rootDir, f'rextra_{sett}')

@@ -193,8 +193,8 @@ class BigPlot(QWidget):
         self.im.set_clim((self.slider.start(), self.slider.end()))
         self.canvas.draw_idle()
 
-    def changeCmap(self, map: str):
-        self.im.set_cmap(map)
+    def changeCmap(self, cMap: str):
+        self.im.set_cmap(cMap)
         self.canvas.draw_idle()
 
 

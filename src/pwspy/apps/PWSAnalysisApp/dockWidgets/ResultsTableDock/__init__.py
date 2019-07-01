@@ -45,7 +45,7 @@ class ResultsTableDock(QDockWidget):
         l.addWidget(scroll, 0, 0, 1, 2)
         l.addWidget(QLabel('Analysis:'), 1, 0, 1, 1)
         l.addWidget(self.analysisNameEdit, 1, 1, 1, 1)
-        l.addWidget(QLabel("Roi:"), 2, 0 ,1, 1)
+        l.addWidget(QLabel("Roi:"), 2, 0, 1, 1)
         l.addWidget(self.roiNameEdit, 2, 1, 1, 1)
         l.addWidget(self.compileButton, 3, 0, 1, 2)
         sidebar.setLayout(l)
@@ -53,8 +53,6 @@ class ResultsTableDock(QDockWidget):
         self._widget.layout().addWidget(sidebar, 0, 0)
         self._widget.layout().addWidget(self.table, 0, 1)
         self.setWidget(self._widget)
-
-
 
     def addCompilationResult(self, result: RoiCompilationResults, metadata: ICMetaData):
         self.table.addItem(ResultsTableItem(result, metadata))

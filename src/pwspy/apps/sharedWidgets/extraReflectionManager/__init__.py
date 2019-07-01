@@ -28,7 +28,10 @@ class ERManager:
     def __init__(self, filePath: str):
         self._directory = filePath
         self._downloader = None
-        self.reinitialize()
+        indexPath = os.path.join(self._directory, 'index.json')
+        if not os.path.exists(indexPath):
+            self.download('index.json')
+        self.dataDir = ERDataDirectory(self._directory)
 
     def createSelectorWindow(self, parent: QWidget):
         return ERSelectorWindow(self, parent)
@@ -36,18 +39,8 @@ class ERManager:
     def createManagerWindow(self, parent: QWidget):
         return ERUploaderWindow(self, parent)
 
-    def reinitialize(self):
-        indexPath = os.path.join(self._directory, 'index.json')
-        if not os.path.exists(indexPath):
-            self.download('index.json')
-        self.dataDir = ERDataDirectory(self._directory)
-        self.index = ERIndex.loadFromFile(indexPath)
-        files = glob(os.path.join(self._directory, f'*{ERMetadata.FILESUFFIX}'))
-        files = [(f, ERMetadata.validPath(f)) for f in files]  # validPath returns whether the datacube was found.
-        files = [(directory, name) for f, (valid, directory, name) in files if valid]
-        tags = [ERMetadata.fromHdfFile(directory, name).idTag for directory, name in files]
-        for i in self.index['reflectanceCubes']:
-            i['downloaded'] = i['idTag'] in tags
+    def rescan(self):
+        self.dataDir.rescan()
 
     def download(self, fileName: str):
         """Begin downloading `fileName` in a separate thread. Use the main thread to update a progress bar"""
@@ -57,7 +50,7 @@ class ERManager:
         b = BusyDialog(QApplication.instance().window, f"Downloading {fileName}. Please Wait...", progressBar=True)
         t.finished.connect(b.accept)
         self._downloader.progress.connect(b.setProgress)
-        t.errorOccurred.connect(lambda e: QMessageBox.information(QApplication.instance().window, 'Uh Oh', str(e))) #TODO This assumes the main window of the application is .window
+        t.errorOccurred.connect(lambda e: QMessageBox.information(QApplication.instance().window, 'Uh Oh', str(e))) #TODO This assumes the main window of the application is app.window
         t.start()
         b.exec()
 
@@ -166,36 +159,44 @@ class ERIndexCube:
 class ERDataDirectory:
     def __init__(self, directory: str):
         self._directory = directory
-        self.index = ERIndex.loadFromFile(os.path.join(self._directory, 'index.json'))
-        files = glob(os.path.join(self._directory, f'*{ERMetadata.FILESUFFIX}'))
-        files = [(f, ERMetadata.validPath(f)) for f in files]  # validPath returns True/False in awhether the datacube was found.
-        files = [(directory, name) for f, (valid, directory, name) in files if valid]
-        self.files = [ERMetadata.fromHdfFile(directory, name) for directory, name in files]
-        calculatedIndex = self.buildIndexFromFiles()
-        foundTags = set([cube.idTag for cube in calculatedIndex.cubes])
-        indTags = set([cube.idTag for cube in self.index.cubes])
-        notIndexed = foundTags - indTags #Tags in foundTags but not in indTags
-        missing = indTags - foundTags #Tags in in indTags but not in foundTags
-        match = indTags & foundTags #Tags present in both sets
-        dataMismatch = [] #Tags that match but have different md5 hashes
-        for id in match:
-            cube = [cube for cube in calculatedIndex.cubes if cube.idTag == id][0]
-            indCube = [cube for cube in self.index.cubes if cube.idTag == id][0]
-            if cube.md5 != indCube.md5:
-                dataMismatch.append(id)
-        #  Construct a dataframe
-        status = pandas.DataFrame({tag: {'missing': tag in missing, 'notIndexed': tag in notIndexed, 'match': tag in match,'dataMismatch': tag in dataMismatch} for tag in foundTags | indTags}).transpose()
+        self.rescan()
 
-    def buildIndexFromFiles(self) -> ERIndex:
+    @staticmethod
+    def buildIndexFromFiles(files: List[ERMetadata]) -> ERIndex:
         """Scan the data files in the directory and construct and ERIndex from the metadata. The `description` field is left blank though."""
         cubes = []
-        for erCube in self.files:
+        for erCube in files:
             md5hash = hashlib.md5()
             with open(erCube.filePath, 'rb') as f:
                 md5hash.update(f.read())
             md5 = md5hash.hexdigest()  # The md5 checksum as a string of hex.
             cubes.append(ERIndexCube(erCube.filePath, '', erCube.idTag, erCube.directory2dirName(erCube.filePath)[-1], md5))
             return ERIndex(cubes)
+
+    def rescan(self):
+        self.index = ERIndex.loadFromFile(os.path.join(self._directory, 'index.json'))
+        files = glob(os.path.join(self._directory, f'*{ERMetadata.FILESUFFIX}'))
+        files = [(f, ERMetadata.validPath(f)) for f in
+                 files]  # validPath returns True/False in awhether the datacube was found.
+        files = [(directory, name) for f, (valid, directory, name) in files if valid]
+        self.files = [ERMetadata.fromHdfFile(directory, name) for directory, name in files]
+        calculatedIndex = self.buildIndexFromFiles(self.files)
+        foundTags = set([cube.idTag for cube in calculatedIndex.cubes])
+        indTags = set([cube.idTag for cube in self.index.cubes])
+        notIndexed = foundTags - indTags  # Tags in foundTags but not in indTags
+        missing = indTags - foundTags  # Tags in in indTags but not in foundTags
+        matched = indTags & foundTags  # Tags present in both sets
+        dataMismatch = []  # Tags that match but have different md5 hashes
+        for ID in matched:
+            cube = [cube for cube in calculatedIndex.cubes if cube.idTag == ID][0]
+            indCube = [cube for cube in self.index.cubes if cube.idTag == ID][0]
+            if cube.md5 != indCube.md5:
+                dataMismatch.append(ID)
+        #  Construct a dataframe
+        self.status = pandas.DataFrame({tag: {'missing': tag in missing, 'notIndexed': tag in notIndexed,
+                                              'match': tag in matched, 'dataMismatch': tag in dataMismatch} for tag in
+                                        foundTags | indTags}).transpose()
+
 
 if __name__ == '__main__':
     m = ERManager(applicationVars.extraReflectionDirectory)

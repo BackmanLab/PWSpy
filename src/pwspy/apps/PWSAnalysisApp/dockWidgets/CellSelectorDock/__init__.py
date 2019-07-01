@@ -13,6 +13,7 @@ from pwspy.imCube.ICMetaDataClass import ICMetaData
 
 class CellSelectorDock(QDockWidget):
     selectionChanged = QtCore.pyqtSignal(list)
+
     def __init__(self):
         super().__init__("Cell Selector")
         self.setStyleSheet("QDockWidget > QWidget { border: 1px solid lightgray; }")
@@ -20,7 +21,7 @@ class CellSelectorDock(QDockWidget):
         self._widget = QWidget(self)
         layout = QVBoxLayout()
         self.tableWidget = CellTableWidget(self._widget)
-        self._selectionChangeDebounce = QtCore.QTimer() #This timer prevents the selectionChanged signal from firing too rapidly.
+        self._selectionChangeDebounce = QtCore.QTimer()  # This timer prevents the selectionChanged signal from firing too rapidly.
         self._selectionChangeDebounce.setInterval(500)
         self._selectionChangeDebounce.setSingleShot(True)
         self._selectionChangeDebounce.timeout.connect(lambda: self.selectionChanged.emit(self.getSelectedCellMetas()))
@@ -35,7 +36,7 @@ class CellSelectorDock(QDockWidget):
             {
             min-width: 200px;
             }
-        ''') #This makes the dropdown wider so we can actually read.
+        ''')  # This makes the dropdown wider so we can actually read.
         width = self.pathFilter.minimumSizeHint().width()
         self.pathFilter.view().setMinimumWidth(width)
         self.expressionFilter = QLineEdit(self._filterWidget)
@@ -52,7 +53,7 @@ class CellSelectorDock(QDockWidget):
         _.setCollapsible(0, False)
         _.setCollapsible(1, False)
         _.setSizes([300, 100])
-        _.setStretchFactor(1, 0); _.setStretchFactor(0, 1) # Make the references column so it doesn't resize on stretching.
+        _.setStretchFactor(1, 0); _.setStretchFactor(0, 1)  # Make the references column so it doesn't resize on stretching.
         layout.addWidget(_)
         layout.addWidget(self._filterWidget)
         self._widget.setLayout(layout)
@@ -61,11 +62,11 @@ class CellSelectorDock(QDockWidget):
     def addCell(self, fileName: str, workingDir: str):
         try:
             cell = ICMetaData.loadAny(fileName)
-        except OSError as e: # Could not find a valid file
+        except OSError as e:  # Could not find a valid file
             print(e)
             return
         cellItem = CellTableWidgetItem(cell, os.path.split(fileName)[0][len(workingDir) + 1:],
-                                   int(fileName.split('Cell')[-1]))
+                                        int(fileName.split('Cell')[-1]))
         if cellItem.isReference():
             self.refTableWidget.updateReferences(True, [cellItem])
         self.tableWidget.addCellItem(cellItem)

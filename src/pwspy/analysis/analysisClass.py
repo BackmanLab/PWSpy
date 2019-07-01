@@ -131,7 +131,7 @@ class Analysis(LegacyAnalysis):
         else:
             theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, index=ref.wavelengths)
         if extraReflectance is None:
-            Iextra = ExtraReflectionCube(ExtraReflectanceCube(np.zeros(ref.data.shape), ref.wavelengths, ERMetadata(ref.metadata._dict)), theoryR, ref) # a bogus reflection that is all zeros
+            Iextra = ExtraReflectionCube(ExtraReflectanceCube(np.zeros(ref.data.shape), ref.wavelengths, ERMetadata(ref.metadata._dict)), theoryR, ref)  # a bogus reflection that is all zeros
             print("Warning: Analysis ignoring extra reflection")
             assert np.all(Iextra.data == 0)
         else:

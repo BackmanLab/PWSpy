@@ -8,18 +8,18 @@ from PyQt5.QtWidgets import QDockWidget, QWidget, \
 
 from pwspy.imCube import CameraCorrection
 from pwspy.analysis import AnalysisSettings
+from pwspy.imCube import ICMetaData
+from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
+from .widgets.QueueAnalysesFrame import AnalysisListItem, QueuedAnalysesFrame
+from .widgets.SettingsFrame import SettingsFrame
+
 import typing
-
-
 if typing.TYPE_CHECKING:
     from pwspy.apps.PWSAnalysisApp.App import PWSApp
     from pwspy.apps.PWSAnalysisApp.dockWidgets import CellSelectorDock
 
 
-from pwspy.imCube import ICMetaData
-from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
-from .widgets.QueueAnalysesFrame import AnalysisListItem, QueuedAnalysesFrame
-from .widgets.SettingsFrame import SettingsFrame
+
 
 
 class AnalysisSettingsDock(QDockWidget):
@@ -45,8 +45,6 @@ class AnalysisSettingsDock(QDockWidget):
         widg.setMaximumWidth(self.settingsFrame.minimumWidth()+10)
 
         self.addAnalysisButton.released.connect(self.addAnalysis)
-
-
         self.setWidget(widg)
 
     def addAnalysis(self):
@@ -59,6 +57,7 @@ class AnalysisSettingsDock(QDockWidget):
         self.analysesQueue.addAnalysis(self.settingsFrame.analysisName, camCorr, settings,
                                        self.selector.getSelectedReferenceMeta(),
                                        self.selector.getSelectedCellMetas())
+
     def loadFromSettings(self, settings: AnalysisSettings):
         self.settingsFrame.loadFromSettings(settings)
 
@@ -69,29 +68,29 @@ class AnalysisSettingsDock(QDockWidget):
         return self.analysesQueue.analyses
 
     def displayItemSettings(self, item: AnalysisListItem):
-        #Highlight relevant cells
+        # Highlight relevant cells
         self.selector.setSelectedCells(item.cells)
         self.selector.setSelectedReference(item.reference)
-        #Open a dialog
+        # Open a dialog
         # message = QMessageBox.information(self, item.name, json.dumps(item.settings.asDict(), indent=4))
         d = QDialog(self, (QtCore.Qt.WindowTitleHint | QtCore.Qt.Window))
         d.setModal(True)
         d.setWindowTitle(item.name)
         l = QGridLayout()
-        setFrame = SettingsFrame(self.app.ERManager)
-        setFrame.loadFromSettings(item.settings)
-        setFrame.loadCameraCorrection(item.cameraCorrection)
-        setFrame._analysisNameEdit.setText(item.name)
-        setFrame._analysisNameEdit.setEnabled(False) # Don't allow changing the name.
+        settingsFrame = SettingsFrame(self.app.ERManager)
+        settingsFrame.loadFromSettings(item.settings)
+        settingsFrame.loadCameraCorrection(item.cameraCorrection)
+        settingsFrame._analysisNameEdit.setText(item.name)
+        settingsFrame._analysisNameEdit.setEnabled(False) # Don't allow changing the name.
 
         okButton = QPushButton("OK")
         okButton.released.connect(d.accept)
 
-        l.addWidget(setFrame, 0, 0, 1, 1)
+        l.addWidget(settingsFrame, 0, 0, 1, 1)
         l.addWidget(okButton, 1, 0, 1, 1)
         d.setLayout(l)
         d.show()
         d.exec()
-        item.settings = setFrame.getSettings()
-        item.cameraCorrection = setFrame.getCameraCorrection()
+        item.settings = settingsFrame.getSettings()
+        item.cameraCorrection = settingsFrame.getCameraCorrection()
 

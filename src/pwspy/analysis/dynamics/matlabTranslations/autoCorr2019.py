@@ -32,8 +32,7 @@ for num in cellNum + [background]: #Loop through all cell folders +1 for backgro
         rois = [dyn.loadRoi(roiName, roiNum) for name, roiNum, _ in dyn.getRois() if name == roiName]
 
     for roi in rois:
-        data = dyn.data[roi.mask]
-        F = np.fft.rfft(data, axis=1) #FFT of each spectra in the roi
+        F = np.fft.rfft(dyn.data[roi.mask], axis=1) #FFT of each spectra in the roi
         data = np.fft.irfft(F*np.conjugate(F), axis=1) / F.shape[1] #Autocorrelation #TODO Should check if this matches with other methods of calculating autocorrelation. I read that this might only work if the original data is padded with zeros.
         truncLength = 100
         data = data[:, :truncLength]

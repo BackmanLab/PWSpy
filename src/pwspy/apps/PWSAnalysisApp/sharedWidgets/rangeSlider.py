@@ -62,7 +62,8 @@ class Ui_Form(object):
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
 
-    def retranslateUi(self, Form):
+    @staticmethod
+    def retranslateUi(Form):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("QRangeSlider", "QRangeSlider"))
 
@@ -234,7 +235,7 @@ class QRangeSlider(QtWidgets.QWidget, Ui_Form):
         setattr(self, '__drawValues', draw)
 
     def getRange(self):
-        return (self.start(), self.end())
+        return self.start(), self.end()
 
     def setRange(self, start, end):
         self.setStart(start)
