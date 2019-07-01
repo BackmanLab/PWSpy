@@ -40,9 +40,8 @@ class ERManager:
         indexPath = os.path.join(self._directory, 'index.json')
         if not os.path.exists(indexPath):
             self.download('index.json')
-        with open(indexPath, 'r') as f:
-            self.index = json.load(f)
-        jsonschema.validate(self.index, schema=self._indexSchema)
+        self.dataDir = ERDataDirectory(self._directory)
+        self.index = ERIndex.loadFromFile(indexPath)
         files = glob(os.path.join(self._directory, f'*{ERMetadata.FILESUFFIX}'))
         files = [(f, ERMetadata.validPath(f)) for f in files]  # validPath returns whether the datacube was found.
         files = [(directory, name) for f, (valid, directory, name) in files if valid]
@@ -173,21 +172,19 @@ class ERDataDirectory:
         files = [(directory, name) for f, (valid, directory, name) in files if valid]
         self.files = [ERMetadata.fromHdfFile(directory, name) for directory, name in files]
         calculatedIndex = self.buildIndexFromFiles()
-
-        status = {}
-        for cube in calculatedIndex.cubes:
-            for indexCube in self.index.cubes:
-                status[cube] = {}
-                if cube.idTag == indexCube.idTag:
-                    status[cube]['match'] = indexCube.idTag
-                if cube.md5 == indexCube.md5:
-                    status[cube]['md5match'] = indexCube.idTag
-        status = pandas.DataFrame(status)
-        status['ok'] = status['match'] and status['md5match']
-
-
-        for i in self.index.cubes:
-            i['downloaded'] = i.idTag in [cube.idTag for cube in calculatedIndex.cubes] #Replace this with code to indicate either `matches`, `md5` conflict, 'not indexed', or 'missing`
+        foundTags = set([cube.idTag for cube in calculatedIndex.cubes])
+        indTags = set([cube.idTag for cube in self.index.cubes])
+        notIndexed = foundTags - indTags #Tags in foundTags but not in indTags
+        missing = indTags - foundTags #Tags in in indTags but not in foundTags
+        match = indTags & foundTags #Tags present in both sets
+        dataMismatch = [] #Tags that match but have different md5 hashes
+        for id in match:
+            cube = [cube for cube in calculatedIndex.cubes if cube.idTag == id][0]
+            indCube = [cube for cube in self.index.cubes if cube.idTag == id][0]
+            if cube.md5 != indCube.md5:
+                dataMismatch.append(id)
+        #  Construct a dataframe
+        status = pandas.DataFrame({tag: {'missing': tag in missing, 'notIndexed': tag in notIndexed, 'match': tag in match,'dataMismatch': tag in dataMismatch} for tag in foundTags | indTags}).transpose()
 
     def buildIndexFromFiles(self) -> ERIndex:
         """Scan the data files in the directory and construct and ERIndex from the metadata. The `description` field is left blank though."""
