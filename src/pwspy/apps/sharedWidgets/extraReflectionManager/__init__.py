@@ -1,5 +1,6 @@
 from __future__ import annotations
 import os
+from typing import Optional
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import QObject, QThread
@@ -17,9 +18,10 @@ from pwspy.apps.PWSAnalysisApp import applicationVars
 
 
 class ERManager:
-    def __init__(self, filePath: str):
+    def __init__(self, filePath: str, parentWidget: Optional[QWidget] = None):
         self._directory = filePath
         self._downloader = None
+        self._parentWidget = parentWidget
         indexPath = os.path.join(self._directory, 'index.json')
         if not os.path.exists(indexPath):
             self.download('index.json')
@@ -39,10 +41,10 @@ class ERManager:
         if self._downloader is None:
             self._downloader = _QtGoogleDriveDownloader(applicationVars.googleDriveAuthPath)
         t = _DownloadThread(self._downloader, fileName, self._directory)
-        b = BusyDialog(QApplication.instance().window, f"Downloading {fileName}. Please Wait...", progressBar=True)
+        b = BusyDialog(self._parentWidget, f"Downloading {fileName}. Please Wait...", progressBar=True)
         t.finished.connect(b.accept)
         self._downloader.progress.connect(b.setProgress)
-        t.errorOccurred.connect(lambda e: QMessageBox.information(QApplication.instance().window, 'Uh Oh', str(e))) #TODO This assumes the main window of the application is app.window
+        t.errorOccurred.connect(lambda e: QMessageBox.information(self._parentWidget, 'Uh Oh', str(e)))
         t.start()
         b.exec()
 
