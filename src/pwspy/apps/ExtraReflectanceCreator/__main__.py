@@ -25,8 +25,8 @@ class ERApp(QApplication):
         settings.setValue("workingDirectory", wDir)
         self.checkDataDir()
 
-        self.workflow = ERWorkFlow(wDir, self.homeDir)
-        self.erManager = ERManager(self.homeDir)
+        self.workflow = ERWorkFlow(wDir, self.gDriveDir)
+        self.erManager = ERManager(self.gDriveDir)
         self.window = MainWindow(self.erManager)
         self.connectWindowToWorkflow()
 
