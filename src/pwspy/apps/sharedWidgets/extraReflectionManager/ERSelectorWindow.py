@@ -104,7 +104,7 @@ class ERSelectorWindow(QDialog):
             self._addItem(item)
 
     def _addItem(self, item: ERIndexCube):
-        tableItem = ERTableWidgetItem(fileName=item.fileName, description=item.description, idTag=item.idTag, name=item.name, downloaded=self._manager.dataDir.status.loc[item.idTag]['match'])
+        tableItem = ERTableWidgetItem(fileName=item.fileName, description=item.description, idTag=item.idTag, name=item.name, downloaded=self._manager.dataDir.status.loc[item.idTag]['idTagMatch'])
         self._items.append(tableItem)
         self.table.setRowCount(len(self._items))
         self.table.setCellWidget(self.table.rowCount() - 1, 0, tableItem.checkBoxWidget)

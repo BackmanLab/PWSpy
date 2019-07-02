@@ -1,5 +1,7 @@
 from typing import Dict, List, Tuple, Iterable, Any, Sequence, Iterator, Union, Optional
 
+import matplotlib
+
 from pwspy.imCube import ImCube, ExtraReflectanceCube
 from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
 from pwspy.imCube.otherClasses import Roi
@@ -147,7 +149,6 @@ def calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theory
 
 def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo], mask: Optional[Roi] = None, plotReflectionImages: bool = False) -> List[plt.Figure]:
     settings = set(df['setting'])
-
     meanValues: Dict[str, Dict[Union[MCombo, str], Dict[str, Any]]] = {}
     allCombos: Dict[str, Dict[MCombo, List[ComboSummary]]] = {}
     for sett in settings:
@@ -159,13 +160,18 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo],
     figs.append(fig)
     ax.set_ylabel("%")
     ax.set_xlabel("nm")
+    i = 0
+    numLines = sum(len(allCombos[sett][matCombo]) for matCombo in matCombos for sett in settings)
+    colormap = plt.cm.gist_rainbow
+    colors = [colormap(i) for i in np.linspace(0, 0.99, numLines)]
     for sett in settings:
         for matCombo in matCombos:
             mat1, mat2 = matCombo
             for combo in allCombos[sett][matCombo]:
                 cubes = combo.combo
-                ax.plot(cubes[mat1].wavelengths, combo.rExtra,
+                ax.plot(cubes[mat1].wavelengths, combo.rExtra, color=colors[i],
                         label=f'{sett} {mat1}:{int(cubes[mat1].metadata.exposure)}ms {mat2}:{int(cubes[mat2].metadata.exposure)}ms')
+                i += 1
         ax.plot(cubes[mat1].wavelengths, meanValues[sett]['mean']['rExtra'], color='k', label=f'{sett} mean')
     ax.legend()
 
