@@ -97,6 +97,7 @@ def getAllCubeCombos(matCombos: Iterable[MCombo], df: pd.DataFrame) -> Dict[MCom
     for matCombo in matCombos:
         matCubes = {material: df[df['material'] == material]['cube'] for material in matCombo}  # A dictionary sorted by material containing lists of the ImCubes that are relevant to this loop..
         allCombos[matCombo] = [CubeCombo(*matCubes.keys(), *combo) for combo in itertools.product(*matCubes.values())]
+    allCombos = {key: val for key, val in allCombos.items() if len(val) > 0}  # In some cases a matCombo appears for which there is no data. get rid of these.
     return allCombos
 
 
@@ -129,11 +130,11 @@ def calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theory
             c.I0 = c.mat2Spectra / (theoryR[mat2] + c.rExtra)
             c.cFactor = (c.rExtra.mean() + theoryR[Material.Water].mean()) / theoryR[Material.Water].mean()
             allCombos[matCombo].append(c)
-        meanValues[matCombo] = {
-                param: np.average(np.array(list(
-                                    [getattr(combo, param) for combo in allCombos[matCombo]])),
-                                axis=0,
-                                weights=np.array([combo.weight for combo in allCombos[matCombo]])) for param in params}
+        meanValues[matCombo] = {}
+        for param in params:
+            meanValues[matCombo][param] = np.average(np.array(list([getattr(combo, param) for combo in allCombos[matCombo]])),
+                                                    axis=0,
+                                                    weights=np.array([combo.weight for combo in allCombos[matCombo]]))
         meanValues[matCombo]['cFactor'] = np.average(np.array([combo.cFactor for combo in allCombos[matCombo]]),
                                                      axis=0,
                                                      weights=np.array([combo.weight.mean() for combo in allCombos[matCombo]]))
@@ -161,11 +162,15 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo],
     ax.set_ylabel("%")
     ax.set_xlabel("nm")
     i = 0
-    numLines = sum(len(allCombos[sett][matCombo]) for matCombo in matCombos for sett in settings)
+    numLines = []
+    for sett in settings:
+        for matCombo in allCombos[sett].keys():
+            numLines.append(len(allCombos[sett][matCombo]))
+    numLines = sum(numLines)
     colormap = plt.cm.gist_rainbow
     colors = [colormap(i) for i in np.linspace(0, 0.99, numLines)]
     for sett in settings:
-        for matCombo in matCombos:
+        for matCombo in allCombos[sett].keys():
             mat1, mat2 = matCombo
             for combo in allCombos[sett][matCombo]:
                 cubes = combo.combo
@@ -183,7 +188,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo],
         ratioAxes[combo].set_title(f'{combo[0].name}/{combo[1].name} reflection ratio')
         ratioAxes[combo].plot(theoryR[combo[0]] / theoryR[combo[1]], label='Theory')
     for sett in settings:
-        for matCombo in matCombos:
+        for matCombo in allCombos[sett].keys():
             mat1, mat2 = matCombo
             for combo in allCombos[sett][matCombo]:
                 cubes = combo.combo
@@ -192,6 +197,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo],
     [ratioAxes[combo].legend() for combo in matCombos]
 
     for sett in settings:
+        settMatCombos = allCombos[sett].keys()  # Sometime we are looking at settings which don't have all the same matCombos. Only use the combos specific to this setting.
         means = meanValues[sett]['mean']
 
         fig3, scatterAx = plt.subplots()  # A scatter plot of the theoretical vs observed reflectance ratio.
@@ -199,12 +205,12 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo],
         figs.append(fig3)
         scatterAx.set_ylabel("Theoretical Ratio")
         scatterAx.set_xlabel("Observed Ratio w/ cFactor")
-        scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in matCombos]
+        scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in settMatCombos]
         scatterPointsX = [means['cFactor'] * (
                 meanValues[sett][matCombo]['mat1Spectra'] / meanValues[sett][matCombo]['mat2Spectra']).mean() for
-                          matCombo in matCombos]
+                          matCombo in settMatCombos]
         [scatterAx.scatter(x, y, label=f'{matCombo[0].name}/{matCombo[1].name}') for x, y, matCombo in
-         zip(scatterPointsX, scatterPointsY, matCombos)]
+         zip(scatterPointsX, scatterPointsY, settMatCombos)]
         x = np.array([0, max(scatterPointsX)])
         scatterAx.plot(x, x, label='1:1')
         scatterAx.legend()
@@ -214,18 +220,18 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo],
         figs.append(fig4)
         scatterAx2.set_ylabel("Theoretical Ratio")
         scatterAx2.set_xlabel("Observed Ratio after Subtraction")
-        scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in matCombos]
+        scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in settMatCombos]
         scatterPointsX = [((meanValues[sett][matCombo]['mat1Spectra'] - means['I0'] * means['rExtra']) / (
                 meanValues[sett][matCombo]['mat2Spectra'] - means['I0'] * means['rExtra'])).mean() for matCombo in
-                          matCombos]
+                          settMatCombos]
         [scatterAx2.scatter(x, y, label=f'{matCombo[0].name}/{matCombo[1].name}') for x, y, matCombo in
-         zip(scatterPointsX, scatterPointsY, matCombos)]
+         zip(scatterPointsX, scatterPointsY, settMatCombos)]
         x = np.array([0, max(scatterPointsX)])
         scatterAx2.plot(x, x, label='1:1')
         scatterAx2.legend()
 
         if plotReflectionImages:
-            for matCombo in matCombos:
+            for matCombo in settMatCombos:
                 mat1, mat2 = matCombo
                 for combo in allCombos[sett][matCombo]:
                     cubes = combo.combo
