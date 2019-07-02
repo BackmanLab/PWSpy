@@ -103,7 +103,7 @@ class ERWorkFlow:
         mask = Roi.fromVerts('doesntmatter', 1, verts, cubes['cube'].sample(n=1).iloc[0].data.shape[:-1])
         self.figs.extend(er.plotExtraReflection(cubes, theoryR, matCombos, mask, plotReflectionImages=True))
         if saveToPdf:
-            with PdfPages(os.path.join(saveDir, "figs.pdf")) as pp:
+            with PdfPages(os.path.join(saveDir, f"fig_{datetime.strftime(datetime.now(), dateTimeFormat)}.pdf")) as pp:
                 for i in plt.get_fignums():
                     f = plt.figure(i)
                     f.set_size_inches(9, 9)
