@@ -201,7 +201,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo],
         means = meanValues[sett]['mean']
 
         fig3, scatterAx = plt.subplots()  # A scatter plot of the theoretical vs observed reflectance ratio.
-        fig3.suptitle(sett)
+        fig3.suptitle(f'{sett} cFactor: {means["cFactor"]}')
         figs.append(fig3)
         scatterAx.set_ylabel("Theoretical Ratio")
         scatterAx.set_xlabel("Observed Ratio w/ cFactor")
