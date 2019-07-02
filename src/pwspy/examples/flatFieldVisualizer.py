@@ -31,20 +31,27 @@ def colorbar(mappable):
 
 if __name__ == "__main__":
     # %%User Input
-    files = glob(r'J:\Calibrations\ITOThinFilm\LCPWS1\*')
+    wDir = r'J:\Calibrations\ITOThinFilm\STORM'
+    referenceMaterial = Material.Water
+    referenceNumber = 999
+    cellNumber = 1
+    
+    files = glob(os.path.join(wDir, '*'))
     files = [f for f in files if os.path.isdir(f)]
+    
+    
     # %% Loading
     theory = pd.read_csv(os.path.join(thinFilmPath, '2um_sio2_ITO_air.txt'), delimiter='\t', index_col=0)
     theory = theory.loc[500:700:2]
     theory = theory
     ztheory = (theory - theory.mean()) / (theory.std() * theory.shape[0])  # Zero normalize for correlation
-    sref = reflectanceHelper.getReflectance(Material.Air, Material.Glass, index=range(500, 701, 2))
+    sref = reflectanceHelper.getReflectance(referenceMaterial, Material.Glass, index=range(500, 701, 2))
 
     result = []
     for f in files:
         print("Loading")
-        im = ImCube.loadAny(os.path.join(f, 'Cell1'))
-        ref = ImCube.loadAny(os.path.join(f, 'Cell999'))
+        im = ImCube.loadAny(os.path.join(f, f'Cell{cellNumber}'))
+        ref = ImCube.loadAny(os.path.join(f, f'Cell{referenceNumber}'))
         print("Dividing data by mirror spectra")
         im.correctCameraEffects(auto=True)
         im.normalizeByExposure()
