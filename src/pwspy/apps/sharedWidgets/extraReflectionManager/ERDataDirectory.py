@@ -30,7 +30,7 @@ class ERDataDirectory:
             with open(erCube.filePath, 'rb') as f:
                 md5hash.update(f.read())
             md5 = md5hash.hexdigest()  # The md5 checksum as a string of hex.
-            cubes.append(ERIndexCube(erCube.filePath, '', erCube.idTag, erCube.directory2dirName(erCube.filePath)[-1], md5))
+            cubes.append(ERIndexCube(erCube.filePath, erCube.inheritedMetadata['description'], erCube.idTag, erCube.directory2dirName(erCube.filePath)[-1], md5))
         return ERIndex(cubes)
 
     def rescan(self):
