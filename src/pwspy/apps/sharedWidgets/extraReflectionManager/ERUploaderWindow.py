@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Optional
 
 from PyQt5 import QtCore
+from PyQt5.QtCore import QModelIndex
 from PyQt5.QtWidgets import QDialog, QWidget, QHBoxLayout, QPushButton, QAbstractItemView, QTableView, QVBoxLayout
 import pandas as pd
 import typing
@@ -19,6 +20,7 @@ class ERUploaderWindow(QDialog):
         self.setLayout(QVBoxLayout())
         self.table = QTableView(self)
         self.table.setModel(PandasModel(self._manager.dataDir.status))
+        self.table.doubleClicked.connect(self.displayInfo)
         # self.table.verticalHeader().hide()
         # self.table.horizontalHeader().setStretchLastSection(True)
         # self.table.itemDoubleClicked.connect(self.displayInfo)
@@ -34,7 +36,7 @@ class ERUploaderWindow(QDialog):
         self.uploadButton.released.connect(self._updateGDrive)
         self.refreshButton = QPushButton('Refresh')
         self.refreshButton.setToolTip("Rescan the files in the applications data directory.")
-        self.refreshButton.released.connect(self._manager.dataDir.rescan)
+        self.refreshButton.released.connect(self.refresh)
         self.layout().addWidget(self.table)
         l = QHBoxLayout()
         l.setContentsMargins(0, 0, 0, 0)
@@ -43,15 +45,20 @@ class ERUploaderWindow(QDialog):
         w = QWidget()
         w.setLayout(l)
         self.layout().addWidget(w)
-        self._initialize()
+        self.table.setColumnWidth(0, 300); self.table.setColumnWidth(1, 150)
+        self.table.setMinimumWidth(sum(self.table.columnWidth(i)for i in range(self.table.model().columnCount())) + self.table.verticalHeader().width() + 20)
 
-    def displayInfo(self):
-        pass
+    def displayInfo(self, index: QModelIndex):
+        print(self._manager.dataDir.status.iloc[index.row()])
+
     def _updateGDrive(self):
         pass
 
-    def _initialize(self):
-        pass
+
+    def refresh(self):
+        self._manager.dataDir.rescan()
+        self.table.setModel(PandasModel(self._manager.dataDir.status))
+
 
 class PandasModel(QtCore.QAbstractTableModel):
     def __init__(self, df = pd.DataFrame(), parent=None):

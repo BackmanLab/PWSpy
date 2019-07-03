@@ -46,6 +46,18 @@ class ERDataDirectory:
             if cube.md5 != indCube.md5:
                 dataMismatch.append(ID)
         #  Construct a dataframe
-        self.status = pandas.DataFrame({tag: {'missing': tag in missing, 'notIndexed': tag in notIndexed,
-                                              'idTagMatch': tag in matched, 'dataMismatch': tag in dataMismatch} for tag in
-                                        foundTags | indTags}).transpose()
+        d = {}
+        for i, tag, in enumerate(foundTags | indTags):
+            if tag in missing:
+                status = 'Data File Missing'
+            elif tag in notIndexed:
+                status = 'Not Indexed'
+            elif tag in dataMismatch:
+                status = 'Data MD5 mismatch'
+            elif tag in matched: #it must have been matched.
+                status = 'Found'
+            else:
+                raise Exception("Programming error.")#This shouldn't be possible
+            d[i] = {'idTag': tag, 'status': status}
+        self.status = pandas.DataFrame(d).transpose()
+        self.status = self.status[['idTag', 'status']] # Set the column order
