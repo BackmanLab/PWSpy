@@ -4,6 +4,9 @@ from datetime import datetime
 from glob import glob
 from typing import List, Any, Dict
 import json
+
+from PyQt5.QtWidgets import QDialog
+
 from pwspy.imCube import ImCube, CameraCorrection, ExtraReflectanceCube
 from pwspy.apps.ExtraReflectanceCreator.widgets.dialog import IndexInfoForm
 from pwspy.imCube import ICMetaData
@@ -123,10 +126,11 @@ class ERWorkFlow:
             self.figs.extend([i.fig for i in self.plotnds]) # keep track of opened figures.
             saveName = f'{self.currDir}-{setting}'
             dialog = IndexInfoForm(f'{self.currDir}-{setting}', erCube.metadata.idTag)
-            dialog.exec()
-            erCube.metadata.inheritedMetadata['description'] = dialog.description
-            erCube.toHdfFile(self.homeDir, saveName)
-            self.updateIndex(saveName, erCube.metadata.idTag, dialog.description, erCube.metadata.dirName2Directory('', saveName))
+            result = dialog.exec()
+            if result == QDialog.Accepted:
+                erCube.metadata.inheritedMetadata['description'] = dialog.description
+                erCube.toHdfFile(self.homeDir, saveName)
+                self.updateIndex(saveName, erCube.metadata.idTag, dialog.description, erCube.metadata.dirName2Directory('', saveName))
 
     def updateIndex(self, saveName: str, idTag: str, description: str, filePath: str):
         with open(os.path.join(self.homeDir, 'index.json'), 'r') as f:
