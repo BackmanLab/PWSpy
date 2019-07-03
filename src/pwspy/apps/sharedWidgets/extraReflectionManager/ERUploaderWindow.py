@@ -106,7 +106,7 @@ class PandasModel(QtCore.QAbstractTableModel):
                 return QtCore.QVariant()
 
     def _calculateColorForRow(self, row: int):
-        if self._df.iloc[row]['status'] == 'Found':
+        if self._df.iloc[row]['status'] == DataStatus.found.value:
             c = QtGui.QColor('green')
         else:
             c = QtGui.QColor('red')
