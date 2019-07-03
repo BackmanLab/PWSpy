@@ -1,11 +1,15 @@
 from __future__ import annotations
 from typing import Optional
 
-from PyQt5 import QtCore
-from PyQt5.QtCore import QModelIndex
-from PyQt5.QtWidgets import QDialog, QWidget, QHBoxLayout, QPushButton, QAbstractItemView, QTableView, QVBoxLayout
+from PyQt5 import QtCore, QtGui
+from PyQt5.QtCore import QModelIndex, QPoint
+from PyQt5.QtWidgets import QDialog, QWidget, QHBoxLayout, QPushButton, QAbstractItemView, QTableView, QVBoxLayout, \
+    QMenu, QAction
 import pandas as pd
 import typing
+
+from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataDirectory import DataStatus
+
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 
@@ -20,7 +24,11 @@ class ERUploaderWindow(QDialog):
         self.setLayout(QVBoxLayout())
         self.table = QTableView(self)
         self.table.setModel(PandasModel(self._manager.dataDir.status))
-        self.table.doubleClicked.connect(self.displayInfo)
+        # self.table.doubleClicked.connect(self.displayInfo)
+        self.table.setSelectionMode(QTableView.SingleSelection)
+        self.table.setSelectionBehavior(QTableView.SelectRows)
+        self.table.customContextMenuRequested.connect(self.openContextMenu)
+        self.table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         # self.table.verticalHeader().hide()
         # self.table.horizontalHeader().setStretchLastSection(True)
         # self.table.itemDoubleClicked.connect(self.displayInfo)
@@ -50,6 +58,22 @@ class ERUploaderWindow(QDialog):
 
     def displayInfo(self, index: QModelIndex):
         print(self._manager.dataDir.status.iloc[index.row()])
+
+    def updateMD5FromData(self):
+        pass
+
+    def openContextMenu(self, pos: QPoint):
+        index = self.table.indexAt(pos)
+        row = self._manager.dataDir.status.iloc[index.row()]
+        menu = QMenu()
+        displayAction = QAction("Display Info")
+        displayAction.triggered.connect(lambda: self.displayInfo(index))
+        menu.addAction(displayAction)
+        if row['status'] == DataStatus.md5Confict.value:
+            correctAction = QAction("Update indexed md5")
+            correctAction.triggered.connect(self.updateMD5FromData)
+            menu.addAction(correctAction)
+        menu.exec(self.mapToGlobal(pos))
 
     def _updateGDrive(self):
         pass
@@ -81,8 +105,18 @@ class PandasModel(QtCore.QAbstractTableModel):
             except (IndexError, ):
                 return QtCore.QVariant()
 
+    def _calculateColorForRow(self, row: int):
+        if self._df.iloc[row]['status'] == 'Found':
+            c = QtGui.QColor('green')
+        else:
+            c = QtGui.QColor('red')
+        return c
+
     def data(self, index, role=QtCore.Qt.DisplayRole):
-        if role != QtCore.Qt.DisplayRole:
+        if role == QtCore.Qt.BackgroundRole:
+            color = self._calculateColorForRow(index.row())
+            return QtGui.QBrush(color)
+        elif role != QtCore.Qt.DisplayRole:
             return QtCore.QVariant()
 
         if not index.isValid():

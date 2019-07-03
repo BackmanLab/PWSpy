@@ -1,5 +1,6 @@
 import hashlib
 import os
+from enum import Enum
 from glob import glob
 from typing import List
 
@@ -7,6 +8,12 @@ import pandas
 
 from pwspy.apps.sharedWidgets.extraReflectionManager.ERIndex import ERIndex, ERIndexCube
 from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
+
+class DataStatus(Enum):
+    md5Confict = 'Data MD5 mismatch'
+    found = 'Found'
+    notIndexed = 'Not Indexed'
+    missing = 'Data File Missing'
 
 
 class ERDataDirectory:
@@ -49,13 +56,13 @@ class ERDataDirectory:
         d = {}
         for i, tag, in enumerate(foundTags | indTags):
             if tag in missing:
-                status = 'Data File Missing'
+                status = DataStatus.missing.value
             elif tag in notIndexed:
-                status = 'Not Indexed'
+                status = DataStatus.notIndexed.value
             elif tag in dataMismatch:
-                status = 'Data MD5 mismatch'
+                status = DataStatus.md5Confict.value
             elif tag in matched: #it must have been matched.
-                status = 'Found'
+                status = DataStatus.found.value
             else:
                 raise Exception("Programming error.")#This shouldn't be possible
             d[i] = {'idTag': tag, 'status': status}
