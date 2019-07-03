@@ -69,7 +69,6 @@ class ERMetadata:
         return cls(json.loads(d.attrs[cls.MDTAG]), filePath=filePath)
 
     def toHdfDataset(self, g: h5py.Group) -> h5py.Group:
-        self.inheritedMetadata['time'] = datetime.now().strftime(dateTimeFormat) #Save the current time
         g[self.DATASETTAG].attrs[self.MDTAG] = np.string_(json.dumps(self.inheritedMetadata))
         return g
 
