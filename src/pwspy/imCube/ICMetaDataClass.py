@@ -67,7 +67,11 @@ class ICMetaData:
                 self._dict['time'] = datetime.strftime(datetime.strptime(self._dict['time'], "%d-%m-%y %H:%M:%S"), dateTimeFormat)
             except ValueError:
                 raise ValueError("The time stamp could not be parsed.")
+        if self._dict['system'] == "":
+            print("Warning: The `system` name in the ImCube metadata is blank. Check that the PWS System is saving the proper calibration values.")
         if all([i in self._dict for i in ['darkCounts', 'linearityPoly']]):
+            if self._dict['darkCounts'] == 0:
+                print("Warning: Detected a darkCounts value of 0 in the ImCube Metadata. Check that the PWS System is saving the proper calibration values.")
             self.cameraCorrection = CameraCorrection(darkCounts=self._dict['darkCounts'],
                                                      linearityPolynomial=self._dict['linearityPoly'])
         else:
