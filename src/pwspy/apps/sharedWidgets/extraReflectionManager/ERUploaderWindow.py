@@ -29,17 +29,6 @@ class ERUploaderWindow(QDialog):
         self.table.setSelectionBehavior(QTableView.SelectRows)
         self.table.customContextMenuRequested.connect(self.openContextMenu)
         self.table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        # self.table.verticalHeader().hide()
-        # self.table.horizontalHeader().setStretchLastSection(True)
-        # self.table.itemDoubleClicked.connect(self.displayInfo)
-        # self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        # self.table.setSelectionMode(QAbstractItemView.SingleSelection)
-        # self.table.setRowCount(0)
-        # self.table.setColumnCount(3)
-        # self.table.setSortingEnabled(True)
-        # self.table.setHorizontalHeaderLabels([" ", "System", "Date"])
-        # self.table.setColumnWidth(0, 10)
-
         self.uploadButton = QPushButton("Upload to Drive")
         self.uploadButton.released.connect(self._updateGDrive)
         self.refreshButton = QPushButton('Refresh')
@@ -105,8 +94,10 @@ class PandasModel(QtCore.QAbstractTableModel):
             except (IndexError, ):
                 return QtCore.QVariant()
 
-    def _calculateColorForRow(self, row: int):
-        if self._df.iloc[row]['status'] == DataStatus.found.value:
+    def _calculateColor(self, index: QModelIndex):
+        if self._df.columns[index.column()] != 'status':
+            c = QtGui.QColor('white')
+        elif self._df.iloc[index.row(), index.column()] == DataStatus.found.value:
             c = QtGui.QColor('green')
         else:
             c = QtGui.QColor('red')
@@ -114,7 +105,7 @@ class PandasModel(QtCore.QAbstractTableModel):
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
         if role == QtCore.Qt.BackgroundRole:
-            color = self._calculateColorForRow(index.row())
+            color = self._calculateColor(index)
             return QtGui.QBrush(color)
         elif role != QtCore.Qt.DisplayRole:
             return QtCore.QVariant()

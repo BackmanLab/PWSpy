@@ -19,6 +19,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 def _splitPath(path: str) -> List[str]:
+    """Utility function. Given a string representing a file path this function will return a list of strings, each list
+    item representing a single level of the file path."""
     folders = []
     while 1:
         path, folder = os.path.split(path)
