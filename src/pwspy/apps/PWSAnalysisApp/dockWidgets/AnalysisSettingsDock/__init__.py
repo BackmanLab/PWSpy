@@ -23,15 +23,15 @@ if typing.TYPE_CHECKING:
 
 
 class AnalysisSettingsDock(QDockWidget):
-    def __init__(self, cellSelector: CellSelectorDock):
+    def __init__(self, cellSelector: CellSelectorDock, erManager):
         super().__init__("Settings")
-        self.app = QApplication.instance()
+        self.erManager = erManager
         self.setStyleSheet("QDockWidget > QWidget { border: 1px solid lightgray; }")
         self.selector = cellSelector
         self.setObjectName('AnalysisSettingsDock')  # needed for restore state to work
         widg = QWidget()
         widg.setLayout(QVBoxLayout())
-        self.settingsFrame = SettingsFrame(self.app.ERManager)
+        self.settingsFrame = SettingsFrame(self.erManager)
         widg.layout().addWidget(self.settingsFrame)
         self.addAnalysisButton = QPushButton("Add Analysis")
         widg.layout().addWidget(self.addAnalysisButton)
@@ -77,7 +77,7 @@ class AnalysisSettingsDock(QDockWidget):
         d.setModal(True)
         d.setWindowTitle(item.name)
         l = QGridLayout()
-        settingsFrame = SettingsFrame(self.app.ERManager)
+        settingsFrame = SettingsFrame(self.erManager)
         settingsFrame.loadFromSettings(item.settings)
         settingsFrame.loadCameraCorrection(item.cameraCorrection)
         settingsFrame._analysisNameEdit.setText(item.name)

@@ -3,6 +3,7 @@ import os
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QMainWindow, QApplication, QToolBar, QMessageBox
 
+from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 from . import resources
 from pwspy.apps import resources as sharedresources
 from .dialogs import WorkingDirDialog
@@ -10,13 +11,13 @@ from .dockWidgets import CellSelectorDock, AnalysisSettingsDock, ResultsTableDoc
 
 
 class PWSWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, erManager: ERManager):
         QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
         super().__init__()
         self.setWindowTitle('PWS Analysis v2')
         self.setWindowIcon(QtGui.QIcon(os.path.join(resources, 'cellLogo.png')))
         self.cellSelector = CellSelectorDock()
-        self.analysisSettings = AnalysisSettingsDock(self.cellSelector)
+        self.analysisSettings = AnalysisSettingsDock(self.cellSelector, erManager)
         self.resultsTable = ResultsTableDock()
         self.plots = PlottingDock(self.cellSelector)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.cellSelector)

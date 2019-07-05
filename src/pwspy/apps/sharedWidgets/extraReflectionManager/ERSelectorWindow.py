@@ -3,15 +3,21 @@ from datetime import datetime
 from typing import List, Optional
 
 from PyQt5 import QtCore
+from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QDialog, QTableWidget, QTableWidgetItem, QMessageBox, QWidget, QCheckBox, QVBoxLayout, \
-    QPushButton, QLineEdit, QComboBox, QGridLayout, QLabel, QDialogButtonBox, QHBoxLayout, QAbstractItemView
+    QPushButton, QLineEdit, QComboBox, QGridLayout, QLabel, QDialogButtonBox, QHBoxLayout, QAbstractItemView, QMenu, \
+    QAction
 
 from pwspy import moduleConsts
 from pwspy.apps.PWSAnalysisApp.sharedWidgets.tables import DatetimeTableWidgetItem
+from pwspy.imCube import ExtraReflectanceCube
 from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
 import numpy as np
 
 import typing
+
+from pwspy.utility import PlotNd
+
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
     from pwspy.apps.sharedWidgets.extraReflectionManager.ERIndex import ERIndexCube
@@ -60,13 +66,15 @@ class ERSelectorWindow(QDialog):
         self._manager = manager
         self._selectedId: str = None
         super().__init__(parent)
-        self.setModal(True)
+        self.setModal(False)
         self.setWindowTitle("Extra Reflectance Selector")
         self.setLayout(QVBoxLayout())
         self.table = QTableWidget(self)
         self.table.verticalHeader().hide()
         self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.itemDoubleClicked.connect(self.displayInfo)
+        self.table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self.showContextMenu)
+        # self.table.itemDoubleClicked.connect(self.displayInfo)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SingleSelection)
         self.table.setRowCount(0)
@@ -94,7 +102,7 @@ class ERSelectorWindow(QDialog):
         self._initialize()
 
     def _updateIndex(self):
-        self._manager.download("index.json")
+        self._manager.download("index.json", parentWidget=self)
         self._initialize()
 
     def _initialize(self):
@@ -104,15 +112,29 @@ class ERSelectorWindow(QDialog):
             self._addItem(item)
 
     def _addItem(self, item: ERIndexCube):
-        tableItem = ERTableWidgetItem(fileName=item.fileName, description=item.description, idTag=item.idTag, name=item.name, downloaded=self._manager.dataDir.status.loc[item.idTag]['idTagMatch'])
+        status = self._manager.dataDir.status
+        tableItem = ERTableWidgetItem(fileName=item.fileName, description=item.description, idTag=item.idTag, name=item.name,
+                                      downloaded=status[status['idTag'] == item.idTag].iloc[0]['Local Status'] == self._manager.dataDir.DataStatus.found.value)
         self._items.append(tableItem)
         self.table.setRowCount(len(self._items))
         self.table.setCellWidget(self.table.rowCount() - 1, 0, tableItem.checkBoxWidget)
         self.table.setItem(self.table.rowCount() - 1, 1, tableItem.sysItem)
         self.table.setItem(self.table.rowCount() - 1, 2, tableItem.dateItem)
 
-    def displayInfo(self, item: QTableWidgetItem):
-        item = [i for i in self._items if i.sysItem.row() == item.row()][0]
+    def showContextMenu(self, pos: QPoint):
+        index = self.table.indexAt(pos)
+        widgetItem: ERTableWidgetItem = [i for i in self._items if i.sysItem.row() == index.row()][0]
+        menu = QMenu()
+        displayAction = QAction("Display Info")
+        displayAction.triggered.connect(lambda: self.displayInfo(widgetItem))
+        menu.addAction(displayAction)
+        if widgetItem.downloaded:
+            plotAction = QAction("Plot Data")
+            plotAction.triggered.connect(lambda: PlotNd(ExtraReflectanceCube.fromHdfFile(self._manager._directory, widgetItem.name).data))
+            menu.addAction(plotAction)
+        menu.exec(self.mapToGlobal(pos))
+
+    def displayInfo(self, item: ERTableWidgetItem):
         message = QMessageBox.information(self, item.name, '\n\n'.join([f'FileName: {item.fileName}',
                                                                       f'ID Tag: {item.idTag}',
                                                                       f'Description: {item.description}']))
@@ -121,7 +143,7 @@ class ERSelectorWindow(QDialog):
         for item in self._items:
             if item.isChecked() and not item.downloaded:
                 # If the checkbox is enabled then it hasn't been downloaded yet. if it is checked then it should be downloaded
-                self._manager.download(item.fileName)
+                self._manager.download(item.fileName, parentWidget=self)
         self._initialize()
 
     def accept(self) -> None:

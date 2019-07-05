@@ -18,10 +18,9 @@ from pwspy.apps.PWSAnalysisApp import applicationVars
 
 
 class ERManager:
-    def __init__(self, filePath: str, parentWidget: Optional[QWidget] = None):
+    def __init__(self, filePath: str):
         self._directory = filePath
         self._downloader: GoogleDriveDownloader = None
-        self._parentWidget = parentWidget
         indexPath = os.path.join(self._directory, 'index.json')
         if not os.path.exists(indexPath):
             self.download('index.json')
@@ -36,7 +35,7 @@ class ERManager:
     def rescan(self):
         self.dataDir.rescan()
 
-    def download(self, fileName: str, directory: Optional[str] = None):
+    def download(self, fileName: str, directory: Optional[str] = None, parentWidget: Optional[QWidget] = None):
         """Begin downloading `fileName` in a separate thread. Use the main thread to update a progress bar.
         If directory is left blank then file will be downloaded to the ERManager main directory"""
         if self._downloader is None:
@@ -44,10 +43,10 @@ class ERManager:
         if directory is None:
             directory = self._directory  # Use the main directory
         t = _DownloadThread(self._downloader, fileName, directory)
-        b = BusyDialog(self._parentWidget, f"Downloading {fileName}. Please Wait...", progressBar=True)
+        b = BusyDialog(parentWidget, f"Downloading {fileName}. Please Wait...", progressBar=True)
         t.finished.connect(b.accept)
         self._downloader.progress.connect(b.setProgress)
-        t.errorOccurred.connect(lambda e: QMessageBox.information(self._parentWidget, 'Drive Downloader Thread', str(e)))
+        t.errorOccurred.connect(lambda e: QMessageBox.information(parentWidget, 'Drive Downloader Thread', str(e)))
         t.start()
         b.exec()
 

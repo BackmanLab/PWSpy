@@ -13,17 +13,19 @@ import typing
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 
-class DataStatus(Enum):
-    md5Confict = 'Data MD5 mismatch'
-    found = 'Found'
-    notIndexed = 'Not Indexed'
-    missing = 'Data File Missing'
 
 
 class ERDataDirectory:
+    class DataStatus(Enum):
+        md5Confict = 'Data MD5 mismatch'
+        found = 'Found'
+        notIndexed = 'Not Indexed'
+        missing = 'Data File Missing'
+
     def __init__(self, directory: str, manager: ERManager):
         self._directory = directory
         self._manager = manager
+        self.index: ERIndex = None
         self.rescan()
 
     @staticmethod
@@ -39,17 +41,17 @@ class ERDataDirectory:
         return ERIndex(cubes)
 
     def rescan(self):
-        localIndex = ERIndex.loadFromFile(os.path.join(self._directory, 'index.json'))
+        self.index = ERIndex.loadFromFile(os.path.join(self._directory, 'index.json'))
         files = glob(os.path.join(self._directory, f'*{ERMetadata.FILESUFFIX}'))
         files = [(f, ERMetadata.validPath(f)) for f in files]  # validPath returns True/False in awhether the datacube was found.
         files = [(directory, name) for f, (valid, directory, name) in files if valid]
         self.files = [ERMetadata.fromHdfFile(directory, name) for directory, name in files]
         calculatedIndex = self.buildIndexFromFiles(self.files)
-        d = self.compareIndexes(calculatedIndex, localIndex)
+        d = self.compareIndexes(calculatedIndex, self.index)
         d = pandas.DataFrame(d).transpose()
         d.columns.values[1] = 'Local Status'
         onlineIndex = self.downloadIndex()
-        d2 = self.compareIndexes(localIndex, onlineIndex)
+        d2 = self.compareIndexes(self.index, onlineIndex)
         d2 = pandas.DataFrame(d2).transpose()
         d2.columns.values[1] = 'Online Status'
         d = pandas.merge(d, d2, how='outer', on='idTag')
@@ -86,13 +88,13 @@ class ERDataDirectory:
         d = {}
         for i, tag, in enumerate(foundTags | indTags):
             if tag in missing:
-                status = DataStatus.missing.value
+                status = ERDataDirectory.DataStatus.missing.value
             elif tag in notIndexed:
-                status = DataStatus.notIndexed.value
+                status = ERDataDirectory.DataStatus.notIndexed.value
             elif tag in dataMismatch:
-                status = DataStatus.md5Confict.value
+                status = ERDataDirectory.DataStatus.md5Confict.value
             elif tag in matched:  # it must have been matched.
-                status = DataStatus.found.value
+                status = ERDataDirectory.DataStatus.found.value
             else:
                 raise Exception("Programming error.")  # This shouldn't be possible
             d[i] = {'idTag': tag, 'status': status}

@@ -9,7 +9,7 @@ import pandas as pd
 import typing
 import os
 
-from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataDirectory import DataStatus
+from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataDirectory import ERDataDirectory
 
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
@@ -90,7 +90,7 @@ class PandasModel(QtCore.QAbstractTableModel):
     def _calculateColor(self, index: QModelIndex):
         if self._df.columns[index.column()] != 'status':
             c = QtGui.QColor('white')
-        elif self._df.iloc[index.row(), index.column()] == DataStatus.found.value:
+        elif self._df.iloc[index.row(), index.column()] == ERDataDirectory.DataStatus.found.value:
             c = QtGui.QColor('green')
         else:
             c = QtGui.QColor('red')

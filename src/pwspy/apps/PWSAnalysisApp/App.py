@@ -32,8 +32,8 @@ class PWSApp(QApplication):
     def __init__(self, args):
         super().__init__(args)
         self._setupDataDirectories()
-        self.window = PWSWindow()
-        self.ERManager = ERManager(applicationVars.extraReflectionDirectory, self.window)
+        self.ERManager = ERManager(applicationVars.extraReflectionDirectory)
+        self.window = PWSWindow(self.ERManager)
         self.anMan = AnalysisManager(self)
         self.window.runAction.connect(self.anMan.runList)
         self.parallelProcessing: bool = True #Determines if analysis and compilation should be run in parallel or not.
