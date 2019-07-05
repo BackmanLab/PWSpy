@@ -25,7 +25,7 @@ class ERManager:
         indexPath = os.path.join(self._directory, 'index.json')
         if not os.path.exists(indexPath):
             self.download('index.json')
-        self.dataDir = ERDataDirectory(self._directory)
+        self.dataDir = ERDataDirectory(self._directory, self)
 
     def createSelectorWindow(self, parent: QWidget):
         return ERSelectorWindow(self, parent)
@@ -36,11 +36,14 @@ class ERManager:
     def rescan(self):
         self.dataDir.rescan()
 
-    def download(self, fileName: str):
-        """Begin downloading `fileName` in a separate thread. Use the main thread to update a progress bar"""
+    def download(self, fileName: str, directory: Optional[str] = None):
+        """Begin downloading `fileName` in a separate thread. Use the main thread to update a progress bar.
+        If directory is left blank then file will be downloaded to the ERManager main directory"""
         if self._downloader is None:
             self._downloader = _QtGoogleDriveDownloader(applicationVars.googleDriveAuthPath)
-        t = _DownloadThread(self._downloader, fileName, self._directory)
+        if directory is None:
+            directory = self._directory  # Use the main directory
+        t = _DownloadThread(self._downloader, fileName, directory)
         b = BusyDialog(self._parentWidget, f"Downloading {fileName}. Please Wait...", progressBar=True)
         t.finished.connect(b.accept)
         self._downloader.progress.connect(b.setProgress)

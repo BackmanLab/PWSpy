@@ -4,9 +4,10 @@ from typing import Optional
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QModelIndex, QPoint
 from PyQt5.QtWidgets import QDialog, QWidget, QHBoxLayout, QPushButton, QAbstractItemView, QTableView, QVBoxLayout, \
-    QMenu, QAction
+    QMenu, QAction, QMessageBox
 import pandas as pd
 import typing
+import os
 
 from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataDirectory import DataStatus
 
@@ -42,14 +43,11 @@ class ERUploaderWindow(QDialog):
         w = QWidget()
         w.setLayout(l)
         self.layout().addWidget(w)
-        self.table.setColumnWidth(0, 300); self.table.setColumnWidth(1, 150)
+        self.table.setColumnWidth(0, 300); self.table.setColumnWidth(1, 150); self.table.setColumnWidth(2, 150)
         self.table.setMinimumWidth(sum(self.table.columnWidth(i)for i in range(self.table.model().columnCount())) + self.table.verticalHeader().width() + 20)
 
     def displayInfo(self, index: QModelIndex):
         print(self._manager.dataDir.status.iloc[index.row()])
-
-    def updateMD5FromData(self):
-        pass
 
     def openContextMenu(self, pos: QPoint):
         index = self.table.indexAt(pos)
@@ -58,15 +56,10 @@ class ERUploaderWindow(QDialog):
         displayAction = QAction("Display Info")
         displayAction.triggered.connect(lambda: self.displayInfo(index))
         menu.addAction(displayAction)
-        if row['status'] == DataStatus.md5Confict.value:
-            correctAction = QAction("Update indexed md5")
-            correctAction.triggered.connect(self.updateMD5FromData)
-            menu.addAction(correctAction)
         menu.exec(self.mapToGlobal(pos))
 
     def _updateGDrive(self):
-        pass
-
+        mess = QMessageBox.information(self, 'Sorry', "This function is not yet implemented")
 
     def refresh(self):
         self._manager.dataDir.rescan()
@@ -74,7 +67,7 @@ class ERUploaderWindow(QDialog):
 
 
 class PandasModel(QtCore.QAbstractTableModel):
-    def __init__(self, df = pd.DataFrame(), parent=None):
+    def __init__(self, df=pd.DataFrame(), parent=None):
         QtCore.QAbstractTableModel.__init__(self, parent=parent)
         self._df = df
 

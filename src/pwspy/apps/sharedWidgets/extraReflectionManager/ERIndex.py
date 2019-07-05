@@ -64,3 +64,6 @@ class ERIndexCube:
     @classmethod
     def fromDict(cls, d: dict) -> ERIndexCube:
         return cls(**d)
+
+    def toDict(self):
+        return {'fileName': self.fileName, 'description': self.description, 'idTag': self.idTag, 'name': self.name, 'md5': self.md5}

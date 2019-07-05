@@ -1,3 +1,4 @@
+from __future__ import annotations
 import hashlib
 import os
 from enum import Enum
@@ -8,6 +9,9 @@ import pandas
 
 from pwspy.apps.sharedWidgets.extraReflectionManager.ERIndex import ERIndex, ERIndexCube
 from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
+import typing
+if typing.TYPE_CHECKING:
+    from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 
 class DataStatus(Enum):
     md5Confict = 'Data MD5 mismatch'
@@ -17,8 +21,9 @@ class DataStatus(Enum):
 
 
 class ERDataDirectory:
-    def __init__(self, directory: str):
+    def __init__(self, directory: str, manager: ERManager):
         self._directory = directory
+        self._manager = manager
         self.rescan()
 
     @staticmethod
@@ -34,22 +39,47 @@ class ERDataDirectory:
         return ERIndex(cubes)
 
     def rescan(self):
-        self.index = ERIndex.loadFromFile(os.path.join(self._directory, 'index.json'))
+        localIndex = ERIndex.loadFromFile(os.path.join(self._directory, 'index.json'))
         files = glob(os.path.join(self._directory, f'*{ERMetadata.FILESUFFIX}'))
-        files = [(f, ERMetadata.validPath(f)) for f in
-                 files]  # validPath returns True/False in awhether the datacube was found.
+        files = [(f, ERMetadata.validPath(f)) for f in files]  # validPath returns True/False in awhether the datacube was found.
         files = [(directory, name) for f, (valid, directory, name) in files if valid]
         self.files = [ERMetadata.fromHdfFile(directory, name) for directory, name in files]
         calculatedIndex = self.buildIndexFromFiles(self.files)
-        foundTags = set([cube.idTag for cube in calculatedIndex.cubes])
-        indTags = set([cube.idTag for cube in self.index.cubes])
+        d = self.compareIndexes(calculatedIndex, localIndex)
+        d = pandas.DataFrame(d).transpose()
+        d.columns.values[1] = 'Local Status'
+        onlineIndex = self.downloadIndex()
+        d2 = self.compareIndexes(localIndex, onlineIndex)
+        d2 = pandas.DataFrame(d2).transpose()
+        d2.columns.values[1] = 'Online Status'
+        d = pandas.merge(d, d2, how='outer', on='idTag')
+        self.status = d
+        self.status = self.status[['idTag', 'Local Status', 'Online Status']]  # Set the column order
+
+    def downloadIndex(self) -> ERIndex:
+        tempDir = os.path.join(self._directory, 'temp')
+        if not os.path.exists(tempDir):
+            os.mkdir(tempDir)
+        indexDir = os.path.join(tempDir, 'index.json')
+        if os.path.exists(indexDir):
+            os.remove(indexDir)
+        self._manager.download('index.json', tempDir)
+        index = ERIndex.loadFromFile(indexDir)
+        os.remove(indexDir)
+        os.rmdir(tempDir)
+        return index
+
+    @staticmethod
+    def compareIndexes(ind1: ERIndex, ind2: ERIndex) -> dict:
+        foundTags = set([cube.idTag for cube in ind1.cubes])
+        indTags = set([cube.idTag for cube in ind2.cubes])
         notIndexed = foundTags - indTags  # Tags in foundTags but not in indTags
         missing = indTags - foundTags  # Tags in in indTags but not in foundTags
         matched = indTags & foundTags  # Tags present in both sets
         dataMismatch = []  # Tags that match but have different md5 hashes
         for ID in matched:
-            cube = [cube for cube in calculatedIndex.cubes if cube.idTag == ID][0]
-            indCube = [cube for cube in self.index.cubes if cube.idTag == ID][0]
+            cube = [cube for cube in ind1.cubes if cube.idTag == ID][0]
+            indCube = [cube for cube in ind2.cubes if cube.idTag == ID][0]
             if cube.md5 != indCube.md5:
                 dataMismatch.append(ID)
         #  Construct a dataframe
@@ -61,10 +91,9 @@ class ERDataDirectory:
                 status = DataStatus.notIndexed.value
             elif tag in dataMismatch:
                 status = DataStatus.md5Confict.value
-            elif tag in matched: #it must have been matched.
+            elif tag in matched:  # it must have been matched.
                 status = DataStatus.found.value
             else:
-                raise Exception("Programming error.")#This shouldn't be possible
+                raise Exception("Programming error.")  # This shouldn't be possible
             d[i] = {'idTag': tag, 'status': status}
-        self.status = pandas.DataFrame(d).transpose()
-        self.status = self.status[['idTag', 'status']] # Set the column order
+        return d
