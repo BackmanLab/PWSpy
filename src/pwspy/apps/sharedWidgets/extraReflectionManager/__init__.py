@@ -20,7 +20,7 @@ from pwspy.apps.PWSAnalysisApp import applicationVars
 class ERManager:
     def __init__(self, filePath: str, parentWidget: Optional[QWidget] = None):
         self._directory = filePath
-        self._downloader = None
+        self._downloader: GoogleDriveDownloader = None
         self._parentWidget = parentWidget
         indexPath = os.path.join(self._directory, 'index.json')
         if not os.path.exists(indexPath):
@@ -47,7 +47,7 @@ class ERManager:
         b = BusyDialog(self._parentWidget, f"Downloading {fileName}. Please Wait...", progressBar=True)
         t.finished.connect(b.accept)
         self._downloader.progress.connect(b.setProgress)
-        t.errorOccurred.connect(lambda e: QMessageBox.information(self._parentWidget, 'Uh Oh', str(e)))
+        t.errorOccurred.connect(lambda e: QMessageBox.information(self._parentWidget, 'Drive Downloader Thread', str(e)))
         t.start()
         b.exec()
 
