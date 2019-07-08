@@ -125,8 +125,14 @@ class ExtraReflectanceCube(ICBase):
         directory, name = ERMetadata.directory2dirName(md.filePath)
         return cls.fromHdfFile(directory, name)
 
-class ExtraReflectionCube:
-    def __init__(self, reflectance: ExtraReflectanceCube, theoryR: pd.Series, reference: ImCube):
-        self.metadata = reflectance.metadata
+
+class ExtraReflectionCube(ICBase):
+    def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], metadata: ERMetadata):
+        super().__init__(data, wavelengths)
+        self.metadata = metadata
+
+    @classmethod
+    def create(cls, reflectance: ExtraReflectanceCube, theoryR: pd.Series, reference: ImCube):
         I0 = reference.data / (theoryR[None, None, :] + reflectance.data) # I0 is the intensity of the illumination source, reconstructed in units of `counts`. this is an inversion of our assumption that reference = I0*(referenceReflectance + extraReflectance)
-        self.data = reflectance.data * I0  # converting extraReflectance to the extra reflection in units of counts
+        data = reflectance.data * I0  # converting extraReflectance to the extra reflection in units of counts
+        return cls(data, reflectance.wavelengths, reflectance.metadata)

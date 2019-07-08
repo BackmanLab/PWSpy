@@ -131,11 +131,11 @@ class Analysis(LegacyAnalysis):
         else:
             theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, index=ref.wavelengths)
         if extraReflectance is None:
-            Iextra = ExtraReflectionCube(ExtraReflectanceCube(np.zeros(ref.data.shape), ref.wavelengths, ERMetadata(ref.metadata._dict)), theoryR, ref)  # a bogus reflection that is all zeros
+            Iextra = ExtraReflectionCube.create(ExtraReflectanceCube(np.zeros(ref.data.shape), ref.wavelengths, ERMetadata(ref.metadata._dict)), theoryR, ref)  # a bogus reflection that is all zeros
             print("Warning: Analysis ignoring extra reflection")
             assert np.all(Iextra.data == 0)
         else:
-            Iextra = ExtraReflectionCube(extraReflectance, theoryR, ref) #Convert from reflectance to predicted counts/ms.
+            Iextra = ExtraReflectionCube.create(extraReflectance, theoryR, ref) #Convert from reflectance to predicted counts/ms.
         ref.subtractExtraReflection(Iextra)  # remove the extra reflection from our data#
         ref = ref / theoryR[None, None, :]  # now when we normalize by our reference we will get a result in units of physical reflectance rather than arbitrary units.
         self.ref = ref
