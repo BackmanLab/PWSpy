@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from pwspy.imCube import ImCube
+from pwspy.imCube import ExtraReflectanceCube, ExtraReflectionCube
 from pwspy.utility import reflectanceHelper
 from glob import glob
 import os
@@ -31,7 +32,7 @@ def colorbar(mappable):
 
 if __name__ == "__main__":
     # %%User Input
-    wDir = r'J:\Calibrations\ITOThinFilm\STORM'
+    wDir = r'J:\Calibrations\ITOThinFilm\LCPWS2'
     referenceMaterial = Material.Water
     referenceNumber = 999
     cellNumber = 1
@@ -52,11 +53,15 @@ if __name__ == "__main__":
         print("Loading")
         im = ImCube.loadAny(os.path.join(f, f'Cell{cellNumber}'))
         ref = ImCube.loadAny(os.path.join(f, f'Cell{referenceNumber}'))
+        er = ExtraReflectanceCube.fromHdfFile(r'C:\Users\backman05\PwspyApps\ExtraReflectanceCreatorData\GoogleDriveData', 'LCPWS2_100xpfs-7_8_2019')
         print("Dividing data by mirror spectra")
         im.correctCameraEffects(auto=True)
-        im.normalizeByExposure()
         ref.correctCameraEffects(auto=True)
+        im.normalizeByExposure()
         ref.normalizeByExposure()
+        Iextra = ExtraReflectionCube.create(er, sref, ref)
+        im.subtractExtraReflection(Iextra)
+        ref.subtractExtraReflection(Iextra)
         mSpectra = ref.getMeanSpectra()[0] # we just want an average spectra to normalize by so we don't normalize out effects that we want to see.
         im /= mSpectra[None, None, :]
         im *= np.array(sref) # Normalize to physical reflectance
@@ -113,3 +118,4 @@ if __name__ == "__main__":
                 fig2.canvas.flush_events()
         except Exception as e:
             raise e
+    
