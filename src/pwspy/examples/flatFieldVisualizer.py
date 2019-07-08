@@ -18,6 +18,8 @@ from pwspy.moduleConsts import Material
 from pwspy.utility import thinFilmPath
 from pwspy.imCube.otherClasses import Roi
 
+#TODO change the theoretical CSV file to use BK7 instead of SIO2. Our measurements are still not matching theory though. Is this because of all the extra scattering?
+
 plt.ion()
 __spec__ = None
 
