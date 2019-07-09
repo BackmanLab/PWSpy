@@ -1,3 +1,3 @@
-from .compilerSettings import CompilerSettings
-from .roiCompiler import RoiCompiler
-from .roiCompilationResults import RoiCompilationResults
+from ._compilerSettings import CompilerSettings
+from ._roiCompiler import RoiCompiler
+from ._roiCompilationResults import RoiCompilationResults

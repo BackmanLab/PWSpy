@@ -34,6 +34,8 @@ def checkMeanSpectraRatio(ratio: float) -> Optional[AnalysisWarning]:
         return None
 
 def checkRSquared(rSquared: np.ndarray) -> Optional[AnalysisWarning]:
+    """We try to fit a line to the natural log of the autocorrelation function in order to find the slope. The RSquared
+    tells us how well this fit worked. If RSquared is too low then we can't really trust the slop value that we calculated."""
     if np.any(rSquared < 0.7):  # TODO this threshold was arbitrarily chosen.
         return AnalysisWarning("R^2 too low", f"{np.sum(rSquared<0.7)} of the {rSquared.size} elements in our ROI show this problem. The rSquared of our linear fit to the autocorrelation function is (<0.7) the LD and CDR parameters may not not be valid.")
     else:

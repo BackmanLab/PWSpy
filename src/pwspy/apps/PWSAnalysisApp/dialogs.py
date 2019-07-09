@@ -4,6 +4,7 @@ Created on Wed Feb 13 18:04:57 2019
 
 @author: Nick Anthony
 """
+from __future__ import annotations
 import os
 from glob import glob
 from typing import Optional, List, Tuple
@@ -17,7 +18,9 @@ from PyQt5.QtWidgets import (QGridLayout, QDialog,
                              QLineEdit, QPushButton, QFileDialog, QCheckBox,
                              QMessageBox, QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QApplication)
 
-from pwspy.imCube import ICMetaData
+import typing
+if typing.TYPE_CHECKING:
+    from pwspy.dataTypes import ImCube
 
 
 class WorkingDirDialog(QDialog):
@@ -77,7 +80,7 @@ class WorkingDirDialog(QDialog):
 
 
 class AnalysisSummaryDisplay(QDialog):
-    def __init__(self, parent: Optional[QWidget], warnings: List[Tuple[List[AnalysisWarning], ICMetaData]],  analysisName: str = '', analysisSettings: AnalysisSettings = None):
+    def __init__(self, parent: Optional[QWidget], warnings: List[Tuple[List[AnalysisWarning], ImCube.ICMetaData]],  analysisName: str = '', analysisSettings: AnalysisSettings = None):
         super().__init__(parent=parent)
         self.analysisName = analysisName
         self.analysisSettings = analysisSettings
@@ -93,7 +96,7 @@ class AnalysisSummaryDisplay(QDialog):
         self.setWindowTitle(f"Analysis Summary: {analysisName}")
         self.show()
 
-    def _addWarnings(self, warnings: List[Tuple[List[AnalysisWarning], ICMetaData]]):
+    def _addWarnings(self, warnings: List[Tuple[List[AnalysisWarning], ImCube.ICMetaData]]):
          for cellWarns, cell in warnings:
             item = QTreeWidgetItem(self.warnList)
             item.setText(0, cell.filePath)
@@ -111,7 +114,7 @@ class AnalysisSummaryDisplay(QDialog):
 
 
 class CompilationSummaryDisplay(QDialog):
-    def __init__(self, parent: Optional[QWidget], warnings: List[Tuple[ICMetaData, List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]]],  analysisName: str = '', analysisSettings: AnalysisSettings = None):
+    def __init__(self, parent: Optional[QWidget], warnings: List[Tuple[ImCube.ICMetaData, List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]]],  analysisName: str = '', analysisSettings: AnalysisSettings = None):
         super().__init__(parent=parent)
         self.setWindowTitle("Compilation Summary")
         layout = QVBoxLayout()
@@ -122,7 +125,7 @@ class CompilationSummaryDisplay(QDialog):
         self._addWarnings(warnings)
         self.show()
 
-    def _addWarnings(self, warnings: List[Tuple[ICMetaData, List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]]]):
+    def _addWarnings(self, warnings: List[Tuple[ImCube.ICMetaData, List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]]]):
         for meta, roiList in warnings:
             item = QTreeWidgetItem(self.warningTree)
             item.setText(0, meta.filePath)

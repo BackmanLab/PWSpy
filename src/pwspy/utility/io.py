@@ -11,18 +11,18 @@ from time import time
 from typing import Union, Optional, List, Tuple
 import pandas as pd
 import psutil
-from pwspy.imCube import ImCube, ICMetaData
+from pwspy.dataTypes import ImCube
 
 '''Local Functions'''
 
 
-def _load(loadHandle: Union[str, ICMetaData], metadataOnly: bool, lock: mp.Lock):
+def _load(loadHandle: Union[str, ImCube.ICMetaData], metadataOnly: bool, lock: mp.Lock):
     if isinstance(loadHandle, str):
-        md = ICMetaData.loadAny(loadHandle, lock=lock)
-    elif isinstance(loadHandle, ICMetaData):
+        md = ImCube.ICMetaData.loadAny(loadHandle, lock=lock)
+    elif isinstance(loadHandle, ImCube.ICMetaData):
         md = loadHandle
     else:
-        raise TypeError("files specified to the loader must be either str or ICMetaData")
+        raise TypeError("files specified to the loader must be either str or ImCube.ICMetaData")
     if metadataOnly:
         return md
     else:
@@ -97,7 +97,7 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
     procArgs
         Optional arguments to pass to processorFunc
     metadataOnly:
-        Instead of passing an ImCube object to the first argument of processorFunc, pass the ICMetadata object
+        Instead of passing an ImCube object to the first argument of processorFunc, pass the ImCube.ICMetaData object
     passLock:
         If true then pass the multiprocessing lock object to the second argument fo processorFunc. this can be used to
         synchronize hard disk activity.

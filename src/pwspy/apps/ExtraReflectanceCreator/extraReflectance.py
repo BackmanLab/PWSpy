@@ -2,9 +2,9 @@ from typing import Dict, List, Tuple, Iterable, Any, Sequence, Iterator, Union, 
 
 import matplotlib
 
-from pwspy.imCube import ImCube, ExtraReflectanceCube
-from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
-from pwspy.imCube.otherClasses import Roi
+from pwspy.dataTypes import ImCube, ExtraReflectanceCube
+from pwspy.dataTypes._ExtraReflectanceCubeClass import ERMetadata
+from pwspy.dataTypes._otherClasses import Roi
 from pwspy.utility.reflectanceHelper import getReflectance
 from pwspy.moduleConsts import Material
 import itertools

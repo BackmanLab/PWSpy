@@ -11,7 +11,7 @@ import os.path as osp
 import os
 from pwspy.utility.micromanager.positions import PositionList, Position2d
 
-resources = osp.join(osp.split(__file__)[0], 'resources')
+resources = osp.join(osp.split(__file__)[0], '_resources')
 testCellPath = osp.join(resources, 'Cell1')
 posListPath = osp.join(resources, 'testPositions.pos')
 

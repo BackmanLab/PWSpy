@@ -5,7 +5,7 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QListWidget, QComboBox, QPushButton, \
     QLabel, QListWidgetItem
 
-from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
+from pwspy.apps._sharedWidgets.extraReflectionManager import ERManager
 
 class MainWindow(QMainWindow):
     def __init__(self, manager: ERManager):

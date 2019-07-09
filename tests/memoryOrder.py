@@ -2,7 +2,7 @@ from timeit import timeit
 import os.path as osp
 from pwspy import ImCube, KCube
 
-resources = osp.join(osp.split(__file__)[0], 'resources')
+resources = osp.join(osp.split(__file__)[0], '_resources')
 testCellPath = osp.join(resources, 'Cell1')
 
 im = ImCube.loadAny(testCellPath)

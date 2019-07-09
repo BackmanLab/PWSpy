@@ -5,4 +5,4 @@ Created on Mon Feb 11 21:25:21 2019
 @author: Nick Anthony
 """
 import os
-resources = os.path.join(os.path.split(__file__)[0], 'resources')
+resources = os.path.join(os.path.split(__file__)[0], '_resources')
