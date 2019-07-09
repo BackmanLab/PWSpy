@@ -15,15 +15,36 @@ pwspy main
 .. automodule:: pwspy
    :members:
 
-pwspy imCube
+pwspy.dataTypes
 ===============================
-.. automodule:: pwspy.imCube
-   :members: ImCube, KCube, ICBase, ICMetaData, CameraCorrection, ExtraReflectanceCube
+.. automodule:: pwspy.dataTypes
+   :members:
+   :undoc-members:
 
 pwspy.analysis
 ===============================
 .. automodule:: pwspy.analysis
-   :members: AnalysisResults, AnalysisSettings
+   :members:
+   :undoc-members:
+
+pwspy.apps
+===============================
+.. automodule:: pwspy.apps
+   :members:
+   :undoc-members:
+
+pwspy.examples
+===============================
+.. automodule:: pwspy.examples
+   :members:
+   :undoc-members:
+
+pwspy.utility
+===============================
+.. automodule:: pwspy.utility
+   :members:
+   :undoc-members:
+
 
 
 Indices and tables
