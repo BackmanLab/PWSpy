@@ -12,23 +12,27 @@ from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
+from abc import ABC
+import time
 
-
-
-class ERDataDirectory:
-    """A class representing the locally stored data file directory for ExtraReflectanceCube files."""
+class ERAbstractDirectory(ABC):
     class DataStatus(Enum):
         md5Confict = 'Data MD5 mismatch'
         found = 'Found'
         notIndexed = 'Not Indexed'
         missing = 'Data File Missing'
 
-    def __init__(self, directory: str, manager: ERManager):
-        self._directory = directory
-        self._manager = manager
+    def __init__(self):
         self.index: ERIndex = None
         self.status: pandas.DataFrame = None
         self.rescan()
+
+class ERDataDirectory(ERAbstractDirectory):
+    """A class representing the locally stored data file directory for ExtraReflectanceCube files."""
+    def __init__(self, directory: str, manager: ERManager):
+        self._directory = directory
+        self._manager = manager
+        super().__init__()
 
     @staticmethod
     def buildIndexFromFiles(files: List[ERMetadata]) -> ERIndex:
@@ -52,14 +56,7 @@ class ERDataDirectory:
         d = self.compareIndexes(calculatedIndex, self.index)
         d = pandas.DataFrame(d).transpose()
         d.columns.values[1] = 'Local Status'
-        onlineIndex = self.getOnlineIndexFile()
-        d2 = self.compareIndexes(self.index, onlineIndex)
-        d2 = pandas.DataFrame(d2).transpose()
-        d2.columns.values[1] = 'Online Status'
-        d = pandas.merge(d, d2, how='outer', on='idTag')
         self.status = d
-        self.status = self.status[['idTag', 'Local Status', 'Online Status']]  # Set the column order
-
 
     @staticmethod
     def compareIndexes(ind1: ERIndex, ind2: ERIndex) -> dict:
@@ -90,16 +87,78 @@ class ERDataDirectory:
             d[i] = {'idTag': tag, 'status': status}
         return d
 
-    def getOnlineIndexFile(self) -> ERIndex:
+
+class EROnlineDirectory(ERAbstractDirectory):
+    """A class representing the status of the google drive directory"""
+    def __init__(self, manager: ERManager):
+        self._manager = manager
+        super().__init__()
+
+    def rescan(self):
+        if self._manager._downloader is not None:
+            self._manager._downloader.updateFilesList()
+        self.index = self.getIndexFile()
+        calculatedIndex = self.buildIndexFromOnlineFiles()
+        d2 = self.compareIndexes(calculatedIndex, self.index)
+        d2 = pandas.DataFrame(d2).transpose()
+        d2.columns.values[1] = 'Online Status'
+        self.status = d2
+
+    def getIndexFile(self) -> ERIndex:
         """Return an ERIndex object from the 'index.json' file saved on Google Drive."""
         tempDir = tempfile.mkdtemp()
-        # if not os.path.exists(tempDir):
-        #     os.mkdir(tempDir)
         indexDir = os.path.join(tempDir, 'index.json')
         if os.path.exists(indexDir):
             os.remove(indexDir)
-        self._manager.download('index.json', tempDir)
+        try:
+            self._manager.download('index.json', tempDir)
+        except ValueError: # File doesn't exist
+            print("Index file was not found on google drive. Uploading from local data directory.")
+            self._manager.upload(os.path.join(self._manager._directory, 'index.json'))
+            time.sleep(3)
         index = ERIndex.loadFromFile(indexDir)
         os.remove(indexDir)
         os.rmdir(tempDir)
         return index
+
+    def buildIndexFromOnlineFiles(self) -> ERIndex:
+        """Return an ERIndex object from the HDF5 data files saved on Google Drive. No downloading required, just scanning metadata."""
+        # api = self._manager._downloader.api
+        downloader = self._manager._downloader
+        files = downloader.getFolderIdContents(
+            downloader.getIdByName('PWSAnalysisAppHostedFiles'))
+        files = downloader.getFolderIdContents(
+            downloader.getIdByName('ExtraReflectanceCubes', fileList=files))
+        files = [f for f in files if ERMetadata.FILESUFFIX in f['name']]  # Select the dictionaries that correspond to a extra reflectance data file
+        files = [ERIndexCube(fileName=f['name'], md5=f['md5Checksum'], name=ERMetadata.directory2dirName(f['name'])[-1], description=None, idTag=None) for f in files]
+        return ERIndex(files)
+
+    @staticmethod
+    def compareIndexes(calculatedIndex: ERIndex, jsonIndex: ERIndex) -> dict:
+        """In this case we are not able to extract the idTags from the dataFiles without downloading them. use filenames instead"""
+        foundNames = set([cube.fileName for cube in calculatedIndex.cubes])
+        indNames = set([cube.fileName for cube in jsonIndex.cubes])
+        notIndexed = foundNames - indNames  # fileNames in foundNames but not in indNames
+        missing = indNames - foundNames  # fileNames in in indNames but not in foundNames
+        matched = indNames & foundNames  # fileNames present in both sets
+        dataMismatch = []  # fileNames that match but have different md5 hashes
+        for name in matched:
+            cube = [cube for cube in calculatedIndex.cubes if cube.fileName == name][0]
+            indCube = [cube for cube in jsonIndex.cubes if cube.fileName == name][0]
+            if cube.md5 != indCube.md5:
+                dataMismatch.append(name)
+        #  Construct a dataframe
+        d = {}
+        for i, fileName, in enumerate(foundNames | indNames):
+            if fileName in missing:
+                status = ERDataDirectory.DataStatus.missing.value
+            elif fileName in notIndexed:
+                status = ERDataDirectory.DataStatus.notIndexed.value
+            elif fileName in dataMismatch:
+                status = ERDataDirectory.DataStatus.md5Confict.value
+            elif fileName in matched:  # it must have been matched.
+                status = ERDataDirectory.DataStatus.found.value
+            else:
+                raise Exception("Programming error.")  # This shouldn't be possible
+            d[i] = {'idTag': [ind.idTag for ind in jsonIndex.cubes if ind.fileName == fileName][0], 'status': status}
+        return d

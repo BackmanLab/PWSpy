@@ -74,7 +74,6 @@ class ERSelectorWindow(QDialog):
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self.showContextMenu)
-        # self.table.itemDoubleClicked.connect(self.displayInfo)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SingleSelection)
         self.table.setRowCount(0)
@@ -108,18 +107,18 @@ class ERSelectorWindow(QDialog):
     def _initialize(self):
         self._manager.rescan()
         self._items: List[ERTableWidgetItem] = []
-        for item in self._manager.dataDir.index.cubes:
+        for item in self._manager.dataComparator.local.index.cubes:
             self._addItem(item)
 
     def _addItem(self, item: ERIndexCube):
-        status = self._manager.dataDir.status
+        status = self._manager.dataComparator.local.status
         tableItem = ERTableWidgetItem(fileName=item.fileName, description=item.description, idTag=item.idTag, name=item.name,
-                                      downloaded=status[status['idTag'] == item.idTag].iloc[0]['Local Status'] == self._manager.dataDir.DataStatus.found.value)
+                                      downloaded=status[status['idTag'] == item.idTag].iloc[0]['Local Status'] == self._manager.dataComparator.local.DataStatus.found.value)
         self._items.append(tableItem)
         self.table.setRowCount(len(self._items))
         self.table.setCellWidget(self.table.rowCount() - 1, 0, tableItem.checkBoxWidget)
         self.table.setItem(self.table.rowCount() - 1, 1, tableItem.sysItem)
-        self.table.setItem(self.table.rowCount() - 1, 2, tableItem.dateItem)
+        self.table.setItem(tableItem.sysItem.row(), 2, tableItem.dateItem)
 
     def showContextMenu(self, pos: QPoint):
         index = self.table.indexAt(pos)

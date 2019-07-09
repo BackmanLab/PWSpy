@@ -1,6 +1,9 @@
 from __future__ import annotations
+
+import traceback
 from typing import Optional
 
+import pandas
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QModelIndex, QPoint
 from PyQt5.QtWidgets import QDialog, QWidget, QHBoxLayout, QPushButton, QAbstractItemView, QTableView, QVBoxLayout, \
@@ -8,8 +11,10 @@ from PyQt5.QtWidgets import QDialog, QWidget, QHBoxLayout, QPushButton, QAbstrac
 import pandas as pd
 import typing
 import os
+import numpy as np
 
 from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataDirectory import ERDataDirectory
+from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataComparator import ERDataComparator
 
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
@@ -24,8 +29,7 @@ class ERUploaderWindow(QDialog):
         self.setWindowTitle("Extra Reflectance File Manager")
         self.setLayout(QVBoxLayout())
         self.table = QTableView(self)
-        self.table.setModel(PandasModel(self._manager.dataDir.status))
-        # self.table.doubleClicked.connect(self.displayInfo)
+        self.table.setModel(PandasModel(self._manager.dataComparator.status))
         self.table.setSelectionMode(QTableView.SingleSelection)
         self.table.setSelectionBehavior(QTableView.SelectRows)
         self.table.customContextMenuRequested.connect(self.openContextMenu)
@@ -47,11 +51,11 @@ class ERUploaderWindow(QDialog):
         self.table.setMinimumWidth(sum(self.table.columnWidth(i)for i in range(self.table.model().columnCount())) + self.table.verticalHeader().width() + 20)
 
     def displayInfo(self, index: QModelIndex):
-        msg = QMessageBox(self, 'Info', repr(self._manager.dataDir.status.iloc[index.row()]))
+        msg = QMessageBox.information(self, 'Info', repr(self._manager.dataComparator.status.iloc[index.row()]))
 
     def openContextMenu(self, pos: QPoint):
         index = self.table.indexAt(pos)
-        row = self._manager.dataDir.status.iloc[index.row()]
+        row = self._manager.dataComparator.status.iloc[index.row()]
         menu = QMenu()
         displayAction = QAction("Display Info")
         displayAction.triggered.connect(lambda: self.displayInfo(index))
@@ -59,11 +63,25 @@ class ERUploaderWindow(QDialog):
         menu.exec(self.mapToGlobal(pos))
 
     def _updateGDrive(self):
-        mess = QMessageBox.information(self, 'Sorry', "This function is not yet implemented")
+        try:
+            status = self._manager.dataComparator.status
+            if not np.all(status['Local Status'] == ERDataDirectory.DataStatus.found.value):
+                raise ValueError("Uploading cannot be performed if the local directory status is not perfect.")
+            uploadableRows = np.logical_or(status['Index Comparison'] == ERDataComparator.ComparisonStatus.LocalOnly.value, status['Online Status'] == ERDataDirectory.DataStatus.missing.value)
+            if np.any(uploadableRows):  # There is something to upload
+                for i, row, in status.loc[uploadableRows].iterrows():
+                    print(row)
+                    fileName = [i.fileName for i in self._manager.dataComparator.local.index.cubes if i.idTag == row['idTag']][0]
+                    self._manager.upload(fileName)
+                self._manager.upload('index.json')
+            self.refresh()
+        except Exception as e:
+            traceback.print_exc()
+            mess = QMessageBox.information(self, 'Sorry', str(e))
 
     def refresh(self):
-        self._manager.dataDir.rescan()
-        self.table.setModel(PandasModel(self._manager.dataDir.status))
+        self._manager.rescan()
+        self.table.setModel(PandasModel(self._manager.dataComparator.status))
 
 
 class PandasModel(QtCore.QAbstractTableModel):
@@ -88,9 +106,9 @@ class PandasModel(QtCore.QAbstractTableModel):
                 return QtCore.QVariant()
 
     def _calculateColor(self, index: QModelIndex):
-        if self._df.columns[index.column()] != 'status':
+        if self._df.columns[index.column()] == 'idTag':
             c = QtGui.QColor('white')
-        elif self._df.iloc[index.row(), index.column()] == ERDataDirectory.DataStatus.found.value:
+        elif (self._df.iloc[index.row(), index.column()] == ERDataDirectory.DataStatus.found.value) or (self._df.iloc[index.row(), index.column()] == ERDataComparator.ComparisonStatus.Match.value):
             c = QtGui.QColor('green')
         else:
             c = QtGui.QColor('red')

@@ -73,8 +73,13 @@ class GoogleDriveDownloader:
 
     def uploadFile(self, filePath: str, parentId: str) -> str:
         """upload the file at `filePath` to the folder with `parentId`. keeping the original file name.
-        Return the new file's id."""
-        fileMetadata = {'name': os.path.split(filePath)[-1], 'parents': [parentId]}
+        Return the new file's id. If a file with the same parent and name already exists, replace it."""
+        fileName = os.path.split(filePath)[-1]
+        existingFiles = self.getFolderIdContents(parentId)
+        if fileName in [i['name'] for i in existingFiles]: #FileName already exists
+            existingId = [i['id'] for i in existingFiles if i['name'] == fileName][0]
+            self.api.files().delete(fileId=existingId).execute()
+        fileMetadata = {'name': fileName, 'parents': [parentId]}
         media = MediaFileUpload(filePath)
         file = self.api.files().create(body=fileMetadata, media_body=media, fields='id').execute()
         return file.get('id')

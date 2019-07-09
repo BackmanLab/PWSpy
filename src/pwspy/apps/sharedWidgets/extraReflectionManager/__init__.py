@@ -5,11 +5,11 @@ from typing import Optional
 from PyQt5 import QtCore
 from PyQt5.QtCore import QObject, QThread
 from PyQt5.QtWidgets import QMessageBox, QApplication, QWidget
-from googleapiclient.http import MediaIoBaseDownload
+from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
 
 from pwspy.apps.PWSAnalysisApp.sharedWidgets.dialogs import BusyDialog
-from pwspy.apps.sharedWidgets.extraReflectionManager.EROnlineDirectory import EROnlineDirectory
-from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataDirectory import ERDataDirectory
+from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataComparator import ERDataComparator
+from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataDirectory import ERDataDirectory, EROnlineDirectory
 from .ERSelectorWindow import ERSelectorWindow
 from .ERUploaderWindow import ERUploaderWindow
 from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
@@ -17,6 +17,7 @@ from pwspy.utility.GoogleDriveDownloader import GoogleDriveDownloader
 
 from pwspy.apps.PWSAnalysisApp import applicationVars
 
+#TODO this whole submodule is kind of a fragile mess and probably not organized in a smart way.
 
 class ERManager:
     def __init__(self, filePath: str):
@@ -25,8 +26,9 @@ class ERManager:
         indexPath = os.path.join(self._directory, 'index.json')
         if not os.path.exists(indexPath):
             self.download('index.json')
-        self.dataDir = ERDataDirectory(self._directory, self)
-        self.onlineDir = EROnlineDirectory(self)
+        dataDir = ERDataDirectory(self._directory, self)
+        onlineDir = EROnlineDirectory(self)
+        self.dataComparator = ERDataComparator(dataDir, onlineDir)
 
     def createSelectorWindow(self, parent: QWidget):
         return ERSelectorWindow(self, parent)
@@ -35,7 +37,7 @@ class ERManager:
         return ERUploaderWindow(self, parent)
 
     def rescan(self):
-        self.dataDir.rescan()
+        self.dataComparator.rescan()
 
     def download(self, fileName: str, directory: Optional[str] = None, parentWidget: Optional[QWidget] = None):
         """Begin downloading `fileName` in a separate thread. Use the main thread to update a progress bar.
@@ -44,6 +46,8 @@ class ERManager:
             self._downloader = _QtGoogleDriveDownloader(applicationVars.googleDriveAuthPath)
         if directory is None:
             directory = self._directory  # Use the main directory
+        if fileName not in [i['name'] for i in self._downloader.allFiles]:
+            raise ValueError(f"File {fileName} does not exist on google drive")
         t = _DownloadThread(self._downloader, fileName, directory)
         b = BusyDialog(parentWidget, f"Downloading {fileName}. Please Wait...", progressBar=True)
         t.finished.connect(b.accept)
@@ -52,6 +56,10 @@ class ERManager:
         t.start()
         b.exec()
 
+    def upload(self, fileName: str):
+        parentId = self._downloader.getIdByName("ExtraReflectanceCubes")
+        filePath = os.path.join(self._directory, fileName)
+        self._downloader.uploadFile(filePath, parentId)
 
     def getMetadataFromId(self, Id: str) -> ERMetadata:
         """Given the Id string for ExtraReflectanceCube this will search the index.json and return the ERMetadata file"""
@@ -97,5 +105,6 @@ class _QtGoogleDriveDownloader(GoogleDriveDownloader, QObject):
             while done is False:
                 status, done = downloader.next_chunk()
                 self.progress.emit(int(status.progress() * 100))
+
 
 

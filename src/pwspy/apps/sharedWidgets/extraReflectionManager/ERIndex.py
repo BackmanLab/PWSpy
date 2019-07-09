@@ -52,6 +52,12 @@ class ERIndex:
     def toDict(self) -> dict:
         return {'creationDate': self.creationDate, 'reflectanceCubes': [i.toDict() for i in self.cubes]}
 
+    def getItemFromIdTag(self, idTag: str) -> ERIndexCube:
+        for i in self.cubes:
+            if i.idTag == idTag:
+                return i
+        raise ValueError(f"No item with idTag {idTag} was found.")
+
 
 class ERIndexCube:
     def __init__(self, fileName: str, description: str, idTag: str, name: str, md5: str):
