@@ -47,7 +47,7 @@ class ERUploaderWindow(QDialog):
         self.table.setMinimumWidth(sum(self.table.columnWidth(i)for i in range(self.table.model().columnCount())) + self.table.verticalHeader().width() + 20)
 
     def displayInfo(self, index: QModelIndex):
-        print(self._manager.dataDir.status.iloc[index.row()])
+        msg = QMessageBox(self, 'Info', repr(self._manager.dataDir.status.iloc[index.row()]))
 
     def openContextMenu(self, pos: QPoint):
         index = self.table.indexAt(pos)

@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import QMessageBox, QApplication, QWidget
 from googleapiclient.http import MediaIoBaseDownload
 
 from pwspy.apps.PWSAnalysisApp.sharedWidgets.dialogs import BusyDialog
+from pwspy.apps.sharedWidgets.extraReflectionManager.EROnlineDirectory import EROnlineDirectory
 from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataDirectory import ERDataDirectory
 from .ERSelectorWindow import ERSelectorWindow
 from .ERUploaderWindow import ERUploaderWindow
@@ -25,6 +26,7 @@ class ERManager:
         if not os.path.exists(indexPath):
             self.download('index.json')
         self.dataDir = ERDataDirectory(self._directory, self)
+        self.onlineDir = EROnlineDirectory(self)
 
     def createSelectorWindow(self, parent: QWidget):
         return ERSelectorWindow(self, parent)

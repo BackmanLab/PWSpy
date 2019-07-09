@@ -38,10 +38,10 @@ class GoogleDriveDownloader:
 
     def updateFilesList(self):
         """Update the list of all files in the google drive account. This is automatically called during initialization."""
-        results = self.api.files().list(fields="nextPageToken, files(id, name, parents)").execute()
+        results = self.api.files().list(fields="nextPageToken, files(id, name, parents, md5Checksum)").execute()
         self.allFiles = results.get('files', [])
 
-    def getIdByName(self, name: str, fileList: Optional = None) -> int:
+    def getIdByName(self, name: str, fileList: Optional = None) -> str:
         """Return the file id associated with a filename. fileList can be a collection of metadata such as is returned by
         getFolderIDContents. If left blank then all files of the google drive account will be searched. If there are multiple
         files with the same name the first match that is found will be returned."""

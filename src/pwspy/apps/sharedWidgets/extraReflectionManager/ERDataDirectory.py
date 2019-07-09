@@ -5,7 +5,7 @@ from enum import Enum
 from glob import glob
 from typing import List
 
-import pandas
+import pandas, tempfile
 
 from pwspy.apps.sharedWidgets.extraReflectionManager.ERIndex import ERIndex, ERIndexCube
 from pwspy.imCube.ExtraReflectanceCubeClass import ERMetadata
@@ -16,6 +16,7 @@ if typing.TYPE_CHECKING:
 
 
 class ERDataDirectory:
+    """A class representing the locally stored data file directory for ExtraReflectanceCube files."""
     class DataStatus(Enum):
         md5Confict = 'Data MD5 mismatch'
         found = 'Found'
@@ -26,6 +27,7 @@ class ERDataDirectory:
         self._directory = directory
         self._manager = manager
         self.index: ERIndex = None
+        self.status: pandas.DataFrame = None
         self.rescan()
 
     @staticmethod
@@ -50,7 +52,7 @@ class ERDataDirectory:
         d = self.compareIndexes(calculatedIndex, self.index)
         d = pandas.DataFrame(d).transpose()
         d.columns.values[1] = 'Local Status'
-        onlineIndex = self.downloadIndex()
+        onlineIndex = self.getOnlineIndexFile()
         d2 = self.compareIndexes(self.index, onlineIndex)
         d2 = pandas.DataFrame(d2).transpose()
         d2.columns.values[1] = 'Online Status'
@@ -58,18 +60,6 @@ class ERDataDirectory:
         self.status = d
         self.status = self.status[['idTag', 'Local Status', 'Online Status']]  # Set the column order
 
-    def downloadIndex(self) -> ERIndex:
-        tempDir = os.path.join(self._directory, 'temp')
-        if not os.path.exists(tempDir):
-            os.mkdir(tempDir)
-        indexDir = os.path.join(tempDir, 'index.json')
-        if os.path.exists(indexDir):
-            os.remove(indexDir)
-        self._manager.download('index.json', tempDir)
-        index = ERIndex.loadFromFile(indexDir)
-        os.remove(indexDir)
-        os.rmdir(tempDir)
-        return index
 
     @staticmethod
     def compareIndexes(ind1: ERIndex, ind2: ERIndex) -> dict:
@@ -99,3 +89,17 @@ class ERDataDirectory:
                 raise Exception("Programming error.")  # This shouldn't be possible
             d[i] = {'idTag': tag, 'status': status}
         return d
+
+    def getOnlineIndexFile(self) -> ERIndex:
+        """Return an ERIndex object from the 'index.json' file saved on Google Drive."""
+        tempDir = tempfile.mkdtemp()
+        # if not os.path.exists(tempDir):
+        #     os.mkdir(tempDir)
+        indexDir = os.path.join(tempDir, 'index.json')
+        if os.path.exists(indexDir):
+            os.remove(indexDir)
+        self._manager.download('index.json', tempDir)
+        index = ERIndex.loadFromFile(indexDir)
+        os.remove(indexDir)
+        os.rmdir(tempDir)
+        return index
