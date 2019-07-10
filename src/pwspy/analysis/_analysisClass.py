@@ -21,7 +21,7 @@ import typing
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ImCube
 
-
+#TODO analysis totally messes up on linux in parallel mode. both modes use too much memory
 class AbstractAnalysis(ABC):
     @abstractmethod
     def __init__(self, settings: AnalysisSettings):
