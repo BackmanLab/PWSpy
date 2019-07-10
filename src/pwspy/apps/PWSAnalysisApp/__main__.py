@@ -11,7 +11,7 @@ def isIpython():
     except:
         return False
 
-
+#TODO set app name
 
 if __name__ == '__main__':
     import sys
