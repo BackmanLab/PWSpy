@@ -13,6 +13,7 @@ from pwspy.apps.PWSAnalysisApp._sharedWidgets.tables import DatetimeTableWidgetI
 from pwspy.dataTypes import ExtraReflectanceCube
 from pwspy.dataTypes._ExtraReflectanceCubeClass import ERMetadata
 import numpy as np
+from .exceptions import OfflineError
 
 import typing
 
@@ -84,25 +85,29 @@ class ERSelectorWindow(QDialog):
 
         self.downloadButton = QPushButton("Download Checked Items")
         self.downloadButton.released.connect(self._downloadCheckedItems)
-        self.updateButton = QPushButton('Update Index')
-        self.updateButton.setToolTip("Update the index containing information about which Extra Reflectance Cubes are available for download.")
-        self.updateButton.released.connect(self._updateIndex)
+        # self.updateButton = QPushButton('Update Index')
+        # self.updateButton.setToolTip("Update the index containing information about which Extra Reflectance Cubes are available for download.")
+        # self.updateButton.released.connect(self._updateIndex)
         self.acceptSelectionButton = QPushButton("Accept Selection")
         self.acceptSelectionButton.released.connect(self.accept)
         self.layout().addWidget(self.table)
         l = QHBoxLayout()
         l.setContentsMargins(0, 0, 0, 0)
         l.addWidget(self.downloadButton)
-        l.addWidget(self.updateButton)
+        # l.addWidget(self.updateButton)
         w = QWidget()
         w.setLayout(l)
         self.layout().addWidget(w)
         self.layout().addWidget(self.acceptSelectionButton)
+        try:
+            self._manager.download('index.json', parentWidget=self)
+        except OfflineError:
+            msbBox = QMessageBox.information(self, 'Offline Mode', 'Could not update `Extra Reflectance` index file. Connection to Google Drive failed.')
         self._initialize()
 
-    def _updateIndex(self):
-        self._manager.download("index.json", parentWidget=self)
-        self._initialize()
+    # def _updateIndex(self):
+    #     self._manager.download("index.json", parentWidget=self)
+    #     self._initialize()
 
     def _initialize(self):
         self._manager.rescan()

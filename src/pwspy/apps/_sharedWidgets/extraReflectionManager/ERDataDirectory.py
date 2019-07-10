@@ -12,6 +12,7 @@ from pwspy.dataTypes._ExtraReflectanceCubeClass import ERMetadata
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.apps._sharedWidgets.extraReflectionManager import ERManager
+from .exceptions import OfflineError
 from abc import ABC
 import time
 
@@ -92,6 +93,8 @@ class EROnlineDirectory(ERAbstractDirectory):
     """A class representing the status of the google drive directory"""
     def __init__(self, manager: ERManager):
         self._manager = manager
+        if self._manager.offlineMode:
+            raise Exception("The EROnlineDirectory cannot be used when the ERManager is in offline mode.")
         super().__init__()
 
     def rescan(self):
@@ -112,6 +115,8 @@ class EROnlineDirectory(ERAbstractDirectory):
             os.remove(indexDir)
         try:
             self._manager.download('index.json', tempDir)
+        except OfflineError:
+            return None
         except ValueError: # File doesn't exist
             print("Index file was not found on google drive. Uploading from local data directory.")
             self._manager.upload(os.path.join(self._manager._directory, 'index.json'))

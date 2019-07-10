@@ -1,7 +1,8 @@
 from __future__ import annotations
 import pandas
-# import typing
-# if typing.TYPE_CHECKING:
+import typing
+if typing.TYPE_CHECKING:
+    from pwspy.apps._sharedWidgets.extraReflectionManager import ERManager
 from pwspy.apps._sharedWidgets.extraReflectionManager.ERDataDirectory import ERDataDirectory, EROnlineDirectory
 import numpy as np
 from enum import Enum
@@ -17,21 +18,30 @@ class ERDataComparator:
         Match = "Match"
 
     """A class to compare the local directory to the online directory."""
-    def __init__(self, local: ERDataDirectory, online: EROnlineDirectory):
-        self.local = local
-        self.online = online
+    def __init__(self, manager: ERManager, directory: str):
+        self.local = ERDataDirectory(directory, manager)
+        if manager.offlineMode:
+            self.online = None
+        else:
+            self.online = EROnlineDirectory(manager)
         self.status: pandas.DataFrame = None
         self.compare()
 
     def rescan(self):
         self.local.rescan()
-        self.online.rescan()
+        if self.online is not None:
+            self.online.rescan()
         self.compare()
 
     def compare(self):
-        self.status = pandas.merge(self.local.status, self.online.status, how='outer', on='idTag')
-        self.status['Index Comparison'] = self.status.apply(lambda row: self._dataFrameCompare(row), axis=1)
-        self.status = self.status[['idTag', 'Local Status', 'Online Status', 'Index Comparison']]  # Set the column order
+        if self.online is not None:
+            self.status = pandas.merge(self.local.status, self.online.status, how='outer', on='idTag')
+            self.status['Index Comparison'] = self.status.apply(lambda row: self._dataFrameCompare(row), axis=1)
+            self.status = self.status[['idTag', 'Local Status', 'Online Status', 'Index Comparison']]  # Set the column order
+        else:
+            self.status = self.local.status
+            self.status['Index Comparison'] = self.ComparisonStatus.LocalOnly.value
+            self.status = self.status[['idTag', 'Local Status', 'Index Comparison']]  # Set the column order
 
     def _dataFrameCompare(self, row) -> str:
         try: self.local.index.getItemFromIdTag(row['idTag'])

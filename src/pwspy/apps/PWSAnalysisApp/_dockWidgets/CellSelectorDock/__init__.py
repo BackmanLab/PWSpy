@@ -112,7 +112,7 @@ class CellSelectorDock(QDockWidget):
             else:
                 self.tableWidget.setRowHidden(item.row, True)
 
-    def getSelectedCellMetas(self):
+    def getSelectedCellMetas(self) -> List[ICMetaData]:
         return [i.cube for i in self.tableWidget.selectedCellItems]
 
     def getSelectedReferenceMeta(self):

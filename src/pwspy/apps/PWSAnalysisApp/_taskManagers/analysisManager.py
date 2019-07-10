@@ -46,7 +46,7 @@ class AnalysisManager(QtCore.QObject):
         """Run multiple queued analyses as specified by the user."""
         for anName, anSettings, cellMetas, refMeta, camCorrection in self.app.window.analysisSettings.getListedAnalyses():
             self.runSingle(anName, anSettings, cellMetas, refMeta, camCorrection)
-            [self.app.window.cellSelector.cellItems[cellMeta.idTag].refresh() for cellMeta in cellMetas]
+            [cellItem.refresh() for cellMeta in cellMetas for cellItem in self.app.window.cellSelector.tableWidget.cellItems if cellMeta == cellItem.cube]
 
     @safeCallback
     def runSingle(self, anName: str, anSettings: AnalysisSettings, cellMetas: List[ICMetaData], refMeta: ICMetaData,

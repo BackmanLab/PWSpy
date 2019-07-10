@@ -15,31 +15,38 @@ from .ERSelectorWindow import ERSelectorWindow
 from .ERUploaderWindow import ERUploaderWindow
 from pwspy.dataTypes._ExtraReflectanceCubeClass import ERMetadata
 from pwspy.utility.GoogleDriveDownloader import GoogleDriveDownloader
-
+from .exceptions import OfflineError
 from pwspy.apps.PWSAnalysisApp import applicationVars
 from google.auth.exceptions import TransportError
 
+
 #TODO this whole submodule is kind of a fragile mess and probably not organized in a smart way.
+
+
+def _offlineDecorator(func):
+    def wrappedFunc(self, *args, **kwargs):
+        if self.offlineMode:
+            print("Warning: Attempting to download when ERManager is in offline mode.")
+            raise OfflineError("Is Offline")
+        func(self, *args, **kwargs)
+
+    return wrappedFunc
+
 
 class ERManager:
     def __init__(self, filePath: str):
         self._directory = filePath
         self.offlineMode = False
+        try:
+            self._downloader = _QtGoogleDriveDownloader(applicationVars.googleDriveAuthPath)
+        except TransportError:
+            self.offlineMode = True
+            print("Google Drive connection failed. Proceeding in offline mode.")
         self._downloader: GoogleDriveDownloader = None
         indexPath = os.path.join(self._directory, 'index.json')
         if not os.path.exists(indexPath):
             self.download('index.json')
-        dataDir = ERDataDirectory(self._directory, self)
-        onlineDir = EROnlineDirectory(self)
-        self.dataComparator = ERDataComparator(dataDir, onlineDir)
-
-    def _offlineDecorator(self, func):
-        def wrappedFunc(self, *args, **kwargs):
-            if self.offlineMode:
-                print("Warning: Attempting to download when ERManager is in offline mode.")
-                return
-            func(self, *args, **kwargs)
-        return wrappedFunc
+        self.dataComparator = ERDataComparator(self, self._directory)
 
     def createSelectorWindow(self, parent: QWidget):
         return ERSelectorWindow(self, parent)
@@ -54,12 +61,6 @@ class ERManager:
     def download(self, fileName: str, directory: Optional[str] = None, parentWidget: Optional[QWidget] = None):
         """Begin downloading `fileName` in a separate thread. Use the main thread to update a progress bar.
         If directory is left blank then file will be downloaded to the ERManager main directory"""
-        if (self._downloader is None):
-            try:
-                self._downloader = _QtGoogleDriveDownloader(applicationVars.googleDriveAuthPath)
-            except TransportError:
-                self.offlineMode = True
-                print("Google Drive connection failed. Proceeding in offline mode.")
         if directory is None:
             directory = self._directory  # Use the main directory
         if fileName not in [i['name'] for i in self._downloader.allFiles]:
@@ -81,10 +82,10 @@ class ERManager:
     def getMetadataFromId(self, Id: str) -> ERMetadata:
         """Given the Id string for ExtraReflectanceCube this will search the index.json and return the ERMetadata file"""
         try:
-            match = [item for item in self.index['reflectanceCubes'] if item['idTag'] == Id][0]
+            match = [item for item in self.dataComparator.local.index.cubes if item.idTag == Id][0]
         except IndexError:
             raise IndexError(f"An ExtraReflectanceCube with idTag {Id} was not found in the index.json file at {self._directory}.")
-        return ERMetadata.fromHdfFile(self._directory, match['name'])
+        return ERMetadata.fromHdfFile(self._directory, match.name)
 
 
 class _DownloadThread(QThread):
