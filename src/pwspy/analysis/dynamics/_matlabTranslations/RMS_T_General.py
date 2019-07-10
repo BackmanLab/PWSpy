@@ -6,13 +6,13 @@ wDir = r''
 refPath = r''
 
 ref = DynCube.loadAny(refPath)
-ref.correctCameraEffects(auto=True)
+ref.correctCameraEffects()
 ref.normalizeByExposure()
 
 files = glob(os.path.join(wDir, 'Cell*'))
 for f in files:
     dyn = DynCube.loadAny(f)
-    dyn.correctCameraEffects(auto=True)
+    dyn.correctCameraEffects()
     dyn.normalizeByExposure()
     dyn.normalizeByReference(ref)
 

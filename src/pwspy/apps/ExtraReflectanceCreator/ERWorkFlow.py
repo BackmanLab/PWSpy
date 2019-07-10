@@ -85,7 +85,7 @@ class ERWorkFlow:
     def loadCubes(self, includeSettings: List[str], binning: int):
         df = self.df[self.df['setting'].isin(includeSettings)]
         if binning is None:
-            args = {'correction': None, 'binning': None, 'auto': True}
+            args = {'correction': None, 'binning': None}
             for cube in df['cube']:
                 md = ICMetaData.loadAny(cube)
                 if md.binning is None:
@@ -93,7 +93,7 @@ class ERWorkFlow:
                 elif md.cameraCorrection is None:
                     raise Exception("No camera correction metadata found. Please specify a binning setting, in this case the application will use the camera correction stored in the cameraCorrection.json file of the calibration folder")
         else:
-            args = {'correction': self.cameraCorrection, 'binning': binning, 'auto': False}
+            args = {'correction': self.cameraCorrection, 'binning': binning}
         self.cubes = loadAndProcess(df, _processIm, parallel=True, procArgs=[args])
 
     def plot(self, saveToPdf: bool = False, saveDir: str = None):

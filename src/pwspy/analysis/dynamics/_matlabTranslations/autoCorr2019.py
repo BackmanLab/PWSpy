@@ -15,7 +15,7 @@ ref = DynCube.loadAny(os.path.join(wDir, f'DYN_Cell{mirrorNum}'))
 
 for num in cellNum + [background]: #Loop through all cell folders +1 for background
     dyn = DynCube.loadAny(os.path.join(wDir, f'DYN_Cell{num}'))
-    dyn.correctCameraEffects(auto=True)
+    dyn.correctCameraEffects()
     dyn.normalizeByExposure()
     dyn.normalizeByReference(ref)
     dyn.data = dyn.data - dyn.data.mean(axis=2)[:, :, None] #Subtract the mean of each spectra
