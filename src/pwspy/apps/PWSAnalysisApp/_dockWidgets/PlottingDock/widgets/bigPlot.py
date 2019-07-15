@@ -14,7 +14,7 @@ from pwspy.apps.PWSAnalysisApp._sharedWidgets.rangeSlider import QRangeSlider
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ImCube
-from pwspy.dataTypes._otherClasses import Roi, RoiFileFormats
+from pwspy.dataTypes import Roi
 import os
 
 

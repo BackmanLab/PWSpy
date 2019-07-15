@@ -16,7 +16,7 @@ import os
 from pwspy.utility.io import loadAndProcess
 from pwspy.moduleConsts import Material
 from pwspy.utility import thinFilmPath
-from pwspy.dataTypes._otherClasses import Roi
+from pwspy.dataTypes import Roi
 
 #TODO change the theoretical CSV file to use BK7 instead of SIO2. Our measurements are still not matching theory though. Is this because of all the extra scattering?
 

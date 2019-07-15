@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 from pwspy.apps.ExtraReflectanceCreator.widgets.mainWindow import MainWindow
 from pwspy.apps import appPath
-from pwspy.apps._sharedWidgets.extraReflectionManager import ERManager
+from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 import traceback
 
 class ERApp(QApplication):
@@ -94,9 +94,9 @@ if __name__ == '__main__':
 
     # This prevents errors from happening silently.
     sys.excepthook_backup = sys.excepthook
-    def exception_hook(exctype, value, traceback):
-        print(exctype, value, traceback)
-        sys.excepthook_backup(exctype, value, traceback)
+    def exception_hook(exctype, value, tb):
+        print(exctype, value, tb)
+        sys.excepthook_backup(exctype, value, tb)
         sys.exit(1)
     sys.excepthook = exception_hook
 

@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineE
 
 from pwspy.apps.PWSAnalysisApp._dockWidgets.CellSelectorDock.widgets import ReferencesTableItem
 from .widgets import CellTableWidgetItem, CellTableWidget, ReferencesTable
-from pwspy.dataTypes._ICMetaDataClass import ICMetaData
+from pwspy.dataTypes import ICMetaData
 
 
 class CellSelectorDock(QDockWidget):

@@ -6,14 +6,14 @@ from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QScrollArea, QVBo
 
 from pwspy.apps.PWSAnalysisApp._dockWidgets import CellSelectorDock
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.roiDrawer import RoiDrawer
-from pwspy.dataTypes._ICMetaDataClass import ICMetaData
+from pwspy.dataTypes import ICMetaData
 from .widgets.widgets import AspectRatioWidget
 from .widgets.littlePlot import LittlePlot
 import os
 
 
 # TODO add blinded roi drawing
-#TODO get rid of refresh button. Just draw when requested with the 'imbd' buttons etc. rename imbd. even if analysis isn't present create a placeholder widget.
+# TODO get rid of refresh button. Just draw when requested with the 'imbd' buttons etc. rename imbd. even if analysis isn't present create a placeholder widget.
 class PlottingDock(QDockWidget):
     def __init__(self, selector: CellSelectorDock):
         super().__init__("Plotting")

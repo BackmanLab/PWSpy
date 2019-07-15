@@ -2,9 +2,8 @@ import numpy as np
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import QWidget, QApplication
 
-from pwspy.analysis._analysisResults import AnalysisResultsLoader
-from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.bigPlot import BigPlot
-from pwspy.dataTypes._ICMetaDataClass import ICMetaData
+from pwspy.analysis import AnalysisResultsLoader
+from pwspy.dataTypes import ICMetaData
 
 
 class AspectRatioWidget(QWidget):

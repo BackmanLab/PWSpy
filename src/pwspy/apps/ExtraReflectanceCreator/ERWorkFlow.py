@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QDialog
 from pwspy.dataTypes import ImCube, CameraCorrection, ExtraReflectanceCube
 from pwspy.apps.ExtraReflectanceCreator.widgets.dialog import IndexInfoForm
 from pwspy.dataTypes import ICMetaData
-from pwspy.dataTypes._otherClasses import Roi
+from pwspy.dataTypes import Roi
 from pwspy.moduleConsts import dateTimeFormat, Material
 from pwspy.utility.io import loadAndProcess
 import pwspy.apps.ExtraReflectanceCreator.extraReflectance  as er

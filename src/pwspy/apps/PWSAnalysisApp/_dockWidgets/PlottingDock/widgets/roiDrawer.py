@@ -7,12 +7,12 @@ from PyQt5.QtWidgets import QWidget, QGridLayout, QButtonGroup, QPushButton, QDi
     QMessageBox
 from matplotlib import patches
 import os
-from pwspy.analysis._analysisResults import AnalysisResultsLoader
+from pwspy.analysis import AnalysisResultsLoader
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.bigPlot import BigPlot
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ImCube
-from pwspy.dataTypes._otherClasses import Roi
+from pwspy.dataTypes import Roi
 from pwspy.utility.matplotlibwidg import AdjustableSelector, MyLasso, MyEllipse
 
 

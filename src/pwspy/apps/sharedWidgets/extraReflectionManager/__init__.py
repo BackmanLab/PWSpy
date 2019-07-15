@@ -4,16 +4,15 @@ from typing import Optional
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import QObject, QThread
-from PyQt5.QtWidgets import QMessageBox, QApplication, QWidget
-from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
+from PyQt5.QtWidgets import QMessageBox, QWidget
+from googleapiclient.http import MediaIoBaseDownload
 
-from pwspy.apps.PWSAnalysisApp._sharedWidgets.dialogs import BusyDialog
-from pwspy.apps.PWSAnalysisApp.applicationVars import googleDriveAuthPath
-from pwspy.apps._sharedWidgets.extraReflectionManager.ERDataComparator import ERDataComparator
-from pwspy.apps._sharedWidgets.extraReflectionManager.ERDataDirectory import ERDataDirectory, EROnlineDirectory
+from pwspy.apps.sharedWidgets.dialogs import BusyDialog
+from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataComparator import ERDataComparator
+from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataDirectory import ERDataDirectory, EROnlineDirectory
 from .ERSelectorWindow import ERSelectorWindow
 from .ERUploaderWindow import ERUploaderWindow
-from pwspy.dataTypes._ExtraReflectanceCubeClass import ERMetadata
+from pwspy.dataTypes import ERMetadata
 from pwspy.utility.GoogleDriveDownloader import GoogleDriveDownloader
 from .exceptions import OfflineError
 from pwspy.apps.PWSAnalysisApp import applicationVars

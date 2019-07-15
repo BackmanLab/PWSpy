@@ -7,11 +7,11 @@ from typing import List
 
 import pandas, tempfile
 
-from pwspy.apps._sharedWidgets.extraReflectionManager.ERIndex import ERIndex, ERIndexCube
-from pwspy.dataTypes._ExtraReflectanceCubeClass import ERMetadata
+from pwspy.apps.sharedWidgets.extraReflectionManager.ERIndex import ERIndex, ERIndexCube
+from pwspy.dataTypes import ERMetadata
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.apps._sharedWidgets.extraReflectionManager import ERManager
+    from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 from .exceptions import OfflineError
 from abc import ABC
 import time

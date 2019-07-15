@@ -8,7 +8,7 @@ from .bigPlot import BigPlot
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ImCube
-from pwspy.analysis._analysisResults import AnalysisResultsLoader
+from pwspy.analysis import AnalysisResultsLoader
 
 
 

@@ -1,4 +1,4 @@
-from pwspy.dataTypes import ICBase
+from pwspy.dataTypes._ICBaseClass import ICBase
 import numpy as np
 
 class DynCube(ICBase):

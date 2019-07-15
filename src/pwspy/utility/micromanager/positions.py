@@ -389,6 +389,8 @@ if __name__ == '__main__':
             pws1 = PositionList.load(loadPath)
         elif isinstance(loadPath, PositionList):
             pws1 = loadPath
+        else:
+            raise TypeError("loadPath must be either `str` or `PositionList`")
         pws2 = pws1.copy()
         pws2.mirrorX()
         pws2.mirrorY()
@@ -404,6 +406,8 @@ if __name__ == '__main__':
             pws1 = PositionList.load(loadPath)
         elif isinstance(loadPath, PositionList):
             pws1 = loadPath
+        else:
+            raise TypeError("loadPath must be either `str` or `PositionList`")
         pws2 = pws1.copy()
         pws2.mirrorY()
         pws2Origin = Position2d(newOriginX, newOriginY)
@@ -418,6 +422,8 @@ if __name__ == '__main__':
             pws2 = PositionList.load(loadPath)
         elif isinstance(loadPath, PositionList):
             pws2 = loadPath
+        else:
+            raise TypeError("loadPath must be either `str` or `PositionList`")
         storm = pws2.copy()
         storm.mirrorX()
         stormOrigin = Position2d(newOriginX, newOriginY)
@@ -431,6 +437,8 @@ if __name__ == '__main__':
             storm = PositionList.load(loadPath)
         elif isinstance(loadPath, PositionList):
             storm = loadPath
+        else:
+            raise TypeError("loadPath must be either `str` or `PositionList`")
         pws2 = storm.copy()
         pws2.mirrorX()
         pws2Origin = Position2d(newOriginX, newOriginY)

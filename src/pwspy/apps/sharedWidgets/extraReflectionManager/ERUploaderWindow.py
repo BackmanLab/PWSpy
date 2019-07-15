@@ -13,11 +13,11 @@ import typing
 import os
 import numpy as np
 
-from pwspy.apps._sharedWidgets.extraReflectionManager.ERDataDirectory import ERDataDirectory
-from pwspy.apps._sharedWidgets.extraReflectionManager.ERDataComparator import ERDataComparator
+from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataDirectory import ERDataDirectory
+from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataComparator import ERDataComparator
 
 if typing.TYPE_CHECKING:
-    from pwspy.apps._sharedWidgets.extraReflectionManager import ERManager
+    from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 
 
 class ERUploaderWindow(QDialog):

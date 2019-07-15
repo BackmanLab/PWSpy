@@ -6,8 +6,7 @@ import typing
 
 from PyQt5.QtCore import QThread
 
-from pwspy.apps.PWSAnalysisApp._sharedWidgets.dialogs import BusyDialog
-from pwspy.utility.misc import profileDec
+from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 
 if typing.TYPE_CHECKING:
     from pwspy.apps.PWSAnalysisApp.App import  PWSApp
@@ -16,9 +15,9 @@ from PyQt5.QtWidgets import QMessageBox
 
 from pwspy.dataTypes import ImCube, CameraCorrection, ExtraReflectanceCube
 from pwspy.analysis import AnalysisSettings
-from pwspy.analysis._analysisClass import Analysis
+from pwspy.analysis import Analysis
 from pwspy.analysis.warnings import AnalysisWarning
-from pwspy.dataTypes._ICMetaDataClass import ICMetaData
+from pwspy.dataTypes import ICMetaData
 from pwspy.utility.io import loadAndProcess
 import threading
 from multiprocessing.util import Finalize

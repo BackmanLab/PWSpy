@@ -5,7 +5,7 @@ Created on Tue Jan  8 10:07:20 2019
 @author: Nick Anthony
 """
 
-from pwspy import ImCube, KCube, CameraCorrection
+from pwspy.dataTypes import ImCube, KCube, CameraCorrection
 import matplotlib.pyplot as plt
 import scipy.signal as sps
 import os

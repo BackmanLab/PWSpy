@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QDockWidget, QWidget, \
 from pwspy.dataTypes import CameraCorrection
 from pwspy.analysis import AnalysisSettings
 
-from pwspy.dataTypes._ExtraReflectanceCubeClass import ERMetadata
+from pwspy.dataTypes import ERMetadata
 from .widgets.QueueAnalysesFrame import AnalysisListItem, QueuedAnalysesFrame
 from .widgets.SettingsFrame import SettingsFrame
 
@@ -17,9 +17,6 @@ import typing
 if typing.TYPE_CHECKING:
     from pwspy.apps.PWSAnalysisApp._dockWidgets import CellSelectorDock
     from pwspy.dataTypes import ImCube
-
-
-
 
 
 class AnalysisSettingsDock(QDockWidget):
@@ -81,7 +78,7 @@ class AnalysisSettingsDock(QDockWidget):
         settingsFrame.loadFromSettings(item.settings)
         settingsFrame.loadCameraCorrection(item.cameraCorrection)
         settingsFrame._analysisNameEdit.setText(item.name)
-        settingsFrame._analysisNameEdit.setEnabled(False) # Don't allow changing the name.
+        settingsFrame._analysisNameEdit.setEnabled(False)  # Don't allow changing the name.
 
         okButton = QPushButton("OK")
         okButton.released.connect(d.accept)

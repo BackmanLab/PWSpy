@@ -1,18 +1,12 @@
 from __future__ import annotations
 from typing import List, Optional, Tuple
-
 from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
-
 from PyQt5.QtWidgets import QListWidgetItem, QWidget, QScrollArea, QListWidget, QMessageBox, QMenu, QAction
-
 from pwspy.analysis import AnalysisSettings
-from pwspy.apps.PWSAnalysisApp._dockWidgets import AnalysisSettingsDock
-from pwspy.dataTypes._ExtraReflectanceCubeClass import ERMetadata
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ImCube, CameraCorrection
-import json
 
 
 class AnalysisListItem(QListWidgetItem):

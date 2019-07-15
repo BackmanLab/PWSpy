@@ -4,7 +4,7 @@ from glob import glob
 from typing import Optional
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.apps._sharedWidgets.extraReflectionManager.manager import ERManager
+    from pwspy.apps.sharedWidgets.extraReflectionManager.manager import ERManager
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import QPalette, QValidator, QDoubleValidator

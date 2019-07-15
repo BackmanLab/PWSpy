@@ -15,7 +15,7 @@ from pwspy.analysis.compilation import RoiCompiler, RoiCompilationResults, Compi
 from pwspy.analysis.warnings import AnalysisWarning
 
 
-from pwspy.apps.PWSAnalysisApp._sharedWidgets.dialogs import BusyDialog
+from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from pwspy.apps.PWSAnalysisApp._taskManagers.analysisManager import safeCallback
 from pwspy.utility.io import loadAndProcess
 import re

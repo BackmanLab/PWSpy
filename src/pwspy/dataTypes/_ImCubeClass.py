@@ -27,8 +27,6 @@ import multiprocessing as mp
 class ImCube(ICBase):
     """ A class representing a single acquisition of PWS. Contains methods for loading and saving to multiple formats as well as common operations used in analysis."""
 
-    ICMetaData = ICMetaData
-
     _cameraCorrected: bool
     _hasBeenNormalized: bool
     _hasExtraReflectionSubtracted: bool

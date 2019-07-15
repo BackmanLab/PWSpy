@@ -2,8 +2,8 @@ from __future__ import annotations
 import pandas
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.apps._sharedWidgets.extraReflectionManager import ERManager
-from pwspy.apps._sharedWidgets.extraReflectionManager.ERDataDirectory import ERDataDirectory, EROnlineDirectory
+    from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
+from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataDirectory import ERDataDirectory, EROnlineDirectory
 import numpy as np
 from enum import Enum
 

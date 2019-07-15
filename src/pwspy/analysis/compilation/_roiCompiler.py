@@ -5,7 +5,7 @@ import numpy as np
 from pwspy.analysis._analysisResults import AbstractAnalysisResults
 from pwspy.analysis.compilation._compilerSettings import CompilerSettings
 from pwspy.analysis.compilation._roiCompilationResults import RoiCompilationResults
-from pwspy.dataTypes._otherClasses import Roi
+from pwspy.dataTypes import Roi
 from pwspy.analysis import warnings
 
 class RoiCompiler:

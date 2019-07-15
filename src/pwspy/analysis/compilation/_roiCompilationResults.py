@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import numpy as np
 import typing
 if typing.TYPE_CHECKING:
-        from pwspy.dataTypes._otherClasses import Roi
+        from pwspy.dataTypes import Roi
 
 
 @dataclass(frozen=True)

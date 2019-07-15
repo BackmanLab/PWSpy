@@ -5,7 +5,7 @@ Created on Wed Jan  9 15:00:39 2019
 @author: Nick Anthony
 """
 
-from pwspy import ImCube
+from pwspy.dataTypes import ImCube
 import matplotlib.pyplot as plt
 import numpy as np
 

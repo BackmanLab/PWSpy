@@ -2,9 +2,9 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QTableWidgetItem, QPushButton, QApplication
 import matplotlib.pyplot as plt
 
-from pwspy.analysis.compilation._roiCompilationResults import RoiCompilationResults
+from pwspy.analysis.compilation import RoiCompilationResults
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.tables import CopyableTable, NumberTableWidgetItem
-from pwspy.dataTypes._ICMetaDataClass import ICMetaData
+from pwspy.dataTypes import ICMetaData
 import os
 
 class ResultsTableItem:

@@ -20,8 +20,8 @@ import typing
 from pwspy.utility import PlotNd
 
 if typing.TYPE_CHECKING:
-    from pwspy.apps._sharedWidgets.extraReflectionManager import ERManager
-    from pwspy.apps._sharedWidgets.extraReflectionManager.ERIndex import ERIndexCube
+    from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
+    from pwspy.apps.sharedWidgets.extraReflectionManager.ERIndex import ERIndexCube
 
 
 class ERTableWidgetItem:

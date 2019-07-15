@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QMenu, QAction
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 
-from pwspy.analysis._analysisResults import AnalysisResultsLoader
+from pwspy.analysis import AnalysisResultsLoader
 from .widgets import AnalysisPlotter
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.analysisViewer import AnalysisViewer
 from pwspy.dataTypes import ImCube

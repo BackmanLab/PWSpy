@@ -2,9 +2,6 @@ from __future__ import annotations
 import dataclasses
 import json
 import os.path as osp
-import typing
-if typing.TYPE_CHECKING:
-    from pwspy.dataTypes._ExtraReflectanceCubeClass import ERMetadata
 from pwspy.moduleConsts import Material
 
 

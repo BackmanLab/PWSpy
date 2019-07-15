@@ -12,13 +12,13 @@ from PyQt5.QtWidgets import QApplication
 
 from pwspy.dataTypes import ImCube
 from .dialogs import AnalysisSummaryDisplay, CompilationSummaryDisplay
-from pwspy.apps.PWSAnalysisApp._taskManagers.analysisManager import AnalysisManager
-from pwspy.apps.PWSAnalysisApp._taskManagers.compilationManager import CompilationManager
+from ._taskManagers.analysisManager import AnalysisManager
+from ._taskManagers.compilationManager import CompilationManager
 from pwspy.analysis import defaultSettingsPath
 from .mainWindow import PWSWindow
 from . import applicationVars
 from . import resources
-from pwspy.apps._sharedWidgets.extraReflectionManager import ERManager
+from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 from glob import glob
 from typing import List, Tuple, Optional
 import typing

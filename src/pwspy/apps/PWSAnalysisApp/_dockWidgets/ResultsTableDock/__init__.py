@@ -2,12 +2,11 @@ from __future__ import annotations
 from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QTableWidgetItem, QFrame, QVBoxLayout, QCheckBox, \
     QScrollArea, QPushButton, QLayout, QGridLayout, QAction, QLineEdit, QLabel, QSizePolicy
 from PyQt5 import QtCore
-
 from pwspy.analysis.compilation import RoiCompilationResults, CompilerSettings
+from .widgets import ResultsTable, ResultsTableItem
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import ImCube
-from .widgets import ResultsTable, ResultsTableItem
+    from pwspy.dataTypes import ICMetaData
 
 
 class ResultsTableDock(QDockWidget):
@@ -27,8 +26,7 @@ class ResultsTableDock(QDockWidget):
         for i, (name, (default, settingsName, tooltip)) in enumerate(self.table.columns.items()):
             c = QCheckBox(name)
             c.setCheckState(2) if default else c.setCheckState(0)
-            f = lambda state, j=i: self.table.setColumnHidden(j, state == 0)
-            c.stateChanged.connect(f)
+            c.stateChanged.connect(lambda state, j=i: self.table.setColumnHidden(j, state == 0))
             checkBoxFrame.layout().addWidget(c)
             self.checkBoxes.append(c)
         self.roiNameEdit = QLineEdit('.*', self._widget)
@@ -57,7 +55,7 @@ class ResultsTableDock(QDockWidget):
         self._widget.layout().addWidget(self.table, 0, 1)
         self.setWidget(self._widget)
 
-    def addCompilationResult(self, result: RoiCompilationResults, metadata: ImCube.ICMetaData):
+    def addCompilationResult(self, result: RoiCompilationResults, metadata: ICMetaData):
         self.table.addItem(ResultsTableItem(result, metadata))
 
     def clearCompilationResults(self):

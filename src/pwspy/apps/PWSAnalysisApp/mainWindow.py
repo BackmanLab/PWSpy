@@ -2,7 +2,7 @@ import os
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QMainWindow, QApplication, QToolBar, QMessageBox
-from pwspy.apps._sharedWidgets.extraReflectionManager import ERManager
+from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 from . import resources
 from pwspy.apps import resources as sharedresources
 from .dialogs import WorkingDirDialog

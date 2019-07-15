@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QPushButton, QTableWidgetItem, QTableWidget, QAbstra
 
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.dictDisplayTree import DictDisplayTree, DictDisplayTreeDialog
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.tables import NumberTableWidgetItem
-from pwspy.dataTypes._ICMetaDataClass import ICMetaData
+from pwspy.dataTypes import ICMetaData
 
 def evalToolTip(cls: Type[QWidget], method):
     """Given a QWidget and a function that returns a string, this decorator returns a modified class that will evaluate
