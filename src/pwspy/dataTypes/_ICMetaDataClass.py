@@ -20,8 +20,8 @@ import tifffile as tf
 
 from pwspy.moduleConsts import dateTimeFormat
 from pwspy.utility.misc import cached_property
+from pwspy.analysis import AnalysisResultsSaver, AnalysisResultsLoader
 if typing.TYPE_CHECKING:
-    from pwspy.analysis import AnalysisResultsSaver, AnalysisResultsLoader
     import multiprocessing as mp
 from pwspy.dataTypes._otherClasses import Roi, RoiFileFormats
 from ._otherClasses import CameraCorrection
