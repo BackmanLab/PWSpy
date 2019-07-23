@@ -18,7 +18,7 @@ for num in cellNum + [background]: #Loop through all cell folders +1 for backgro
     dyn.correctCameraEffects(auto=True)
     dyn.normalizeByExposure()
     dyn.normalizeByReference(ref)
-    dyn.data = dyn.data - dyn.data.mean(axis=2)[:, :, None] #Subtract the mean of each spectra
+    dyn.data = dyn.data - dyn.data.mean(axis=2)[:, :, None] #Subtract the mean of each spectra #TODO what is the purpose of this?
 
     if num == background: #If background then generate a random roi
         # Randomly sample points of background to save space

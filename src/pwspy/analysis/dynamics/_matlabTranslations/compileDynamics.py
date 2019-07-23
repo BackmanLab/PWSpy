@@ -1,6 +1,7 @@
 from pwspy.dataTypes import DynCube, Roi
 import numpy as np
 import os
+import pandas as pd
 
 #TODO this is very nonfunctional. just a sketch
 
@@ -21,7 +22,7 @@ fileName = f'{bwName}_Autocorr'
 dataAutocorr = {}
 dataDiff = []
 
-dataTempD=['Cell #', 'D', 'Sigma_t^2 (b sub)', 'Sigma_s', 'Reflectance']
+output = []
 
 roi = DynCube.loadRoi(bwName, 1)
 bgCube = DynCube.loadAny(os.path.join(wDir, f'Cell{background}'))
@@ -47,18 +48,17 @@ for cellNum in cellNums:
         #Remove negative values before taking log
         normBsCorr[normBsCorr < 0] = np.nan
 
-        dt = xVals[1] - xVals[0]
-        dSlope = np.diff(np.log(normBsCorr).mean(axis=?)) / (dt*4*k**2)
+        dt = cube.times[1] - cube.times[0]
+        dSlope = np.diff(np.log(normBsCorr).mean(axis=(0, 1))) / (dt*4*k**2)
         dSlope = dSlope[0]
 
-        dataTempD = cat(2, dataTempD, [{['Cell', num2str(cellNum(i)), '_', char(ACFList(d))]},
-                                       num2cell(d_slope),
-                                       num2cell(rmsT_sq),
-                                       mean(cubeRms(BW)),
-                                       mean(cubeReflectance(BW))])
+        output.append({'Cell #': f'{cellNum}_{roi.name}{roi.number}',
+         'D': dSlope,
+         'Sigma_t^2 (b sub)': rmsT_sq,
+         'Sigma_s': an.rms[BW],
+         'Reflectance': an.reflectance[BW]})
 
-    dataDiff(size(dataDiff, 1) + 1, 1) = patList(f)
-    dataDiff(size(dataDiff, 1) + 1:size(dataDiff, 1) + size(dataTempD, 1), 1 : size(dataTempD, 2)) = dataTempD
+output = pd.DataFrame(output)
 
 
 
