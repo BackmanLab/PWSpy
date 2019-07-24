@@ -21,7 +21,14 @@ class AnalysisViewer(AnalysisPlotter, QWidget):
         self.plotWidg = BigPlot(metadata, metadata.getImBd(), 'title')
         self.analysisCombo = QComboBox(self)
         self.analysisCombo.currentTextChanged.connect(self.changeData)
-        self.analysisCombo.addItems(['imbd'] + [i for i in ['meanReflectance', 'rms', 'autoCorrelationSlope', 'rSquared', 'ld'] if hasattr(self.analysis, i)])
+        items = ['imbd']
+        for i in ['meanReflectance', 'rms', 'autoCorrelationSlope', 'rSquared', 'ld']:
+            try:
+                if hasattr(self.analysis, i):  # This will raise a key error if the analysis object exists but the requested item is not found
+                    items.append(i)
+            except KeyError:
+                pass
+        self.analysisCombo.addItems(items)
         layout.addWidget(self.analysisCombo, 0, 0, 1, 1)
         layout.addWidget(self.plotWidg, 1, 0, 8, 8)
         self.setLayout(layout)

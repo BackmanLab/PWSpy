@@ -35,14 +35,14 @@ class PWSWindow(QMainWindow):
         self.parallelAction = menu.addAction("Multi-Core Analysis")
         self.parallelAction.setCheckable(True)
         self.parallelAction.setChecked(True)
+        infoAction = menu.addAction("Info")
+        infoAction.triggered.connect(self.openInfoPane)
         toolBar = QToolBar("Tool Bar", self)
         toolBar.setFloatable(False)
         toolBar.setObjectName('mainToolBar()')
         self.addToolBar(QtCore.Qt.LeftToolBarArea, toolBar)
         browseAction = toolBar.addAction(QtGui.QIcon(os.path.join(sharedresources, 'folder.svg')), "Set Path")
         browseAction.triggered.connect(self.fileDialog.show)
-        action2 = toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'icon.png')), "Info")
-        action2.triggered.connect(self.openInfoPane)
         self.runAction = toolBar.addAction(QtGui.QIcon(os.path.join(resources, 'playicon.svg')), 'Run').triggered
         settings = QtCore.QSettings("BackmanLab", "PWSAnalysis2")
         try:
@@ -61,7 +61,7 @@ class PWSWindow(QMainWindow):
         super().closeEvent(event)
 
     def openInfoPane(self):
-        msgBox = QMessageBox.information(self, "About", "This software blah blah blah.")
+        msgBox = QMessageBox.information(self, "About PWS Analysis V2", "This software is intended for the analysis of Partial Wave Spectroscopic microscopy data.")
 
     def _setDefaultLayout(self):
         #remove all docks then re add them

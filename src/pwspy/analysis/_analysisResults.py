@@ -119,13 +119,13 @@ class AnalysisResultsSaver: #TODO this should inherit from abstract class but it
                 if k == 'settings':
                     v = v.toJsonString()
                 if isinstance(v, str):
-                    hf.create_dataset(k, data=np.string_(v)) #h5py recommends encoding strings this way for compatability.
+                    hf.create_dataset(k, data=np.string_(v))  # h5py recommends encoding strings this way for compatability.
                 elif isinstance(v, KCube):
                     hf = v.toFixedPointHdfDataset(hf, k)
                 elif isinstance(v, np.ndarray):
                     hf.create_dataset(k, data=v)
                 elif v is None:
-                    pass #Don't bother writing values that were skipped.
+                    pass  # Don't bother writing values that were skipped.
                 else:
                     raise TypeError(f"Analysis results type {k}, {type(v)} not supported or expected")
 
@@ -136,7 +136,7 @@ def clearError(func):
             return func(*args)
         except KeyError:
             raise KeyError(f"The analysis file does not contain a {func.__name__} item.")
-    newFunc.__name__ = func.__name__ # failing to do this renaming can mess with other decorators e.g. cached_property
+    newFunc.__name__ = func.__name__  # failing to do this renaming can mess with other decorators e.g. cached_property
     return newFunc
 
 class AnalysisResultsLoader(AbstractAnalysisResults):#TODO get chunked reading working.

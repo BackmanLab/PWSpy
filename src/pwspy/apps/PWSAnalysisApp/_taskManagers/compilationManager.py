@@ -1,24 +1,18 @@
 from __future__ import annotations
 from typing import Tuple, List, Optional
-import typing
-
 from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QMessageBox
-
-if typing.TYPE_CHECKING:
-    from pwspy.apps.PWSAnalysisApp.App import PWSApp
-    from pwspy.dataTypes import ICMetaData
-
 from PyQt5 import QtCore
-
 from pwspy.analysis.compilation import RoiCompiler, RoiCompilationResults, CompilerSettings
 from pwspy.analysis.warnings import AnalysisWarning
-
-
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from pwspy.apps.PWSAnalysisApp._taskManagers.analysisManager import safeCallback
 from pwspy.utility.io import loadAndProcess
 import re
+import typing
+if typing.TYPE_CHECKING:
+    from pwspy.apps.PWSAnalysisApp.App import PWSApp
+    from pwspy.dataTypes import ICMetaData
 
 
 class CompilationManager(QtCore.QObject):

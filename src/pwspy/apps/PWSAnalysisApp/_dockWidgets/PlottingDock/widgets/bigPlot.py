@@ -69,7 +69,7 @@ class BigPlot(QWidget):
         self.setMetadata(metadata)
         self.setImageData(data)
 
-        self.show()
+        # self.show()
         self.setSaturation()
 
         self.annot = self.ax.annotate("", xy=(0, 0), xytext=(20, 20), textcoords="offset points",
