@@ -22,7 +22,7 @@ def _load(loadHandle: Union[str, ICMetaData], metadataOnly: bool, lock: mp.Lock)
     elif isinstance(loadHandle, ICMetaData):
         md = loadHandle
     else:
-        raise TypeError("files specified to the loader must be either str or ImCube.ICMetaData")
+        raise TypeError("files specified to the loader must be either str or ICMetaData")
     if metadataOnly:
         return md
     else:
@@ -97,7 +97,7 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
     procArgs
         Optional arguments to pass to processorFunc
     metadataOnly:
-        Instead of passing an ImCube object to the first argument of processorFunc, pass the ImCube.ICMetaData object
+        Instead of passing an ImCube object to the first argument of processorFunc, pass the ICMetaData object
     passLock:
         If true then pass the multiprocessing lock object to the second argument fo processorFunc. this can be used to
         synchronize hard disk activity.

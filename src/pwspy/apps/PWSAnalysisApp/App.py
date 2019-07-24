@@ -10,7 +10,7 @@ import shutil
 
 from PyQt5.QtWidgets import QApplication
 
-from pwspy.dataTypes import ImCube
+from pwspy.dataTypes import ICMetaData
 from .dialogs import AnalysisSummaryDisplay, CompilationSummaryDisplay
 from ._taskManagers.analysisManager import AnalysisManager
 from ._taskManagers.compilationManager import CompilationManager
@@ -64,7 +64,7 @@ class PWSApp(QApplication):
             shutil.copyfile(os.path.join(resources, 'credentials.json'), os.path.join(applicationVars.googleDriveAuthPath, 'credentials.json'))
             shutil.copyfile(os.path.join(resources, 'driveToken.pickle'), os.path.join(applicationVars.googleDriveAuthPath, 'driveToken.pickle'))
 
-    def handleCompilationResults(self, inVal: List[Tuple[ImCube.ICMetaData, List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]]]):
+    def handleCompilationResults(self, inVal: List[Tuple[ICMetaData, List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]]]):
         #  Display warnings if necessary.
         warningStructure = []
         for meta, roiList in inVal:

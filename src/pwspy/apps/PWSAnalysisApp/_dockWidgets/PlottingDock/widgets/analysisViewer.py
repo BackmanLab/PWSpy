@@ -7,13 +7,13 @@ from .widgets import AnalysisPlotter
 from .bigPlot import BigPlot
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import ImCube
+    from pwspy.dataTypes import ICMetaData
 from pwspy.analysis import AnalysisResultsLoader
 
 
 
 class AnalysisViewer(AnalysisPlotter, QWidget):
-    def __init__(self, metadata: ImCube.ICMetaData, analysisLoader: Optional[AnalysisResultsLoader], title: str, parent=None):
+    def __init__(self, metadata: ICMetaData, analysisLoader: Optional[AnalysisResultsLoader], title: str, parent=None):
         AnalysisPlotter.__init__(self, metadata, analysisLoader)
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         self.setWindowTitle(title)

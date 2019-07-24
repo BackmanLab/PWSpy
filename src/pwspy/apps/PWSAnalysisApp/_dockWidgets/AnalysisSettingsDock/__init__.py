@@ -16,7 +16,7 @@ from .widgets.SettingsFrame import SettingsFrame
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.apps.PWSAnalysisApp._dockWidgets import CellSelectorDock
-    from pwspy.dataTypes import ImCube
+    from pwspy.dataTypes import ICMetaData
 
 
 class AnalysisSettingsDock(QDockWidget):
@@ -61,7 +61,7 @@ class AnalysisSettingsDock(QDockWidget):
     def getAnalysisName(self):
         return self.settingsFrame.analysisName
 
-    def getListedAnalyses(self) -> List[Tuple[str, AnalysisSettings, List[ImCube.ICMetaData], ImCube.ICMetaData, CameraCorrection, ERMetadata]]:
+    def getListedAnalyses(self) -> List[Tuple[str, AnalysisSettings, List[ICMetaData], ICMetaData, CameraCorrection, ERMetadata]]:
         return self.analysesQueue.analyses
 
     def displayItemSettings(self, item: AnalysisListItem):

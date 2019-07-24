@@ -6,11 +6,11 @@ from PyQt5.QtWidgets import QListWidgetItem, QWidget, QScrollArea, QListWidget, 
 from pwspy.analysis import AnalysisSettings
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import ImCube, CameraCorrection
+    from pwspy.dataTypes import ICMetaData, CameraCorrection
 
 
 class AnalysisListItem(QListWidgetItem):
-    def __init__(self, cameraCorrection: CameraCorrection, settings: AnalysisSettings, reference: ImCube.ICMetaData, cells: List[ImCube.ICMetaData], analysisName: str,
+    def __init__(self, cameraCorrection: CameraCorrection, settings: AnalysisSettings, reference: ICMetaData, cells: List[ICMetaData], analysisName: str,
                  parent: Optional[QWidget] = None):
         super().__init__(analysisName, parent)
         self.cameraCorrection = cameraCorrection
@@ -31,12 +31,12 @@ class QueuedAnalysesFrame(QScrollArea):
         self.setWidgetResizable(True)
 
     @property
-    def analyses(self) -> List[Tuple[str, AnalysisSettings, List[ImCube.ICMetaData], ImCube.ICMetaData, CameraCorrection]]:
+    def analyses(self) -> List[Tuple[str, AnalysisSettings, List[ICMetaData], ICMetaData, CameraCorrection]]:
         items: List[AnalysisListItem] = [self.listWidget.item(i) for i in range(self.listWidget.count())]
         return [(item.name, item.settings, item.cells, item.reference, item.cameraCorrection)  for item in items]
 
     def addAnalysis(self, analysisName: str, cameraCorrection: CameraCorrection, settings: AnalysisSettings,
-                    reference: ImCube.ICMetaData, cells: List[ImCube.ICMetaData]):
+                    reference: ICMetaData, cells: List[ICMetaData]):
         if reference is None:
             QMessageBox.information(self, '!', f'Please select a reference Cell.')
             return

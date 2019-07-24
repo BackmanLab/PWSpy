@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QMessageBox
 
 if typing.TYPE_CHECKING:
     from pwspy.apps.PWSAnalysisApp.App import PWSApp
-    from pwspy.dataTypes import ImCube
+    from pwspy.dataTypes import ICMetaData
 
 from PyQt5 import QtCore
 
@@ -29,11 +29,11 @@ class CompilationManager(QtCore.QObject):
         self.app = app
 
     @safeCallback
-    def run(self) -> List[Tuple[ImCube.ICMetaData, List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]]]:
+    def run(self) -> List[Tuple[ICMetaData, List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]]]:
         roiName: str = self.app.window.resultsTable.getRoiName()
         analysisName: str = self.app.window.resultsTable.getAnalysisName()
         settings: CompilerSettings = self.app.window.resultsTable.getSettings()
-        cellMetas: List[ImCube.ICMetaData] = self.app.window.cellSelector.getSelectedCellMetas()
+        cellMetas: List[ICMetaData] = self.app.window.cellSelector.getSelectedCellMetas()
         if len(cellMetas) == 0:
             QMessageBox.information(self.app.window, "What?", "Please select at least one cell.")
             return None
@@ -54,7 +54,7 @@ class CompilationManager(QtCore.QObject):
     class CompilationThread(QThread):
         errorOccurred = QtCore.pyqtSignal(Exception)
 
-        def __init__(self, cellMetas: List[ImCube.ICMetaData], compiler: RoiCompiler, roiNamePattern: str, analysisNamePattern: str):
+        def __init__(self, cellMetas: List[ICMetaData], compiler: RoiCompiler, roiNamePattern: str, analysisNamePattern: str):
             super().__init__()
             self.cellMetas = cellMetas
             self.roiNamePattern = roiNamePattern
@@ -66,12 +66,12 @@ class CompilationManager(QtCore.QObject):
             try:
                 self.result = loadAndProcess(self.cellMetas, processorFunc=self._process, procArgs=[self.compiler, self.roiNamePattern, self.analysisNamePattern],
                                              parallel=False,
-                                             metadataOnly=True)  # A list of Tuples. each tuple containing a list of warnings and the ImCube.ICMetaData to go with it.
+                                             metadataOnly=True)  # A list of Tuples. each tuple containing a list of warnings and the ICMetaData to go with it.
             except Exception as e:
                 self.errorOccurred.emit(e)
 
         @staticmethod
-        def _process(md: ImCube.ICMetaData, compiler: RoiCompiler, roiNamePattern: str, analysisNamePattern: str) -> Tuple[ImCube.ICMetaData, List[Tuple[RoiCompilationResults, List[AnalysisWarning]]]]:
+        def _process(md: ICMetaData, compiler: RoiCompiler, roiNamePattern: str, analysisNamePattern: str) -> Tuple[ICMetaData, List[Tuple[RoiCompilationResults, List[AnalysisWarning]]]]:
             rois = [md.loadRoi(name, num, fformat) for name, num, fformat in md.getRois() if re.match(roiNamePattern, name)]
             analysisResults = [md.loadAnalysis(name) for name in md.getAnalyses() if re.match(analysisNamePattern, name)]
             ret = []

@@ -13,13 +13,13 @@ from matplotlib.figure import Figure
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.rangeSlider import QRangeSlider
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import ImCube
+    from pwspy.dataTypes import ICMetaData
 from pwspy.dataTypes import Roi
 import os
 
 
 class BigPlot(QWidget):
-    def __init__(self, metadata: ImCube.ICMetaData, data: np.ndarray, title: str, parent=None):
+    def __init__(self, metadata: ICMetaData, data: np.ndarray, title: str, parent=None):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         self.setWindowTitle(title)
         layout = QGridLayout()
@@ -86,7 +86,7 @@ class BigPlot(QWidget):
         self.slider.setMin(self.data.min())
         self.canvas.draw_idle()
 
-    def setMetadata(self, metadata: ImCube.ICMetaData):
+    def setMetadata(self, metadata: ICMetaData):
         self.metadata = metadata
         self.clearRois()
         currentSel = self.roiFilter.currentText()

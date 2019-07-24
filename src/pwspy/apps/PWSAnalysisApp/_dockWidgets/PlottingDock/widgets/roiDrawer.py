@@ -11,13 +11,13 @@ from pwspy.analysis import AnalysisResultsLoader
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.bigPlot import BigPlot
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import ImCube
+    from pwspy.dataTypes import ICMetaData
 from pwspy.dataTypes import Roi
 from pwspy.utility.matplotlibwidg import AdjustableSelector, MyLasso, MyEllipse
 
 
 class RoiDrawer(QWidget):
-    def __init__(self, metadatas: List[Tuple[ImCube.ICMetaData, Optional[AnalysisResultsLoader]]], parent=None):
+    def __init__(self, metadatas: List[Tuple[ICMetaData, Optional[AnalysisResultsLoader]]], parent=None):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         self.setWindowTitle("Roi Drawer 3000")
         self.metadatas = metadatas
