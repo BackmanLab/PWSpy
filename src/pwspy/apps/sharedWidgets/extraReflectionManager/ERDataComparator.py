@@ -8,8 +8,6 @@ import numpy as np
 from enum import Enum
 
 
-
-
 class ERDataComparator:
     class ComparisonStatus(Enum):
         LocalOnly = "Local Only"
