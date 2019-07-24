@@ -11,15 +11,15 @@ from time import time
 from typing import Union, Optional, List, Tuple
 import pandas as pd
 import psutil
-from pwspy.dataTypes import ImCube
+from pwspy.dataTypes import ICMetaData, ImCube
 
 '''Local Functions'''
 
 
-def _load(loadHandle: Union[str, ImCube.ICMetaData], metadataOnly: bool, lock: mp.Lock):
+def _load(loadHandle: Union[str, ICMetaData], metadataOnly: bool, lock: mp.Lock):
     if isinstance(loadHandle, str):
-        md = ImCube.ICMetaData.loadAny(loadHandle, lock=lock)
-    elif isinstance(loadHandle, ImCube.ICMetaData):
+        md = ICMetaData.loadAny(loadHandle, lock=lock)
+    elif isinstance(loadHandle, ICMetaData):
         md = loadHandle
     else:
         raise TypeError("files specified to the loader must be either str or ImCube.ICMetaData")

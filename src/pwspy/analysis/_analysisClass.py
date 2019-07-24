@@ -10,7 +10,6 @@ from typing import List, Tuple
 
 import numpy as np
 import scipy.signal as sps
-from pwspy.dataTypes import KCube, ExtraReflectanceCube, ExtraReflectionCube
 from pwspy.analysis import warnings
 from pwspy.utility import reflectanceHelper
 from pwspy.moduleConsts import Material
@@ -19,7 +18,7 @@ import pandas as pd
 
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import ImCube
+    from pwspy.dataTypes import ImCube, ExtraReflectanceCube
 
 #TODO analysis totally messes up on linux in parallel mode. both modes use too much memory
 class AbstractAnalysis(ABC):
@@ -43,6 +42,7 @@ class LegacyAnalysis(AbstractAnalysis):
         self.ref = ref
 
     def run(self, cube: ImCube) -> Tuple[AnalysisResultsSaver, List[warnings.AnalysisWarning]]:
+        from pwspy.dataTypes import KCube
         assert cube.isCorrected()
         warns = []
         cube = self._normalizeImCube(cube)
@@ -127,6 +127,7 @@ class LegacyAnalysis(AbstractAnalysis):
 
 class Analysis(LegacyAnalysis):
     def __init__(self, settings: AnalysisSettings, ref: ImCube, extraReflectance: ExtraReflectanceCube):
+        from pwspy.dataTypes import ExtraReflectionCube, ExtraReflectanceCube
         super().__init__(settings, ref)
         ref.filterDust(.75)  # Apply a blur to filter out dust particles #TODO this is in microns. I have no idea what the radius should actually be.
         if settings.referenceMaterial is None:

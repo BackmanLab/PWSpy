@@ -41,7 +41,7 @@ class ERManager:
         except TransportError:
             self.offlineMode = True
             print("Google Drive connection failed. Proceeding in offline mode.")
-        self._downloader: GoogleDriveDownloader = None
+            self._downloader: GoogleDriveDownloader = None
         indexPath = os.path.join(self._directory, 'index.json')
         if not os.path.exists(indexPath):
             self.download('index.json')

@@ -10,12 +10,12 @@ from matplotlib.figure import Figure
 from pwspy.analysis import AnalysisResultsLoader
 from .widgets import AnalysisPlotter
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.analysisViewer import AnalysisViewer
-from pwspy.dataTypes import ImCube
+from pwspy.dataTypes import ImCube, ICMetaData
 from pwspy.utility import PlotNd
 
 
 class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
-    def __init__(self, metadata: ImCube.ICMetaData, analysis: AnalysisResultsLoader, title: str, text: str = None,initialField='imbd'):
+    def __init__(self, metadata: ICMetaData, analysis: AnalysisResultsLoader, title: str, text: str = None,initialField='imbd'):
         AnalysisPlotter.__init__(self, metadata, analysis)
         self.fig = Figure()
         self.ax = self.fig.add_subplot(1, 1, 1)
