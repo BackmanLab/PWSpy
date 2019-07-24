@@ -39,7 +39,7 @@ class KCube(ICBase):
     def wavenumbers(self):
         return self.index
 
-    def getOpd(self, isHannWindow: bool, indexOpdStop: int = None, mask=None):
+    def getOpd(self, isHannWindow: bool, indexOpdStop: int = None, mask=None) -> Tuple[np.ndarray, np.ndarray]:
         fftSize = int(2 ** (np.ceil(np.log2((2 * len(
             self.wavenumbers)) - 1))))  # %This is the next size of fft that is  at least 2x greater than is needed but is a power of two. Results in interpolation, helps amplitude accuracy and fft efficiency.
         fftSize *= 2  # We double the fftsize for even more iterpolation. Not sure why, but that's how it was done in matlab.
@@ -72,7 +72,7 @@ class KCube(ICBase):
         xVals = xVals.astype(self.data.dtype)
         return opd, xVals
 
-    def getAutoCorrelation(self, isAutocorrMinSub: bool, stopIndex: int):
+    def getAutoCorrelation(self, isAutocorrMinSub: bool, stopIndex: int) -> Tuple[np.ndarray, np.ndarray]:
         # The autocorrelation of a signal is the covariance of a signal with a
         # lagged version of itself, normalized so that the covariance at
         # zero-lag is equal to 1.0 (c[0] = 1.0).  The same process without
