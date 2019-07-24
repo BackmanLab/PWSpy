@@ -90,11 +90,13 @@ class ERManager:
 class _DownloadThread(QThread):
     """A QThread to download from google drive"""
     errorOccurred = QtCore.pyqtSignal(Exception)
+
     def __init__(self, downloader, fileName, directory):
         super().__init__()
         self.downloader = downloader
         self.fileName = fileName
         self.directory = directory
+
     def run(self):
         try:
             files = self.downloader.getFolderIdContents(
@@ -105,6 +107,7 @@ class _DownloadThread(QThread):
             self.downloader.downloadFile(fileId, os.path.join(self.directory, self.fileName))
         except Exception as e:
             self.errorOccurred.emit(e)
+
 
 class _QtGoogleDriveDownloader(GoogleDriveDownloader, QObject):
     """Same as the standard google drive downloader except it emits a progress signal after each chunk downloaded."""
