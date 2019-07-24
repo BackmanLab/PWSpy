@@ -10,15 +10,26 @@ The flat field visualizer is intended to show how the pws signal of a thin film 
 
 Utility provides useful function for parallel loading and processing of ImCube files.
 
-## Update Me!!!
+## Building from source and distributing
 
 Building conda package from source:  
 navigate to the root directory of the project and use `conda-build .. --output-folder {outputDestination}` to build the package.
+Copy `install.bat` from the `installScripts` folder to `{outputDestination}`. The `{outputDestination}` folder is all that is needed for distribution.
 
-Installing the package using the built conda package
+
+## Automatically installing with the script
+Optional:
+  Create a new environment with `conda create -n {environmentName}`.
+  Add the new environment name to the `env` variable in the first line of `install.bat`.
+run the `install.bat`  
+
+## Installing Manually
+
 Optional:
   Create a new environment with `conda create -n {environmentName}`.
   Activate the new environment with `conda activate {environmentName}`.
+  
+Install the built package with `conda install -c file://{buildDestination} pwspy`.
 
-install the built package with `conda install -c file://{buildDestination} pwspy`.
+Installing the package using the install script:
 
