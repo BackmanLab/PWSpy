@@ -82,7 +82,7 @@ class Roi:
         return cls(name, number, mask, verts, filePath=filePath, fileFormat=fileFormat)
 
     @classmethod
-    def fromHDF(cls, directory: str, name: str, number: int):
+    def fromHDF_legacy(cls, directory: str, name: str, number: int):
         path = os.path.join(directory, f'roi_{name}.h5')
         if not os.path.exists(path):
             raise OSError(f"File {path} does not exist.")
@@ -90,7 +90,7 @@ class Roi:
             return cls(name, number, mask=np.array(hf[str(number)]).astype(np.bool), verts=None, filePath=path, fileFormat=RoiFileFormats.HDF)
 
     @classmethod
-    def fromHDF2(cls, directory: str, name: str, number: int):
+    def fromHDF(cls, directory: str, name: str, number: int):
         path = os.path.join(directory, f'ROI_{name}.h5')
         if not os.path.exists(path):
             raise OSError(f"File {path} does not exist.")
@@ -108,10 +108,10 @@ class Roi:
     @classmethod
     def loadAny(cls, directory: str, name: str, number: int):
         try:
-            return Roi.fromHDF2(directory, name, number)
+            return Roi.fromHDF(directory, name, number)
         except:
             try:
-                return Roi.fromHDF(directory, name, number)
+                return Roi.fromHDF_legacy(directory, name, number)
             except OSError: #For backwards compatibility purposes
                 return Roi.fromMat(directory, name, number)
 

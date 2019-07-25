@@ -114,7 +114,7 @@ class ImCube(ICBase):
         return cls(data, metadata)
 
     @classmethod
-    def fromMetadata(cls, meta: ICMetaData,  lock: mp.Lock = None):
+    def fromMetadata(cls, meta: ICMetaData,  lock: mp.Lock = None) -> ImCube:
         if meta.fileFormat == ICFileFormats.Tiff:
             return cls.fromTiff(meta.filePath, metadata=meta, lock=lock)
         elif meta.fileFormat == ICFileFormats.RawBinary:
