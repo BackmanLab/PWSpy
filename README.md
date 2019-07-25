@@ -29,7 +29,6 @@ Optional:
   Create a new environment with `conda create -n {environmentName}`.
   Activate the new environment with `conda activate {environmentName}`.
   
-Install the built package with `conda install -c file://{buildDestination} pwspy`.
+Install the built package with `conda install -c file://{buildDestination} -c conda-forge pwspy`.
 
-Installing the package using the install script:
 
