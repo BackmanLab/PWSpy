@@ -1,13 +1,16 @@
 from __future__ import annotations
 from pwspy.dataTypes import CameraCorrection, ExtraReflectionCube
 from ._ICBaseClass import ICBase
-from ._ICMetaDataClass import ICMetaData
+from ._DynMetaDataClass import DynMetaData
 import numpy as np
+import multiprocessing as mp
+import os
+import tifffile as tf
 
 
 class DynCube(ICBase):
-    def __init__(self, data, metadata: ICMetaData, dtype=np.float32):
-        assert isinstance(metadata, ICMetaData)
+    def __init__(self, data, metadata: DynMetaData, dtype=np.float32):
+        assert isinstance(metadata, DynMetaData)
         self.metadata = metadata
         ICBase.__init__(self, data, self.metadata.times, dtype=dtype)
         self._hasExtraReflectionSubtracted = False
@@ -18,6 +21,41 @@ class DynCube(ICBase):
     @property
     def times(self):
         return self.index
+
+    @classmethod
+    def fromMetadata(cls, meta: DynMetaData, lock: mp.Lock = None) -> DynCube:
+        if meta.fileFormat == DynMetaData.FileFormats.Tiff:
+            return cls.fromTiff(meta.filePath, metadata=meta, lock=lock)
+        elif meta.fileFormat is None:
+            return cls.loadAny(meta.filePath, metadata=meta, lock=lock)
+        else:
+            raise TypeError("Invalid FileFormat")
+
+    @classmethod
+    def loadAny(cls, directory: str, metadata: DynMetaData = None, lock: mp.Lock = None):
+        try:
+            return DynCube.fromTiff(directory, metadata=metadata, lock=lock)
+        except:
+            raise OSError(f"Could not find a valid PWS image cube file at {directory}.")
+
+    @classmethod
+    def fromTiff(cls, directory, metadata: DynMetaData = None, lock: mp.Lock = None):
+        if lock is not None:
+            lock.acquire()
+        try:
+            if metadata is None:
+                metadata = DynMetaData.fromTiff(directory)
+            if os.path.exists(os.path.join(directory, 'dyn.tif')):
+                path = os.path.join(directory, 'dyn.tif')
+            else:
+                raise OSError("No Tiff file was found at:", directory)
+            with tf.TiffFile(path) as tif:
+                data = np.rollaxis(tif.asarray(), 0, 3)  # Swap axes to match y,x,lambda convention.
+        finally:
+            if lock is not None:
+                lock.release()
+        data = data.copy(order='C')
+        return cls(data, metadata)
 
     def normalizeByExposure(self):
         if not self._cameraCorrected:
@@ -83,7 +121,7 @@ class DynCube(ICBase):
     def selIndex(self, start, stop) -> DynCube:
         ret = super().selIndex(start, stop)
         md = self.metadata
-        md._dict['wavelengths'] = ret.index
+        md._dict['times'] = ret.index
         return DynCube(ret.data, md)
 
     def getAutocorrelation(self) -> np.ndarray:

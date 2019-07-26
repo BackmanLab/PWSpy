@@ -1,0 +1,62 @@
+from enum import Enum, auto
+from typing import Optional, Tuple
+import multiprocessing as mp
+from ._MetaDataBaseClass import MetaDataBase
+import os, json
+import tifffile as tf
+
+class DynMetaData(MetaDataBase):
+    class FileFormats(Enum):
+        Tiff = auto()
+
+    _jsonSchema = {"$schema": "http://json-schema.org/schema#",
+                   '$id': 'DynMetaDataSchema',
+                   'title': 'DynMetaDataSchema',
+                   'type': 'object',
+                   'allOf': [{"$ref": "MetaDataBaseSchema"}],
+                   'required': ['wavelength', 'times'],
+                   'properties': {
+                       'times': {'type': 'array',
+                                       'items': {'type': 'number'}
+                                       },
+                       'wavelength': {'type': 'number'}
+                        }
+                   }
+
+    def __init__(self, metadata: dict, filePath: Optional[str], fileFormat: Optional[FileFormats] = None):
+        self.fileFormat = fileFormat
+        super().__init__(metadata, filePath)
+
+    @property
+    def idTag(self) -> str:
+        return f"DynCube_{self._dict['system']}_{self._dict['time']}"
+
+    @property
+    def wavelength(self) -> int:
+        return self._dict['wavelength']
+
+    @property
+    def times(self) -> Tuple[float, ...]:
+        return self._dict['times']
+
+    @classmethod
+    def fromTiff(cls, directory, lock: mp.Lock = None):
+        if lock is not None:
+            lock.acquire()
+        try:
+            if os.path.exists(os.path.join(directory, 'dyn.tif')):
+                path = os.path.join(directory, 'dyn.tif')
+            else:
+                raise OSError("No Tiff file was found at:", directory)
+            if os.path.exists(os.path.join(directory, 'dynmetadata.json')):
+                metadata = json.load(open(os.path.join(directory, 'dynmetadata.json'), 'r'))
+            else:
+                with tf.TiffFile(path) as tif:
+                    metadata = json.loads(tif.imagej_metadata['Info'])  # The micromanager plugin saves metadata as the info property of the imagej imageplus object.
+        finally:
+            if lock is not None:
+                lock.release()
+        metadata['binning'] = metadata['MicroManagerMetadata']['Binning']['scalar']  # Get binning from the micromanager metadata
+        metadata['pixelSizeUm'] = metadata['MicroManagerMetadata']['PixelSizeUm']['scalar']  # Get the pixel size from the micromanager metadata
+        if metadata['pixelSizeUm'] == 0: metadata['pixelSizeUm'] = None
+        return cls(metadata, filePath=directory, fileFormat=cls.FileFormats.Tiff)

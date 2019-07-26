@@ -21,6 +21,7 @@ from pwspy.utility.matplotlibwidg import AxManager, MyPoint
 
 from pwspy.dataTypes._otherClasses import Roi
 from matplotlib import patches
+import copy
 
 class ICBase:
     """A class to handle the data operations common to PWS related `image cubes`. Does not contain any file specific
@@ -167,8 +168,6 @@ class ICBase:
             raise NotImplementedError(f"Multiplication is not supported between {self.__class__} and {type(other)}")
         return ret
 
-    __mul__ = None
-    __rmul__ = __mul__  # multiplication is commutative. let it work both ways.
 
     def _truediv(self, other: typing.Union['self.__class__', numbers.Real, np.ndarray]) -> 'self.__class__':
         if isinstance(other, self.__class__):
@@ -180,6 +179,32 @@ class ICBase:
         else:
             raise NotImplementedError(f"Division is not supported between {self.__class__} and {type(other)}")
         return ret
+
+    def __add__(self, other):
+        ret = self._add(other)
+        new = copy.deepcopy(self)
+        new.data = ret
+        return new
+
+    def __sub__(self, other):
+        ret = self._sub(other)
+        new = copy.deepcopy(self)
+        new.data = ret
+        return new
+
+    def __mul__(self, other):
+        ret = self._mul(other)
+        new = copy.deepcopy(self)
+        new.data = ret
+        return new
+
+    __rmul__ = __mul__  # multiplication is commutative. let it work both ways.
+
+    def __truediv__(self, other):
+        ret = self._truediv(other)
+        new = copy.deepcopy(self)
+        new.data = ret
+        return new
 
     def toHdfDataset(self, g: h5py.Group, name: str) -> h5py.Group:
         tim = time()

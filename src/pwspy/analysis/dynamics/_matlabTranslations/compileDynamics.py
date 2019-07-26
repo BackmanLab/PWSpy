@@ -12,9 +12,6 @@ background = 1997  # Temporal Background for noise subtraction
 bwName = 'nuc'
 n_medium = 1.37  # RI of the media (avg RI of chromatin)
 
-
-k = (n_medium * 2 * np.pi) / wavelength
-
 sigmaCells = range(1, 15)
 sigmaName = 'p0'
 
@@ -49,6 +46,7 @@ for cellNum in cellNums:
         normBsCorr[normBsCorr < 0] = np.nan
 
         dt = cube.times[1] - cube.times[0]
+        k = (n_medium * 2 * np.pi) / cube.metadata.wavelength
         dSlope = np.diff(np.log(normBsCorr).mean(axis=(0, 1))) / (dt*4*k**2)
         dSlope = dSlope[0]
 

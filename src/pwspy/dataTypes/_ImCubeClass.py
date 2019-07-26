@@ -21,7 +21,7 @@ if typing.TYPE_CHECKING:
     from pwspy.dataTypes._ExtraReflectanceCubeClass import ExtraReflectionCube
 from ._otherClasses import CameraCorrection
 from ._ICBaseClass import ICBase
-from ._ICMetaDataClass import ICMetaData, ICFileFormats
+from ._ICMetaDataClass import ICMetaData, _ICFileFormats
 import multiprocessing as mp
 
 class ImCube(ICBase):
@@ -115,11 +115,11 @@ class ImCube(ICBase):
 
     @classmethod
     def fromMetadata(cls, meta: ICMetaData,  lock: mp.Lock = None) -> ImCube:
-        if meta.fileFormat == ICFileFormats.Tiff:
+        if meta.fileFormat == ICMetaData.FileFormats.Tiff:
             return cls.fromTiff(meta.filePath, metadata=meta, lock=lock)
-        elif meta.fileFormat == ICFileFormats.RawBinary:
+        elif meta.fileFormat == ICMetaData.FileFormats.RawBinary:
             return cls.fromOldPWS(meta.filePath, metadata=meta, lock=lock)
-        elif meta.fileFormat == ICFileFormats.NanoMat:
+        elif meta.fileFormat == ICMetaData.FileFormats.NanoMat:
             return cls.fromNano(meta.filePath, metadata=meta, lock=lock)
         elif meta.fileFormat is None:
             return cls.loadAny(meta.filePath, metadata=meta, lock=lock)
@@ -233,30 +233,6 @@ class ImCube(ICBase):
 
     def isExtraReflectionSubtracted(self) -> bool:
         return self._hasExtraReflectionSubtracted
-
-    def __add__(self, other):
-        ret = self._add(other)
-        new = copy.deepcopy(self)
-        new.data = ret
-        return new
-
-    def __sub__(self, other):
-        ret = self._sub(other)
-        new = copy.deepcopy(self)
-        new.data = ret
-        return new
-
-    def __mul__(self, other):
-        ret = self._mul(other)
-        new = copy.deepcopy(self)
-        new.data = ret
-        return new
-
-    def __truediv__(self, other):
-        ret = self._truediv(other)
-        new = copy.deepcopy(self)
-        new.data = ret
-        return new
 
     @classmethod
     def fromHdfDataset(cls, d: h5py.Dataset):

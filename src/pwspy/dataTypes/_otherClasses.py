@@ -24,7 +24,7 @@ from shapely import geometry
 from pwspy.utility.misc import profileDec
 
 
-class RoiFileFormats(Enum):
+class _RoiFileFormats(Enum):
     HDF = auto()
     MAT = auto()
     HDF2 = auto()
@@ -54,8 +54,8 @@ class CameraCorrection:
 
 
 class Roi:
-    FileFormats = RoiFileFormats
-    def __init__(self, name: str, number: int, mask: np.ndarray, verts: np.ndarray, filePath: str = None, fileFormat: RoiFileFormats = None):
+    FileFormats = _RoiFileFormats
+    def __init__(self, name: str, number: int, mask: np.ndarray, verts: np.ndarray, filePath: str = None, fileFormat: _RoiFileFormats = None):
         """A class representing a single ROI. consists of a name, a number, and a boolean mask array."""
         assert isinstance(mask, np.ndarray), f"data is a {type(mask)}"
         assert mask.dtype == np.bool
@@ -67,7 +67,7 @@ class Roi:
         self.fileFormat = fileFormat
 
     @classmethod
-    def fromVerts(cls, name: str, number: int, verts: np.ndarray, dataShape: tuple, filePath: str = None, fileFormat: RoiFileFormats = None):
+    def fromVerts(cls, name: str, number: int, verts: np.ndarray, dataShape: tuple, filePath: str = None, fileFormat: _RoiFileFormats = None):
         assert isinstance(verts, np.ndarray)
         assert isinstance(dataShape, tuple)
         assert len(dataShape) == 2
@@ -87,7 +87,7 @@ class Roi:
         if not os.path.exists(path):
             raise OSError(f"File {path} does not exist.")
         with h5py.File(path, 'r') as hf:
-            return cls(name, number, mask=np.array(hf[str(number)]).astype(np.bool), verts=None, filePath=path, fileFormat=RoiFileFormats.HDF)
+            return cls(name, number, mask=np.array(hf[str(number)]).astype(np.bool), verts=None, filePath=path, fileFormat=_RoiFileFormats.HDF)
 
     @classmethod
     def fromHDF(cls, directory: str, name: str, number: int):
@@ -98,12 +98,12 @@ class Roi:
             verts = hf[str(number)]['verts']
             verts = None if verts.shape is None else np.array(verts)
             return cls(name, number, mask=np.array(hf[str(number)]['mask']).astype(np.bool), verts=verts, filePath=path,
-                       fileFormat=RoiFileFormats.HDF)
+                       fileFormat=_RoiFileFormats.HDF)
 
     @classmethod
     def fromMat(cls, directory: str, name: str, number: int):
         filePath = os.path.join(directory, f'BW{number}_{name}.mat')
-        return cls(name, number, mask=spio.loadmat(filePath)['BW'].astype(np.bool), verts=None, filePath=filePath, fileFormat=RoiFileFormats.MAT)
+        return cls(name, number, mask=spio.loadmat(filePath)['BW'].astype(np.bool), verts=None, filePath=filePath, fileFormat=_RoiFileFormats.MAT)
 
     @classmethod
     def loadAny(cls, directory: str, name: str, number: int):
@@ -130,7 +130,7 @@ class Roi:
                 g.create_dataset(np.string_("verts"), data=self.verts.astype(np.float32))
             g.create_dataset(np.string_("mask"), data=self.mask.astype(np.uint8), compression=5)
         self.filePath = savePath
-        self.fileFormat = RoiFileFormats.HDF2
+        self.fileFormat = _RoiFileFormats.HDF2
 
     @staticmethod
     def deleteRoi(directory: str, name: str, num: int):
@@ -146,12 +146,12 @@ class Roi:
             os.remove(path)
 
     @staticmethod
-    def getValidRoisInPath(path: str) -> List[Tuple[str, int, RoiFileFormats]]:
-        patterns = [('BW*_*.mat', RoiFileFormats.MAT), ('roi_*.h5', RoiFileFormats.HDF)]
+    def getValidRoisInPath(path: str) -> List[Tuple[str, int, _RoiFileFormats]]:
+        patterns = [('BW*_*.mat', _RoiFileFormats.MAT), ('roi_*.h5', _RoiFileFormats.HDF)]
         files = {fformat: glob(os.path.join(path, p)) for p, fformat in patterns} #Lists of the found files keyed by file format
         ret = []
         for fformat, fileNames in files.items():
-            if fformat == RoiFileFormats.HDF:
+            if fformat == _RoiFileFormats.HDF:
                 for i in fileNames:
                     with h5py.File(i, 'r') as hf: # making sure to open this file in read mode make the function way faster!
                         for g in hf.keys():
@@ -159,7 +159,7 @@ class Roi:
                                 if 'mask' in hf[g] and 'verts' in hf[g]:
                                     name = i.split("ROI_")[-1][:-3]
                                     try:
-                                        ret.append((name, int(g), RoiFileFormats.HDF2))
+                                        ret.append((name, int(g), _RoiFileFormats.HDF2))
                                     except ValueError:
                                         print(f"Warning: File {i} contains uninterpretable dataset named {g}")
                                 else:
@@ -167,16 +167,16 @@ class Roi:
                             elif isinstance(hf[g], h5py.Dataset): #Legacy format
                                 name = i.split('roi_')[-1][:-3]
                                 try:
-                                    ret.append((name, int(g), RoiFileFormats.HDF))
+                                    ret.append((name, int(g), _RoiFileFormats.HDF))
                                 except ValueError:
                                     print(f"Warning: File {i} contains uninterpretable dataset named {g}")
 
-            elif fformat == RoiFileFormats.MAT:
+            elif fformat == _RoiFileFormats.MAT:
                 for i in fileNames: #list in files
                     i = os.path.split(i)[-1]
                     num = int(i.split('_')[0][2:])
                     name = i.split('_')[1][:-4]
-                    ret.append((name, num, RoiFileFormats.MAT))
+                    ret.append((name, num, _RoiFileFormats.MAT))
         return ret
 
     def transform(self, matrix: np.ndarray) -> Roi:

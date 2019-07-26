@@ -23,84 +23,47 @@ from pwspy.utility.misc import cached_property
 from pwspy.analysis import AnalysisResultsSaver, AnalysisResultsLoader
 if typing.TYPE_CHECKING:
     import multiprocessing as mp
-from pwspy.dataTypes._otherClasses import Roi, RoiFileFormats
+from pwspy.dataTypes._otherClasses import Roi, _RoiFileFormats
 from ._otherClasses import CameraCorrection
+from ._MetaDataBaseClass import MetaDataBase
 import numpy as np
 from datetime import datetime
 
-class ICFileFormats(Enum):
+
+class _ICFileFormats(Enum):
     RawBinary = auto()
     Tiff = auto()
     Hdf = auto()
     NanoMat = auto()
 
 
-class ICMetaData:
-    FileFormats = ICFileFormats
+class ICMetaData(MetaDataBase):
+    FileFormats = _ICFileFormats
     _jsonSchema = {"$schema": "http://json-schema.org/schema#",
-                   '$id': 'ICMetadataSchema',
-                   'title': 'ICMetadataSchema',
+                   '$id': 'ICMetaDataSchema',
+                   'title': 'ICMetaDataSchema',
                    'type': 'object',
-                   'required': ['system', 'time', 'exposure', 'wavelengths', 'pixelSizeUm', 'binning'],
+                   'allOf': [{"$ref": "MetaDataBaseSchema"}],
+                   'required': ['wavelengths'],
                    'properties': {
-                       'system': {'type': 'string'},
-                       'time': {'type': 'string'},
-                       'exposure': {'type': 'number'},
                        'wavelengths': {'type': 'array',
                                        'items': {'type': 'number'}
-                                       },
-                       'pixelSizeUm': {'type': ['number', 'null']},
-                       'binning': {'type': ['integer', 'null']}
+                                       }
                        }
                    }
 
-    def __init__(self, metadata: dict, filePath: str = None, fileFormat: ICFileFormats = None):
-        jsonschema.validate(instance=metadata, schema=self._jsonSchema, types={'array': (list, tuple)})
-        self._dict: dict = metadata
-        self.filePath: Optional[str] = filePath
-        self.fileFormat: ICFileFormats = fileFormat
+    def __init__(self, metadata: dict, filePath: Optional[str] = None, fileFormat: _ICFileFormats = None):
+        super().__init__(metadata, filePath)
+        self.fileFormat: _ICFileFormats = fileFormat
         self._dict['wavelengths'] = tuple(np.array(self._dict['wavelengths']).astype(float))
-        try:
-            datetime.strptime(self._dict['time'], dateTimeFormat)
-        except ValueError:
-            try:
-                print("Detected a non-compliant timestamp. attempting to correct.")
-                self._dict['time'] = datetime.strftime(datetime.strptime(self._dict['time'], "%d-%m-%y %H:%M:%S"), dateTimeFormat)
-            except ValueError:
-                raise ValueError("The time stamp could not be parsed.")
-        if self._dict['system'] == "":
-            print("Warning: The `system` name in the ImCube metadata is blank. Check that the PWS System is saving the proper calibration values.")
-        if all([i in self._dict for i in ['darkCounts', 'linearityPoly']]):
-            if self._dict['darkCounts'] == 0:
-                print("Warning: Detected a darkCounts value of 0 in the ImCube Metadata. Check that the PWS System is saving the proper calibration values.")
-            self.cameraCorrection = CameraCorrection(darkCounts=self._dict['darkCounts'],
-                                                     linearityPolynomial=self._dict['linearityPoly'])
-        else:
-            self.cameraCorrection = None
 
     @cached_property
     def idTag(self) -> str:
         return f"ImCube_{self._dict['system']}_{self._dict['time']}"
 
     @property
-    def binning(self) -> int:
-        return self._dict['binning']
-
-    @property
-    def pixelSizeUm(self) -> float:
-        return self._dict['pixelSizeUm']
-
-    @property
     def wavelengths(self) -> Tuple[float, ...]:
         return self._dict['wavelengths']
-
-    @property
-    def exposure(self) -> float:
-        return self._dict['exposure']
-
-    @property
-    def time(self) -> str:
-        return self._dict['time']
 
     @classmethod
     def loadAny(cls, directory, lock: mp.Lock = None):
@@ -137,7 +100,7 @@ class ICMetaData:
         finally:
             if lock is not None:
                 lock.release()
-        return cls(md, filePath=directory, fileFormat=ICFileFormats.RawBinary)
+        return cls(md, filePath=directory, fileFormat=_ICFileFormats.RawBinary)
 
     @classmethod
     def fromNano(cls, directory: str, lock: mp.Lock = None):
@@ -155,7 +118,7 @@ class ICMetaData:
         finally:
             if lock is not None:
                 lock.release()
-        return cls(md, filePath=directory, fileFormat=ICFileFormats.NanoMat)
+        return cls(md, filePath=directory, fileFormat=_ICFileFormats.NanoMat)
 
     @classmethod
     def fromTiff(cls, directory, lock: mp.Lock = None):
@@ -191,33 +154,14 @@ class ICMetaData:
         # Get the pixel size from the micromanager metadata
         metadata['pixelSizeUm'] = metadata['MicroManagerMetadata']['PixelSizeUm']['scalar']
         if metadata['pixelSizeUm'] == 0: metadata['pixelSizeUm'] = None
-        if 'waveLengths' in metadata:
+        if 'waveLengths' in metadata:  # Fix an old naming issue
             metadata['wavelengths'] = metadata['waveLengths']
             del metadata['waveLengths']
-        return cls(metadata, filePath=directory, fileFormat=ICFileFormats.Tiff)
+        return cls(metadata, filePath=directory, fileFormat=_ICFileFormats.Tiff)
 
     def metadataToJson(self, directory):
         with open(os.path.join(directory, 'pwsmetadata.json'), 'w') as f:
             json.dump(self._dict, f)
-
-    def getRois(self) -> List[Tuple[str, int, RoiFileFormats]]:
-        assert self.filePath is not None
-        return Roi.getValidRoisInPath(self.filePath)
-
-    def loadRoi(self, name: str, num: int, fformat: RoiFileFormats = None) -> Roi:
-        if fformat == RoiFileFormats.MAT:
-            return Roi.fromMat(self.filePath, name, num)
-        elif fformat == RoiFileFormats.HDF:
-            return Roi.fromHDF(self.filePath, name, num)
-        else:
-            return Roi.loadAny(self.filePath, name, num)
-
-    def saveRoi(self, roi: Roi, overwrite: bool = False) -> None:
-        roi.toHDF(self.filePath, overwrite=overwrite)
-
-    def deleteRoi(self, name: str, num: int):
-        Roi.deleteRoi(self.filePath, name, num)
-
 
     def getAnalyses(self) -> typing.List[str]:
         assert self.filePath is not None
@@ -247,47 +191,15 @@ class ICMetaData:
         from pwspy.analysis import AnalysisResultsLoader
         os.remove(os.path.join(self.filePath, 'analyses', AnalysisResultsLoader.name2FileName(name)))
 
-    def editNotes(self):
-        filepath = os.path.join(self.filePath, 'notes.txt')
-        if not os.path.exists(filepath):
-            with open(filepath, 'w') as f:
-                pass
-        if sys.platform.startswith('darwin'):
-            subprocess.call(('open', filepath))
-        elif os.name == 'nt':  # For Windows
-            os.startfile(filepath)
-        elif os.name == 'posix':  # For Linux, Mac, etc.
-            subprocess.call(('xdg-open', filepath))
-
-    def hasNotes(self) -> bool:
-        return os.path.exists(os.path.join(self.filePath, 'notes.txt'))
-
-    def getNotes(self) -> str:
-        if self.hasNotes():
-            with open(os.path.join(self.filePath, 'notes.txt'), 'r') as f:
-                return '\n'.join(f.readlines())
-        else:
-            return ''
-
-    @classmethod
-    def _decodeHdfMetadata(cls, d: h5py.Dataset) -> dict:
-        assert 'metadata' in d.attrs
-        return json.loads(d.attrs['metadata'])
-
     @classmethod
     def fromHdf(cls, d: h5py.Dataset):
-        return cls(cls._decodeHdfMetadata(d), fileFormat=ICFileFormats.Hdf)
-
-    def encodeHdfMetadata(self, d: h5py.Dataset) -> h5py.Dataset:
-        d.attrs['metadata'] = np.string_(json.dumps(self._dict))
-        return d
+        return cls(cls._decodeHdfMetadata(d), fileFormat=_ICFileFormats.Hdf)
 
     def getImBd(self) -> np.ndarray:
-        if self.fileFormat == ICFileFormats.NanoMat:
+        if self.fileFormat == _ICFileFormats.NanoMat:
             with h5py.File(os.path.join(self.filePath, 'image_bd.mat'), 'r') as hf:
                 return np.array(hf['image_bd'])
         else:
             with tf.TiffFile(os.path.join(self.filePath, 'image_bd.tif')) as f:
                 return f.asarray()
-
 
