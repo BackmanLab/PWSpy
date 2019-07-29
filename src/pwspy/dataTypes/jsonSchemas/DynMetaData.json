@@ -1,0 +1,12 @@
+{"$schema": "http://json-schema.org/schema#",
+ "title": "DynMetaDataSchema",
+ "type": "object",
+ "allOf": [{"$ref": "MetaDataBase.json"}],
+ "required": ["wavelength", "times"],
+ "properties": {
+     "times": {"type": "array",
+                     "items": {"type": "number"}
+                     },
+     "wavelength": {"type": "number"}
+      }
+ }

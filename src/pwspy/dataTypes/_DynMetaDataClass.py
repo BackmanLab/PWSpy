@@ -4,24 +4,15 @@ import multiprocessing as mp
 from ._MetaDataBaseClass import MetaDataBase
 import os, json
 import tifffile as tf
+from . import _jsonSchemasPath
 
 class DynMetaData(MetaDataBase):
     class FileFormats(Enum):
         Tiff = auto()
 
-    _jsonSchema = {"$schema": "http://json-schema.org/schema#",
-                   '$id': 'DynMetaDataSchema',
-                   'title': 'DynMetaDataSchema',
-                   'type': 'object',
-                   'allOf': [{"$ref": "MetaDataBaseSchema"}],
-                   'required': ['wavelength', 'times'],
-                   'properties': {
-                       'times': {'type': 'array',
-                                       'items': {'type': 'number'}
-                                       },
-                       'wavelength': {'type': 'number'}
-                        }
-                   }
+    _jsonSchemaPath = os.path.join(_jsonSchemasPath, 'DynMetaData.json')
+    with open(_jsonSchemaPath) as f:
+        _jsonSchema = json.load(f)
 
     def __init__(self, metadata: dict, filePath: Optional[str], fileFormat: Optional[FileFormats] = None):
         self.fileFormat = fileFormat

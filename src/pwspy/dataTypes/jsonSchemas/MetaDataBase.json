@@ -1,0 +1,13 @@
+{"$schema": "http://json-schema.org/schema#",
+                   "$id": "MetadataBaseSchemaid",
+                   "title": "MetaDataBaseSchemadd",
+                   "type": "object",
+                   "required": ["system", "time", "exposure", "pixelSizeUm", "binning"],
+                   "properties": {
+                       "system": {"type": "string"},
+                       "time": {"type": "string"},
+                       "exposure": {"type": "number"},
+                       "pixelSizeUm": {"type": ["number", "null"]},
+                       "binning": {"type": ["integer", "null"]}
+                       }
+                   }

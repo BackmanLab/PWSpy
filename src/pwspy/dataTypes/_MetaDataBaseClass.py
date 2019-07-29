@@ -8,26 +8,18 @@ import os, sys, subprocess
 import h5py
 import json
 import numpy as np
-
+from . import _jsonSchemasPath
+import pathlib
 
 class MetaDataBase(ABC):
-    _jsonSchema = {"$schema": "http://json-schema.org/schema#",
-                   '$id': 'MetadataBaseSchema',
-                   'title': 'MetaDataBaseSchema',
-                   'type': 'object',
-                   'required': ['system', 'time', 'exposure', 'pixelSizeUm', 'binning'],
-                   'properties': {
-                       'system': {'type': 'string'},
-                       'time': {'type': 'string'},
-                       'exposure': {'type': 'number'},
-                       'pixelSizeUm': {'type': ['number', 'null']},
-                       'binning': {'type': ['integer', 'null']}
-                       }
-                   }
+    _jsonSchemaPath = os.path.join(_jsonSchemasPath, 'MetaDataBase.json')
+    with open(_jsonSchemaPath) as f:
+        _jsonSchema = json.load(f)
 
     def __init__(self, metadata: dict, filePath: Optional[str] = None):
         self.filePath = filePath
-        jsonschema.validate(instance=metadata, schema=self._jsonSchema, types={'array': (list, tuple)})
+        refResolver = jsonschema.RefResolver(pathlib.Path(self._jsonSchemaPath).as_uri(), None)  # This resolver is used to allow derived json schemas to refer to the base schema.
+        jsonschema.validate(instance=metadata, schema=self._jsonSchema, types={'array': (list, tuple)}, resolver=refResolver)
         self._dict: dict = metadata
         try:
             datetime.strptime(self._dict['time'], dateTimeFormat)

@@ -28,7 +28,7 @@ from ._otherClasses import CameraCorrection
 from ._MetaDataBaseClass import MetaDataBase
 import numpy as np
 from datetime import datetime
-
+from . import _jsonSchemasPath
 
 class _ICFileFormats(Enum):
     RawBinary = auto()
@@ -39,18 +39,10 @@ class _ICFileFormats(Enum):
 
 class ICMetaData(MetaDataBase):
     FileFormats = _ICFileFormats
-    _jsonSchema = {"$schema": "http://json-schema.org/schema#",
-                   '$id': 'ICMetaDataSchema',
-                   'title': 'ICMetaDataSchema',
-                   'type': 'object',
-                   'allOf': [{"$ref": "MetaDataBaseSchema"}],
-                   'required': ['wavelengths'],
-                   'properties': {
-                       'wavelengths': {'type': 'array',
-                                       'items': {'type': 'number'}
-                                       }
-                       }
-                   }
+
+    _jsonSchemaPath = os.path.join(_jsonSchemasPath, 'ICMetaData.json')
+    with open(_jsonSchemaPath) as f:
+        _jsonSchema = json.load(f)
 
     def __init__(self, metadata: dict, filePath: Optional[str] = None, fileFormat: _ICFileFormats = None):
         super().__init__(metadata, filePath)

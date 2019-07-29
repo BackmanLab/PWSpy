@@ -1,0 +1,11 @@
+{"$schema": "http://json-schema.org/schema#",
+ "title": "ICMetaDataSchema",
+ "type": "object",
+ "allOf": [{"$ref": "MetaDataBase.json"}],
+ "required": ["wavelengths"],
+ "properties": {
+     "wavelengths": {"type": "array",
+                     "items": {"type": "number"}
+                     }
+     }
+ }
