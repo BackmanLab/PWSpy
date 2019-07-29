@@ -9,6 +9,9 @@ import tifffile as tf
 
 
 class DynCube(ICBase):
+    """A class representing a single acquisition of PWS Dynamics. In which the wavelength is held constant and the 3rd
+    dimension of the data is time rather than wavelength. This can be analyzed to reveal information about diffusion rate.
+    Contains methods for loading and saving to multiple formats as well as common operations used in analysis."""
     def __init__(self, data, metadata: DynMetaData, dtype=np.float32):
         assert isinstance(metadata, DynMetaData)
         self.metadata = metadata
