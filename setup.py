@@ -29,5 +29,6 @@ setup(name='pwspy',
 								'utility/thinFilmInterferenceFiles/*',
 								'apps/_resources/*',
 								'analysis/_resources/*',
-								'apps/PWSAnalysisApp/_resources/*']},
+                                'apps/PWSAnalysisApp/_resources/*',
+                              'dataTypes/jsonSchemas/*']},
       packages=find_packages('src'))
