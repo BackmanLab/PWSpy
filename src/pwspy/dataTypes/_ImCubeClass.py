@@ -21,7 +21,7 @@ if typing.TYPE_CHECKING:
     from pwspy.dataTypes._ExtraReflectanceCubeClass import ExtraReflectionCube
 from ._otherClasses import CameraCorrection
 from ._ICBaseClass import ICBase
-from ._ICMetaDataClass import ICMetaData, _ICFileFormats
+from ._ICMetaDataClass import ICMetaData
 import multiprocessing as mp
 
 class ImCube(ICBase):

@@ -10,6 +10,7 @@ import shutil
 
 from PyQt5.QtWidgets import QApplication
 
+from pwspy.apps.PWSAnalysisApp.blinder import BlinderDialog
 from pwspy.dataTypes import ICMetaData
 from .dialogs import AnalysisSummaryDisplay, CompilationSummaryDisplay
 from ._taskManagers.analysisManager import AnalysisManager
@@ -44,6 +45,7 @@ class PWSApp(QApplication):
         self.window.resultsTable.compileButton.released.connect(self.compMan.run)
         self.compMan.compilationDone.connect(self.handleCompilationResults)
         self.window.fileDialog.directoryChanged.connect(self.changeDirectory)
+        self.window.blindAction.triggered.connect(self.openBlindingDialog)
         self.workingDirectory = None
 
     @staticmethod
@@ -92,3 +94,7 @@ class PWSApp(QApplication):
         #Change title
         self.window.setWindowTitle(f'PWS Analysis v2 - {directory}')
         self.workingDirectory = directory
+
+    def openBlindingDialog(self):
+        dialog = BlinderDialog(self.window, self.workingDirectory, self.window.cellSelector.getAllCellMetas())
+        dialog.exec()

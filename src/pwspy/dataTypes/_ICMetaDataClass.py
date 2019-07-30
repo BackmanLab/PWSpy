@@ -7,14 +7,11 @@ Created on Tue Feb 12 19:17:14 2019
 from __future__ import annotations
 import json
 import os
-import subprocess
-import sys
 import typing
 from enum import Enum, auto
 from typing import Optional, List, Tuple
 
 import h5py
-import jsonschema
 import scipy.io as spio
 import tifffile as tf
 
@@ -23,12 +20,11 @@ from pwspy.utility.misc import cached_property
 from pwspy.analysis import AnalysisResultsSaver, AnalysisResultsLoader
 if typing.TYPE_CHECKING:
     import multiprocessing as mp
-from pwspy.dataTypes._otherClasses import Roi, _RoiFileFormats
-from ._otherClasses import CameraCorrection
 from ._MetaDataBaseClass import MetaDataBase
 import numpy as np
 from datetime import datetime
 from . import _jsonSchemasPath
+
 
 class _ICFileFormats(Enum):
     RawBinary = auto()
@@ -38,15 +34,19 @@ class _ICFileFormats(Enum):
 
 
 class ICMetaData(MetaDataBase):
-    FileFormats = _ICFileFormats
+    class FileFormats(Enum):
+        RawBinary = auto()
+        Tiff = auto()
+        Hdf = auto()
+        NanoMat = auto()
 
     _jsonSchemaPath = os.path.join(_jsonSchemasPath, 'ICMetaData.json')
     with open(_jsonSchemaPath) as f:
         _jsonSchema = json.load(f)
 
-    def __init__(self, metadata: dict, filePath: Optional[str] = None, fileFormat: _ICFileFormats = None):
+    def __init__(self, metadata: dict, filePath: Optional[str] = None, fileFormat: ICMetaData.FileFormats = None):
         super().__init__(metadata, filePath)
-        self.fileFormat: _ICFileFormats = fileFormat
+        self.fileFormat: ICMetaData.FileFormats = fileFormat
         self._dict['wavelengths'] = tuple(np.array(self._dict['wavelengths']).astype(float))
 
     @cached_property
@@ -92,7 +92,7 @@ class ICMetaData(MetaDataBase):
         finally:
             if lock is not None:
                 lock.release()
-        return cls(md, filePath=directory, fileFormat=_ICFileFormats.RawBinary)
+        return cls(md, filePath=directory, fileFormat=ICMetaData.FileFormats.RawBinary)
 
     @classmethod
     def fromNano(cls, directory: str, lock: mp.Lock = None):
@@ -110,7 +110,7 @@ class ICMetaData(MetaDataBase):
         finally:
             if lock is not None:
                 lock.release()
-        return cls(md, filePath=directory, fileFormat=_ICFileFormats.NanoMat)
+        return cls(md, filePath=directory, fileFormat=ICMetaData.FileFormats.NanoMat)
 
     @classmethod
     def fromTiff(cls, directory, lock: mp.Lock = None):
@@ -149,7 +149,7 @@ class ICMetaData(MetaDataBase):
         if 'waveLengths' in metadata:  # Fix an old naming issue
             metadata['wavelengths'] = metadata['waveLengths']
             del metadata['waveLengths']
-        return cls(metadata, filePath=directory, fileFormat=_ICFileFormats.Tiff)
+        return cls(metadata, filePath=directory, fileFormat=ICMetaData.FileFormats.Tiff)
 
     def metadataToJson(self, directory):
         with open(os.path.join(directory, 'pwsmetadata.json'), 'w') as f:
@@ -185,10 +185,10 @@ class ICMetaData(MetaDataBase):
 
     @classmethod
     def fromHdf(cls, d: h5py.Dataset):
-        return cls(cls._decodeHdfMetadata(d), fileFormat=_ICFileFormats.Hdf)
+        return cls(cls._decodeHdfMetadata(d), fileFormat=ICMetaData.FileFormats.Hdf)
 
     def getThumbnail(self) -> np.ndarray:
-        if self.fileFormat == _ICFileFormats.NanoMat:
+        if self.fileFormat == ICMetaData.FileFormats.NanoMat:
             with h5py.File(os.path.join(self.filePath, 'image_bd.mat'), 'r') as hf:
                 return np.array(hf['image_bd'])
         else:

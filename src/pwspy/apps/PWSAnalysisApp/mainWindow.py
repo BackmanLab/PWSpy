@@ -7,7 +7,7 @@ from . import resources
 from pwspy.apps import resources as sharedresources
 from .dialogs import WorkingDirDialog
 from ._dockWidgets import CellSelectorDock, AnalysisSettingsDock, ResultsTableDock, PlottingDock
-
+from .blinder import BlinderDialog
 
 class PWSWindow(QMainWindow):
     def __init__(self, erManager: ERManager):
@@ -25,7 +25,6 @@ class PWSWindow(QMainWindow):
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.resultsTable)
         self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks | QMainWindow.AllowTabbedDocks)
 
-
         self.fileDialog = WorkingDirDialog(self)
 
         menuBar = self.menuBar()
@@ -37,6 +36,7 @@ class PWSWindow(QMainWindow):
         self.parallelAction.setChecked(True)
         infoAction = menu.addAction("Info")
         infoAction.triggered.connect(self.openInfoPane)
+        self.blindAction = menu.addAction("Create blinded directory")
         toolBar = QToolBar("Tool Bar", self)
         toolBar.setFloatable(False)
         toolBar.setObjectName('mainToolBar()')

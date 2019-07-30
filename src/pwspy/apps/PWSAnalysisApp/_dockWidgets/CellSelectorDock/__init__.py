@@ -40,7 +40,9 @@ class CellSelectorDock(QDockWidget):
         width = self.pathFilter.minimumSizeHint().width()
         self.pathFilter.view().setMinimumWidth(width)
         self.expressionFilter = QLineEdit(self._filterWidget)
-        self.expressionFilter.setPlaceholderText("Python boolean expression. Cell#: {num}, Analysis names: {analyses}, ROI names: {rois}")
+        description = "Python boolean expression. Cell#: {num}, Analysis names: {analyses}, ROI names: {rois}. E.G. `{num} > 5 and 'nucleus' in {rois}`"
+        self.expressionFilter.setPlaceholderText(description)
+        self.expressionFilter.setToolTip(description)
         self.expressionFilter.returnPressed.connect(self.executeFilter)
         _ = QGridLayout()
         _.addWidget(self.pathFilter, 0, 0, 1, 1)
@@ -114,6 +116,9 @@ class CellSelectorDock(QDockWidget):
 
     def getSelectedCellMetas(self) -> List[ICMetaData]:
         return [i.cube for i in self.tableWidget.selectedCellItems]
+
+    def getAllCellMetas(self) -> List[ICMetaData]:
+        return [i.cube for i in self.tableWidget.cellItems]
 
     def getSelectedReferenceMeta(self):
         return self.refTableWidget.selectedReferenceMeta
