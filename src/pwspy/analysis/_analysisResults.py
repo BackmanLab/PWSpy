@@ -7,6 +7,8 @@ import numpy as np
 import os.path as osp
 from datetime import datetime
 import typing
+if typing.TYPE_CHECKING:
+    from pwspy.dataTypes import KCube
 from ._analysisSettings import AnalysisSettings
 from abc import ABC, abstractmethod
 from pwspy.moduleConsts import dateTimeFormat
@@ -139,7 +141,7 @@ def clearError(func):
     newFunc.__name__ = func.__name__  # failing to do this renaming can mess with other decorators e.g. cached_property
     return newFunc
 
-class AnalysisResultsLoader(AbstractAnalysisResults):#TODO get chunked reading working.
+class AnalysisResultsLoader(AbstractAnalysisResults):
     """A read-only loader for analysis results that will only load them from hard disk as needed."""
     def __init__(self, directory: str, name: str):
         self.filePath = osp.join(directory, self.name2FileName(name))
