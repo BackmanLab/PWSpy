@@ -24,7 +24,7 @@ class RoiDrawer(QWidget):
         layout = QGridLayout()
         self.mdIndex = 0
         self.newRoiDlg = NewRoiDlg(self)
-        self.plotWidg = BigPlot(metadatas[self.mdIndex][0], metadatas[self.mdIndex][0].getImBd(), 'title')
+        self.plotWidg = BigPlot(metadatas[self.mdIndex][0], metadatas[self.mdIndex][0].getThumbnail(), 'title')
         self.buttonGroup = QButtonGroup(self)
         self.noneButton = QPushButton("Inspect")
         self.lassoButton = QPushButton("Lasso")
@@ -117,7 +117,7 @@ class RoiDrawer(QWidget):
         currRoi = self.plotWidg.roiFilter.currentText()
         md = self.metadatas[self.mdIndex][0]
         self.plotWidg.setMetadata(md)
-        self.plotWidg.setImageData(md.getImBd())
+        self.plotWidg.setImageData(md.getThumbnail())
         self.plotWidg.roiFilter.setEditText(currRoi)
         self.setWindowTitle(f"Roi Drawer - {os.path.split(md.filePath)[-1]}")
 

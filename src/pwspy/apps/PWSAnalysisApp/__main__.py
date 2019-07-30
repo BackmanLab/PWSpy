@@ -11,12 +11,11 @@ def isIpython():
     except:
         return False
 
-#TODO set app name
 
 if __name__ == '__main__':
     import sys
 
-    # This prevents errors from happening silently.
+    # This prevents errors from happening silently. Found on stack overflow.
     sys.excepthook_backup = sys.excepthook
     def exception_hook(exctype, value, traceBack):
         print(exctype, value, traceBack)
@@ -25,13 +24,12 @@ if __name__ == '__main__':
     sys.excepthook = exception_hook
 
     try:
-        if isIpython():
+        if isIpython():  # IPython runs its own QApplication so we handle things slightly different.
             app = PWSApp(sys.argv)
         else:
-            print("Not Ipython")
             app = PWSApp(sys.argv)
             sys.exit(app.exec_())
-    except Exception as e:
+    except Exception as e: # Save error to text file.
         with open(os.path.join(applicationVars.dataDirectory, 'crashLog.txt'), 'w') as f:
             traceback.print_exc(limit=None, file=f)
             print(f"Error Occurred: Please check {os.path.join(applicationVars.dataDirectory, 'crashLog.txt')}")

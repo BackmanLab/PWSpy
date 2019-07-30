@@ -33,8 +33,8 @@ class AnalysisPlotter:
     def changeData(self, field):
         if field != self.analysisField:
             self.analysisField = field
-            if field == 'imbd': #Load the imbd from the ICMetadata object
-                self.data = self.metadata.getImBd()
+            if field == 'thumbnail': #Load the thumbnail from the ICMetadata object
+                self.data = self.metadata.getThumbnail()
             else:
                 if self.analysis is None:
                     raise ValueError(f"Analysis Plotter for ImCube {self.metadata.filePath} does not have an analysis file.")

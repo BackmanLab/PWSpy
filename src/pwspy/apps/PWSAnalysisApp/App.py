@@ -31,6 +31,7 @@ if typing.TYPE_CHECKING:
 class PWSApp(QApplication):
     def __init__(self, args):
         super().__init__(args)
+        self.setApplicationName("PWS Analysis V2")
         self._setupDataDirectories()
         self.ERManager = ERManager(applicationVars.extraReflectionDirectory)
         self.window = PWSWindow(self.ERManager)

@@ -187,7 +187,7 @@ class ICMetaData(MetaDataBase):
     def fromHdf(cls, d: h5py.Dataset):
         return cls(cls._decodeHdfMetadata(d), fileFormat=_ICFileFormats.Hdf)
 
-    def getImBd(self) -> np.ndarray:
+    def getThumbnail(self) -> np.ndarray:
         if self.fileFormat == _ICFileFormats.NanoMat:
             with h5py.File(os.path.join(self.filePath, 'image_bd.mat'), 'r') as hf:
                 return np.array(hf['image_bd'])

@@ -18,10 +18,10 @@ class AnalysisViewer(AnalysisPlotter, QWidget):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         self.setWindowTitle(title)
         layout = QGridLayout()
-        self.plotWidg = BigPlot(metadata, metadata.getImBd(), 'title')
+        self.plotWidg = BigPlot(metadata, metadata.getThumbnail(), 'title')
         self.analysisCombo = QComboBox(self)
         self.analysisCombo.currentTextChanged.connect(self.changeData)
-        items = ['imbd']
+        items = ['thumbnail']
         for i in ['meanReflectance', 'rms', 'autoCorrelationSlope', 'rSquared', 'ld']:
             try:
                 if hasattr(self.analysis, i):  # This will raise a key error if the analysis object exists but the requested item is not found

@@ -145,24 +145,24 @@ class ImCube(ICBase):
         savemat(os.path.join(directory, 'info2'), info2)
         savemat(os.path.join(directory, 'info3'), info3)
         savemat(os.path.join(directory, 'WV'), wv)
-        self._saveImBd(directory)
+        self._saveThumbnail(directory)
         with open(os.path.join(directory, 'image_cube'), 'wb') as f:
             f.write(self.data.astype(np.uint16).tobytes(order='F'))
 
-    def _saveImBd(self, directory):
-        imbd = self.data[:, :, self.data.shape[-1] // 2]
-        nimbd = imbd - np.percentile(imbd, 0.01)  # .01 percent saturation
-        nimbd = nimbd / np.percentile(nimbd, 99.99)
-        nimbd = (nimbd * 255).astype(np.uint8)
+    def _saveThumbnail(self, directory):
+        im = self.data[:, :, self.data.shape[-1] // 2]
+        normedIm = im - np.percentile(im, 0.01)  # .01 percent saturation
+        normedIm = normedIm / np.percentile(normedIm, 99.99)
+        normedIm = (normedIm * 255).astype(np.uint8)
         im = tf.TiffWriter(os.path.join(directory, 'image_bd.tif'))
-        im.save(nimbd)
+        im.save(normedIm)
         im.close()
 
     def toTiff(self, outpath: str, dtype=np.uint16):
         im = self.data
         im = im.astype(dtype)
         os.mkdir(outpath)
-        self._saveImBd(outpath)
+        self._saveThumbnail(outpath)
         with tf.TiffWriter(open(os.path.join(outpath, 'pws.tif'), 'wb')) as w:
             w.save(np.rollaxis(im, -1, 0), metadata=self.metadata._dict)
         self.metadata.metadataToJson(outpath)

@@ -13,7 +13,6 @@ import os
 
 
 # TODO add blinded roi drawing
-# TODO get rid of refresh button. Just draw when requested with the 'imbd' buttons etc. rename imbd. even if analysis isn't present create a placeholder widget.
 class PlottingDock(QDockWidget):
     def __init__(self, selector: CellSelectorDock):
         super().__init__("Plotting")
@@ -50,10 +49,10 @@ class PlottingDock(QDockWidget):
         self.buttonGroup = QButtonGroup()
         self._lastButton = None
         self.buttonGroup.buttonReleased.connect(self.handleButtons)
-        self.plotImBdButton = QPushButton("ImBd")
+        self.plotThumbnailButton = QPushButton("Thumbnail")
         self.plotRMSButton = QPushButton("RMS")
         self.plotRButton = QPushButton('R')
-        self.buttonGroup.addButton(self.plotImBdButton)
+        self.buttonGroup.addButton(self.plotThumbnailButton)
         self.buttonGroup.addButton(self.plotRMSButton)
         self.buttonGroup.addButton(self.plotRButton)
         [i.setCheckable(True) for i in self.buttonGroup.buttons()]
@@ -120,15 +119,15 @@ class PlottingDock(QDockWidget):
             self.roiButton.setEnabled(False)
         elif enable == 'partial':
             for button in self.buttonGroup.buttons():
-                if not button is self.plotImBdButton:
+                if not button is self.plotThumbnailButton:
                     button.setEnabled(False)
-            self.plotImBdButton.setEnabled(True)
+            self.plotThumbnailButton.setEnabled(True)
             self.roiButton.setEnabled(True)
         elif enable == 'true':
             for button in self.buttonGroup.buttons():
-                if not button is self.plotImBdButton:
+                if not button is self.plotThumbnailButton:
                     button.setEnabled(True)
-            self.plotImBdButton.setEnabled(True)
+            self.plotThumbnailButton.setEnabled(True)
             self.roiButton.setEnabled(True)
         else:
             raise ValueError("`enable` string not recognized.")
@@ -164,12 +163,12 @@ class PlottingDock(QDockWidget):
         if button != self._lastButton:
             for plot in self.plots:
                 try:
-                    if button is self.plotImBdButton:
-                        plot.changeData('imbd')
+                    if button is self.plotThumbnailButton:
+                        plot.changeData('thumbnail')
                     elif button is self.plotRMSButton:
                         plot.changeData('rms')
                     elif button is self.plotRButton:
                         plot.changeData('meanReflectance')
                 except ValueError:  # The analysis field wasn't found
-                    plot.changeData('imbd')
+                    plot.changeData('thumbnail')
             self._lastButton = button

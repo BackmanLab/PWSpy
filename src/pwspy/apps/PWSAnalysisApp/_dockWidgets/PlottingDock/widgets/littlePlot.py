@@ -15,7 +15,7 @@ from pwspy.utility import PlotNd
 
 
 class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
-    def __init__(self, metadata: ICMetaData, analysis: AnalysisResultsLoader, title: str, text: str = None,initialField='imbd'):
+    def __init__(self, metadata: ICMetaData, analysis: AnalysisResultsLoader, title: str, text: str = None, initialField='thumbnail'):
         AnalysisPlotter.__init__(self, metadata, analysis)
         self.fig = Figure()
         self.ax = self.fig.add_subplot(1, 1, 1)
