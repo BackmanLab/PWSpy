@@ -19,7 +19,9 @@ import matplotlib.pyplot as plt
 import h5py
 import numpy as np
 from scipy import io as spio
+from scipy.spatial.qhull import Delaunay
 from shapely import geometry
+from shapely.ops import cascaded_union, polygonize
 
 from pwspy.utility.misc import profileDec
 
@@ -59,6 +61,46 @@ class CameraCorrection:
         e.g corr = CameraCorrection.fromJsonFile('~/Desktop/camera.json')"""
         with open(filePath, 'r') as f:
             return cls(**json.load(f))
+
+
+def _concaveHull(coords: np.ndarray, alpha):
+    """
+    Found here: https://gist.github.com/dwyerk/10561690
+    Compute the alpha shape (concave hull) of a set
+    of points.
+    @param coords: nx2 array of points.
+    @param alpha: alpha value to influence the
+        gooeyness of the border. Smaller numbers
+        don't fall inward as much as larger numbers.
+        Too large, and you lose everything!
+    """
+    if len(coords) < 4:
+        # When you have a triangle, there is no sense
+        # in computing an alpha shape.
+        return geometry.MultiPoint(coords).convex_hull
+    coords = np.array(coords)
+    tri = Delaunay(coords)
+    triangles = coords[tri.simplices]
+    # Lengths of sides of triangle
+
+    a = ((triangles[:, 0, 0] - triangles[:, 1, 0]) ** 2 + (triangles[:, 0, 1] - triangles[:, 1, 1]) ** 2) ** 0.5
+    b = ((triangles[:, 1, 0] - triangles[:, 2, 0]) ** 2 + (triangles[:, 1, 1] - triangles[:, 2, 1]) ** 2) ** 0.5
+    c = ((triangles[:, 2, 0] - triangles[:, 0, 0]) ** 2 + (triangles[:, 2, 1] - triangles[:, 0, 1]) ** 2) ** 0.5
+    s = (a + b + c) / 2.0        # Semiperimeter of triangle
+
+    areas = (s * (s - a) * (s - b) * (s - c)) ** 0.5        # Area of triangle by Heron's formula
+
+    circums = a * b * c / (4.0 * areas)
+    filtered = triangles[circums < alpha]         # Here's the radius filter.
+
+    edge1 = filtered[:, (0, 1)]
+    edge2 = filtered[:, (1, 2)]
+    edge3 = filtered[:, (2, 0)]
+    edge_points = np.unique(np.concatenate((edge1, edge2, edge3)), axis=0).tolist()
+    m = geometry.MultiLineString(edge_points)
+    triangles = list(polygonize(m))
+    return cascaded_union(triangles), edge_points
+
 
 
 class Roi:
@@ -235,11 +277,13 @@ class Roi:
         if self.verts is None:  # calculate convex hull
             x = np.arange(self.mask.shape[1])
             y = np.arange(self.mask.shape[0])
-            X, Y = np.meshgrid(x, y)
+            X, Y = np.meshgrid(x, y)  # Generate arrays indicating X and Y coordinates for each array element.
             X = X[self.mask]
             Y = Y[self.mask]
-            coords = list(zip(X, Y))
-            g = geometry.Polygon(coords)
-            return patches.Polygon(list(g.convex_hull.exterior.coords), facecolor=(1, 0, 0, 0.5))
+            coords = list(zip(X, Y))  # Get coordinates of items in the mask.
+            cHull, edgePoints = _concaveHull(coords, 4)
+            return patches.Polygon(cHull.exterior.coords, facecolor=(1, 0, 0, 0.5))
         else:
             return patches.Polygon(self.verts, facecolor=(1, 0, 0, 0.5))
+
+
