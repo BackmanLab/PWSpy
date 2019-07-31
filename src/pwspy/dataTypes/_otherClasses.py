@@ -63,7 +63,7 @@ class CameraCorrection:
             return cls(**json.load(f))
 
 
-def _concaveHull(coords: np.ndarray, alpha):
+def _concaveHull(coords: List[Tuple[int, int]], alpha):
     """
     Found here: https://gist.github.com/dwyerk/10561690
     Compute the alpha shape (concave hull) of a set
