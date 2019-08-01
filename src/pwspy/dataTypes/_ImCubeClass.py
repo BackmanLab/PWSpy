@@ -25,7 +25,8 @@ from ._ICMetaDataClass import ICMetaData
 import multiprocessing as mp
 
 class ImCube(ICBase):
-    """ A class representing a single acquisition of PWS. Contains methods for loading and saving to multiple formats as well as common operations used in analysis."""
+    """ A class representing a single PWS acquisition. Contains methods for loading and saving to multiple formats as
+    well as common operations used in analysis."""
 
     _cameraCorrected: bool
     _hasBeenNormalized: bool
@@ -47,6 +48,7 @@ class ImCube(ICBase):
 
     @classmethod
     def loadAny(cls, directory, metadata: ICMetaData = None,  lock: mp.Lock = None):
+        """Attempt loading any of the known file formats."""
         try:
             return ImCube.fromTiff(directory, metadata=metadata, lock=lock)
         except:
@@ -60,6 +62,9 @@ class ImCube(ICBase):
 
     @classmethod
     def fromOldPWS(cls, directory, metadata: ICMetaData = None,  lock: mp.Lock = None):
+        """Loads from the file format that was saved by the all-matlab version of the Basis acquisition code.
+        Data was saved in raw binary to a file called `image_cube`. Some metadata was saved to .mat files called
+        `info2` and `info3`."""
         if lock is not None:
             lock.acquire()
         try:
@@ -77,6 +82,10 @@ class ImCube(ICBase):
 
     @classmethod
     def fromTiff(cls, directory, metadata: ICMetaData = None,  lock: mp.Lock = None):
+        """Loads from a 3D tiff file named `pws.tif`, or in some older data `MMStack.ome.tif`. Metadata can be stored in
+        the tags of the tiff file but if there is a pwsmetadata.json file found then this is preferred.
+        A multiprocessing.Lock object can be passed to this function so that it will acquire a lock during the
+        hard-drive intensive parts of the function. this is useful in multi-core contexts."""
         if lock is not None:
             lock.acquire()
         try:
@@ -98,6 +107,7 @@ class ImCube(ICBase):
 
     @classmethod
     def fromNano(cls, directory: str, metadata: ICMetaData = None, lock: mp.Lock = None):
+        """Loads from the file format used at NanoCytomics. all data and metdata is contained in a .mat file."""
         path = os.path.join(directory, 'imageCube.mat')
         if lock is not None:
             lock.acquire()
@@ -115,6 +125,8 @@ class ImCube(ICBase):
 
     @classmethod
     def fromMetadata(cls, meta: ICMetaData,  lock: mp.Lock = None) -> ImCube:
+        """If provided with an ICMetadata object this function will automatically select the correct file loading method
+        and will return the associated ImCube."""
         if meta.fileFormat == ICMetaData.FileFormats.Tiff:
             return cls.fromTiff(meta.filePath, metadata=meta, lock=lock)
         elif meta.fileFormat == ICMetaData.FileFormats.RawBinary:
@@ -150,6 +162,8 @@ class ImCube(ICBase):
             f.write(self.data.astype(np.uint16).tobytes(order='F'))
 
     def _saveThumbnail(self, directory):
+        """Used to save a thumbnail image called `image_bd.tif` this is useful for quickly viewing the cells without
+        having to load and process all the data."""
         im = self.data[:, :, self.data.shape[-1] // 2]
         normedIm = im - np.percentile(im, 0.01)  # .01 percent saturation
         normedIm = normedIm / np.percentile(normedIm, 99.99)
@@ -159,6 +173,7 @@ class ImCube(ICBase):
         im.close()
 
     def toTiff(self, outpath: str, dtype=np.uint16):
+        """Save the ImCube to the standard tiff file format."""
         im = self.data
         im = im.astype(dtype)
         os.mkdir(outpath)
@@ -168,6 +183,8 @@ class ImCube(ICBase):
         self.metadata.metadataToJson(outpath)
 
     def normalizeByExposure(self):
+        """This is one of the first steps in most analysis pipelines. Data is divided by the camera exposure.
+        This way two ImCube that were acquired at different exposure times will still be on equivalent scales."""
         if not self._cameraCorrected:
             raise Exception(
                 "This ImCube has not yet been corrected for camera effects. are you sure you want to normalize by exposure?")
@@ -178,7 +195,8 @@ class ImCube(ICBase):
         self._hasBeenNormalized = True
 
     def correctCameraEffects(self, correction: CameraCorrection = None, binning: int = None):
-        """ Subtracts the darkcounts from the data. count is darkcounts per pixel. binning should be specified if it wasn't saved in the micromanager metadata."""
+        """Subtracts the darkcounts from the data. count is darkcounts per pixel. binning should be specified if
+        it wasn't saved in the micromanager metadata."""
         if self._cameraCorrected:
             raise Exception("This ImCube has already had it's camera correction applied!")
         if binning is None:

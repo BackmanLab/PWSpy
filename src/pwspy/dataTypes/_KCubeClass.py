@@ -38,7 +38,7 @@ class KCube(ICBase):
         return cls(data, tuple(evenWavenumbers.astype(np.float32)), metadata=cube.metadata)
 
     @property
-    def wavenumbers(self):
+    def wavenumbers(self) -> Tuple[float, ...]:
         return self.index
 
     def getOpd(self, isHannWindow: bool, indexOpdStop: int = None, mask=None) -> Tuple[np.ndarray, np.ndarray]:
