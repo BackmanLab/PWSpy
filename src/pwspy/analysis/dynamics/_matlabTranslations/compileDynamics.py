@@ -25,7 +25,7 @@ roi = DynCube.loadRoi(bwName, 1)
 bgCube = DynCube.loadAny(os.path.join(wDir, f'Cell{background}'))
 ac = bgCube.getAutocorr() #'BW1_fullFOV_Autocorr.mat', get xVals too
 meanBackground = ac.getMeanSpectra(roi)
-bLim = meanBackground[0]
+bLim = meanBackground[0] #TODO need to understand this better.
 
 for cellNum in cellNums:
     cube = DynCube.loadAny(os.path.join(wDir, f'Cell{cellNum}'))

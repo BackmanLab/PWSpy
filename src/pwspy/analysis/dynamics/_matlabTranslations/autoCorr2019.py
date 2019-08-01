@@ -2,12 +2,14 @@ from pwspy.dataTypes import DynCube
 import os
 import numpy as np
 from pwspy.dataTypes._otherClasses import Roi
-#TODO add author and license
 
 wDir = r''
 cellNum = list(range(1001, 1015)) # Cell numbers to analyze
-mirrorNum = 937 # Flat normalization cube
+mirrorNum = 937 # Flat normalization cube, this has been processed by `timeseries2imagecube_general`
 background = 1997 # Normal cube used for temporal background for noise subtraction
+
+#It's not clear why there is a mirror and a background. Couldn't you just have one. You could then use the mean of the
+# data as the mirror while still extracting noise data.
 
 roiName = 'nuc'
 

@@ -16,7 +16,7 @@ for f in files:
     dyn.normalizeByExposure()
     dyn.normalizeByReference(ref)
 
-    #TODO the original script optionally uses 3 frame frame-averaging here as a lowpass
+    #TODO the original matlab script optionally uses 3 frame frame-averaging here as a lowpass
 
     #This is equivalent to subtracting the mean from each spectra and taking the RMS
     rms = dyn.data.std(axis=2)

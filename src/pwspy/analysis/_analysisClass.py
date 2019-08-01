@@ -19,8 +19,9 @@ import pandas as pd
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ImCube, ExtraReflectanceCube
+    from pwspy.dataTypes._ICBaseClass import ICBase
 
-#TODO analysis totally messes up on linux in parallel mode. both modes use too much memory
+
 class AbstractAnalysis(ABC):
     @abstractmethod
     def __init__(self, settings: AnalysisSettings):
@@ -28,7 +29,7 @@ class AbstractAnalysis(ABC):
         self.settings = settings
 
     @abstractmethod
-    def run(self, cube) -> AnalysisResultsSaver:
+    def run(self, cube: ICBase) -> AnalysisResultsSaver:
         """Given an ImCube to analyze this function returns an instanse of AnalysisResultsSaver. In the PWSAnalysisApp this function is run in parallel by the AnalysisManager."""
         pass
 

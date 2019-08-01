@@ -1,4 +1,7 @@
 from __future__ import annotations
+
+from typing import Union
+
 from pwspy.dataTypes import CameraCorrection, ExtraReflectionCube
 from ._ICBaseClass import ICBase
 from ._DynMetaDataClass import DynMetaData
@@ -89,7 +92,10 @@ class DynCube(ICBase):
         self._cameraCorrected = True
         return
 
-    def normalizeByReference(self, reference: DynCube):
+    def normalizeByReference(self, reference: Union[DynCube, np.ndarray]):
+        """This method can accept either a DynCube (in which case it's average over time will be calculate and used for
+        normalization) or a numpy Array which should represent the average over time of a reference DynCube. The array
+        should be 2D and its shape should match the first two dimensions of this DynCube."""
         if self._hasBeenNormalizedByReference:
             raise Exception("This ImCube has already been normalized by a reference.")
         if not self.isCorrected():
@@ -100,7 +106,16 @@ class DynCube(ICBase):
             print("Warning: The reference ImCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
         if not reference.isExposureNormalized():
             print("Warning: The reference ImCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
-        self.data = self.data / reference.data
+        if isinstance(reference, np.ndarray):
+            assert len(reference.shape) == 2
+            assert reference.shape[0] == self.data.shape[0]
+            assert reference.shape[1] == self.data.shape[1]
+            mean = reference
+        elif isinstance(reference, DynCube):
+            mean = reference.data.mean(axis=2)
+        else:
+            raise TypeError(f"`reference` must be either DynCube or numpy.ndarray, not {type(reference)}")
+        self.data = self.data / mean[:, :, None]
         self._hasBeenNormalizedByReference = True
 
     def subtractExtraReflection(self, extraReflection: ExtraReflectionCube):
@@ -128,8 +143,9 @@ class DynCube(ICBase):
         return DynCube(ret.data, md)
 
     def getAutocorrelation(self) -> np.ndarray:
+        # TODO add `mask` arg so that only a section of the data array needs to be processed.
         truncLength = 100
         F = np.fft.rfft(self.data, axis=2)
-        ac = np.fft.irfft(F * np.conjugate(F), axis=2)
+        ac = np.fft.irfft(F * np.conjugate(F), axis=2) / F.shape[2]
         return ac[:, :, :truncLength]
 
