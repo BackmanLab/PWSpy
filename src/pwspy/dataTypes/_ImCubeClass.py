@@ -238,31 +238,39 @@ class ImCube(ICBase):
             raise Exception("The ImCube has already has extra reflection subtracted.")
 
     def isCorrected(self) -> bool:
+        """Indicates whether or not the ImCube has had camera defects corrected out."""
         return self._cameraCorrected
 
     def isExposureNormalized(self) -> bool:
+        """Indicates whether the ImCube has had its data normalized by exposure."""
         return self._hasBeenNormalized
 
     def selIndex(self, start, stop) -> ImCube:
+        """Return a copy of this ImCube only within a range of wavelengths."""
         ret = super().selIndex(start, stop)
         md = self.metadata
         md._dict['wavelengths'] = ret.index
         return ImCube(ret.data, md)
 
     def isExtraReflectionSubtracted(self) -> bool:
+        """Indicates whether the data of this ImCube has been corrected for the extra reflectance present in the system."""
         return self._hasExtraReflectionSubtracted
 
     @classmethod
     def fromHdfDataset(cls, d: h5py.Dataset):
+        """Load an Imcube from an HDF5 dataset."""
         data, index = cls._decodeHdf(d)
         md = ICMetaData.fromHdf(d)
         return cls(data, md)
 
     def toHDF(self, g: h5py.Group, name: str) -> None:
+        """Save the ImCube to an HDF5 dataset in HDF5 group `g`"""
         g = super().toHdfDataset(g, name=name)
         d = self.metadata.encodeHdfMetadata(g[name])
 
     def filterDust(self, kernelRadius: float, pixelSize: float = None) -> None:
+        """This method blurs the data of the ImCube along the X and Y dimensions. This is useful if the ImCube is being
+        used as a reference to normalize other ImCube. It helps blur out dust adn other unwanted small features."""
         if pixelSize is None:
             pixelSize = self.metadata.pixelSizeUm
             if pixelSize is None:
