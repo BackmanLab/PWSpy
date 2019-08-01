@@ -15,8 +15,8 @@ import copy
 
 
 class KCube(ICBase):
-    """A class representing an ImCube after being transformed from being described in terms of wavelength in to
-    wavenumber (k-space)."""
+    """A class representing an ImCube after being transformed from being described in terms of wavelength to
+    wavenumber (k-space). Much of the analysis operated in terms of k-space."""
 
     def __init__(self, data: np.ndarray, wavenumbers: Tuple[float], metadata: ICMetaData = None):
         self.metadata = metadata #Just saving a reference to the original imcube in case we want to reference it.
@@ -24,6 +24,8 @@ class KCube(ICBase):
 
     @classmethod
     def fromImCube(cls, cube: ImCube):
+        """Convert an ImCube into a KCube. Data is converted from wavelength to wavenumber (1/lambda), interpolation is
+        then used to linearize the data in terms of wavenumber."""
         # Convert to wavenumber and reverse the order so we are ascending in order.
         wavenumbers = (2 * np.pi) / (np.array(cube.wavelengths, dtype=np.float64) * 1e-3)[::-1]
         data = cube.data[:, :, ::-1]
@@ -73,26 +75,26 @@ class KCube(ICBase):
         return opd, xVals
 
     def getAutoCorrelation(self, isAutocorrMinSub: bool, stopIndex: int) -> Tuple[np.ndarray, np.ndarray]:
-        # The autocorrelation of a signal is the covariance of a signal with a
-        # lagged version of itself, normalized so that the covariance at
-        # zero-lag is equal to 1.0 (c[0] = 1.0).  The same process without
-        # normalization is the autocovariance.
-        #
-        # A fast method for determining the autocovariance of a signal with
-        # itself is to utilize fast-fourier transforms.  In this method, the
-        # signal is converted to the frequency domain using fft.  The
-        # frequency-domain signal is then convolved with itself.  The inverse
-        # fft is performed on this self-convolution, yielding the
-        # autocorrelation.
-        #
-        # In this instance, the autocorrelation is determined for a series of
-        # lags, Z. Z is equal to [-P+1:P-1], where P is the quantity of
-        # measurements in each signal (the quantity of wavenumbers).  Thus, the
-        # quantity of lags is equal to (2*P)-1.  The fft process is fastest
-        # when performed on signals with a length equal to a power of 2.  To
-        # take advantage of this property, a Z-point fft is performed on the
-        # signal, where Z is a number greater than (2*P)-1 that is also a power
-        # of 2.
+        """The autocorrelation of a signal is the covariance of a signal with a
+        lagged version of itself, normalized so that the covariance at
+        zero-lag is equal to 1.0 (c[0] = 1.0).  The same process without
+        normalization is the autocovariance.
+
+        A fast method for determining the autocovariance of a signal with
+        itself is to utilize fast-fourier transforms.  In this method, the
+        signal is converted to the frequency domain using fft.  The
+        frequency-domain signal is then convolved with itself.  The inverse
+        fft is performed on this self-convolution, yielding the
+        autocorrelation.
+
+        In this instance, the autocorrelation is determined for a series of
+        lags, Z. Z is equal to [-P+1:P-1], where P is the quantity of
+        measurements in each signal (the quantity of wavenumbers).  Thus, the
+        quantity of lags is equal to (2*P)-1.  The fft process is fastest
+        when performed on signals with a length equal to a power of 2.  To
+        take advantage of this property, a Z-point fft is performed on the
+        signal, where Z is a number greater than (2*P)-1 that is also a power
+        of 2."""
         fftSize = int(2 ** (np.ceil(np.log2((2 * len(
             self.wavenumbers)) - 1))))  # This is the next size of fft that is  at least 2x greater than is needed but is a power of two. Results in interpolation, helps amplitude accuracy and fft efficiency.
 

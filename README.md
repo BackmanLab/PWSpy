@@ -11,9 +11,10 @@ The flat field visualizer is intended to show how the pws signal of a thin film 
 Utility provides useful function for parallel loading and processing of ImCube files.
 
 ## Building from source and distributing
+`{blah}` indicates a blank spot named 'blah' that you need to fill in.
 
 Building conda package from source:  
-navigate to the root directory of the project and use `conda-build .. --output-folder {outputDestination}` to build the package.
+navigate to the root directory of the project and use `conda-build .. --output-folder {outputDestination}` to build the package. (You will need to make sure that the `conda-forge` channel is in your `conda.rc` file.
 Copy `install.bat` from the `installScripts` folder to `{outputDestination}`. The `{outputDestination}` folder is all that is needed for distribution.
 
 
