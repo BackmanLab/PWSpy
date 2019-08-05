@@ -197,7 +197,8 @@ class Roi:
                     raise OSError(f"The Roi file {savePath} already contains a dataset {self.number}")
             g = hf.create_group(np.string_(str(self.number)))
             if self.verts is None:
-                g.create_dataset(np.string_('verts'), data=h5py.Empty('f'))
+                raise ValueError("An Roi cannot be saved to HDF without a `verts` property specifying the vertices of the"
+                                 "rois enclosing polygon. You can use `getBoundingPolygon` to use Concave Hull method to generate the vertices.")
             else:
                 g.create_dataset(np.string_("verts"), data=self.verts.astype(np.float32))
             g.create_dataset(np.string_("mask"), data=self.mask.astype(np.uint8), compression=5)
