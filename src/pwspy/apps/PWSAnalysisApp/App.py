@@ -8,7 +8,7 @@ from __future__ import annotations
 import os
 import shutil
 
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QMessageBox
 
 from pwspy.apps.PWSAnalysisApp._utilities import BlinderDialog, RoiConverter
 from pwspy.dataTypes import ICMetaData
@@ -99,8 +99,16 @@ class PWSApp(QApplication):
         self.workingDirectory = directory
 
     def openBlindingDialog(self):
-        dialog = BlinderDialog(self.window, self.workingDirectory, self.window.cellSelector.getSelectedCellMetas())
+        metas = self.window.cellSelector.getSelectedCellMetas()
+        if len(metas) == 0:
+            QMessageBox.information(self.window, "No Cells Selected", "Please select cells to act upon.")
+            return
+        dialog = BlinderDialog(self.window, self.workingDirectory, metas)
         dialog.exec()
 
     def convertRois(self):
-        rc = RoiConverter(self.window.cellSelector.getSelectedCellMetas())
+        metas = self.window.cellSelector.getSelectedCellMetas()
+        if len(metas) == 0:
+            QMessageBox.information(self.window, "No Cells Selected", "Please select cells to act upon.")
+            return
+        rc = RoiConverter(metas)
