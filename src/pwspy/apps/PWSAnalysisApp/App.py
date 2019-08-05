@@ -55,6 +55,8 @@ class PWSApp(QApplication):
         if not os.path.exists(applicationVars.analysisSettingsDirectory):
             os.mkdir(applicationVars.analysisSettingsDirectory)
             settingsFiles = glob(os.path.join(defaultSettingsPath, '*.json'))
+            if len(settingsFiles) == 0:
+                print("Warning: Could not find any analysis settings presets.")
             for f in settingsFiles:
                 shutil.copyfile(f, os.path.join(applicationVars.analysisSettingsDirectory, os.path.split(f)[-1]))
         if not os.path.exists(applicationVars.extraReflectionDirectory):

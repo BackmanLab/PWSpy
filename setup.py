@@ -28,7 +28,7 @@ setup(name='pwspy',
       package_data={'pwspy': ['utility/refractiveIndexFiles/*',
 								'utility/thinFilmInterferenceFiles/*',
 								'apps/_resources/*',
-								'analysis/_resources/*',
+								'analysis/_resources/defaultAnalysisSettings/*',
                                 'apps/PWSAnalysisApp/_resources/*',
                               'dataTypes/jsonSchemas/*']},
       packages=find_packages('src'))
