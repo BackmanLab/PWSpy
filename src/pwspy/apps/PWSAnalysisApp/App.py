@@ -10,7 +10,7 @@ import shutil
 
 from PyQt5.QtWidgets import QApplication
 
-from pwspy.apps.PWSAnalysisApp.blinder import BlinderDialog
+from pwspy.apps.PWSAnalysisApp._utilities import BlinderDialog, RoiConverter
 from pwspy.dataTypes import ICMetaData
 from .dialogs import AnalysisSummaryDisplay, CompilationSummaryDisplay
 from ._taskManagers.analysisManager import AnalysisManager
@@ -46,6 +46,7 @@ class PWSApp(QApplication):
         self.compMan.compilationDone.connect(self.handleCompilationResults)
         self.window.fileDialog.directoryChanged.connect(self.changeDirectory)
         self.window.blindAction.triggered.connect(self.openBlindingDialog)
+        self.window.roiConvertAction.triggered.connect(self.convertRois)
         self.workingDirectory = None
 
     @staticmethod
@@ -98,5 +99,8 @@ class PWSApp(QApplication):
         self.workingDirectory = directory
 
     def openBlindingDialog(self):
-        dialog = BlinderDialog(self.window, self.workingDirectory, self.window.cellSelector.getAllCellMetas())
+        dialog = BlinderDialog(self.window, self.workingDirectory, self.window.cellSelector.getSelectedCellMetas())
         dialog.exec()
+
+    def convertRois(self):
+        rc = RoiConverter(self.window.cellSelector.getSelectedCellMetas())

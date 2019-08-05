@@ -7,7 +7,7 @@ from . import resources
 from pwspy.apps import resources as sharedresources
 from .dialogs import WorkingDirDialog
 from ._dockWidgets import CellSelectorDock, AnalysisSettingsDock, ResultsTableDock, PlottingDock
-from .blinder import BlinderDialog
+
 
 class PWSWindow(QMainWindow):
     def __init__(self, erManager: ERManager):
@@ -28,15 +28,25 @@ class PWSWindow(QMainWindow):
         self.fileDialog = WorkingDirDialog(self)
 
         menuBar = self.menuBar()
-        menu = menuBar.addMenu("Menu")
+        menu = menuBar.addMenu("View")
         defaultLayoutAction = menu.addAction("Set Default Layout")
         defaultLayoutAction.triggered.connect(self._setDefaultLayout)
+        infoAction = menu.addAction("Info")
+        infoAction.triggered.connect(self.openInfoPane)
+        menu = menuBar.addMenu("Config")
         self.parallelAction = menu.addAction("Multi-Core Analysis")
         self.parallelAction.setCheckable(True)
         self.parallelAction.setChecked(True)
-        infoAction = menu.addAction("Info")
-        infoAction.triggered.connect(self.openInfoPane)
+        menu = menuBar.addMenu("Actions")
+        menu.setToolTipsVisible(True)
         self.blindAction = menu.addAction("Create blinded directory")
+        self.blindAction.setToolTip("Creates a folder of symlinks to the original data that is randomly numbered. "
+                                    "This allows you to work on data anonymously without bias. You may need to run this"
+                                    "software as Admin for this to work on windows.")
+        self.roiConvertAction = menu.addAction("Update Roi file formats")
+        self.roiConvertAction.setToolTip("Updates old .MAT roi files to a newer .H5 format that will run more efficiently."
+                                         " Warning: The old files will be deleted.")
+
         toolBar = QToolBar("Tool Bar", self)
         toolBar.setFloatable(False)
         toolBar.setObjectName('mainToolBar()')
