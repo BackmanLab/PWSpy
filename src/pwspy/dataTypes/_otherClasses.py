@@ -286,4 +286,6 @@ class Roi:
         else:
             return patches.Polygon(self.verts, facecolor=(1, 0, 0, 0.5))
 
+#TODO add way to convert old rois to new rois for performance reasons.
+#TODO view analysis as you go.
 
