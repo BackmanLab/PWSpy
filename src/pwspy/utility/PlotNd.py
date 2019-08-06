@@ -9,6 +9,8 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
 from typing import Tuple
+
+from PyQt5.QtWidgets import QMessageBox
 from matplotlib.animation import FuncAnimation
 
 lw = 0.5
@@ -118,10 +120,23 @@ class PlotNd(object):
        secondary axis to become a primary axis"""
     def __init__(self, X: np.ndarray, names: Tuple[str,...]=('y', 'x', 'lambda'), initialCoords: Tuple[int,...]=None, title: str='', indices: Tuple[np.ndarray]=(None, None, None)):
         self.max = self.min = None #  The minimum and maximum for the color scaling
-        self.names = names # The labels for each axis
+        self.names = names  # The labels for each axis
         self.extraDims = len(X.shape[2:]) # the first two axes are the image dimensions. Any axes after that are extra dimensions that can be scanned through
+        import matplotlib
+        matplotlib.rcParams["toolbar"] = "toolmanager"
+        from matplotlib.backend_tools import ToolBase
         fig = plt.figure(figsize=(6, 6))
         fig.suptitle(title)
+
+
+        tm = fig.canvas.manager.toolmanager
+        class MyTool(ToolBase):
+            def trigger(self, *args, **kwargs):
+                msg = QMessageBox.information(None, 'Help!', str(PlotNd.__doc__))
+
+        tm.add_tool("Help!", MyTool)
+        fig.canvas.manager.toolbar.add_tool(tm.get_tool("Help!"), "toolgroup")
+
         h, w = X.shape[:2]
         gs = gridspec.GridSpec(3, 2 + self.extraDims + 1, hspace=0,
                                width_ratios=[w * .2 / (self.extraDims + 1)] * (self.extraDims + 1) + [w, w * .2],
