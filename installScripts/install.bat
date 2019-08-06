@@ -8,6 +8,6 @@ call conda activate %env%
 
 set "currDir=%cd%"
 
-call conda install -c file:///%currDir% -c defaults -c conda-forge pwspy
+call conda install -c file:///%currDir% -c defaults -c conda-forge pwspy --force-reinstall
 
 pause
