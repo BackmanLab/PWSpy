@@ -163,7 +163,7 @@ class Roi:
             verts = hf[str(number)]['verts']
             verts = None if verts.shape is None else np.array(verts)
             return cls(name, number, mask=np.array(hf[str(number)]['mask']).astype(np.bool), verts=verts, filePath=path,
-                       fileFormat=Roi.FileFormats.HDF)
+                       fileFormat=Roi.FileFormats.HDF2)
 
     @classmethod
     def fromMat(cls, directory: str, name: str, number: int):

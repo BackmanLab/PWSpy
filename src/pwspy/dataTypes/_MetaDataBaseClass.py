@@ -77,8 +77,10 @@ class MetaDataBase(ABC):
         """Load a Roi that has been saved to file in the acquisition's file path."""
         if fformat == Roi.FileFormats.MAT:
             return Roi.fromMat(self.filePath, name, num)
-        elif fformat == Roi.FileFormats.HDF:
+        elif fformat == Roi.FileFormats.HDF2:
             return Roi.fromHDF(self.filePath, name, num)
+        elif fformat == Roi.FileFormats.HDF:
+            return Roi.fromHDF_legacy(self.filePath, name, num)
         else:
             return Roi.loadAny(self.filePath, name, num)
 

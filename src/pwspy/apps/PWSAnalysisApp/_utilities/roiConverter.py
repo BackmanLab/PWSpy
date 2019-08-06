@@ -1,3 +1,4 @@
+import copy
 import os
 from typing import List
 from pwspy.dataTypes import ICMetaData, Roi
@@ -14,11 +15,16 @@ class RoiConverter:
             rois = cell.getRois()
             for name, num, fformat in rois:
                 if fformat == Roi.FileFormats.MAT:
-                    print('\t', name, num)
+                    print('\t', name, num, "MAT")
                     roi = Roi.fromMat(cell.filePath, name, num)
-                    assert roi.verts is None
-                    roi.verts = roi.getBoundingPolygon().get_verts() #Use concave hull method to generate the vertices.
-                    oldFilePath = roi.filePath
-                    roi.toHDF(cell.filePath) #save to hdf. At this point the filePath and fileFormat will be changed. Don't use the delete method or we'll delete the new file.
-                    os.remove(oldFilePath)
+                elif fformat == Roi.FileFormats.HDF:
+                    print('\t', name, num, "LegacyHDF")
+                    roi = Roi.fromHDF_legacy(cell.filePath, name, num)
+                else:
+                    continue #Conversion of other formats is not supported
+                assert roi.verts is None
+                roi.verts = roi.getBoundingPolygon().get_verts()  # Use concave hull method to generate the vertices.
+                oldFilePath = roi.filePath
+                roi.toHDF(cell.filePath)  # save to hdf. At this point the filePath and fileFormat will be changed. Don't use the delete method or we'll delete the new file.
+                Roi.deleteRoi(oldFilePath, roi.name, roi.number)
 
