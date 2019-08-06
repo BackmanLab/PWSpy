@@ -1,5 +1,9 @@
 from enum import unique, Enum, auto
 
+"""This module contains variables that are used across the entirety of the pwspy package. `dateTimeFormat` is the
+format string used by the datetime module to load and store time stamps in metadata.
+`Material` is an Enum class containing items for the various materials that we can calculate reflectance for."""
+
 dateTimeFormat = "%d-%m-%Y %H:%M:%S"
 
 
