@@ -36,7 +36,7 @@ class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
 
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
-            AnalysisViewer(metadata=self.metadata, analysisLoader=self.analysis, title=self.title, parent=self)
+            AnalysisViewer(metadata=self.metadata, analysisLoader=self.analysis, title=self.title, parent=self, initialField=self.analysisField)
 
     def changeData(self, field):
         AnalysisPlotter.changeData(self, field)
@@ -50,7 +50,7 @@ class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
             anPlotAction = QAction("Plot3d Analyzed Reflectance", self)
             anPlotAction.triggered.connect(self.plotAn3d)
             menu.addAction(anPlotAction)
-            if 'opd' in self.analysis.file.keys():
+            if 'reflectance' in self.analysis.file.keys():
                 opdAction = QAction("Plot3d OPD", self)
                 opdAction.triggered.connect(self.plotOpd3d)
                 menu.addAction(opdAction)

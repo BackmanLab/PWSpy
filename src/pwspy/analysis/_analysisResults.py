@@ -141,7 +141,7 @@ def clearError(func):
     newFunc.__name__ = func.__name__  # failing to do this renaming can mess with other decorators e.g. cached_property
     return newFunc
 
-class AnalysisResultsLoader(AbstractAnalysisResults):
+class AnalysisResultsLoader(AbstractAnalysisResults): #TODO All these cached properties stay in memory once they are loaded. It may be necessary to add a mechanism to decache them when memory is needed.
     """A read-only loader for analysis results that will only load them from hard disk as needed."""
     def __init__(self, directory: str, name: str):
         self.filePath = osp.join(directory, self.name2FileName(name))

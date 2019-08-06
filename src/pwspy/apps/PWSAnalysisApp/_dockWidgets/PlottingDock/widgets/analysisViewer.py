@@ -13,14 +13,13 @@ from pwspy.analysis import AnalysisResultsLoader
 
 
 class AnalysisViewer(AnalysisPlotter, QWidget):
-    def __init__(self, metadata: ICMetaData, analysisLoader: Optional[AnalysisResultsLoader], title: str, parent=None):
+    def __init__(self, metadata: ICMetaData, analysisLoader: Optional[AnalysisResultsLoader], title: str, parent=None, initialField='thumbnail'):
         AnalysisPlotter.__init__(self, metadata, analysisLoader)
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         self.setWindowTitle(title)
         layout = QGridLayout()
         self.plotWidg = BigPlot(metadata, metadata.getThumbnail(), 'title')
         self.analysisCombo = QComboBox(self)
-        self.analysisCombo.currentTextChanged.connect(self.changeData)
         items = ['thumbnail']
         for i in ['meanReflectance', 'rms', 'autoCorrelationSlope', 'rSquared', 'ld']: #TODO allow viewing of where the opd peak is.
             try:
@@ -28,13 +27,19 @@ class AnalysisViewer(AnalysisPlotter, QWidget):
                     items.append(i)
             except KeyError:
                 pass
+        if 'reflectance' in self.analysis.file.keys(): #This is the normalized 3d data cube. needed to generate the opd.
+            items.append('opdPeak')
         self.analysisCombo.addItems(items)
+        self.analysisCombo.currentTextChanged.connect(self.changeData)  # If this line comes before the analysisCombo.addItems line then it will get triggered when adding items.
         layout.addWidget(self.analysisCombo, 0, 0, 1, 1)
         layout.addWidget(self.plotWidg, 1, 0, 8, 8)
         self.setLayout(layout)
+        self.changeData(initialField)
         self.show()
 
     def changeData(self, field):
         super().changeData(field)
+        if self.analysisCombo.currentText() != field:
+            self.analysisCombo.setCurrentText(field)
         self.plotWidg.setImageData(self.data)
         self.plotWidg.setSaturation()
