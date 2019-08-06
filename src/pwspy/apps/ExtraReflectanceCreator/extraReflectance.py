@@ -237,7 +237,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], ma
                     cubes = combo.combo
                     fig5 = plt.figure()
                     figs.append(fig5)
-                    plt.title(f"Reflectance %. {sett}, {mat1}:{int(cubes[mat2].metadata.exposure)}ms, {mat2}:{int(cubes[mat2].metadata.exposure)}ms")
+                    plt.title(f"Reflectance %. {sett}, {mat1}:{int(cubes[mat1].metadata.exposure)}ms, {mat2}:{int(cubes[mat2].metadata.exposure)}ms")
                     _ = ((theoryR[mat1][np.newaxis, np.newaxis, :] * cubes[mat2].data) - (
                         theoryR[mat2][np.newaxis, np.newaxis, :] * cubes[mat1].data)) / (
                             cubes[mat1].data - cubes[mat2].data)
