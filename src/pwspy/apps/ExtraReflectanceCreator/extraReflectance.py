@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, Iterable, Any, Sequence, Iterator, Union, Optional
+from typing import Dict, List, Tuple, Iterable, Any, Sequence, Iterator, Union, Optional, Set
 
 import matplotlib
 
@@ -66,7 +66,7 @@ def _interpolateNans(arr):
     arr = np.apply_along_axis(interp1, 2, arr)
     return arr
 
-def getTheoreticalReflectances(materials: Iterable[Material], index: Tuple[float]) -> Dict:
+def getTheoreticalReflectances(materials: Set[Material], index: Tuple[float]) -> Dict[Material, pd.Series]:
     """Generate a dictionary containing a pandas series of the `material`-glass reflectance for each material in
     `materials`. Index is in units of nanometers."""
     theoryR = {}
@@ -100,7 +100,7 @@ def getAllCubeCombos(matCombos: Iterable[MCombo], df: pd.DataFrame) -> Dict[MCom
     return allCombos
 
 
-def calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict, mask: Roi = None) ->\
+def calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theoryR: Dict[Material, pd.Series], mask: Roi = None) ->\
         Tuple[Dict[Union[MCombo, str], Dict[str, Any]], Dict[MCombo, List[ComboSummary]]]:
     """Expects a dictionary as created by `getAllCubeCombos` and a dictionary of theoretical reflections.
 
@@ -127,7 +127,8 @@ def calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theory
             c.weight = (c.mat1Spectra - c.mat2Spectra) ** 2 / (c.mat1Spectra ** 2 + c.mat2Spectra ** 2)
             c.rExtra = ((theoryR[mat1] * c.mat2Spectra) - (theoryR[mat2] * c.mat1Spectra)) / (c.mat1Spectra - c.mat2Spectra)
             c.I0 = c.mat2Spectra / (theoryR[mat2] + c.rExtra)
-            c.cFactor = (c.rExtra.mean() + theoryR[Material.Water].mean()) / theoryR[Material.Water].mean()
+            waterTheory = getReflectance(Material.Water, Material.Glass, index=list(theoryR.values())[0].index)
+            c.cFactor = (c.rExtra.mean() + waterTheory.mean()) / waterTheory.mean()
             allCombos[matCombo].append(c)
         meanValues[matCombo] = {}
         for param in params:
@@ -147,7 +148,7 @@ def calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theory
     return meanValues, allCombos
 
 
-def plotExtraReflection(df: pd.DataFrame, theoryR: dict, matCombos:List[MCombo], mask: Optional[Roi] = None, plotReflectionImages: bool = False) -> List[plt.Figure]:
+def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], matCombos:List[MCombo], mask: Optional[Roi] = None, plotReflectionImages: bool = False) -> List[plt.Figure]:
     settings = set(df['setting'])
     meanValues: Dict[str, Dict[Union[MCombo, str], Dict[str, Any]]] = {}
     allCombos: Dict[str, Dict[MCombo, List[ComboSummary]]] = {}
