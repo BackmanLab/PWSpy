@@ -22,7 +22,7 @@ class AnalysisViewer(AnalysisPlotter, QWidget):
         self.analysisCombo = QComboBox(self)
         self.analysisCombo.currentTextChanged.connect(self.changeData)
         items = ['thumbnail']
-        for i in ['meanReflectance', 'rms', 'autoCorrelationSlope', 'rSquared', 'ld']:
+        for i in ['meanReflectance', 'rms', 'autoCorrelationSlope', 'rSquared', 'ld']: #TODO allow viewing of where the opd peak is.
             try:
                 if hasattr(self.analysis, i):  # This will raise a key error if the analysis object exists but the requested item is not found
                     items.append(i)
