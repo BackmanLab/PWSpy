@@ -27,8 +27,9 @@ class AnalysisViewer(AnalysisPlotter, QWidget):
                     items.append(i)
             except KeyError:
                 pass
-        if 'reflectance' in self.analysis.file.keys(): #This is the normalized 3d data cube. needed to generate the opd.
-            items.append('opdPeak')
+        if self.analysis is not None:
+            if 'reflectance' in self.analysis.file.keys(): #This is the normalized 3d data cube. needed to generate the opd.
+                items.append('opdPeak')
         self.analysisCombo.addItems(items)
         self.analysisCombo.currentTextChanged.connect(self.changeData)  # If this line comes before the analysisCombo.addItems line then it will get triggered when adding items.
         layout.addWidget(self.analysisCombo, 0, 0, 1, 1)
