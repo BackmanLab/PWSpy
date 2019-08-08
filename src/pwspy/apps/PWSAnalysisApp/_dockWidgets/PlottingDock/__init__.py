@@ -21,6 +21,7 @@ class PlottingDock(QDockWidget):
         self.roiDrawer = None
         self.setObjectName('PlottingWidget')
         self.plots = []
+        self.cellMetas = []
         self._widget = QWidget()
         self._widget.setLayout(QHBoxLayout())
         plotScroll = QScrollArea()
