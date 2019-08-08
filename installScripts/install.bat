@@ -1,4 +1,4 @@
-set env=test
+set env=pwspy
 
 set root=%userprofile%\Anaconda3
 
