@@ -102,7 +102,7 @@ class Stack:
     def addElement(self, element: Element):
         self._elements.append(element)
 
-    def generateMatrix(self):
+    def generateMatrix(self) -> np.ndarray:
         """First and last items just have propagation matrices. """
         matrices = []
         lastItem: Element = None
@@ -110,6 +110,13 @@ class Stack:
             if lastItem is not None:
                 matrices.append(interface(lastItem.n, el.n))
             matrices.append(propagation(lamb, el.n, el.d))
+        matrices.reverse()
+
+        previousMat = None
+        for matrix in matrices:
+            if previousMat is not None:
+                previousMat = np.matmul(previousMat, matrix)
+        return previousMat
 
     def plot(self):
         cycle = cycler('color', ['r', 'g', 'b', 'y', 'c', 'm'])
@@ -148,7 +155,7 @@ def propagation(lamb: float, n: Union[np.ndarray, float], d: float):
 def calc(m):
     # calculates reflected power given a transfer matrix, "m".
     def m_to_scatter(m):
-        return (1 / m[1, 1]) * np.matrix([[m[0, 0] * m[1, 1] - m[0, 1] * m[1, 0], m[0, 1]], [-m[1, 0], 1]])
+        return (1 / m[1, 1]) * np.array([[m[0, 0] * m[1, 1] - m[0, 1] * m[1, 0], m[0, 1]], [-m[1, 0], 1]])
 
     scatter = m_to_scatter(m)
     Reflect = np.real(scatter[1, 0] * np.conj(scatter[1, 0]))
@@ -181,8 +188,7 @@ for l in np.linspace(Low_lambda, High_lambda, num=R.shape[0]):
         '''
         m = (propagation(l, n3, lb / (4 * n3)) * interface(n3, n2) * propagation(l, n2, lb / (4 * n2)) * interface(n2, n3)) ** 10
 
-        R[np.where(np.linspace(Low_lambda, High_lambda, num=R.shape[0]) == l)[0][0], np.where(param == p)[0][0]] = (
-            calc(m))
+        R[np.where(np.linspace(Low_lambda, High_lambda, num=R.shape[0]) == l)[0][0], np.where(param == p)[0][0]] = (calc(m))
 hf = plt.figure()
 ha = hf.add_subplot(111, projection='3d')
 X, Y = np.meshgrid(param, np.linspace(Low_lambda, High_lambda, num=R.shape[0]))
