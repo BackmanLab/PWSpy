@@ -202,6 +202,7 @@ class Stack:
             [m[:, 0, 0] * m[:, 1, 1] - m[:, 0, 1] * m[:, 1, 0], m[:, 0, 1]],
             [-m[:, 1, 0],                              np.ones((m.shape[0],))]])
         scatterMatrix = np.transpose(scatterMatrix, axes=(2, 0, 1))
+        scatterMatrix = (1 / m[:, 1, 1])[:, None, None] * scatterMatrix
         R = scatterMatrix[:, 1, 0] * np.conjugate(scatterMatrix[:, 1, 0])  # The reflectance of the stack. This is a real number. Equivalent to np.absolute(scatterMatrix[1, 0]) ** 2
         assert np.max(np.abs(np.imag(R))) == 0
         return np.real(R)
