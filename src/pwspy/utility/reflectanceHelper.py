@@ -176,6 +176,8 @@ class Stack:
         # Actually the order of terms does not appear to matter.
         assert len(n1) == len(n2)
         assert np.all(n1.index == n2.index)
+        n1 = np.array(n1)
+        n2 = np.array(n2)
         matrix = np.array([[n2 + n1, n2 - n1], [n2 - n1, n2 + n1]])
         matrix = np.transpose(matrix, axes=(2, 0, 1))
         matrix = (1 / (2 * n2))[:, None, None] * matrix
@@ -188,7 +190,7 @@ class Stack:
         # and the index fo the Series is the associated wavelengths. with wavelength.
         # for a distance of "d". d and the wavelengths must use the same units.
         wavelengths = n.index
-        phi = (2 * np.pi / d) * (n / wavelengths)
+        phi = np.array(2 * np.pi * d * n / wavelengths)
         zeroArray = 0 * phi  # Without this our matrix will not shape properly
         matrix = np.array([[np.exp(-phi * 1j), zeroArray], [zeroArray, np.exp(1j * phi)]])
         matrix = np.transpose(matrix, axes=(2,0,1))
