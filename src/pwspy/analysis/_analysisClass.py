@@ -11,7 +11,7 @@ from typing import List, Tuple
 import numpy as np
 import scipy.signal as sps
 from pwspy.analysis import warnings
-from pwspy.utility import reflectanceHelper
+from pwspy.utility.reflection import reflectanceHelper
 from pwspy.moduleConsts import Material
 from . import AnalysisSettings, AnalysisResultsSaver
 import pandas as pd

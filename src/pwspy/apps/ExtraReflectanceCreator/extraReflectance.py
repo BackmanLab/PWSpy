@@ -4,7 +4,7 @@ import matplotlib
 
 from pwspy.dataTypes import ImCube, ExtraReflectanceCube
 from pwspy.dataTypes import ERMetadata, Roi
-from pwspy.utility.reflectanceHelper import getReflectance
+from pwspy.utility.reflection import reflectanceHelper
 from pwspy.moduleConsts import Material
 import itertools
 import matplotlib.pyplot as plt
@@ -71,7 +71,7 @@ def getTheoreticalReflectances(materials: Set[Material], index: Tuple[float]) ->
     `materials`. Index is in units of nanometers."""
     theoryR = {}
     for material in materials:  # For each unique material in the `cubes` list
-        theoryR[material] = getReflectance(material, Material.Glass, index=index)
+        theoryR[material] = reflectanceHelper.getReflectance(material, Material.Glass, index=index)
     return theoryR
 
 
@@ -84,7 +84,7 @@ def generateMaterialCombos(materials: Iterable[Material], excludedCombos: Iterab
     matCombos = [(m1, m2) for m1, m2 in matCombos if
                  not (((m1, m2) in excludedCombos) or ((m2, m1) in excludedCombos))]  # Remove excluded combinations.
     for i, (m1, m2) in enumerate(matCombos):  # Make sure to arrange materials so that our reflectance ratio is greater than 1
-        if (getReflectance(m1, Material.Glass) / getReflectance(m2, Material.Glass)).mean() < 1:
+        if (reflectanceHelper.getReflectance(m1, Material.Glass) / reflectanceHelper.getReflectance(m2, Material.Glass)).mean() < 1:
             matCombos[i] = (m2, m1)
     return matCombos
 
@@ -127,7 +127,7 @@ def calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theory
             c.weight = (c.mat1Spectra - c.mat2Spectra) ** 2 / (c.mat1Spectra ** 2 + c.mat2Spectra ** 2)
             c.rExtra = ((theoryR[mat1] * c.mat2Spectra) - (theoryR[mat2] * c.mat1Spectra)) / (c.mat1Spectra - c.mat2Spectra)
             c.I0 = c.mat2Spectra / (theoryR[mat2] + c.rExtra)
-            waterTheory = getReflectance(Material.Water, Material.Glass, index=list(theoryR.values())[0].index)
+            waterTheory = reflectanceHelper.getReflectance(Material.Water, Material.Glass, index=list(theoryR.values())[0].index)
             c.cFactor = (c.rExtra.mean() + waterTheory.mean()) / waterTheory.mean()
             allCombos[matCombo].append(c)
         meanValues[matCombo] = {}

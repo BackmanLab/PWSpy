@@ -16,7 +16,7 @@ from pwspy.analysis import AnalysisSettings
 from pwspy.apps.PWSAnalysisApp import applicationVars
 from pwspy.apps import resources
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.collapsibleSection import CollapsibleSection
-from pwspy.utility import reflectanceHelper
+from pwspy.utility.reflection import reflectanceHelper
 from pwspy.moduleConsts import Material
 
 
