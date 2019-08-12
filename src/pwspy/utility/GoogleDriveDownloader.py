@@ -11,7 +11,7 @@ from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
 class GoogleDriveDownloader:
     def __init__(self, authPath: str):
         """AuthPath is the folder to store authentication files. Before this class will work you will need to place
-        `credentials.json` in the authPath. You can get this file from the online Google Drive api console.
+        `credentials.json` in the authPath. You can get this file from the online Google Drive api console. Create an Oauth 2.0 credential with access to the drive.file api.
         Upon initializing an instance of this class you will be asked for username and password if you don't already have
         authentication saved from a previous login."""
         self.allFiles = None

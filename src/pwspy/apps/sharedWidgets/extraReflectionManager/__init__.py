@@ -33,6 +33,9 @@ def _offlineDecorator(func):
 
 
 class ERManager:
+    """This class expects that the google drive application will already have access to a folder named
+    `PWSAnalysisAppHostedFiles` which contains a folder `ExtraReflectanceCubes`, you will
+    have to create these manually if starting on a new Drive account."""
     def __init__(self, filePath: str):
         self._directory = filePath
         self.offlineMode = False
