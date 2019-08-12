@@ -5,32 +5,23 @@ Created on Tue Feb 12 19:17:14 2019
 @author: Nick Anthony
 """
 from __future__ import annotations
-import json
-import os
-import typing
-from enum import Enum, auto
-from typing import Optional, List, Tuple
-
-import h5py
-import scipy.io as spio
-import tifffile as tf
-
+from ._MetaDataBaseClass import MetaDataBase
+from . import _jsonSchemasPath
 from pwspy.moduleConsts import dateTimeFormat
 from pwspy.utility.misc import cached_property
 from pwspy.analysis import AnalysisResultsSaver, AnalysisResultsLoader
-if typing.TYPE_CHECKING:
-    import multiprocessing as mp
-from ._MetaDataBaseClass import MetaDataBase
+import json
+import os
+from enum import Enum, auto
+from typing import Optional, List, Tuple
+import h5py
+import scipy.io as spio
+import tifffile as tf
 import numpy as np
 from datetime import datetime
-from . import _jsonSchemasPath
-
-
-class _ICFileFormats(Enum):
-    RawBinary = auto()
-    Tiff = auto()
-    Hdf = auto()
-    NanoMat = auto()
+import typing
+if typing.TYPE_CHECKING:
+    import multiprocessing as mp
 
 
 class ICMetaData(MetaDataBase):

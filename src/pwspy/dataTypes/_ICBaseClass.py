@@ -23,6 +23,7 @@ from pwspy.dataTypes._otherClasses import Roi
 from matplotlib import patches
 import copy
 
+
 class ICBase:
     """A class to handle the data operations common to PWS related `image cubes`. Does not contain any file specific
     functionality. uses the generic `index` attribute which can be overridden by derived classes to be wavelength, wavenumber,
