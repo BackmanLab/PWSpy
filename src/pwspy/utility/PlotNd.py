@@ -12,11 +12,13 @@ from typing import Tuple
 
 from PyQt5.QtWidgets import QMessageBox
 from matplotlib.animation import FuncAnimation
+from abc import ABC
 
 lw = 0.5
 
 
-class Base:
+class PlotBase(ABC):
+    """An abstract class for the plots in the ND plotter widget."""
     def __init__(self, ax):
         self.ax = ax
         self.artists = None
@@ -30,7 +32,7 @@ class Base:
             self.ax.draw_artist(artist)
 
 
-class SidePlot(Base):
+class SidePlot(PlotBase):
     """A line plot meant to sit on the side of the image plot."""
     def __init__(self, ax: plt.Axes, dimLength: int, vertical: bool, invertAxis: bool = False):
         super().__init__(ax)
@@ -72,7 +74,8 @@ class SidePlot(Base):
         self.plot.set_data(*data)
 
 
-class CenterPlot(Base):
+class CenterPlot(PlotBase):
+    """The center plot of the ND plotter widget. consists of an image."""
     def __init__(self, ax: plt.Axes, shape):
         super().__init__(ax)
         self.shape = shape
@@ -97,6 +100,7 @@ class CenterPlot(Base):
 
 
 class CBar:
+    """The colorbar at the top of the ND plotter."""
     def __init__(self, ax: plt.Axes, im):
         self.ax = ax
         self.cbar = plt.colorbar(im, cax=self.ax, orientation='horizontal')
@@ -118,10 +122,12 @@ class PlotNd(object):
        Press 'y' to rotate the order of the secondary axes.
        Press 'u' to rotate the order of all axes, allowing.
        secondary axis to become a primary axis"""
-    def __init__(self, X: np.ndarray, names: Tuple[str,...]=('y', 'x', 'lambda'), initialCoords: Tuple[int,...]=None, title: str='', indices: Tuple[np.ndarray]=(None, None, None)):
+    def __init__(self, X: np.ndarray, names: Tuple[str, ...] = ('y', 'x', 'lambda'),
+                 initialCoords: Tuple[int, ...] = None, title: str = '', indices: Tuple[np.ndarray] = (None, None, None)):
         self.max = self.min = None #  The minimum and maximum for the color scaling
         self.names = names  # The labels for each axis
         self.extraDims = len(X.shape[2:]) # the first two axes are the image dimensions. Any axes after that are extra dimensions that can be scanned through
+        self.childPlots = [] # If this object spawns new Plotnd objects then it will store a reference to them here. otherwise they may be garbage collected and become unresponsive.
         import matplotlib
         matplotlib.rcParams["toolbar"] = "toolmanager"
         from matplotlib.backend_tools import ToolBase
@@ -131,6 +137,7 @@ class PlotNd(object):
 
         tm = fig.canvas.manager.toolmanager
         class MyTool(ToolBase):
+            """This class just provides a `help` button that is used to open a dialog."""
             def trigger(self, *args, **kwargs):
                 msg = QMessageBox.information(None, 'Help!', str(PlotNd.__doc__))
 
@@ -263,19 +270,20 @@ class PlotNd(object):
             names = [self.names[i] for i in axes]
             coords = tuple(self.coords[i] for i in axes)
             newX = np.transpose(self.X, axes)
-            PlotNd(newX, names, coords)
+            self.childPlots.append(PlotNd(newX, names, coords))
+
         elif event.key == 't':
             axes = [1, 0] + list(range(2, len(self.X.shape)))
             names = [self.names[i] for i in axes]
             coords = tuple(self.coords[i] for i in axes)
             newX = np.transpose(self.X, axes)
-            PlotNd(newX, names, coords)
+            self.childPlots.append(PlotNd(newX, names, coords))
         elif event.key == 'y':
             axes = [0, 1] + list(np.roll(np.arange(2, len(self.X.shape)), 1))
             names = [self.names[i] for i in axes]
             coords = tuple(self.coords[i] for i in axes)
             newX = np.transpose(self.X, axes)
-            PlotNd(newX, names, coords)
+            self.childPlots.append(PlotNd(newX, names, coords))
 
     def onclick(self, event):
         if event.inaxes is None:
