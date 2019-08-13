@@ -17,3 +17,4 @@ class Material(Enum):
     Oil_1_4 = auto()
     Ipa = auto()
     Ethanol = auto()
+    ITO = auto()

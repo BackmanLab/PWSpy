@@ -20,7 +20,8 @@ class ReflectanceHelper:
         Material.Oil_1_7: 'CargilleOil1_7.csv',
         Material.Oil_1_4: "CargilleOil1_4.csv",
         Material.Ipa: 'Sani-DellOro-IPA.csv',
-        Material.Ethanol: 'Rheims.csv'}
+        Material.Ethanol: 'Rheims.csv',
+        Material.ITO: 'Konig.csv'}
 
     _instance = None
 
