@@ -147,8 +147,8 @@ class PolarizedStack(Stack):
         n2 = n2.values[:, None]
         n0 = n0.values[:, None]
         angle = angle[None, :]
-        theta1 = np.arcsin(n1 * np.sin(angle) / n0)
-        theta2 = np.arcsin(n2 * np.sin(theta1) / n1)
+        theta1 = np.arcsin(n0 * np.sin(angle) / n1)
+        theta2 = np.arcsin(n0 * np.sin(angle) / n2)
         if polarization is Polarization.TE:
             a21 = 1
             N1 = n1 * np.cos(theta1)
@@ -175,7 +175,7 @@ class PolarizedStack(Stack):
         n = n.values[:, None]
         n0 = n0.values[:, None]
         angle = angle[None, :]
-        theta = np.arcsin(n * np.sin(angle) / n0)
+        theta = np.arcsin(n0 * np.sin(angle) / n)
         phi = n * d * np.cos(theta) * 2 * np.pi / wavelengths
         # phi = np.array(2 * np.pi * d * n / wavelengths)
         zeroArray = np.zeros(phi.shape)  # Without this our matrix will not shape properly
@@ -185,15 +185,15 @@ class PolarizedStack(Stack):
         assert matrix.shape == (n.size, angle.size) + (2, 2)
         return matrix
 
-    def generateMatrix(self, polarization: Polarization, angle: np.ndarray) -> np.ndarray:
+    def generateMatrix(self, polarization: Polarization, NAs: np.ndarray) -> np.ndarray:
         """First and last items just have propagation matrices. """
         matrices = []
         lastItem: Layer = None
         n0 = self.layers[0].getRefractiveIndex(self.wavelengths)
         for el in self.layers:
             if lastItem is not None:
-                matrices.append(self.interfaceMatrix(lastItem.getRefractiveIndex(self.wavelengths), el.getRefractiveIndex(self.wavelengths), polarization, angle, n0))
-            matrices.append(self.propagationMatrix(el.getRefractiveIndex(self.wavelengths), el.d, angle, n0))
+                matrices.append(self.interfaceMatrix(lastItem.getRefractiveIndex(self.wavelengths), el.getRefractiveIndex(self.wavelengths), polarization, NAs, n0))
+            matrices.append(self.propagationMatrix(el.getRefractiveIndex(self.wavelengths), el.d, NAs, n0))
             lastItem = el
         matrices.reverse()
 
@@ -205,11 +205,11 @@ class PolarizedStack(Stack):
                 previousMat = matrix
         return previousMat
 
-    def calculateReflectance(self, angles: np.ndarray):
+    def calculateReflectance(self, NAs: np.ndarray):
         out = {}
         for polarization in Polarization:
-            print(polarization.name, angles)
-            m = self.generateMatrix(polarization, angles)
+            print(polarization.name)
+            m = self.generateMatrix(polarization, NAs)
             # assert m.shape == (len(self.wavelengths),) + (2, 2)
             scatterMatrix = np.array([  # A 2x2 scattering matrix. https://en.wikipedia.org/wiki/S-matrix
                 [m[:, :, 0, 0] * m[:, :, 1, 1] - m[:, :, 0, 1] * m[:, :, 1, 0], m[:, :, 0, 1]],
@@ -220,8 +220,9 @@ class PolarizedStack(Stack):
             out[polarization] = R.real
         return out
 
-    def a(self, angles: np.ndarray):
-        d = self.calculateReflectance(angles)
+    # def circularIntegration(self, ma):
+    def a(self, NAs: np.ndarray):
+        d = self.calculateReflectance(NAs)
         # rTM == a**2, rTE == b**2
         rTM = d[Polarization.TM]
         rTE = d[Polarization.TE]
@@ -234,30 +235,30 @@ class PolarizedStack(Stack):
         ax.set_xlabel("wavelength")
         ax.set_ylabel("Angle")
         ax2.set_xlabel("wavelength")
-        ax2.set_ylabel("Angle")
-        im = ax.imshow(eccentricity, extent=[self.wavelengths[0], self.wavelengths[-1], angles[-1], angles[0]], interpolation=None, aspect='auto')
+        ax2.set_ylabel("NA")
+        im = ax.imshow(eccentricity, extent=[self.wavelengths[0], self.wavelengths[-1], NAs[-1], NAs[0]], interpolation=None, aspect='auto')
         plt.colorbar(im, ax=ax)
-        im = ax2.imshow(r, extent=[self.wavelengths[0], self.wavelengths[-1], angles[-1], angles[0]], interpolation=None, aspect='auto')
+        im = ax2.imshow(r, extent=[self.wavelengths[0], self.wavelengths[-1], NAs[-1], NAs[0]], interpolation=None, aspect='auto')
         plt.colorbar(im, ax=ax2)
         fig.show()
         fig2.show()
         fig3, ax3 = plt.subplots()
         colormap = plt.cm.gist_rainbow
         colors = [colormap(i) for i in np.linspace(0, 0.99, r.shape[1])]
-        norm = mpl.colors.Normalize(vmin=angles[0], vmax=angles[-1])
+        norm = mpl.colors.Normalize(vmin=NAs[0], vmax=NAs[-1])
         sm = plt.cm.ScalarMappable(cmap=colormap, norm=norm)
         for i in range(r.shape[1]):
-            ax3.plot(self.wavelengths, r[:, i], color=colors[i], label=angles[i])
+            ax3.plot(self.wavelengths, r[:, i], color=colors[i], label=NAs[i])
         plt.colorbar(sm, ax=ax3)
         # ax3.legend()
         # ax3.plot(r.mean(axis=0))
         fig3.show()
         fig4, ax4 = plt.subplots()
-        angles = np.rad2deg(angles)
-        ax4.set_xlabel("Angle (degrees)")
-        ax4.plot(angles, rTM.mean(axis=0), label='TM')
-        ax4.plot(angles, rTE.mean(axis=0), label='TE')
-        ax4.plot(angles, r.mean(axis=0), label='R')
+        NAs = np.rad2deg(NAs)
+        ax4.set_xlabel("NA")
+        ax4.plot(NAs, rTM.mean(axis=0), label='TM')
+        ax4.plot(NAs, rTE.mean(axis=0), label='TE')
+        ax4.plot(NAs, r.mean(axis=0), label='R')
         ax4.legend()
         fig4.show()
 
