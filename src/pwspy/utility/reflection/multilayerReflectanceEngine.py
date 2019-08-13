@@ -138,17 +138,14 @@ class NonPolarizedStack(Stack):
 
 class PolarizedStack(Stack):
     @staticmethod
-    def interfaceMatrix(n1: pd.Series, n2: pd.Series, polarization: Polarization, angle: np.ndarray,
-                        n0: pd.Series) -> np.ndarray:
-        #NA = np.sin(angle) * n0 so in theory these variables could both be replaced NA.
+    def interfaceMatrix(n1: pd.Series, n2: pd.Series, polarization: Polarization, NAs: np.ndarray) -> np.ndarray:
         assert len(n1) == len(n2)
         assert np.all(n1.index == n2.index)
         n1 = n1.values[:, None]
         n2 = n2.values[:, None]
-        n0 = n0.values[:, None]
-        angle = angle[None, :]
-        theta1 = np.arcsin(n0 * np.sin(angle) / n1)
-        theta2 = np.arcsin(n0 * np.sin(angle) / n2)
+        NAs = NAs[None, :]
+        theta1 = np.arcsin(NAs / n1)
+        theta2 = np.arcsin(NAs / n2)
         if polarization is Polarization.TE:
             a21 = 1
             N1 = n1 * np.cos(theta1)
@@ -161,39 +158,36 @@ class PolarizedStack(Stack):
                            [N2 - N1, N2 + N1]])
         matrix = np.transpose(matrix, axes=(2, 3, 0, 1))
         matrix = (1 / (2 * a21 * N2))[:, :, None, None] * matrix
-        assert matrix.shape == (n1.size, angle.size) + (2, 2)
+        assert matrix.shape == (n1.size, NAs.size) + (2, 2)
         return matrix
 
 
     @staticmethod
-    def propagationMatrix(n: pd.Series, d: float, angle: np.ndarray,
-                          n0: pd.Series) -> np.ndarray:
+    def propagationMatrix(n: pd.Series, d: float, NAs: np.ndarray) -> np.ndarray:
         # Returns a matrix representing the propagation of light. n should be a pandas Series where the values are complex refractive index
         # and the index fo the Series is the associated wavelengths. with wavelength.
         # for a distance of "d". d and the wavelengths must use the same units.
         wavelengths = np.array(n.index)[:, None]
         n = n.values[:, None]
-        n0 = n0.values[:, None]
-        angle = angle[None, :]
-        theta = np.arcsin(n0 * np.sin(angle) / n)
+        NAs = NAs[None, :]
+        theta = np.arcsin(NAs / n)
         phi = n * d * np.cos(theta) * 2 * np.pi / wavelengths
         # phi = np.array(2 * np.pi * d * n / wavelengths)
         zeroArray = np.zeros(phi.shape)  # Without this our matrix will not shape properly
         matrix = np.array([[np.exp(-1j * phi), zeroArray],
                            [zeroArray, np.exp(1j * phi)]])
         matrix = np.transpose(matrix, axes=(2, 3, 0, 1)) # Move the angle and wavelength dimensions up front. leave the matrix dimensions as the last two.
-        assert matrix.shape == (n.size, angle.size) + (2, 2)
+        assert matrix.shape == (n.size, NAs.size) + (2, 2)
         return matrix
 
     def generateMatrix(self, polarization: Polarization, NAs: np.ndarray) -> np.ndarray:
         """First and last items just have propagation matrices. """
         matrices = []
         lastItem: Layer = None
-        n0 = self.layers[0].getRefractiveIndex(self.wavelengths)
         for el in self.layers:
             if lastItem is not None:
-                matrices.append(self.interfaceMatrix(lastItem.getRefractiveIndex(self.wavelengths), el.getRefractiveIndex(self.wavelengths), polarization, NAs, n0))
-            matrices.append(self.propagationMatrix(el.getRefractiveIndex(self.wavelengths), el.d, NAs, n0))
+                matrices.append(self.interfaceMatrix(lastItem.getRefractiveIndex(self.wavelengths), el.getRefractiveIndex(self.wavelengths), polarization, NAs))
+            matrices.append(self.propagationMatrix(el.getRefractiveIndex(self.wavelengths), el.d, NAs))
             lastItem = el
         matrices.reverse()
 
@@ -226,7 +220,7 @@ class PolarizedStack(Stack):
         # rTM == a**2, rTE == b**2
         rTM = d[Polarization.TM]
         rTE = d[Polarization.TE]
-        eccentricity = np.sqrt(1 - rTE / rTM)
+        eccentricity = np.sqrt(1 - rTM / rTE)
         r = (rTM + rTE) / 2
         fig, ax = plt.subplots()
         fig2, ax2 = plt.subplots()
@@ -254,7 +248,6 @@ class PolarizedStack(Stack):
         # ax3.plot(r.mean(axis=0))
         fig3.show()
         fig4, ax4 = plt.subplots()
-        NAs = np.rad2deg(NAs)
         ax4.set_xlabel("NA")
         ax4.plot(NAs, rTM.mean(axis=0), label='TM')
         ax4.plot(NAs, rTE.mean(axis=0), label='TE')
