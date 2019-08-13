@@ -20,7 +20,7 @@ from pwspy.moduleConsts import Material
 import pandas as pd
 import numpy as np
 from pwspy.utility.reflection import reflectanceHelper
-
+import matplotlib as mpl
 
 class Polarization(Enum):
     TE = auto()  # Transverse Electric Field
@@ -57,6 +57,7 @@ class Stack:
     def addLayer(self, element: Layer):
         self.layers.append(element)
 
+class NonPolarizedStack(Stack):
     def generateMatrix(self) -> np.ndarray:
         """First and last items just have propagation matrices. """
         matrices = []
@@ -134,19 +135,21 @@ class Stack:
         assert np.max(np.abs(np.imag(R))) == 0
         return np.real(R)
 
+
 class PolarizedStack(Stack):
-
-
     @staticmethod
-    def interfaceMatrix(n1: pd.Series, n2: pd.Series, polarization: Polarization, angle: Union[np.ndarray, float], n0: pd.Series) -> np.ndarray:
+    def interfaceMatrix(n1: pd.Series, n2: pd.Series, polarization: Polarization, angle: np.ndarray,
+                        n0: pd.Series) -> np.ndarray:
         #NA = np.sin(angle) * n0 so in theory these variables could both be replaced NA.
         assert len(n1) == len(n2)
         assert np.all(n1.index == n2.index)
-        n1 = np.array(n1)
-        n2 = np.array(n2)
+        n1 = n1.values[:, None]
+        n2 = n2.values[:, None]
+        n0 = n0.values[:, None]
+        angle = angle[None, :]
         theta1 = np.arcsin(n1 * np.sin(angle) / n0)
         theta2 = np.arcsin(n2 * np.sin(theta1) / n1)
-        if polarization == Polarization.TE:
+        if polarization is Polarization.TE:
             a21 = 1
             N1 = n1 * np.cos(theta1)
             N2 = n2 * np.cos(theta2)
@@ -156,30 +159,33 @@ class PolarizedStack(Stack):
             N2 = n2 / np.cos(theta2)
         matrix = np.array([[N2 + N1, N2 - N1],
                            [N2 - N1, N2 + N1]])
-        matrix = np.transpose(matrix, axes=(2, 0, 1))
-        matrix = (1 / (2 * a21 * N2))[:, None, None] * matrix
-        assert matrix.shape == (len(n1),) + (2, 2)
+        matrix = np.transpose(matrix, axes=(2, 3, 0, 1))
+        matrix = (1 / (2 * a21 * N2))[:, :, None, None] * matrix
+        assert matrix.shape == (n1.size, angle.size) + (2, 2)
         return matrix
 
 
     @staticmethod
-    def propagationMatrix(n: pd.Series, d: float, angle: Union[pd.Series, float],
+    def propagationMatrix(n: pd.Series, d: float, angle: np.ndarray,
                           n0: pd.Series) -> np.ndarray:
         # Returns a matrix representing the propagation of light. n should be a pandas Series where the values are complex refractive index
         # and the index fo the Series is the associated wavelengths. with wavelength.
         # for a distance of "d". d and the wavelengths must use the same units.
-        wavelengths = n.index
+        wavelengths = np.array(n.index)[:, None]
+        n = n.values[:, None]
+        n0 = n0.values[:, None]
+        angle = angle[None, :]
         theta = np.arcsin(n * np.sin(angle) / n0)
         phi = n * d * np.cos(theta) * 2 * np.pi / wavelengths
         # phi = np.array(2 * np.pi * d * n / wavelengths)
         zeroArray = np.zeros(phi.shape)  # Without this our matrix will not shape properly
         matrix = np.array([[np.exp(-1j * phi), zeroArray],
                            [zeroArray, np.exp(1j * phi)]])
-        matrix = np.transpose(matrix, axes=(2, 0, 1))
-        assert matrix.shape == (len(n),) + (2, 2)
+        matrix = np.transpose(matrix, axes=(2, 3, 0, 1)) # Move the angle and wavelength dimensions up front. leave the matrix dimensions as the last two.
+        assert matrix.shape == (n.size, angle.size) + (2, 2)
         return matrix
 
-    def generateMatrix(self, polarization: Polarization, angle: float) -> np.ndarray:
+    def generateMatrix(self, polarization: Polarization, angle: np.ndarray) -> np.ndarray:
         """First and last items just have propagation matrices. """
         matrices = []
         lastItem: Layer = None
@@ -199,25 +205,22 @@ class PolarizedStack(Stack):
                 previousMat = matrix
         return previousMat
 
-    def calculateReflectance(self, angles: List[float]):
+    def calculateReflectance(self, angles: np.ndarray):
         out = {}
         for polarization in Polarization:
-            r = []
-            for angle in angles:
-                print(polarization.name, angle)
-                m = self.generateMatrix(polarization, angle)
-                assert m.shape == (len(self.wavelengths),) + (2, 2)
-                scatterMatrix = np.array([  # A 2x2 scattering matrix. https://en.wikipedia.org/wiki/S-matrix
-                    [m[:, 0, 0] * m[:, 1, 1] - m[:, 0, 1] * m[:, 1, 0], m[:, 0, 1]],
-                    [-m[:, 1, 0],                              np.ones((m.shape[0],))]])
-                scatterMatrix = np.transpose(scatterMatrix, axes=(2, 0, 1))
-                scatterMatrix = (1 / m[:, 1, 1])[:, None, None] * scatterMatrix
-                R = scatterMatrix[:, 1, 0] * np.conjugate(scatterMatrix[:, 1, 0])  # The reflectance of the stack. This is a real number. Equivalent to np.absolute(scatterMatrix[1, 0]) ** 2
-                r.append(np.real(R))
-            out[polarization] = np.array(r)
+            print(polarization.name, angles)
+            m = self.generateMatrix(polarization, angles)
+            # assert m.shape == (len(self.wavelengths),) + (2, 2)
+            scatterMatrix = np.array([  # A 2x2 scattering matrix. https://en.wikipedia.org/wiki/S-matrix
+                [m[:, :, 0, 0] * m[:, :, 1, 1] - m[:, :, 0, 1] * m[:, :, 1, 0], m[:, :, 0, 1]],
+                [-m[:, :, 1, 0],                              np.ones((m.shape[0], m.shape[1]))]])
+            scatterMatrix = np.transpose(scatterMatrix, axes=(2, 3, 0, 1))
+            scatterMatrix = (1 / m[:, :, 1, 1])[:, :, None, None] * scatterMatrix
+            R = scatterMatrix[:, :, 1, 0] * np.conjugate(scatterMatrix[:, :, 1, 0])  # The reflectance of the stack. This is a real number. Equivalent to np.absolute(scatterMatrix[1, 0]) ** 2
+            out[polarization] = R.real
         return out
 
-    def a(self, angles: Union[List[float], np.ndarray]):
+    def a(self, angles: np.ndarray):
         d = self.calculateReflectance(angles)
         # rTM == a**2, rTE == b**2
         rTM = d[Polarization.TM]
@@ -226,36 +229,45 @@ class PolarizedStack(Stack):
         r = (rTM + rTE) / 2
         fig, ax = plt.subplots()
         fig2, ax2 = plt.subplots()
-        fig.suptitle("E")
+        fig.suptitle("Eccentricity")
         fig2.suptitle("R")
         ax.set_xlabel("wavelength")
         ax.set_ylabel("Angle")
         ax2.set_xlabel("wavelength")
         ax2.set_ylabel("Angle")
-        ax.imshow(eccentricity, extent=[self.wavelengths[0], self.wavelengths[-1], angles[-1], angles[0]], interpolation=None, aspect='auto')
-        ax2.imshow(r, extent=[self.wavelengths[0], self.wavelengths[-1], angles[-1], angles[0]], interpolation=None, aspect='auto')
+        im = ax.imshow(eccentricity, extent=[self.wavelengths[0], self.wavelengths[-1], angles[-1], angles[0]], interpolation=None, aspect='auto')
+        plt.colorbar(im, ax=ax)
+        im = ax2.imshow(r, extent=[self.wavelengths[0], self.wavelengths[-1], angles[-1], angles[0]], interpolation=None, aspect='auto')
+        plt.colorbar(im, ax=ax2)
         fig.show()
         fig2.show()
         fig3, ax3 = plt.subplots()
-        for i in range(r.shape[0]):
-            ax3.plot(r[i, :], label=i)
-        ax3.legend()
+        colormap = plt.cm.gist_rainbow
+        colors = [colormap(i) for i in np.linspace(0, 0.99, r.shape[1])]
+        norm = mpl.colors.Normalize(vmin=angles[0], vmax=angles[-1])
+        sm = plt.cm.ScalarMappable(cmap=colormap, norm=norm)
+        for i in range(r.shape[1]):
+            ax3.plot(self.wavelengths, r[:, i], color=colors[i], label=angles[i])
+        plt.colorbar(sm, ax=ax3)
+        # ax3.legend()
         # ax3.plot(r.mean(axis=0))
         fig3.show()
         fig4, ax4 = plt.subplots()
-        ax4.plot(angles, rTM.mean(axis=1), label='TM')
-        ax4.plot(angles, rTE.mean(axis=1), label='TE')
-        ax4.plot(angles, r.mean(axis=1), label='R')
+        angles = np.rad2deg(angles)
+        ax4.set_xlabel("Angle (degrees)")
+        ax4.plot(angles, rTM.mean(axis=0), label='TM')
+        ax4.plot(angles, rTE.mean(axis=0), label='TE')
+        ax4.plot(angles, r.mean(axis=0), label='R')
         ax4.legend()
         fig4.show()
 
 if __name__ == '__main__':
-    num = 30
-    wv = np.linspace(500, 700, num=50)
+    num = 100
+    wv = np.linspace(500, 700, num=100)
     s = PolarizedStack(wv)
     s.addLayer(Layer(Material.Air, 100000))
-    s.addLayer(Layer(Material.Water, 1400))
+    s.addLayer(Layer(Material.Water, 2000))
     s.addLayer(Layer(Material.Glass, 10000))
     # s.addLayer(Layer(Material.Air, 10000))
-    s.a(np.linspace(0, np.pi/4, num=num))
+    s.a(np.linspace(0, .52, num=num))
     pass
