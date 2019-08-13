@@ -40,7 +40,7 @@ class Layer:
     def getRefractiveIndex(self, wavelengths: np.ndarray) -> pd.Series:
         if isinstance(self.mat, Material):
             n = reflectanceHelper.getRefractiveIndex(self.mat, wavelengths=wavelengths)
-            n = pd.Series(n.real, index=n.index)
+            n = pd.Series(n.real, index=n.index) # TODO we are failing to account for absorption here.
             return n
         elif isinstance(self.mat, Number):
             return pd.Series(np.array([self.mat]*len(wavelengths)), index=wavelengths)
@@ -214,9 +214,15 @@ class PolarizedStack(Stack):
             out[polarization] = R.real
         return out
 
-    # def circularIntegration(self, ma):
-    def a(self, NAs: np.ndarray):
-        d = self.calculateReflectance(NAs)
+    def circularIntegration(self, d: dict, NAs: np.ndarray) -> np.ndarray:
+        r = (d[Polarization.TE] + d[Polarization.TM]) / 2
+        integral = np.zeros(self.wavelengths.shape)
+        dna = NAs[1] - NAs[0]  #The difference between discrete NAs in our discrete integral.
+        for i, na in enumerate(NAs):
+            integral += 2 * np.pi * na * r[:, i] * dna
+        return integral
+
+    def a(self, d: dict, NAs: np.ndarray):
         # rTM == a**2, rTE == b**2
         rTM = d[Polarization.TM]
         rTE = d[Polarization.TE]
@@ -259,9 +265,16 @@ if __name__ == '__main__':
     num = 100
     wv = np.linspace(500, 700, num=100)
     s = PolarizedStack(wv)
-    s.addLayer(Layer(Material.Air, 100000))
-    s.addLayer(Layer(Material.Water, 2000))
     s.addLayer(Layer(Material.Glass, 10000))
+    s.addLayer(Layer(Material.ITO, 2000))
+    s.addLayer(Layer(Material.Air, 100000))
     # s.addLayer(Layer(Material.Air, 10000))
-    s.a(np.linspace(0, .52, num=num))
+    nas = np.linspace(0, .52, num=num)
+    d = s.calculateReflectance(nas)
+    s.a(d, nas)
+    out = s.circularIntegration(d, nas)
+    fig, ax = plt.subplots()
+    ax.plot(out)
+    fig.show()
+
     pass
