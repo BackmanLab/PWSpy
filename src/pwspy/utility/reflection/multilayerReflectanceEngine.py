@@ -48,7 +48,6 @@ class Layer:
             return self.mat
 
 
-#TODO support 5d arrays where 2 dimensions are matrix mult dimensions and the other two dimensions are angle and lambda and index.
 class Stack:
     def __init__(self, wavelengths: np.ndarray, elements: Optional[List[Layer]] = []):
         assert len(wavelengths.shape) == 1
@@ -171,8 +170,8 @@ class PolarizedStack(Stack):
         # for a distance of "d". d and the wavelengths must use the same units.
         wavelengths = n.index
         theta = np.arcsin(n * np.sin(angle) / n0)
-        phi = n * d * np.cos(theta)
-        phi = np.array(2 * np.pi * d * n / wavelengths)
+        phi = n * d * np.cos(theta) * 2 * np.pi / wavelengths
+        # phi = np.array(2 * np.pi * d * n / wavelengths)
         zeroArray = np.zeros(phi.shape)  # Without this our matrix will not shape properly
         matrix = np.array([[np.exp(-1j * phi), zeroArray],
                            [zeroArray, np.exp(1j * phi)]])
