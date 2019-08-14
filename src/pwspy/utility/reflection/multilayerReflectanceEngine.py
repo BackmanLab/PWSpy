@@ -27,6 +27,7 @@ class Polarization(Enum):
     TM = auto()  # Transverse Magnetic Field
 
 class Layer:
+    """This represents a layer with a thickness and an index of refraction. Note: This whole system only supports lossless media, we only use the real part of the index of refraction."""
     def __init__(self, mat: Union[Number, pd.Series, Material], d: float, name: str = None):
         if not isinstance(mat, (Number, pd.Series, Material)):
             raise TypeError(f"Type {type(mat)} is not supported")
@@ -40,7 +41,7 @@ class Layer:
     def getRefractiveIndex(self, wavelengths: np.ndarray) -> pd.Series:
         if isinstance(self.mat, Material):
             n = reflectanceHelper.getRefractiveIndex(self.mat, wavelengths=wavelengths)
-            n = pd.Series(n.real, index=n.index) # TODO we are failing to account for absorption here.
+            n = pd.Series(n.real, index=n.index)
             return n
         elif isinstance(self.mat, Number):
             return pd.Series(np.array([self.mat]*len(wavelengths)), index=wavelengths)
@@ -58,6 +59,9 @@ class Stack:
         self.layers.append(element)
 
 class NonPolarizedStack(Stack):
+    def __init__(self, wavelengths: np.ndarray, elements: Optional[List[Layer]] = []):
+        super().__init__(wavelengths, elements)
+
     def generateMatrix(self) -> np.ndarray:
         """First and last items just have propagation matrices. """
         matrices = []
@@ -94,9 +98,9 @@ class NonPolarizedStack(Stack):
 
     @staticmethod
     def interfaceMatrix(n1: pd.Series, n2: pd.Series) -> np.ndarray:
-        # Returns a matrix representing the interface between two dielectrics with indices n1 on the left and n2 on the right.
-        # Actually the order of terms does not appear to matter. This does not account for polarization or incidence angles
-        # other than 0 degrees.
+        """Returns a matrix representing the interface between two dielectrics with indices n1 on the left and n2 on the right.
+        Actually the order of terms does not appear to matter. This does not account for polarization or incidence angles
+        other than 0 degrees."""
         assert len(n1) == len(n2)
         assert np.all(n1.index == n2.index)
         n1 = np.array(n1)
@@ -111,9 +115,9 @@ class NonPolarizedStack(Stack):
 
     @staticmethod
     def propagationMatrix(n: pd.Series, d: float) -> np.ndarray:
-        # Returns a matrix representing the propagation of light. n should be a pandas Series where the values are complex refractive index
-        # and the index fo the Series is the associated wavelengths. with wavelength.
-        # for a distance of "d". d and the wavelengths must use the same units.
+        """Returns a matrix representing the propagation of light. n should be a pandas Series where the values are
+         complex refractive index and the index fo the Series is the associated wavelengths. with wavelength.
+        for a distance of "d". d and the wavelengths must use the same units."""
         wavelengths = n.index
         phi = np.array(2 * np.pi * d * n / wavelengths)
         zeroArray = 0 * phi  # Without this our matrix will not shape properly
@@ -125,7 +129,7 @@ class NonPolarizedStack(Stack):
 
     def calculateReflectance(self):
         m = self.generateMatrix()
-        assert m.shape == (len(self.wavelengths),) + (2, 2) #TODO for now this is how it works. should be expanded to higher dimensionality later.
+        assert m.shape == (len(self.wavelengths),) + (2, 2)
         scatterMatrix = np.array([ # A 2x2 scattering matrix. https://en.wikipedia.org/wiki/S-matrix
             [m[:, 0, 0] * m[:, 1, 1] - m[:, 0, 1] * m[:, 1, 0], m[:, 0, 1]],
             [-m[:, 1, 0],                              np.ones((m.shape[0],))]])
@@ -137,6 +141,9 @@ class NonPolarizedStack(Stack):
 
 
 class PolarizedStack(Stack):
+    def __init__(self, wavelengths: np.ndarray, elements: Optional[List[Layer]] = []):
+        super().__init__(wavelengths, elements)
+
     @staticmethod
     def interfaceMatrix(n1: pd.Series, n2: pd.Series, polarization: Polarization, NAs: np.ndarray) -> np.ndarray:
         assert len(n1) == len(n2)
@@ -204,7 +211,6 @@ class PolarizedStack(Stack):
         for polarization in Polarization:
             print(polarization.name)
             m = self.generateMatrix(polarization, NAs)
-            # assert m.shape == (len(self.wavelengths),) + (2, 2)
             scatterMatrix = np.array([  # A 2x2 scattering matrix. https://en.wikipedia.org/wiki/S-matrix
                 [m[:, :, 0, 0] * m[:, :, 1, 1] - m[:, :, 0, 1] * m[:, :, 1, 0], m[:, :, 0, 1]],
                 [-m[:, :, 1, 0],                              np.ones((m.shape[0], m.shape[1]))]])
@@ -215,6 +221,7 @@ class PolarizedStack(Stack):
         return out
 
     def circularIntegration(self, d: dict, NAs: np.ndarray) -> np.ndarray:
+        #TODO this doesn't work.
         r = (d[Polarization.TE] + d[Polarization.TM]) / 2
         integral = np.zeros(self.wavelengths.shape)
         dna = NAs[1] - NAs[0]  #The difference between discrete NAs in our discrete integral.
@@ -222,25 +229,35 @@ class PolarizedStack(Stack):
             integral += 2 * np.pi * na * r[:, i] * dna
         return integral
 
-    def a(self, d: dict, NAs: np.ndarray):
+    def a(self, d: dict, NAs: np.ndarray, polarization: Polarization = None):
         # rTM == a**2, rTE == b**2
         rTM = d[Polarization.TM]
         rTE = d[Polarization.TE]
-        eccentricity = np.sqrt(1 - rTM / rTE)
-        r = (rTM + rTE) / 2
-        fig, ax = plt.subplots()
+        if polarization is None:
+            eccentricity = np.sqrt(1 - rTM / rTE)
+            r = (rTM + rTE) / 2
+        elif polarization == Polarization.TE:
+            r = rTE
+            eccentricity = None
+        elif polarization == Polarization.TM:
+            r = rTM
+            eccentricity = None
+        else:
+            raise TypeError(f"`polarization` must be Polarization, not {type(polarization)}.")
         fig2, ax2 = plt.subplots()
-        fig.suptitle("Eccentricity")
         fig2.suptitle("R")
-        ax.set_ylabel("wavelength")
-        ax.set_xlabel("Angle")
         ax2.set_ylabel("wavelength")
         ax2.set_xlabel("NA")
-        im = ax.imshow(eccentricity, extent=[NAs[-1], NAs[0], self.wavelengths[0], self.wavelengths[-1]], interpolation=None, aspect='auto')
-        plt.colorbar(im, ax=ax)
+        if eccentricity is not None:
+            fig, ax = plt.subplots()
+            fig.suptitle("Eccentricity")
+            ax.set_ylabel("wavelength")
+            ax.set_xlabel("Angle")
+            im = ax.imshow(eccentricity, extent=[NAs[-1], NAs[0], self.wavelengths[0], self.wavelengths[-1]], interpolation=None, aspect='auto')
+            plt.colorbar(im, ax=ax)
+            fig.show()
         im = ax2.imshow(r, extent=[NAs[-1], NAs[0], self.wavelengths[0], self.wavelengths[-1]], interpolation=None, aspect='auto')
         plt.colorbar(im, ax=ax2)
-        fig.show()
         fig2.show()
         fig3, ax3 = plt.subplots()
         colormap = plt.cm.gist_rainbow
@@ -262,19 +279,28 @@ class PolarizedStack(Stack):
         fig4.show()
 
 if __name__ == '__main__':
-    num = 100
+    num = 40
     wv = np.linspace(500, 700, num=100)
     s = PolarizedStack(wv)
-    s.addLayer(Layer(Material.Glass, 10000))
+    s2 = NonPolarizedStack(wv)
+    s.addLayer(Layer(Material.Glass, 100000))
     s.addLayer(Layer(Material.ITO, 2000))
-    s.addLayer(Layer(Material.Air, 100000))
-    # s.addLayer(Layer(Material.Air, 10000))
-    nas = np.linspace(0, .52, num=num)
+    s.addLayer(Layer(Material.Air, 10000))
+
+    s2.addLayer(Layer(Material.Glass, 100000))
+    s2.addLayer(Layer(Material.ITO, 2000))
+    s2.addLayer(Layer(Material.Air, 10000))
+
+    nas = np.linspace(0, .52, num=1000)
     d = s.calculateReflectance(nas)
     s.a(d, nas)
     out = s.circularIntegration(d, nas)
     fig, ax = plt.subplots()
-    ax.plot(out)
+    ax.plot(s.wavelengths, out)
     fig.show()
 
+    r = s2.calculateReflectance()
+    plt.figure()
+    plt.plot(s2.wavelengths, r)
+    plt.show()
     pass
