@@ -220,21 +220,20 @@ class PolarizedStack(Stack):
             out[polarization] = R.real
         return out
 
-    def circularIntegration(self, d: dict, NAs: np.ndarray) -> np.ndarray:
-        #TODO this doesn't work.
+    def circularIntegration(self, nas: np.ndarray):
+        from scipy.integrate import trapz
+        d = self.calculateReflectance(nas)
         r = (d[Polarization.TE] + d[Polarization.TM]) / 2
-        integral = np.zeros(self.wavelengths.shape)
-        dna = NAs[1] - NAs[0]  #The difference between discrete NAs in our discrete integral.
-        for i, na in enumerate(NAs):
-            integral += 2 * np.pi * na * r[:, i] * dna
-        return integral
+        r = r * 2 * np.pi * nas
+        inte = trapz(r, nas, nas[1] - nas[0], axis=1)
+        return inte
 
-    def a(self, d: dict, NAs: np.ndarray, polarization: Polarization = None):
-        # rTM == a**2, rTE == b**2
+    def plot(self, NAs: np.ndarray, polarization: Polarization = None):
+        d = self.calculateReflectance(nas)
         rTM = d[Polarization.TM]
         rTE = d[Polarization.TE]
         if polarization is None:
-            eccentricity = np.sqrt(1 - rTM / rTE)
+            eccentricity = np.sqrt(1 - rTM / rTE)        # rTM == a**2, rTE == b**2
             r = (rTM + rTE) / 2
         elif polarization == Polarization.TE:
             r = rTE
@@ -292,9 +291,8 @@ if __name__ == '__main__':
     s2.addLayer(Layer(Material.Air, 10000))
 
     nas = np.linspace(0, .52, num=1000)
-    d = s.calculateReflectance(nas)
-    s.a(d, nas)
-    out = s.circularIntegration(d, nas)
+    s.plot(nas)
+    out = s.circularIntegration(nas)
     fig, ax = plt.subplots()
     ax.plot(s.wavelengths, out)
     fig.show()
