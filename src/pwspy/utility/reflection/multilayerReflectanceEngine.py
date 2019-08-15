@@ -50,18 +50,18 @@ class Layer:
 
 
 class Stack:
-    def __init__(self, wavelengths: np.ndarray, elements: Optional[List[Layer]] = []):
+    def __init__(self, wavelengths: np.ndarray, elements: Optional[List[Layer]] = None):
         assert len(wavelengths.shape) == 1
         self.wavelengths = wavelengths
-        self.layers = elements
+        if elements is None:
+            self.layers = []
+        else:
+            self.layers = elements
 
     def addLayer(self, element: Layer):
         self.layers.append(element)
 
 class NonPolarizedStack(Stack):
-    def __init__(self, wavelengths: np.ndarray, elements: Optional[List[Layer]] = []):
-        super().__init__(wavelengths, elements)
-
     def generateMatrix(self) -> np.ndarray:
         """First and last items just have propagation matrices. """
         matrices = []
@@ -141,9 +141,6 @@ class NonPolarizedStack(Stack):
 
 
 class PolarizedStack(Stack):
-    def __init__(self, wavelengths: np.ndarray, elements: Optional[List[Layer]] = []):
-        super().__init__(wavelengths, elements)
-
     @staticmethod
     def interfaceMatrix(n1: pd.Series, n2: pd.Series, polarization: Polarization, NAs: np.ndarray) -> np.ndarray:
         assert len(n1) == len(n2)
