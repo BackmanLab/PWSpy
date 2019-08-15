@@ -221,9 +221,10 @@ class PolarizedStack(Stack):
         from scipy.integrate import trapz
         d = self.calculateReflectance(nas)
         r = (d[Polarization.TE] + d[Polarization.TM]) / 2
-        r = r * 2 * np.pi * nas
-        inte = trapz(r, nas, nas[1] - nas[0], axis=1)
-        return inte
+        r = r * 2 * np.pi * nas #The aperture plane is a disk, higher NAs have larger circumference disks contributing to them. hence the 2pi*na factor.
+        inte = trapz(r, nas, axis=1)
+        int2 = trapz(2*np.pi*nas, nas) #This is used for normalization. basically accounting for the fact that na is proportional to radius in aperture plane, not equal.
+        return inte / int2
 
     def plot(self, NAs: np.ndarray, polarization: Polarization = None):
         d = self.calculateReflectance(nas)
