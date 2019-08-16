@@ -232,7 +232,7 @@ class Stack(StackBase):
             out[polarization] = R.real
         return out
 
-    def circularIntegration(self, nas: np.ndarray):
+    def circularIntegration(self, nas: np.ndarray) -> pd.Series:
         """Given an array of NumericalApertures (usually from 0 to NAMax.) This function integrates the reflectance over
         a disc of Numerical Apertures (Just like in a microscope the Aperture plane is a disc shape, with higher NA
         being further from the center.) Ultimately the result of this integration should match the reflectance measured
@@ -243,7 +243,7 @@ class Stack(StackBase):
         r = r * 2 * np.pi * nas #The aperture plane is a disk, higher NAs have larger circumference disks contributing to them. hence the 2pi*na factor.
         inte = trapz(r, nas, axis=1)
         int2 = trapz(2*np.pi*nas, nas) #This is used for normalization. basically accounting for the fact that na is proportional to radius in aperture plane, not equal.
-        return inte / int2
+        return pd.Series(inte / int2, index=self.wavelengths)
 
     def plot(self, NAs: np.ndarray, polarization: Polarization = None):
         """Plot various graphs of reflectance vs NA. NAs should be an array of Numerical apertures to have the

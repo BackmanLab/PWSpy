@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 import os
 from pwspy.moduleConsts import Material
-
+from .multilayerReflectanceEngine import Stack, Layer
 
 class ReflectanceHelper:
     materialFiles = {
@@ -60,27 +60,35 @@ class ReflectanceHelper:
         df = df.interpolate('index')
         self.n = df.loc[first:last]
 
-
-    def getReflectance(self, mat1: Material, mat2: Material, wavelengths=None) -> pd.Series:
+    def getReflectance(self, mat1: Material, mat2: Material, wavelengths=None, NA: float=None) -> pd.Series:
         """Given the names of two interfaces this provides the reflectance in units of percent.
-        If given a series as index the data will be interpolated and reindexed to match the index."""
+        If given a series as index the data will be interpolated and reindexed to match the index. If NA is None the result
+        is for light with 0 degree angle of incidence. If NA is specified then the result is the disc integral from
+        0 to NA, this should match what is seen in the microscope."""
+        index = self.n.index if wavelengths is None else wavelengths
+        s = Stack(wavelengths=index)
+        s.addLayer(Layer(mat1, 1e9))  # Add a meter thick layer
+        s.addLayer(Layer(mat2, 1e9))
+        if NA is None:
+            r = pd.Series(s.calculateReflectance(np.array([0])), index=wavelengths) # Get reflectance at 0 NA (0 incident angle)
+        else:
+            r = s.circularIntegration(np.linspace(0, NA, num=1000))
+        return r
 
-        # nc1 = np.array([np.complex(i[0], i[1]) for idx, i in n[mat1].iterrows()])  # complex index for material 1
-        # nc2 = np.array([np.complex(i[0], i[1]) for idx, i in n[mat2].iterrows()])
-        nc1 = self.getRefractiveIndex(mat1)
-        nc2 = self.getRefractiveIndex(mat2)
-        result = np.abs(((nc1 - nc2) / (nc1 + nc2)) ** 2)
-        result = pd.Series(result, index=self.n.index)
-        if wavelengths is not None:
-            wavelengths = pd.Index(wavelengths)
-            combinedIdx = result.index.append(
-                wavelengths)  # An index that contains all the original index points and all of the new. That way we can interpolate without first throwing away old data.
-            result = result.reindex(combinedIdx)
-            result = result.sort_index()
-            result = result.interpolate(method='index')  #Use the values of the index rather than assuming it is linearly spaced.
-            result = result[~result.index.duplicated()]  # remove duplicate indices to avoid error
-            result = result.reindex(wavelengths)  # reindex again to get rid of unwanted index points.
-        return result
+        # nc1 = self.getRefractiveIndex(mat1)
+        # nc2 = self.getRefractiveIndex(mat2)
+        # result = np.abs(((nc1 - nc2) / (nc1 + nc2)) ** 2)
+        # result = pd.Series(result, index=self.n.index)
+        # if wavelengths is not None:
+        #     wavelengths = pd.Index(wavelengths)
+        #     combinedIdx = result.index.append(
+        #         wavelengths)  # An index that contains all the original index points and all of the new. That way we can interpolate without first throwing away old data.
+        #     result = result.reindex(combinedIdx)
+        #     result = result.sort_index()
+        #     result = result.interpolate(method='index')  #Use the values of the index rather than assuming it is linearly spaced.
+        #     result = result[~result.index.duplicated()]  # remove duplicate indices to avoid error
+        #     result = result.reindex(wavelengths)  # reindex again to get rid of unwanted index points.
+        # return result
 
 
     def getRefractiveIndex(self, mat: Material, wavelengths=None) -> pd.Series:
