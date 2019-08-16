@@ -22,12 +22,15 @@ import numpy as np
 from pwspy.utility.reflection import reflectanceHelper
 import matplotlib as mpl
 
+
 class Polarization(Enum):
     TE = auto()  # Transverse Electric Field
     TM = auto()  # Transverse Magnetic Field
 
+
 class Layer:
-    """This represents a layer with a thickness and an index of refraction. Note: This whole system only supports lossless media, we only use the real part of the index of refraction."""
+    """This represents a layer with a thickness and an index of refraction. Note: This whole system only supports
+    lossless media, we only use the real part of the index of refraction."""
     def __init__(self, mat: Union[Number, pd.Series, Material], d: float, name: str = None):
         if not isinstance(mat, (Number, pd.Series, Material)):
             raise TypeError(f"Type {type(mat)} is not supported")
@@ -49,7 +52,7 @@ class Layer:
             return self.mat
 
 
-class Stack:
+class StackBase:
     def __init__(self, wavelengths: np.ndarray, elements: Optional[List[Layer]] = None):
         assert len(wavelengths.shape) == 1
         self.wavelengths = wavelengths
@@ -61,8 +64,11 @@ class Stack:
     def addLayer(self, element: Layer):
         self.layers.append(element)
 
-class NonPolarizedStack(Stack):
-    def generateMatrix(self) -> np.ndarray:
+
+class NonPolarizedStack(StackBase):
+    """Represents a stack of 1d homogenous films. Reflectance can only be calculated at 0 incidence angle in which case
+    polarization is irrelevant. This class does not do anything that can't be done with the `Stack`. Indices of refraction must be real (no absorption)."""
+    def _generateMatrix(self) -> np.ndarray:
         """First and last items just have propagation matrices. """
         matrices = []
         lastItem: Layer = None
@@ -128,7 +134,7 @@ class NonPolarizedStack(Stack):
         return matrix
 
     def calculateReflectance(self):
-        m = self.generateMatrix()
+        m = self._generateMatrix()
         assert m.shape == (len(self.wavelengths),) + (2, 2)
         scatterMatrix = np.array([ # A 2x2 scattering matrix. https://en.wikipedia.org/wiki/S-matrix
             [m[:, 0, 0] * m[:, 1, 1] - m[:, 0, 1] * m[:, 1, 0], m[:, 0, 1]],
@@ -140,9 +146,14 @@ class NonPolarizedStack(Stack):
         return np.real(R)
 
 
-class PolarizedStack(Stack):
+class Stack(StackBase):
+    """Represents a stack of 1d homogenous films. Reflectance for the two polarizations can be calculated for a range of
+    numerical apertures (angles). Indices of refraction must be real (no absorption)."""
     @staticmethod
     def interfaceMatrix(n1: pd.Series, n2: pd.Series, polarization: Polarization, NAs: np.ndarray) -> np.ndarray:
+        """Returns a matrix representing a dieletric interface. n1 and n2 should be a pandas Series where the values are complex refractive index
+        and the index of the Series is the associated wavelengths.
+        for a distance of "d". d and the wavelengths must use the same units."""
         assert len(n1) == len(n2)
         assert np.all(n1.index == n2.index)
         n1 = n1.values[:, None]
@@ -168,9 +179,9 @@ class PolarizedStack(Stack):
 
     @staticmethod
     def propagationMatrix(n: pd.Series, d: float, NAs: np.ndarray) -> np.ndarray:
-        # Returns a matrix representing the propagation of light. n should be a pandas Series where the values are complex refractive index
-        # and the index fo the Series is the associated wavelengths. with wavelength.
-        # for a distance of "d". d and the wavelengths must use the same units.
+        """Returns a matrix representing the propagation of light. n should be a pandas Series where the values are complex refractive index
+        and the index fo the Series is the associated wavelengths.
+        for a distance of "d". d and the wavelengths must use the same units."""
         wavelengths = np.array(n.index)[:, None]
         n = n.values[:, None]
         NAs = NAs[None, :]
@@ -184,7 +195,7 @@ class PolarizedStack(Stack):
         assert matrix.shape == (n.size, NAs.size) + (2, 2)
         return matrix
 
-    def generateMatrix(self, polarization: Polarization, NAs: np.ndarray) -> np.ndarray:
+    def _generateMatrix(self, polarization: Polarization, NAs: np.ndarray) -> np.ndarray:
         """First and last items just have propagation matrices. """
         matrices = []
         lastItem: Layer = None
@@ -204,10 +215,14 @@ class PolarizedStack(Stack):
         return previousMat
 
     def calculateReflectance(self, NAs: np.ndarray):
+        """Given an array of numerical apertures this function returns the reflectance as a dictionary of 2d arrays.
+        There is one 2d array for each of the two polarizations. the dimensions of the array is (wavelengths x NAs).
+        The total reflectance can be calculated as the average reflectance of the two polarizations. Other ellipsometric
+        parameters can also be calculated."""
         out = {}
         for polarization in Polarization:
             print(polarization.name)
-            m = self.generateMatrix(polarization, NAs)
+            m = self._generateMatrix(polarization, NAs)
             scatterMatrix = np.array([  # A 2x2 scattering matrix. https://en.wikipedia.org/wiki/S-matrix
                 [m[:, :, 0, 0] * m[:, :, 1, 1] - m[:, :, 0, 1] * m[:, :, 1, 0], m[:, :, 0, 1]],
                 [-m[:, :, 1, 0],                              np.ones((m.shape[0], m.shape[1]))]])
@@ -218,6 +233,10 @@ class PolarizedStack(Stack):
         return out
 
     def circularIntegration(self, nas: np.ndarray):
+        """Given an array of NumericalApertures (usually from 0 to NAMax.) This function integrates the reflectance over
+        a disc of Numerical Apertures (Just like in a microscope the Aperture plane is a disc shape, with higher NA
+        being further from the center.) Ultimately the result of this integration should match the reflectance measured
+        with the same NA."""
         from scipy.integrate import trapz
         d = self.calculateReflectance(nas)
         r = (d[Polarization.TE] + d[Polarization.TM]) / 2
@@ -227,6 +246,8 @@ class PolarizedStack(Stack):
         return inte / int2
 
     def plot(self, NAs: np.ndarray, polarization: Polarization = None):
+        """Plot various graphs of reflectance vs NA. NAs should be an array of Numerical apertures to have the
+        reflectance calculated for. `polarization` can be specified to view the reflectance of only one polarization."""
         d = self.calculateReflectance(nas)
         rTM = d[Polarization.TM]
         rTE = d[Polarization.TE]
@@ -264,8 +285,6 @@ class PolarizedStack(Stack):
         for i in range(r.shape[1]):
             ax3.plot(self.wavelengths, r[:, i], color=colors[i], label=NAs[i])
         plt.colorbar(sm, ax=ax3)
-        # ax3.legend()
-        # ax3.plot(r.mean(axis=0))
         fig3.show()
         fig4, ax4 = plt.subplots()
         ax4.set_xlabel("NA")
@@ -278,25 +297,18 @@ class PolarizedStack(Stack):
 if __name__ == '__main__':
     num = 40
     wv = np.linspace(500, 700, num=100)
-    s = PolarizedStack(wv)
-    s2 = NonPolarizedStack(wv)
+    s = Stack(wv)
     s.addLayer(Layer(Material.Glass, 100000))
-    s.addLayer(Layer(Material.ITO, 2000))
+    for i in range(20):
+        s.addLayer(Layer(1.2, 650/1.2/4))
+        s.addLayer(Layer(1.35, 650/1.35/4))
+    # s.addLayer(Layer(Material.ITO, 2000))
     s.addLayer(Layer(Material.Air, 10000))
 
-    s2.addLayer(Layer(Material.Glass, 100000))
-    s2.addLayer(Layer(Material.ITO, 2000))
-    s2.addLayer(Layer(Material.Air, 10000))
-
-    nas = np.linspace(0, .52, num=1000)
+    nas = np.linspace(0, .2, num=1000)
     s.plot(nas)
     out = s.circularIntegration(nas)
     fig, ax = plt.subplots()
     ax.plot(s.wavelengths, out)
     fig.show()
-
-    r = s2.calculateReflectance()
-    plt.figure()
-    plt.plot(s2.wavelengths, r)
-    plt.show()
     pass
