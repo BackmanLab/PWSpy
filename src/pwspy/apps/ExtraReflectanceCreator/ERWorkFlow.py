@@ -124,7 +124,7 @@ class ERWorkFlow:
                                                     cubes['cube'].iloc[0].wavelengths, numericalAperture)  # Theoretical reflectances
             matCombos = er.generateMaterialCombos(materials)
             combos = er.getAllCubeCombos(matCombos, cubes)
-            erCube, rExtraDict, self.plotnds = er.generateRExtraCubes(combos, theoryR)
+            erCube, rExtraDict, self.plotnds = er.generateRExtraCubes(combos, theoryR, numericalAperture)
             print(f"Final data max is {erCube.data.max()}")
             print(f"Final data min is {erCube.data.min()}")
             self.figs.extend([i.fig for i in self.plotnds]) # keep track of opened figures.
@@ -132,7 +132,7 @@ class ERWorkFlow:
             dialog = IndexInfoForm(f'{self.currDir}-{setting}', erCube.metadata.idTag)
             result = dialog.exec()
             if result == QDialog.Accepted:
-                erCube.metadata.inheritedMetadata['description'] = dialog.description #TODO Force saving of NA information
+                erCube.metadata.inheritedMetadata['description'] = dialog.description
                 erCube.toHdfFile(self.homeDir, saveName)
                 self.updateIndex(saveName, erCube.metadata.idTag, dialog.description, erCube.metadata.dirName2Directory('', saveName))
 

@@ -21,7 +21,7 @@ class ERMetadata:
     _jsonSchema = {"$schema": "http://json-schema.org/schema#",
                    '$id': 'extraReflectionMetadataSchema',
                    'title': 'extraReflectionMetadataSchema',
-                   'required': ['system', 'time', 'wavelengths', 'pixelSizeUm', 'binning'],
+                   'required': ['system', 'time', 'wavelengths', 'pixelSizeUm', 'binning', 'numericalAperture'],
                    'type': 'object',
                    'properties': {
                        'system': {'type': 'string'},
@@ -30,7 +30,8 @@ class ERMetadata:
                                         'items': {'type': 'number'}
                                         },
                        'pixelSizeUm': {'type': ['number', 'null']},
-                       'binning': {'type': ['integer', 'null']}
+                       'binning': {'type': ['integer', 'null']},
+                       'numericalAperture': {'type': ['number']}
                         }
                    }
     FILESUFFIX = '_eReflectance.h5'

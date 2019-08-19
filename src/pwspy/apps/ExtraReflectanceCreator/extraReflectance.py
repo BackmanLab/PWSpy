@@ -284,7 +284,7 @@ def generateOneRExtraCube(combo: CubeCombo, theoryR: dict) -> Tuple[np.ndarray, 
 
 
 
-def generateRExtraCubes(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict) -> Tuple[ExtraReflectanceCube, Dict[Union[str, MCombo], Tuple[np.ndarray, np.ndarray]], List[PlotNd]]:
+def generateRExtraCubes(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict, numericalAperture: float) -> Tuple[ExtraReflectanceCube, Dict[Union[str, MCombo], Tuple[np.ndarray, np.ndarray]], List[PlotNd]]:
     """Expects a dict of lists CubeCombos, each keyed by a 2-tuple of Materials. TheoryR is the theoretical reflectance for each material.
     Returns extra reflectance for each material combo as well as the mean of all extra reflectances. This is what gets used. Ideally all the cubes will be very similar.
     Additionally returns a list of plot objects. references to these must be kept alive for the plots to be responsive."""
@@ -303,7 +303,10 @@ def generateRExtraCubes(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict)
     rExtra['mean'] = (weightedMean, meanWeight)
     plots = [PlotNd(rExtra[k][0], title=k) for k in rExtra.keys()] + [PlotNd(rExtra[k][1], title=f'{k} weight') for k in rExtra.keys()]
     sampleCube: ImCube = list(allCombos.values())[0][0].data1
-    erCube = ExtraReflectanceCube(rExtra['mean'][0], sampleCube.wavelengths, ERMetadata(sampleCube.metadata._dict))
+    md = sampleCube.metadata._dict
+    md['numericalAperture'] = numericalAperture
+    md = ERMetadata(md)
+    erCube = ExtraReflectanceCube(rExtra['mean'][0], sampleCube.wavelengths, md)
     return erCube, rExtra, plots
 
 

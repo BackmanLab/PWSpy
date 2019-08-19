@@ -70,5 +70,5 @@ if __name__ == '__main__':
     if produceRextraCube:
         for sett in set(cubes['setting']):
             allCombos = er.getAllCubeCombos(matCombos, cubes[cubes['setting'] == sett])
-            erCube, rextras, plots = er.generateRExtraCubes(allCombos, theoryR)
+            erCube, rextras, plots = er.generateRExtraCubes(allCombos, theoryR, 0.52)
             erCube.toHdfFile(rootDir, f'rextra_{sett}')
