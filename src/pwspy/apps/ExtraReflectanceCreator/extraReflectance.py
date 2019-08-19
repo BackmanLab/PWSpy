@@ -71,7 +71,7 @@ def getTheoreticalReflectances(materials: Set[Material], index: Tuple[float]) ->
     `materials`. Index is in units of nanometers."""
     theoryR = {}
     for material in materials:  # For each unique material in the `cubes` list
-        theoryR[material] = reflectanceHelper.getReflectance(material, Material.Glass, index=index)
+        theoryR[material] = reflectanceHelper.getReflectance(material, Material.Glass, wavelengths=index, NA=)
     return theoryR
 
 
@@ -127,7 +127,7 @@ def calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theory
             c.weight = (c.mat1Spectra - c.mat2Spectra) ** 2 / (c.mat1Spectra ** 2 + c.mat2Spectra ** 2)
             c.rExtra = ((theoryR[mat1] * c.mat2Spectra) - (theoryR[mat2] * c.mat1Spectra)) / (c.mat1Spectra - c.mat2Spectra)
             c.I0 = c.mat2Spectra / (theoryR[mat2] + c.rExtra)
-            waterTheory = reflectanceHelper.getReflectance(Material.Water, Material.Glass, index=list(theoryR.values())[0].index)
+            waterTheory = reflectanceHelper.getReflectance(Material.Water, Material.Glass, wavelengths=list(theoryR.values())[0].index, NA=)
             c.cFactor = (c.rExtra.mean() + waterTheory.mean()) / waterTheory.mean()
             allCombos[matCombo].append(c)
         meanValues[matCombo] = {}
