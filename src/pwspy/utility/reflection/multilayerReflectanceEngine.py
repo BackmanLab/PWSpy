@@ -19,7 +19,6 @@ from typing import Union, Optional, List
 from pwspy.moduleConsts import Material
 import pandas as pd
 import numpy as np
-from pwspy.utility.reflection import reflectanceHelper
 import matplotlib as mpl
 
 
@@ -42,8 +41,9 @@ class Layer:
             self.name = name
 
     def getRefractiveIndex(self, wavelengths: np.ndarray) -> pd.Series:
+        from .reflectanceHelper import getRefractiveIndex
         if isinstance(self.mat, Material):
-            n = reflectanceHelper.getRefractiveIndex(self.mat, wavelengths=wavelengths)
+            n = getRefractiveIndex(self.mat, wavelengths=wavelengths)
             n = pd.Series(n.real, index=n.index)
             return n
         elif isinstance(self.mat, Number):
