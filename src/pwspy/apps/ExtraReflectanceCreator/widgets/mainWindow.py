@@ -3,7 +3,7 @@ from datetime import datetime
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QListWidget, QComboBox, QPushButton, \
-    QLabel, QListWidgetItem
+    QLabel, QListWidgetItem, QDoubleSpinBox
 
 from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 
@@ -24,6 +24,8 @@ class MainWindow(QMainWindow):
         self.deleteFigsButton = QPushButton("Close Figures")
         self.viewFilesButton = QPushButton("View Files")
         self.viewFilesButton.released.connect(self.viewFiles)
+        self.numericalAperture = QDoubleSpinBox()
+        self.numericalAperture.setRange(0, 2)
         row = 0
         layout.addWidget(self.listWidg, row, 0, 4, 4)
         layout.addWidget(self.selListWidg, row, 4, 4, 4)

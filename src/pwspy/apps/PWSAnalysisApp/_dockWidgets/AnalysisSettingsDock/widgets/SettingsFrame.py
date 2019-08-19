@@ -107,6 +107,12 @@ class SettingsFrame(QScrollArea):
         self.refMaterialCombo = QComboBox()
         self.refMaterialCombo.addItems([k.name for k in reflectanceHelper.materialFiles.keys() if k.name != 'Glass'])
         self.refMaterialCombo.addItem("Ignore")
+        self.numericalAperture = QDoubleSpinBox()
+        self.numericalAperture.setRange(0, 2)
+        self.numericalAperture.setToolTip("The illumination numerical aperture used. This is usually 0.52 on NU systems."
+                                          "This is used to accurately calculate the theoretically expected reflectance of "
+                                          "the reference material. We also want to check that the ExtraReflection was taken "
+                                          "at the same NA.")
         rLayout = QHBoxLayout()
         _ = rLayout.addWidget
         _(QLabel("R Subtraction"))
@@ -117,6 +123,11 @@ class SettingsFrame(QScrollArea):
         _ = rLayout.addWidget
         _(QLabel("Reference Material"))
         _(self.refMaterialCombo)
+        layout.addLayout(rLayout)
+        rLayout = QHBoxLayout()
+        _ = rLayout.addWidget
+        _(QLabel("Numerical Aperture"))
+        _(self.numericalAperture)
         layout.addLayout(rLayout)
         self.extraReflection.setLayout(layout)
         self._layout.addWidget(self.extraReflection, row, 0, 1, 4)
@@ -231,6 +242,7 @@ class SettingsFrame(QScrollArea):
         self.advanced.setCheckState(2 if settings.skipAdvanced else 0)
         self.autoCorrStopIndex.setValue(settings.autoCorrStopIndex)
         self.minSubCheckBox.setCheckState(2 if settings.autoCorrMinSub else 0)
+        self.numericalAperture.setValue(settings.numericalAperture)
 
     def loadCameraCorrection(self, camCorr: Optional[CameraCorrection] = None):
         if camCorr is None: #Automatic camera corrections
@@ -262,7 +274,8 @@ class SettingsFrame(QScrollArea):
                                  wavelengthStop=self.wavelengthStop.value(),
                                  skipAdvanced=self.advanced.checkState() != 0,
                                  autoCorrMinSub=self.minSubCheckBox.checkState() != 0,
-                                 autoCorrStopIndex=self.autoCorrStopIndex.value())
+                                 autoCorrStopIndex=self.autoCorrStopIndex.value(),
+                                 numericalAperture=self.numericalAperture.value())
 
     def getCameraCorrection(self) -> CameraCorrection:
         if self.hardwareCorrections.checkState() == 0:

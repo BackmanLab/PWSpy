@@ -135,7 +135,7 @@ class Analysis(LegacyAnalysis):
             theoryR = pd.Series(np.ones((len(ref.wavelengths),)), index=ref.wavelengths) # Having this as all ones effectively ignores it.
             print("Warning: Analysis ignoring reference material correction")
         else:
-            theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, wavelengths=ref.wavelengths, NA=)
+            theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, wavelengths=ref.wavelengths, NA=settings.numericalAperture)
         if extraReflectance is None:
             Iextra = ExtraReflectionCube.create(ExtraReflectanceCube(np.zeros(ref.data.shape), ref.wavelengths, ExtraReflectanceCube.ERMetadata(ref.metadata._dict)), theoryR, ref)  # a bogus reflection that is all zeros
             print("Warning: Analysis ignoring extra reflection")

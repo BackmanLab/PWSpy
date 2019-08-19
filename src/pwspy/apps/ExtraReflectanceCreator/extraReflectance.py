@@ -66,12 +66,13 @@ def _interpolateNans(arr):
     arr = np.apply_along_axis(interp1, 2, arr)
     return arr
 
-def getTheoreticalReflectances(materials: Set[Material], index: Tuple[float]) -> Dict[Material, pd.Series]:
+def getTheoreticalReflectances(materials: Set[Material], index: Tuple[float], numericalAperture: float) -> Dict[Material, pd.Series]:
     """Generate a dictionary containing a pandas series of the `material`-glass reflectance for each material in
-    `materials`. Index is in units of nanometers."""
+    `materials`. Index is in units of nanometers.
+    :param numericalAperture: """
     theoryR = {}
     for material in materials:  # For each unique material in the `cubes` list
-        theoryR[material] = reflectanceHelper.getReflectance(material, Material.Glass, wavelengths=index, NA=)
+        theoryR[material] = reflectanceHelper.getReflectance(material, Material.Glass, wavelengths=index, NA=numericalAperture)
     return theoryR
 
 
@@ -100,12 +101,14 @@ def getAllCubeCombos(matCombos: Iterable[MCombo], df: pd.DataFrame) -> Dict[MCom
     return allCombos
 
 
-def calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theoryR: Dict[Material, pd.Series], mask: Roi = None) ->\
+def calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theoryR: Dict[Material, pd.Series],
+                               numericalAperture: float, mask: Roi = None) ->\
         Tuple[Dict[Union[MCombo, str], Dict[str, Any]], Dict[MCombo, List[ComboSummary]]]:
     """Expects a dictionary as created by `getAllCubeCombos` and a dictionary of theoretical reflections.
 
     This is used to examine the output of extra reflection calculation before using saveRExtra to save a cube for each setting.
     Returns a dictionary containing
+    :param numericalAperture:
     """
 
     # Save the results of relevant calculations to a dictionary, this dictionary will be returned to the user along with
@@ -127,7 +130,7 @@ def calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theory
             c.weight = (c.mat1Spectra - c.mat2Spectra) ** 2 / (c.mat1Spectra ** 2 + c.mat2Spectra ** 2)
             c.rExtra = ((theoryR[mat1] * c.mat2Spectra) - (theoryR[mat2] * c.mat1Spectra)) / (c.mat1Spectra - c.mat2Spectra)
             c.I0 = c.mat2Spectra / (theoryR[mat2] + c.rExtra)
-            waterTheory = reflectanceHelper.getReflectance(Material.Water, Material.Glass, wavelengths=list(theoryR.values())[0].index, NA=)
+            waterTheory = reflectanceHelper.getReflectance(Material.Water, Material.Glass, wavelengths=list(theoryR.values())[0].index, NA=numericalAperture)
             c.cFactor = (c.rExtra.mean() + waterTheory.mean()) / waterTheory.mean()
             allCombos[matCombo].append(c)
         meanValues[matCombo] = {}
@@ -148,13 +151,15 @@ def calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theory
     return meanValues, allCombos
 
 
-def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], matCombos:List[MCombo], mask: Optional[Roi] = None, plotReflectionImages: bool = False) -> List[plt.Figure]:
+def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], matCombos: List[MCombo],
+                        numericalAperture: float, mask: Optional[Roi] = None,
+                        plotReflectionImages: bool = False) -> List[plt.Figure]:
     settings = set(df['setting'])
     meanValues: Dict[str, Dict[Union[MCombo, str], Dict[str, Any]]] = {}
     allCombos: Dict[str, Dict[MCombo, List[ComboSummary]]] = {}
     for sett in settings:
         cubeCombos = getAllCubeCombos(matCombos, df[df['setting'] == sett])
-        meanValues[sett], allCombos[sett] = calculateSpectraFromCombos(cubeCombos, theoryR, mask)
+        meanValues[sett], allCombos[sett] = calculateSpectraFromCombos(cubeCombos, theoryR, numericalAperture, mask)
     figs = []
     fig, ax = plt.subplots()  # For extra reflections
     fig.suptitle("Extra Reflection")
