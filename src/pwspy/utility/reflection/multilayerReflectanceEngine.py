@@ -221,7 +221,6 @@ class Stack(StackBase):
         parameters can also be calculated."""
         out = {}
         for polarization in Polarization:
-            print(polarization.name)
             m = self._generateMatrix(polarization, NAs)
             scatterMatrix = np.array([  # A 2x2 scattering matrix. https://en.wikipedia.org/wiki/S-matrix
                 [m[:, :, 0, 0] * m[:, :, 1, 1] - m[:, :, 0, 1] * m[:, :, 1, 0], m[:, :, 0, 1]],

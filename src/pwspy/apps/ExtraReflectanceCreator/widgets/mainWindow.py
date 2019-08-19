@@ -26,6 +26,7 @@ class MainWindow(QMainWindow):
         self.viewFilesButton.released.connect(self.viewFiles)
         self.numericalAperture = QDoubleSpinBox()
         self.numericalAperture.setRange(0, 2)
+        self.numericalAperture.setSingleStep(0.1)
         row = 0
         layout.addWidget(self.listWidg, row, 0, 4, 4)
         layout.addWidget(self.selListWidg, row, 4, 4, 4)
@@ -35,9 +36,11 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.deleteFigsButton, row, 2, 1, 1)
         layout.addWidget(QLabel("Binning"), row, 4, 1, 1)
         layout.addWidget(self.binningCombo, row, 5, 1, 1)
-        layout.addWidget(self.saveButton, row, 6, 1, 1)
         row += 1
-        layout.addWidget(self.viewFilesButton, row, 0, 1, 1)
+        layout.addWidget(self.saveButton, row, 0, 1, 1)
+        layout.addWidget(self.viewFilesButton, row, 1, 1, 1)
+        layout.addWidget(QLabel("NA"), row, 4, 1, 1)
+        layout.addWidget(self.numericalAperture, row, 5, 1, 1)
         widg.setLayout(layout)
         self.setCentralWidget(widg)
         self.buttons = [self.compareDatesButton, self.plotButton, self.saveButton]

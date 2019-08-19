@@ -10,6 +10,7 @@ import numpy as np
 import os
 from pwspy.moduleConsts import Material
 from .multilayerReflectanceEngine import Stack, Layer
+from typing import Union, List, Tuple
 
 
 materialFiles = {
@@ -67,17 +68,19 @@ def getRefractiveIndex(mat: Material, wavelengths=None) -> pd.Series:
 
 
 
-def getReflectance(mat1: Material, mat2: Material, wavelengths=None, NA: float = None) -> pd.Series:
+def getReflectance(mat1: Material, mat2: Material, wavelengths: Union[np.ndarray, List, Tuple] = None, NA: float = None) -> pd.Series:
     """Given the names of two interfaces this provides the reflectance in units of percent.
     If given a series as index the data will be interpolated and reindexed to match the index. If NA is None the result
     is for light with 0 degree angle of incidence. If NA is specified then the result is the disc integral from
     0 to NA, this should match what is seen in the microscope."""
     index = n.index if wavelengths is None else wavelengths
+    if not isinstance(index, np.ndarray):
+        index = np.array(index)
     s = Stack(wavelengths=index)
     s.addLayer(Layer(mat1, 1e9))  # Add a meter thick layer
     s.addLayer(Layer(mat2, 1e9))
     if NA is None:
-        r = pd.Series(s.calculateReflectance(np.array([0])), index=wavelengths) # Get reflectance at 0 NA (0 incident angle)
+        r = pd.Series(s.calculateReflectance(np.array([0])), index=index) # Get reflectance at 0 NA (0 incident angle)
     else:
         r = s.circularIntegration(np.linspace(0, NA, num=1000))
     return r
