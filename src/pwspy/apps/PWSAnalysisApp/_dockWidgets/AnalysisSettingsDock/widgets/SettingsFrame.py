@@ -157,7 +157,7 @@ class SettingsFrame(QScrollArea):
         cutoffLabel = QLabel("Cutoff Freq.")
         self.filterCutoff = QDoubleSpinBox()
         self.filterCutoff.setToolTip("The frequency in units of 1/wavelength for the filter cutoff.")
-        cutoffLabel.setTooltip(self.filterCutoff.toolTip())
+        cutoffLabel.setToolTip(self.filterCutoff.toolTip())
         _(orderLabel, 0, 0, 1, 1)
         _(self.filterOrder, 0, 1, 1, 1)
         _(cutoffLabel, 1, 0, 1, 1)
