@@ -38,11 +38,12 @@ class ERMetadata:
     DATASETTAG = 'extraReflection'
     MDTAG = 'metadata'
 
-    def __init__(self, inheritedMetadata: dict, filePath: str=None):
+    def __init__(self, inheritedMetadata: dict, numericalAperture: float, filePath: str=None):
         """The metadata dictionary will often just be inherited information from one of the ImCubes that was used to create
         this ER Cube. While this data can be useful it should be taken with a grain of salt. E.G. the metadata will contain
         an `exposure` field. In reality this ER Cube will have been created from ImCubes at a variety of exposures."""
         self.inheritedMetadata = inheritedMetadata
+        self.inheritedMetadata['numericalAperture'] = numericalAperture
         jsonschema.validate(instance=inheritedMetadata, schema=self._jsonSchema, types={'array': (list, tuple)})
         self.filePath = filePath
 

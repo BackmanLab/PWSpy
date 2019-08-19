@@ -303,9 +303,7 @@ def generateRExtraCubes(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict,
     rExtra['mean'] = (weightedMean, meanWeight)
     plots = [PlotNd(rExtra[k][0], title=k) for k in rExtra.keys()] + [PlotNd(rExtra[k][1], title=f'{k} weight') for k in rExtra.keys()]
     sampleCube: ImCube = list(allCombos.values())[0][0].data1
-    md = sampleCube.metadata._dict
-    md['numericalAperture'] = numericalAperture
-    md = ERMetadata(md)
+    md = ERMetadata(sampleCube.metadata._dict, numericalAperture)
     erCube = ExtraReflectanceCube(rExtra['mean'][0], sampleCube.wavelengths, md)
     return erCube, rExtra, plots
 
