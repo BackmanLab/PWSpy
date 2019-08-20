@@ -34,7 +34,7 @@ class ERApp(QApplication):
         for k, v in self.workflow.fileStruct.items():
             self.window.listWidg.addItem(k)
         self.window.listWidg.currentItemChanged.connect(self.selectionChanged)
-        self.window.deleteFigsButton.released.connect(self._cb(self.workflow.deleteFigures))
+        self.window.deleteFigsButton.released.connect(self.workflow.deleteFigures)
         self.window.saveButton.released.connect(self._cb(lambda: self.workflow.save(self.window.numericalAperture.value())))
         self.window.selListWidg.itemChanged.connect(self.workflow.invalidateCubes)
         self.window.binningCombo.currentIndexChanged.connect(self.workflow.invalidateCubes)

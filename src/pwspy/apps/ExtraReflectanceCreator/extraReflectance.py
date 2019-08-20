@@ -72,6 +72,7 @@ def getTheoreticalReflectances(materials: Set[Material], index: Tuple[float], nu
     :param numericalAperture: """
     theoryR = {}
     for material in materials:  # For each unique material in the `cubes` list
+        print(f"Calculating reflectance for {material}")
         theoryR[material] = reflectanceHelper.getReflectance(material, Material.Glass, wavelengths=index, NA=numericalAperture)
     return theoryR
 

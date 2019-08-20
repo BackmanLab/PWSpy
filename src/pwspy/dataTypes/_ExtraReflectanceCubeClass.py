@@ -70,7 +70,8 @@ class ERMetadata:
 
     @classmethod
     def fromHdfDataset(cls, d: h5py.Dataset, filePath: str = None):
-        return cls(json.loads(d.attrs[cls.MDTAG]), filePath=filePath)
+        mdDict = json.loads(d.attrs[cls.MDTAG])
+        return cls(mdDict, mdDict['numericalAperture'], filePath=filePath)
 
     def toHdfDataset(self, g: h5py.Group) -> h5py.Group:
         g[self.DATASETTAG].attrs[self.MDTAG] = np.string_(json.dumps(self.inheritedMetadata))
