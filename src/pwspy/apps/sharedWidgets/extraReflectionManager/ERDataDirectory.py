@@ -114,6 +114,7 @@ class EROnlineDirectory(ERAbstractDirectory):
         if os.path.exists(indexDir):
             os.remove(indexDir)
         try:
+            self._manager._downloader.updateFilesList()
             self._manager.download('index.json', tempDir)
         except OfflineError:
             return None
@@ -121,6 +122,7 @@ class EROnlineDirectory(ERAbstractDirectory):
             print("Index file was not found on google drive. Uploading from local data directory.")
             self._manager.upload(os.path.join(self._manager._directory, 'index.json'))
             time.sleep(3)
+            return self.getIndexFile() #Try downloading again.
         index = ERIndex.loadFromFile(indexDir)
         os.remove(indexDir)
         os.rmdir(tempDir)

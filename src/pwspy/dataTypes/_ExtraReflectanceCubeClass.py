@@ -21,7 +21,7 @@ class ERMetadata:
     _jsonSchema = {"$schema": "http://json-schema.org/schema#",
                    '$id': 'extraReflectionMetadataSchema',
                    'title': 'extraReflectionMetadataSchema',
-                   'required': ['system', 'time', 'wavelengths', 'pixelSizeUm', 'binning'],
+                   'required': ['system', 'time', 'wavelengths', 'pixelSizeUm', 'binning', 'numericalAperture'],
                    'type': 'object',
                    'properties': {
                        'system': {'type': 'string'},
@@ -30,24 +30,30 @@ class ERMetadata:
                                         'items': {'type': 'number'}
                                         },
                        'pixelSizeUm': {'type': ['number', 'null']},
-                       'binning': {'type': ['integer', 'null']}
+                       'binning': {'type': ['integer', 'null']},
+                       'numericalAperture': {'type': ['number']}
                         }
                    }
     FILESUFFIX = '_eReflectance.h5'
     DATASETTAG = 'extraReflection'
     MDTAG = 'metadata'
 
-    def __init__(self, inheritedMetadata: dict, filePath: str=None):
+    def __init__(self, inheritedMetadata: dict, numericalAperture: float, filePath: str=None):
         """The metadata dictionary will often just be inherited information from one of the ImCubes that was used to create
         this ER Cube. While this data can be useful it should be taken with a grain of salt. E.G. the metadata will contain
         an `exposure` field. In reality this ER Cube will have been created from ImCubes at a variety of exposures."""
         self.inheritedMetadata = inheritedMetadata
+        self.inheritedMetadata['numericalAperture'] = numericalAperture
         jsonschema.validate(instance=inheritedMetadata, schema=self._jsonSchema, types={'array': (list, tuple)})
         self.filePath = filePath
 
     @property
     def idTag(self):
         return f"ExtraReflection_{self.inheritedMetadata['system']}_{self.inheritedMetadata['time']}"
+
+    @property
+    def numericalAperture(self):
+        return self.inheritedMetadata['numericalAperture']
 
     @classmethod
     def validPath(cls, path: str) -> Tuple[bool, Union[str, bytes], Union[str, bytes]]:
@@ -68,7 +74,8 @@ class ERMetadata:
 
     @classmethod
     def fromHdfDataset(cls, d: h5py.Dataset, filePath: str = None):
-        return cls(json.loads(d.attrs[cls.MDTAG]), filePath=filePath)
+        mdDict = json.loads(d.attrs[cls.MDTAG])
+        return cls(mdDict, mdDict['numericalAperture'], filePath=filePath)
 
     def toHdfDataset(self, g: h5py.Group) -> h5py.Group:
         g[self.DATASETTAG].attrs[self.MDTAG] = np.string_(json.dumps(self.inheritedMetadata))

@@ -57,11 +57,11 @@ if __name__ == '__main__':
     fileFrame = pd.DataFrame([{'setting': 'none', 'material': m, 'cube': cube} for m in materials for cube in glob(os.path.join(rootDir, m, 'Cell*'))])
     cubes = loadAndProcess(fileFrame, processIm, parallel=True)
 
-    theoryR = er.getTheoreticalReflectances(list(zip(*materials))[1], cubes['cube'][0].wavelengths)
+    theoryR = er.getTheoreticalReflectances(list(zip(*materials))[1], cubes['cube'][0].wavelengths, 0.52)
     matCombos = er.generateMaterialCombos(list(zip(*materials))[1], excludedCombos=exclude)
     if plotResults:
         mask = random.choice(cubes['cube']).selectLassoRoi()
-        er.plotExtraReflection(cubes, theoryR, matCombos, mask, plotReflectionImages=False)
+        er.plotExtraReflection(cubes, theoryR, matCombos, 0.52, mask, plotReflectionImages=False)
         with PdfPages(os.path.join(rootDir, "figs.pdf")) as pp:
             for i in plt.get_fignums():
                 f = plt.figure(i)
@@ -70,5 +70,5 @@ if __name__ == '__main__':
     if produceRextraCube:
         for sett in set(cubes['setting']):
             allCombos = er.getAllCubeCombos(matCombos, cubes[cubes['setting'] == sett])
-            erCube, rextras, plots = er.generateRExtraCubes(allCombos, theoryR)
+            erCube, rextras, plots = er.generateRExtraCubes(allCombos, theoryR, 0.52)
             erCube.toHdfFile(rootDir, f'rextra_{sett}')

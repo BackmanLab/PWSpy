@@ -11,7 +11,7 @@ from typing import List, Tuple
 import numpy as np
 import scipy.signal as sps
 from pwspy.analysis import warnings
-from pwspy.utility import reflectanceHelper
+from pwspy.utility.reflection import reflectanceHelper
 from pwspy.moduleConsts import Material
 from . import AnalysisSettings, AnalysisResultsSaver
 import pandas as pd
@@ -135,7 +135,9 @@ class Analysis(LegacyAnalysis):
             theoryR = pd.Series(np.ones((len(ref.wavelengths),)), index=ref.wavelengths) # Having this as all ones effectively ignores it.
             print("Warning: Analysis ignoring reference material correction")
         else:
-            theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, index=ref.wavelengths)
+            theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, wavelengths=ref.wavelengths, NA=settings.numericalAperture)
+        if extraReflectance.metadata.numericalAperture != settings.numericalAperture:
+            print(f"Warning: The numerical aperture of your analysis does not match the NA of the Extra Reflectance Calibration. Calibration File NA: {extraReflectance.metadata.numericalAperture}. Analysis NA: {settings.numericalAperture}.")
         if extraReflectance is None:
             Iextra = ExtraReflectionCube.create(ExtraReflectanceCube(np.zeros(ref.data.shape), ref.wavelengths, ExtraReflectanceCube.ERMetadata(ref.metadata._dict)), theoryR, ref)  # a bogus reflection that is all zeros
             print("Warning: Analysis ignoring extra reflection")

@@ -17,6 +17,7 @@ class AnalysisSettings:
     skipAdvanced: bool
     autoCorrStopIndex: int
     autoCorrMinSub: bool  # Determines if the autocorrelation should have it's minimum subtracted from it before processing. These is mathematically nonsense but is needed if the autocorrelation has negative values in it.
+    numericalAperture: float
 
     @classmethod
     def fromJson(cls, filePath: str, name: str):

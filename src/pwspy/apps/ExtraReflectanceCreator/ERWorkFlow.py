@@ -96,17 +96,18 @@ class ERWorkFlow:
             args = {'correction': self.cameraCorrection, 'binning': binning}
         self.cubes = loadAndProcess(df, _processIm, parallel=True, procArgs=[args])
 
-    def plot(self, saveToPdf: bool = False, saveDir: str = None):
+    def plot(self, numericalAperture: float, saveToPdf: bool = False, saveDir: str = None):
         cubes = self.cubes
         settings = set(cubes['setting'])  # Unique setting values
         materials = set(cubes['material'])
-        theoryR = er.getTheoreticalReflectances(materials, cubes['cube'].iloc[0].wavelengths)  # Theoretical reflectances
+        theoryR = er.getTheoreticalReflectances(materials,
+                                                cubes['cube'].iloc[0].wavelengths, numericalAperture)  # Theoretical reflectances
         matCombos = er.generateMaterialCombos(materials)
 
         print("Select an ROI")
         verts = cubes['cube'].sample(n=1).iloc[0].selectLassoROI()  # Select an ROI to analyze
         mask = Roi.fromVerts('doesntmatter', 1, verts, cubes['cube'].sample(n=1).iloc[0].data.shape[:-1])
-        self.figs.extend(er.plotExtraReflection(cubes, theoryR, matCombos, mask, plotReflectionImages=True))
+        self.figs.extend(er.plotExtraReflection(cubes, theoryR, matCombos, numericalAperture, mask, plotReflectionImages=True))
         if saveToPdf:
             with PdfPages(os.path.join(saveDir, f"fig_{datetime.strftime(datetime.now(), '%d-%m-%Y %HH%MM%SS')}.pdf")) as pp:
                 for i in plt.get_fignums():
@@ -114,15 +115,16 @@ class ERWorkFlow:
                     f.set_size_inches(9, 9)
                     pp.savefig(f)
 
-    def save(self):
+    def save(self, numericalAperture: float):
         settings = set(self.cubes['setting'])
         for setting in settings:
             cubes = self.cubes[self.cubes['setting'] == setting]
             materials = set(cubes['material'])
-            theoryR = er.getTheoreticalReflectances(materials, cubes['cube'].iloc[0].wavelengths)  # Theoretical reflectances
+            theoryR = er.getTheoreticalReflectances(materials,
+                                                    cubes['cube'].iloc[0].wavelengths, numericalAperture)  # Theoretical reflectances
             matCombos = er.generateMaterialCombos(materials)
             combos = er.getAllCubeCombos(matCombos, cubes)
-            erCube, rExtraDict, self.plotnds = er.generateRExtraCubes(combos, theoryR)
+            erCube, rExtraDict, self.plotnds = er.generateRExtraCubes(combos, theoryR, numericalAperture)
             print(f"Final data max is {erCube.data.max()}")
             print(f"Final data min is {erCube.data.min()}")
             self.figs.extend([i.fig for i in self.plotnds]) # keep track of opened figures.

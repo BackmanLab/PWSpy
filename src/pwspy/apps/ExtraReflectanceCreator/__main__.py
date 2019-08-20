@@ -34,13 +34,13 @@ class ERApp(QApplication):
         for k, v in self.workflow.fileStruct.items():
             self.window.listWidg.addItem(k)
         self.window.listWidg.currentItemChanged.connect(self.selectionChanged)
-        self.window.deleteFigsButton.released.connect(self._cb(self.workflow.deleteFigures))
-        self.window.saveButton.released.connect(self._cb(self.workflow.save))
+        self.window.deleteFigsButton.released.connect(self.workflow.deleteFigures)
+        self.window.saveButton.released.connect(self._cb(lambda: self.workflow.save(self.window.numericalAperture.value())))
         self.window.selListWidg.itemChanged.connect(self.workflow.invalidateCubes)
         self.window.binningCombo.currentIndexChanged.connect(self.workflow.invalidateCubes)
         self.window.compareDatesButton.released.connect(self._cb(self.workflow.compareDates))
         self.window.plotButton.released.connect(
-            self._cb(lambda: self.workflow.plot(saveToPdf=True, saveDir=self.figsDir)))
+            self._cb(lambda: self.workflow.plot(self.window.numericalAperture.value(), saveToPdf=True, saveDir=self.figsDir)))
 
     def checkDataDir(self):
         self.homeDir = os.path.join(appPath, 'ExtraReflectanceCreatorData')

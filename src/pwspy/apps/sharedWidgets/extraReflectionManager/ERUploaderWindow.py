@@ -15,6 +15,8 @@ import numpy as np
 
 from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataDirectory import ERDataDirectory
 from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataComparator import ERDataComparator
+from pwspy.dataTypes import ExtraReflectanceCube
+from pwspy.utility import PlotNd
 
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
@@ -25,7 +27,7 @@ class ERUploaderWindow(QDialog):
         self._manager = manager
         self._selectedId: str = None
         super().__init__(parent)
-        self.setModal(True)
+        self.setModal(False)
         self.setWindowTitle("Extra Reflectance File Manager")
         self.setLayout(QVBoxLayout())
         self.table = QTableView(self)
@@ -53,6 +55,12 @@ class ERUploaderWindow(QDialog):
     def displayInfo(self, index: QModelIndex):
         msg = QMessageBox.information(self, 'Info', repr(self._manager.dataComparator.status.iloc[index.row()]))
 
+    def plotData(self, index: QModelIndex):
+        idTag = self._manager.dataComparator.status.iloc[index.row()]['idTag']
+        md = self._manager.getMetadataFromId(idTag)
+        erCube = ExtraReflectanceCube.fromMetadata(md)
+        self.plotHandle = PlotNd(erCube.data)
+
     def openContextMenu(self, pos: QPoint):
         index = self.table.indexAt(pos)
         row = self._manager.dataComparator.status.iloc[index.row()]
@@ -60,6 +68,10 @@ class ERUploaderWindow(QDialog):
         displayAction = QAction("Display Info")
         displayAction.triggered.connect(lambda: self.displayInfo(index))
         menu.addAction(displayAction)
+        if row['Local Status'] == self._manager.dataComparator.local.DataStatus.found.value:
+            plotAction = QAction("Plot Local Data")
+            plotAction.triggered.connect(lambda: self.plotData(index))
+            menu.addAction(plotAction)
         menu.exec(self.mapToGlobal(pos))
 
     def _updateGDrive(self):

@@ -113,15 +113,15 @@ class CBar:
 
 class PlotNd(object):
     """A class to conveniently view 3d or greater data.
-       Scroll to navigate stacks.
-       Press "a" to automatically scroll.
-       Left click the color bar to set the max color range.
-       Right click to set the mininum.
-       Press "r" to reset the color range.
-       Press 't' to swap the two primary axes.
-       Press 'y' to rotate the order of the secondary axes.
-       Press 'u' to rotate the order of all axes, allowing.
-       secondary axis to become a primary axis"""
+    Scroll to navigate stacks.
+    Press "a" to automatically scroll.
+    Left click the color bar to set the max color range.
+    Right click to set the mininum.
+    Press "r" to reset the color range.
+    Press 't' to swap the two primary axes.
+    Press 'y' to rotate the order of the secondary axes.
+    Press 'u' to rotate the order of all axes, allowing.
+    secondary axis to become a primary axis"""
     def __init__(self, X: np.ndarray, names: Tuple[str, ...] = ('y', 'x', 'lambda'),
                  initialCoords: Tuple[int, ...] = None, title: str = '', indices: Tuple[np.ndarray] = (None, None, None)):
         self.max = self.min = None #  The minimum and maximum for the color scaling
