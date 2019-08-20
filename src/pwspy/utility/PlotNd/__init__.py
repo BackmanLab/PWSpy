@@ -48,23 +48,17 @@ class PlotNd(QWidget):
                 i.mpl_connect('scroll_event', self.onscroll)
 
 
-        self.update(blit=False)
+        self.updatePlots(blit=False)
         self.updateLimits()
         self.show()
 
-    def update(self, blit=True):
+    def updatePlots(self, blit=True):
         for plot in self.artistManagers:
             slic = tuple(c if i not in plot.dimensions else slice(None) for i, c in enumerate(self.coords))
             newData = self.data[slic]
             plot.setData(newData)
             newCoords = tuple(c for i, c in enumerate(self.coords) if i in plot.dimensions)
             plot.setMarker(newCoords)
-        # for i, sp in enumerate(self.extra):
-        #     # sp.setData(self.data[self.coords[:2 + i] + (slice(None),) + self.coords[3 + i:]])
-        #     sp.setMarker(self.coords[2 + i])
-        # self.image.setMarker(self.coords[1], self.coords[0])
-        # self.spX.setMarker(self.coords[1])
-        # self.spY.setMarker(self.coords[0])
         if blit:
             self.blit()
         else:
@@ -98,13 +92,13 @@ class PlotNd(QWidget):
         self.max = np.percentile(self.data[np.logical_not(np.isnan(self.data))], 99.99)
         self.min = np.percentile(self.data[np.logical_not(np.isnan(self.data))], 0.01)
         self.updateLimits()
-    #
-    def onscroll(self, event): #TODO make so that the correct axis scrolls
-        step = int(4 * event.step)
-        # plot = [for man in self.artistManagers if man.ax == event.inaxes][0]
+
+    def onscroll(self, event):
         if (event.button == 'up') or (event.button == 'down'):
-            self.coords = self.coords[:2] + ((self.coords[2] + int(step)) % self.data.shape[2],) + (self.coords[3:])
-        self.update()
+            step = int(4 * event.step)
+            plot = [plot for plot in self.artistManagers if plot.ax == event.inaxes][0]
+            self.coords = tuple((c + step) % self.data.shape[plot.dimensions[0]] if i in plot.dimensions else c for i, c in enumerate(self.coords))
+            self.updatePlots()
     #
     # def onpress(self, event):
     #     print(event.key)
@@ -152,7 +146,7 @@ class PlotNd(QWidget):
         elif ax in [sp.ax for sp in self.extra]:
             idx = [sp.ax for sp in self.extra].index(ax)
             self.coords = self.coords[:2 + idx] + (int(y),) + self.coords[3 + idx:]
-        self.update()
+        self.updatePlots()
 
     def ondrag(self, event):
         if event.inaxes is None:
@@ -171,7 +165,7 @@ if __name__ == '__main__':
 
     x = np.linspace(0, 1)
     y = np.linspace(0, 1, num=30)
-    z = np.linspace(0, 1, num=20)
+    z = np.linspace(0, 1, num=200)
     t = np.linspace(0, 1, num=10)
     X, Y, Z, T = np.meshgrid(x, y, z, t)
     arr = np.sin(2 * np.pi * 4 * Z) + .5 * X

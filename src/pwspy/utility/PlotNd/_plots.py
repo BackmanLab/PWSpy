@@ -33,12 +33,11 @@ class ImPlot(PlotBase):
         self.ax.get_xaxis().set_visible(False)
         self.vLine = self.ax.plot([100, 100], [0, shape[0]], 'r', linewidth=lw, animated=True)[0]
         self.hLine = self.ax.plot([0, shape[1]], [100, 100], 'r', linewidth=lw, animated=True)[0]
-        self.im = self.ax.imshow(np.zeros(shape), aspect='auto', animated=True)
+        self.im = self.ax.imshow(np.zeros(shape), aspect='auto', animated=True, interpolation=None)
         self.ax.set_xlim((0, shape[1]-1))
         self.ax.set_ylim((0, shape[0]-1))
         self.range = (0, 1)
         self.artists = [self.im, self.hLine, self.vLine]
-        # self.fig.colorbar(self.im, ax=self.ax)
 
     def setRange(self, Min, Max):
         self.range = (Min, Max)
@@ -52,7 +51,6 @@ class ImPlot(PlotBase):
 
     def setData(self, data):
         self.im.set_data(data)
-
 
 
 class SidePlot(PlotBase):
