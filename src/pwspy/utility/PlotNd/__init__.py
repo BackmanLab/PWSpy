@@ -19,11 +19,14 @@ class PlotNd(QWidget):
         self.max = self.min = None  # The minimum and maximum for the color scaling
 
         self.image = ImPlot(data.shape[:2], (0, 1))
-        self.spY = SidePlot(data.shape[0], True, 0, title=self.names[0])
-        self.spX = SidePlot(data.shape[1], False, 1, title=self.names[1])
+        self.spY = SidePlot(data.shape[0], True, 0,)
+        self.spY.ax.set_ylabel(self.names[0])
+        self.spY.ax.yaxis.set_label_position('right')
+        self.spY.ax.yaxis.set_ticks_position("right")
+        self.spX = SidePlot(data.shape[1], False, 1)
+        self.spX.ax.set_xlabel(self.names[1])
 
-        extraDims = len(data.shape[
-                        2:])  # the first two axes are the image dimensions. Any axes after that are extra dimensions that can be scanned through
+        extraDims = len(data.shape[2:])  # the first two axes are the image dimensions. Any axes after that are extra dimensions that can be scanned through
         self.extra = [SidePlot(data.shape[2 + i], True, 2+i, title=self.names[2 + i]) for i in range(extraDims)]
 
         self.artistManagers = [self.spX, self.spY, self.image] + self.extra
@@ -43,10 +46,8 @@ class PlotNd(QWidget):
         for i in self.artistManagers:
             i.mpl_connect('button_press_event', self.onclick)
             i.mpl_connect('motion_notify_event', self.ondrag)
-        # fig.canvas.mpl_connect('key_press_event', self.onpress)
             if isinstance(i, SidePlot):
                 i.mpl_connect('scroll_event', self.onscroll)
-
 
         self.updatePlots(blit=False)
         self.updateLimits()
