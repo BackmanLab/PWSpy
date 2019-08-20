@@ -4,7 +4,8 @@ Created on Tue Aug  7 13:20:25 2018
 
 @author: Nick Anthony
 """
-__all__ = ['micromanager', 'reflectanceHelper', 'refractiveIndexFiles', 'GoogleDriveDownloader', 'io', 'matplotlibwidg', 'misc', 'PlotNd', 'thinFilmInterferenceFiles', 'toD']
+__all__ = ['micromanager', 'reflectanceHelper', 'refractiveIndexFiles', 'GoogleDriveDownloader', 'io', 'matplotlibwidg', 'misc',
+           'PlotNdbackup.py', 'thinFilmInterferenceFiles', 'toD']
 from .PlotNd import PlotNd
 import os
 
