@@ -51,6 +51,10 @@ class ERMetadata:
     def idTag(self):
         return f"ExtraReflection_{self.inheritedMetadata['system']}_{self.inheritedMetadata['time']}"
 
+    @property
+    def numericalAperture(self):
+        return self.inheritedMetadata['numericalAperture']
+
     @classmethod
     def validPath(cls, path: str) -> Tuple[bool, Union[str, bytes], Union[str, bytes]]:
         if cls.FILESUFFIX in path:
