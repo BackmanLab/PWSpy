@@ -40,8 +40,8 @@ class CellSelectorDock(QDockWidget):
         width = self.pathFilter.minimumSizeHint().width()
         self.pathFilter.view().setMinimumWidth(width)
         self.expressionFilter = QLineEdit(self._filterWidget)
-        description = "Python boolean expression. Cell#: {num}, Analysis names: {analyses}, ROI names: {rois}. E.G. `{num} > 5 and 'nucleus' in {rois}`"
-        self.expressionFilter.setPlaceholderText(description)
+        description = "Python boolean expression.\n\tCell#: {num},\n\tAnalysis names: {analyses},\n\tROI names: {rois},\n\tID tag: {idTag}.\nE.G. `{num} > 5 and 'nucleus' in {rois}`"
+        self.expressionFilter.setPlaceholderText(description.replace('\n', '').replace('\t', ''))  #Strip out the white space
         self.expressionFilter.setToolTip(description)
         self.expressionFilter.returnPressed.connect(self.executeFilter)
         _ = QGridLayout()
@@ -103,7 +103,7 @@ class CellSelectorDock(QDockWidget):
             expr = self.expressionFilter.text()
             if expr.strip() != '':
                 try:
-                    ret = bool(eval(expr.format(num=item.num, analyses=item.cube.getAnalyses(), rois=[i[0] for i in item.cube.getRois()])))
+                    ret = bool(eval(expr.format(num=item.num, analyses=item.cube.getAnalyses(), rois=[i[0] for i in item.cube.getRois()], idTag=item.cube.idTag)))
                 except Exception:
                     QMessageBox.information(self, 'Hmm', f'{expr} is not a valid boolean expression.')
                     return
