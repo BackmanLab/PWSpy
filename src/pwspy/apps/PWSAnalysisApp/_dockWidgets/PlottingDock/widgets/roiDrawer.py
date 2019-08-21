@@ -14,7 +14,7 @@ import typing
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ICMetaData
 from pwspy.dataTypes import Roi
-from pwspy.utility.matplotlibwidg import AdjustableSelector, MyLasso, MyEllipse, MyPaint
+from pwspy.utility.matplotlibwidg import AdjustableSelector, MyLasso, MyEllipse, MyPaint, PolygonInteractor
 
 
 class RoiDrawer(QWidget):
@@ -29,8 +29,11 @@ class RoiDrawer(QWidget):
         self.buttonGroup = QButtonGroup(self)
         self.noneButton = QPushButton("Inspect")
         self.lassoButton = QPushButton("Lasso")
+        self.lassoButton.setToolTip(MyLasso.getHelpText())
         self.ellipseButton = QPushButton("Ellipse")
+        self.ellipseButton.setToolTip(MyEllipse.getHelpText())
         self.paintButton = QPushButton("Paint")
+        self.paintButton.setToolTip(MyPaint.getHelpText())
         self.lastButton_ = None
         self.buttonGroup.addButton(self.noneButton)
         self.buttonGroup.addButton(self.lassoButton)
@@ -40,6 +43,7 @@ class RoiDrawer(QWidget):
         [i.setCheckable(True) for i in self.buttonGroup.buttons()]
         self.noneButton.setChecked(True)
         self.adjustButton = QPushButton("Adj")
+        self.adjustButton.setToolTip(PolygonInteractor.getHelpText())
         self.adjustButton.setCheckable(True)
         self.adjustButton.toggled.connect(self.handleAdjustButton)
         self.previousButton = QPushButton('←')

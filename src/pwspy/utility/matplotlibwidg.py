@@ -89,6 +89,10 @@ class MySelectorWidget(AxesWidget):
         self._prev_event = None
         self.state = set()
 
+    @staticmethod
+    def getHelpText():
+        return "This Selector has no help text."
+
     def set_active(self, active):
         AxesWidget.set_active(self, active)
         if active:
@@ -264,7 +268,11 @@ class MyLasso(MySelectorWidget):
         self.polygon.set_visible(False)
         self.addArtist(self.polygon)
 #        self.set_active(True) #needed for blitting to work
-        
+
+    @staticmethod
+    def getHelpText():
+        return "Click and drag to draw a freehand shape."
+
     def _press(self, event):
         self.verts = [(event.xdata, event.ydata)]
         self.set_visible(True)
@@ -295,6 +303,10 @@ class MyEllipse(MySelectorWidget):
         self.startPoint = None
         self.patch = Ellipse((0, 0), 0, 0, 0, facecolor=(0, 0, 1, .1), animated=True, edgecolor=(0,0,1,.8))
         self.addArtist(self.patch)
+
+    @staticmethod
+    def getHelpText():
+        return "Click and drag to draw the length of the ellipse. Then click again to set the width."
 
     def _press(self, event):
         if event.button!=1:
@@ -401,6 +413,10 @@ class MyPaint(MySelectorWidget):
         self.box = Rectangle((0,0), 0, 0, facecolor = (1,0,0,.1), edgecolor=(0,0,1,.4), animated=True)
         self.addArtist(self.box)
 
+    @staticmethod
+    def getHelpText():
+        return "Click and drag to select a rectangular region to search for objects. Then click the object you would like to select."
+
     def findContours(self, rect: Rectangle):
         import cv2
         x, y = rect.xy
@@ -421,7 +437,7 @@ class MyPaint(MySelectorWidget):
             if contour.shape[0] < 3:  # We need a polygon, not a line
                 continue
             contour += np.array([xslice.start, yslice.start])  # Apply offset so that coordinates are globally correct.
-            p = Polygon(contour)
+            p = Polygon(contour, color=(0,1,0,.4), animated=True)
             self.addArtist(p)
             self.contours.append(p)
             self.axMan.update()
@@ -557,6 +573,12 @@ class PolygonInteractor(MySelectorWidget):
         self.addArtist(self.poly)
         self.addArtist(self.markers)
         self.set_visible(False)
+
+    @staticmethod
+    def getHelpText():
+        return """This Selector will become active after the primary Selector is finished. Click and drag the handle 
+        points to adjust the ROI. Press 'd' to delete a point. Press 'i' to insert a new point. Press 'enter' to accept
+        the selection."""
         
     def initialize(self, verts):
         """Given a set of points this will initialize the artists to them"""
