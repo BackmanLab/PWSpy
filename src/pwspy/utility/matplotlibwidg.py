@@ -14,7 +14,7 @@ from matplotlib.lines import Line2D
 from matplotlib.patches import Patch, Polygon, Ellipse, Rectangle
 from matplotlib.widgets import AxesWidget
 from scipy import interpolate
-from shapely.geometry import LinearRing, Polygon as shapelyPolygon
+from shapely.geometry import LinearRing, Polygon as shapelyPolygon, MultiPolygon
 from typing import Type
 from matplotlib.pyplot import  Axes
 from matplotlib.image import AxesImage
@@ -454,8 +454,9 @@ class MyPaint(MySelectorWidget):
                     assert isinstance(artist, Polygon)
                     if artist.get_path().contains_point(coord):
                         l = shapelyPolygon(LinearRing(artist.xy))
-                        l = l.buffer(0)
                         l = l.simplify(l.length / 2e2, preserve_topology=False)
+                        if isinstance(l, MultiPolygon):# There is a chance for this to convert a Polygon to a Multipolygon.
+                            l = max(l, key=lambda a: a.area) #To fix this we extract the largest polygon from the multipolygon
                         handles = l.exterior.coords
                         self.onselect(artist.xy, handles)
                         break
