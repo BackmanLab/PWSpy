@@ -21,7 +21,7 @@ class AnalysisViewer(AnalysisPlotter, QWidget):
         self.plotWidg = BigPlot(metadata, metadata.getThumbnail(), 'title')
         self.analysisCombo = QComboBox(self)
         items = ['thumbnail']
-        for i in ['meanReflectance', 'rms', 'autoCorrelationSlope', 'rSquared', 'ld']: #TODO allow viewing of where the opd peak is.
+        for i in ['meanReflectance', 'rms', 'autoCorrelationSlope', 'rSquared', 'ld']:
             try:
                 if hasattr(self.analysis, i):  # This will raise a key error if the analysis object exists but the requested item is not found
                     items.append(i)
@@ -30,6 +30,8 @@ class AnalysisViewer(AnalysisPlotter, QWidget):
         if self.analysis is not None:
             if 'reflectance' in self.analysis.file.keys(): #This is the normalized 3d data cube. needed to generate the opd.
                 items.append('opdPeak')
+        if self.metadata.hasFluorescence():
+            items.append('fluorescence')
         self.analysisCombo.addItems(items)
         self.analysisCombo.currentTextChanged.connect(self.changeData)  # If this line comes before the analysisCombo.addItems line then it will get triggered when adding items.
         layout.addWidget(self.analysisCombo, 0, 0, 1, 1)

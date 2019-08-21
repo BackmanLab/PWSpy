@@ -38,6 +38,8 @@ class AnalysisPlotter:
             elif field == 'opdPeak': # Return the opd value corresponding to the max of that pixels opd funtion.
                 opd, opdIndex = self.analysis.opd
                 self.data = opdIndex[np.argmax(opd, axis=2)]
+            elif field == 'fluorescence': #Open the fluorescence image.
+                self.data = self.metadata.getFluorescence().data
             else:
                 if self.analysis is None:
                     raise ValueError(f"Analysis Plotter for ImCube {self.metadata.filePath} does not have an analysis file.")
