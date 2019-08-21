@@ -14,7 +14,7 @@ import typing
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ICMetaData
 from pwspy.dataTypes import Roi
-from pwspy.utility.matplotlibwidg import AdjustableSelector, MyLasso, MyEllipse
+from pwspy.utility.matplotlibwidg import AdjustableSelector, MyLasso, MyEllipse, MyPaint
 
 
 class RoiDrawer(QWidget):
@@ -30,10 +30,12 @@ class RoiDrawer(QWidget):
         self.noneButton = QPushButton("Inspect")
         self.lassoButton = QPushButton("Lasso")
         self.ellipseButton = QPushButton("Ellipse")
+        self.paintButton = QPushButton("Paint")
         self.lastButton_ = None
         self.buttonGroup.addButton(self.noneButton)
         self.buttonGroup.addButton(self.lassoButton)
         self.buttonGroup.addButton(self.ellipseButton)
+        self.buttonGroup.addButton(self.paintButton)
         self.buttonGroup.buttonReleased.connect(self.handleButtons)
         [i.setCheckable(True) for i in self.buttonGroup.buttons()]
         self.noneButton.setChecked(True)
@@ -48,12 +50,13 @@ class RoiDrawer(QWidget):
         layout.addWidget(self.noneButton, 0, 0, 1, 1)
         layout.addWidget(self.lassoButton, 0, 1, 1, 1)
         layout.addWidget(self.ellipseButton, 0, 2, 1, 1)
-        layout.addWidget(self.adjustButton, 0, 3, 1, 1)
-        layout.addWidget(self.previousButton, 0, 5, 1, 1)
-        layout.addWidget(self.nextButton, 0, 6, 1, 1)
+        layout.addWidget(self.paintButton, 0, 3, 1, 1)
+        layout.addWidget(self.adjustButton, 0, 4, 1, 1)
+        layout.addWidget(self.previousButton, 0, 6, 1, 1)
+        layout.addWidget(self.nextButton, 0, 7, 1, 1)
         layout.addWidget(self.anViewer, 1, 0, 8, 8)
         self.setLayout(layout)
-        self.selector: AdjustableSelector = AdjustableSelector(self.anViewer.plotWidg.ax, MyLasso, onfinished=self.finalizeRoi)
+        self.selector: AdjustableSelector = AdjustableSelector(self.anViewer.plotWidg.ax, self.anViewer.plotWidg.im, MyLasso, onfinished=self.finalizeRoi)
         self.show()
 
     def finalizeRoi(self, verts: np.ndarray):
@@ -78,7 +81,6 @@ class RoiDrawer(QWidget):
         self.anViewer.plotWidg.canvas.draw_idle()
         self.selector.setActive(True)  # Start the next roi.
 
-
     def handleButtons(self, button):
         if button != self.lastButton_:
             if button is self.lassoButton:
@@ -88,6 +90,11 @@ class RoiDrawer(QWidget):
                 self.adjustButton.setEnabled(True)
             elif button is self.ellipseButton:
                 self.selector.setSelector(MyEllipse)
+                self.selector.setActive(True)
+                self.anViewer.plotWidg.enableHoverAnnotation(False)
+                self.adjustButton.setEnabled(True)
+            elif button is self.paintButton:
+                self.selector.setSelector(MyPaint)
                 self.selector.setActive(True)
                 self.anViewer.plotWidg.enableHoverAnnotation(False)
                 self.adjustButton.setEnabled(True)
@@ -122,7 +129,7 @@ class RoiDrawer(QWidget):
 
 class NewRoiDlg(QDialog):
     def __init__(self, parent: RoiDrawer):
-        super().__init__(parent=parent, flags=QtCore.Qt.FramelessWindowHint)
+        super().__init__(parent=parent)#, flags=QtCore.Qt.FramelessWindowHint)
         self.parent = parent
         self.setModal(True)
 

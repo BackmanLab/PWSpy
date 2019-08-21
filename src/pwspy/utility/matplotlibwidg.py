@@ -9,6 +9,7 @@ import copy
 
 import matplotlib.pyplot as plt
 import numpy as np
+from PyQt5.QtWidgets import QDialog, QDoubleSpinBox, QGridLayout, QLabel
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch, Polygon, Ellipse, Rectangle
 from matplotlib.widgets import AxesWidget
@@ -16,6 +17,7 @@ from scipy import interpolate
 from shapely.geometry import LinearRing, Polygon as shapelyPolygon
 from typing import Type
 from matplotlib.pyplot import  Axes
+from matplotlib.image import AxesImage
 
 class AxManager:
     """An object to manage multiple selector tools on a single axes. only one of these should exist per Axes."""
@@ -58,11 +60,12 @@ class MySelectorWidget(AxesWidget):
     can implement a number of action handlers like mouse actions and keyboard presses.
     button allows the user to specify which mouse buttons are valid to trigger an event. This can be an int or list of ints.
     state_modifier_keys should be a dict {state: keyName}, the default is {move=' ', clear='escape', square='shift', center='control'}"""
-    def __init__(self, axMan: AxManager, onselect=None, button=None, state_modifier_keys=None):
+    def __init__(self, axMan: AxManager, image: AxesImage, onselect=None, button=None, state_modifier_keys=None):
         AxesWidget.__init__(self, axMan.ax)
         self.onselect = onselect
         self.visible = True
         self.axMan = axMan
+        self.image = image
         self.artists = []
         self.connect_event('motion_notify_event', self.onmove)
         self.connect_event('button_press_event', self.press)
@@ -224,6 +227,12 @@ class MySelectorWidget(AxesWidget):
         self.artists = []
         self.axMan.draw()
 
+    def removeArtist(self, artist):
+        self.artists.remove(artist)
+        self.axMan.artists.remove(artist)
+        artist.remove()
+        self.axMan.draw()
+
     # Overridable events
     def _on_key_release(self, event):
         """Key release event handler"""
@@ -247,8 +256,8 @@ class MySelectorWidget(AxesWidget):
         pass
 
 class MyLasso(MySelectorWidget):
-    def __init__(self, axMan: AxManager, onselect=None, button=None):
-        super().__init__(axMan, button=button)
+    def __init__(self, axMan: AxManager, image: AxesImage, onselect=None, button=None):
+        super().__init__(axMan, image, button=button)
         self.onselect = onselect
         self.verts = None
         self.polygon = Polygon([[0,0]], facecolor=(0, 0, 1, .1), animated=True, edgecolor=(0, 0, 1, .8))
@@ -278,8 +287,8 @@ class MyLasso(MySelectorWidget):
 
 
 class MyEllipse(MySelectorWidget):
-    def __init__(self, axMan: AxManager, onselect=None):
-        super().__init__(axMan)
+    def __init__(self, axMan: AxManager, image: AxesImage, onselect=None):
+        super().__init__(axMan, image)
         self.started = False
         self.onselect = onselect
         self.settingWidth = False
@@ -294,6 +303,7 @@ class MyEllipse(MySelectorWidget):
             self.startPoint = [event.xdata, event.ydata]
             self.patch.set_center(self.startPoint)
             self.started = True
+
     def _ondrag(self,event):
         if self.started:
             dx = event.xdata-self.startPoint[0]
@@ -303,6 +313,7 @@ class MyEllipse(MySelectorWidget):
             self.patch.set_center([self.startPoint[0]+dx/2, self.startPoint[1]+dy/2])
             self.patch.angle = np.degrees(np.arctan2(dy,dx)) - 90
             self.axMan.update()
+
     def _onhover(self, event):
         if self.started:
             dx = event.xdata - self.patch.center[0]
@@ -311,6 +322,7 @@ class MyEllipse(MySelectorWidget):
             theta = np.arctan2(dy,dx) - np.radians(self.patch.angle)
             self.patch.width = 2*h*np.cos(theta)
             self.axMan.update()
+
     def _release(self, event):
         if event.button != 1:
             return
@@ -334,9 +346,10 @@ class MyEllipse(MySelectorWidget):
                     handles = [verts[0], verts[len(verts)//4], verts[len(verts)//2], verts[3*len(verts)//4], verts[0]]
                     self.onselect(verts, handles)
 
+
 class MyPoint(MySelectorWidget):
-    def __init__(self, axMan: AxManager, onselect = None, side: int = 3):
-        super().__init__(axMan)
+    def __init__(self, axMan: AxManager, image: AxesImage, onselect = None, side: int = 3):
+        super().__init__(axMan, image)
         self.onselect = onselect
         self.side = side
         self.patch = Rectangle((0, 0), 1, 1, facecolor=(1, 0, 0, 0.5), animated=True)
@@ -377,6 +390,78 @@ class MyPoint(MySelectorWidget):
         self.ghostPatch.set_width(self.side)
         self.ghostPatch.set_height(self.side)
         self.axMan.update()
+
+class MyPaint(MySelectorWidget):
+    def __init__(self, axMan: AxManager, im: AxesImage, onselect=None):
+        super().__init__(axMan, im)
+        self.onselect = onselect
+        self.started = False
+        self.selectionTime = False
+        self.contours = []
+        self.box = Rectangle((0,0), 0, 0, facecolor = (1,0,0,.1), edgecolor=(0,0,1,.4), animated=True)
+        self.addArtist(self.box)
+
+    def findContours(self, rect: Rectangle):
+        import cv2
+        x, y = rect.xy
+        x = int(x)
+        y = int(y)
+        x2 = int(x + rect.get_width())
+        y2 = int(y + rect.get_height())
+        xslice = slice(x, x2+1) if x2 > x else slice(x2, x+1)
+        yslice = slice(y, y2+1) if y2 > y else slice(y2, y+1)
+        image = self.image.get_array()[(yslice, xslice)]
+        image = ((image - image.min()) / (image.max() - image.min()) * 255).astype(np.uint8)
+        threshold, binary = cv2.threshold(image, 0, 1, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+        contours, hierarchy = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        for contour in contours:
+            contour = contour.squeeze()  # We want a Nx2 array. We get Nx1x2 though.
+            if len(contour.shape) != 2:  # Sometimes contour is 1x1x2 which squezes down to just 2
+                continue
+            if contour.shape[0] < 3:  # We need a polygon, not a line
+                continue
+            contour += np.array([xslice.start, yslice.start])  # Apply offset so that coordinates are globally correct.
+            p = Polygon(contour)
+            self.addArtist(p)
+            self.contours.append(p)
+            self.axMan.update()
+
+
+    def _press(self, event):
+        if event.button == 1: # Left Click
+            if not self.started and not self.selectionTime:
+                self.started = True
+                self.box.set_xy((event.xdata, event.ydata))
+            elif self.selectionTime:
+                coord = (event.xdata, event.ydata)
+                for artist in self.contours:
+                    assert isinstance(artist, Polygon)
+                    if artist.get_path().contains_point(coord):
+                        l = shapelyPolygon(LinearRing(artist.xy))
+                        l = l.buffer(0)
+                        l = l.simplify(l.length / 2e2, preserve_topology=False)
+                        handles = l.exterior.coords
+                        self.onselect(artist.xy, handles)
+                        break
+                [self.removeArtist(i) for i in self.contours]
+                self.contours = []
+                self.selectionTime = False
+
+    def _ondrag(self, event):
+        if self.started and event.button == 1:
+            x, y = self.box.xy
+            dx = event.xdata - x
+            dy = event.ydata - y
+            self.box.set_width(dx)
+            self.box.set_height(dy)
+            self.axMan.update()
+
+    def _release(self, event):
+        if event.button == 1 and self.started:
+            self.findContours(self.box)
+            self.selectionTime = True
+            self.started = False
+
 
 
 class PolygonInteractor(MySelectorWidget):
@@ -448,7 +533,7 @@ class PolygonInteractor(MySelectorWidget):
         """whenever a key is pressed"""
 #        if not event.inaxes:
 #            return
-        if event.key == 't':
+        if event.key == 't':#Show points
             self.showverts = not self.showverts
             self.markers.set_visible(self.showverts)
             if not self.showverts:
@@ -482,7 +567,6 @@ class PolygonInteractor(MySelectorWidget):
         lastHoverInd = self._hoverInd
         self._hoverInd = self._get_ind_under_point(event)
         if lastHoverInd != self._hoverInd:
-            print(f"Hover {self._hoverInd}")
             if self._hoverInd is not None:
                 self.markers.set_markerfacecolor((0, .9, 1, 1))
             else:
@@ -509,9 +593,10 @@ class AdjustableSelector:
     """This class manager an roi selector. By setting `adjustable` true then when the selector calls its `onselect` function
     the results will be passed on to a PolygonInteractor for further tweaking. Tweaking can be confirmed by pressing enter.
     at the end the selector will pass an 2d boolean array and a polygon patch to the `onfinished` function if it has been set."""
-    def __init__(self, ax: Axes, selectorClass: Type[MySelectorWidget], onfinished = None):
+    def __init__(self, ax: Axes, image: AxesImage, selectorClass: Type[MySelectorWidget], onfinished = None):
         self.axMan = AxManager(ax)
-        self.selector = selectorClass(self.axMan, onselect=self.goPoly)
+        self.image = image
+        self.selector = selectorClass(self.axMan, self.image, onselect=self.goPoly)
         self.selector.active = False
         self.adjuster = PolygonInteractor(self.axMan, onselect=self.finish)
         self.adjuster.active = False
@@ -542,7 +627,7 @@ class AdjustableSelector:
 
     def setSelector(self, selectorClass: Type):
         self.selector.removeArtists()
-        self.selector = selectorClass(self.axMan)
+        self.selector = selectorClass(self.axMan, self.image)
         self.adjustable = self.adjustable
 
     def goPoly(self, verts, handles):
