@@ -87,6 +87,7 @@ class BigPlot(QWidget):
         self.canvas.draw_idle()
 
     def setMetadata(self, metadata: ICMetaData):
+        """Refresh the ROIs based on a new metadata. Also needs to be provided with the data for the image to display."""
         self.metadata = metadata
         self.clearRois()
         currentSel = self.roiFilter.currentText()

@@ -14,8 +14,8 @@ from pwspy.analysis import AnalysisResultsLoader
 
 class AnalysisViewer(AnalysisPlotter, QWidget):
     def __init__(self, metadata: ICMetaData, analysisLoader: Optional[AnalysisResultsLoader], title: str, parent=None, initialField='thumbnail'):
-        AnalysisPlotter.__init__(self, metadata, analysisLoader)
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
+        AnalysisPlotter.__init__(self, metadata, analysisLoader)
         self.setWindowTitle(title)
         layout = QGridLayout()
         self.plotWidg = BigPlot(metadata, metadata.getThumbnail(), 'title')
@@ -46,3 +46,7 @@ class AnalysisViewer(AnalysisPlotter, QWidget):
             self.analysisCombo.setCurrentText(field)
         self.plotWidg.setImageData(self.data)
         self.plotWidg.setSaturation()
+
+    def setMetadata(self, md: ICMetaData, analysis: Optional[AnalysisResultsLoader]=None):
+        super().setMetadata(md, analysis)
+        self.plotWidg.setMetadata(md)

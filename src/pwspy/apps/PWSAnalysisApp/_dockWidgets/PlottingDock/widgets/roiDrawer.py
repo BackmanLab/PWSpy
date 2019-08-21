@@ -25,7 +25,7 @@ class RoiDrawer(QWidget):
         layout = QGridLayout()
         self.mdIndex = 0
         self.newRoiDlg = NewRoiDlg(self)
-        self.plotWidg = AnalysisViewer(metadatas[self.mdIndex][0], metadatas[self.mdIndex][1], 'title')
+        self.anViewer = AnalysisViewer(metadatas[self.mdIndex][0], metadatas[self.mdIndex][1], 'title')
         self.buttonGroup = QButtonGroup(self)
         self.noneButton = QPushButton("Inspect")
         self.lassoButton = QPushButton("Lasso")
@@ -51,31 +51,31 @@ class RoiDrawer(QWidget):
         layout.addWidget(self.adjustButton, 0, 3, 1, 1)
         layout.addWidget(self.previousButton, 0, 5, 1, 1)
         layout.addWidget(self.nextButton, 0, 6, 1, 1)
-        layout.addWidget(self.plotWidg, 1, 0, 8, 8)
+        layout.addWidget(self.anViewer, 1, 0, 8, 8)
         self.setLayout(layout)
-        self.selector: AdjustableSelector = AdjustableSelector(self.plotWidg.plotWidg.ax, MyLasso, onfinished=self.finalizeRoi)
+        self.selector: AdjustableSelector = AdjustableSelector(self.anViewer.plotWidg.ax, MyLasso, onfinished=self.finalizeRoi)
         self.show()
 
     def finalizeRoi(self, verts: np.ndarray):
         poly = patches.Polygon(verts, facecolor=(0, .5, 0.5, 0.4))
-        shape = self.plotWidg.plotWidg.data.shape
-        self.plotWidg.plotWidg.ax.add_patch(poly)
-        self.plotWidg.plotWidg.canvas.draw_idle()
+        shape = self.anViewer.plotWidg.data.shape
+        self.anViewer.plotWidg.ax.add_patch(poly)
+        self.anViewer.plotWidg.canvas.draw_idle()
         self.newRoiDlg.show()
         self.newRoiDlg.exec()
         poly.remove()
         if self.newRoiDlg.result() == QDialog.Accepted:
-            r = Roi.fromVerts(self.plotWidg.plotWidg.roiFilter.currentText(), self.newRoiDlg.number, verts=np.array(verts), dataShape=shape)
+            r = Roi.fromVerts(self.anViewer.plotWidg.roiFilter.currentText(), self.newRoiDlg.number, verts=np.array(verts), dataShape=shape)
             md = self.metadatas[self.mdIndex][0]
             try:
                 md.saveRoi(r)
-                self.plotWidg.plotWidg.addRoi(r)
+                self.anViewer.plotWidg.addRoi(r)
             except OSError: #We must already have this roi saved
                 ans = QMessageBox.question(self, 'Overwrite?', f"Roi {r.name}:{r.number} already exists. Overwrite?")
                 if ans == QMessageBox.Yes:
                     md.saveRoi(r, overwrite=True)
-                    self.plotWidg.plotWidg.showRois() #Refresh all rois since we just deleted one as well.
-        self.plotWidg.plotWidg.canvas.draw_idle()
+                    self.anViewer.plotWidg.showRois() #Refresh all rois since we just deleted one as well.
+        self.anViewer.plotWidg.canvas.draw_idle()
         self.selector.setActive(True)  # Start the next roi.
 
 
@@ -84,16 +84,16 @@ class RoiDrawer(QWidget):
             if button is self.lassoButton:
                 self.selector.setSelector(MyLasso)
                 self.selector.setActive(True)
-                self.plotWidg.plotWidg.enableHoverAnnotation(False)
+                self.anViewer.plotWidg.enableHoverAnnotation(False)
                 self.adjustButton.setEnabled(True)
             elif button is self.ellipseButton:
                 self.selector.setSelector(MyEllipse)
                 self.selector.setActive(True)
-                self.plotWidg.plotWidg.enableHoverAnnotation(False)
+                self.anViewer.plotWidg.enableHoverAnnotation(False)
                 self.adjustButton.setEnabled(True)
             elif button is self.noneButton:
                 self.selector.setActive(False)
-                self.plotWidg.plotWidg.enableHoverAnnotation(True)
+                self.anViewer.plotWidg.enableHoverAnnotation(True)
                 self.adjustButton.setEnabled(False)
             self.lastButton_ = button
 
@@ -114,16 +114,16 @@ class RoiDrawer(QWidget):
         self._updateDisplayedCell()
 
     def _updateDisplayedCell(self):
-        currRoi = self.plotWidg.plotWidg.roiFilter.currentText()
+        currRoi = self.anViewer.plotWidg.roiFilter.currentText() #Since the next cell we look at will likely not have rois of the current name we want to manually force the ROI name to stay the same.
         md = self.metadatas[self.mdIndex][0]
-        self.plotWidg.plotWidg.setMetadata(md)
-        self.plotWidg.plotWidg.setImageData(md.getThumbnail())
-        self.plotWidg.plotWidg.roiFilter.setEditText(currRoi)
+        self.anViewer.setMetadata(md)
+        self.anViewer.plotWidg.roiFilter.setEditText(currRoi)
         self.setWindowTitle(f"Roi Drawer - {os.path.split(md.filePath)[-1]}")
 
 class NewRoiDlg(QDialog):
-    def __init__(self, parent: QWidget):
+    def __init__(self, parent: RoiDrawer):
         super().__init__(parent=parent, flags=QtCore.Qt.FramelessWindowHint)
+        self.parent = parent
         self.setModal(True)
 
         self.number = None
@@ -152,8 +152,8 @@ class NewRoiDlg(QDialog):
         super().reject()
 
     def show(self) -> None:
-        if len(self.parent().plotWidg.plotWidg._rois) > 0:
-            rois, ims, polys = zip(*self.parent().plotWidg.plotWidg._rois)
+        if len(self.parent.anViewer.plotWidg._rois) > 0:
+            rois, ims, polys = zip(*self.parent.anViewer.plotWidg._rois)
             newNum = max([r.number for r in rois]) + 1 #Set the box 1 number abox the maximum found
             self.numBox.setValue(newNum)
         else:

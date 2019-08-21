@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import QWidget, QApplication
@@ -25,13 +27,13 @@ class AspectRatioWidget(QWidget):
 
 class AnalysisPlotter:
     def __init__(self, metadata: ICMetaData, analysis: AnalysisResultsLoader = None):
+        self.analysisField = None
         self.analysis = analysis
         self.metadata = metadata
         self.data = None
-        self.analysisField = None
 
     def changeData(self, field):
-        if field != self.analysisField:
+        # if field != self.analysisField:
             self.analysisField = field
             if field == 'thumbnail': #Load the thumbnail from the ICMetadata object
                 self.data = self.metadata.getThumbnail()
@@ -45,3 +47,9 @@ class AnalysisPlotter:
                     raise ValueError(f"Analysis Plotter for ImCube {self.metadata.filePath} does not have an analysis file.")
                 self.data = getattr(self.analysis, field)
             assert len(self.data.shape) == 2
+
+    def setMetadata(self, md: ICMetaData, analysis: Optional[AnalysisResultsLoader] = None):
+        self.analysis = analysis
+        self.metadata = md
+        self.changeData(self.analysisField)
+
