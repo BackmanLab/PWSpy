@@ -136,13 +136,13 @@ class Analysis(LegacyAnalysis):
             print("Warning: Analysis ignoring reference material correction")
         else:
             theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, wavelengths=ref.wavelengths, NA=settings.numericalAperture)
-        if extraReflectance.metadata.numericalAperture != settings.numericalAperture:
-            print(f"Warning: The numerical aperture of your analysis does not match the NA of the Extra Reflectance Calibration. Calibration File NA: {extraReflectance.metadata.numericalAperture}. Analysis NA: {settings.numericalAperture}.")
         if extraReflectance is None:
             Iextra = ExtraReflectionCube.create(ExtraReflectanceCube(np.zeros(ref.data.shape), ref.wavelengths, ExtraReflectanceCube.ERMetadata(ref.metadata._dict)), theoryR, ref)  # a bogus reflection that is all zeros
             print("Warning: Analysis ignoring extra reflection")
             assert np.all(Iextra.data == 0)
         else:
+            if extraReflectance.metadata.numericalAperture != settings.numericalAperture:
+                print(f"Warning: The numerical aperture of your analysis does not match the NA of the Extra Reflectance Calibration. Calibration File NA: {extraReflectance.metadata.numericalAperture}. Analysis NA: {settings.numericalAperture}.")
             Iextra = ExtraReflectionCube.create(extraReflectance, theoryR, ref) #Convert from reflectance to predicted counts/ms.
         ref.subtractExtraReflection(Iextra)  # remove the extra reflection from our data#
         ref = ref / theoryR[None, None, :]  # now when we normalize by our reference we will get a result in units of physical reflectance rather than arbitrary units.

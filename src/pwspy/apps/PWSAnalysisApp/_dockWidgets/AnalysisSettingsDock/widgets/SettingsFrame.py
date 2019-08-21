@@ -11,7 +11,7 @@ from PyQt5.QtGui import QPalette, QValidator, QDoubleValidator
 from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupBox, QHBoxLayout, QWidget, QRadioButton, \
     QFrame, QSpinBox, QVBoxLayout, QPushButton, QComboBox, QDoubleSpinBox, QCheckBox, QMessageBox, QSpacerItem, QSizePolicy, QLayout
 
-from pwspy.dataTypes import CameraCorrection
+from pwspy.dataTypes import CameraCorrection, ERMetadata
 from pwspy.analysis import AnalysisSettings
 from pwspy.apps.PWSAnalysisApp import applicationVars
 from pwspy.apps import resources
@@ -24,7 +24,7 @@ class SettingsFrame(QScrollArea):
     def __init__(self, erManager: ERManager):
         super().__init__()
         self.ERExplorer = erManager.createSelectorWindow(self)
-        self.ERExplorer.selectionChanged.connect(lambda md: self.RSubtractionNameLabel.setText(os.path.split(md.filePath)[-1]))
+        self.ERExplorer.selectionChanged.connect(self.extraReflectionChanged)
         self._frame = VerticallyCompressedWidget(self)
         self._layout = QGridLayout()
         self._frame.setLayout(self._layout)
@@ -105,7 +105,7 @@ class SettingsFrame(QScrollArea):
         layout = QVBoxLayout()
         layout.setContentsMargins(5, 1, 5, 5)
         rsubLabel = QLabel("R Subtraction")
-        self.RSubtractionNameLabel = QLineEdit()
+        self.RSubtractionNameLabel = QLineEdit('None')
         self.RSubtractionNameLabel.setEnabled(False)
         self.RSubtractionBrowseButton = QPushButton(QtGui.QIcon(os.path.join(resources, 'folder.svg')), '')
         self.RSubtractionBrowseButton.released.connect(self._browseReflection)
@@ -228,6 +228,12 @@ class SettingsFrame(QScrollArea):
     @property
     def analysisName(self) -> str:
         return self._analysisNameEdit.text()
+
+    def extraReflectionChanged(self, md: Optional[ERMetadata]):
+        if md is None:
+            self.RSubtractionNameLabel.setText('None')
+        else:
+            self.RSubtractionNameLabel.setText(os.path.split(md.filePath)[-1])
 
     def _updateSize(self):
         height = 100  # give this much excess room.

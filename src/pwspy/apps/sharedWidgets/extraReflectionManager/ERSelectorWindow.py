@@ -59,7 +59,7 @@ class ERTreeWidgetItem(QTreeWidgetItem):
 
 
 class ERSelectorWindow(QDialog):
-    selectionChanged = QtCore.pyqtSignal(ERMetadata)
+    selectionChanged = QtCore.pyqtSignal(object) #Usually an ERMetadata object, sometimes None
     def __init__(self, manager: ERManager, parent: Optional[QWidget] = None):
         self._manager = manager
         self._selectedId: str = None
@@ -99,6 +99,9 @@ class ERSelectorWindow(QDialog):
         #Sort items by date
         for item in [self.tree.invisibleRootItem().child(i) for i in range(self.tree.invisibleRootItem().childCount())]:
             item.sortChildren(0, QtCore.Qt.AscendingOrder)
+        ig = QTreeWidgetItem()
+        ig.setText(0, "Ignore")
+        self.tree.invisibleRootItem().addChild(ig)
 
     def _addItem(self, item: ERIndexCube):
         status = self._manager.dataComparator.local.status
@@ -140,17 +143,24 @@ class ERSelectorWindow(QDialog):
         self._initialize()
 
     def accept(self) -> None:
-        try:
-            self.setSelection(self.tree.selectedItems()[0].idTag)
+        if self.tree.selectedItems()[0].text(0) == 'Ignore':
+            self.setSelection(None)
             super().accept()
-        except IndexError:  # Nothing was selected
-            msg = QMessageBox.information(self, 'Uh oh!', 'No item was selected!')
+        else:
+            try:
+                self.setSelection(self.tree.selectedItems()[0].idTag)
+                super().accept()
+            except IndexError:  # Nothing was selected
+                msg = QMessageBox.information(self, 'Uh oh!', 'No item was selected!')
 
     def getSelectedId(self):
         return self._selectedId
 
     def setSelection(self, idTag: str):
-        md = self._manager.getMetadataFromId(idTag)
+        if idTag is None:
+            md = None
+        else:
+            md = self._manager.getMetadataFromId(idTag)
         self._selectedId = idTag
         self.selectionChanged.emit(md)
 
