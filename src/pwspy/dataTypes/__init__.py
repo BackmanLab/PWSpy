@@ -16,5 +16,6 @@ from ._KCubeClass import KCube
 from ._ExtraReflectanceCubeClass import ExtraReflectanceCube, ExtraReflectionCube, ERMetadata
 from ._DynCubeClass import DynCube
 from ._DynMetaDataClass import DynMetaData
+from ._FluoresenceImg import FluorescenceImage
 
 

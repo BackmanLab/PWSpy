@@ -5,6 +5,8 @@ Created on Tue Feb 12 19:17:14 2019
 @author: Nick Anthony
 """
 from __future__ import annotations
+
+from pwspy.dataTypes._FluoresenceImg import FluorescenceImage
 from ._MetaDataBaseClass import MetaDataBase
 from . import _jsonSchemasPath
 from pwspy.moduleConsts import dateTimeFormat
@@ -24,7 +26,7 @@ if typing.TYPE_CHECKING:
     import multiprocessing as mp
 
 
-class ICMetaData(MetaDataBase):
+class ICMetaData(MetaDataBase): #TODO this currently encapsulates PWS specific funcitonality as well as PWS/Dyn/Fluore/Analysis folder stuff. should be separated into two classes.
     class FileFormats(Enum):
         RawBinary = auto()
         Tiff = auto()
@@ -186,3 +188,9 @@ class ICMetaData(MetaDataBase):
             with tf.TiffFile(os.path.join(self.filePath, 'image_bd.tif')) as f:
                 return f.asarray()
 
+    def hasFluorescence(self) -> bool:
+        """Indicates whether or not a fluorescence image was found."""
+        return FluorescenceImage.isValidPath(os.path.join(self.filePath, 'Fluorescence'))
+
+    def getFluorescence(self) -> FluorescenceImage:
+        return FluorescenceImage.fromTiff(os.path.join(self.filePath, 'Fluorescence'))
