@@ -6,6 +6,10 @@ call "%root%\Scripts\activate.bat" "%root%"
 
 call conda activate %env%
 
-call python -m pwspy.apps.PWSAnalysisApp
+if errorlevel 1 (
+	echo Please create a Conda environment named %env% and reinstall the PWS software
+) else (
+	call python -m pwspy.apps.PWSAnalysisApp
+)
 
 pause
