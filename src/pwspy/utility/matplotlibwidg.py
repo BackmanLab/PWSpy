@@ -18,6 +18,7 @@ from shapely.geometry import LinearRing, Polygon as shapelyPolygon, MultiPolygon
 from typing import Type
 from matplotlib.pyplot import  Axes
 from matplotlib.image import AxesImage
+from cycler import cycler
 
 class AxManager:
     """An object to manage multiple selector tools on a single axes. only one of these should exist per Axes."""
@@ -410,7 +411,7 @@ class MyPaint(MySelectorWidget):
         self.started = False
         self.selectionTime = False
         self.contours = []
-        self.box = Rectangle((0,0), 0, 0, facecolor = (1,0,0,.1), edgecolor=(0,0,1,.4), animated=True)
+        self.box = Rectangle((0,0), 0, 0, facecolor = (1,0,1,.01), edgecolor=(0,0,1,.4), animated=True)
         self.addArtist(self.box)
 
     @staticmethod
@@ -429,15 +430,17 @@ class MyPaint(MySelectorWidget):
         image = self.image.get_array()[(yslice, xslice)]
         image = ((image - image.min()) / (image.max() - image.min()) * 255).astype(np.uint8)
         threshold, binary = cv2.threshold(image, 0, 1, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-        contours, hierarchy = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-        for contour in contours:
+        contImage, contours, hierarchy = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        alpha = 0.3
+        colorCycler = cycler(color=[(1,0,0,alpha), (0,1,0,alpha), (0,0,1,alpha), (1,1,0,alpha), (1,0,1,alpha)])
+        for contour, color in zip(contours, colorCycler()):
             contour = contour.squeeze()  # We want a Nx2 array. We get Nx1x2 though.
             if len(contour.shape) != 2:  # Sometimes contour is 1x1x2 which squezes down to just 2
                 continue
             if contour.shape[0] < 3:  # We need a polygon, not a line
                 continue
             contour += np.array([xslice.start, yslice.start])  # Apply offset so that coordinates are globally correct.
-            p = Polygon(contour, color=(0,1,0,.4), animated=True)
+            p = Polygon(contour, color=color['color'], animated=True)
             self.addArtist(p)
             self.contours.append(p)
             self.axMan.update()

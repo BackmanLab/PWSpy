@@ -18,19 +18,19 @@ requirements:
 
   run:
     - python
-    - numpy >=1.8*
-    - scipy >=0.18*
+    - numpy >=1.16
+    - scipy >=0.18
     - tifffile # -c conda-forge
     - psutil
     - shapely
     - h5py
     - pandas
-    - matplotlib >=1.4*
+    - matplotlib >=1.4
     - jsonschema
     - google-api-python-client # -c conda-forge
     - google-auth-httplib2 # -c conda-forge
     - google-auth-oauthlib # -c conda-forge
-    - opencv # -c menpo
+    - opencv =3 # -c menpo
 
 about:
   home: data['url']
