@@ -188,9 +188,3 @@ class ICMetaData(MetaDataBase): #TODO this currently encapsulates PWS specific f
             with tf.TiffFile(os.path.join(self.filePath, 'image_bd.tif')) as f:
                 return f.asarray()
 
-    def hasFluorescence(self) -> bool:
-        """Indicates whether or not a fluorescence image was found."""
-        return FluorescenceImage.isValidPath(os.path.join(self.filePath, 'Fluorescence'))
-
-    def getFluorescence(self) -> FluorescenceImage:
-        return FluorescenceImage.fromTiff(os.path.join(self.filePath, 'Fluorescence'))

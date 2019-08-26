@@ -17,5 +17,6 @@ from ._ExtraReflectanceCubeClass import ExtraReflectanceCube, ExtraReflectionCub
 from ._DynCubeClass import DynCube
 from ._DynMetaDataClass import DynMetaData
 from ._FluoresenceImg import FluorescenceImage
+from ._AcqDir import AcqDir
 
 
