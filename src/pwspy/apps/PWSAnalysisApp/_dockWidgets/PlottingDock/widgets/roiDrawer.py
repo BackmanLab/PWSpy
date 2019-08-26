@@ -68,11 +68,16 @@ class RoiDrawer(QWidget):
         shape = self.anViewer.plotWidg.data.shape
         self.anViewer.plotWidg.ax.add_patch(poly)
         self.anViewer.plotWidg.canvas.draw_idle()
+        roiName = self.anViewer.plotWidg.roiFilter.currentText()
+        if roiName == '':
+            QMessageBox.information(self, 'Wait', 'Please type an ROI name into the box at the bottom of the screen.')
+            self.selector.setActive(True)
+            return
         self.newRoiDlg.show()
         self.newRoiDlg.exec()
         poly.remove()
         if self.newRoiDlg.result() == QDialog.Accepted:
-            r = Roi.fromVerts(self.anViewer.plotWidg.roiFilter.currentText(), self.newRoiDlg.number, verts=np.array(verts), dataShape=shape)
+            r = Roi.fromVerts(roiName, self.newRoiDlg.number, verts=np.array(verts), dataShape=shape)
             md = self.metadatas[self.mdIndex][0]
             try:
                 md.saveRoi(r)
