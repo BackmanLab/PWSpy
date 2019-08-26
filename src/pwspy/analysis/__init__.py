@@ -11,7 +11,6 @@ from ._analysisSettings import AnalysisSettings
 from ._analysisResults import AnalysisResultsSaver, AnalysisResultsLoader
 from ._analysisClass import Analysis, LegacyAnalysis
 
-# TODO add Dynamics analysis
 
 # TODO replace slope entirely with CDR
 

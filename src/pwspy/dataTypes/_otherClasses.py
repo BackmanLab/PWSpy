@@ -22,7 +22,7 @@ from scipy import io as spio
 from scipy.spatial.qhull import Delaunay
 from shapely import geometry
 from shapely.ops import cascaded_union, polygonize
-
+import cv2
 from pwspy.utility.misc import profileDec
 
 import typing
@@ -258,7 +258,6 @@ class Roi:
     def transform(self, matrix: np.ndarray) -> Roi:
         """return a copy of this Roi that has been transformed by an affine transform matrix like the one returned by
         opencv.estimateRigidTransform. This can be obtained using ICBase's getTransform method."""
-        import cv2
         mask = cv2.warpAffine(self.mask.astype(np.uint8), matrix, self.mask.shape).astype(np.bool)
         if self.verts is not None: verts = cv2.transform(self.verts, matrix)
         else: verts = None
@@ -287,6 +286,4 @@ class Roi:
         else:
             return patches.Polygon(self.verts, facecolor=(1, 0, 0, 0.5))
 
-#TODO add way to convert old rois to new rois for performance reasons.
-#TODO view analysis as you go.
 

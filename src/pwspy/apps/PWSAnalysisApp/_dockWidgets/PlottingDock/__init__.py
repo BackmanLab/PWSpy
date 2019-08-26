@@ -12,7 +12,6 @@ from .widgets.littlePlot import LittlePlot
 import os
 
 
-# TODO add blinded roi drawing
 class PlottingDock(QDockWidget):
     def __init__(self, selector: CellSelectorDock):
         super().__init__("Plotting")

@@ -143,7 +143,6 @@ class DynCube(ICBase):
         return DynCube(ret.data, md)
 
     def getAutocorrelation(self) -> np.ndarray:
-        # TODO add `mask` arg so that only a section of the data array needs to be processed.
         truncLength = 100
         F = np.fft.rfft(self.data, axis=2)
         ac = np.fft.irfft(F * np.conjugate(F), axis=2) / F.shape[2]
