@@ -143,7 +143,11 @@ class ERSelectorWindow(QDialog):
         self._initialize()
 
     def accept(self) -> None:
-        if self.tree.selectedItems()[0].text(0) == 'Ignore':
+        items = self.tree.selectedItems()
+        if len(items) == 0:
+            self.setSelection(None)
+            super().accept()
+        elif self.tree.selectedItems()[0].text(0) == 'Ignore':
             self.setSelection(None)
             super().accept()
         else:
