@@ -103,7 +103,7 @@ class CellSelectorDock(QDockWidget):
             expr = self.expressionFilter.text()
             if expr.strip() != '':
                 try:
-                    ret = bool(eval(expr.format(num=item.num, analyses=item.cube.getAnalyses(), rois=[i[0] for i in item.cube.getRois()], idTag=item.cube.idTag)))
+                    ret = bool(eval(expr.format(num=item.num, analyses=item.acqDir.getAnalyses(), rois=[i[0] for i in item.acqDir.getRois()], idTag=item.acqDir.idTag)))
                 except Exception:
                     QMessageBox.information(self, 'Hmm', f'{expr} is not a valid boolean expression.')
                     return
@@ -115,10 +115,10 @@ class CellSelectorDock(QDockWidget):
                 self.tableWidget.setRowHidden(item.row, True)
 
     def getSelectedCellMetas(self) -> List[ICMetaData]:
-        return [i.cube for i in self.tableWidget.selectedCellItems]
+        return [i.acqDir for i in self.tableWidget.selectedCellItems]
 
     def getAllCellMetas(self) -> List[ICMetaData]:
-        return [i.cube for i in self.tableWidget.cellItems]
+        return [i.acqDir for i in self.tableWidget.cellItems]
 
     def getSelectedReferenceMeta(self):
         return self.refTableWidget.selectedReferenceMeta
@@ -126,7 +126,7 @@ class CellSelectorDock(QDockWidget):
     def setSelectedCells(self, cells: List[ICMetaData]):
         idTags = [i.idTag for i in cells]
         for item in self.tableWidget.cellItems:
-            if item.cube.idTag in idTags:
+            if item.acqDir.idTag in idTags:
                 item.setSelected(True)
             else:
                 item.setSelected(False)

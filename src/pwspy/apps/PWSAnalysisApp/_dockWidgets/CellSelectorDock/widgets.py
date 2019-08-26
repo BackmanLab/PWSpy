@@ -7,6 +7,7 @@ from typing import List, Optional, Type
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import QPalette
 from PyQt5.QtWidgets import QPushButton, QTableWidgetItem, QTableWidget, QAbstractItemView, QMenu, QWidget, QMessageBox
+from dataTypes import AcqDir
 
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.dictDisplayTree import DictDisplayTree, DictDisplayTreeDialog
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.tables import NumberTableWidgetItem
@@ -24,27 +25,27 @@ def evalToolTip(cls: Type[QWidget], method):
 
 
 class CellTableWidgetItem:
-    def __init__(self, cube: ICMetaData, label: str, num: int):
-        self.cube = cube
+    def __init__(self, acq: AcqDir, label: str, num: int):
+        self.acqDir = acq
         self.num = num
         self.path = label
-        self.notesButton = evalToolTip(QPushButton, cube.getNotes)("Open")
+        self.notesButton = evalToolTip(QPushButton, acq.getNotes)("Open")
         self.notesButton.setFixedSize(40, 30)
         self.pathLabel = QTableWidgetItem(self.path)
         self.numLabel = NumberTableWidgetItem(num)
         self.roiLabel = NumberTableWidgetItem(0)
-        nameNums = [(name, num) for name, num, fformat in cube.getRois()]
+        nameNums = [(name, num) for name, num, fformat in acq.getRois()]
         if len(nameNums) > 0:
             names = set(list(zip(*nameNums))[0])
             d = {name: [num for nname, num in nameNums if nname == name] for name in names}
             self.roiLabel.setToolTip("\n".join([f'{k}: {v}' for k, v in d.items()]))
 
         self.anLabel = NumberTableWidgetItem(0)
-        self.anLabel.setToolTip(', '.join(cube.getAnalyses()))
-        self.notesButton.released.connect(self.cube.editNotes)
+        self.anLabel.setToolTip(', '.join(self.acqDir.pws.getAnalyses()))
+        self.notesButton.released.connect(self.acqDir.editNotes)
         self._items = [self.pathLabel, self.numLabel, self.roiLabel, self.anLabel]
         self.refresh()
-        self.mdPath = os.path.join(self.cube.filePath, 'AnAppPrefs.json')
+        self.mdPath = os.path.join(self.acqDir.filePath, 'AnAppPrefs.json')
         try:
             with open(self.mdPath, 'r') as f:
                 self.md = json.load(f)
@@ -110,9 +111,9 @@ class CellTableWidgetItem:
         self.close() #This is here just in case. realistacally del rarely gets called, need to manually close each cell item.
 
     def refresh(self):
-        self.roiLabel.setNumber(len(self.cube.getRois()))
-        self.anLabel.setNumber(len(self.cube.getAnalyses()))
-        if self.cube.getNotes() != '':
+        self.roiLabel.setNumber(len(self.acqDir.getRois()))
+        self.anLabel.setNumber(len(self.acqDir.getAnalyses()))
+        if self.acqDir.getNotes() != '':
             self.notesButton.setStyleSheet('QPushButton { background-color: lightgreen;}')
         else:
             self.notesButton.setStyleSheet('QPushButton { background-color: lightgrey;}')
@@ -167,7 +168,7 @@ class CellTableWidget(QTableWidget):
 
     def displayCellMetadata(self):
         for i in self.selectedCellItems:
-            d = DictDisplayTreeDialog(self, i.cube._dict, title=os.path.join(i.path, f"Cell{i.num}"))
+            d = DictDisplayTreeDialog(self, i.acqDir._dict, title=os.path.join(i.path, f"Cell{i.num}"))
             d.show()
 
     def toggleSelectedCellsInvalid(self, state: bool):
@@ -288,4 +289,4 @@ class ReferencesTable(QTableWidget):
         if len(items) == 0:
             return None
         else:
-            return items[0].item.cube
+            return items[0].item.acqDir

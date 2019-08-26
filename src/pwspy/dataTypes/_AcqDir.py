@@ -5,12 +5,16 @@ import sys
 from dataTypes import FluorescenceImage, ICMetaData, DynMetaData, Roi
 import os
 
+from utility.misc import cached_property
+
+
 class AcqDir:
     """"A class handling the file structure of a single acquisition. this can include a PWS acquisition as well as collocalized Dynamics and fluorescence."""
     def __init__(self, directory: str):
         self.filePath = directory
 
-    def getPWS(self) -> ICMetaData:
+    @cached_property
+    def pws(self) -> ICMetaData:
         """Returns None of the path was invalid."""
         try:
             return ICMetaData.loadAny(os.path.join(self.filePath, 'PWS'))
@@ -20,13 +24,15 @@ class AcqDir:
             except:
                 return None
 
-    def getDynamics(self) -> DynMetaData:
+    @cached_property
+    def dynamics(self) -> DynMetaData:
         try:
             return DynMetaData.fromTiff(os.path.join(self.filePath, 'Dynamics'))
         except:
             return None
 
-    def getFluorescence(self) -> FluorescenceImage:
+    @cached_property
+    def fluorescence(self) -> FluorescenceImage:
         path = os.path.join(self.filePath, 'Fluorescence')
         if FluorescenceImage.isValidPath(path):
             return FluorescenceImage.fromTiff(path)
