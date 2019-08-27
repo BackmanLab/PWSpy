@@ -6,6 +6,7 @@ Created on Tue Feb 12 19:17:14 2019
 """
 from __future__ import annotations
 
+from dataTypes import AcqDir
 from pwspy.dataTypes._FluoresenceImg import FluorescenceImage
 from ._MetaDataBaseClass import MetaDataBase
 from . import _jsonSchemasPath
@@ -37,10 +38,11 @@ class ICMetaData(MetaDataBase): #TODO this currently encapsulates PWS specific f
     with open(_jsonSchemaPath) as f:
         _jsonSchema = json.load(f)
 
-    def __init__(self, metadata: dict, filePath: Optional[str] = None, fileFormat: ICMetaData.FileFormats = None):
-        super().__init__(metadata, filePath)
+    def __init__(self, metadata: dict, filePath: Optional[str] = None, fileFormat: ICMetaData.FileFormats = None, acquisitionDirectory: Optional[AcqDir] = None):
+        super().__init__(metadata, filePath, acquisitionDirectory=acquisitionDirectory)
         self.fileFormat: ICMetaData.FileFormats = fileFormat
         self._dict['wavelengths'] = tuple(np.array(self._dict['wavelengths']).astype(float))
+
 
     @cached_property
     def idTag(self) -> str:
@@ -51,20 +53,20 @@ class ICMetaData(MetaDataBase): #TODO this currently encapsulates PWS specific f
         return self._dict['wavelengths']
 
     @classmethod
-    def loadAny(cls, directory, lock: mp.Lock = None):
+    def loadAny(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None):
         try:
-            return ICMetaData.fromTiff(directory, lock=lock)
+            return ICMetaData.fromTiff(directory, lock=lock, acquisitionDirectory=acquisitionDirectory)
         except:
             try:
-                return ICMetaData.fromOldPWS(directory, lock=lock)
+                return ICMetaData.fromOldPWS(directory, lock=lock, acquisitionDirectory=acquisitionDirectory)
             except:
                 try:
-                    return ICMetaData.fromNano(directory, lock=lock)
+                    return ICMetaData.fromNano(directory, lock=lock, acquisitionDirectory=acquisitionDirectory)
                 except:
                     raise OSError(f"Could not find a valid PWS image cube file at {directory}.")
 
     @classmethod
-    def fromOldPWS(cls, directory, lock: mp.Lock = None):
+    def fromOldPWS(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None):
         if lock is not None:
             lock.acquire()
         try:
@@ -85,10 +87,10 @@ class ICMetaData(MetaDataBase): #TODO this currently encapsulates PWS specific f
         finally:
             if lock is not None:
                 lock.release()
-        return cls(md, filePath=directory, fileFormat=ICMetaData.FileFormats.RawBinary)
+        return cls(md, filePath=directory, fileFormat=ICMetaData.FileFormats.RawBinary, acquisitionDirectory=acquisitionDirectory)
 
     @classmethod
-    def fromNano(cls, directory: str, lock: mp.Lock = None):
+    def fromNano(cls, directory: str, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None):
         if lock is not None:
             lock.acquire()
         try:
@@ -103,10 +105,10 @@ class ICMetaData(MetaDataBase): #TODO this currently encapsulates PWS specific f
         finally:
             if lock is not None:
                 lock.release()
-        return cls(md, filePath=directory, fileFormat=ICMetaData.FileFormats.NanoMat)
+        return cls(md, filePath=directory, fileFormat=ICMetaData.FileFormats.NanoMat, acquisitionDirectory=acquisitionDirectory)
 
     @classmethod
-    def fromTiff(cls, directory, lock: mp.Lock = None):
+    def fromTiff(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None):
         if lock is not None:
             lock.acquire()
         try:
@@ -142,7 +144,7 @@ class ICMetaData(MetaDataBase): #TODO this currently encapsulates PWS specific f
         if 'waveLengths' in metadata:  # Fix an old naming issue
             metadata['wavelengths'] = metadata['waveLengths']
             del metadata['waveLengths']
-        return cls(metadata, filePath=directory, fileFormat=ICMetaData.FileFormats.Tiff)
+        return cls(metadata, filePath=directory, fileFormat=ICMetaData.FileFormats.Tiff, acquisitionDirectory=acquisitionDirectory)
 
     def metadataToJson(self, directory):
         with open(os.path.join(directory, 'pwsmetadata.json'), 'w') as f:

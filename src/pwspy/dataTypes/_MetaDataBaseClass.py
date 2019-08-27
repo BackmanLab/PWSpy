@@ -1,5 +1,7 @@
 import jsonschema
 from datetime import datetime
+
+from dataTypes import AcqDir
 from pwspy.moduleConsts import dateTimeFormat
 from ._otherClasses import CameraCorrection, Roi
 from abc import ABC, abstractmethod
@@ -17,8 +19,9 @@ class MetaDataBase(ABC):
     with open(_jsonSchemaPath) as f:
         _jsonSchema = json.load(f)  # This serves as a schematic that can be checked against when loading metadata to make sure it contains the required information.
 
-    def __init__(self, metadata: dict, filePath: Optional[str] = None):
+    def __init__(self, metadata: dict, filePath: Optional[str] = None, acquisitionDirectory: Optional[AcqDir] = None):
         self.filePath = filePath
+        self.acquisitionDirectory = acquisitionDirectory
         refResolver = jsonschema.RefResolver(pathlib.Path(self._jsonSchemaPath).as_uri(), None)  # This resolver is used to allow derived json schemas to refer to the base schema.
         jsonschema.validate(instance=metadata, schema=self._jsonSchema, types={'array': (list, tuple)}, resolver=refResolver)
         self._dict: dict = metadata

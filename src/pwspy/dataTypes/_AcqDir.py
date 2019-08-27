@@ -17,17 +17,17 @@ class AcqDir:
     def pws(self) -> ICMetaData:
         """Returns None of the path was invalid."""
         try:
-            return ICMetaData.loadAny(os.path.join(self.filePath, 'PWS'))
+            return ICMetaData.loadAny(os.path.join(self.filePath, 'PWS'), acquisitionDirectory=self)
         except:
             try:
-                return ICMetaData.loadAny(os.path.join(self.filePath)) #Many of the old files are saved here.
+                return ICMetaData.loadAny(os.path.join(self.filePath), acquisitionDirectory=self) #Many of the old files are saved here.
             except:
                 return None
 
     @cached_property
     def dynamics(self) -> DynMetaData:
         try:
-            return DynMetaData.fromTiff(os.path.join(self.filePath, 'Dynamics'))
+            return DynMetaData.fromTiff(os.path.join(self.filePath, 'Dynamics'), acquisitionDirectory=self)
         except:
             return None
 
@@ -35,7 +35,7 @@ class AcqDir:
     def fluorescence(self) -> FluorescenceImage:
         path = os.path.join(self.filePath, 'Fluorescence')
         if FluorescenceImage.isValidPath(path):
-            return FluorescenceImage.fromTiff(path)
+            return FluorescenceImage.fromTiff(path, acquisitionDirectory=self)
         else:
             return None
 
