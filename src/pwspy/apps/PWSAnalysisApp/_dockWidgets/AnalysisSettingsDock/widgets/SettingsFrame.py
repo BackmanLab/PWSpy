@@ -19,6 +19,31 @@ from pwspy.apps.PWSAnalysisApp._sharedWidgets.collapsibleSection import Collapsi
 from pwspy.utility.reflection import reflectanceHelper
 from pwspy.moduleConsts import Material
 
+def humble(clas):
+    """Returns a subclass of clas that will not allow scrolling unless it has been actively selected."""
+    class HumbleDoubleSpinBox(clas):
+        def __init__(self, *args):
+            super(HumbleDoubleSpinBox, self).__init__(*args)
+            self.setFocusPolicy(QtCore.Qt.StrongFocus)
+
+        def focusInEvent(self, event):
+            self.setFocusPolicy(QtCore.Qt.WheelFocus)
+            super(HumbleDoubleSpinBox, self).focusInEvent(event)
+
+        def focusOutEvent(self, event):
+            self.setFocusPolicy(QtCore.Qt.StrongFocus)
+            super(HumbleDoubleSpinBox, self).focusOutEvent(event)
+
+        def wheelEvent(self, event):
+            if self.hasFocus():
+                return super(HumbleDoubleSpinBox, self).wheelEvent(event)
+            else:
+                event.ignore()
+    return HumbleDoubleSpinBox
+
+QHSpinBox = humble(QSpinBox)
+QHDoubleSpinBox = humble(QDoubleSpinBox)
+QHComboBox = humble(QComboBox)
 
 class SettingsFrame(QScrollArea):
     def __init__(self, erManager: ERManager):
@@ -67,7 +92,7 @@ class SettingsFrame(QScrollArea):
         '''Hardwarecorrections'''
         layout = QGridLayout()
         dcLabel = QLabel('Dark Counts')
-        self.darkCountBox = QSpinBox()
+        self.darkCountBox = QHSpinBox()
         self.darkCountBox.setToolTip("The counts/pixel reported by the camera when it is not exposed to any light."
                                      " e.g if using 2x2 binning and you measure 400 counts, then the value to put here is 100.")
         dcLabel.setToolTip(self.darkCountBox.toolTip())
@@ -110,11 +135,11 @@ class SettingsFrame(QScrollArea):
         self.RSubtractionBrowseButton = QPushButton(QtGui.QIcon(os.path.join(resources, 'folder.svg')), '')
         self.RSubtractionBrowseButton.released.connect(self._browseReflection)
         refMatLabel = QLabel("Reference Material")
-        self.refMaterialCombo = QComboBox()
+        self.refMaterialCombo = QHComboBox()
         self.refMaterialCombo.addItems([k.name for k in reflectanceHelper.materialFiles.keys() if k.name != 'Glass'])
         self.refMaterialCombo.addItem("Ignore")
         naLabel = QLabel("Numerical Aperture")
-        self.numericalAperture = QDoubleSpinBox()
+        self.numericalAperture = QHDoubleSpinBox()
         self.numericalAperture.setRange(0, 2)
         self.numericalAperture.setSingleStep(0.1)
         self.numericalAperture.setToolTip("The illumination numerical aperture used. This is usually 0.52 on NU systems."
@@ -150,12 +175,12 @@ class SettingsFrame(QScrollArea):
         layout.setContentsMargins(5, 1, 5, 5)
         _ = layout.addWidget
         orderLabel = QLabel("Filter Order")
-        self.filterOrder = QSpinBox()
+        self.filterOrder = QHSpinBox()
         self.filterOrder.setRange(0, 6)
         self.filterOrder.setToolTip("A lowpass filter is applied to the spectral signal to reduce noise. This determines the `order` of the digital filter.")
         orderLabel.setToolTip(self.filterOrder.toolTip())
         cutoffLabel = QLabel("Cutoff Freq.")
-        self.filterCutoff = QDoubleSpinBox()
+        self.filterCutoff = QHDoubleSpinBox()
         self.filterCutoff.setToolTip("The frequency in units of 1/wavelength for the filter cutoff.")
         cutoffLabel.setToolTip(self.filterCutoff.toolTip())
         _(orderLabel, 0, 0, 1, 1)
@@ -173,8 +198,8 @@ class SettingsFrame(QScrollArea):
         layout = QGridLayout()
         layout.setContentsMargins(5, 1, 5, 5)
         _ = layout.addWidget
-        self.wavelengthStart = QSpinBox()
-        self.wavelengthStop = QSpinBox()
+        self.wavelengthStart = QHSpinBox()
+        self.wavelengthStop = QHSpinBox()
         self.wavelengthStart.setToolTip("Sometimes the beginning and end of the spectrum can have very high noise. For this reason we crop the data before analysis.")
         self.wavelengthStop.setToolTip("Sometimes the beginning and end of the spectrum can have very high noise. For this reason we crop the data before analysis.")
         self.wavelengthStart.setRange(300, 800)
@@ -195,7 +220,7 @@ class SettingsFrame(QScrollArea):
         layout = QGridLayout()
         layout.setContentsMargins(5, 1, 5, 5)
         _ = layout.addWidget
-        self.polynomialOrder = QSpinBox()
+        self.polynomialOrder = QHSpinBox()
         _(QLabel("Order"), 0, 0, 1, 1)
         _(self.polynomialOrder, 0, 1, 1, 1)
         self.polySub.setLayout(layout)
@@ -206,7 +231,7 @@ class SettingsFrame(QScrollArea):
         self.advanced = CollapsibleSection('Skip Advanced Analysis', 200, self)
         self.advanced.stateChanged.connect(self._updateSize)
         self.advanced.setToolTip("If this box is ticked then some of the less common analyses will be skipped. This saves time and harddrive space.")
-        self.autoCorrStopIndex = QSpinBox()
+        self.autoCorrStopIndex = QHSpinBox()
         self.autoCorrStopIndex.setToolTip("Autocorrelation slope is determined by fitting a line to the first values of the autocorrelation function. This value determines how many values to include in this linear fit.")
         self.minSubCheckBox = QCheckBox("MinSub")
         self.minSubCheckBox.setToolTip("The calculation of autocorrelation decay slope involves taking the natural logarithm of of the autocorrelation. However noise often causes the autocorrelation to have negative values which causes problems for the logarithm. Checking this box adds an offset to the autocorrelation so that no values are negative.")
@@ -219,6 +244,16 @@ class SettingsFrame(QScrollArea):
         self._layout.addWidget(self.advanced, row, 0, 1, 4)
         row += 1
 
+        # for widg in [self.autoCorrStopIndex, self.polynomialOrder, self.wavelengthStart, self.wavelengthStop,
+        #              self.filterCutoff, self.filterOrder, self.numericalAperture, self.refMaterialCombo, self.darkCountBox]:
+        #     widg.setFocusPolicy(QtCore.Qt.StrongFocus) # Disable scrolling unless the box was specifically focused.
+        #     widg.wheelEvent = lambda self, event:
+
+        # if not self.hasFocus():
+        #     event.ignore()
+        # else:
+        #     QSpinBox:: wheelEvent(event)
+        #
         self._updateSize()
 
     def showEvent(self, a0: QtGui.QShowEvent) -> None:
