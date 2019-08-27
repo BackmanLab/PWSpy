@@ -34,6 +34,7 @@ def safeCallback(func):
             traceback.print_exc()
     return newFunc
 
+#TODO detect if the systems don't match for extrareflectance, reference, etc.
 class AnalysisManager(QtCore.QObject):
     analysisDone = QtCore.pyqtSignal(str, AnalysisSettings, list)
 
