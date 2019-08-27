@@ -34,7 +34,6 @@ def safeCallback(func):
             traceback.print_exc()
     return newFunc
 
-#TODO detect if the systems don't match for extrareflectance, reference, etc.
 class AnalysisManager(QtCore.QObject):
     analysisDone = QtCore.pyqtSignal(str, AnalysisSettings, list)
 
@@ -78,6 +77,10 @@ class AnalysisManager(QtCore.QObject):
                 erCube = None
             else:
                 erMeta = self.app.ERManager.getMetadataFromId(anSettings.extraReflectanceId)
+                if refMeta.systemName != erMeta.systemName:
+                    ans = QMessageBox.question(self.app.window, "Uh Oh", "The reference was acquired on system: {refMeta.systemName} while the extra reflectance correction was acquired on system: {erMeta.systemName}. Are you sure you want to continue?")
+                    if ans == QMessageBox.No:
+                        return
                 erCube = ExtraReflectanceCube.fromMetadata(erMeta)
             analysis = Analysis(anSettings, ref, erCube)
             #replace read-only arrays that are shared between processes with shared memory. saves a few gigs of ram and speeds things up.

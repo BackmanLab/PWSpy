@@ -13,7 +13,6 @@ if typing.TYPE_CHECKING:
 from pwspy.analysis import AnalysisResultsLoader
 
 
-
 class AnalysisViewer(AnalysisPlotter, QWidget):
     def __init__(self, metadata: AcqDir, analysisLoader: Optional[AnalysisResultsLoader], title: str, parent=None, initialField='thumbnail'):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
