@@ -1,6 +1,8 @@
 import copy
 import os
 from typing import List
+
+from dataTypes import AcqDir
 from pwspy.dataTypes import ICMetaData, Roi
 
 
@@ -9,7 +11,7 @@ class RoiConverter:
     The key difference here is that the new files contain an array of vertices
     that specify the outline of the roi. Without these vertices they must be
     calculated using the concave hull method which is slow."""
-    def __init__(self, cells: List[ICMetaData]):
+    def __init__(self, cells: List[AcqDir]):
         for cell in cells:
             print(cell.filePath)
             rois = cell.getRois()

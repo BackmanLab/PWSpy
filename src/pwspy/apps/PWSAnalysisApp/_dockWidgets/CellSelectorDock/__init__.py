@@ -5,6 +5,7 @@ from typing import List, Dict
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineEdit, QGridLayout, QSplitter, \
     QSizePolicy, QMessageBox
+from dataTypes import AcqDir
 
 from pwspy.apps.PWSAnalysisApp._dockWidgets.CellSelectorDock.widgets import ReferencesTableItem
 from .widgets import CellTableWidgetItem, CellTableWidget, ReferencesTable
@@ -62,10 +63,9 @@ class CellSelectorDock(QDockWidget):
         self.setWidget(self._widget)
 
     def addCell(self, fileName: str, workingDir: str):
-        try:
-            cell = ICMetaData.loadAny(fileName)
-        except OSError as e:  # Could not find a valid file
-            print(e)
+        cell = AcqDir(fileName)
+        if cell.pws is None and cell.fluorescence is None and cell.dynamics is None:
+            #Could not find a valid file
             return
         cellItem = CellTableWidgetItem(cell, os.path.split(fileName)[0][len(workingDir) + 1:],
                                         int(fileName.split('Cell')[-1]))

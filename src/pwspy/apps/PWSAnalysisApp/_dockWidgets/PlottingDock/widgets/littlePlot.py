@@ -4,6 +4,7 @@ import numpy as np
 from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QMenu, QAction
+from dataTypes import AcqDir
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 
@@ -15,7 +16,7 @@ from pwspy.utility import PlotNd
 
 
 class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
-    def __init__(self, metadata: ICMetaData, analysis: AnalysisResultsLoader, title: str, text: str = None, initialField='thumbnail'):
+    def __init__(self, metadata: AcqDir, analysis: AnalysisResultsLoader, title: str, text: str = None, initialField='thumbnail'):
         AnalysisPlotter.__init__(self, metadata, analysis)
         self.fig = Figure()
         self.ax = self.fig.add_subplot(1, 1, 1)

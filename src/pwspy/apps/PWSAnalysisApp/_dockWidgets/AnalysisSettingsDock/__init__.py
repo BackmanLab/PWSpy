@@ -61,7 +61,7 @@ class AnalysisSettingsDock(QDockWidget):
     def getAnalysisName(self):
         return self.settingsFrame.analysisName
 
-    def getListedAnalyses(self) -> List[Tuple[str, AnalysisSettings, List[ICMetaData], ICMetaData, CameraCorrection, ERMetadata]]:
+    def getListedAnalyses(self) -> List[Tuple[str, AnalysisSettings, List[ICMetaData], ICMetaData, CameraCorrection]]:
         return self.analysesQueue.analyses
 
     def displayItemSettings(self, item: AnalysisListItem):

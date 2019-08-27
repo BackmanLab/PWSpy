@@ -6,7 +6,6 @@ Created on Tue Feb 12 19:17:14 2019
 """
 from __future__ import annotations
 
-from dataTypes import AcqDir
 from pwspy.dataTypes._FluoresenceImg import FluorescenceImage
 from ._MetaDataBaseClass import MetaDataBase
 from . import _jsonSchemasPath
@@ -25,6 +24,7 @@ from datetime import datetime
 import typing
 if typing.TYPE_CHECKING:
     import multiprocessing as mp
+    from ._AcqDir import AcqDir
 
 
 class ICMetaData(MetaDataBase): #TODO this currently encapsulates PWS specific funcitonality as well as PWS/Dyn/Fluore/Analysis folder stuff. should be separated into two classes.
@@ -53,7 +53,7 @@ class ICMetaData(MetaDataBase): #TODO this currently encapsulates PWS specific f
         return self._dict['wavelengths']
 
     @classmethod
-    def loadAny(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None):
+    def loadAny(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> ICMetaData:
         try:
             return ICMetaData.fromTiff(directory, lock=lock, acquisitionDirectory=acquisitionDirectory)
         except:
@@ -66,7 +66,7 @@ class ICMetaData(MetaDataBase): #TODO this currently encapsulates PWS specific f
                     raise OSError(f"Could not find a valid PWS image cube file at {directory}.")
 
     @classmethod
-    def fromOldPWS(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None):
+    def fromOldPWS(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> ICMetaData:
         if lock is not None:
             lock.acquire()
         try:
@@ -90,7 +90,7 @@ class ICMetaData(MetaDataBase): #TODO this currently encapsulates PWS specific f
         return cls(md, filePath=directory, fileFormat=ICMetaData.FileFormats.RawBinary, acquisitionDirectory=acquisitionDirectory)
 
     @classmethod
-    def fromNano(cls, directory: str, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None):
+    def fromNano(cls, directory: str, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> ICMetaData:
         if lock is not None:
             lock.acquire()
         try:
@@ -108,7 +108,7 @@ class ICMetaData(MetaDataBase): #TODO this currently encapsulates PWS specific f
         return cls(md, filePath=directory, fileFormat=ICMetaData.FileFormats.NanoMat, acquisitionDirectory=acquisitionDirectory)
 
     @classmethod
-    def fromTiff(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None):
+    def fromTiff(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> ICMetaData:
         if lock is not None:
             lock.acquire()
         try:

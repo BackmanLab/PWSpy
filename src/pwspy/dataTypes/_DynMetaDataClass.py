@@ -1,13 +1,15 @@
+from __future__ import annotations
 from enum import Enum, auto
 from typing import Optional, Tuple
 import multiprocessing as mp
-
-from dataTypes import AcqDir
-
 from ._MetaDataBaseClass import MetaDataBase
 import os, json
 import tifffile as tf
 from . import _jsonSchemasPath
+import typing
+if typing.TYPE_CHECKING:
+    from ._AcqDir import AcqDir
+
 
 class DynMetaData(MetaDataBase):
     class FileFormats(Enum):

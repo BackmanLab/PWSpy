@@ -112,7 +112,7 @@ class CellTableWidgetItem:
 
     def refresh(self):
         self.roiLabel.setNumber(len(self.acqDir.getRois()))
-        self.anLabel.setNumber(len(self.acqDir.getAnalyses()))
+        self.anLabel.setNumber(len(self.acqDir.pws.getAnalyses()))
         if self.acqDir.getNotes() != '':
             self.notesButton.setStyleSheet('QPushButton { background-color: lightgreen;}')
         else:
@@ -282,7 +282,7 @@ class ReferencesTable(QTableWidget):
         self._references = []
 
     @property
-    def selectedReferenceMeta(self) -> Optional[ICMetaData]:
+    def selectedReferenceMeta(self) -> Optional[AcqDir]:
         """Returns the ICMetadata that have been selected. Return None if nothing is selected."""
         items: List[ReferencesTableItem] = self.selectedItems()
         assert len(items) <= 1

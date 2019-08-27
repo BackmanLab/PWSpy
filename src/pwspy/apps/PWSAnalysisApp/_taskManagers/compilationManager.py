@@ -66,7 +66,7 @@ class CompilationManager(QtCore.QObject):
 
         @staticmethod
         def _process(md: ICMetaData, compiler: RoiCompiler, roiNamePattern: str, analysisNamePattern: str) -> Tuple[ICMetaData, List[Tuple[RoiCompilationResults, List[AnalysisWarning]]]]:
-            rois = [md.loadRoi(name, num, fformat) for name, num, fformat in md.getRois() if re.match(roiNamePattern, name)]
+            rois = [md.acquisitionDirectory.loadRoi(name, num, fformat) for name, num, fformat in md.acquisitionDirectory.getRois() if re.match(roiNamePattern, name)]
             analysisResults = [md.loadAnalysis(name) for name in md.getAnalyses() if re.match(analysisNamePattern, name)]
             ret = []
             for analysisResult in analysisResults:

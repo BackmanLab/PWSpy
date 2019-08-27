@@ -1,7 +1,7 @@
+from __future__ import annotations
 import jsonschema
 from datetime import datetime
 
-from dataTypes import AcqDir
 from pwspy.moduleConsts import dateTimeFormat
 from ._otherClasses import CameraCorrection, Roi
 from abc import ABC, abstractmethod
@@ -12,6 +12,9 @@ import json
 import numpy as np
 from . import _jsonSchemasPath
 import pathlib
+import typing
+if typing.TYPE_CHECKING:
+    from ._AcqDir import AcqDir
 
 class MetaDataBase(ABC):
     """This base class provides that basic functionality to store information about a PWS related acquisition on file."""

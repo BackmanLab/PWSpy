@@ -13,13 +13,13 @@ from matplotlib.figure import Figure
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.rangeSlider import QRangeSlider
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import ICMetaData
+    from pwspy.dataTypes import AcqDir
 from pwspy.dataTypes import Roi
 import os
 
 
 class BigPlot(QWidget):
-    def __init__(self, metadata: ICMetaData, data: np.ndarray, title: str, parent=None):
+    def __init__(self, acqDir: AcqDir, data: np.ndarray, title: str, parent=None):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         self.setWindowTitle(title)
         layout = QGridLayout()
@@ -66,7 +66,7 @@ class BigPlot(QWidget):
         layout.setRowStretch(0, 1)  # This causes the plot to take up all the space that isn't needed by the other widgets.
         self.setLayout(layout)
 
-        self.setMetadata(metadata)
+        self.setMetadata(acqDir)
         self.setImageData(data)
 
         # self.show()
@@ -86,7 +86,7 @@ class BigPlot(QWidget):
         self.slider.setMin(self.data.min())
         self.canvas.draw_idle()
 
-    def setMetadata(self, metadata: ICMetaData):
+    def setMetadata(self, metadata: AcqDir):
         """Refresh the ROIs based on a new metadata. Also needs to be provided with the data for the image to display."""
         self.metadata = metadata
         self.clearRois()

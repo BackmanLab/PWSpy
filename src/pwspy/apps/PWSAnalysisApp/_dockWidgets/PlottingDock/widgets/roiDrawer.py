@@ -5,6 +5,7 @@ import numpy as np
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QWidget, QGridLayout, QButtonGroup, QPushButton, QDialog, QSpinBox, QLabel, \
     QMessageBox
+from dataTypes import AcqDir
 from matplotlib import patches
 import os
 from pwspy.analysis import AnalysisResultsLoader
@@ -18,7 +19,7 @@ from pwspy.utility.matplotlibwidg import AdjustableSelector, MyLasso, MyEllipse,
 
 
 class RoiDrawer(QWidget):
-    def __init__(self, metadatas: List[Tuple[ICMetaData, Optional[AnalysisResultsLoader]]], parent=None):
+    def __init__(self, metadatas: List[Tuple[AcqDir, Optional[AnalysisResultsLoader]]], parent=None):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         self.setWindowTitle("Roi Drawer 3000")
         self.metadatas = metadatas

@@ -3,6 +3,8 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QWidget, QGridLayout, QComboBox
 from typing import Optional
 
+from dataTypes import AcqDir
+
 from .widgets import AnalysisPlotter
 from .bigPlot import BigPlot
 import typing
@@ -13,12 +15,12 @@ from pwspy.analysis import AnalysisResultsLoader
 
 
 class AnalysisViewer(AnalysisPlotter, QWidget):
-    def __init__(self, metadata: ICMetaData, analysisLoader: Optional[AnalysisResultsLoader], title: str, parent=None, initialField='thumbnail'):
+    def __init__(self, metadata: AcqDir, analysisLoader: Optional[AnalysisResultsLoader], title: str, parent=None, initialField='thumbnail'):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         AnalysisPlotter.__init__(self, metadata, analysisLoader)
         self.setWindowTitle(title)
         layout = QGridLayout()
-        self.plotWidg = BigPlot(metadata, metadata.getThumbnail(), 'title')
+        self.plotWidg = BigPlot(metadata, metadata.pws.getThumbnail(), 'title')
         self.analysisCombo = QComboBox(self)
         items = ['thumbnail']
         for i in ['meanReflectance', 'rms', 'autoCorrelationSlope', 'rSquared', 'ld']:
@@ -30,7 +32,7 @@ class AnalysisViewer(AnalysisPlotter, QWidget):
         if self.analysis is not None:
             if 'reflectance' in self.analysis.file.keys(): #This is the normalized 3d data cube. needed to generate the opd.
                 items.append('opdPeak')
-        if self.metadata.hasFluorescence():
+        if self.metadata.fluorescence is not None:
             items.append('fluorescence')
         self.analysisCombo.addItems(items)
         self.analysisCombo.currentTextChanged.connect(self.changeData)  # If this line comes before the analysisCombo.addItems line then it will get triggered when adding items.
@@ -47,6 +49,6 @@ class AnalysisViewer(AnalysisPlotter, QWidget):
         self.plotWidg.setImageData(self.data)
         self.plotWidg.setSaturation()
 
-    def setMetadata(self, md: ICMetaData, analysis: Optional[AnalysisResultsLoader]=None):
+    def setMetadata(self, md: AcqDir, analysis: Optional[AnalysisResultsLoader] = None):
         super().setMetadata(md, analysis)
         self.plotWidg.setMetadata(md)

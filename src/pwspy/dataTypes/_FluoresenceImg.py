@@ -1,9 +1,11 @@
+from __future__ import annotations
 import numpy as np
 import tifffile as tf
 import os, json
 from typing import Optional
-
-from dataTypes import AcqDir
+import typing
+if typing.TYPE_CHECKING:
+    from ._AcqDir import AcqDir
 
 
 class FluorescenceImage:
