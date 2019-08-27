@@ -39,7 +39,7 @@ class AnalysisSettingsDock(QDockWidget):
         widg.layout().addWidget(self.analysesQueue)
         self.analysesQueue.setFixedHeight(50)
         widg.setMinimumHeight(200)
-        widg.setMaximumWidth(self.settingsFrame.minimumWidth()+10)
+        widg.setMinimumWidth(self.settingsFrame.minimumWidth()+10)
 
         self.addAnalysisButton.released.connect(self.addAnalysis)
         self.setWidget(widg)

@@ -73,6 +73,10 @@ class MetaDataBase(ABC):
         """The date and time that the acquisition was taken."""
         return self._dict['time']
 
+    @property
+    def systemName(self) -> str:
+        """The name of the system this was acquired on. The name is set in the `PWS Acquisition Plugin` for Micromanager."""
+        return self._dict['system']
 
     @staticmethod
     def _decodeHdfMetadata(d: h5py.Dataset) -> dict:

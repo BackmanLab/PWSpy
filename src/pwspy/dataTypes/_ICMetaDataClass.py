@@ -27,7 +27,7 @@ if typing.TYPE_CHECKING:
     from ._AcqDir import AcqDir
 
 
-class ICMetaData(MetaDataBase): #TODO this currently encapsulates PWS specific funcitonality as well as PWS/Dyn/Fluore/Analysis folder stuff. should be separated into two classes.
+class ICMetaData(MetaDataBase):
     class FileFormats(Enum):
         RawBinary = auto()
         Tiff = auto()
