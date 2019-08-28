@@ -8,7 +8,7 @@ from ._DynMetaDataClass import DynMetaData
 from ._otherClasses import Roi
 import os
 
-from utility.misc import cached_property
+from pwspy.utility.misc import cached_property
 
 
 class AcqDir:
