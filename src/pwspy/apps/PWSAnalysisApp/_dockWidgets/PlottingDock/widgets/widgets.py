@@ -3,7 +3,7 @@ from typing import Optional
 import numpy as np
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import QWidget, QApplication
-from dataTypes import AcqDir
+from pwspy.dataTypes import AcqDir
 
 from pwspy.analysis import AnalysisResultsLoader
 from pwspy.dataTypes import ICMetaData

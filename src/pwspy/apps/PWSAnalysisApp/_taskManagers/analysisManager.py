@@ -3,17 +3,12 @@ import os
 import traceback
 from typing import Tuple, List
 import typing
-
 from PyQt5.QtCore import QThread
 
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
-
-if typing.TYPE_CHECKING:
-    from pwspy.apps.PWSAnalysisApp.App import  PWSApp
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox
-
-from pwspy.dataTypes import ImCube, CameraCorrection, ExtraReflectanceCube
+from pwspy.dataTypes import ImCube, CameraCorrection, ExtraReflectanceCube, AcqDir
 from pwspy.analysis import AnalysisSettings
 from pwspy.analysis import Analysis
 from pwspy.analysis.warnings import AnalysisWarning
@@ -23,6 +18,8 @@ import threading
 from multiprocessing.util import Finalize
 from multiprocessing.sharedctypes import RawArray
 import numpy as np
+if typing.TYPE_CHECKING:
+    from pwspy.apps.PWSAnalysisApp.App import PWSApp
 
 
 def safeCallback(func):
@@ -45,12 +42,14 @@ class AnalysisManager(QtCore.QObject):
         """Run multiple queued analyses as specified by the user."""
         for anName, anSettings, cellMetas, refMeta, camCorrection in self.app.window.analysisSettings.getListedAnalyses():
             self.runSingle(anName, anSettings, cellMetas, refMeta, camCorrection)
-            [cellItem.refresh() for cellMeta in cellMetas for cellItem in self.app.window.cellSelector.tableWidget.cellItems if cellMeta == cellItem.cube]
+            [cellItem.refresh() for cellMeta in cellMetas for cellItem in self.app.window.cellSelector.tableWidget.cellItems if cellMeta == cellItem.acqDir]
 
     @safeCallback
-    def runSingle(self, anName: str, anSettings: AnalysisSettings, cellMetas: List[ICMetaData], refMeta: ICMetaData,
-                  cameraCorrection: CameraCorrection) -> Tuple[str, AnalysisSettings, List[Tuple[List[AnalysisWarning], ICMetaData]]]:
+    def runSingle(self, anName: str, anSettings: AnalysisSettings, cellMetas: List[AcqDir], refMeta: AcqDir,
+                  cameraCorrection: CameraCorrection) -> Tuple[str, AnalysisSettings, List[Tuple[List[AnalysisWarning], AcqDir]]]:
         """Run a single analysis batch"""
+        refMeta = refMeta.pws #We are only interested in pws data here
+        cellMetas = [i.pws for i in cellMetas]
         #Determine which cells already have an analysis by this name and raise a deletion dialog.
         conflictCells = []
         for cell in cellMetas:

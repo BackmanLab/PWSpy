@@ -5,7 +5,7 @@ from typing import List, Dict
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineEdit, QGridLayout, QSplitter, \
     QSizePolicy, QMessageBox
-from dataTypes import AcqDir
+from pwspy.dataTypes import AcqDir
 
 from pwspy.apps.PWSAnalysisApp._dockWidgets.CellSelectorDock.widgets import ReferencesTableItem
 from .widgets import CellTableWidgetItem, CellTableWidget, ReferencesTable
@@ -63,9 +63,9 @@ class CellSelectorDock(QDockWidget):
         self.setWidget(self._widget)
 
     def addCell(self, fileName: str, workingDir: str):
-        cell = AcqDir(fileName)
-        if cell.pws is None and cell.fluorescence is None and cell.dynamics is None:
-            #Could not find a valid file
+        try:
+            cell = AcqDir(fileName)
+        except OSError:
             return
         cellItem = CellTableWidgetItem(cell, os.path.split(fileName)[0][len(workingDir) + 1:],
                                         int(fileName.split('Cell')[-1]))
@@ -114,16 +114,16 @@ class CellSelectorDock(QDockWidget):
             else:
                 self.tableWidget.setRowHidden(item.row, True)
 
-    def getSelectedCellMetas(self) -> List[ICMetaData]:
+    def getSelectedCellMetas(self) -> List[AcqDir]:
         return [i.acqDir for i in self.tableWidget.selectedCellItems]
 
-    def getAllCellMetas(self) -> List[ICMetaData]:
+    def getAllCellMetas(self) -> List[AcqDir]:
         return [i.acqDir for i in self.tableWidget.cellItems]
 
     def getSelectedReferenceMeta(self):
         return self.refTableWidget.selectedReferenceMeta
 
-    def setSelectedCells(self, cells: List[ICMetaData]):
+    def setSelectedCells(self, cells: List[AcqDir]):
         idTags = [i.idTag for i in cells]
         for item in self.tableWidget.cellItems:
             if item.acqDir.idTag in idTags:
@@ -131,7 +131,7 @@ class CellSelectorDock(QDockWidget):
             else:
                 item.setSelected(False)
 
-    def setSelectedReference(self, ref: ICMetaData):
+    def setSelectedReference(self, ref: AcqDir):
         idTag = ref.idTag
         for i in range(self.refTableWidget.rowCount()):
             refitem: ReferencesTableItem = self.refTableWidget.item(i, 0)

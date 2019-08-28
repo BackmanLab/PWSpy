@@ -3,6 +3,7 @@ from typing import List, Optional, Tuple
 from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QListWidgetItem, QWidget, QScrollArea, QListWidget, QMessageBox, QMenu, QAction
+from pwspy.dataTypes import AcqDir
 from pwspy.analysis import AnalysisSettings
 import typing
 if typing.TYPE_CHECKING:
@@ -10,7 +11,7 @@ if typing.TYPE_CHECKING:
 
 
 class AnalysisListItem(QListWidgetItem):
-    def __init__(self, cameraCorrection: CameraCorrection, settings: AnalysisSettings, reference: ICMetaData, cells: List[ICMetaData], analysisName: str,
+    def __init__(self, cameraCorrection: CameraCorrection, settings: AnalysisSettings, reference: AcqDir, cells: List[AcqDir], analysisName: str,
                  parent: Optional[QWidget] = None):
         super().__init__(analysisName, parent)
         self.cameraCorrection = cameraCorrection
@@ -31,12 +32,12 @@ class QueuedAnalysesFrame(QScrollArea):
         self.setWidgetResizable(True)
 
     @property
-    def analyses(self) -> List[Tuple[str, AnalysisSettings, List[ICMetaData], ICMetaData, CameraCorrection]]:
+    def analyses(self) -> List[Tuple[str, AnalysisSettings, List[AcqDir], AcqDir, CameraCorrection]]:
         items: List[AnalysisListItem] = [self.listWidget.item(i) for i in range(self.listWidget.count())]
-        return [(item.name, item.settings, item.cells, item.reference, item.cameraCorrection)  for item in items]
+        return [(item.name, item.settings, item.cells, item.reference, item.cameraCorrection) for item in items]
 
     def addAnalysis(self, analysisName: str, cameraCorrection: CameraCorrection, settings: AnalysisSettings,
-                    reference: ICMetaData, cells: List[ICMetaData]):
+                    reference: AcqDir, cells: List[AcqDir]):
         if reference is None:
             QMessageBox.information(self, '!', f'Please select a reference Cell.')
             return

@@ -6,7 +6,7 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, \
     QVBoxLayout, QPushButton, QSplitter, QMessageBox, QDialog, QGridLayout, QApplication
 
-from pwspy.dataTypes import CameraCorrection
+from pwspy.dataTypes import CameraCorrection, AcqDir
 from pwspy.analysis import AnalysisSettings
 
 from pwspy.dataTypes import ERMetadata
@@ -61,7 +61,7 @@ class AnalysisSettingsDock(QDockWidget):
     def getAnalysisName(self):
         return self.settingsFrame.analysisName
 
-    def getListedAnalyses(self) -> List[Tuple[str, AnalysisSettings, List[ICMetaData], ICMetaData, CameraCorrection]]:
+    def getListedAnalyses(self) -> List[Tuple[str, AnalysisSettings, List[AcqDir], AcqDir, CameraCorrection]]:
         return self.analysesQueue.analyses
 
     def displayItemSettings(self, item: AnalysisListItem):

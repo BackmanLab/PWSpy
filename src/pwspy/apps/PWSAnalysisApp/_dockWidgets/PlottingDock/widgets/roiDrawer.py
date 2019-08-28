@@ -5,7 +5,7 @@ import numpy as np
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QWidget, QGridLayout, QButtonGroup, QPushButton, QDialog, QSpinBox, QLabel, \
     QMessageBox
-from dataTypes import AcqDir
+from pwspy.dataTypes import AcqDir
 from matplotlib import patches
 import os
 from pwspy.analysis import AnalysisResultsLoader

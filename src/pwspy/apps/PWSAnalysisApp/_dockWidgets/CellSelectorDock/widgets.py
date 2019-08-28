@@ -7,7 +7,7 @@ from typing import List, Optional, Type
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import QPalette
 from PyQt5.QtWidgets import QPushButton, QTableWidgetItem, QTableWidget, QAbstractItemView, QMenu, QWidget, QMessageBox
-from dataTypes import AcqDir
+from pwspy.dataTypes import AcqDir
 
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.dictDisplayTree import DictDisplayTree, DictDisplayTreeDialog
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.tables import NumberTableWidgetItem
@@ -168,7 +168,7 @@ class CellTableWidget(QTableWidget):
 
     def displayCellMetadata(self):
         for i in self.selectedCellItems:
-            d = DictDisplayTreeDialog(self, i.acqDir._dict, title=os.path.join(i.path, f"Cell{i.num}"))
+            d = DictDisplayTreeDialog(self, i.acqDir.pws._dict, title=os.path.join(i.path, f"Cell{i.num}"))
             d.show()
 
     def toggleSelectedCellsInvalid(self, state: bool):

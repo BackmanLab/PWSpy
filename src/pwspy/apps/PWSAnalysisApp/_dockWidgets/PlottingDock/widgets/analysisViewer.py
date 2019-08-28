@@ -3,7 +3,7 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QWidget, QGridLayout, QComboBox
 from typing import Optional
 
-from dataTypes import AcqDir
+from pwspy.dataTypes import AcqDir
 
 from .widgets import AnalysisPlotter
 from .bigPlot import BigPlot

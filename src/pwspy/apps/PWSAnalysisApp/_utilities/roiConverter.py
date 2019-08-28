@@ -2,8 +2,7 @@ import copy
 import os
 from typing import List
 
-from dataTypes import AcqDir
-from pwspy.dataTypes import ICMetaData, Roi
+from pwspy.dataTypes import AcqDir, Roi
 
 
 class RoiConverter:

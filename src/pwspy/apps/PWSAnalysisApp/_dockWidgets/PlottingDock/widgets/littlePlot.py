@@ -4,7 +4,7 @@ import numpy as np
 from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QMenu, QAction
-from dataTypes import AcqDir
+from pwspy.dataTypes import AcqDir
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 
