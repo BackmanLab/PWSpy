@@ -2,7 +2,10 @@ import subprocess
 from typing import List, Tuple
 
 import sys
-from dataTypes import FluorescenceImage, ICMetaData, DynMetaData, Roi
+from ._FluoresenceImg import FluorescenceImage
+from ._ICMetaDataClass import ICMetaData
+from ._DynMetaDataClass import DynMetaData
+from ._otherClasses import Roi
 import os
 
 from utility.misc import cached_property
@@ -12,6 +15,8 @@ class AcqDir:
     """"A class handling the file structure of a single acquisition. this can include a PWS acquisition as well as collocalized Dynamics and fluorescence."""
     def __init__(self, directory: str):
         self.filePath = directory
+        if (self.pws is None) and (self.dynamics is None): # We must have one of these two items.
+            raise OSError("Could not find a valid PWS or Dynamics Acquisition.")
 
     @cached_property
     def pws(self) -> ICMetaData:
@@ -38,6 +43,13 @@ class AcqDir:
             return FluorescenceImage.fromTiff(path, acquisitionDirectory=self)
         else:
             return None
+
+    @property
+    def idTag(self):
+        if self.pws is not None:
+            return self.pws.idTag
+        else: #We must have one of these two items.
+            return self.dynamics.idTag
 
     def getRois(self) -> List[Tuple[str, int, Roi.FileFormats]]:
         """Return information about the Rois found in the acquisition's file path.
