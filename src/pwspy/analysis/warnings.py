@@ -10,13 +10,15 @@ class AnalysisWarning:
 
 
 def checkMeanReflectance(r: np.ndarray) -> Optional[AnalysisWarning]:
-    """Given an array of reflectance values (normalized by tyhe reference, not scaled to physical reflectance units),
+    """Given an array of reflectance values (normalized by the reference, not scaled to physical reflectance units),
     this function returns a warning if the mean of the array is greater than 1.5. This suggests that the reference is not
     valid to use with this sample or something unexpected has happened to the sample."""
     assert len(r.shape) == 2
     avg = r.mean()
     if avg > 1.5:
         return AnalysisWarning("R > 1.5", f"Mean reflectance is {avg} (>1.5). Is something wrong with the reference?")
+    if avg < .75:
+        return AnalysisWarning("R < 0.75", f"Mean reflectance is {avg} (<0.75). Is something wrong with the reference?")
     else:
         return None
 
@@ -27,9 +29,9 @@ def checkMeanSpectraRatio(ratio: float) -> Optional[AnalysisWarning]:
     expect this to be flat but realistically we se some variation due to the natural spectral reflectance profile of the sample.
     If this mean spectra changes it suggests something has changed in the system and we want to be aware of this."""
     if ratio > 0.4: #TODO the upper and lower bounds here were arbitrarily chosen without any testing.
-        return AnalysisWarning("Mean RMS too high", f"Ratio between variance of mean ROI spectra and mean of spectra variance in ROI is {ratio} (>0.4). This suggests that the ROI is absorbing or fluorescing, or something stranger could be happening.")
+        return AnalysisWarning("Mean RMS ratio too high", f"Ratio between variance of mean ROI spectra and mean of spectra variance in ROI is {ratio} (>0.4). This suggests that the ROI is absorbing or fluorescing, or something stranger could be happening.")
     elif ratio < 0.3:
-        return AnalysisWarning("Mean RMS too low", f"Ratio between variance of mean ROI spectra and mean of spectra variance in ROI is {ratio} (<0.3). This suggests that the ROI is absorbing or fluorescing, or something stranger could be happening.")
+        return AnalysisWarning("Mean RMS ratio too low", f"Ratio between variance of mean ROI spectra and mean of spectra variance in ROI is {ratio} (<0.3). This suggests that the ROI is absorbing or fluorescing, or something stranger could be happening.")
     else:
         return None
 
