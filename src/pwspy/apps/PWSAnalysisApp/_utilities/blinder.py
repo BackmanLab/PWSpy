@@ -18,9 +18,8 @@ class Blinder:
         indexPath = os.path.join(homeDir, 'blindedIndex.json')
         if os.path.exists(indexPath):
             raise ValueError(f"A `blindedIndex.json` file already exists in {homeDir}.")
-        if os.path.exists(outDir):
-            raise ValueError(f"The output directory, {outDir}, already exists.")
-        os.mkdir(outDir)
+        if not os.path.exists(outDir):
+            os.mkdir(outDir)
         try:
             paths = [c.filePath for c in cells]
             nums = list(range(1, len(paths)+1))
@@ -51,16 +50,12 @@ class BlinderDialog(QDialog):
         self.pathEdit = QLineEdit(self)
         self.browseButton = QPushButton(QtGui.QIcon(os.path.join(resources, 'folder.svg')), '')
         self.browseButton.released.connect(self._getPath)
-        self.slashLabel = QLabel('/', self)
-        self.folderNameEdit = QLineEdit(self)
         self.okButton = QPushButton('Ok', self)
         self.okButton.released.connect(self.accept)
         self.okButton.setMaximumWidth(100)
         layout = QGridLayout(self)
         layout.addWidget(self.browseButton, 0, 0)
         layout.addWidget(self.pathEdit, 0, 1)
-        layout.addWidget(self.slashLabel, 0, 2)
-        layout.addWidget(self.folderNameEdit, 0, 3)
         layout.addWidget(self.okButton, 1, 1, 1, 2)
 
         newDir = self._getPath()
@@ -72,9 +67,7 @@ class BlinderDialog(QDialog):
 
     def accept(self) -> None:
         try:
-            if self.folderNameEdit.text() == '':
-                raise ValueError("Folder name must be specified.")
-            outDir = os.path.join(self.pathEdit.text(), self.folderNameEdit.text())
+            outDir = self.pathEdit.text()
             b = Blinder(self.cells, self.homeDir, outDir)
             super().accept()
         except Exception as e:
