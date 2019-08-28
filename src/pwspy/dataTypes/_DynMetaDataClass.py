@@ -1,5 +1,5 @@
 from __future__ import annotations
-from enum import IntEnum, auto
+from enum import Enum, auto
 from typing import Optional, Tuple
 import multiprocessing as mp
 from ._MetaDataBaseClass import MetaDataBase
@@ -12,7 +12,7 @@ if typing.TYPE_CHECKING:
 
 
 class DynMetaData(MetaDataBase):
-    class FileFormats(IntEnum):
+    class FileFormats(Enum):
         Tiff = auto()
 
     _jsonSchemaPath = os.path.join(_jsonSchemasPath, 'DynMetaData.json')

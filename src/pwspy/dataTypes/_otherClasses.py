@@ -11,7 +11,7 @@ import re
 from matplotlib import patches, path
 import typing
 import dataclasses
-from enum import IntEnum, auto
+from enum import Enum, auto
 from glob import glob
 from typing import List, Tuple
 import matplotlib.pyplot as plt
@@ -110,7 +110,7 @@ class Roi:
      included in the Roi), a set of of `vertices` (a 2 x N array specifying the vertices of the polygon enclosing the
      mask, this is useful if you want to adjust the Roi later."""
 
-    class FileFormats(IntEnum):
+    class FileFormats(Enum):
         """An enumerator of the different file formats that an ROI can be saved to."""
         HDF = auto()
         MAT = auto()

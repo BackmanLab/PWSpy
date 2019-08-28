@@ -5,11 +5,11 @@ if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataDirectory import ERDataDirectory, EROnlineDirectory
 import numpy as np
-from enum import IntEnum
+from enum import Enum
 
 
 class ERDataComparator:
-    class ComparisonStatus(IntEnum):
+    class ComparisonStatus(Enum):
         LocalOnly = "Local Only"
         OnlineOnly = "Online Only"
         Md5Mismatch = 'MD5 Mismatch'
