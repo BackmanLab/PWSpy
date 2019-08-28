@@ -41,7 +41,7 @@ class PWSWindow(QMainWindow):
         menu.setToolTipsVisible(True)
         self.blindAction = menu.addAction("Create blinded directory")
         self.blindAction.setToolTip("Creates a folder of symlinks to the original data that is randomly numbered. "
-                                    "This allows you to work on data anonymously without bias. You may need to run this"
+                                    "This allows you to work on data anonymously without bias. You may need to run this "
                                     "software as Admin for this to work on windows.")
         self.roiConvertAction = menu.addAction("Update Roi file formats")
         self.roiConvertAction.setToolTip("Updates old .MAT roi files to a newer .H5 format that will run more efficiently."

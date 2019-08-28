@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QScrollArea, QVBo
 
 from pwspy.apps.PWSAnalysisApp._dockWidgets import CellSelectorDock
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.roiDrawer import RoiDrawer
-from pwspy.dataTypes import ICMetaData
+from pwspy.dataTypes import ICMetaData, AcqDir
 from .widgets.widgets import AspectRatioWidget
 from .widgets.littlePlot import LittlePlot
 import os
@@ -132,7 +132,7 @@ class PlottingDock(QDockWidget):
         else:
             raise ValueError("`enable` string not recognized.")
 
-    def generatePlots(self, cells: List[ICMetaData]):
+    def generatePlots(self, cells: List[AcqDir]):
         self.cellMetas = cells
         analysisName = self.anNameEdit.text()
         #clear Plots
@@ -150,8 +150,8 @@ class PlottingDock(QDockWidget):
                 self.addPlot(LittlePlot(cell, None, f"{os.path.split(cell.filePath)[-1]}"))
                 buttonState = 'partial'
             else:
-                if analysisName in cell.getAnalyses():
-                    analysis = cell.loadAnalysis(analysisName)
+                if analysisName in cell.pws.getAnalyses():
+                    analysis = cell.pws.loadAnalysis(analysisName)
                     self.addPlot(LittlePlot(cell, analysis, f"{analysisName} {os.path.split(cell.filePath)[-1]}"))
                     buttonState = 'true'
                 else: #Specified analysis was not found, load a dummy widget

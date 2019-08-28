@@ -12,7 +12,7 @@ import re
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.apps.PWSAnalysisApp.App import PWSApp
-    from pwspy.dataTypes import ICMetaData
+    from pwspy.dataTypes import AcqDir, ICMetaData
 
 
 class CompilationManager(QtCore.QObject):
@@ -27,7 +27,8 @@ class CompilationManager(QtCore.QObject):
         roiName: str = self.app.window.resultsTable.getRoiName()
         analysisName: str = self.app.window.resultsTable.getAnalysisName()
         settings: CompilerSettings = self.app.window.resultsTable.getSettings()
-        cellMetas: List[ICMetaData] = self.app.window.cellSelector.getSelectedCellMetas()
+        cellMetas: List[AcqDir] = self.app.window.cellSelector.getSelectedCellMetas()
+        cellMetas = [i.pws for i in cellMetas]  # Just use the pws data
         if len(cellMetas) == 0:
             QMessageBox.information(self.app.window, "What?", "Please select at least one cell.")
             return None
