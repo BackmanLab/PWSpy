@@ -71,9 +71,9 @@ class PlotNd(QWidget):
         self.updateLimits()
         self.show()
 
-    def _updateBackground(self):
+    def _updateBackground(self, event):
         for artistManager in self.artistManagers:
-            artistManager.updateBackground()
+            artistManager.updateBackground(event)
 
     def updatePlots(self, blit=True):
         for plot in self.artistManagers:
@@ -91,9 +91,9 @@ class PlotNd(QWidget):
         """Re-render the axes."""
         for artistManager in self.artistManagers: # The fact that spX is first here makes it not render on click. sometimes not sure why.
             if artistManager.background is not None:
-               artistManager.restore_region(artistManager.background)
+               self.canvas.restore_region(artistManager.background)
             artistManager.drawArtists() #Draw the artists
-            artistManager.blit(artistManager.ax.bbox)
+            self.canvas.blit(artistManager.ax.bbox)
 
     # def resize(self, event):
     #     size = min([event.width, event.height])
@@ -183,11 +183,11 @@ class PlotNd(QWidget):
 
 if __name__ == '__main__':
     import sys
-
-    x = np.linspace(0, 1)
-    y = np.linspace(0, 1, num=30)
-    z = np.linspace(0, 1, num=200)
-    t = np.linspace(0, 1, num=10)
+    print("Starting")
+    x = np.linspace(0, 1, num=512)
+    y = np.linspace(0, 1, num=512)
+    z = np.linspace(0, 1, num=101)
+    t = np.linspace(0, 1, num=3)
     X, Y, Z, T = np.meshgrid(x, y, z, t)
     arr = np.sin(2 * np.pi * 4 * Z) + .5 * X
     app = QApplication(sys.argv)
