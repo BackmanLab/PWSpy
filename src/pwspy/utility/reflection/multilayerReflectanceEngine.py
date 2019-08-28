@@ -10,7 +10,7 @@ representing each element of the system. If the transmitted light is considered
 to be propagating from left to right then the matrices should be in multiplied
 in reverse, from right to left.
 '''
-from enum import Enum, auto
+from enum import IntEnum, auto
 
 import matplotlib.pyplot as plt
 from cycler import cycler
@@ -22,7 +22,7 @@ import numpy as np
 import matplotlib as mpl
 
 
-class Polarization(Enum):
+class Polarization(IntEnum):
     TE = auto()  # Transverse Electric Field
     TM = auto()  # Transverse Magnetic Field
 

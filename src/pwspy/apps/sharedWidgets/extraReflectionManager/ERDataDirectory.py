@@ -1,7 +1,7 @@
 from __future__ import annotations
 import hashlib
 import os
-from enum import Enum
+from enum import IntEnum
 from glob import glob
 from typing import List
 
@@ -17,7 +17,7 @@ from abc import ABC
 import time
 
 class ERAbstractDirectory(ABC):
-    class DataStatus(Enum):
+    class DataStatus(IntEnum):
         md5Confict = 'Data MD5 mismatch'
         found = 'Found'
         notIndexed = 'Not Indexed'

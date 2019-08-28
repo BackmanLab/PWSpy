@@ -14,7 +14,7 @@ from pwspy.utility.misc import cached_property
 from pwspy.analysis import AnalysisResultsSaver, AnalysisResultsLoader
 import json
 import os
-from enum import Enum, auto
+from enum import IntEnum, auto
 from typing import Optional, List, Tuple
 import h5py
 import scipy.io as spio
@@ -28,7 +28,7 @@ if typing.TYPE_CHECKING:
 
 
 class ICMetaData(MetaDataBase):
-    class FileFormats(Enum):
+    class FileFormats(IntEnum):
         RawBinary = auto()
         Tiff = auto()
         Hdf = auto()
@@ -73,9 +73,9 @@ class ICMetaData(MetaDataBase):
             try:
                 md = json.load(open(os.path.join(directory, 'pwsmetadata.txt')))
             except:  # have to use the old metadata
-                print("Json metadata not found. Using backup metadata.")
                 info2 = list(spio.loadmat(os.path.join(directory, 'info2.mat'))['info2'].squeeze())
                 info3 = list(spio.loadmat(os.path.join(directory, 'info3.mat'))['info3'].squeeze())
+                print("Json metadata not found. Using backup metadata.")
                 wv = list(spio.loadmat(os.path.join(directory, 'WV.mat'))['WV'].squeeze())
                 wv = [int(i) for i in wv]  # We will have issues saving later if these are numpy int types.
                 md = {'startWv': info2[0], 'stepWv': info2[1], 'stopWv': info2[2],
