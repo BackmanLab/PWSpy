@@ -2,8 +2,11 @@ from typing import Tuple
 
 from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication
 # from ._plots import ImPlot, SidePlot
+from matplotlib import gridspec
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from pwspy.utility.PlotNd._plots import ImPlot, SidePlot
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 
@@ -18,40 +21,59 @@ class PlotNd(QWidget):
         self.names = names
         self.max = self.min = None  # The minimum and maximum for the color scaling
 
-        self.image = ImPlot(data.shape[:2], (0, 1))
-        self.spY = SidePlot(data.shape[0], True, 0,)
-        self.spY.ax.set_ylabel(self.names[0])
-        self.spY.ax.yaxis.set_label_position('right')
-        self.spY.ax.yaxis.set_ticks_position("right")
-        self.spX = SidePlot(data.shape[1], False, 1)
+        extraDims = len(data.shape[2:])  # the first two axes are the image dimensions. Any axes after that are extra dimensions that can be scanned through
+
+
+        fig = plt.Figure()
+        h, w = data.shape[:2]
+        gs = gridspec.GridSpec(3, 2 + extraDims + 1, hspace=0,
+                               width_ratios=[w * .2 / (extraDims + 1)] * (extraDims + 1) + [w, w * .2],
+                               height_ratios=[h * .1, h, h * .2], wspace=0)
+        ax: plt.Axes = fig.add_subplot(gs[1, extraDims + 1])
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
+        self.image = ImPlot(ax, data.shape[:2], (0, 1))
+
+        ax: plt.Axes = fig.add_subplot(gs[1, extraDims + 2], sharey=self.image.ax)
+        ax.set_title(names[0])
+        ax.yaxis.set_ticks_position('right')
+        self.spY = SidePlot(ax, data.shape[0], True, 0, )
+
+        ax: plt.Axes = fig.add_subplot(gs[2, extraDims + 1], sharex=self.image.ax)
+        ax.set_xlabel(names[1])
+        self.spX = SidePlot(ax, data.shape[1], False, 1)
         self.spX.ax.set_xlabel(self.names[1])
 
-        extraDims = len(data.shape[2:])  # the first two axes are the image dimensions. Any axes after that are extra dimensions that can be scanned through
-        self.extra = [SidePlot(data.shape[2 + i], True, 2+i, title=self.names[2 + i]) for i in range(extraDims)]
+        extra = [fig.add_subplot(gs[1, i]) for i in range(extraDims)]
+        [extra[i].set_ylim(0, X.shape[2 + i] - 1) for i in range(extraDims)]
+        [extra[i].set_title(names[2 + i]) for i in range(extraDims)]
+        self.extra = [SidePlot(ax, X.shape[i+2], True, 2+i) for i, ax in enumerate(extra)]
 
         self.artistManagers = [self.spX, self.spY, self.image] + self.extra
 
+        self.canvas = FigureCanvasQTAgg(fig)
+
         layout = QGridLayout()
-        layout.addWidget(self.image, 0, extraDims, 1, 1)
-        layout.addWidget(self.spY, 0, 1 + extraDims, 1, 1)
-        layout.addWidget(self.spX, 1, extraDims, 1, 1)
-        for i, plot in enumerate(self.extra):
-            layout.addWidget(plot, 0, i, 1, 1)
+        layout.addWidget(self.canvas)
         self.setLayout(layout)
 
         self.data = data
         self.resetColor()
         self.coords = tuple(i // 2 for i in X.shape) if initialCoords is None else initialCoords
 
-        for i in self.artistManagers:
-            i.mpl_connect('button_press_event', self.onclick)
-            i.mpl_connect('motion_notify_event', self.ondrag)
-            if isinstance(i, SidePlot):
-                i.mpl_connect('scroll_event', self.onscroll)
+        self.canvas.mpl_connect('button_press_event', self.onclick)
+        self.canvas.mpl_connect('motion_notify_event', self.ondrag)
+        self.canvas.mpl_connect('scroll_event', self.onscroll)
+        self.canvas.mpl_connect('draw_event', self._updateBackground)
+
 
         self.updatePlots(blit=False)
         self.updateLimits()
         self.show()
+
+    def _updateBackground(self):
+        for artistManager in self.artistManagers:
+            artistManager.updateBackground()
 
     def updatePlots(self, blit=True):
         for plot in self.artistManagers:
@@ -63,8 +85,7 @@ class PlotNd(QWidget):
         if blit:
             self.blit()
         else:
-            for i in self.artistManagers:
-                i.draw()
+            self.canvas.draw()
 
     def blit(self):
         """Re-render the axes."""
@@ -86,8 +107,7 @@ class PlotNd(QWidget):
         for sp in self.extra:
             sp.setRange(self.min, self.max)
         # self.cbar.draw()
-        for artistManager in self.artistManagers:
-            artistManager.draw_idle()
+        self.canvas.draw_idle()
 
     def resetColor(self):
         self.max = np.percentile(self.data[np.logical_not(np.isnan(self.data))], 99.99)

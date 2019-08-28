@@ -1,20 +1,20 @@
+from abc import ABC
+
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from typing import Tuple, Union
 import numpy as np
+import matplotlib.pyplot as plt
 
 lw = 0.75
 
-class PlotBase(FigureCanvasQTAgg):
+class PlotBase(ABC):
     """An abstract class for the plots in the ND plotter widget. Dimension is the numpy array dimensions associated with this plot. For an image plot it should be a tuple of the two dimensions."""
-    def __init__(self, dimensions: Tuple[int, ...]):
-        self.figure = Figure()
-        self.ax = self.figure.add_subplot(1, 1, 1)
+    def __init__(self, ax: plt.Axes, dimensions: Tuple[int, ...]):
+        self.ax = ax
         self.dimensions = dimensions
         self.artists = None  # Derived classes should have a list of all matplotlib artists.
         self.background = None
-        super().__init__(self.figure)
-        self.mpl_connect('draw_event', self.updateBackground)
 
     def updateBackground(self, event):
         self.background = self.ax.figure.canvas.copy_from_bbox(self.ax.bbox)
@@ -25,10 +25,10 @@ class PlotBase(FigureCanvasQTAgg):
 
 
 class ImPlot(PlotBase):
-    def __init__(self, shape: Tuple[int, int], dims: Tuple[int ,int]):
+    def __init__(self, ax, shape: Tuple[int, int], dims: Tuple[int ,int]):
         assert len(shape) == 2
         self.shape = shape
-        super().__init__(dims)
+        super().__init__(ax, dims)
         self.ax.get_yaxis().set_visible(False)
         self.ax.get_xaxis().set_visible(False)
         self.vLine = self.ax.plot([100, 100], [0, shape[0]], 'r', linewidth=lw, animated=True)[0]
@@ -54,8 +54,8 @@ class ImPlot(PlotBase):
 
 
 class SidePlot(PlotBase):
-    def __init__(self, dimLength: int, vertical: bool, dimension: int, invertAxis: bool = False, title: str = None):
-        super().__init__((dimension,))
+    def __init__(self, ax, dimLength: int, vertical: bool, dimension: int, invertAxis: bool = False, title: str = None):
+        super().__init__(ax, (dimension,))
         if title:
             self.ax.set_title(title)
         self.vertical = vertical
