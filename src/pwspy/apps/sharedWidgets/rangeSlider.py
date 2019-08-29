@@ -180,8 +180,8 @@ class QRangeSlider(QtWidgets.QWidget, Ui_Form):
         self._tail.setLayout(self._tail_layout)
         self.tail = Tail(self._tail, main=self)
         self._tail_layout.addWidget(self.tail)
-        self.setMin(0)
-        self.setMax(99)
+        self._setMin(0)
+        self._setMax(99)
         self.setStart(0)
         self.setEnd(99)
         self.setDrawValues(True)
@@ -192,13 +192,23 @@ class QRangeSlider(QtWidgets.QWidget, Ui_Form):
     def max(self):
         return getattr(self, '__max', None)
 
-    def setMin(self, value):
+    def _setMin(self, value):
         setattr(self, '__min', value)
         self.minValueChanged.emit(value)
 
-    def setMax(self, value):
+    def setMin(self, value):
+        self._setMin(value)
+        if self.start() < value:
+            self._setStart(value)
+
+    def _setMax(self, value):
         setattr(self, '__max', value)
         self.maxValueChanged.emit(value)
+
+    def setMax(self, value):
+        self._setMax(value)
+        if self.end() > value:
+            self._setEnd(value)
 
     def start(self):
         return getattr(self, '__start', None)
