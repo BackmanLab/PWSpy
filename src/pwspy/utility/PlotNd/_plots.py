@@ -54,8 +54,11 @@ class ImPlot(PlotBase):
 
 
 class SidePlot(PlotBase):
-    def __init__(self, ax, dimLength: int, vertical: bool, dimension: int, invertAxis: bool = False, title: str = None):
+    def __init__(self, ax, dimLength: int, vertical: bool, dimension: int, invertAxis: bool = False, title: str = None, ind = None):
         super().__init__(ax, (dimension,))
+        if ind is None:
+            ind = np.arange(dimLength)
+        self.ind = ind
         if title:
             self.ax.set_title(title)
         self.vertical = vertical
@@ -63,9 +66,9 @@ class SidePlot(PlotBase):
         limFunc = self.ax.set_ylim if vertical else self.ax.set_xlim
 
         if invertAxis:  # Change the data direction. this can be used to make the image orientation match the orientation of other images.
-            limFunc(dimLength-1, 0)
+            limFunc(ind[-1], 0)
         else:
-            limFunc(0, dimLength-1)
+            limFunc(0, ind[-1])
         self.range = (0, 1)
         markerData = (self.range, (0, dimLength))
         if self.vertical:
@@ -76,10 +79,18 @@ class SidePlot(PlotBase):
 
     def setMarker(self, pos: Tuple[float]):
         assert len(pos) == 1
+        pos = self.coordToValue(pos[0])
         data = ((pos, pos), self.range)
         if self.vertical:
             data = (data[1],) + (data[0],)
         self.markerLine.set_data(*data)
+
+    def coordToValue(self, coord):
+        return self.ind[coord]
+
+    def valueToCoord(self, value):
+        coord = np.where(np.abs(self.ind - value) == np.min(np.abs(self.ind - value)))[0]
+        return coord
 
     def setRange(self, Min, Max):
         self.range = (Min, Max)
@@ -90,10 +101,12 @@ class SidePlot(PlotBase):
         _(*self.range)
 
     def setData(self, data):
-        ind = np.arange(self.dimLength)
+        self._data = (self.ind, data)
         if self.vertical:
-            data = (data, ind)
+            data = (data, self.ind)
         else:
-            data = (ind, data)
+            data = (self.ind, data)
         self.plot.set_data(*data)
 
+    def getData(self):
+        return self._data

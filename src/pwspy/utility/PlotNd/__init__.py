@@ -1,7 +1,11 @@
 from typing import Tuple
 
-from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication
+from PyQt5 import QtCore
+from PyQt5.QtCore import QSize
+from PyQt5.QtGui import QResizeEvent
+from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QSizePolicy
 # from ._plots import ImPlot, SidePlot
+from apps.sharedWidgets.utilityWidgets import AspectRatioWidget
 from matplotlib import gridspec
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from pwspy.utility.PlotNd._plots import ImPlot, SidePlot
@@ -13,18 +17,21 @@ import matplotlib.pyplot as plt
 class PlotNd(QWidget):
     def __init__(self, data: np.ndarray, names: Tuple[str, ...] = ('y', 'x', 'lambda'),
                  initialCoords: Tuple[int, ...] = None, title: str = '',
-                 indices: Tuple[np.ndarray] = (None, None, None), parent: QWidget = None):
+                 indices: Tuple[np.ndarray] = (None, None, None), parent: QWidget = None,
+                 extraDimIndices = None):
         assert len(names) == len(data.shape)
         super().__init__(parent=parent)
         self.setWindowTitle(title)
 
+        self.childPlots = []
         self.names = names
         self.max = self.min = None  # The minimum and maximum for the color scaling
 
         extraDims = len(data.shape[2:])  # the first two axes are the image dimensions. Any axes after that are extra dimensions that can be scanned through
 
 
-        fig = plt.Figure()
+        fig = plt.Figure(figsize=(6, 6))
+        self.fig = fig
         h, w = data.shape[:2]
         gs = gridspec.GridSpec(3, 2 + extraDims + 1, hspace=0,
                                width_ratios=[w * .2 / (extraDims + 1)] * (extraDims + 1) + [w, w * .2],
@@ -37,7 +44,7 @@ class PlotNd(QWidget):
         ax: plt.Axes = fig.add_subplot(gs[1, extraDims + 2], sharey=self.image.ax)
         ax.set_title(names[0])
         ax.yaxis.set_ticks_position('right')
-        self.spY = SidePlot(ax, data.shape[0], True, 0, )
+        self.spY = SidePlot(ax, data.shape[0], True, 0)
 
         ax: plt.Axes = fig.add_subplot(gs[2, extraDims + 1], sharex=self.image.ax)
         ax.set_xlabel(names[1])
@@ -47,14 +54,22 @@ class PlotNd(QWidget):
         extra = [fig.add_subplot(gs[1, i]) for i in range(extraDims)]
         [extra[i].set_ylim(0, X.shape[2 + i] - 1) for i in range(extraDims)]
         [extra[i].set_title(names[2 + i]) for i in range(extraDims)]
-        self.extra = [SidePlot(ax, X.shape[i+2], True, 2+i) for i, ax in enumerate(extra)]
+        self.extra = []
+        for i, ax in enumerate(extra):
+            if extraDimIndices is None:
+                self.extra.append(SidePlot(ax, X.shape[i + 2], True, 2 + i))
+            else:
+                self.extra.append(SidePlot(ax, X.shape[i + 2], True, 2 + i, ind=extraDimIndices[i]))
 
         self.artistManagers = [self.spX, self.spY, self.image] + self.extra
 
         self.canvas = FigureCanvasQTAgg(fig)
-
+        self.arWidget = AspectRatioWidget(1, self)
         layout = QGridLayout()
         layout.addWidget(self.canvas)
+        self.arWidget.setLayout(layout)
+        layout = QGridLayout()
+        layout.addWidget(self.arWidget)
         self.setLayout(layout)
 
         self.data = data
@@ -95,11 +110,6 @@ class PlotNd(QWidget):
             artistManager.drawArtists() #Draw the artists
             self.canvas.blit(artistManager.ax.bbox)
 
-    # def resize(self, event):
-    #     size = min([event.width, event.height])
-    #     size = size / self.fig.get_dpi()
-    #     self.fig.set_size_inches(size, size)
-    #
     def updateLimits(self):
         self.image.setRange(self.min, self.max)
         self.spY.setRange(self.min, self.max)
@@ -151,6 +161,12 @@ class PlotNd(QWidget):
         if event.inaxes is None:
             return
         if event.dblclick:
+            am = [artistManager for artistManager in self.artistManagers if artistManager.ax == event.inaxes][0]
+            if isinstance(am, SidePlot):
+                fig, ax = plt.subplots()
+                ax.plot(*am.getData())
+                self.childPlots.append(fig)
+                fig.show()
             print("Double!") #TODO open a better plot of the data.
         ax = event.inaxes
         x, y = event.xdata, event.ydata
@@ -166,7 +182,9 @@ class PlotNd(QWidget):
             self.coords = (self.coords[0], int(x)) + self.coords[2:]
         elif ax in [sp.ax for sp in self.extra]:
             idx = [sp.ax for sp in self.extra].index(ax)
-            self.coords = self.coords[:2 + idx] + (int(y),) + self.coords[3 + idx:]
+            sp = [sp for sp in self.extra if sp.ax is ax][0]
+            ycoord = sp.valueToCoord(y)
+            self.coords = self.coords[:2 + idx] + (int(ycoord),) + self.coords[3 + idx:]
         self.updatePlots()
 
     def ondrag(self, event):
@@ -181,16 +199,17 @@ class PlotNd(QWidget):
 
 
 
+
 if __name__ == '__main__':
     import sys
     print("Starting")
-    x = np.linspace(0, 1, num=512)
-    y = np.linspace(0, 1, num=512)
+    x = np.linspace(0, 1, num=100)
+    y = np.linspace(0, 1, num=150)
     z = np.linspace(0, 1, num=101)
     t = np.linspace(0, 1, num=3)
     X, Y, Z, T = np.meshgrid(x, y, z, t)
     arr = np.sin(2 * np.pi * 4 * Z) + .5 * X
     app = QApplication(sys.argv)
-    p = PlotNd(arr, names=('y', 'x', 'z', 't'))
+    p = PlotNd(arr, names=('y', 'x', 'z', 't'), extraDimIndices=[z,t])
     sys.exit(app.exec_())
 
