@@ -61,10 +61,7 @@ class PlotNd(QWidget):
         self.artistManagers = [self.spX, self.spY, self.image] + self.extra
 
         self.canvas = FigureCanvasQTAgg(fig)
-        self.arWidget = AspectRatioWidget(1, self)
-        layout = QGridLayout()
-        layout.addWidget(self.canvas)
-        self.arWidget.setLayout(layout)
+
 
         self.slider = QRangeSlider(self)
         self.slider.setMax(data.max())
@@ -74,9 +71,14 @@ class PlotNd(QWidget):
         self.slider.startValueChanged.connect(self.updateLimits)
         self.slider.endValueChanged.connect(self.updateLimits)
 
+        self.arWidget = AspectRatioWidget(1, self)
+        layout = QGridLayout()
+        layout.addWidget(self.canvas)
+        layout.addWidget(self.slider)
+        self.arWidget.setLayout(layout)
+
         layout = QGridLayout()
         layout.addWidget(self.arWidget)
-        layout.addWidget(self.slider)
         self.setLayout(layout)
 
         self.data = data

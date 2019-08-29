@@ -24,4 +24,3 @@ class AspectRatioWidget(QWidget):
     def setAspect(self, aspect: float):
         self._aspect = aspect
         self._resize(self.width(), self.height())
-
