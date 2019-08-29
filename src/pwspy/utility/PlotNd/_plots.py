@@ -129,3 +129,14 @@ class SidePlot(PlotBase):
 
     def getData(self):
         return self._data
+
+class CBar:
+    """The colorbar at the top of the ND plotter."""
+    def __init__(self, ax: plt.Axes, im):
+        self.ax = ax
+        self.cbar = plt.colorbar(im, cax=self.ax, orientation='horizontal')
+        self.ax.xaxis.set_ticks_position("top")
+        self.artists = [None]
+
+    def draw(self):
+        self.ax.xaxis.set_ticks_position("top")

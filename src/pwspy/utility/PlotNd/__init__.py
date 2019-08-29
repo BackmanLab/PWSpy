@@ -1,12 +1,13 @@
 from typing import Tuple, List
 from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication
+from apps.sharedWidgets.rangeSlider import QRangeSlider
 from apps.sharedWidgets.utilityWidgets import AspectRatioWidget
 from matplotlib import gridspec
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from pwspy.utility.PlotNd._plots import ImPlot, SidePlot
 import numpy as np
 import matplotlib.pyplot as plt
-
+from utility.PlotNd._plots import CBar
 
 
 class PlotNd(QWidget):
@@ -44,6 +45,9 @@ class PlotNd(QWidget):
         self.spX = SidePlot(ax, data.shape[1], False, 1)
         self.spX.ax.set_xlabel(self.names[1])
 
+        ax: plt.Axes = fig.add_subplot(gs[0, extraDims + 1])
+        self.cbar = CBar(ax, self.image.im)
+
         extra = [fig.add_subplot(gs[1, i]) for i in range(extraDims)]
         [extra[i].set_ylim(0, X.shape[2 + i] - 1) for i in range(extraDims)]
         [extra[i].set_title(names[2 + i]) for i in range(extraDims)]
@@ -52,7 +56,7 @@ class PlotNd(QWidget):
             if extraDimIndices is None:
                 self.extra.append(SidePlot(ax, X.shape[i + 2], True, 2 + i))
             else:
-                self.extra.append(SidePlot(ax, X.shape[i + 2], True, 2 + i, ind=extraDimIndices[i]))
+                self.extra.append(SidePlot(ax, X.shape[i + 2], True, 2 + i, index=extraDimIndices[i]))
 
         self.artistManagers = [self.spX, self.spY, self.image] + self.extra
 
@@ -61,8 +65,18 @@ class PlotNd(QWidget):
         layout = QGridLayout()
         layout.addWidget(self.canvas)
         self.arWidget.setLayout(layout)
+
+        self.slider = QRangeSlider(self)
+        self.slider.setMax(data.max())
+        self.slider.setMin(data.min())
+        self.slider.setEnd(data.max())
+        self.slider.setStart(data.min())
+        self.slider.startValueChanged.connect(self.updateLimits)
+        self.slider.endValueChanged.connect(self.updateLimits)
+
         layout = QGridLayout()
         layout.addWidget(self.arWidget)
+        layout.addWidget(self.slider)
         self.setLayout(layout)
 
         self.data = data
@@ -82,6 +96,7 @@ class PlotNd(QWidget):
     def _updateBackground(self, event):
         for artistManager in self.artistManagers:
             artistManager.updateBackground(event)
+        self.cbar.draw()
 
     def updatePlots(self, blit=True):
         for plot in self.artistManagers:
@@ -104,13 +119,19 @@ class PlotNd(QWidget):
             self.canvas.blit(artistManager.ax.bbox)
 
     def updateLimits(self):
+        self.min = self.slider.start()
+        self.max = self.slider.end()
         self.image.setRange(self.min, self.max)
         self.spY.setRange(self.min, self.max)
         self.spX.setRange(self.min, self.max)
         for sp in self.extra:
             sp.setRange(self.min, self.max)
-        # self.cbar.draw()
+        self.cbar.draw()
         self.canvas.draw_idle()
+        try:
+            self.updatePlots()  # This will fail when this is run in the constructor.
+        except:
+            pass
 
     def resetColor(self):
         self.max = np.percentile(self.data[np.logical_not(np.isnan(self.data))], 99.99)
