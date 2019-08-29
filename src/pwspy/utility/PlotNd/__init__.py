@@ -1,5 +1,5 @@
 from typing import Tuple, List
-from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication
+from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QPushButton, QDialog
 from apps.sharedWidgets.rangeSlider import QRangeSlider
 from apps.sharedWidgets.utilityWidgets import AspectRatioWidget
 from matplotlib import gridspec
@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from utility.PlotNd._plots import CBar
 
+#TODO add toolbar like in the `bigplot`. default to a larger size.
 
 class PlotNd(QWidget):
     def __init__(self, data: np.ndarray, names: Tuple[str, ...] = ('y', 'x', 'lambda'),
@@ -22,7 +23,6 @@ class PlotNd(QWidget):
         self.max = self.min = None  # The minimum and maximum for the color scaling
 
         extraDims = len(data.shape[2:])  # the first two axes are the image dimensions. Any axes after that are extra dimensions that can be scanned through
-
 
         fig = plt.Figure(figsize=(6, 6))
         self.fig = fig
@@ -64,6 +64,7 @@ class PlotNd(QWidget):
 
 
         self.slider = QRangeSlider(self)
+        self.slider.setMaximumHeight(20)
         self.slider.setMax(data.max())
         self.slider.setMin(data.min())
         self.slider.setEnd(data.max())
@@ -71,14 +72,13 @@ class PlotNd(QWidget):
         self.slider.startValueChanged.connect(self.updateLimits)
         self.slider.endValueChanged.connect(self.updateLimits)
 
-        self.arWidget = AspectRatioWidget(1, self)
-        layout = QGridLayout()
-        layout.addWidget(self.canvas)
-        layout.addWidget(self.slider)
-        self.arWidget.setLayout(layout)
+        self.resizeButton = QPushButton("Resize")
+        # self.resizeButton.released.connect(self.resizeDlg)
 
         layout = QGridLayout()
-        layout.addWidget(self.arWidget)
+        layout.addWidget(self.canvas, 0, 0, 8, 8)
+        layout.addWidget(self.slider, 8, 0, 4, 1)
+        layout.addWidget(self.resizeButton, 8, 4, 1, 1)
         self.setLayout(layout)
 
         self.data = data
@@ -93,7 +93,11 @@ class PlotNd(QWidget):
 
         self.updatePlots(blit=False)
         self.updateLimits()
+
+        self.setFixedSize(self.size())
+
         self.show()
+
 
     def _updateBackground(self, event):
         for artistManager in self.artistManagers:
