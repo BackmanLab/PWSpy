@@ -1,26 +1,7 @@
 import numpy as np
-from PyQt5 import QtGui
-from PyQt5.QtWidgets import QWidget, QApplication
 
 from pwspy.analysis import AnalysisResultsLoader
 from pwspy.dataTypes import ICMetaData
-
-
-class AspectRatioWidget(QWidget):
-    def __init__(self, aspect: float, parent: QWidget = None):
-        super().__init__(parent)
-        self._aspect = aspect
-
-    def resizeEvent(self, event: QtGui.QResizeEvent):
-        self._resize(event.size().width())
-
-    def _resize(self, width):
-        newHeight = width / self._aspect
-        self.setMaximumHeight(newHeight)
-
-    def setAspect(self, aspect: float):
-        self._aspect = aspect
-        self._resize(self.width())
 
 
 class AnalysisPlotter:
