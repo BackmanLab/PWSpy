@@ -1,10 +1,5 @@
-from typing import Tuple
-
-from PyQt5 import QtCore
-from PyQt5.QtCore import QSize
-from PyQt5.QtGui import QResizeEvent
-from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QSizePolicy
-# from ._plots import ImPlot, SidePlot
+from typing import Tuple, List
+from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication
 from apps.sharedWidgets.utilityWidgets import AspectRatioWidget
 from matplotlib import gridspec
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
@@ -16,9 +11,7 @@ import matplotlib.pyplot as plt
 
 class PlotNd(QWidget):
     def __init__(self, data: np.ndarray, names: Tuple[str, ...] = ('y', 'x', 'lambda'),
-                 initialCoords: Tuple[int, ...] = None, title: str = '',
-                 indices: Tuple[np.ndarray] = (None, None, None), parent: QWidget = None,
-                 extraDimIndices = None):
+                 initialCoords: Tuple[int, ...] = None, title: str = '', parent: QWidget = None, extraDimIndices = None):
         assert len(names) == len(data.shape)
         super().__init__(parent=parent)
         self.setWindowTitle(title)
