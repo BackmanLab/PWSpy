@@ -130,7 +130,8 @@ class Analysis(LegacyAnalysis):
     def __init__(self, settings: AnalysisSettings, ref: ImCube, extraReflectance: ExtraReflectanceCube):
         from pwspy.dataTypes import ExtraReflectionCube, ExtraReflectanceCube
         super().__init__(settings, ref)
-        ref.filterDust(.75)  # Apply a blur to filter out dust particles. This is in microns. I'm not sure if this is the optimal value.
+        if ref.metadata.pixelSizeUm is not None: #Only works if pixel size was saved in the metadata.
+            ref.filterDust(.75)  # Apply a blur to filter out dust particles. This is in microns. I'm not sure if this is the optimal value.
         if settings.referenceMaterial is None:
             theoryR = pd.Series(np.ones((len(ref.wavelengths),)), index=ref.wavelengths) # Having this as all ones effectively ignores it.
             print("Warning: Analysis ignoring reference material correction")
