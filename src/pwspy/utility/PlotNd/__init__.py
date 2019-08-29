@@ -49,14 +49,14 @@ class PlotNd(QWidget):
         self.cbar = CBar(ax, self.image.im)
 
         extra = [fig.add_subplot(gs[1, i]) for i in range(extraDims)]
-        [extra[i].set_ylim(0, X.shape[2 + i] - 1) for i in range(extraDims)]
+        [extra[i].set_ylim(0, data.shape[2 + i] - 1) for i in range(extraDims)]
         [extra[i].set_title(names[2 + i]) for i in range(extraDims)]
         self.extra = []
         for i, ax in enumerate(extra):
             if extraDimIndices is None:
-                self.extra.append(SidePlot(ax, X.shape[i + 2], True, 2 + i))
+                self.extra.append(SidePlot(ax, data.shape[i + 2], True, 2 + i))
             else:
-                self.extra.append(SidePlot(ax, X.shape[i + 2], True, 2 + i, index=extraDimIndices[i]))
+                self.extra.append(SidePlot(ax, data.shape[i + 2], True, 2 + i, index=extraDimIndices[i]))
 
         self.artistManagers = [self.spX, self.spY, self.image] + self.extra
 
@@ -81,7 +81,7 @@ class PlotNd(QWidget):
 
         self.data = data
         self.resetColor()
-        self.coords = tuple(i // 2 for i in X.shape) if initialCoords is None else initialCoords
+        self.coords = tuple(i // 2 for i in data.shape) if initialCoords is None else initialCoords
 
         self.canvas.mpl_connect('button_press_event', self.onclick)
         self.canvas.mpl_connect('motion_notify_event', self.ondrag)
@@ -181,7 +181,6 @@ class PlotNd(QWidget):
                 ax.plot(*am.getData())
                 self.childPlots.append(fig)
                 fig.show()
-            print("Double!") #TODO open a better plot of the data.
         ax = event.inaxes
         x, y = event.xdata, event.ydata
         button = event.button
