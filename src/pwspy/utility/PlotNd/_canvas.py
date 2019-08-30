@@ -4,7 +4,7 @@ import numpy as np
 from PyQt5 import QtCore
 from matplotlib import pyplot as plt, gridspec
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-from utility.PlotNd import ImPlot, SidePlot, CBar
+from ._plots import ImPlot, SidePlot, CBar
 
 
 class PlotNdCanvas(FigureCanvasQTAgg):
