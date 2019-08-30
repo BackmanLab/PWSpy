@@ -71,7 +71,7 @@ class ImPlot(PlotBase):
 
 class SidePlot(PlotBase):
     def __init__(self, ax, dimLength: int, vertical: bool, dimension: int, invertAxis: bool = False, title: str = None,
-                 index = None):
+                 index: np.ndarray = None):
         super().__init__(ax, (dimension,))
         if index is None:
             index = np.arange(dimLength)
@@ -83,9 +83,9 @@ class SidePlot(PlotBase):
         limFunc = self.ax.set_ylim if vertical else self.ax.set_xlim
 
         if invertAxis:  # Change the data direction. this can be used to make the image orientation match the orientation of other images.
-            limFunc(index[-1], 0)
+            limFunc(index[-1], index[0])
         else:
-            limFunc(0, index[-1])
+            limFunc(index[0], index[-1])
         self.range = (0, 1)
         markerData = (self.range, (0, dimLength))
         if self.vertical:
