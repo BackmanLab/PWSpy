@@ -274,7 +274,8 @@ class QRangeSlider(QtWidgets.QWidget, Ui_Form):
         self._handle.setStyleSheet(style)
 
     def _valueToPos(self, value):
-        return scale(value, (self.min(), self.max()), (0, self.width()))
+        s = scale(value, (self.min(), self.max()), (0, self.width()))
+        return int(s)
 
     def _posToValue(self, xpos):
         return scale(xpos, (0, self.width()), (self.min(), self.max()))
