@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, List
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QPushButton, QDialog, QSpinBox, QLabel
@@ -14,7 +14,8 @@ from utility.PlotNd._canvas import PlotNdCanvas
 
 class PlotNd(QWidget):
     def __init__(self, data: np.ndarray, names: Tuple[str, ...] = ('y', 'x', 'lambda'),
-                 initialCoords: Tuple[int, ...] = None, title: str = '', parent: QWidget = None, extraDimIndices = None):
+                 initialCoords: Tuple[int, ...] = None, title: str = '', parent: QWidget = None,
+                 extraDimIndices: List[np.ndarray] = None):
         super().__init__(parent=parent)
         title = str(title) #Convert to string just in case
         self.setWindowTitle(title)
