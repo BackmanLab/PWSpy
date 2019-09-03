@@ -53,7 +53,6 @@ class LegacyAnalysis(AbstractAnalysis):
         cube = cube.selIndex(self.settings.wavelengthStart, self.settings.wavelengthStop)
         # Determine the mean-reflectance for each pixel in the cell.
         reflectance = cube.data.mean(axis=2)
-        warns.append(warnings.checkMeanReflectance(reflectance))
         cube = KCube.fromImCube(cube)  # -- Convert to K-Space
         cubePoly = self._fitPolynomial(cube)
         # Remove the polynomial fit from filtered cubeCell.

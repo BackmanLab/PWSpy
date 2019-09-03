@@ -9,20 +9,6 @@ class AnalysisWarning:
         self.shortMsg = shortMsg
 
 
-def checkMeanReflectance(r: np.ndarray) -> Optional[AnalysisWarning]:
-    """Given an array of reflectance values (normalized by the reference, not scaled to physical reflectance units),
-    this function returns a warning if the mean of the array is greater than 1.5. This suggests that the reference is not
-    valid to use with this sample or something unexpected has happened to the sample."""
-    assert len(r.shape) == 2
-    avg = r.mean()
-    if avg > 1.5:
-        return AnalysisWarning("R > 1.5", f"Mean reflectance is {avg} (>1.5). Is something wrong with the reference?")
-    if avg < .75:
-        return AnalysisWarning("R < 0.75", f"Mean reflectance is {avg} (<0.75). Is something wrong with the reference?")
-    else:
-        return None
-
-
 def checkMeanSpectraRatio(ratio: float) -> Optional[AnalysisWarning]:
     """For PWS while we expect RMS of the spectra in a region to be similar we don't expect nearby pixels to have well
     correlated spectra. By averaging the spectra of all pixels in a region we can get a `mean spectra`. Ideally we would
