@@ -49,5 +49,9 @@ class AnalysisViewer(AnalysisPlotter, QWidget):
         self.plotWidg.setSaturation()
 
     def setMetadata(self, md: AcqDir, analysis: Optional[AnalysisResultsLoader] = None):
-        super().setMetadata(md, analysis)
+        try:
+            super().setMetadata(md, analysis)
+        except ValueError:  # Trying to set new metadata may result in an error if the new analysis/metadata can't plot the currently set analysisField
+            self.changeData('thumbnail')  # revert back to thumbnail which should always be possible
+            super().setMetadata(md, analysis)
         self.plotWidg.setMetadata(md)

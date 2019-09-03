@@ -26,7 +26,7 @@ class AnalysisPlotter:
                 self.data = self.metadata.fluorescence.data
             else:
                 if self.analysis is None:
-                    raise ValueError(f"Analysis Plotter for ImCube {self.metadata.filePath} does not have an analysis file.")
+                    raise ValueError(f"Analysis Plotter for {self.metadata.filePath} does not have an analysis file.")
                 self.data = getattr(self.analysis, field)
             assert len(self.data.shape) == 2
 
