@@ -7,9 +7,7 @@ from matplotlib.backends.backend_qt5 import NavigationToolbar2QT
 from pwspy.utility.PlotNd._plots import ImPlot, SidePlot
 import numpy as np
 from pwspy.utility.PlotNd._plots import CBar
-
-#TODO add toolbar like in the `bigplot`. default to a larger size.
-from utility.PlotNd._canvas import PlotNdCanvas
+from pwspy.utility.PlotNd._canvas import PlotNdCanvas
 
 
 class PlotNd(QDialog):
