@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QScrollArea, QVBo
 from pwspy.apps.PWSAnalysisApp._dockWidgets import CellSelectorDock
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.roiDrawer import RoiDrawer
 from pwspy.dataTypes import ICMetaData, AcqDir
-from .widgets.widgets import AspectRatioWidget
+from apps.sharedWidgets.utilityWidgets import AspectRatioWidget
 from .widgets.littlePlot import LittlePlot
 import os
 

@@ -5,7 +5,7 @@ from glob import glob
 from typing import List, Any, Dict
 import json
 
-from PyQt5.QtWidgets import QDialog
+from PyQt5.QtWidgets import QDialog, QWidget
 
 from pwspy.dataTypes import ImCube, CameraCorrection, ExtraReflectanceCube
 from pwspy.apps.ExtraReflectanceCreator.widgets.dialog import IndexInfoForm
@@ -79,7 +79,12 @@ class ERWorkFlow:
 
     def deleteFigures(self):
         for fig in self.figs:
-            plt.close(fig)
+            if isinstance(fig, plt.Figure):
+                plt.close(fig)
+            elif isinstance(fig, QWidget):
+                fig.close()
+            else:
+                raise TypeError(f"Type {type(fig)} shouldn't be here, what's going on?")
         self.figs = []
 
     def loadCubes(self, includeSettings: List[str], binning: int):
@@ -127,7 +132,7 @@ class ERWorkFlow:
             erCube, rExtraDict, self.plotnds = er.generateRExtraCubes(combos, theoryR, numericalAperture)
             print(f"Final data max is {erCube.data.max()}")
             print(f"Final data min is {erCube.data.min()}")
-            self.figs.extend([i.fig for i in self.plotnds]) # keep track of opened figures.
+            self.figs.extend(self.plotnds) # keep track of opened figures.
             saveName = f'{self.currDir}-{setting}'
             dialog = IndexInfoForm(f'{self.currDir}-{setting}', erCube.metadata.idTag)
             result = dialog.exec()

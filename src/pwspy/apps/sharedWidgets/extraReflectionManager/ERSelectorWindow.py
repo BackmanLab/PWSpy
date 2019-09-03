@@ -126,7 +126,7 @@ class ERSelectorWindow(QDialog):
         menu.addAction(displayAction)
         if widgetItem.downloaded:
             plotAction = QAction("Plot Data")
-            plotAction.triggered.connect(lambda: PlotNd(ExtraReflectanceCube.fromHdfFile(self._manager._directory, widgetItem.name).data))
+            plotAction.triggered.connect(lambda wItem=widgetItem: self._plot3dData(wItem))
             menu.addAction(plotAction)
         menu.exec(self.mapToGlobal(pos))
 
@@ -134,6 +134,10 @@ class ERSelectorWindow(QDialog):
         message = QMessageBox.information(self, item.name, '\n\n'.join([f'FileName: {item.fileName}',
                                                                       f'ID Tag: {item.idTag}',
                                                                       f'Description: {item.description}']))
+
+    def _plot3dData(self, widgetItem):
+        er = ExtraReflectanceCube.fromHdfFile(self._manager._directory, widgetItem.name)
+        PlotNd(er.data, extraDimIndices=[er.wavelengths])
 
     def _downloadCheckedItems(self):
         for item in self._items:
