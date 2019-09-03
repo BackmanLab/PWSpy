@@ -88,6 +88,9 @@ class AnalysisSettingsDock(QDockWidget):
         d.setLayout(l)
         d.show()
         d.exec()
-        item.settings = settingsFrame.getSettings()
-        item.cameraCorrection = settingsFrame.getCameraCorrection()
+        try:
+            item.settings = settingsFrame.getSettings()
+            item.cameraCorrection = settingsFrame.getCameraCorrection()
+        except Exception as e:
+            QMessageBox.warning(self, 'Oh No!', str(e))
 

@@ -135,7 +135,7 @@ class CellSelectorDock(QDockWidget):
         idTag = ref.idTag
         for i in range(self.refTableWidget.rowCount()):
             refitem: ReferencesTableItem = self.refTableWidget.item(i, 0)
-            if refitem.item.cube.idTag == idTag:
+            if refitem.item.acqDir.idTag == idTag:
                 refitem.setSelected(True)
             else:
                 refitem.setSelected(False)

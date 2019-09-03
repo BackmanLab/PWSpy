@@ -55,6 +55,10 @@ class ERMetadata:
     def numericalAperture(self):
         return self.inheritedMetadata['numericalAperture']
 
+    @property
+    def systemName(self) -> str:
+        return self.inheritedMetadata['system']
+
     @classmethod
     def validPath(cls, path: str) -> Tuple[bool, Union[str, bytes], Union[str, bytes]]:
         if cls.FILESUFFIX in path:

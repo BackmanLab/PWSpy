@@ -65,7 +65,7 @@ class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
                              names=('y', 'x', 'k'), extraDimIndices=[self.analysis.reflectance.wavenumbers])
 
     def plotRaw3d(self):
-        im = ImCube.fromMetadata(self.metadata)
+        im = ImCube.fromMetadata(self.metadata.pws)
         self.plotnd = PlotNd(im.data, title=os.path.split(self.metadata.filePath)[-1],
                              extraDimIndices=[im.wavelengths])
 
