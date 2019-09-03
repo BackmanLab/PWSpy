@@ -77,7 +77,7 @@ class AnalysisManager(QtCore.QObject):
             else:
                 erMeta = self.app.ERManager.getMetadataFromId(anSettings.extraReflectanceId)
                 if refMeta.systemName != erMeta.systemName:
-                    ans = QMessageBox.question(self.app.window, "Uh Oh", "The reference was acquired on system: {refMeta.systemName} while the extra reflectance correction was acquired on system: {erMeta.systemName}. Are you sure you want to continue?")
+                    ans = QMessageBox.question(self.app.window, "Uh Oh", f"The reference was acquired on system: {refMeta.systemName} while the extra reflectance correction was acquired on system: {erMeta.systemName}. Are you sure you want to continue?")
                     if ans == QMessageBox.No:
                         return
                 erCube = ExtraReflectanceCube.fromMetadata(erMeta)
