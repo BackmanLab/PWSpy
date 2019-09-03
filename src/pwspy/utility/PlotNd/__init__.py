@@ -12,7 +12,7 @@ from pwspy.utility.PlotNd._plots import CBar
 from utility.PlotNd._canvas import PlotNdCanvas
 
 
-class PlotNd(QWidget):
+class PlotNd(QDialog):
     def __init__(self, data: np.ndarray, names: Tuple[str, ...] = ('y', 'x', 'lambda'),
                  initialCoords: Tuple[int, ...] = None, title: str = '', parent: QWidget = None,
                  extraDimIndices: List[np.ndarray] = None):
