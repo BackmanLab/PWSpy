@@ -21,6 +21,7 @@ def checkMeanSpectraRatio(ratio: float) -> Optional[AnalysisWarning]:
     else:
         return None
 
+
 def checkRSquared(rSquared: np.ndarray) -> Optional[AnalysisWarning]:
     """We try to fit a line to the natural log of the autocorrelation function in order to find the slope. The RSquared
     tells us how well this fit worked. If RSquared is too low then we can't really trust the slop value that we calculated."""
