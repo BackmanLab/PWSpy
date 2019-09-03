@@ -61,15 +61,14 @@ class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
 
     def plotAn3d(self):
         self.plotnd = PlotNd(self.analysis.reflectance.data, title=os.path.split(self.metadata.filePath)[-1],
-                             names=('y','x','k'), extraDimIndices=[self.analysis.reflectance.wavenumbers], parent=self)
+                             names=('y','x','k'), extraDimIndices=[self.analysis.reflectance.wavenumbers])
 
     def plotRaw3d(self):
         im = ImCube.fromMetadata(self.metadata)
         self.plotnd = PlotNd(im.data, title=os.path.split(self.metadata.filePath)[-1],
-                             extraDimIndices=[im.wavelengths], parent=self)
+                             extraDimIndices=[im.wavelengths])
 
     def plotOpd3d(self):
         opd, opdIndex = self.analysis.opd
         self.plotnd = PlotNd(opd, names=('y', 'x', '(um)'), title=os.path.split(self.metadata.filePath)[-1],
-                             extraDimIndices=[opdIndex], parent=self)
-        
+                             extraDimIndices=[opdIndex])
