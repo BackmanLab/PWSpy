@@ -10,7 +10,7 @@ from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationTo
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 
-from apps.sharedWidgets.rangeSlider import QRangeSlider
+from pwspy.apps.sharedWidgets.rangeSlider import QRangeSlider
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import AcqDir
