@@ -79,7 +79,8 @@ def _loadThenProcess(procFunc, procFuncArgs, metadataOnly: bool, lock: mp.Lock, 
 
 
 def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: Optional = None, parallel: Optional=None,
-                   procArgs: Optional = None, metadataOnly: bool = False, passLock: bool = False, initializer = None, initArgs = None) -> Union[pd.DataFrame, List, Tuple]:
+                   procArgs: Optional = None, metadataOnly: bool = False, passLock: bool = False, initializer = None,
+                   initArgs = None, maxProcesses: int = 1000) -> Union[pd.DataFrame, List, Tuple]:
     """    A convenient function to load a series of ImCubes from a list or dictionary of file paths.
 
     Parameters
@@ -105,6 +106,9 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
         A function that is run once at the beginning of each spawned process. Can be used for copying shared memory.
     initArgs:
         A tuple of arguments to pass to the `initializer` function.
+    maxProcesses:
+        The maximum number of processes that can be spawned. Regardless of this parameter the function will not spawn more
+        than 1 less than the total number of cores on the cpu.
 
     Returns
     -------
@@ -135,7 +139,8 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
             raise Exception("Running in parallel with no processorFunc is a bad idea.")
         m = mp.Manager()
         lock = m.Lock()
-        po = mp.Pool(processes=psutil.cpu_count(logical=False) - 1, initializer=initializer, initargs=initArgs)
+        numProcesses = min([psutil.cpu_count(logical=False) - 1, maxProcesses])
+        po = mp.Pool(processes=numProcesses, initializer=initializer, initargs=initArgs)
         try:
             cubes = po.starmap(_loadThenProcess, zip(*zip(*[[processorFunc, procArgs, metadataOnly, lock, passLock]] * len(fileFrame)), fileFrame.iterrows()))
         finally:

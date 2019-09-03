@@ -137,7 +137,7 @@ class AnalysisManager(QtCore.QObject):
         def run(self):
             try:
                 self.warnings = loadAndProcess(self.cellMetas, processorFunc=self._process, initArgs=[self.analysis, self.anName, self.cameraCorrection],
-                                     parallel=self.parallel, initializer=self._initializer) # A list of Tuples. each tuple containing a list of warnings and the ICmetadata to go with it.
+                                     parallel=self.parallel, initializer=self._initializer, maxProcesses=3) # Returns a list of Tuples, each tuple containing a list of warnings and the ICmetadata to go with it.
             except Exception as e:
                 self.errorOccurred.emit(e)
 
@@ -158,7 +158,7 @@ class AnalysisManager(QtCore.QObject):
             """This method is run in parallel. once for each dataTypes that we want to analyze."""
             global pwspyAnalysisAppParallelGlobals
             global saveThreadResource
-            if saveThreadResource.thread:
+            if saveThreadResource.thread: # Start saving the last iteration's analysis file.
                 saveThreadResource.thread.start()
             analysis = pwspyAnalysisAppParallelGlobals['analysis']
             analysisName = pwspyAnalysisAppParallelGlobals['analysisName']
@@ -172,7 +172,7 @@ class AnalysisManager(QtCore.QObject):
                 md = im.metadata
             else:
                 md = None
-            if saveThreadResource.thread:
+            if saveThreadResource.thread: #Make sure the thread finished saving before reassigning it.
                 saveThreadResource.thread.join()
             saveThreadResource.thread = threading.Thread(target=lambda: im.metadata.saveAnalysis(results, analysisName))
             return warnings, md
@@ -189,6 +189,7 @@ class AnalysisManager(QtCore.QObject):
                 return self
 
             def __exit__(self):
+                """When the multiprocessing run is finalized run this to finish saving the last analysis file."""
                 if self.thread:
                     self.thread.start()
                     self.thread.join()
