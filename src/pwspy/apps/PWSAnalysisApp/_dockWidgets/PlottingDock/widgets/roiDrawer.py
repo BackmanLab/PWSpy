@@ -132,8 +132,8 @@ class RoiDrawer(QWidget):
 
     def _updateDisplayedCell(self):
         currRoi = self.anViewer.plotWidg.roiFilter.currentText() #Since the next cell we look at will likely not have rois of the current name we want to manually force the ROI name to stay the same.
-        md = self.metadatas[self.mdIndex][0]
-        self.anViewer.setMetadata(md)
+        md, analysis = self.metadatas[self.mdIndex]
+        self.anViewer.setMetadata(md, analysis=analysis)
         self.anViewer.plotWidg.roiFilter.setEditText(currRoi)
         self.setWindowTitle(f"Roi Drawer - {os.path.split(md.filePath)[-1]}")
 

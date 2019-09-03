@@ -164,11 +164,11 @@ class PlottingDock(QDockWidget):
             for plot in self.plots:
                 try:
                     if button is self.plotThumbnailButton:
-                        plot.changeData('thumbnail')
+                        plot.changeData(plot.PlotFields.Thumbnail)
                     elif button is self.plotRMSButton:
-                        plot.changeData('rms')
+                        plot.changeData(plot.PlotFields.RMS)
                     elif button is self.plotRButton:
-                        plot.changeData('meanReflectance')
+                        plot.changeData(plot.PlotFields.MeanReflectance)
                 except ValueError:  # The analysis field wasn't found
-                    plot.changeData('thumbnail')
+                    plot.changeData(plot.PlotFields.Thumbnail)
             self._lastButton = button

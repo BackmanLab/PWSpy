@@ -16,7 +16,8 @@ from pwspy.utility import PlotNd
 
 
 class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
-    def __init__(self, metadata: AcqDir, analysis: AnalysisResultsLoader, title: str, text: str = None, initialField='thumbnail'):
+    def __init__(self, metadata: AcqDir, analysis: AnalysisResultsLoader, title: str, text: str = None,
+                 initialField=AnalysisPlotter.PlotFields.Thumbnail):
         AnalysisPlotter.__init__(self, metadata, analysis)
         self.fig = Figure()
         self.ax = self.fig.add_subplot(1, 1, 1)
@@ -39,7 +40,7 @@ class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
         if event.button() == QtCore.Qt.LeftButton:
             AnalysisViewer(metadata=self.metadata, analysisLoader=self.analysis, title=self.title, parent=self, initialField=self.analysisField)
 
-    def changeData(self, field):
+    def changeData(self, field: AnalysisPlotter.PlotFields):
         AnalysisPlotter.changeData(self, field)
         self.im.set_data(self.data)
         self.im.set_clim((np.percentile(self.data, 0.1), np.percentile(self.data, 99.9)))
