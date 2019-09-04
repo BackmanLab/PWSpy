@@ -249,6 +249,7 @@ class ImCube(ICBase):
         """Return a copy of this ImCube only within a range of wavelengths."""
         ret = super().selIndex(start, stop)
         md = self.metadata
+        md = ICMetaData(md._dict, md.filePath, md.fileFormat, md.acquisitionDirectory) # We are creating a copy of the metadata object because modifying the original metadata object can cause weird issues.
         md._dict['wavelengths'] = ret.index
         return ImCube(ret.data, md)
 
