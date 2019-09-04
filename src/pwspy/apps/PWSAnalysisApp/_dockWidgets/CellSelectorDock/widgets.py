@@ -34,14 +34,7 @@ class CellTableWidgetItem:
         self.pathLabel = QTableWidgetItem(self.path)
         self.numLabel = NumberTableWidgetItem(num)
         self.roiLabel = NumberTableWidgetItem(0)
-        nameNums = [(name, num) for name, num, fformat in acq.getRois()]
-        if len(nameNums) > 0:
-            names = set(list(zip(*nameNums))[0])
-            d = {name: [num for nname, num in nameNums if nname == name] for name in names}
-            self.roiLabel.setToolTip("\n".join([f'{k}: {v}' for k, v in d.items()]))
-
         self.anLabel = NumberTableWidgetItem(0)
-        self.anLabel.setToolTip(', '.join(self.acqDir.pws.getAnalyses()))
         self.notesButton.released.connect(self.acqDir.editNotes)
         self._items = [self.pathLabel, self.numLabel, self.roiLabel, self.anLabel]
         self.refresh()
@@ -117,6 +110,14 @@ class CellTableWidgetItem:
             self.notesButton.setStyleSheet('QPushButton { background-color: lightgreen;}')
         else:
             self.notesButton.setStyleSheet('QPushButton { background-color: lightgrey;}')
+
+        nameNums = [(name, num) for name, num, fformat in self.acqDir.getRois()]
+        if len(nameNums) > 0:
+            names = set(list(zip(*nameNums))[0])
+            d = {name: [num for nname, num in nameNums if nname == name] for name in names}
+            self.roiLabel.setToolTip("\n".join([f'{k}: {v}' for k, v in d.items()]))
+
+        self.anLabel.setToolTip(', '.join(self.acqDir.pws.getAnalyses()))
 
 
 class CellTableWidget(QTableWidget):
