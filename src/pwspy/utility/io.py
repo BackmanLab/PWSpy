@@ -33,16 +33,21 @@ def _loadIms(qout: queue.Queue, qin: queue.Queue, metadataOnly: bool, lock: th.L
     """When not running in parallel this function is executed in a separate thread to load ImCubes and populate a Queue
     with them."""
     while not qin.empty():
-        index, row = qin.get()
-        print('starting', row['cube'])
-        im = _load(row['cube'], metadataOnly=metadataOnly, lock=lock)
-        row['cube'] = im
-        qout.put((index, row))
-        perc = psutil.virtual_memory().percent
-        print("Memory Usage: ", perc, '%')
-        if perc >= 95:
-            print('quitting')
-            return
+        try:
+            index, row = qin.get()
+            displayStr = row['cube'].filePath if isinstance(row['cube'], ICMetaData) else row['cube']
+            print('Starting', displayStr)
+            im = _load(row['cube'], metadataOnly=metadataOnly, lock=lock)
+            row['cube'] = im
+            qout.put((index, row))
+            perc = psutil.virtual_memory().percent
+            print("Memory Usage: ", perc, '%')
+            if perc >= 95:
+                print('quitting')
+                return
+        except Exception as e:
+            qout.put(e) #Put the error in the queue so it can propagate to the main thread.
+            raise e
 
 def _procWrap(procFunc, passLock: bool, lock: th.Lock):
     def func(fromQueue, procFuncArgs=None):
@@ -79,8 +84,8 @@ def _loadThenProcess(procFunc, procFuncArgs, metadataOnly: bool, lock: mp.Lock, 
 
 
 def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: Optional = None, parallel: Optional=None,
-                   procArgs: Optional = None, metadataOnly: bool = False, passLock: bool = False, initializer = None,
-                   initArgs = None, maxProcesses: int = 1000) -> Union[pd.DataFrame, List, Tuple]:
+                   procArgs: Optional = None, metadataOnly: bool = False, passLock: bool = False, initializer=None,
+                   initArgs=None, maxProcesses: int = 1000) -> Union[pd.DataFrame, List, Tuple]:
     """    A convenient function to load a series of ImCubes from a list or dictionary of file paths.
 
     Parameters
@@ -131,7 +136,6 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
     # Error checking
     if 'cube' not in fileFrame.columns:
         raise IndexError("The fileFrame must contain a 'cube' column.")
-    numThreads = 2  # even this might be unnecesary. don't bother going higher.
     print(f"Starting loading {len(fileFrame)} files.")
     sTime = time()
     if parallel:
@@ -153,14 +157,21 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
         qin = queue.Queue()
         [qin.put(f) for f in fileFrame.iterrows()]
         lock = th.Lock()
-        threads = [th.Thread(target=_loadIms, args=[qout, qin, metadataOnly, lock]) for i in range(numThreads)]
-        [thread.start() for thread in threads]
-        if processorFunc is not None:
+        thread = th.Thread(target=_loadIms, args=[qout, qin, metadataOnly, lock])
+        thread.start()
+        cubes = []
+        if processorFunc:
             wrappedFunc = _procWrap(processorFunc, passLock, lock)
-            cubes = [wrappedFunc(qout.get(), procArgs) for i in range(len(fileFrame))]
-        else:
-            cubes = [qout.get() for i in range(len(fileFrame))] # A list of tuples of index, dataframe row
-        [thread.join() for thread in threads]
+        for i in range(len(fileFrame)):
+            ret = qout.get()
+            if isinstance(ret, Exception):
+                raise ret
+            else:
+                if processorFunc:
+                    cubes.append(wrappedFunc(ret, procArgs))
+                else:
+                    cubes.append(ret)  # A list of tuples of index, dataframe row
+        thread.join()
         indices, cubes = zip(*sorted(cubes)) #This ensures that the return value is in the same order as the input array.
     print(f"Loading took {time() - sTime} seconds")
     ret = pd.DataFrame(list(cubes))

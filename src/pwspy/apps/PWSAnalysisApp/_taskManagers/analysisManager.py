@@ -82,7 +82,7 @@ class AnalysisManager(QtCore.QObject):
                         return
                 erCube = ExtraReflectanceCube.fromMetadata(erMeta)
             analysis = Analysis(anSettings, ref, erCube)
-            #replace read-only arrays that are shared between processes with shared memory. saves a few gigs of ram and speeds things up.
+            #Rather than have read-only arrays that are shared between processes with shared memory. saves a few gigs of ram and speeds things up.
             refdata = RawArray('f', analysis.ref.data.size)
             refdata = np.frombuffer(refdata, dtype=np.float32).reshape(analysis.ref.data.shape)
             np.copyto(refdata, analysis.ref.data)
