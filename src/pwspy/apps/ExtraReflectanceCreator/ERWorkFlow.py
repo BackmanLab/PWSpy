@@ -12,7 +12,7 @@ from pwspy.apps.ExtraReflectanceCreator.widgets.dialog import IndexInfoForm
 from pwspy.dataTypes import ICMetaData
 from pwspy.dataTypes import Roi
 from pwspy.moduleConsts import dateTimeFormat, Material
-from pwspy.utility.io import loadAndProcess
+from pwspy.utility.fileIO import loadAndProcess
 import pwspy.apps.ExtraReflectanceCreator.extraReflectance  as er
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt

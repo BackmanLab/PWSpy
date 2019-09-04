@@ -13,7 +13,7 @@ from pwspy.dataTypes import ExtraReflectanceCube, ExtraReflectionCube
 from pwspy.utility import reflectanceHelper
 from glob import glob
 import os
-from pwspy.utility.io import loadAndProcess
+from pwspy.utility.fileIO import loadAndProcess
 from pwspy.moduleConsts import Material
 from pwspy.utility import thinFilmPath
 from pwspy.dataTypes import Roi

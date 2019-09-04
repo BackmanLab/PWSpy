@@ -13,7 +13,7 @@ from pwspy.analysis import AnalysisSettings
 from pwspy.analysis import Analysis
 from pwspy.analysis.warnings import AnalysisWarning
 from pwspy.dataTypes import ICMetaData
-from pwspy.utility.io import loadAndProcess
+from pwspy.utility.fileIO import loadAndProcess
 import threading
 from multiprocessing.util import Finalize
 from multiprocessing.sharedctypes import RawArray
@@ -21,7 +21,7 @@ import numpy as np
 if typing.TYPE_CHECKING:
     from pwspy.apps.PWSAnalysisApp.App import PWSApp
 
-
+#TODO last thing isn't saved in threaded mode. metadata getting modified.
 def safeCallback(func):
     """A decorator to make a function print its traceback without crashing."""
     def newFunc(*args):

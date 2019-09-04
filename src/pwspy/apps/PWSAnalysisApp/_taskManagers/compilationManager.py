@@ -7,7 +7,7 @@ from pwspy.analysis.compilation import RoiCompiler, RoiCompilationResults, Compi
 from pwspy.analysis.warnings import AnalysisWarning
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from pwspy.apps.PWSAnalysisApp._taskManagers.analysisManager import safeCallback
-from pwspy.utility.io import loadAndProcess
+from pwspy.utility.fileIO import loadAndProcess
 import re
 import typing
 if typing.TYPE_CHECKING:
