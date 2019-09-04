@@ -146,9 +146,6 @@ class AnalysisManager(QtCore.QObject):
         def _initializer(analysis: Analysis, analysisName: str, cameraCorrection: CameraCorrection):
             """This method is run once for each process that is spawned. it initialized _resources that are shared between each iteration of _process."""
             global pwspyAnalysisAppParallelGlobals
-            global saveThreadResource
-            saveThreadResource = AnalysisManager.AnalysisThread.ThreadResource().__enter__()
-            Finalize(saveThreadResource, saveThreadResource.__exit__, exitpriority=16)
             print('initializing!')
             pwspyAnalysisAppParallelGlobals = {'analysis': analysis, 'analysisName': analysisName,
                                                'cameraCorrection': cameraCorrection}
@@ -157,9 +154,6 @@ class AnalysisManager(QtCore.QObject):
         def _process(im: ImCube):
             """This method is run in parallel. once for each dataTypes that we want to analyze."""
             global pwspyAnalysisAppParallelGlobals
-            global saveThreadResource
-            if saveThreadResource.thread: # Start saving the last iteration's analysis file.
-                saveThreadResource.thread.start()
             analysis = pwspyAnalysisAppParallelGlobals['analysis']
             analysisName = pwspyAnalysisAppParallelGlobals['analysisName']
             cameraCorrection = pwspyAnalysisAppParallelGlobals['cameraCorrection']
@@ -172,24 +166,5 @@ class AnalysisManager(QtCore.QObject):
                 md = im.metadata
             else:
                 md = None
-            if saveThreadResource.thread: #Make sure the thread finished saving before reassigning it.
-                saveThreadResource.thread.join()
-            saveThreadResource.thread = threading.Thread(target=lambda: im.metadata.saveAnalysis(results, analysisName))
+            im.metadata.saveAnalysis(results, analysisName)
             return warnings, md
-
-        class ThreadResource:
-            """This hacky thing is used in _initializer and _process, it allows us to save to harddisk in a separate thread
-            and make sure that the process doesn't quit before the last file is saved. This is needed since Pool doesn't allow
-            a deinitializer method"""
-
-            def __init__(self):
-                self.thread = None
-
-            def __enter__(self):
-                return self
-
-            def __exit__(self):
-                """When the multiprocessing run is finalized run this to finish saving the last analysis file."""
-                if self.thread:
-                    self.thread.start()
-                    self.thread.join()
