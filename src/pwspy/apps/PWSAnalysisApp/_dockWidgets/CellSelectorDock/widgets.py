@@ -225,7 +225,8 @@ class CellTableWidget(QTableWidget):
 class ReferencesTableItem(QTableWidgetItem):
     def __init__(self, item: CellTableWidgetItem):
         self.item = item
-        super().__init__(os.path.join(item.pathLabel.text(), f'Cell{item.num}'))
+        super().__init__(f"Cell{item.num}")
+        self.setToolTip(os.path.join(item.pathLabel.text(), f'Cell{item.num}'))
 
 
 class ReferencesTable(QTableWidget):
