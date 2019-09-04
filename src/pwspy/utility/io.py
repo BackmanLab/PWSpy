@@ -71,7 +71,8 @@ def _loadThenProcess(procFunc, procFuncArgs, metadataOnly: bool, lock: mp.Lock, 
      on each core when running in parallel. If not running in parallel then _loadIms will be used."""
     index, row = row
     im = _load(row['cube'], metadataOnly=metadataOnly, lock=lock)
-    print("Run", row['cube'], mp.current_process())
+    displayStr = row['cube'].filePath if isinstance(row['cube'], ICMetaData) else row['cube']
+    print("Run", displayStr, mp.current_process())
     if passLock:
         ret = procFunc(im, lock, *procFuncArgs)
     else:
