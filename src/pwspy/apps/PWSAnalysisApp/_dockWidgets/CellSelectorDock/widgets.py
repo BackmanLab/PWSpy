@@ -25,6 +25,7 @@ def evalToolTip(cls: Type[QWidget], method):
 
 
 class CellTableWidgetItem:
+    """Represents a single row of the CellTableWidget and corresponds to a single PWS acquisition."""
     def __init__(self, acq: AcqDir, label: str, num: int):
         self.acqDir = acq
         self.num = num
@@ -53,18 +54,6 @@ class CellTableWidgetItem:
         This should return the correct row number."""
         return self.numLabel.row()
 
-    @property
-    def _invalid(self): return self.md['invalid']
-
-    @_invalid.setter
-    def _invalid(self, val): self.md['invalid'] = val
-
-    @property
-    def _reference(self): return self.md['reference']
-
-    @_reference.setter
-    def _reference(self, val): self.md['reference'] = val
-
     def setInvalid(self, invalid: bool):
         if invalid:
             self._setItemColor(QtCore.Qt.red)
@@ -72,6 +61,7 @@ class CellTableWidgetItem:
         else:
             self._setItemColor(QtCore.Qt.white)
         self._invalid = invalid
+        self._saveMetadata()
 
     def setReference(self, reference: bool) -> None:
         if self.isInvalid():
@@ -81,10 +71,7 @@ class CellTableWidgetItem:
         else:
             self._setItemColor(QtCore.Qt.white)
         self._reference = reference
-
-    def _setItemColor(self, color):
-        for i in self._items:
-            i.setBackground(color)
+        self._saveMetadata()
 
     def isInvalid(self) -> bool:
         return self._invalid
@@ -97,11 +84,7 @@ class CellTableWidgetItem:
             i.setSelected(select)
 
     def close(self):
-        with open(self.mdPath, 'w') as f:
-            json.dump(self.md, f)
-
-    def __del__(self):
-        self.close() #This is here just in case. realistacally del rarely gets called, need to manually close each cell item.
+        self._saveMetadata()
 
     def refresh(self):
         self.roiLabel.setNumber(len(self.acqDir.getRois()))
@@ -119,8 +102,32 @@ class CellTableWidgetItem:
 
         self.anLabel.setToolTip(', '.join(self.acqDir.pws.getAnalyses()))
 
+    @property
+    def _invalid(self): return self.md['invalid']
+
+    @_invalid.setter
+    def _invalid(self, val): self.md['invalid'] = val
+
+    @property
+    def _reference(self): return self.md['reference']
+
+    @_reference.setter
+    def _reference(self, val): self.md['reference'] = val
+
+    def _saveMetadata(self):
+        with open(self.mdPath, 'w') as f:
+            json.dump(self.md, f)
+
+    def __del__(self):
+        self.close() #This is here just in case. realistacally del rarely gets called, need to manually close each cell item.
+
+    def _setItemColor(self, color):
+        for i in self._items:
+            i.setBackground(color)
 
 class CellTableWidget(QTableWidget):
+    """This is the table from which the user can select which cells to analyze, plot, etc. Each row of the table is
+    represented by a CellTableWidgetItem which are stored in the self._cellItems list"""
     referencesChanged = QtCore.pyqtSignal(bool, list)
     itemsCleared = QtCore.pyqtSignal()
 
@@ -128,7 +135,7 @@ class CellTableWidget(QTableWidget):
         super().__init__(parent)
         self.setSortingEnabled(True)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.customContextMenuRequested.connect(self.showContextMenu)
+        self.customContextMenuRequested.connect(self._showContextMenu)
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
         columns = ('Path', 'Cell#', 'ROIs', 'Analyses', 'Notes')
         self.setRowCount(0)
@@ -152,44 +159,6 @@ class CellTableWidget(QTableWidget):
     def cellItems(self) -> List[CellTableWidgetItem]:
         return self._cellItems
 
-    def showContextMenu(self, point: QtCore.QPoint):
-        if len(self.selectedCellItems) > 0:
-            menu = QMenu("Context Menu")
-            state = not self.selectedCellItems[0].isInvalid()
-            stateString = "Disable Cell(s)" if state else "Enable Cell(s)"
-            refState = not self.selectedCellItems[0].isReference()
-            refStateString = "Set as Reference" if refState else "Unset as Reference"
-            invalidAction = menu.addAction(stateString)
-            invalidAction.triggered.connect(lambda: self.toggleSelectedCellsInvalid(state))
-            refAction = menu.addAction(refStateString)
-            refAction.triggered.connect(lambda: self.toggleSelectedCellsReference(refState))
-            mdAction = menu.addAction("Display Metadata")
-            mdAction.triggered.connect(self.displayCellMetadata)
-            menu.exec(self.mapToGlobal(point))
-
-    def displayCellMetadata(self):
-        for i in self.selectedCellItems:
-            d = DictDisplayTreeDialog(self, i.acqDir.pws._dict, title=os.path.join(i.path, f"Cell{i.num}"))
-            d.show()
-
-    def toggleSelectedCellsInvalid(self, state: bool):
-        changedItems = []
-        for i in self.selectedCellItems:
-            if i.isInvalid() != state:
-                i.setInvalid(state)
-                changedItems.append(i)
-        if state:
-            self.referencesChanged.emit(False, changedItems)
-
-    def toggleSelectedCellsReference(self, state: bool) -> None:
-        items = self.selectedCellItems
-        changedItems = []
-        for i in items:
-            if (i.isReference() != state) and (not i.isInvalid()):
-                i.setReference(state)
-                changedItems.append(i)
-        self.referencesChanged.emit(state, changedItems)
-
     @property
     def selectedCellItems(self) -> typing.List[CellTableWidgetItem]:
         """Returns the rows that have been selected."""
@@ -197,10 +166,6 @@ class CellTableWidget(QTableWidget):
         rowIndices.sort()
         _ = {i.row: i for i in self._cellItems} #Cell items keyed by their current row position.
         return [_[i] for i in rowIndices]
-
-    @property
-    def analyzableCells(self) -> typing.List[CellTableWidgetItem]:
-        return [i for i in self._cellItems if not (i.isInvalid() or i.isReference())]
 
     def addCellItem(self, item: CellTableWidgetItem) -> None:
         row = len(self._cellItems)
@@ -221,8 +186,47 @@ class CellTableWidget(QTableWidget):
         self._cellItems = []
         self.itemsCleared.emit()
 
+    def _showContextMenu(self, point: QtCore.QPoint):
+        if len(self.selectedCellItems) > 0:
+            menu = QMenu("Context Menu")
+            state = not self.selectedCellItems[0].isInvalid()
+            stateString = "Disable Cell(s)" if state else "Enable Cell(s)"
+            refState = not self.selectedCellItems[0].isReference()
+            refStateString = "Set as Reference" if refState else "Unset as Reference"
+            invalidAction = menu.addAction(stateString)
+            invalidAction.triggered.connect(lambda: self._toggleSelectedCellsInvalid(state))
+            refAction = menu.addAction(refStateString)
+            refAction.triggered.connect(lambda: self._toggleSelectedCellsReference(refState))
+            mdAction = menu.addAction("Display Metadata")
+            mdAction.triggered.connect(self._displayCellMetadata)
+            menu.exec(self.mapToGlobal(point))
+
+    def _displayCellMetadata(self):
+        for i in self.selectedCellItems:
+            d = DictDisplayTreeDialog(self, i.acqDir.pws._dict, title=os.path.join(i.path, f"Cell{i.num}"))
+            d.show()
+
+    def _toggleSelectedCellsInvalid(self, state: bool):
+        changedItems = []
+        for i in self.selectedCellItems:
+            if i.isInvalid() != state:
+                i.setInvalid(state)
+                changedItems.append(i)
+        if state:
+            self.referencesChanged.emit(False, changedItems)
+
+    def _toggleSelectedCellsReference(self, state: bool) -> None:
+        items = self.selectedCellItems
+        changedItems = []
+        for i in items:
+            if (i.isReference() != state) and (not i.isInvalid()):
+                i.setReference(state)
+                changedItems.append(i)
+        self.referencesChanged.emit(state, changedItems)
+
 
 class ReferencesTableItem(QTableWidgetItem):
+    """A single row of the reference table."""
     def __init__(self, item: CellTableWidgetItem):
         self.item = item
         super().__init__(f"Cell{item.num}")
@@ -230,13 +234,13 @@ class ReferencesTableItem(QTableWidgetItem):
 
 
 class ReferencesTable(QTableWidget):
+    """This table shows all acquisitions which can be used as a reference in an analysis."""
     def __init__(self, parent: QWidget, cellTable: CellTableWidget):
         super().__init__(parent)
         #This makes the items stay looking selected even when the table is inactive
         self.setStyleSheet("""QTableWidget::item:active {   
                                 selection-background-color: darkblue;
                                 selection-color: white;}
-
                                 QTableWidget::item:inactive {
                                 selection-background-color: darkblue;
                                 selection-color: white;}""")
@@ -246,19 +250,10 @@ class ReferencesTable(QTableWidget):
         self.setRowCount(0)
         self.verticalHeader().hide()
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.customContextMenuRequested.connect(self.showContextMenu)
+        self.customContextMenuRequested.connect(self._showContextMenu)
         cellTable.referencesChanged.connect(self.updateReferences)
-        cellTable.itemsCleared.connect(self.clearItems)
+        cellTable.itemsCleared.connect(self._clearItems)
         self._references: typing.List[CellTableWidgetItem] = []
-
-    def showContextMenu(self, point: QtCore.QPoint):
-        items = self.selectedItems()
-        if len(items) > 0:
-            menu = QMenu("Context Menu")
-            refStateString = "Unset as Reference"
-            refAction = menu.addAction(refStateString)
-            refAction.triggered.connect(lambda: self.updateReferences(False, [i.item for i in self.selectedItems()]))
-            menu.exec(self.mapToGlobal(point))
 
     def updateReferences(self, state: bool, items: typing.List[CellTableWidgetItem]):
         if state:
@@ -279,10 +274,6 @@ class ReferencesTable(QTableWidget):
                             self.removeRow(i)
                             break
 
-    def clearItems(self):
-        self.setRowCount(0)
-        self._references = []
-
     @property
     def selectedReferenceMeta(self) -> Optional[AcqDir]:
         """Returns the ICMetadata that have been selected. Return None if nothing is selected."""
@@ -292,3 +283,18 @@ class ReferencesTable(QTableWidget):
             return None
         else:
             return items[0].item.acqDir
+
+    def _showContextMenu(self, point: QtCore.QPoint):
+        items = self.selectedItems()
+        if len(items) > 0:
+            menu = QMenu("Context Menu")
+            refStateString = "Unset as Reference"
+            refAction = menu.addAction(refStateString)
+            refAction.triggered.connect(
+                lambda: self.updateReferences(False, [i.item for i in self.selectedItems()]))
+            menu.exec(self.mapToGlobal(point))
+
+    def _clearItems(self):
+        self.setRowCount(0)
+        self._references = []
+

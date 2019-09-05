@@ -9,10 +9,10 @@ from pwspy.dataTypes import AcqDir
 
 from pwspy.apps.PWSAnalysisApp._dockWidgets.CellSelectorDock.widgets import ReferencesTableItem
 from .widgets import CellTableWidgetItem, CellTableWidget, ReferencesTable
-from pwspy.dataTypes import ICMetaData
 
 
 class CellSelectorDock(QDockWidget):
+    """This dockwidget is used by the user to select which cells they want to act upon (run an analysis, plot, etc.)"""
     selectionChanged = QtCore.pyqtSignal(list)
 
     def __init__(self):
@@ -44,7 +44,7 @@ class CellSelectorDock(QDockWidget):
         description = "Python boolean expression.\n\tCell#: {num},\n\tAnalysis names: {analyses},\n\tROI names: {rois},\n\tID tag: {idTag}.\nE.G. `{num} > 5 and 'nucleus' in {rois}`"
         self.expressionFilter.setPlaceholderText(description.replace('\n', '').replace('\t', ''))  #Strip out the white space
         self.expressionFilter.setToolTip(description)
-        self.expressionFilter.returnPressed.connect(self.executeFilter)
+        self.expressionFilter.returnPressed.connect(self._executeFilter)
         _ = QGridLayout()
         _.addWidget(self.pathFilter, 0, 0, 1, 1)
         _.addWidget(self.expressionFilter, 0, 1, 1, 1)
@@ -88,9 +88,9 @@ class CellSelectorDock(QDockWidget):
         for i in self.tableWidget.cellItems:
             paths.append(i.path)
         self.pathFilter.addItems(set(paths))
-        self.pathFilter.currentIndexChanged.connect(self.executeFilter)  # reconnect
+        self.pathFilter.currentIndexChanged.connect(self._executeFilter)  # reconnect
 
-    def executeFilter(self):
+    def _executeFilter(self):
         path = self.pathFilter.currentText()
         path = path.replace('\\', '\\\\')
         for item in self.tableWidget.cellItems:
