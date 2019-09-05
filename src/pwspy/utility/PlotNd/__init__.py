@@ -2,6 +2,7 @@ from typing import Tuple, List
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QPushButton, QDialog, QSpinBox, QLabel
+from matplotlib.animation import FuncAnimation
 from pwspy.apps.sharedWidgets.rangeSlider import QRangeSlider
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT
 from pwspy.utility.PlotNd._plots import ImPlot, SidePlot
@@ -26,11 +27,11 @@ class PlotNd(QDialog):
         self.slider.setMin(np.nanmin(data))
         self.slider.setEnd(np.nanmax(data))
         self.slider.setStart(np.nanmin(data))
-        self.slider.startValueChanged.connect(self.updateLimits)
-        self.slider.endValueChanged.connect(self.updateLimits)
+        self.slider.startValueChanged.connect(self._updateLimits)
+        self.slider.endValueChanged.connect(self._updateLimits)
 
         self.resizeButton = QPushButton("Resize")
-        self.resizeButton.released.connect(self.resizeDlg)
+        self.resizeButton.released.connect(self._resizeDlg)
 
         layout = QGridLayout()
         layout.addWidget(self.canvas, 0, 0, 8, 8)
@@ -44,10 +45,10 @@ class PlotNd(QDialog):
         self.setFixedSize(self.size())
         self.ar = self.height() / self.width()
 
-    def updateLimits(self):
+    def _updateLimits(self):
         self.canvas.updateLimits(self.slider.end(), self.slider.start())
 
-    def resizeDlg(self):
+    def _resizeDlg(self):
         dlg = ResizeDlg(self, self.height())
         dlg.exec()
         if dlg.result() == QDialog.Accepted:
@@ -55,6 +56,14 @@ class PlotNd(QDialog):
             print(size)
             self.setFixedHeight(size)
             self.setFixedWidth(int(size / self.ar))
+
+    def getAnimation(self, interval: int = 50):
+        def f(self: PlotNdCanvas, z: int):
+            self.coords = self.coords[:2] + (z,) + self.coords[3:]
+            self.updatePlots()
+
+        ani = FuncAnimation(self.canvas.fig, lambda z: f(self.canvas, z), frames=list(range(self.canvas.data.shape[2])), blit=False, interval=interval)
+        return ani
 
 
 class ResizeDlg(QDialog):

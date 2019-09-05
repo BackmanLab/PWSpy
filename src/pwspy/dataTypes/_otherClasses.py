@@ -127,7 +127,7 @@ class Roi:
         self.fileFormat = fileFormat
 
     @classmethod
-    def fromVerts(cls, name: str, number: int, verts: np.ndarray, dataShape: tuple, filePath: str = None, fileFormat: _RoiFileFormats = None):
+    def fromVerts(cls, name: str, number: int, verts: np.ndarray, dataShape: tuple, filePath: str = None, fileFormat: Roi.FileFormats = None):
         """Automatically generate the mask for an Roi using just the vertices of an enclosing polygon and the
         `dataShape` (dimensions of the full image).
         For example: myRoi = Roi.fromVerts('nucleus', 1, polyVerts, (1024, 1024))"""
