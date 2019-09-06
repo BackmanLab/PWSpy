@@ -18,10 +18,7 @@ class GoogleDriveDownloader:
         self.authPath = authPath
         tokenPath = os.path.join(self.authPath, 'driveToken.pickle')
         credPath = os.path.join(self.authPath, 'credentials.json')
-        creds = None
-        if os.path.exists(tokenPath):
-            with open(tokenPath, 'rb') as token:
-                creds = pickle.load(token)
+        creds = self.getCredentials(tokenPath)
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
@@ -32,9 +29,17 @@ class GoogleDriveDownloader:
                 creds = flow.run_local_server()
             with open(tokenPath, 'wb') as token: # Save the credentials for the next run
                 pickle.dump(creds, token)
-
         self.api = build('drive', 'v3', credentials=creds) #this returns access to the drive api. see google documentation
         self.updateFilesList()
+
+    @staticmethod
+    def getCredentials(authPath: str):
+        tokenPath = os.path.join(authPath, 'driveToken.pickle')
+        creds = None
+        if os.path.exists(tokenPath):
+            with open(tokenPath, 'rb') as token:
+                creds = pickle.load(token)
+        return creds
 
     def updateFilesList(self):
         """Update the list of all files in the google drive account. This is automatically called during initialization."""

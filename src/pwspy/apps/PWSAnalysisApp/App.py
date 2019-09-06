@@ -29,7 +29,6 @@ if typing.TYPE_CHECKING:
     from pwspy.analysis.warnings import AnalysisWarning
 
 #TODO add tooltips for everything!!!
-#TODO if google drive log-in is needed bring up a message explaining which account to use.
 
 class PWSApp(QApplication):
     def __init__(self, args):
