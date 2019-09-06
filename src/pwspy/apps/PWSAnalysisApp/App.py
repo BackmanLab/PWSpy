@@ -8,6 +8,7 @@ from __future__ import annotations
 import os
 import shutil
 
+import psutil
 from PyQt5.QtWidgets import QApplication, QMessageBox
 
 from pwspy.apps.PWSAnalysisApp._utilities import BlinderDialog, RoiConverter
@@ -28,6 +29,7 @@ if typing.TYPE_CHECKING:
     from pwspy.analysis.warnings import AnalysisWarning
 
 #TODO add tooltips for everything!!!
+#TODO if google drive log-in is needed bring up a message explaining which account to use.
 
 class PWSApp(QApplication):
     def __init__(self, args):
@@ -38,8 +40,13 @@ class PWSApp(QApplication):
         self.window = PWSWindow(self.ERManager)
         self.anMan = AnalysisManager(self)
         self.window.runAction.connect(self.anMan.runList)
-        self.parallelProcessing: bool = True #Determines if analysis and compilation should be run in parallel or not.
+        self.parallelProcessing: bool = None #Determines if analysis and compilation should be run in parallel or not.
         self.window.parallelAction.toggled.connect(lambda checked: setattr(self, 'parallelProcessing', checked))
+        availableRamGigs = psutil.virtual_memory().available / 1024**3
+        if availableRamGigs > 16: # Default to parallel analysis if we have more than 16 Gb of ram available.
+            self.window.parallelAction.setChecked(True)
+        else:
+            self.window.parallelAction.setChecked(False)
         self.anMan.analysisDone.connect(lambda name, settings, warningList: AnalysisSummaryDisplay(self.window, warningList, name, settings))
         self.compMan = CompilationManager(self)
         self.window.resultsTable.compileButton.released.connect(self.compMan.run)

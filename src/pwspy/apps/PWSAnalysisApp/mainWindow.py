@@ -36,7 +36,6 @@ class PWSWindow(QMainWindow):
         menu = menuBar.addMenu("Config")
         self.parallelAction = menu.addAction("Multi-Core Analysis")
         self.parallelAction.setCheckable(True)
-        self.parallelAction.setChecked(True)
         menu = menuBar.addMenu("Actions")
         menu.setToolTipsVisible(True)
         self.blindAction = menu.addAction("Create blinded directory")
