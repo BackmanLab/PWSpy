@@ -10,12 +10,13 @@ import typing
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import KCube
 from analysis.pws._analysisSettings import AnalysisSettings
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from pwspy.moduleConsts import dateTimeFormat
 from pwspy.utility.misc import cached_property
+from pwspy.analysis._abstract import AbstractAnalysisResults
 
 
-class AbstractPWSAnalysisResults(ABC):
+class AbstractPWSAnalysisResults(AbstractAnalysisResults):
     """Enforce that derived classes will have the following properties."""
     @property
     @abstractmethod
