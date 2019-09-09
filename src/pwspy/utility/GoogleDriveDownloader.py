@@ -18,7 +18,7 @@ class GoogleDriveDownloader:
         self.authPath = authPath
         tokenPath = os.path.join(self.authPath, 'driveToken.pickle')
         credPath = os.path.join(self.authPath, 'credentials.json')
-        creds = self.getCredentials(tokenPath)
+        creds = self.getCredentials(self.authPath)
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
