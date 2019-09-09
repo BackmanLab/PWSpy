@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QWidget, QGridLayout, QButtonGroup, QPushButton, QDi
 from pwspy.dataTypes import AcqDir
 from matplotlib import patches
 import os
-from pwspy.analysis import AnalysisResultsLoader
+from pwspy.analysis.pws import AnalysisResultsLoader
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.analysisViewer import AnalysisViewer
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.bigPlot import BigPlot
 import typing

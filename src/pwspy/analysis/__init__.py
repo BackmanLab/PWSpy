@@ -4,12 +4,11 @@ Created on Tue Feb 12 21:44:31 2019
 
 @author: Nick Anthony
 """
-__all__ = ['compilation', 'dynamics', 'Analysis', 'LegacyAnalysis', 'AnalysisResultsLoader', 'AnalysisResultsSaver', 'AnalysisSettings', 'warnings']
+__all__ = ['compilation', 'dynamics', 'pws', 'warnings', 'AbstractAnalysisSettings']
 import os
 
-from ._analysisSettings import AnalysisSettings
-from ._analysisResults import AnalysisResultsSaver, AnalysisResultsLoader
-from ._analysisClass import Analysis, LegacyAnalysis
+from ._abstract import AbstractAnalysisSettings, AbstractAnalysis, AbstractAnalysisResults
+
 
 
 # TODO replace slope entirely with CDR

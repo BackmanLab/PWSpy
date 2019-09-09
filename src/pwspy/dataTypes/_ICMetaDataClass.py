@@ -11,7 +11,6 @@ from ._MetaDataBaseClass import MetaDataBase
 from . import _jsonSchemasPath
 from pwspy.moduleConsts import dateTimeFormat
 from pwspy.utility.misc import cached_property
-from pwspy.analysis import AnalysisResultsSaver, AnalysisResultsLoader
 import json
 import os
 from enum import Enum, auto
@@ -25,6 +24,7 @@ import typing
 if typing.TYPE_CHECKING:
     import multiprocessing as mp
     from ._AcqDir import AcqDir
+    from pwspy.analysis.pws import AnalysisResultsSaver, AnalysisResultsLoader
 
 
 class ICMetaData(MetaDataBase):
@@ -156,6 +156,7 @@ class ICMetaData(MetaDataBase):
 
     @staticmethod
     def getAnalysesAtPath(path: str) -> typing.List[str]:
+        from pwspy.analysis.pws import AnalysisResultsLoader
         anPath = os.path.join(path, 'analyses')
         if os.path.exists(anPath):
             files = os.listdir(os.path.join(path, 'analyses'))
@@ -171,11 +172,11 @@ class ICMetaData(MetaDataBase):
         analysis.toHDF5(path, name)
 
     def loadAnalysis(self, name: str) -> AnalysisResultsLoader:
-        from pwspy.analysis import AnalysisResultsLoader
+        from pwspy.analysis.pws import AnalysisResultsLoader
         return AnalysisResultsLoader(os.path.join(self.filePath, 'analyses'), name)
 
     def removeAnalysis(self, name: str):
-        from pwspy.analysis import AnalysisResultsLoader
+        from pwspy.analysis.pws import AnalysisResultsLoader
         os.remove(os.path.join(self.filePath, 'analyses', AnalysisResultsLoader.name2FileName(name)))
 
     @classmethod

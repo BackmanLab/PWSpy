@@ -1,5 +1,5 @@
 from analysis import warnings
-from pwspy.analysis._analysisClass import AbstractAnalysis
+from analysis._abstract import AbstractAnalysis
 from pwspy.dataTypes import DynCube
 
 class DynamicsAnalysis(AbstractAnalysis):

@@ -5,11 +5,11 @@ Created on Tue Feb 12 23:10:35 2019
 @author: Nick Anthony
 """
 from __future__ import annotations
-from abc import ABC, abstractmethod
 from typing import List, Tuple
 
 import numpy as np
 import scipy.signal as sps
+from analysis._abstract import AbstractAnalysis
 from pwspy.analysis import warnings
 from pwspy.utility.reflection import reflectanceHelper
 from pwspy.moduleConsts import Material
@@ -19,19 +19,6 @@ import pandas as pd
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ImCube, ExtraReflectanceCube
-    from pwspy.dataTypes._ICBaseClass import ICBase
-
-
-class AbstractAnalysis(ABC):
-    @abstractmethod
-    def __init__(self, settings: AnalysisSettings):
-        """Does all of the one-time tasks needed to start running an analysis. e.g. prepare the reference, load the extrareflection cube, etc."""
-        self.settings = settings
-
-    @abstractmethod
-    def run(self, cube: ICBase) -> AnalysisResultsSaver:
-        """Given an ImCube to analyze this function returns an instanse of AnalysisResultsSaver. In the PWSAnalysisApp this function is run in parallel by the AnalysisManager."""
-        pass
 
 
 class LegacyAnalysis(AbstractAnalysis):

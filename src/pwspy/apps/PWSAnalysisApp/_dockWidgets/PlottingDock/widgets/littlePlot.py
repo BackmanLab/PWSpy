@@ -8,7 +8,7 @@ from pwspy.dataTypes import AcqDir
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 
-from pwspy.analysis import AnalysisResultsLoader
+from pwspy.analysis.pws import AnalysisResultsLoader
 from .widgets import AnalysisPlotter
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.analysisViewer import AnalysisViewer
 from pwspy.dataTypes import ImCube, ICMetaData

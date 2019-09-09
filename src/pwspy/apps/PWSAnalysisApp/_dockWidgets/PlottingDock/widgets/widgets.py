@@ -1,7 +1,7 @@
 from typing import Optional
 import numpy as np
 from pwspy.dataTypes import AcqDir
-from pwspy.analysis import AnalysisResultsLoader
+from pwspy.analysis.pws import AnalysisResultsLoader
 from pwspy.dataTypes import ICMetaData
 from enum import Enum, auto
 

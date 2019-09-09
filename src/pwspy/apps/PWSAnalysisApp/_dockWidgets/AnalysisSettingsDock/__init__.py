@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QDockWidget, QWidget, \
     QVBoxLayout, QPushButton, QSplitter, QMessageBox, QDialog, QGridLayout, QApplication
 
 from pwspy.dataTypes import CameraCorrection, AcqDir
-from pwspy.analysis import AnalysisSettings
+from pwspy.analysis.pws import AnalysisSettings
 
 from pwspy.dataTypes import ERMetadata
 from .widgets.QueueAnalysesFrame import AnalysisListItem, QueuedAnalysesFrame

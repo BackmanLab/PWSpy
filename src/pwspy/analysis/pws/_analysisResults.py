@@ -9,13 +9,13 @@ from datetime import datetime
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import KCube
-from ._analysisSettings import AnalysisSettings
+from analysis.pws._analysisSettings import AnalysisSettings
 from abc import ABC, abstractmethod
 from pwspy.moduleConsts import dateTimeFormat
 from pwspy.utility.misc import cached_property
 
 
-class AbstractAnalysisResults(ABC):
+class AbstractPWSAnalysisResults(ABC):
     """Enforce that derived classes will have the following properties."""
     @property
     @abstractmethod
@@ -112,7 +112,7 @@ class AnalysisResultsSaver: #TODO this should inherit from abstract class but it
 
     def toHDF5(self, directory: str, name: str):
         from pwspy.dataTypes import KCube #Need this for instance checking
-        fileName = osp.join(directory, AbstractAnalysisResults.name2FileName(name))
+        fileName = osp.join(directory, AbstractPWSAnalysisResults.name2FileName(name))
         if osp.exists(fileName):
             raise OSError(f'{fileName} already exists.')
         # now save the stuff
@@ -141,7 +141,7 @@ def clearError(func):
     newFunc.__name__ = func.__name__  # failing to do this renaming can mess with other decorators e.g. cached_property
     return newFunc
 
-class AnalysisResultsLoader(AbstractAnalysisResults): #TODO All these cached properties stay in memory once they are loaded. It may be necessary to add a mechanism to decache them when memory is needed.
+class AnalysisResultsLoader(AbstractPWSAnalysisResults): #TODO All these cached properties stay in memory once they are loaded. It may be necessary to add a mechanism to decache them when memory is needed.
     """A read-only loader for analysis results that will only load them from hard disk as needed."""
     def __init__(self, directory: str, name: str):
         self.filePath = osp.join(directory, self.name2FileName(name))

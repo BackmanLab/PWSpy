@@ -4,7 +4,7 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QListWidgetItem, QWidget, QScrollArea, QListWidget, QMessageBox, QMenu, QAction
 from pwspy.dataTypes import AcqDir
-from pwspy.analysis import AnalysisSettings
+from pwspy.analysis.pws import AnalysisSettings
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ICMetaData, CameraCorrection

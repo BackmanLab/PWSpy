@@ -10,7 +10,7 @@ from .bigPlot import BigPlot
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ICMetaData
-from pwspy.analysis import AnalysisResultsLoader
+from pwspy.analysis.pws import AnalysisResultsLoader
 
 
 class AnalysisViewer(AnalysisPlotter, QWidget):

@@ -9,8 +9,8 @@ from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox
 from pwspy.dataTypes import ImCube, CameraCorrection, ExtraReflectanceCube, AcqDir
-from pwspy.analysis import AnalysisSettings
-from pwspy.analysis import Analysis
+from pwspy.analysis.pws import AnalysisSettings
+from pwspy.analysis.pws import Analysis
 from pwspy.analysis.warnings import AnalysisWarning
 from pwspy.dataTypes import ICMetaData
 from pwspy.utility.fileIO import loadAndProcess

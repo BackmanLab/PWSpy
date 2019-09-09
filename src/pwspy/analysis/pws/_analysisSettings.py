@@ -1,12 +1,11 @@
 from __future__ import annotations
 import dataclasses
-import json
-import os.path as osp
 from pwspy.moduleConsts import Material
+from pwspy.analysis import AbstractAnalysisSettings
 
 
 @dataclasses.dataclass
-class AnalysisSettings:
+class AnalysisSettings(AbstractAnalysisSettings):
     filterOrder: int
     filterCutoff: float
     polynomialOrder: int
@@ -19,25 +18,9 @@ class AnalysisSettings:
     autoCorrMinSub: bool  # Determines if the autocorrelation should have it's minimum subtracted from it before processing. These is mathematically nonsense but is needed if the autocorrelation has negative values in it.
     numericalAperture: float
 
-    @classmethod
-    def fromJson(cls, filePath: str, name: str):
-        with open(osp.join(filePath, f'{name}_analysis.json'), 'r') as f:
-            d=json.load(f)
-        return cls.fromDict(d)
+    FileSuffix = 'analysis'
 
-    def toJson(self, filePath: str, name: str):
-        d = self.asDict()
-        with open(osp.join(filePath, f'{name}_analysis.json'), 'w') as f:
-            json.dump(d, f, indent=4)
-
-    def toJsonString(self):
-        return json.dumps(self.asDict(), indent=4)
-
-    @classmethod
-    def fromJsonString(cls, string: str):
-        return cls.fromDict(json.loads(string))
-
-    def asDict(self) -> dict:
+    def _asDict(self) -> dict:
         d = dataclasses.asdict(self)
         if self.referenceMaterial is None:
             d['referenceMaterial'] = None
@@ -46,7 +29,7 @@ class AnalysisSettings:
         return d
 
     @classmethod
-    def fromDict(cls, d: dict) -> AnalysisSettings:
+    def _fromDict(cls, d: dict) -> AnalysisSettings:
         if d['referenceMaterial'] is not None:
             d['referenceMaterial'] = Material[d['referenceMaterial']]  # Convert from string to enum
         return cls(**d)

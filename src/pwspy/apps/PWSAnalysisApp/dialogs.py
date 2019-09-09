@@ -9,7 +9,7 @@ import os
 from glob import glob
 from typing import Optional, List, Tuple
 
-from pwspy.analysis import AnalysisSettings
+from pwspy.analysis.pws import AnalysisSettings
 from pwspy.analysis.compilation import RoiCompilationResults
 from pwspy.analysis.warnings import AnalysisWarning
 from pwspy.apps import resources
