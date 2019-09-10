@@ -42,8 +42,6 @@ class ERManager:
         creds = _QtGoogleDriveDownloader.getCredentials(applicationVars.googleDriveAuthPath)
         if creds is None: #Check if the google drive credentials exists and if they don't then give the user a message.
             msg = QMessageBox.information(None, "Time to log in!", "Please log in to the google drive account containing the PWS Calibration Database. This is currently backman.lab@gmail.com")
-        elif not creds.valid:
-            msg = QMessageBox.information(None, "Time to log in!", "Please log in to the google drive account containing the PWS Calibration Database. This is currently backman.lab@gmail.com")
         try:
             self._downloader = _QtGoogleDriveDownloader(applicationVars.googleDriveAuthPath)
         except TransportError:
