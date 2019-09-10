@@ -10,12 +10,12 @@ from .bigPlot import BigPlot
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ICMetaData
-from pwspy.analysis.pws import AnalysisResultsLoader
+from pwspy.analysis.pws import PWSAnalysisResults
 
 
 class AnalysisViewer(AnalysisPlotter, QWidget):
     """This class is a window that provides convenient viewing of a pws acquisition, analysis, and related images."""
-    def __init__(self, metadata: AcqDir, analysisLoader: Optional[AnalysisResultsLoader], title: str, parent=None,
+    def __init__(self, metadata: AcqDir, analysisLoader: Optional[PWSAnalysisResults], title: str, parent=None,
                  initialField=AnalysisPlotter.PlotFields.Thumbnail):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         AnalysisPlotter.__init__(self, metadata, analysisLoader)
@@ -65,7 +65,7 @@ class AnalysisViewer(AnalysisPlotter, QWidget):
         self.plotWidg.setImageData(self.data)
         self.plotWidg.setSaturation()
 
-    def setMetadata(self, md: AcqDir, analysis: Optional[AnalysisResultsLoader] = None):
+    def setMetadata(self, md: AcqDir, analysis: Optional[PWSAnalysisResults] = None):
         """Change this widget to display data for a different acquisition and optionally an analysis."""
         try:
             super().setMetadata(md, analysis)

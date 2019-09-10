@@ -13,7 +13,7 @@ from analysis._abstract import AbstractAnalysis
 from pwspy.analysis import warnings
 from pwspy.utility.reflection import reflectanceHelper
 from pwspy.moduleConsts import Material
-from . import AnalysisSettings, AnalysisResultsSaver
+from . import AnalysisSettings, PWSAnalysisResults
 import pandas as pd
 
 import typing
@@ -29,7 +29,7 @@ class LegacyAnalysis(AbstractAnalysis):
         ref.normalizeByExposure()
         self.ref = ref
 
-    def run(self, cube: ImCube) -> Tuple[AnalysisResultsSaver, List[warnings.AnalysisWarning]]:
+    def run(self, cube: ImCube) -> Tuple[PWSAnalysisResults, List[warnings.AnalysisWarning]]:
         from pwspy.dataTypes import KCube
         assert cube.isCorrected()
         warns = []
@@ -59,7 +59,7 @@ class LegacyAnalysis(AbstractAnalysis):
         else:
             rmsPoly = slope = rSquared = ld = None
 
-        results = AnalysisResultsSaver(
+        results = PWSAnalysisResults.create(
             meanReflectance=reflectance,
             reflectance=cube,
             rms=rms,
@@ -136,7 +136,7 @@ class Analysis(LegacyAnalysis):
         self.ref = ref
         self.extraReflection = Iextra
 
-    def run(self, cube: ImCube) -> Tuple[AnalysisResultsSaver, List[warnings.AnalysisWarning]]:
+    def run(self, cube: ImCube) -> Tuple[PWSAnalysisResults, List[warnings.AnalysisWarning]]:
         results, warns = super().run(cube)
         results.extraReflectionTag = self.extraReflection.metadata.idTag
         return results, warns

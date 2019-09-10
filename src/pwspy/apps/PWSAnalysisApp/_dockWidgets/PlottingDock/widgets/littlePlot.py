@@ -8,7 +8,7 @@ from pwspy.dataTypes import AcqDir
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 
-from pwspy.analysis.pws import AnalysisResultsLoader
+from pwspy.analysis.pws import PWSAnalysisResults
 from .widgets import AnalysisPlotter
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.analysisViewer import AnalysisViewer
 from pwspy.dataTypes import ImCube, ICMetaData
@@ -16,7 +16,7 @@ from pwspy.utility import PlotNd
 
 
 class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
-    def __init__(self, metadata: AcqDir, analysis: AnalysisResultsLoader, title: str, text: str = None,
+    def __init__(self, metadata: AcqDir, analysis: PWSAnalysisResults, title: str, text: str = None,
                  initialField=AnalysisPlotter.PlotFields.Thumbnail):
         AnalysisPlotter.__init__(self, metadata, analysis)
         self.fig = Figure()

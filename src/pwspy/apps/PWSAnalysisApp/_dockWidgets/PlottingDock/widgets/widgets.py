@@ -1,7 +1,7 @@
 from typing import Optional
 import numpy as np
 from pwspy.dataTypes import AcqDir
-from pwspy.analysis.pws import AnalysisResultsLoader
+from pwspy.analysis.pws import PWSAnalysisResults
 from pwspy.dataTypes import ICMetaData
 from enum import Enum, auto
 
@@ -19,7 +19,7 @@ class AnalysisPlotter:
         RSquared = 'rSquared'
         Ld = 'ld'
 
-    def __init__(self, metadata: AcqDir, analysis: AnalysisResultsLoader = None):
+    def __init__(self, metadata: AcqDir, analysis: PWSAnalysisResults = None):
         self.analysisField = None
         self.analysis = analysis
         self.metadata = metadata
@@ -43,7 +43,7 @@ class AnalysisPlotter:
             self.data = getattr(self.analysis, field.value)
         assert len(self.data.shape) == 2
 
-    def setMetadata(self, md: AcqDir, analysis: Optional[AnalysisResultsLoader] = None):
+    def setMetadata(self, md: AcqDir, analysis: Optional[PWSAnalysisResults] = None):
         self.analysis = analysis
         self.metadata = md
         self.changeData(self.analysisField)

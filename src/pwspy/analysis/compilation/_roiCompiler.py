@@ -2,7 +2,7 @@ from typing import Tuple, List
 
 import numpy as np
 
-from analysis.pws._analysisResults import AbstractPWSAnalysisResults
+from analysis.pws._analysisResults import PWSAnalysisResults
 from pwspy.analysis.compilation._compilerSettings import CompilerSettings
 from pwspy.analysis.compilation._roiCompilationResults import RoiCompilationResults
 from pwspy.dataTypes import Roi
@@ -12,7 +12,7 @@ class RoiCompiler:
     def __init__(self, settings: CompilerSettings):
         self.settings = settings
 
-    def run(self, results: AbstractPWSAnalysisResults, roi: Roi) -> Tuple[RoiCompilationResults, List[warnings.AnalysisWarning]]:
+    def run(self, results: PWSAnalysisResults, roi: Roi) -> Tuple[RoiCompilationResults, List[warnings.AnalysisWarning]]:
         warns = []
         reflectance = self._avgOverRoi(roi, results.meanReflectance) if self.settings.reflectance else None
         rms = self._avgOverRoi(roi, results.rms) if self.settings.rms else None

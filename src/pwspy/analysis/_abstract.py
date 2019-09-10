@@ -49,7 +49,7 @@ class AbstractAnalysis(ABC):
 
     @abstractmethod
     def run(self, cube: ICBase) -> AbstractAnalysisResults:
-        """Given an ImCube to analyze this function returns an instanse of AnalysisResultsSaver. In the PWSAnalysisApp this function is run in parallel by the AnalysisManager."""
+        """Given an ImCube to analyze this function returns an instanse of AnalysisResults. In the PWSAnalysisApp this function is run in parallel by the AnalysisManager."""
         pass
 
 class AbstractAnalysisResults(ABC):

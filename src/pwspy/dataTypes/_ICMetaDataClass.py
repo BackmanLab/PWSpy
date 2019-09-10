@@ -24,7 +24,7 @@ import typing
 if typing.TYPE_CHECKING:
     import multiprocessing as mp
     from ._AcqDir import AcqDir
-    from pwspy.analysis.pws import AnalysisResultsSaver, AnalysisResultsLoader
+    from pwspy.analysis.pws import PWSAnalysisResults
 
 
 class ICMetaData(MetaDataBase):
@@ -156,28 +156,28 @@ class ICMetaData(MetaDataBase):
 
     @staticmethod
     def getAnalysesAtPath(path: str) -> typing.List[str]:
-        from pwspy.analysis.pws import AnalysisResultsLoader
+        from pwspy.analysis.pws import PWSAnalysisResults
         anPath = os.path.join(path, 'analyses')
         if os.path.exists(anPath):
             files = os.listdir(os.path.join(path, 'analyses'))
-            return [AnalysisResultsLoader.fileName2Name(f) for f in files]
+            return [PWSAnalysisResults.fileName2Name(f) for f in files]
         else:
             # print(f"ImCube at {path} has no `analyses` folder.")
             return []
 
-    def saveAnalysis(self, analysis: AnalysisResultsSaver, name:str):
+    def saveAnalysis(self, analysis: PWSAnalysisResults, name:str):
         path = os.path.join(self.filePath, 'analyses')
         if not os.path.exists(path):
             os.mkdir(path)
-        analysis.toHDF5(path, name)
+        analysis.toHDF(path, name)
 
-    def loadAnalysis(self, name: str) -> AnalysisResultsLoader:
-        from pwspy.analysis.pws import AnalysisResultsLoader
-        return AnalysisResultsLoader(os.path.join(self.filePath, 'analyses'), name)
+    def loadAnalysis(self, name: str) -> PWSAnalysisResults:
+        from pwspy.analysis.pws import PWSAnalysisResults
+        return PWSAnalysisResults.fromHDF(os.path.join(self.filePath, 'analyses'), name)
 
     def removeAnalysis(self, name: str):
-        from pwspy.analysis.pws import AnalysisResultsLoader
-        os.remove(os.path.join(self.filePath, 'analyses', AnalysisResultsLoader.name2FileName(name)))
+        from pwspy.analysis.pws import PWSAnalysisResults
+        os.remove(os.path.join(self.filePath, 'analyses', PWSAnalysisResults.name2FileName(name)))
 
     @classmethod
     def fromHdf(cls, d: h5py.Dataset):
