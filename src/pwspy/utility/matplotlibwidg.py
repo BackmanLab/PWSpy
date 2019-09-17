@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PyQt5.QtWidgets import QDialog, QDoubleSpinBox, QGridLayout, QLabel
 from matplotlib.lines import Line2D
-from matplotlib.patches import Patch, Polygon, Ellipse, Rectangle
+from matplotlib.patches import Patch, Polygon, Ellipse, Rectangle, Circle
 from matplotlib.widgets import AxesWidget
 from scipy import interpolate
 from shapely.geometry import LinearRing, Polygon as shapelyPolygon, MultiPolygon
@@ -304,6 +304,8 @@ class MyEllipse(MySelectorWidget):
         self.startPoint = None
         self.patch = Ellipse((0, 0), 0, 0, 0, facecolor=(0, 0, 1, .1), animated=True, edgecolor=(0,0,1,.8))
         self.addArtist(self.patch)
+        self.circleGuide = Circle((0, 0), animated=True, edgecolor=(1,0,0,.6), facecolor=(0,0,0,0), linestyle='dotted')
+        self.addArtist(self.circleGuide)
 
     @staticmethod
     def getHelpText():
@@ -315,6 +317,7 @@ class MyEllipse(MySelectorWidget):
         if not self.started:
             self.startPoint = [event.xdata, event.ydata]
             self.patch.set_center(self.startPoint)
+            self.circleGuide.set_center(self.startPoint)
             self.started = True
 
     def _ondrag(self,event):
@@ -325,6 +328,8 @@ class MyEllipse(MySelectorWidget):
             self.patch.width = self.patch.height / 4
             self.patch.set_center([self.startPoint[0]+dx/2, self.startPoint[1]+dy/2])
             self.patch.angle = np.degrees(np.arctan2(dy,dx)) - 90
+            self.circleGuide.set_center([self.startPoint[0]+dx/2, self.startPoint[1]+dy/2])
+            self.circleGuide.set_radius(np.sqrt(dx**2 + dy**2)/2)
             self.axMan.update()
 
     def _onhover(self, event):
