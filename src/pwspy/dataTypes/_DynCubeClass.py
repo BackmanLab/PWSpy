@@ -93,8 +93,8 @@ class DynCube(ICBase):
         return
 
     def normalizeByReference(self, reference: Union[DynCube, np.ndarray]):
-        """This method can accept either a DynCube (in which case it's average over time will be calculate and used for
-        normalization) or a numpy Array which should represent the average over time of a reference DynCube. The array
+        """This method can accept either a DynCube (in which case it's average over time will be calculated and used for
+        normalization) or a 2d numpy Array which should represent the average over time of a reference DynCube. The array
         should be 2D and its shape should match the first two dimensions of this DynCube."""
         if self._hasBeenNormalizedByReference:
             raise Exception("This ImCube has already been normalized by a reference.")
@@ -124,6 +124,7 @@ class DynCube(ICBase):
             raise Exception("This ImCube has not yet been normalized by exposure. are you sure you want to normalize by exposure?")
         if not self._hasExtraReflectionSubtracted:
             self.data = self.data - extraReflection.data
+            self._hasExtraReflectionSubtracted = True
         else:
             raise Exception("The ImCube has already has extra reflection subtracted.")
 
