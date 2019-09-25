@@ -24,12 +24,12 @@ class DynamicsAnalysisResults(AbstractAnalysisResults):
 
 
     @classmethod
-    def create(cls, settings: DynamicsAnalysisSettings, meanReflectance: np.ndarray, rms: np.ndarray,
+    def create(cls, settings: DynamicsAnalysisSettings, meanReflectance: np.ndarray, rms_t: np.ndarray,
                 imCubeIdTag: str, referenceIdTag: str, extraReflectionIdTag: Optional[str]):
         #TODO check datatypes here
         d = {'time': datetime.now().strftime(dateTimeFormat),
             'meanReflectance': meanReflectance,
-            'rms': rms,
+            'rms_t': rms_t,
             'imCubeIdTag': imCubeIdTag,
             'referenceIdTag': referenceIdTag,
             'extraReflectionIdTag': extraReflectionIdTag,
@@ -44,8 +44,8 @@ class DynamicsAnalysisResults(AbstractAnalysisResults):
 
     @cached_property
     @getFromDict
-    def rms(self) -> np.ndarray:
-        dset = self.file['rms']
+    def rms_t(self) -> np.ndarray:
+        dset = self.file['rms_t']
         return np.array(dset)
 
     @cached_property
