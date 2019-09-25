@@ -144,8 +144,9 @@ class DynCube(ICBase):
         return DynCube(ret.data, md)
 
     def getAutocorrelation(self) -> np.ndarray:
+        data = self.data - self.data.mean(axis=2) # By subtracting the mean we get and ACF where the 0-lag value is the variance of the signal.
         truncLength = 100
-        F = np.fft.rfft(self.data, axis=2)
+        F = np.fft.rfft(data, axis=2)
         ac = np.fft.irfft(F * np.conjugate(F), axis=2) / F.shape[2]
         return ac[:, :, :truncLength]
 
