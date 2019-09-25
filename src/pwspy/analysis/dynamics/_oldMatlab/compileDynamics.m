@@ -40,7 +40,6 @@ dataDiff=cell(1,length(cellNum));
 for f=1:length(patList)
     folder=[root,patList{f},'\'];
     dataTempD={'Cell #';'D';'Sigma_t^2 (b sub)';'Sigma_s';'Reflectance'};
-%     dataTempD={};
     % Load the background autocorr for background subtraction
     if exist([folder,'Cell',num2str(background)],'dir')
         load([folder,'Cell',num2str(background),'\BW1_fullFOV_Autocorr.mat']);
@@ -87,13 +86,13 @@ for f=1:length(patList)
                     
                     % Remove pixels with low SNR
                     % Default threshold removes values where 1st point of acf is less than sqrt(2) of background acf
-                    spectraList = spectraList(find(spectraList(:,1)>sqrt(2)*bLim),:);
+                    spectraList = spectraList(find(spectraList(:,1)>sqrt(2)*bLim), :);
 
                     % Background Subtraction
                     normBsCorr = spectraList-meanBackground;
 
                     % Normalization
-                    normBsCorr = normBsCorr./squeeze(repmat(abs(normBsCorr(:,1)),1,1,size(normBsCorr,2)));
+                    normBsCorr = normBsCorr./squeeze(repmat(abs(normBsCorr(:,1)),1,1,size(normBsCorr, 2)));
                     
                     % Removed negative values for calculating natural log
                     list4 = normBsCorr;

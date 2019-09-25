@@ -20,15 +20,16 @@ def getFromDict(func):
 class DynamicsAnalysisResults(AbstractAnalysisResults):
     @staticmethod
     def fields():
-        return ['meanReflectance', 'rms_t', 'time', 'settings', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionIdTag']
+        return ['meanReflectance', 'rms_t', 'dSlope', 'time', 'settings', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionIdTag']
 
 
     @classmethod
-    def create(cls, settings: DynamicsAnalysisSettings, meanReflectance: np.ndarray, rms_t: np.ndarray,
+    def create(cls, settings: DynamicsAnalysisSettings, meanReflectance: np.ndarray, rms_t: np.ndarray, dSlope: np.ndarray,
                 imCubeIdTag: str, referenceIdTag: str, extraReflectionIdTag: Optional[str]):
         #TODO check datatypes here
         d = {'time': datetime.now().strftime(dateTimeFormat),
             'meanReflectance': meanReflectance,
+            'dSlope': dSlope,
             'rms_t': rms_t,
             'imCubeIdTag': imCubeIdTag,
             'referenceIdTag': referenceIdTag,
@@ -52,6 +53,12 @@ class DynamicsAnalysisResults(AbstractAnalysisResults):
     @getFromDict
     def settings(self) -> DynamicsAnalysisSettings:
         return DynamicsAnalysisSettings.fromJsonString(self.file['settings'])
+
+    @cached_property
+    @getFromDict
+    def dSlope(self) -> np.ndarray:
+        dset = self.file['dSlope']
+        return np.array(dset)
 
     @cached_property
     @getFromDict
