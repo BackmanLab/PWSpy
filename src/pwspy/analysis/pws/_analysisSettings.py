@@ -33,3 +33,4 @@ class AnalysisSettings(AbstractAnalysisSettings):
         if d['referenceMaterial'] is not None:
             d['referenceMaterial'] = Material[d['referenceMaterial']]  # Convert from string to enum
         return cls(**d)
+ 

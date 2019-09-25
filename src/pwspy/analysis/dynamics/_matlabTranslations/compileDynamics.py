@@ -7,7 +7,6 @@ import pandas as pd
 
 wDir = r''
 cellNums = range(1001, 1015)
-mirrornum = 937  # Flat Normalization cube
 background = 1997  # Temporal Background for noise subtraction
 bwName = 'nuc'
 n_medium = 1.37  # RI of the media (avg RI of chromatin)
@@ -21,11 +20,8 @@ dataDiff = []
 
 output = []
 
-roi = DynCube.loadRoi(bwName, 1)
 bgCube = DynCube.loadAny(os.path.join(wDir, f'Cell{background}'))
-ac = bgCube.getAutocorr() #'BW1_fullFOV_Autocorr.mat', get xVals too
-meanBackground = ac.getMeanSpectra(roi)
-bLim = meanBackground[0] #TODO need to understand this better.
+backgroundACF = bgCube.getAutocorr() #The background ACF
 
 for cellNum in cellNums:
     cube = DynCube.loadAny(os.path.join(wDir, f'Cell{cellNum}'))
@@ -33,13 +29,13 @@ for cellNum in cellNums:
     for roi in rois:
         an = cube.loadAnalysis()
         ac = cube.getAutocorrelation()
-        rmsT_sq = (ac - bLim).mean()  # background subtracted sigma_t^2
+        bLim = backgroundACF[:,:,0][roi.mask].mean() #The mean background ACF0 value for the ROI
+        rmsT_sq = (ac[:,:,0] - bLim).mean()  # background subtracted sigma_t^2
 
         # Remove pixels with low SNR. default threshold removes values where first ACF point is less than sqrt(2) of background ACF
-        ac = ac[ac[:, 0] > np.sqrt(2)*bLim, :]
+        ac = ac[ac[:, :, 0] > np.sqrt(2)*bLim[:,:,None]]
 
-        normBsCorr = ac - meanBackground  # Background Subtraction
-
+        normBsCorr = ac - backgroundACF[roi.mask[:,:,None]]  # Background Subtraction
         normBsCorr = normBsCorr / np.abs(normBsCorr[:, 0])[:, None]  # Normalization
 
         # Remove negative values before taking log

@@ -5,6 +5,9 @@ import numpy as np
 import os.path as osp
 from datetime import datetime
 import typing
+
+from analysis import AbstractAnalysisSettings
+
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import KCube
 from analysis.pws._analysisSettings import AnalysisSettings
@@ -28,22 +31,18 @@ def getFromDict(func):
             return self.dict[func.__name__]
         else:
             return func(self, *args)
+
     newFunc.__name__ = func.__name__
     return newFunc
 
 
 class PWSAnalysisResults(AbstractAnalysisResults): #TODO All these cached properties stay in memory once they are loaded. It may be necessary to add a mechanism to decache them when memory is needed.
-    """A read-only loader for analysis results that will only load them from hard disk as needed."""
-    fields = ['time', 'reflectance', 'meanReflectance', 'rms', 'polynomialRms', 'autoCorrelationSlope', 'rSquared',
-                'ld', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionTag', 'settings']
+    """A loader for analysis results that will only load them from hard disk as needed."""
 
-    def __init__(self, file: h5py.File, variablesDict: dict):
-        if file is not None:
-            assert variablesDict is None
-        elif variablesDict is not None:
-            assert file is None
-        self.file = file
-        self.dict = variablesDict
+    @staticmethod
+    def fields():
+        return ['time', 'reflectance', 'meanReflectance', 'rms', 'polynomialRms', 'autoCorrelationSlope', 'rSquared',
+                'ld', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionTag', 'settings']
 
     @staticmethod
     def name2FileName(name: str) -> str:
@@ -52,15 +51,6 @@ class PWSAnalysisResults(AbstractAnalysisResults): #TODO All these cached proper
     @staticmethod
     def fileName2Name(fileName: str) -> str:
         return fileName.split('analysisResults_')[1][:-3]
-
-
-    @classmethod
-    def fromHDF(cls, directory: str, name: str):
-        filePath = osp.join(directory, cls.name2FileName(name))
-        if not osp.exists(filePath):
-            raise OSError("The analysis file does not exist.")
-        file = h5py.File(filePath, 'r')
-        return cls(file, None)
 
     @classmethod
     def create(cls, settings: AnalysisSettings, reflectance: KCube, meanReflectance: np.ndarray, rms: np.ndarray,
@@ -81,39 +71,11 @@ class PWSAnalysisResults(AbstractAnalysisResults): #TODO All these cached proper
             'settings': settings}
         return cls(None, d)
 
-    def toHDF(self, directory: str, name: str):
-        from pwspy.dataTypes import KCube #Need this for instance checking
-        fileName = osp.join(directory, self.name2FileName(name))
-        if osp.exists(fileName):
-            raise OSError(f'{fileName} already exists.')
-        # now save the stuff
-        with h5py.File(fileName, 'w') as hf:
-            for field in self.fields:
-                k = field
-                v = getattr(self, field)
-                if k == 'settings':
-                    v = v.toJsonString()
-
-                if isinstance(v, str):
-                    hf.create_dataset(k, data=np.string_(v))  # h5py recommends encoding strings this way for compatability.
-                elif isinstance(v, KCube):
-                    hf = v.toFixedPointHdfDataset(hf, k)
-                elif isinstance(v, np.ndarray):
-                    hf.create_dataset(k, data=v)
-                elif v is None:
-                    pass
-                else:
-                    raise TypeError(f"Analysis results type {k}, {type(v)} not supported or expected")
-
     @cached_property
     @clearError
     @getFromDict
     def settings(self) -> AnalysisSettings:
         return AnalysisSettings.fromJsonString(self.file['settings'])
-
-    def __del__(self):
-        if self.file:
-            self.file.close()
 
     @cached_property
     @clearError
