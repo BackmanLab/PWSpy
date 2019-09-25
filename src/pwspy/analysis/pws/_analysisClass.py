@@ -21,13 +21,32 @@ if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ImCube, ExtraReflectanceCube
 
 
-class LegacyAnalysis(AbstractAnalysis):
+class Analysis(AbstractAnalysis):
     """An analysis without Extra reflection subtraction."""
-    def __init__(self, settings: AnalysisSettings, ref: ImCube):
+    def __init__(self, settings: AnalysisSettings, ref: ImCube, extraReflectance: ExtraReflectanceCube):
+        from pwspy.dataTypes import ExtraReflectionCube, ExtraReflectanceCube
         assert ref.isCorrected()
         super().__init__(settings)
         ref.normalizeByExposure()
+        if ref.metadata.pixelSizeUm is not None: #Only works if pixel size was saved in the metadata.
+            ref.filterDust(.75)  # Apply a blur to filter out dust particles. This is in microns. I'm not sure if this is the optimal value.
+        if settings.referenceMaterial is None:
+            theoryR = pd.Series(np.ones((len(ref.wavelengths),)), index=ref.wavelengths) # Having this as all ones effectively ignores it.
+            print("Warning: Analysis ignoring reference material correction")
+        else:
+            theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, wavelengths=ref.wavelengths, NA=settings.numericalAperture)
+        if extraReflectance is None:
+            Iextra = ExtraReflectionCube.create(ExtraReflectanceCube(np.zeros(ref.data.shape), ref.wavelengths, ExtraReflectanceCube.ERMetadata(ref.metadata._dict, settings.numericalAperture)), theoryR, ref)  # a bogus reflection that is all zeros
+            print("Warning: Analysis ignoring extra reflection")
+            assert np.all(Iextra.data == 0)
+        else:
+            if extraReflectance.metadata.numericalAperture != settings.numericalAperture:
+                print(f"Warning: The numerical aperture of your analysis does not match the NA of the Extra Reflectance Calibration. Calibration File NA: {extraReflectance.metadata.numericalAperture}. Analysis NA: {settings.numericalAperture}.")
+            Iextra = ExtraReflectionCube.create(extraReflectance, theoryR, ref) #Convert from reflectance to predicted counts/ms.
+        ref.subtractExtraReflection(Iextra)  # remove the extra reflection from our data#
+        ref = ref / theoryR[None, None, :]  # now when we normalize by our reference we will get a result in units of physical reflectance rather than arbitrary units.
         self.ref = ref
+        self.extraReflection = Iextra
 
     def run(self, cube: ImCube) -> Tuple[PWSAnalysisResults, List[warnings.AnalysisWarning]]:
         from pwspy.dataTypes import KCube
@@ -70,12 +89,13 @@ class LegacyAnalysis(AbstractAnalysis):
             settings=self.settings,
             imCubeIdTag=cube.metadata.idTag,
             referenceIdTag=self.ref.metadata.idTag,
-            extraReflectionTag=None)
+            extraReflectionTag=self.extraReflection.metadata.idTag)
         warns = [warn for warn in warns if warn is not None] #Filter out null values.
         return results, warns
 
     def _normalizeImCube(self, cube: ImCube) -> ImCube:
         cube.normalizeByExposure()
+        cube.subtractExtraReflection(self.extraReflection)
         cube.normalizeByReference(self.ref)
         return cube
 
@@ -110,40 +130,4 @@ class LegacyAnalysis(AbstractAnalysis):
         A2 = 4
         ld = ((A2 / A1) * fact) * (rms / (-1 * slope.reshape(rms.shape)))
         return ld
-
-
-class Analysis(LegacyAnalysis):
-    def __init__(self, settings: AnalysisSettings, ref: ImCube, extraReflectance: ExtraReflectanceCube):
-        from pwspy.dataTypes import ExtraReflectionCube, ExtraReflectanceCube
-        super().__init__(settings, ref)
-        if ref.metadata.pixelSizeUm is not None: #Only works if pixel size was saved in the metadata.
-            ref.filterDust(.75)  # Apply a blur to filter out dust particles. This is in microns. I'm not sure if this is the optimal value.
-        if settings.referenceMaterial is None:
-            theoryR = pd.Series(np.ones((len(ref.wavelengths),)), index=ref.wavelengths) # Having this as all ones effectively ignores it.
-            print("Warning: Analysis ignoring reference material correction")
-        else:
-            theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, wavelengths=ref.wavelengths, NA=settings.numericalAperture)
-        if extraReflectance is None:
-            Iextra = ExtraReflectionCube.create(ExtraReflectanceCube(np.zeros(ref.data.shape), ref.wavelengths, ExtraReflectanceCube.ERMetadata(ref.metadata._dict, settings.numericalAperture)), theoryR, ref)  # a bogus reflection that is all zeros
-            print("Warning: Analysis ignoring extra reflection")
-            assert np.all(Iextra.data == 0)
-        else:
-            if extraReflectance.metadata.numericalAperture != settings.numericalAperture:
-                print(f"Warning: The numerical aperture of your analysis does not match the NA of the Extra Reflectance Calibration. Calibration File NA: {extraReflectance.metadata.numericalAperture}. Analysis NA: {settings.numericalAperture}.")
-            Iextra = ExtraReflectionCube.create(extraReflectance, theoryR, ref) #Convert from reflectance to predicted counts/ms.
-        ref.subtractExtraReflection(Iextra)  # remove the extra reflection from our data#
-        ref = ref / theoryR[None, None, :]  # now when we normalize by our reference we will get a result in units of physical reflectance rather than arbitrary units.
-        self.ref = ref
-        self.extraReflection = Iextra
-
-    def run(self, cube: ImCube) -> Tuple[PWSAnalysisResults, List[warnings.AnalysisWarning]]:
-        results, warns = super().run(cube)
-        results.extraReflectionTag = self.extraReflection.metadata.idTag
-        return results, warns
-
-    def _normalizeImCube(self, cube: ImCube) -> ImCube:
-        cube.normalizeByExposure()
-        cube.subtractExtraReflection(self.extraReflection)
-        cube.normalizeByReference(self.ref)
-        return cube
 
