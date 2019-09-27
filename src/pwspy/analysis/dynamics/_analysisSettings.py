@@ -5,16 +5,8 @@ from pwspy.moduleConsts import Material
 
 @dataclasses.dataclass
 class DynamicsAnalysisSettings(AbstractAnalysisSettings):
-    # filterOrder: int
-    # filterCutoff: float
-    # polynomialOrder: int
     extraReflectanceId: str
     referenceMaterial: Material
-    # wavelengthStart: int
-    # wavelengthStop: int
-    # skipAdvanced: bool
-    # autoCorrStopIndex: int
-    # autoCorrMinSub: bool  # Determines if the autocorrelation should have it's minimum subtracted from it before processing. These is mathematically nonsense but is needed if the autocorrelation has negative values in it.
     numericalAperture: float
 
     def asDict(self) -> dict:

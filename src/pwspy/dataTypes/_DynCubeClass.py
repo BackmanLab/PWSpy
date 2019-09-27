@@ -118,12 +118,12 @@ class DynCube(ICBase):
         self.data = self.data / mean[:, :, None]
         self._hasBeenNormalizedByReference = True
 
-    def subtractExtraReflection(self, extraReflection: ExtraReflectionCube):
-        assert self.data.shape == extraReflection.data.shape
+    def subtractExtraReflection(self, extraReflection: np.ndarray):
+        assert self.data.shape == extraReflection.shape[:2]
         if not self._hasBeenNormalized:
             raise Exception("This ImCube has not yet been normalized by exposure. are you sure you want to normalize by exposure?")
         if not self._hasExtraReflectionSubtracted:
-            self.data = self.data - extraReflection.data
+            self.data = self.data - extraReflection
             self._hasExtraReflectionSubtracted = True
         else:
             raise Exception("The ImCube has already has extra reflection subtracted.")
@@ -150,3 +150,11 @@ class DynCube(ICBase):
         ac = np.fft.irfft(F * np.conjugate(F), axis=2) / F.shape[2]
         return ac[:, :, :truncLength]
 
+    def filterDust(self, kernelRadius: float, pixelSize: float = None) -> None:
+        """This method blurs the data of the ImCube along the X and Y dimensions. This is useful if the ImCube is being
+        used as a reference to normalize other ImCube. It helps blur out dust adn other unwanted small features."""
+        if pixelSize is None:
+            pixelSize = self.metadata.pixelSizeUm
+            if pixelSize is None:
+                raise ValueError("DynCube Metadata does not have a `pixelSizeUm` saved. please manually specify pixel size. use pixelSize=1 to make `kernelRadius in units of pixels.")
+        super().filterDust(kernelRadius, pixelSize)
