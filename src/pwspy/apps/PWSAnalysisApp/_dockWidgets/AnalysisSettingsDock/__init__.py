@@ -1,15 +1,11 @@
 from __future__ import annotations
 import json
 from typing import Tuple, List
-
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, \
     QVBoxLayout, QPushButton, QSplitter, QMessageBox, QDialog, QGridLayout, QApplication
-
-from pwspy.dataTypes import CameraCorrection, AcqDir
+from pwspy.dataTypes import CameraCorrection, AcqDir, ERMetadata
 from pwspy.analysis.pws import AnalysisSettings
-
-from pwspy.dataTypes import ERMetadata
 from .widgets.QueueAnalysesFrame import AnalysisListItem, QueuedAnalysesFrame
 from .widgets.SettingsFrame import SettingsFrame
 

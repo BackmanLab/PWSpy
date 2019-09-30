@@ -3,8 +3,9 @@ from abc import ABC, abstractmethod
 import json
 import os.path as osp
 from typing import List
-
-from dataTypes._ICBaseClass import ICBase
+import typing
+if typing.TYPE_CHECKING:
+    from pwspy.dataTypes import ICBase
 import h5py
 import numpy as np
 

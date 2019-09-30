@@ -2,13 +2,16 @@ from __future__ import annotations
 
 from typing import Union
 
-from pwspy.dataTypes import CameraCorrection, ExtraReflectionCube
+
 from ._ICBaseClass import ICBase
-from ._DynMetaDataClass import DynMetaData
+from dataTypes._metadata._DynMetaDataClass import DynMetaData
 import numpy as np
 import multiprocessing as mp
 import os
 import tifffile as tf
+import typing
+if typing.TYPE_CHECKING:
+    from pwspy.dataTypes import CameraCorrection
 
 
 class DynCube(ICBase):

@@ -8,10 +8,9 @@ from typing import Tuple
 
 from ._ICBaseClass import ICBase
 from ._ImCubeClass import ImCube
-from ._ICMetaDataClass import ICMetaData
+from dataTypes._metadata._ICMetaDataClass import ICMetaData
 import numpy as np
 import scipy.interpolate as spi
-import copy
 
 
 class KCube(ICBase):

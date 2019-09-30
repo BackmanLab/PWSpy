@@ -6,15 +6,14 @@ Created on Tue Feb 12 19:17:14 2019
 """
 from __future__ import annotations
 
-from pwspy.dataTypes._FluoresenceImg import FluorescenceImage
-from ._MetaDataBaseClass import MetaDataBase
-from . import _jsonSchemasPath
+from dataTypes._metadata._MetaDataBaseClass import MetaDataBase
+from dataTypes import _jsonSchemasPath
 from pwspy.moduleConsts import dateTimeFormat
 from pwspy.utility.misc import cached_property
 import json
 import os
 from enum import Enum, auto
-from typing import Optional, List, Tuple
+from typing import Optional, Tuple
 import h5py
 import scipy.io as spio
 import tifffile as tf
@@ -23,7 +22,7 @@ from datetime import datetime
 import typing
 if typing.TYPE_CHECKING:
     import multiprocessing as mp
-    from ._AcqDir import AcqDir
+    from dataTypes._AcqDir import AcqDir
     from pwspy.analysis.pws import PWSAnalysisResults
 
 

@@ -3,8 +3,8 @@ from typing import List, Tuple
 
 import sys
 from ._FluoresenceImg import FluorescenceImage
-from ._ICMetaDataClass import ICMetaData
-from ._DynMetaDataClass import DynMetaData
+from dataTypes._metadata._ICMetaDataClass import ICMetaData
+from dataTypes._metadata._DynMetaDataClass import DynMetaData
 from ._otherClasses import Roi
 import os
 

@@ -12,17 +12,15 @@ import h5py
 import numpy as np
 import tifffile as tf
 import os
-import json
-from glob import glob
 import typing
-import numbers
 from scipy.io import savemat
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes._ExtraReflectanceCubeClass import ExtraReflectionCube
-from ._otherClasses import CameraCorrection
+    from dataTypes._arrayClasses._ExtraReflectanceCubeClass import ExtraReflectionCube
+from dataTypes._otherClasses import CameraCorrection
 from ._ICBaseClass import ICBase
-from ._ICMetaDataClass import ICMetaData
+from dataTypes._metadata import ICMetaData
 import multiprocessing as mp
+
 
 class ImCube(ICBase):
     """ A class representing a single PWS acquisition. Contains methods for loading and saving to multiple formats as

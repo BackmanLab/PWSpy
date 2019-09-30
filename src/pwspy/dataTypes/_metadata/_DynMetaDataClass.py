@@ -5,10 +5,10 @@ import multiprocessing as mp
 from ._MetaDataBaseClass import MetaDataBase
 import os, json
 import tifffile as tf
-from . import _jsonSchemasPath
+from dataTypes import _jsonSchemasPath
 import typing
 if typing.TYPE_CHECKING:
-    from ._AcqDir import AcqDir
+    from dataTypes._AcqDir import AcqDir
 
 
 class DynMetaData(MetaDataBase):
