@@ -4,7 +4,7 @@ from typing import Union
 
 
 from ._ICBaseClass import ICBase
-from dataTypes._metadata._DynMetaDataClass import DynMetaData
+from .._metadata import DynMetaData
 import numpy as np
 import multiprocessing as mp
 import os

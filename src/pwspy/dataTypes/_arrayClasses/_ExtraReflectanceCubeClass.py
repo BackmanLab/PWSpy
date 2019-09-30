@@ -4,7 +4,7 @@ from typing import Tuple
 import h5py
 from .._metadata import ERMetadata
 
-from dataTypes._arrayClasses._ICBaseClass import ICBase
+from ._ICBaseClass import ICBase
 import numpy as np
 import os
 import typing

@@ -6,8 +6,8 @@ Created on Tue Feb 12 19:17:14 2019
 """
 from __future__ import annotations
 
-from dataTypes._metadata._MetaDataBaseClass import MetaDataBase
-from dataTypes import _jsonSchemasPath
+from ._MetaDataBaseClass import MetaDataBase
+from pwspy.dataTypes import _jsonSchemasPath
 from pwspy.moduleConsts import dateTimeFormat
 from pwspy.utility.misc import cached_property
 import json
@@ -22,7 +22,7 @@ from datetime import datetime
 import typing
 if typing.TYPE_CHECKING:
     import multiprocessing as mp
-    from dataTypes._AcqDir import AcqDir
+    from pwspy.dataTypes import AcqDir
     from pwspy.analysis.pws import PWSAnalysisResults
 
 

@@ -8,7 +8,7 @@ from typing import Tuple
 
 from ._ICBaseClass import ICBase
 from ._ImCubeClass import ImCube
-from dataTypes._metadata._ICMetaDataClass import ICMetaData
+from pwspy.dataTypes import ICMetaData
 import numpy as np
 import scipy.interpolate as spi
 

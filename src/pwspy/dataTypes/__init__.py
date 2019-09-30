@@ -9,10 +9,10 @@ __all__ = ['ImCube', 'ICMetaData', 'Roi', 'CameraCorrection', 'KCube', 'ExtraRef
 import os
 _jsonSchemasPath = os.path.join(os.path.split(__file__)[0], 'jsonSchemas')
 
-from ._arrayClasses import ImCube, DynCube, ExtraReflectionCube, ExtraReflectanceCube, KCube
 from ._metadata import ICMetaData, DynMetaData, ERMetadata
 from ._otherClasses import Roi, CameraCorrection
 from ._FluoresenceImg import FluorescenceImage
+from ._arrayClasses import ImCube, DynCube, ExtraReflectionCube, ExtraReflectanceCube, KCube
 from ._AcqDir import AcqDir
 
 

@@ -15,10 +15,9 @@ import os
 import typing
 from scipy.io import savemat
 if typing.TYPE_CHECKING:
-    from dataTypes._arrayClasses._ExtraReflectanceCubeClass import ExtraReflectionCube
-from dataTypes._otherClasses import CameraCorrection
+    from pwspy.dataTypes._arrayClasses._ExtraReflectanceCubeClass import ExtraReflectionCube
+from .. import CameraCorrection, ICMetaData
 from ._ICBaseClass import ICBase
-from dataTypes._metadata import ICMetaData
 import multiprocessing as mp
 
 

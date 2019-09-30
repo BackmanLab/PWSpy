@@ -3,8 +3,7 @@ from typing import List, Tuple
 
 import sys
 from ._FluoresenceImg import FluorescenceImage
-from dataTypes._metadata._ICMetaDataClass import ICMetaData
-from dataTypes._metadata._DynMetaDataClass import DynMetaData
+from pwspy.dataTypes import ICMetaData, DynMetaData
 from ._otherClasses import Roi
 import os
 

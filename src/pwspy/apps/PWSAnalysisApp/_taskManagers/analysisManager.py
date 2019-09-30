@@ -8,11 +8,10 @@ from PyQt5.QtCore import QThread
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox
-from pwspy.dataTypes import ImCube, CameraCorrection, ExtraReflectanceCube, AcqDir
+from pwspy.dataTypes import ImCube, CameraCorrection, ExtraReflectanceCube, AcqDir, ICMetaData
 from pwspy.analysis.pws import AnalysisSettings
 from pwspy.analysis.pws import Analysis
 from pwspy.analysis.warnings import AnalysisWarning
-from pwspy.dataTypes import ICMetaData
 from pwspy.utility.fileIO import loadAndProcess
 import threading
 from multiprocessing.util import Finalize
