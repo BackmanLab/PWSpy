@@ -76,7 +76,7 @@ class PlottingDock(QDockWidget):
 
         self._widget.layout().addWidget(plotScroll)
         self._widget.layout().addWidget(buttons)
-        self._widget.setMaximumWidth(plotScroll.maximumWidth()+buttons.maximumWidth()+10)
+        # self._widget.setMaximumWidth(plotScroll.maximumWidth()+buttons.maximumWidth()+10)
         self.setWidget(self._widget)
 
         self.enableAnalysisPlottingButtons('false')

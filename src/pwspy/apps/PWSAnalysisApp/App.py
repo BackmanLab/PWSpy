@@ -42,7 +42,7 @@ class PWSApp(QApplication):
         self.parallelProcessing: bool = None #Determines if analysis and compilation should be run in parallel or not.
         self.window.parallelAction.toggled.connect(lambda checked: setattr(self, 'parallelProcessing', checked))
         availableRamGigs = psutil.virtual_memory().available / 1024**3
-        if availableRamGigs > 16: # Default to parallel analysis if we have more than 16 Gb of ram available.
+        if availableRamGigs > 16:  # Default to parallel analysis if we have more than 16 Gb of ram available.
             self.window.parallelAction.setChecked(True)
         else:
             self.window.parallelAction.setChecked(False)

@@ -22,7 +22,7 @@ if typing.TYPE_CHECKING:
 
 
 class Analysis(AbstractAnalysis):
-    """An analysis without Extra reflection subtraction."""
+    """The standard PWS analysis routine. Initialize and then `run` for as many different ImCubes as you want."""
     def __init__(self, settings: AnalysisSettings, ref: ImCube, extraReflectance: ExtraReflectanceCube):
         from pwspy.dataTypes import ExtraReflectionCube, ExtraReflectanceCube
         assert ref.isCorrected()
@@ -49,6 +49,7 @@ class Analysis(AbstractAnalysis):
         self.extraReflection = Iextra
 
     def run(self, cube: ImCube) -> Tuple[PWSAnalysisResults, List[warnings.AnalysisWarning]]:
+        """Runs analysis on `cube` returns a list of warnings indicating abnormal results and an analyisResults object which can be saved."""
         from pwspy.dataTypes import KCube
         assert cube.isCorrected()
         warns = []

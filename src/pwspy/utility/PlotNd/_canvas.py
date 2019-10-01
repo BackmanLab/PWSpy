@@ -21,7 +21,6 @@ class PlotNdCanvas(FigureCanvasQTAgg):
 
         extraDims = len(data.shape[2:])  # the first two axes are the image dimensions. Any axes after that are extra dimensions that can be scanned through
 
-
         h, w = data.shape[:2]
         gs = gridspec.GridSpec(3, 2 + extraDims + 1, hspace=0,
                                width_ratios=[w * .2 / (extraDims + 1)] * (extraDims + 1) + [w, w * .2],
