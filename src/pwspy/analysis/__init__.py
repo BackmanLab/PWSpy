@@ -4,12 +4,10 @@ Created on Tue Feb 12 21:44:31 2019
 
 @author: Nick Anthony
 """
-__all__ = ['compilation', 'dynamics', 'pws', 'warnings', 'AbstractAnalysisSettings']
+__all__ = ['compilation', 'dynamics', 'pws', 'warnings', 'AbstractAnalysisSettings', 'defaultSettingsPath']
 import os
 
 from ._abstract import AbstractAnalysisSettings, AbstractAnalysis, AbstractAnalysisResults
-
-
 
 # TODO replace slope entirely with CDR
 

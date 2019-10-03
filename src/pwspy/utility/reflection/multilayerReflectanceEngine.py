@@ -44,7 +44,7 @@ class Layer:
         from .reflectanceHelper import getRefractiveIndex
         if isinstance(self.mat, Material):
             n = getRefractiveIndex(self.mat, wavelengths=wavelengths)
-            n = pd.Series(n.real, index=n.index)
+            n = pd.Series(np.real(n), index=n.index)
             return n
         elif isinstance(self.mat, Number):
             return pd.Series(np.array([self.mat]*len(wavelengths)), index=wavelengths)
@@ -231,17 +231,17 @@ class Stack(StackBase):
             out[polarization] = R.real
         return out
 
-    def circularIntegration(self, nas: np.ndarray) -> pd.Series:
+    def circularIntegration(self, NAs: np.ndarray) -> pd.Series:
         """Given an array of NumericalApertures (usually from 0 to NAMax.) This function integrates the reflectance over
         a disc of Numerical Apertures (Just like in a microscope the Aperture plane is a disc shape, with higher NA
         being further from the center.) Ultimately the result of this integration should match the reflectance measured
         with the same NA."""
         from scipy.integrate import trapz
-        d = self.calculateReflectance(nas)
+        d = self.calculateReflectance(NAs)
         r = (d[Polarization.TE] + d[Polarization.TM]) / 2
-        r = r * 2 * np.pi * nas #The aperture plane is a disk, higher NAs have larger circumference disks contributing to them. hence the 2pi*na factor.
-        inte = trapz(r, nas, axis=1)
-        int2 = trapz(2*np.pi*nas, nas) #This is used for normalization. basically accounting for the fact that na is proportional to radius in aperture plane, not equal.
+        r = r * 2 * np.pi * NAs #The aperture plane is a disk, higher NAs have larger circumference disks contributing to them. hence the 2pi*na factor.
+        inte = trapz(r, NAs, axis=1)
+        int2 = trapz(2 * np.pi * NAs, NAs) #This is used for normalization. basically accounting for the fact that na is proportional to radius in aperture plane, not equal.
         return pd.Series(inte / int2, index=self.wavelengths)
 
     def plot(self, NAs: np.ndarray, polarization: Polarization = None):
