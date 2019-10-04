@@ -30,7 +30,7 @@ requirements:
     - google-api-python-client # -c conda-forge
     - google-auth-httplib2 # -c conda-forge
     - google-auth-oauthlib # -c conda-forge
-    - opencv =3 # -c menpo
+    - py-opencv
 
 about:
   home: data['url']
