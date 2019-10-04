@@ -1,11 +1,10 @@
-from analysis.dynamics._analysisResults import DynamicsAnalysisResults
+from ._analysisResults import DynamicsAnalysisResults
+from ._analysisSettings import DynamicsAnalysisSettings
 from pwspy.analysis import warnings
 from pwspy.analysis._abstract import AbstractAnalysis
-from ._analysisSettings import DynamicsAnalysisSettings
 from pwspy.dataTypes import DynCube, ExtraReflectanceCube
 import numpy as np
 from typing import Tuple, List
-import pandas as pd
 from pwspy.utility.reflection import reflectanceHelper
 from pwspy.moduleConsts import Material
 

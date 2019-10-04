@@ -2,7 +2,7 @@ from typing import Tuple, List
 
 import numpy as np
 
-from analysis.pws._analysisResults import PWSAnalysisResults
+from pwspy.analysis.pws._analysisResults import PWSAnalysisResults
 from pwspy.analysis.compilation._compilerSettings import CompilerSettings
 from pwspy.analysis.compilation._roiCompilationResults import RoiCompilationResults
 from pwspy.dataTypes import Roi

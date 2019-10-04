@@ -28,7 +28,6 @@ if typing.TYPE_CHECKING:
     from pwspy.analysis.compilation import RoiCompilationResults
     from pwspy.analysis.warnings import AnalysisWarning
 
-#TODO add tooltips for everything!!!
 
 class PWSApp(QApplication):
     def __init__(self, args):
@@ -39,7 +38,7 @@ class PWSApp(QApplication):
         self.window = PWSWindow(self.ERManager)
         self.anMan = AnalysisManager(self)
         self.window.runAction.connect(self.anMan.runList)
-        self.parallelProcessing: bool = None #Determines if analysis and compilation should be run in parallel or not.
+        self.parallelProcessing: bool = None  # Determines if analysis and compilation should be run in parallel or not.
         self.window.parallelAction.toggled.connect(lambda checked: setattr(self, 'parallelProcessing', checked))
         availableRamGigs = psutil.virtual_memory().available / 1024**3
         if availableRamGigs > 16:  # Default to parallel analysis if we have more than 16 Gb of ram available.

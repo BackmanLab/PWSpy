@@ -1,16 +1,13 @@
 from __future__ import annotations
 from typing import Optional, Tuple
-import h5py
 import numpy as np
-import os.path as osp
 from datetime import datetime
 import typing
 
-from analysis import AbstractAnalysisSettings
 
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import KCube
-from analysis.pws._analysisSettings import AnalysisSettings
+from pwspy.analysis.pws._analysisSettings import AnalysisSettings
 from pwspy.moduleConsts import dateTimeFormat
 from pwspy.utility.misc import cached_property
 from pwspy.analysis._abstract import AbstractAnalysisResults

@@ -15,7 +15,6 @@ from enum import Enum, auto
 from glob import glob
 from typing import List, Tuple
 import matplotlib.pyplot as plt
-
 import h5py
 import numpy as np
 from scipy import io as spio
@@ -23,8 +22,6 @@ from scipy.spatial.qhull import Delaunay
 from shapely import geometry
 from shapely.ops import cascaded_union, polygonize
 import cv2
-from pwspy.utility.misc import profileDec
-
 import typing
 if typing.TYPE_CHECKING:
     from matplotlib.image import AxesImage

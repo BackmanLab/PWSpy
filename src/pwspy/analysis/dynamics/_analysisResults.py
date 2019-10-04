@@ -1,10 +1,10 @@
 from datetime import datetime
 from typing import Optional
 
-from analysis.dynamics._analysisSettings import DynamicsAnalysisSettings
-from moduleConsts import dateTimeFormat
+from ._analysisSettings import DynamicsAnalysisSettings
+from pwspy.moduleConsts import dateTimeFormat
 from pwspy.analysis._abstract import AbstractAnalysisResults
-from utility.misc import cached_property
+from pwspy.utility.misc import cached_property
 import numpy as np
 
 def getFromDict(func):

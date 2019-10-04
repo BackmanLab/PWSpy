@@ -9,7 +9,7 @@ from typing import List, Tuple
 
 import numpy as np
 import scipy.signal as sps
-from analysis._abstract import AbstractAnalysis
+from pwspy.analysis._abstract import AbstractAnalysis
 from pwspy.analysis import warnings
 from pwspy.utility.reflection import reflectanceHelper
 from pwspy.moduleConsts import Material

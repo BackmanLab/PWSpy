@@ -9,7 +9,7 @@ import copy
 import scipy.signal as sps
 import numpy as np
 
-from pwspy.analysis import PWSAnalysisResults
+from pwspy.analysis.pws import PWSAnalysisResults
 
 
 def analyzeCube(cubeCell: ImCube, darkCount: int, mirror: ImCube, orderFilter: int,
