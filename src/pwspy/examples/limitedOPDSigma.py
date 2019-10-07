@@ -5,7 +5,14 @@ Created on Tue Jan  8 10:07:20 2019
 @author: Nick Anthony
 """
 
-from pwspy.dataTypes import ImCube, KCube, CameraCorrection
+#Last tested on pwspy ad745ef0c1ae526e25981b0036f460981397a456
+
+"""This script is based on a matlab script written by Lusik Cherkezyan for Nanocytomics.
+Nano uses this method to extract rms from phantom make from ChromEM cells embedded in resin.
+The phantom has a strong thin-film spectrum. This script is meant to filter out the thin film components
+of the fourier transfrom and extract RMS from what is left."""
+
+from pwspy.dataTypes import ImCube, KCube, CameraCorrection, AcqDir, Roi
 import matplotlib.pyplot as plt
 import scipy.signal as sps
 import os
@@ -13,7 +20,7 @@ import numpy as np
 import scipy as sp
 
 '''User Input'''
-path = r'G:\Data\LCPWS1TimeSeriesCorrelation\2_7_2019 11.07'
+path = r'2_7_2019 11.07'
 refName = 'Cell999'  # This is an imcube of glass, used for normalization.
 cellNames = ['Cell1', 'Cell2']  # , 'Cell3', 'Cell4','Cell5']
 maskSuffix = 'resin'
@@ -36,9 +43,9 @@ b, a = sps.butter(6, 0.1 * wv_step)
 opdIntegralEnd = integrationDepth * 2 * sampleRI  # We need to convert from our desired depth into an opd value. There are some questions about having a 2 here but that's how it is in the matlab code so I'm keeping it.
 
 ### load and save mirror or glass image cube
-ref = ImCube.loadAny(os.path.join(path, refName))
+ref = ImCube.fromMetadata(AcqDir(os.path.join(path, refName)).pws)
 ref.correctCameraEffects(correction)
-ref.filterDust(6)
+ref.filterDust(6, pixelSize=1)
 ref.normalizeByExposure()
 
 if subtractResinOpd:
@@ -46,21 +53,21 @@ if subtractResinOpd:
     fig, ax = plt.subplots()
     resinOpds = {}
     for cellName in cellNames:
-        resin = ImCube.loadAny(os.path.join(path, cellName))
+        resin = ImCube.fromMetadata(AcqDir(os.path.join(path, cellName)).pws)
         resin.correctCameraEffects(correction)
         resin.normalizeByExposure()
         resin /= ref
         resin = KCube.fromImCube(resin)
         if resetResinMasks:
-            [resin.deleteMask(i, maskSuffix) for i in resin.getMasks()[maskSuffix]]
-        if maskSuffix in resin.getMasks():
-            mask = resin.loadMask(1, maskSuffix)
+            [resin.metadata.acquisitionDirectory.deleteRoi(name, num) for name, num, fformat in resin.metadata.acquisitionDirectory.getRois() if name == maskSuffix]
+        if maskSuffix in [name for name, number, fformat in resin.metadata.acquisitionDirectory.getRois()]:
+            resinRoi = resin.metadata.acquisitionDirectory.loadRoi(maskSuffix, 1)
         else:
             print('Select a region containing only resin.')
-            mask = resin.selectLassoROI()
-            resin.saveMask(mask, 1, maskSuffix)
+            resinRoi = Roi.fromVerts(maskSuffix, 1, resin.selectLassoROI(), resin.data.shape[:2])
+            resin.metadata.acquisitionDirectory.saveRoi(resinRoi)
         resin.data -= resin.data.mean(axis=2)[:, :, np.newaxis]
-        opdResin, xvals = resin.getOpd(isHannWindow, indexOpdStop=None, mask=mask)
+        opdResin, xvals = resin.getOpd(isHannWindow, indexOpdStop=None, mask=resinRoi.mask)
         resinOpds[cellName] = opdResin
         ax.plot(xvals, opdResin, label=cellName)
         ax.vlines([opdIntegralEnd], ymin=opdResin.min(), ymax=opdResin.max())
@@ -71,7 +78,7 @@ if subtractResinOpd:
 
 rmses = {}  # Store the rms maps for later saving
 for cellName in cellNames:
-    cube = ImCube.loadAny(os.path.join(path, cellName))
+    cube = ImCube.fromMetadata(AcqDir(os.path.join(path, cellName)).pws)
     cube.correctCameraEffects(correction)
     cube.normalizeByExposure()
     cube /= ref
@@ -128,7 +135,7 @@ for cellName in cellNames:
     plt.pause(0.2)
 plt.pause(0.5)
 
-# plt.waitforbuttonpress(timeout=-1)
-for k, v in rmses.items():
-    if input(f"Save opdRms for {k}? (y/n): ").strip().lower() == 'y':
-        sp.io.savemat(os.path.join(path, k, 'phantom_Rms.mat'), {'cubeRms': v.astype(np.float32)})  # save as a single
+## plt.waitforbuttonpress(timeout=-1)
+#for k, v in rmses.items():
+#    if input(f"Save opdRms for {k}? (y/n): ").strip().lower() == 'y':
+#        sp.io.savemat(os.path.join(path, k, 'phantom_Rms.mat'), {'cubeRms': v.astype(np.float32)})  # save as a single
