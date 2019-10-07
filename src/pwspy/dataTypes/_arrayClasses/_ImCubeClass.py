@@ -124,6 +124,7 @@ class ImCube(ICBase):
     def fromMetadata(cls, meta: ICMetaData,  lock: mp.Lock = None) -> ImCube:
         """If provided with an ICMetadata object this function will automatically select the correct file loading method
         and will return the associated ImCube."""
+        assert isinstance(meta, ICMetaData)
         if meta.fileFormat == ICMetaData.FileFormats.Tiff:
             return cls.fromTiff(meta.filePath, metadata=meta, lock=lock)
         elif meta.fileFormat == ICMetaData.FileFormats.RawBinary:

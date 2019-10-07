@@ -58,6 +58,8 @@ class AcqDir:
 
     def loadRoi(self, name: str, num: int, fformat: Roi.FileFormats = None) -> Roi:
         """Load a Roi that has been saved to file in the acquisition's file path."""
+        assert isinstance(name, str)
+        assert isinstance(num, int)
         if fformat == Roi.FileFormats.MAT:
             return Roi.fromMat(self.filePath, name, num)
         elif fformat == Roi.FileFormats.HDF2:
