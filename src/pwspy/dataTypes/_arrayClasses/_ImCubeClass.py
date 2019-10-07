@@ -140,16 +140,15 @@ class ImCube(ICBase):
             raise OSError("The specified directory already exists.")
         os.mkdir(directory)
         m = self.metadata
-        info2 = {'info2': np.array([m.wavelengths[0], 0, m.wavelengths[-1], m.exposure, 0, 0, 0, 0, 0, 0],
-                                   dtype=object)}
         try:
-            info3 = {
-                'info3': np.array([m._dict['systemId'], m.exposure, m._dict['imgHeight'], m._dict['imgWidth'], 0, 0, 0, 0, 0, 0, 0, 0],
-                                  dtype=object)}  # the old way
-        except:
-            info3 = {'info3': np.array(
-                [m._dict['system'], m.exposure, self.data.shape[0], self.data.shape[1], 0, 0, 0, 0, 0, 0, 0, 0],
-                dtype=object)}  # The new way
+            systemId = m._dict['systemId']
+        except KeyError:
+            systemId = 0
+        info2 = {'info2': np.array([m.wavelengths[0], m.wavelengths[1]-m.wavelengths[0], m.wavelengths[-1], m.exposure, 0, 0, 0, 0, 0, 0],
+                                   dtype=np.float64)}
+        info3 = {'info3': np.array(
+            [systemId, m.exposure, self.data.shape[0], self.data.shape[1], 1970, 1, 1, 0, 0, 0, 0, 0], #Use data 1/1/1970 since we don't have a real acquisition date.
+            dtype=np.float64)}  # The new way
         wv = {"WV": m.wavelengths}
         savemat(os.path.join(directory, 'info2'), info2)
         savemat(os.path.join(directory, 'info3'), info3)
@@ -163,7 +162,9 @@ class ImCube(ICBase):
         having to load and process all the data."""
         im = self.data[:, :, self.data.shape[-1] // 2]
         normedIm = im - np.percentile(im, 0.01)  # .01 percent saturation
+        normedIm[normedIm<0] = 0 #Don't allow negative values.
         normedIm = normedIm / np.percentile(normedIm, 99.99)
+        normedIm[normedIm>1] = 1 #Keep eveything below 1
         normedIm = (normedIm * 255).astype(np.uint8)
         im = tf.TiffWriter(os.path.join(directory, 'image_bd.tif'))
         im.save(normedIm)
