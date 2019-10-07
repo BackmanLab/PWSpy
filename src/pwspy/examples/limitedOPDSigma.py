@@ -16,6 +16,7 @@ from pwspy.dataTypes import ImCube, KCube, CameraCorrection, AcqDir, Roi
 import matplotlib.pyplot as plt
 import scipy.signal as sps
 import os
+import sys
 import numpy as np
 import scipy as sp
 
@@ -100,13 +101,14 @@ for cellName in cellNames:
     # Remove the polynomial fit from filtered cubeCell.
     cube.data = cube.data - cubePoly
 
+    rmsData = np.sqrt(np.mean(cube.data ** 2, axis=2)) #This can be compared to rmsOPDIntData, when the integralStopIdx is high and we don't do spectral subtraction they should be equivalent.
+
     # Find the fft for each signal in the desired wavelength range
     opdData, xvals = cube.getOpd(isHannWindow, None)
 
     if subtractResinOpd:
         opdData = opdData - resinOpds[cellName]
 
-    rmsData = np.sqrt(np.mean(cube.data ** 2, axis=2))
     try:
         integralStopIdx = np.where(xvals >= opdIntegralEnd)[0][0]
     except IndexError:  # If we get an index error here then our opdIntegralEnd is probably bigger than we can achieve. Just use the biggest value we have.
@@ -114,15 +116,12 @@ for cellName in cellNames:
         opdIntegralEnd = max(xvals)
         print(f'Integrating to OPD {opdIntegralEnd}')
 
-    opdSquared = np.sum(opdData[:, :, :integralStopIdx] ** 2,
-                        axis=2)  # Parseval's theorem tells us that this is equivalent to the sum of the squares of our original signal
-    opdSquared *= len(cube.wavenumbers) / opdData.shape[
-        2]  # If the original data and opd were of the same length then the above line would be correct. Since the fft has been upsampled. we need to normalize.
-    rmsOpdIntData = np.sqrt(
-        opdSquared)  # this should be equivalent to normal RMS if our stop index is high and resin subtraction is disabled.
+    opdSquared = np.sum(opdData[:, :, :integralStopIdx] ** 2,axis=2)  # Parseval's theorem tells us that this is equivalent to the sum of the squares of our original signal
+    opdSquared *= len(cube.wavenumbers) / opdData.shape[2]  # If the original data and opd were of the same length then the above line would be correct. Since the fft has been upsampled. we need to normalize.
+    rmsOpdIntData = np.sqrt(opdSquared)  # this should be equivalent to normal RMS if our stop index is high and resin subtraction is disabled.
 
     cmap = plt.get_cmap('jet')
-    fig, axs = plt.subplots(1, 2)
+    fig, axs = plt.subplots(1, 2, sharex=True, sharey=True)
     im = axs[0].imshow(rmsData, cmap=cmap, clim=[np.percentile(rmsData, 0.5), np.percentile(rmsData, 99.5)])
     fig.colorbar(im, ax=axs[0])
     axs[0].set_title('RMS')
