@@ -10,7 +10,8 @@ if typing.TYPE_CHECKING:
 from pwspy.analysis.pws._analysisSettings import AnalysisSettings
 from pwspy.moduleConsts import dateTimeFormat
 from pwspy.utility.misc import cached_property
-from pwspy.analysis._abstract import AbstractAnalysisResults
+from pwspy.analysis._abstract import AbstractAnalysisResults, AbstractHDFAnalysisResults
+import os
 
 
 def clearError(func):
@@ -33,7 +34,7 @@ def getFromDict(func):
     return newFunc
 
 
-class PWSAnalysisResults(AbstractAnalysisResults): #TODO All these cached properties stay in memory once they are loaded. It may be necessary to add a mechanism to decache them when memory is needed.
+class PWSAnalysisResults(AbstractHDFAnalysisResults): #TODO All these cached properties stay in memory once they are loaded. It may be necessary to add a mechanism to decache them when memory is needed.
     """A loader for analysis results that will only load them from hard disk as needed."""
 
     @staticmethod
@@ -42,7 +43,7 @@ class PWSAnalysisResults(AbstractAnalysisResults): #TODO All these cached proper
                 'ld', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionTag', 'settings']
 
     @staticmethod
-    def name2FileName(name: str) -> str:
+    def _name2FileName(name: str) -> str:
         return f'analysisResults_{name}.h5'
 
     @staticmethod
@@ -157,3 +158,24 @@ class PWSAnalysisResults(AbstractAnalysisResults): #TODO All these cached proper
     @getFromDict
     def extraReflectionTag(self) -> str:
         return bytes(np.array(self.file['extraReflectionTag'])).decode()
+
+
+class LegacyPWSAnalysisResults(AbstractAnalysisResults):
+    """Allows loading of the .mat files that were used by matlab analysis code to save analysis results. Only partially implemented."""
+    def __init__(self, rms: np.ndarray):
+        self._dict = {}
+        self._dict['rms'] = rms
+
+    @property
+    def rms(self):
+        return self._dict['rms']
+
+    @classmethod
+    def create(cls):
+        raise NotImplementedError
+
+    @classmethod
+    def load(cls, directory, analysisName: str):
+        import scipy.io as sio
+        rms = sio.loadmat(os.path.join(directory, f'{analysisName}_Rms.mat'))['cubeRms']
+        return cls(rms)

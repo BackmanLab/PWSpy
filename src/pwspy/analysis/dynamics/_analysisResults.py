@@ -3,7 +3,7 @@ from typing import Optional
 
 from ._analysisSettings import DynamicsAnalysisSettings
 from pwspy.moduleConsts import dateTimeFormat
-from pwspy.analysis._abstract import AbstractAnalysisResults
+from pwspy.analysis._abstract import AbstractAnalysisResults, AbstractHDFAnalysisResults
 from pwspy.utility.misc import cached_property
 import numpy as np
 
@@ -17,11 +17,18 @@ def getFromDict(func):
     newFunc.__name__ = func.__name__
     return newFunc
 
-class DynamicsAnalysisResults(AbstractAnalysisResults):
+class DynamicsAnalysisResults(AbstractHDFAnalysisResults):
     @staticmethod
     def fields():
         return ['meanReflectance', 'rms_t', 'dSlope', 'time', 'settings', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionIdTag']
 
+    @staticmethod
+    def _name2FileName(name: str) -> str:
+        return f'dynAnalysisResults_{name}.h5'
+
+    @staticmethod
+    def fileName2Name(fileName: str) -> str:
+        return fileName.split('dynAnalysisResults_')[1][:-3]
 
     @classmethod
     def create(cls, settings: DynamicsAnalysisSettings, meanReflectance: np.ndarray, rms_t: np.ndarray, dSlope: np.ndarray,

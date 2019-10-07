@@ -56,7 +56,22 @@ class AbstractAnalysis(ABC):
         pass
 
 class AbstractAnalysisResults(ABC):
+    @classmethod
+    @abstractmethod
+    def create(cls):
+        """Used to create results from existing variables. These results can then be saved to file."""
+        pass
+
+    @classmethod
+    @abstractmethod
+    def load(cls, directory: str, name: str):
+        """Used to load results from a saved file"""
+        pass
+
+
+class AbstractHDFAnalysisResults(AbstractAnalysisResults):
     def __init__(self, file: h5py.File, variablesDict: dict):
+        """"Can be instantiated with one of the two arguments. To load from file provide the h5py file. To create from variable provide a dictionary keyed by all the field names."""
         if file is not None:
             assert variablesDict is None
         elif variablesDict is not None:
@@ -64,14 +79,15 @@ class AbstractAnalysisResults(ABC):
         self.file = file
         self.dict = variablesDict
 
-    @classmethod
+
+    @staticmethod
     @abstractmethod
-    def create(cls):
+    def fields() -> List[str]:
         pass
 
     @staticmethod
     @abstractmethod
-    def name2FileName(name: str) -> str:
+    def _name2FileName(name: str) -> str:
         pass
 
     @staticmethod
@@ -79,14 +95,9 @@ class AbstractAnalysisResults(ABC):
     def fileName2Name(fileName: str) -> str:
         pass
 
-    @staticmethod
-    @abstractmethod
-    def fields() -> List[str]:
-        pass
-
     def toHDF(self, directory: str, name: str):
         from pwspy.dataTypes import KCube #Need this for instance checking
-        fileName = osp.join(directory, self.name2FileName(name))
+        fileName = osp.join(directory, self._name2FileName(name))
         if osp.exists(fileName):
             raise OSError(f'{fileName} already exists.')
         # now save the stuff
@@ -108,8 +119,8 @@ class AbstractAnalysisResults(ABC):
                     raise TypeError(f"Analysis results type {k}, {type(v)} not supported or expected")
 
     @classmethod
-    def fromHDF(cls, directory: str, name: str):
-        filePath = osp.join(directory, cls.name2FileName(name))
+    def load(cls, directory: str, name: str):
+        filePath = osp.join(directory, cls._name2FileName(name))
         if not osp.exists(filePath):
             raise OSError("The analysis file does not exist.")
         file = h5py.File(filePath, 'r')
