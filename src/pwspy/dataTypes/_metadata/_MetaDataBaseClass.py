@@ -35,7 +35,8 @@ class MetaDataBase(ABC):
                 print("Detected a non-compliant timestamp. attempting to correct.")
                 self._dict['time'] = datetime.strftime(datetime.strptime(self._dict['time'], "%d-%m-%y %H:%M:%S"), dateTimeFormat)
             except ValueError:
-                raise ValueError("The time stamp could not be parsed.")
+                print("Warning!: The time stamp could not be parsed. Replacing with 1_1_1970")
+                self._dict['time'] = "1-1-1990 01:01:01"
         if self._dict['system'] == "":
             print("Warning: The `system` name in the metadata is blank. Check that the PWS System is saving the proper calibration values.")
         if all([i in self._dict for i in ['darkCounts', 'linearityPoly']]):

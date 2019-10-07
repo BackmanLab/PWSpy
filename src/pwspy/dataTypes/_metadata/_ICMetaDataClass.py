@@ -138,7 +138,10 @@ class ICMetaData(MetaDataBase):
             binning = binning['scalar']
         metadata['binning'] = binning
         # Get the pixel size from the micromanager metadata
-        metadata['pixelSizeUm'] = metadata['MicroManagerMetadata']['PixelSizeUm']['scalar']
+        try:
+            metadata['pixelSizeUm'] = metadata['MicroManagerMetadata']['PixelSizeUm']['scalar']
+        except KeyError:
+            metadata['pixelSizeUm'] = None
         if metadata['pixelSizeUm'] == 0: metadata['pixelSizeUm'] = None
         if 'waveLengths' in metadata:  # Fix an old naming issue
             metadata['wavelengths'] = metadata['waveLengths']
@@ -172,11 +175,11 @@ class ICMetaData(MetaDataBase):
 
     def loadAnalysis(self, name: str) -> PWSAnalysisResults:
         from pwspy.analysis.pws import PWSAnalysisResults
-        return PWSAnalysisResults.fromHDF(os.path.join(self.filePath, 'analyses'), name)
+        return PWSAnalysisResults.load(os.path.join(self.filePath, 'analyses'), name)
 
     def removeAnalysis(self, name: str):
         from pwspy.analysis.pws import PWSAnalysisResults
-        os.remove(os.path.join(self.filePath, 'analyses', PWSAnalysisResults.name2FileName(name)))
+        os.remove(os.path.join(self.filePath, 'analyses', PWSAnalysisResults._name2FileName(name)))
 
     @classmethod
     def fromHdf(cls, d: h5py.Dataset):
