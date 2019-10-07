@@ -41,9 +41,8 @@ class KCube(ICBase):
         return self.index
 
     def getOpd(self, isHannWindow: bool, indexOpdStop: int = None, mask=None) -> Tuple[np.ndarray, np.ndarray]:
-        fftSize = int(2 ** (np.ceil(np.log2((2 * len(
-            self.wavenumbers)) - 1))))  # %This is the next size of fft that is  at least 2x greater than is needed but is a power of two. Results in interpolation, helps amplitude accuracy and fft efficiency.
-        fftSize *= 2  # We double the fftsize for even more iterpolation. Not sure why, but that's how it was done in matlab.
+        fftSize = int(2 ** (np.ceil(np.log2((2 * len(self.wavenumbers)) - 1))))  # %This is the next size of fft that is  at least 2x greater than is needed but is a power of two. Results in interpolation, helps amplitude accuracy and fft efficiency.
+        fftSize *= 2  # We double the fftsize for even more iterpolation. Not sure why, but that's how it was done in the original matlab code.
         if isHannWindow:  # if hann window checkbox is selected, create hann window
             w = np.hanning(len(self.wavenumbers))  # Hanning window
         else:
@@ -72,6 +71,26 @@ class KCube(ICBase):
         opd = opd.astype(self.data.dtype) #Make sure to upscale precision
         xVals = xVals.astype(self.data.dtype)
         return opd, xVals
+
+    # @classmethod
+    @staticmethod
+    def fromOpd(opd: np.ndarray, xVals: np.ndarray, useHannWindow: bool):
+        """WARNING: This function is untested. it almost certainly doesn't work. Create a KCube from and opd in the form returned by KCube.getOpd. This is useful if you want to do spectral manipulation and then transform back."""
+        assert len(xVals.shape) == 1
+        fftSize = int(2 ** (np.ceil(np.log2((2 * len(xVals)) - 1))))  # %This is the next size of fft that is  at least 2x greater than is needed but is a power of two. Results in interpolation, helps amplitude accuracy and fft efficiency.
+        if useHannWindow: w = np.hanning(len(xVals))
+        else: w = np.ones((len(xVals)))
+        sig = np.fft.irfft(opd * w[None, None, :], n=fftSize, axis=2)
+        #I don't think we need to normalize by the number of elements like we do in getOpd
+
+        # by multiplying by Hann window we reduce the total power of signal. To account for that,
+        sig = np.abs(sig / np.sqrt(np.mean(w ** 2)))
+
+        maxWavenumberInterval = 2*np.pi / (xVals[1] - xVals[0])
+        dWavenumber = maxWavenumberInterval / len(xVals)
+        waveNumbers = len(xVals) / 2 * np.array(range(fftSize // 2 + 1)) * dWavenumber / (fftSize // 2 + 1)
+        return sig, waveNumbers
+
 
     def getAutoCorrelation(self, isAutocorrMinSub: bool, stopIndex: int) -> Tuple[np.ndarray, np.ndarray]:
         """The autocorrelation of a signal is the covariance of a signal with a
