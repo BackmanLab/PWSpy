@@ -60,7 +60,7 @@ class ICBase:
         return mean, std
 
     def selectLassoROI(self, displayIndex=None):
-        # display index is used to display a particular z-slice for mask drawing. If None then the mean along Z is displayed.
+        """`displayIndex` is used to display a particular z-slice for mask drawing. If None then the mean along Z is displayed. Returns an array of vertices of the polygon."""
         Verts = [None]
         if displayIndex is None:
             displayIndex = self.data.shape[2]//2
@@ -76,9 +76,8 @@ class ICBase:
             fig.canvas.flush_events()
         return np.array(Verts[0])
 
-    def selectRectangleROI(self, displayIndex=None):
-        # display index is used to display a particular z-slice for mask drawing. If None then the mean along Z is displayed.
-        # X and Y slice allow manual selection of the range.
+    def selectRectangleROI(self, displayIndex=None) ->np.ndarray:
+        """`displayIndex` is used to display a particular z-slice for mask drawing. If None then the mean along Z is displayed. Returns an array of vertices of the rectangle."""
         verts = [None]
 
         if displayIndex is None:
