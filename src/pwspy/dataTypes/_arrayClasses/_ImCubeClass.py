@@ -110,7 +110,7 @@ class ImCube(ICBase):
             lock.acquire()
         try:
             if metadata is None:
-                metadata = ICMetaData.fromNano(path)
+                metadata = ICMetaData.fromNano(directory)
             with h5py.File(path, 'r') as hf:
                 data = np.array(hf['imageCube'])
                 data = np.rollaxis(data, 0, 3)

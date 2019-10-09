@@ -9,7 +9,7 @@ from ._plots import ImPlot, SidePlot, CBar
 
 class PlotNdCanvas(FigureCanvasQTAgg):
     def __init__(self, data: np.ndarray, names: Tuple[str, ...] = ('y', 'x', 'lambda'),
-                 initialCoords: Tuple[int, ...] = None, extraDimIndices = None):
+                 initialCoords: Tuple[int, ...] = None, extraDimIndices=None):
         assert len(names) == len(data.shape)
         fig = plt.Figure(figsize=(6, 6))
         self.fig = fig

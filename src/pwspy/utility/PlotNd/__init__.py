@@ -11,7 +11,7 @@ from pwspy.utility.PlotNd._plots import CBar
 from pwspy.utility.PlotNd._canvas import PlotNdCanvas
 
 
-class PlotNd(QDialog):
+class PlotNd(QDialog): #TODO add button to save animation
     def __init__(self, data: np.ndarray, names: Tuple[str, ...] = ('y', 'x', 'lambda'),
                  initialCoords: Tuple[int, ...] = None, title: str = '', parent: QWidget = None,
                  extraDimIndices: List[np.ndarray] = None):
