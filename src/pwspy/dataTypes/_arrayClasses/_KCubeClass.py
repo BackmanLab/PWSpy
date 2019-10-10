@@ -63,9 +63,11 @@ class KCube(ICBase):
             opd = opd[mask].mean(axis=0)
 
         # Generate the xval for the current OPD.
-        maxOpd = 2 * np.pi / (self.wavenumbers[1] - self.wavenumbers[0])
-        dOpd = maxOpd / len(self.wavenumbers)
+        dk = self.wavenumbers[1] - self.wavenumbers[0] #The interval that our linear array of wavenumbers is spaced by
+        maxOpd = 2 * np.pi / dk #This is the maximum OPD value we can get with. tighter wavenumber spacing increases OPD range.
+        dOpd = maxOpd / len(self.wavenumbers) #The interval we want between values in our opd vector.
         xVals = len(self.wavenumbers) / 2 * np.array(range(fftSize // 2 + 1)) * dOpd / (fftSize // 2 + 1)
+        #The above line is how it was writtne in the matlab code. Couldn't it be simplified down to maxOpd * np.linspace(0, 1, num = fftSize // 2 + 1) / 2 ? I'm not sure what the 2 means though.
         xVals = xVals[:indexOpdStop]
 
         opd = opd.astype(self.data.dtype) #Make sure to upscale precision
