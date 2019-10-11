@@ -70,7 +70,7 @@ class AbstractAnalysisResults(ABC):
 
 
 class AbstractHDFAnalysisResults(AbstractAnalysisResults):
-    def __init__(self, file: h5py.File, variablesDict: dict):
+    def __init__(self, file: h5py.File, variablesDict: dict, analysisName: Optional[str] = None):
         """"Can be instantiated with one of the two arguments. To load from file provide the h5py file. To create from variable provide a dictionary keyed by all the field names."""
         if file is not None:
             assert variablesDict is None
@@ -78,6 +78,7 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
             assert file is None
         self.file = file
         self.dict = variablesDict
+        self.analysisName = analysisName
 
 
     @staticmethod
@@ -124,7 +125,7 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
         if not osp.exists(filePath):
             raise OSError("The analysis file does not exist.")
         file = h5py.File(filePath, 'r')
-        return cls(file, None)
+        return cls(file, None, name)
 
     def __del__(self):
         if self.file:
