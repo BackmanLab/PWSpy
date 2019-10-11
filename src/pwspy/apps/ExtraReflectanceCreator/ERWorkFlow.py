@@ -135,11 +135,15 @@ class ERWorkFlow:
             self.figs.extend(self.plotnds) # keep track of opened figures.
             saveName = f'{self.currDir}-{setting}'
             dialog = IndexInfoForm(f'{self.currDir}-{setting}', erCube.metadata.idTag)
-            result = dialog.exec()
-            if result == QDialog.Accepted:
-                erCube.metadata.inheritedMetadata['description'] = dialog.description
-                erCube.toHdfFile(self.homeDir, saveName)
-                self.updateIndex(saveName, erCube.metadata.idTag, dialog.description, erCube.metadata.dirName2Directory('', saveName))
+            self.saveParams = {'dlg': dialog, 'ercube': erCube, 'savename': saveName} #We save this to a varaible so it can be accessed by the callback for an accepted dialog.
+            dialog.accepted.connect(self.saveERDialogAccepted)
+            dialog.show()
+
+    def saveERDialogAccepted(self):
+        dialog = self.saveParams['dlg']; erCube = self.saveParams['ercube']; saveName = self.saveParams['savename']
+        erCube.metadata.inheritedMetadata['description'] = dialog.description
+        erCube.toHdfFile(self.homeDir, saveName)
+        self.updateIndex(saveName, erCube.metadata.idTag, dialog.description, erCube.metadata.dirName2Directory('', saveName))
 
     def updateIndex(self, saveName: str, idTag: str, description: str, filePath: str):
         with open(os.path.join(self.homeDir, 'index.json'), 'r') as f:
