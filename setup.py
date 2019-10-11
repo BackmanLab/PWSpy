@@ -7,7 +7,7 @@ Created on Sat Feb  9 20:14:25 2019
 from setuptools import setup, find_packages
 
 setup(name='pwspy',
-      version='0.0.1',
+      version='0.0.2',
       description='A framework for working with Partial Wave Spectroscopy files.',
       author='Nick Anthony',
       author_email='nicholas.anthony@northwestern.edu',
