@@ -21,7 +21,7 @@ class ERApp(QApplication):
             initialDir = settings.value('workingDirectory')
         except TypeError: #Setting not found
             initialDir = None
-        wDir = QFileDialog.getExistingDirectory(caption='Select Working Directory', directory=initialDir)
+        wDir = QFileDialog.getExistingDirectory(caption='Select the root `ExtraReflection` directory', directory=initialDir)
         settings.setValue("workingDirectory", wDir)
         self.checkDataDir()
 
@@ -52,7 +52,6 @@ class ERApp(QApplication):
         self.figsDir = os.path.join(self.homeDir, 'Plots')
         if not os.path.exists(self.figsDir):
             os.mkdir(self.figsDir)
-
 
     def loadIfNeeded(self):
         if self.workflow.cubes is None:
