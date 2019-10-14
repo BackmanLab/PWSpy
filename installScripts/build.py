@@ -2,13 +2,13 @@ from git import Repo
 import os
 import shutil
 import subprocess
+
 """This builds the pwpsy conda package and saves it to `outputDir`
 It should be run from the base conda env."""
 
 outputDir = 'I:'
 
-
-buildScriptDir = os.path.split(__file__)[0] #Location of build scripts
+buildScriptDir = os.path.dirname(os.path.abspath(__file__)) #Location of build scripts
 buildDir = os.path.split(buildScriptDir)[0] #Parent directory of project.
 
 # Set the version number of the package. this should be shared by the package itself, the setup.py file, and the conda package `yaml`
