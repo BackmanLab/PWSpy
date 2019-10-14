@@ -5,9 +5,13 @@ Created on Sat Feb  9 20:14:25 2019
 @author: Nick Anthony
 """
 from setuptools import setup, find_packages
+import os.path as osp
+
+with open(osp.join(osp.split(__file__)[0], 'src', 'pwspy', '_version'), 'r') as f: #Read the version number from the _version file. this file is updated by our build script.
+    version = str(f.readline())
 
 setup(name='pwspy',
-      version='0.0.2',
+      version=version,
       description='A framework for working with Partial Wave Spectroscopy files.',
       author='Nick Anthony',
       author_email='nicholas.anthony@northwestern.edu',
