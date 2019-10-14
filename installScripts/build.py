@@ -12,11 +12,11 @@ buildScriptDir = os.path.split(__file__)[0] #Location of build scripts
 buildDir = os.path.split(buildScriptDir)[0] #Parent directory of project.
 
 # Set the version number of the package. this should be shared by the package itself, the setup.py file, and the conda package `yaml`
-versionNumber = '0.0.1'
 repo = Repo(buildDir)
+version = repo.git.describe('--tags') #Get the output of the command `git describe --tags` serves as a good version number
 pwspydir = os.path.join(repo.working_tree_dir, 'src', 'pwspy')
 with open(os.path.join(pwspydir, '_version'), 'w') as f: #Overwrite the version file
-    f.write(versionNumber)
+    f.write(version)
 
 # Build and save to the outputDirectory
 
