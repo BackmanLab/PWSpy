@@ -28,7 +28,7 @@ class CompilationManager(QtCore.QObject):
         analysisName: str = self.app.window.resultsTable.getAnalysisName()
         settings: CompilerSettings = self.app.window.resultsTable.getSettings()
         cellMetas: List[AcqDir] = self.app.window.cellSelector.getSelectedCellMetas()
-        cellMetas = [i.pws for i in cellMetas]  # Just use the pws data
+        cellMetas: List[ICMetaData] = [i.pws for i in cellMetas]  # Just use the pws data
         if len(cellMetas) == 0:
             QMessageBox.information(self.app.window, "What?", "Please select at least one cell.")
             return None

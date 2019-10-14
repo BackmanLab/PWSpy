@@ -2,49 +2,58 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 import json
 import os.path as osp
-from typing import List
+from typing import List, Optional
+import h5py
+import numpy as np
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ICBase
-import h5py
-import numpy as np
+
 
 class AbstractAnalysisSettings(ABC):
-
+    """This abstract class lays out the basic skeleton of what an AnalysisSettings class should implement."""
     @classmethod
     def fromJson(cls, filePath: str, name: str):
+        """Create a new instance of this class from a json text file."""
         with open(osp.join(filePath, f'{name}_{cls.FileSuffix}.json'), 'r') as f:
             d=json.load(f)
         return cls._fromDict(d)
 
     def toJson(self, filePath: str, name: str):
+        """Save this object to a json text file."""
         d = self._asDict()
         with open(osp.join(filePath, f'{name}_{self.FileSuffix}.json'), 'w') as f:
             json.dump(d, f, indent=4)
 
     def toJsonString(self):
+        """Use `_asDict` to convert an instance of this class to a json string"""
         return json.dumps(self._asDict(), indent=4)
 
     @classmethod
     def fromJsonString(cls, string: str):
+        """Use `_fromDict` to load a new instance of the `cls` from a json string."""
         return cls._fromDict(json.loads(string))
 
     @abstractmethod
     def _asDict(self) -> dict:
-       pass
+        """Implementing class should override this method to return a `dict` with setting names as the keys and the values of the settings as the values."""
+        pass
 
     @classmethod
     @abstractmethod
     def _fromDict(cls, d: dict) -> AbstractAnalysisSettings:
+        """Implementing subclass, `cls`, should override this classmethod to return an instance of `cls` based on the `dict`, `d`."""
         pass
 
     @property
     @abstractmethod
     def FileSuffix(self):
+        """Implementing subclass should override this property to return a constant string which will be used as a suffix for json files saving the settings of this class."""
         pass
 
 
 class AbstractAnalysis(ABC):
+    """This abstract class lays out the basic skeleton that an analysis class should implement."""
     @abstractmethod
     def __init__(self, settings: AbstractAnalysisSettings):
         """Does all of the one-time tasks needed to start running an analysis. e.g. prepare the reference, load the extrareflection cube, etc."""
@@ -56,6 +65,7 @@ class AbstractAnalysis(ABC):
         pass
 
 class AbstractAnalysisResults(ABC):
+    """This abstract class lays out the most basic skeleton of what an AnalysisResults object should implement."""
     @classmethod
     @abstractmethod
     def create(cls):
@@ -70,8 +80,13 @@ class AbstractAnalysisResults(ABC):
 
 
 class AbstractHDFAnalysisResults(AbstractAnalysisResults):
+    """This abstract class implements method of `AbstractAnalysisResults` for an object that can be saved and loaded to/from an HDF file. Classes implementing this abstract
+    class should implement:  the `fields` property, a list of string names of the datafields that the analysis involves. The `_name2Filename` method which, given an analysis id name,
+     returns the file name for the hdf5 file. And the `fileName2Name` method which does the opposite operation."""
+
     def __init__(self, file: h5py.File, variablesDict: dict, analysisName: Optional[str] = None):
-        """"Can be instantiated with one of the two arguments. To load from file provide the h5py file. To create from variable provide a dictionary keyed by all the field names."""
+        """"Can be instantiated with one of the two arguments. To load from file provide the h5py file. To create from variable provide a dictionary keyed by all the field names.
+        This initializer should not be run directly, it should only be used by the `create` and `load` class methods."""
         if file is not None:
             assert variablesDict is None
         elif variablesDict is not None:
@@ -97,6 +112,8 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
         pass
 
     def toHDF(self, directory: str, name: str):
+        """Save the AnalysisResults object to an HDF file in `directory`. The name of the file will be determined by `name`. If you want to know what the full file name
+        will be you can use this class's `_name2FileName` method."""
         from pwspy.dataTypes import KCube #Need this for instance checking
         fileName = osp.join(directory, self._name2FileName(name))
         if osp.exists(fileName):
@@ -121,6 +138,7 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
 
     @classmethod
     def load(cls, directory: str, name: str):
+        """Load an analyisResults object from an hdf5 file located in `directory`."""
         filePath = osp.join(directory, cls._name2FileName(name))
         if not osp.exists(filePath):
             raise OSError("The analysis file does not exist.")

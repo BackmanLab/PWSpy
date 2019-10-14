@@ -19,13 +19,13 @@ with open(os.path.join(pwspydir, '_version'), 'w') as f: #Overwrite the version 
     f.write(version)
 
 # Build and save to the outputDirectory
-
 proc = subprocess.Popen(f"conda-build {buildDir} --output-folder {outputDir}", stdin=None, stderr=None)
 print("Waiting for conda-build")
 proc.wait()
 result, error = proc.communicate()
-if error: print(f"conda-build Error: {error}")
-if result: print(f"Conda-build results: {result}")
+# if error: print(f"Conda-build Error: {error}")
+# if result: print(f"Conda-build results: {result}")
+
 #Copy the other scripts
 for fname in ['install.bat', 'Run Analysis.bat']:
     shutil.copyfile(os.path.join(buildScriptDir, fname), os.path.join(outputDir, fname))

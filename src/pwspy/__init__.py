@@ -4,10 +4,8 @@ Created on Tue Aug  7 13:20:25 2018
 
 @author: Nick Anthony
 """
-# from git import Repo
 import os
-# gitpath = os.path.split(os.path.split(__file__)[0])[0]
-# repo = Repo(__file__, search_parent_directories=True)
+
 __author__ = 'Nick Anthony'
 with open(os.path.join(os.path.split(__file__)[0], '_version'), 'r') as f: # We load the version string from a text file. This allows us to easily set the contents of the text file with a build script.
     __version__ = str(f.readline())

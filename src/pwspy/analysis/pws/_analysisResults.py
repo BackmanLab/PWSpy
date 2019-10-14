@@ -2,19 +2,19 @@ from __future__ import annotations
 from typing import Optional, Tuple
 import numpy as np
 from datetime import datetime
-import typing
-
-
-if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import KCube
 from pwspy.analysis.pws._analysisSettings import AnalysisSettings
 from pwspy.moduleConsts import dateTimeFormat
 from pwspy.utility.misc import cached_property
 from pwspy.analysis._abstract import AbstractAnalysisResults, AbstractHDFAnalysisResults
 import os
+import typing
+if typing.TYPE_CHECKING:
+    from pwspy.dataTypes import KCube
 
 
 def clearError(func):
+    """This decorator tried to run the original function. If the function raises a keyerror then we raise a new keyerror with a clearer message. This is intended to be used with `field` accessors of implementations
+    of `AbstractHDFAnalysisResults`."""
     def newFunc(*args):
         try:
             return func(*args)
@@ -24,6 +24,8 @@ def clearError(func):
     return newFunc
 
 def getFromDict(func):
+    """This decorator makes it so that when the method is run we will check if our class instance has a `file` property. If not, then we will attempt to access a `dict` property which is keyed
+    by the same name as our original method. Otherwide we simply run the method. This is intended for use with implementations of `AbstractHDFAnalysisResults`"""
     def newFunc(self, *args):
         if self.file is None:
             return self.dict[func.__name__]
