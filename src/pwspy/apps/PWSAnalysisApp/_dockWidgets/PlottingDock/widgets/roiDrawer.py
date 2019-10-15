@@ -73,6 +73,7 @@ class RoiDrawer(QWidget):
         if roiName == '':
             QMessageBox.information(self, 'Wait', 'Please type an ROI name into the box at the bottom of the screen.')
             self.selector.setActive(True)
+            poly.remove()
             return
         self.newRoiDlg.show()
         self.newRoiDlg.exec()
