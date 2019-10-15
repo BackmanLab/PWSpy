@@ -17,14 +17,13 @@ version = repo.git.describe('--tags') #Get the output of the command `git descri
 pwspydir = os.path.join(repo.working_tree_dir, 'src', 'pwspy')
 with open(os.path.join(pwspydir, '_version'), 'w') as f: #Overwrite the version file
     f.write(version)
+print(f"Saved version, {version}, to the `_version` file.")
 
 # Build and save to the outputDirectory
 proc = subprocess.Popen(f"conda-build {buildDir} --output-folder {outputDir}", stdin=None, stderr=None)
 print("Waiting for conda-build")
 proc.wait()
 result, error = proc.communicate()
-# if error: print(f"Conda-build Error: {error}")
-# if result: print(f"Conda-build results: {result}")
 
 #Copy the other scripts
 for fname in ['install.bat', 'Run Analysis.bat']:
