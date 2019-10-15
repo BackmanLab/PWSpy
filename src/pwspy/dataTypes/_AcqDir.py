@@ -6,12 +6,13 @@ from ._FluoresenceImg import FluorescenceImage
 from pwspy.dataTypes import ICMetaData, DynMetaData
 from ._otherClasses import Roi
 import os
+import numpy as np
 
 from pwspy.utility.misc import cached_property
 
 
 class AcqDir:
-    """"A class handling the file structure of a single acquisition. this can include a PWS acquisition as well as collocalized Dynamics and fluorescence."""
+    """"A class handling the file structure of a single acquisition. this can include a PWS acquisition as well as colocalized Dynamics and fluorescence."""
     def __init__(self, directory: str):
         self.filePath = directory
         if (self.pws is None) and (self.dynamics is None): # We must have one of these two items.
@@ -100,3 +101,12 @@ class AcqDir:
                 return '\n'.join(f.readlines())
         else:
             return ''
+
+    def getThumbnail(self) -> np.ndarray:
+        """Return a thumbnail from any of the available acquisitions. Should be an 8bit normalized image."""
+        if self.pws is not None:
+            return self.pws.getThumbnail()
+        elif self.dynamics is not None:
+            return self.dynamics.getThumbnail()
+        elif self.fluorescence is not None:
+            return self.fluorescence.getThumbnail()

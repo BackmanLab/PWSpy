@@ -6,6 +6,7 @@ from ._MetaDataBaseClass import MetaDataBase
 import os, json
 import tifffile as tf
 from pwspy.dataTypes import _jsonSchemasPath
+import numpy as np
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import AcqDir
@@ -56,3 +57,7 @@ class DynMetaData(MetaDataBase):
         metadata['pixelSizeUm'] = metadata['MicroManagerMetadata']['PixelSizeUm']['scalar']  # Get the pixel size from the micromanager metadata
         if metadata['pixelSizeUm'] == 0: metadata['pixelSizeUm'] = None
         return cls(metadata, filePath=directory, fileFormat=cls.FileFormats.Tiff, acquisitionDirectory=acquisitionDirectory)
+
+    def getThumbnail(self) -> np.ndarray:
+        with tf.TiffFile(os.path.join(self.filePath, 'image_bd.tif')) as f:
+            return f.asarray()

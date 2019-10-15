@@ -21,7 +21,7 @@ class AnalysisViewer(AnalysisPlotter, QWidget):
         AnalysisPlotter.__init__(self, metadata, analysisLoader)
         self.setWindowTitle(title)
         layout = QGridLayout()
-        self.plotWidg = BigPlot(metadata, metadata.pws.getThumbnail(), 'title')
+        self.plotWidg = BigPlot(metadata, metadata.getThumbnail(), 'title')
         self.analysisCombo = QComboBox(self)
         self._populateFields()
         layout.addWidget(self.analysisCombo, 0, 0, 1, 1)

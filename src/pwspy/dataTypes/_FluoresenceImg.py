@@ -39,3 +39,7 @@ class FluorescenceImage:
             tf.imsave(f, self.data)
         with open(os.path.join(directory, FluorescenceImage.MDPATH), 'w') as f:
             json.dump(self.metadata, f)
+
+    def getThumbnail(self) -> np.ndarray:
+        with tf.TiffFile(os.path.join(self.filePath, 'image_bd.tif')) as f:
+            return f.asarray()

@@ -29,7 +29,7 @@ class AnalysisPlotter:
         assert isinstance(field, AnalysisPlotter.PlotFields)
         self.analysisField = field
         if field is self.PlotFields.Thumbnail:  # Load the thumbnail from the ICMetadata object
-            self.data = self.metadata.pws.getThumbnail()
+            self.data = self.metadata.getThumbnail()
         elif field is self.PlotFields.OpdPeak: # Return the opd value corresponding to the max of that pixels opd funtion.
             if self.analysis is None:
                 raise ValueError(f"Analysis Plotter for {self.metadata.filePath} does not have an analysis file.")
