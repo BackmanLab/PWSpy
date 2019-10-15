@@ -37,7 +37,21 @@ class CellTableWidgetItem:
         self.roiLabel = NumberTableWidgetItem(0)
         self.anLabel = NumberTableWidgetItem(0)
         self.notesButton.released.connect(self.acqDir.editNotes)
-        self._items = [self.pathLabel, self.numLabel, self.roiLabel, self.anLabel]
+        self.pLabel = QTableWidgetItem()
+        self.pLabel.setToolTip("Indicates if PWS measurement is present")
+        self.dLabel = QTableWidgetItem()
+        self.dLabel.setToolTip("Indicates if Dynamics measurement is present")
+        self.fLabel = QTableWidgetItem()
+        self.fLabel.setToolTip("Indicates if Fluorescence measurement is present")
+        for i in [self.pLabel, self.dLabel, self.fLabel]:
+            i.setTextAlignment(QtCore.Qt.AlignCenter)
+        if self.acqDir.pws is not None: self.pLabel.setText('Y'); self.pLabel.setBackground(QtCore.Qt.darkGreen)
+        else: self.pLabel.setText('N'); self.pLabel.setBackground(QtCore.Qt.white)
+        if self.acqDir.dynamics is not None: self.dLabel.setText('Y'); self.dLabel.setBackground(QtCore.Qt.darkGreen)
+        else: self.dLabel.setText('N'); self.dLabel.setBackground(QtCore.Qt.white)
+        if self.acqDir.fluorescence is not None: self.fLabel.setText('Y'); self.fLabel.setBackground(QtCore.Qt.darkGreen)
+        else: self.fLabel.setText('N'); self.fLabel.setBackground(QtCore.Qt.white)
+        self._items = [self.pathLabel, self.numLabel, self.roiLabel, self.anLabel] #This list is used for changing background color and for setting all items selected.
         self.refresh()
         self.mdPath = os.path.join(self.acqDir.filePath, 'AnAppPrefs.json')
         try:
@@ -67,7 +81,7 @@ class CellTableWidgetItem:
         if self.isInvalid():
             return
         if reference:
-            self._setItemColor(QtCore.Qt.green)
+            self._setItemColor(QtCore.Qt.darkGreen)
         else:
             self._setItemColor(QtCore.Qt.white)
         self._reference = reference
@@ -89,7 +103,11 @@ class CellTableWidgetItem:
     def refresh(self):
         """Set the number of roi's and analyses. Update the tooltips."""
         self.roiLabel.setNumber(len(self.acqDir.getRois()))
-        self.anLabel.setNumber(len(self.acqDir.pws.getAnalyses()))
+        if self.acqDir.pws is not None:
+            self.anLabel.setNumber(len(self.acqDir.pws.getAnalyses()))
+            self.anLabel.setToolTip(', '.join(self.acqDir.pws.getAnalyses()))
+        else:
+            self.anLabel.setNumber(0)
         if self.acqDir.getNotes() != '':
             self.notesButton.setStyleSheet('QPushButton { background-color: lightgreen;}')
         else:
@@ -101,7 +119,6 @@ class CellTableWidgetItem:
             d = {name: [num for nname, num in nameNums if nname == name] for name in names}
             self.roiLabel.setToolTip("\n".join([f'{k}: {v}' for k, v in d.items()]))
 
-        self.anLabel.setToolTip(', '.join(self.acqDir.pws.getAnalyses()))
 
     @property
     def _invalid(self): return self.md['invalid']
@@ -138,12 +155,13 @@ class CellTableWidget(QTableWidget):
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._showContextMenu)
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
-        columns = ('Path', 'Cell#', 'ROIs', 'Analyses', 'Notes')
+        columns = ('Path', 'Cell#', 'ROIs', 'Analyses', 'Notes', 'P', 'D', 'F')
         self.setRowCount(0)
         self.setColumnCount(len(columns))
         self.setHorizontalHeaderLabels(columns)
         self.verticalHeader().hide()
-        [self.setColumnWidth(i, w) for i, w in zip(range(len(columns)), [60, 40, 40, 50, 40])]
+        [self.setColumnWidth(i, w) for i, w in zip(range(len(columns)), [60, 40, 40, 50, 40, 20, 20, 20])] #Set the column widths
+        [self.horizontalHeader().setSectionResizeMode(i, self.horizontalHeader().Fixed) for i in [4, 5, 6, 7]] #set the notes, and p/d/f columns nonresizeable
         self._cellItems = []
         #This makes the items stay looking selected even when the table is inactive
         self.setStyleSheet("""QTableWidget::item:active {
@@ -177,6 +195,9 @@ class CellTableWidget(QTableWidget):
         self.setItem(row, 2, item.roiLabel)
         self.setItem(row, 3, item.anLabel)
         self.setCellWidget(row, 4, item.notesButton)
+        self.setItem(row, 5, item.pLabel)
+        self.setItem(row, 6, item.dLabel)
+        self.setItem(row, 7, item.fLabel)
         self.setSortingEnabled(True)
         self._cellItems.append(item)
 
