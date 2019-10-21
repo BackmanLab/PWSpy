@@ -132,6 +132,7 @@ class RoiDrawer(QWidget):
         self._updateDisplayedCell()
 
     def _updateDisplayedCell(self):
+        #TODO the analysis field combo box always says 'Thumbnail' after switching cells.
         currRoi = self.anViewer.plotWidg.roiFilter.currentText() #Since the next cell we look at will likely not have rois of the current name we want to manually force the ROI name to stay the same.
         md, analysis = self.metadatas[self.mdIndex]
         self.anViewer.setMetadata(md, analysis=analysis)

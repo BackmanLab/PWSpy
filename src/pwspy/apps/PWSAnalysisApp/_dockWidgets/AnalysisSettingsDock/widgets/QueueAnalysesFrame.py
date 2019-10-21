@@ -47,10 +47,6 @@ class QueuedAnalysesFrame(QScrollArea):
         if len(cells) == 0:
             QMessageBox.information(self, '!', f'Please select cells to analyse.')
             return
-        for i in range(self.listWidget.count()):
-            if self.listWidget.item(i).name == analysisName:
-                QMessageBox.information(self, '!', f'Analysis {analysisName} already exists.')
-                return
         item = AnalysisListItem(cameraCorrection, settings, reference, cells, analysisName, self.listWidget) #the item is automatically loaded ot the list here.
 
     def showContextMenu(self, point: QPoint):
