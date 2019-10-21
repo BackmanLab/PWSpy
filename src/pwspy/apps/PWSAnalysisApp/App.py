@@ -28,7 +28,8 @@ if typing.TYPE_CHECKING:
     from pwspy.analysis.compilation import RoiCompilationResults
     from pwspy.analysis.warnings import AnalysisWarning
 
-
+#TODO add relative R
+#TODO allow rois to be drawn etc while analyis runs.
 class PWSApp(QApplication):
     def __init__(self, args):
         super().__init__(args)

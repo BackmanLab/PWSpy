@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QToolBar, QMessageBox
 from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 from . import resources
 from pwspy.apps import resources as sharedresources
+import pwspy
 from .dialogs import WorkingDirDialog
 from ._dockWidgets import CellSelectorDock, AnalysisSettingsDock, ResultsTableDock, PlottingDock
 
@@ -70,7 +71,7 @@ class PWSWindow(QMainWindow):
         super().closeEvent(event)
 
     def openInfoPane(self):
-        msgBox = QMessageBox.information(self, "About PWS Analysis V2", "This software is intended for the analysis of Partial Wave Spectroscopic microscopy data.")
+        msgBox = QMessageBox.information(self, "About PWS Analysis V2", f"This software is intended for the analysis of Partial Wave Spectroscopic microscopy data.\npwspy version: {pwspy.__version__}")
 
     def _setDefaultLayout(self):
         #remove all docks then re add them
