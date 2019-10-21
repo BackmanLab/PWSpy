@@ -25,7 +25,7 @@ class KCube(ICBase):
     def fromImCube(cls, cube: ImCube):
         """Convert an ImCube into a KCube. Data is converted from wavelength to wavenumber (1/lambda), interpolation is
         then used to linearize the data in terms of wavenumber."""
-        # Convert to wavenumber and reverse the order so we are ascending in order.
+        # Convert to wavenumber and reverse the order so we are ascending in order. Units of radian/micron
         wavenumbers = (2 * np.pi) / (np.array(cube.wavelengths, dtype=np.float64) * 1e-3)[::-1]
         data = cube.data[:, :, ::-1]
         # Generate evenly spaced wavenumbers
@@ -41,7 +41,7 @@ class KCube(ICBase):
         return self.index
 
     def getOpd(self, isHannWindow: bool, indexOpdStop: int = None, mask=None) -> Tuple[np.ndarray, np.ndarray]:
-        fftSize = int(2 ** (np.ceil(np.log2((2 * len(self.wavenumbers)) - 1))))  # %This is the next size of fft that is  at least 2x greater than is needed but is a power of two. Results in interpolation, helps amplitude accuracy and fft efficiency.
+        fftSize = int(2 ** (np.ceil(np.log2((2 * len(self.wavenumbers)) - 1))))  # This is the next size of fft that is  at least 2x greater than is needed but is a power of two. Results in interpolation, helps amplitude accuracy and fft efficiency.
         fftSize *= 2  # We double the fftsize for even more iterpolation. Not sure why, but that's how it was done in the original matlab code.
         if isHannWindow:  # if hann window checkbox is selected, create hann window
             w = np.hanning(len(self.wavenumbers))  # Hanning window
@@ -64,7 +64,7 @@ class KCube(ICBase):
 
         # Generate the xval for the current OPD.
         dk = self.wavenumbers[1] - self.wavenumbers[0] #The interval that our linear array of wavenumbers is spaced by
-        maxOpd = 2 * np.pi / dk #This is the maximum OPD value we can get with. tighter wavenumber spacing increases OPD range.
+        maxOpd = 2 * np.pi / dk #This is the maximum OPD value we can get with. tighter wavenumber spacing increases OPD range. units of microns
         dOpd = maxOpd / len(self.wavenumbers) #The interval we want between values in our opd vector.
         xVals = len(self.wavenumbers) / 2 * np.array(range(fftSize // 2 + 1)) * dOpd / (fftSize // 2 + 1)
         #The above line is how it was writtne in the matlab code. Couldn't it be simplified down to maxOpd * np.linspace(0, 1, num = fftSize // 2 + 1) / 2 ? I'm not sure what the 2 means though.
