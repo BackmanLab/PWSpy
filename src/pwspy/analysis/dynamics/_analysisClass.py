@@ -20,7 +20,7 @@ class DynamicsAnalysis(AbstractAnalysis):
             theoryR = 1  # Having this as 1 effectively ignores it.
             print("Warning: Analysis ignoring reference material correction")
         else:
-            theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, wavelengths=ref.metadata.wavelength, NA=settings.numericalAperture) #TODO is having this as length 1 going to work?
+            theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, wavelengths=ref.metadata.wavelength, NA=settings.numericalAperture) #TODO is having wavelemgth as length 1 going to work?
         if extraReflectance is None:
             Iextra = np.zeros(ref.data.shape[:2])  # a bogus reflection that is all zeros
             print("Warning: Analysis ignoring extra reflection")

@@ -9,7 +9,7 @@ import pwspy
 from .dialogs import WorkingDirDialog
 from ._dockWidgets import CellSelectorDock, AnalysisSettingsDock, ResultsTableDock, PlottingDock
 
-#TODO cant resize widgets
+
 class PWSWindow(QMainWindow):
     def __init__(self, erManager: ERManager):
         QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)

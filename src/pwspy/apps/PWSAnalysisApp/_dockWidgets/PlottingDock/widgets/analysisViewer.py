@@ -31,6 +31,7 @@ class AnalysisViewer(AnalysisPlotter, QWidget):
         self.show()
 
     def _populateFields(self):
+        currField = self.analysisCombo.currentText()
         try:
             self.analysisCombo.disconnect()
         except:
@@ -50,6 +51,8 @@ class AnalysisViewer(AnalysisPlotter, QWidget):
         if self.metadata.fluorescence is not None:
             items.append(_.Fluorescence)
         self.analysisCombo.addItems([i.name for i in items])
+        if currField in [i.name for i in items]:
+            self.analysisCombo.setCurrentText(currField) #Maintain the same field if possible.
         self.analysisCombo.currentTextChanged.connect(self.changeDataByName)  # If this line comes before the analysisCombo.addItems line then it will get triggered when adding items.
 
 
