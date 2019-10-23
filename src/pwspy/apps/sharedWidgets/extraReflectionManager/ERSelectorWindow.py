@@ -85,7 +85,7 @@ class ERSelectorWindow(QDialog):
         try:
             self._manager.download('index.json', parentWidget=self)
         except OfflineError:
-            msgBox = QMessageBox.information(self, 'Offline Mode', 'Could not update `Extra Reflectance` index file. Connection to Google Drive failed.')
+            print('Offline Mode: Could not update `Extra Reflectance` index file. Connection to Google Drive failed.')
         self._initialize()
 
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 import os
 from typing import Optional
 
+import httplib2
 from PyQt5 import QtCore
 from PyQt5.QtCore import QObject, QThread
 from PyQt5.QtWidgets import QMessageBox, QWidget
@@ -44,7 +45,7 @@ class ERManager:
             msg = QMessageBox.information(None, "Time to log in!", "Please log in to the google drive account containing the PWS Calibration Database. This is currently backman.lab@gmail.com")
         try:
             self._downloader = _QtGoogleDriveDownloader(applicationVars.googleDriveAuthPath)
-        except TransportError:
+        except (TransportError, httplib2.ServerNotFoundError):
             self.offlineMode = True
             print("Google Drive connection failed. Proceeding in offline mode.")
             self._downloader: GoogleDriveDownloader = None

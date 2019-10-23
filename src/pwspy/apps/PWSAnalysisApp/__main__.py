@@ -27,7 +27,9 @@ if __name__ == '__main__':
         if isIpython():  # IPython runs its own QApplication so we handle things slightly different.
             app = PWSApp(sys.argv)
         else:
+            print("Starting setup")
             app = PWSApp(sys.argv)
+            print("Application setup complete")
             sys.exit(app.exec_())
     except Exception as e: # Save error to text file.
         with open(os.path.join(applicationVars.dataDirectory, 'crashLog.txt'), 'w') as f:

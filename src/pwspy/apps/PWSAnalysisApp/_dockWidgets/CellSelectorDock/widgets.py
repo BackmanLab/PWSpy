@@ -238,6 +238,7 @@ class CellTableWidget(QTableWidget):
             self.referencesChanged.emit(False, changedItems)
 
     def _toggleSelectedCellsReference(self, state: bool) -> None:
+        """State indicates whether the cells are being marked as reference or as non-reference."""
         items = self.selectedCellItems
         changedItems = []
         for i in items:
@@ -278,6 +279,7 @@ class ReferencesTable(QTableWidget):
         self._references: typing.List[CellTableWidgetItem] = []
 
     def updateReferences(self, state: bool, items: typing.List[CellTableWidgetItem]):
+        """state indicates if the cells are being added or being removed as references."""
         if state:
             for item in items:
                 if item not in self._references:
