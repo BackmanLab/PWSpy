@@ -2,12 +2,15 @@ from __future__ import annotations
 from typing import List, Optional, Tuple
 from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
-from PyQt5.QtWidgets import QListWidgetItem, QWidget, QScrollArea, QListWidget, QMessageBox, QMenu, QAction
+from PyQt5.QtWidgets import QListWidgetItem, QWidget, QScrollArea, QListWidget, QMessageBox, QMenu, QAction, QDialog, QGridLayout, QPushButton
+
+from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrame import SettingsFrame
 from pwspy.dataTypes import AcqDir
 from pwspy.analysis.pws import AnalysisSettings
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ICMetaData, CameraCorrection
+    from pwspy.apps.PWSAnalysisApp._dockWidgets import AnalysisSettingsDock
 
 
 class AnalysisListItem(QListWidgetItem):
@@ -22,14 +25,16 @@ class AnalysisListItem(QListWidgetItem):
 
 
 class QueuedAnalysesFrame(QScrollArea):
-    def __init__(self):
+    def __init__(self, parent: AnalysisSettingsDock):
         super().__init__()
+        self.parent = parent
         self.listWidget = QListWidget()
         self.setWidget(self.listWidget)
         self.listWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.listWidget.customContextMenuRequested.connect(self.showContextMenu)
         self.listWidget.setMinimumHeight(30)
         self.setWidgetResizable(True)
+        self.listWidget.itemDoubleClicked.connect(self.displayItemSettings)
 
     @property
     def analyses(self) -> List[Tuple[str, AnalysisSettings, List[AcqDir], AcqDir, CameraCorrection]]:
@@ -59,4 +64,36 @@ class QueuedAnalysesFrame(QScrollArea):
     def deleteSelected(self):
         for i in self.listWidget.selectedItems():
             self.listWidget.takeItem(self.listWidget.row(i))
+
+    def displayItemSettings(self, item: AnalysisListItem):
+        # Highlight relevant cells
+        self.parent.selector.setSelectedCells(item.cells)
+        self.parent.selector.setSelectedReference(item.reference)
+        # Open a dialog
+        # message = QMessageBox.information(self, item.name, json.dumps(item.settings.asDict(), indent=4))
+        d = QDialog(self.parent, (QtCore.Qt.WindowTitleHint | QtCore.Qt.Window))
+        d.setModal(True)
+        d.setWindowTitle(item.name)
+        l = QGridLayout()
+        settingsFrame = SettingsFrame(self.parent.erManager)
+        settingsFrame.loadFromSettings(item.settings)
+        settingsFrame.loadCameraCorrection(item.cameraCorrection)
+        settingsFrame._analysisNameEdit.setText(item.name)
+        settingsFrame._analysisNameEdit.setEnabled(False)  # Don't allow changing the name.
+
+        okButton = QPushButton("OK")
+        okButton.released.connect(d.accept)
+
+        l.addWidget(settingsFrame, 0, 0, 1, 1)
+        l.addWidget(okButton, 1, 0, 1, 1)
+        d.setLayout(l)
+        d.show()
+        d.exec()
+        try:
+            item.settings = settingsFrame.getSettings()
+            item.cameraCorrection = settingsFrame.getCameraCorrection()
+        except Exception as e:
+            QMessageBox.warning(self.parent, 'Oh No!', str(e))
+
+
 

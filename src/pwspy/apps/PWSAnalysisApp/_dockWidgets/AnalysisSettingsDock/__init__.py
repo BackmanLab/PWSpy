@@ -29,8 +29,7 @@ class AnalysisSettingsDock(QDockWidget):
         self.addAnalysisButton = QPushButton("Add Analysis")
         widg.layout().addWidget(self.addAnalysisButton)
 
-        self.analysesQueue = QueuedAnalysesFrame()
-        self.analysesQueue.listWidget.itemDoubleClicked.connect(self.displayItemSettings)
+        self.analysesQueue = QueuedAnalysesFrame(self)
 
         widg.layout().addWidget(self.analysesQueue)
         self.analysesQueue.setFixedHeight(50)
@@ -59,34 +58,4 @@ class AnalysisSettingsDock(QDockWidget):
 
     def getListedAnalyses(self) -> List[Tuple[str, AnalysisSettings, List[AcqDir], AcqDir, CameraCorrection]]:
         return self.analysesQueue.analyses
-
-    def displayItemSettings(self, item: AnalysisListItem):
-        # Highlight relevant cells
-        self.selector.setSelectedCells(item.cells)
-        self.selector.setSelectedReference(item.reference)
-        # Open a dialog
-        # message = QMessageBox.information(self, item.name, json.dumps(item.settings.asDict(), indent=4))
-        d = QDialog(self, (QtCore.Qt.WindowTitleHint | QtCore.Qt.Window))
-        d.setModal(True)
-        d.setWindowTitle(item.name)
-        l = QGridLayout()
-        settingsFrame = SettingsFrame(self.erManager)
-        settingsFrame.loadFromSettings(item.settings)
-        settingsFrame.loadCameraCorrection(item.cameraCorrection)
-        settingsFrame._analysisNameEdit.setText(item.name)
-        settingsFrame._analysisNameEdit.setEnabled(False)  # Don't allow changing the name.
-
-        okButton = QPushButton("OK")
-        okButton.released.connect(d.accept)
-
-        l.addWidget(settingsFrame, 0, 0, 1, 1)
-        l.addWidget(okButton, 1, 0, 1, 1)
-        d.setLayout(l)
-        d.show()
-        d.exec()
-        try:
-            item.settings = settingsFrame.getSettings()
-            item.cameraCorrection = settingsFrame.getCameraCorrection()
-        except Exception as e:
-            QMessageBox.warning(self, 'Oh No!', str(e))
 
