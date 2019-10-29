@@ -9,7 +9,8 @@ import os
 import shutil
 
 import psutil
-from PyQt5.QtWidgets import QApplication, QMessageBox
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import QApplication, QMessageBox, QSplashScreen
 
 from pwspy.apps.PWSAnalysisApp._utilities import BlinderDialog, RoiConverter
 from pwspy.dataTypes import ICMetaData
@@ -29,14 +30,16 @@ if typing.TYPE_CHECKING:
     from pwspy.analysis.warnings import AnalysisWarning
 
 #TODO add relative R
-#TODO allow rois to be drawn etc while analyis runs.
 class PWSApp(QApplication):
     def __init__(self, args):
         super().__init__(args)
         self.setApplicationName("PWS Analysis V2")
+        splash = QSplashScreen(QPixmap(os.path.join(resources, 'pwsLogo.png')))
+        splash.show()
         self._setupDataDirectories()
         self.ERManager = ERManager(applicationVars.extraReflectionDirectory)
         self.window = PWSWindow(self.ERManager)
+        splash.finish(self.window)
         self.anMan = AnalysisManager(self)
         self.window.runAction.connect(self.anMan.runList)
         self.parallelProcessing: bool = None  # Determines if analysis and compilation should be run in parallel or not.
