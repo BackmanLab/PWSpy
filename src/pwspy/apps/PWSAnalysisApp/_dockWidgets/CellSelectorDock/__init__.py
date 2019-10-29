@@ -139,3 +139,20 @@ class CellSelectorDock(QDockWidget):
                 refitem.setSelected(True)
             else:
                 refitem.setSelected(False)
+
+    def setHighlightedCells(self, cells: List[AcqDir]):
+        idTags = [i.idTag for i in cells]
+        for item in self.tableWidget.cellItems:
+            if item.acqDir.idTag in idTags:
+                item.setHighlighted(True)
+            else:
+                item.setHighlighted(False)
+
+    def setHighlightedReference(self, ref: AcqDir):
+        idTag = ref.idTag
+        for i in range(self.refTableWidget.rowCount()):
+            refitem: ReferencesTableItem = self.refTableWidget.item(i, 0)
+            if refitem.item.acqDir.idTag == idTag:
+                refitem.setHighlighted(True)
+            else:
+                refitem.setHighlighted(False)

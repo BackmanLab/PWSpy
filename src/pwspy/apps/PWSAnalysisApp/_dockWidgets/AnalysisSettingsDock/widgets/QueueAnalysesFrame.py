@@ -35,6 +35,7 @@ class QueuedAnalysesFrame(QScrollArea):
         self.listWidget.setMinimumHeight(30)
         self.setWidgetResizable(True)
         self.listWidget.itemDoubleClicked.connect(self.displayItemSettings)
+        self.listWidget.itemClicked.connect(self.highlightAssociatedCells)
 
     @property
     def analyses(self) -> List[Tuple[str, AnalysisSettings, List[AcqDir], AcqDir, CameraCorrection]]:
@@ -65,10 +66,12 @@ class QueuedAnalysesFrame(QScrollArea):
         for i in self.listWidget.selectedItems():
             self.listWidget.takeItem(self.listWidget.row(i))
 
-    def displayItemSettings(self, item: AnalysisListItem):
+    def highlightAssociatedCells(self, item: AnalysisListItem):
         # Highlight relevant cells
-        self.parent.selector.setSelectedCells(item.cells)
-        self.parent.selector.setSelectedReference(item.reference)
+        self.parent.selector.setHighlightedCells(item.cells)
+        self.parent.selector.setHighlightedReference(item.reference)
+
+    def displayItemSettings(self, item: AnalysisListItem):
         # Open a dialog
         # message = QMessageBox.information(self, item.name, json.dumps(item.settings.asDict(), indent=4))
         d = QDialog(self.parent, (QtCore.Qt.WindowTitleHint | QtCore.Qt.Window))

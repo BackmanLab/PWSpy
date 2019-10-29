@@ -97,6 +97,12 @@ class CellTableWidgetItem:
         for i in self._items:
             i.setSelected(select)
 
+    def setHighlighted(self, select: bool):
+        originalFont = self._items[0].font()
+        originalFont.setBold(select)
+        for i in self._items:
+            i.setFont(originalFont)
+
     def close(self):
         self._saveMetadata()
 
@@ -254,6 +260,11 @@ class ReferencesTableItem(QTableWidgetItem):
         self.item = item
         super().__init__(f"Cell{item.num}")
         self.setToolTip(os.path.join(item.pathLabel.text(), f'Cell{item.num}'))
+
+    def setHighlighted(self, select: bool):
+        originalFont = self.font()
+        originalFont.setBold(select)
+        self.setFont(originalFont)
 
 
 class ReferencesTable(QTableWidget):
