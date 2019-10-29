@@ -37,7 +37,7 @@ class ERDataDirectory(ERAbstractDirectory):
 
     @staticmethod
     def buildIndexFromFiles(files: List[ERMetadata]) -> ERIndex:
-        """Scan the data files in the directory and construct and ERIndex from the metadata. The `description` field is left blank though. This function is quite slow, 1.6 seconds."""
+        """Scan the data files in the directory and construct an ERIndex from the metadata. The `description` field is left blank though. This function is quite slow, 1.6 seconds."""
         cubes = []
         for erCube in files:
             md5hash = hashlib.md5()
