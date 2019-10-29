@@ -48,6 +48,7 @@ class ERDataDirectory(ERAbstractDirectory):
         return ERIndex(cubes)
 
     def rescan(self):
+        """Scan the local files and compare them to the contents of the local index file. store the comparison results in `self.status`."""
         self.index = ERIndex.loadFromFile(os.path.join(self._directory, 'index.json'))
         files = glob(os.path.join(self._directory, f'*{ERMetadata.FILESUFFIX}'))
         files = [(f, ERMetadata.validPath(f)) for f in files]  # validPath returns True/False in awhether the datacube was found.
@@ -61,6 +62,7 @@ class ERDataDirectory(ERAbstractDirectory):
 
     @staticmethod
     def compareIndexes(ind1: ERIndex, ind2: ERIndex) -> dict:
+        """A utility function to compare two `ERIndex` objects and return a `dict` containing the status for each file. """
         foundTags = set([cube.idTag for cube in ind1.cubes])
         indTags = set([cube.idTag for cube in ind2.cubes])
         notIndexed = foundTags - indTags  # Tags in foundTags but not in indTags
@@ -98,6 +100,7 @@ class EROnlineDirectory(ERAbstractDirectory):
         super().__init__()
 
     def rescan(self):
+        """Compare the status of the online index file and online files. store the results in `self.status`"""
         if self._manager._downloader is not None:
             self._manager._downloader.updateFilesList()
         self.index = self.getIndexFile()
@@ -130,7 +133,6 @@ class EROnlineDirectory(ERAbstractDirectory):
 
     def buildIndexFromOnlineFiles(self) -> ERIndex:
         """Return an ERIndex object from the HDF5 data files saved on Google Drive. No downloading required, just scanning metadata."""
-        # api = self._manager._downloader.api
         downloader = self._manager._downloader
         files = downloader.getFolderIdContents(
             downloader.getIdByName('PWSAnalysisAppHostedFiles'))
@@ -142,7 +144,8 @@ class EROnlineDirectory(ERAbstractDirectory):
 
     @staticmethod
     def compareIndexes(calculatedIndex: ERIndex, jsonIndex: ERIndex) -> dict:
-        """In this case we are not able to extract the idTags from the dataFiles without downloading them. use filenames instead"""
+        """A utility function to compare two `ERIndex` objects and return a `dict` containing the status for each file.
+        In this case we are not able to extract the idTags from the dataFiles without downloading them. use filenames instead"""
         foundNames = set([cube.fileName for cube in calculatedIndex.cubes])
         indNames = set([cube.fileName for cube in jsonIndex.cubes])
         notIndexed = foundNames - indNames  # fileNames in foundNames but not in indNames

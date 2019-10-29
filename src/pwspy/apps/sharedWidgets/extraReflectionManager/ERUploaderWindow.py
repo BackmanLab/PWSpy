@@ -23,6 +23,8 @@ if typing.TYPE_CHECKING:
 
 
 class ERUploaderWindow(QDialog):
+    """This window provides the user a visual picture of the local and online status of the Extra Reflectance calibration file repository. It also allows uploading
+    of files that are present locally but not on the server. It does not have good handling of edge cases, e.g. online server in inconsistent state."""
     def __init__(self, manager: ERManager, parent: Optional[QWidget] = None):
         self._manager = manager
         self._selectedId: str = None
@@ -62,6 +64,7 @@ class ERUploaderWindow(QDialog):
         self.plotHandle = PlotNd(erCube.data)
 
     def openContextMenu(self, pos: QPoint):
+        """This method opens a context menu, it should be called when the user right clicks."""
         index = self.table.indexAt(pos)
         row = self._manager.dataComparator.status.iloc[index.row()]
         menu = QMenu()
@@ -75,6 +78,7 @@ class ERUploaderWindow(QDialog):
         menu.exec(self.mapToGlobal(pos))
 
     def _updateGDrive(self):
+        """Checks for all files taht are present locally but not on the server. Uploads those file and then overwrites the index."""
         try:
             status = self._manager.dataComparator.status
             if not np.all(status['Local Status'] == ERDataDirectory.DataStatus.found.value):
@@ -92,12 +96,15 @@ class ERUploaderWindow(QDialog):
             mess = QMessageBox.information(self, 'Sorry', str(e))
 
     def refresh(self):
+        """Scans local and online files to refresh the display."""
         self._manager.rescan()
         self.table.setModel(PandasModel(self._manager.dataComparator.status))
 
 
 class PandasModel(QtCore.QAbstractTableModel):
+    """This Qt model is used to adapt a Pandas dataframe to a QTableView widget. This was found somewhere on stack overflow."""
     def __init__(self, df=pd.DataFrame(), parent=None):
+        """`df` should be the dataframe that you want to view."""
         QtCore.QAbstractTableModel.__init__(self, parent=parent)
         self._df = df
 

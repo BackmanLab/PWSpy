@@ -24,6 +24,7 @@ from google.auth.exceptions import TransportError
 
 
 def _offlineDecorator(func):
+    """Functions decorated with this will raise an OfflineError if there are attempted to be called while the ERManager is in offline mode."""
     def wrappedFunc(self, *args, **kwargs):
         if self.offlineMode:
             print("Warning: Attempting to download when ERManager is in offline mode.")
@@ -61,6 +62,7 @@ class ERManager:
         return ERUploaderWindow(self, parent)
 
     def rescan(self):
+        """Scans local and online files to put together an idea of the status. Do the data files match the index file? etc. It's really over complicated."""
         self.dataComparator.rescan()
 
     @_offlineDecorator
@@ -81,12 +83,14 @@ class ERManager:
 
     @_offlineDecorator
     def upload(self, fileName: str):
+        """Uploads the file at `fileName` to the `ExtraReflectanceCubes` folder of the google drive account"""
         parentId = self._downloader.getIdByName("ExtraReflectanceCubes")
         filePath = os.path.join(self._directory, fileName)
         self._downloader.uploadFile(filePath, parentId)
 
     def getMetadataFromId(self, Id: str) -> ERMetadata:
-        """Given the Id string for ExtraReflectanceCube this will search the index.json and return the ERMetadata file"""
+        """Given the Id string for an ExtraReflectanceCube this will search the index.json and return the ERMetadata file. If it cannot be found then an
+        `IndexError will be raised."""
         try:
             match = [item for item in self.dataComparator.local.index.cubes if item.idTag == Id][0]
         except IndexError:
@@ -117,7 +121,7 @@ class _DownloadThread(QThread):
 
 
 class _QtGoogleDriveDownloader(GoogleDriveDownloader, QObject):
-    """Same as the standard google drive downloader except it emits a progress signal after each chunk downloaded."""
+    """Same as the standard google drive downloader except it emits a progress signal after each chunk downloaded. This can be used to update a progress bar."""
     progress = QtCore.pyqtSignal(int)
     def __init__(self, authPath: str):
         GoogleDriveDownloader.__init__(self, authPath)
