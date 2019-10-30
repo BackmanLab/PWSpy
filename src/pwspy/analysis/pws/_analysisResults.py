@@ -75,7 +75,7 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults): #TODO All these cached pro
     @clearError
     @getFromDict
     def settings(self) -> AnalysisSettings:
-        return AnalysisSettings.fromJsonString(self.file['settings'])
+        return AnalysisSettings.fromJsonString(bytes(np.array(self.file['settings'])).decode())
 
     @cached_property
     @clearError
