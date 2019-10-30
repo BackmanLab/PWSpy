@@ -214,7 +214,7 @@ class CellTableWidget(QTableWidget):
         self._cellItems = []
         self.itemsCleared.emit()
 
-    def _showContextMenu(self, point: QtCore.QPoint):
+    def _showContextMenu(self, point: QtCore.QPoint): #TODO view analysis metadata, delete analysis
         if len(self.selectedCellItems) > 0:
             menu = QMenu("Context Menu")
             state = not self.selectedCellItems[0].isInvalid()

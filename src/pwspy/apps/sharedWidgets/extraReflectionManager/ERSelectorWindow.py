@@ -125,7 +125,7 @@ class ERSelectorWindow(QDialog):
         menu.addAction(displayAction)
         if widgetItem.downloaded:
             plotAction = QAction("Plot Data")
-            plotAction.triggered.connect(lambda wItem=widgetItem: self._plot3dData(wItem))
+            plotAction.triggered.connect(lambda checked, wItem=widgetItem: self._plot3dData(wItem))
             menu.addAction(plotAction)
         menu.exec(self.mapToGlobal(pos))
 
