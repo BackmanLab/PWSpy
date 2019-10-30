@@ -214,7 +214,7 @@ class CellTableWidget(QTableWidget):
         self._cellItems = []
         self.itemsCleared.emit()
 
-    def _showContextMenu(self, point: QtCore.QPoint): #TODO view analysis metadata, delete analysis
+    def _showContextMenu(self, point: QtCore.QPoint):
         if len(self.selectedCellItems) > 0:
             menu = QMenu("Context Menu")
             state = not self.selectedCellItems[0].isInvalid()
@@ -227,7 +227,21 @@ class CellTableWidget(QTableWidget):
             refAction.triggered.connect(lambda: self._toggleSelectedCellsReference(refState))
             mdAction = menu.addAction("Display Metadata")
             mdAction.triggered.connect(self._displayCellMetadata)
+            anAction = menu.addAction("View analysis settings")
+            anAction.triggered.connect(self._displayAnalysisSettings)
             menu.exec(self.mapToGlobal(point))
+
+    def _displayAnalysisSettings(self):
+        analyses = set()
+        for i in self.selectedCellItems:
+            #We assume that analyses with the same name have the same settings
+            analyses.update(i.acqDir.pws.getAnalyses())
+        for an in analyses:
+            for i in self.selectedCellItems:
+                if an in i.acqDir.pws.getAnalyses():
+                    d = DictDisplayTreeDialog(self, i.acqDir.pws.loadAnalysis(an).settings._asDict(), title=an)
+                    d.show()
+                    break
 
     def _displayCellMetadata(self):
         for i in self.selectedCellItems:
