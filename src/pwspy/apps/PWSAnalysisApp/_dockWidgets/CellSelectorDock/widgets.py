@@ -139,8 +139,11 @@ class CellTableWidgetItem:
     def _reference(self, val): self.md['reference'] = val
 
     def _saveMetadata(self):
-        with open(self.mdPath, 'w') as f:
-            json.dump(self.md, f)
+        try:
+            with open(self.mdPath, 'w') as f:
+                json.dump(self.md, f)
+        except:
+            print("Failed to save app metadata for self.mdPath")
 
     def __del__(self):
         self.close() #This is here just in case. realistacally del rarely gets called, need to manually close each cell item.
