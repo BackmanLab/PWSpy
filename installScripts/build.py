@@ -6,8 +6,8 @@ import argparse
 """This builds the pwpsy conda package and saves it to `outputDir`
 It should be run from the base conda env."""
 
-parser = argparse.ArgumentParser(description="get the directory that the built conda package should be saved to.")
-parser.add_argument("outputDirectory", type=str, help="The directory that the build conda package should be saved to.")
+parser = argparse.ArgumentParser(description="Build `pwspy` as a conda package and save it to a specified directory along with some useful installation scripts.")
+parser.add_argument("outputDirectory", type=str, help="The directory that the built conda package should be saved to.")
 args = parser.parse_args()
 outputDir = args.outputDirectory
 print(outputDir)
