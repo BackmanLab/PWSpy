@@ -2,11 +2,16 @@ from git import Repo
 import os
 import shutil
 import subprocess
-
+import argparse
 """This builds the pwpsy conda package and saves it to `outputDir`
 It should be run from the base conda env."""
 
-outputDir = 'I:'
+parser = argparse.ArgumentParser(description="get the directory that the built conda package should be saved to.")
+parser.add_argument("outputDirectory", type=str, help="The directory that the build conda package should be saved to.")
+args = parser.parse_args()
+outputDir = args.outputDirectory
+print(outputDir)
+assert os.path.isdir(outputDir), f"Error: The directory, {outputDir}, does not exist."
 
 buildScriptDir = os.path.dirname(os.path.abspath(__file__)) #Location of build scripts
 buildDir = os.path.split(buildScriptDir)[0] #Parent directory of project.
