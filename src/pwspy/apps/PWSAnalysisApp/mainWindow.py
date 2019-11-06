@@ -35,7 +35,7 @@ class PWSWindow(QMainWindow):
         infoAction = menu.addAction("Info")
         infoAction.triggered.connect(self.openInfoPane)
         menu = menuBar.addMenu("Config")
-        self.parallelAction = menu.addAction("Multi-Core Analysis")
+        self.parallelAction = menu.addAction("Multi-Core Analysis (faster, needs more ram)")
         self.parallelAction.setCheckable(True)
         menu = menuBar.addMenu("Actions")
         menu.setToolTipsVisible(True)
