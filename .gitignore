@@ -2,3 +2,4 @@
 src/pwspy.egg-info/
 .idea/
 docs/build/
+src/pwspy/_version
