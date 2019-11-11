@@ -20,7 +20,6 @@ import numpy as np
 if typing.TYPE_CHECKING:
     from pwspy.apps.PWSAnalysisApp.App import PWSApp
 
-#TODO last thing isn't saved in threaded mode. metadata getting modified.
 def safeCallback(func):
     """A decorator to make a function print its traceback without crashing."""
     def newFunc(*args):
