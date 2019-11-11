@@ -12,7 +12,7 @@ class ResultsTableItem:
         self.results = results
         self.metadata = metadata
         cellPath = os.path.split(metadata.filePath)[0][len(QApplication.instance().workingDirectory) + 1:]
-        cellNumber = int(metadata.filePath.split('Cell')[-1])
+        cellNumber = int(metadata.acquisitionDirectory.filePath.split('Cell')[-1])
         self.cellPathLabel = QTableWidgetItem(cellPath)
         self.cellNumLabel = NumberTableWidgetItem(cellNumber)
         self.analysisNameLabel = QTableWidgetItem(results.analysisName)
