@@ -7,7 +7,7 @@ import json
 
 from PyQt5.QtWidgets import QDialog, QWidget
 
-from pwspy.dataTypes import ImCube, CameraCorrection, ExtraReflectanceCube
+from pwspy.dataTypes import ImCube, CameraCorrection, ExtraReflectanceCube, AcqDir
 from pwspy.apps.ExtraReflectanceCreator.widgets.dialog import IndexInfoForm
 from pwspy.dataTypes import ICMetaData
 from pwspy.dataTypes import Roi
@@ -46,6 +46,7 @@ def scanDirectory(directory: str) -> Dict[str, Any]:
         filelist = _splitPath(file)
         s = filelist[2]
         m = matMap[filelist[1]]
+        file = AcqDir(file).pws.filePath # old pws is saved directly in the "Cell{X}" folder. new pws is saved in "Cell{x}/PWS" the acqDir class helps us abstract that out and be compatible with both.
         rows.append({'setting': s, 'material': m, 'cube': file})
     df = pd.DataFrame(rows)
     return {'dataFrame': df, 'camCorrection': cam}
