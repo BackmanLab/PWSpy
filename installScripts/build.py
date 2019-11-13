@@ -31,5 +31,5 @@ proc.wait()
 result, error = proc.communicate()
 
 #Copy the other scripts
-for fname in ['install.bat', 'Run Analysis.bat']:
+for fname in ['install Windows.bat', 'Run Analysis Windows.bat', 'Run Analysis Mac.sh', 'install Mac.sh']:
     shutil.copyfile(os.path.join(buildScriptDir, fname), os.path.join(outputDir, fname))
