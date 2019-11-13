@@ -40,16 +40,20 @@ class ERManager:
     have to create these manually if starting on a new Drive account."""
     def __init__(self, filePath: str):
         self._directory = filePath
-        self.offlineMode = False
+        self.offlineMode = True
+        skipLogin = False
+        self._downloader: GoogleDriveDownloader = None
         creds = _QtGoogleDriveDownloader.getCredentials(applicationVars.googleDriveAuthPath)
         if creds is None: #Check if the google drive credentials exists and if they don't then give the user a message.
-            msg = QMessageBox.information(None, "Time to log in!", "Please log in to the google drive account containing the PWS Calibration Database. This is currently backman.lab@gmail.com")
-        try:
-            self._downloader = _QtGoogleDriveDownloader(applicationVars.googleDriveAuthPath)
-        except (TransportError, httplib2.ServerNotFoundError):
-            self.offlineMode = True
-            print("Google Drive connection failed. Proceeding in offline mode.")
-            self._downloader: GoogleDriveDownloader = None
+            button = QMessageBox.question(None, "Time to log in!", "Please log in to the google drive account containing the PWS Calibration Database. This is currently backman.lab@gmail.com. Proceed?")
+            if button == QMessageBox.No:
+                skipLogin = True
+        if not skipLogin:
+            try:
+                self._downloader = _QtGoogleDriveDownloader(applicationVars.googleDriveAuthPath)
+                self.offlineMode = False
+            except (TransportError, httplib2.ServerNotFoundError):
+                print("Google Drive connection failed. Proceeding in offline mode.")
         indexPath = os.path.join(self._directory, 'index.json')
         if not os.path.exists(indexPath):
             self.download('index.json')
