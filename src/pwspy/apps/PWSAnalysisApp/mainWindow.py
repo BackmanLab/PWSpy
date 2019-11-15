@@ -80,7 +80,8 @@ class PWSWindow(QMainWindow):
             self.removeDockWidget(dock)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.cellSelector)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.plots)
-        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.resultsTable)
+        #self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.resultsTable)
+        self.tabifyDockWidget(self.cellSelector, self.resultsTable)
         self.tabifyDockWidget(self.plots, self.analysisSettings)
         for dock in docks:
             dock.setFloating(False)
