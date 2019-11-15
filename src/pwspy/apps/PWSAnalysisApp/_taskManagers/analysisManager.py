@@ -29,6 +29,7 @@ def safeCallback(func):
             traceback.print_exc()
     return newFunc
 
+
 class AnalysisManager(QtCore.QObject):
     analysisDone = QtCore.pyqtSignal(str, AnalysisSettings, list)
 
@@ -38,9 +39,11 @@ class AnalysisManager(QtCore.QObject):
 
     def runList(self):
         """Run multiple queued analyses as specified by the user."""
-        for anName, anSettings, cellMetas, refMeta, camCorrection in self.app.window.analysisSettings.getListedAnalyses():
+        for anName, anSettings, cellMetas, refMeta, camCorrection, widgetHandle in self.app.window.analysisSettings.getListedAnalyses():
             self.runSingle(anName, anSettings, cellMetas, refMeta, camCorrection)
-            [cellItem.refresh() for cellMeta in cellMetas for cellItem in self.app.window.cellSelector.tableWidget.cellItems if cellMeta == cellItem.acqDir]
+            [cellItem.refresh() for cellMeta in cellMetas for cellItem in self.app.window.cellSelector.tableWidget.cellItems if cellMeta == cellItem.acqDir] #Refresh our displayed cell info
+            _ = widgetHandle.listWidget().takeItem(widgetHandle.listWidget().row(widgetHandle)) #remove the analysis item once it has been run
+            del _
 
     @safeCallback
     def runSingle(self, anName: str, anSettings: AnalysisSettings, cellMetas: List[AcqDir], refMeta: AcqDir,
@@ -80,17 +83,23 @@ class AnalysisManager(QtCore.QObject):
                         return
                 erCube = ExtraReflectanceCube.fromMetadata(erMeta)
             analysis = Analysis(anSettings, ref, erCube)
-            #Rather than have read-only arrays that are shared between processes with shared memory. saves a few gigs of ram and speeds things up.
-            refdata = RawArray('f', analysis.ref.data.size)
-            refdata = np.frombuffer(refdata, dtype=np.float32).reshape(analysis.ref.data.shape)
-            np.copyto(refdata, analysis.ref.data)
-            analysis.ref.data = refdata
-            iedata = RawArray('f', analysis.extraReflection.data.size)
-            iedata = np.frombuffer(iedata, dtype=np.float32).reshape(analysis.extraReflection.data.shape)
-            np.copyto(iedata, analysis.extraReflection.data)
-            analysis.extraReflection.data = iedata
+            useParallelProcessing = self.app.parallelProcessing
+            #TODO would be good to estimate ram usage here and make a decision on whether or not to go parallel
+            if (len(cellMetas) <= 3): #No reason to start 3 parallel processes for less than 3 cells.
+                useParallelProcessing = False
+            if useParallelProcessing:
+                #Rather than have read-only arrays that are shared between processes with shared memory. saves a few gigs of ram and speeds things up.
+                print("AnalysisManager: Using parallel processing. Creating shared memory.")
+                refdata = RawArray('f', analysis.ref.data.size)
+                refdata = np.frombuffer(refdata, dtype=np.float32).reshape(analysis.ref.data.shape)
+                np.copyto(refdata, analysis.ref.data)
+                analysis.ref.data = refdata
+                iedata = RawArray('f', analysis.extraReflection.data.size)
+                iedata = np.frombuffer(iedata, dtype=np.float32).reshape(analysis.extraReflection.data.shape)
+                np.copyto(iedata, analysis.extraReflection.data)
+                analysis.extraReflection.data = iedata
             #Run parallel processing
-            t = self.AnalysisThread(cellMetas, analysis, anName, cameraCorrection, self.app.parallelProcessing)
+            t = self.AnalysisThread(cellMetas, analysis, anName, cameraCorrection, useParallelProcessing)
             b = BusyDialog(self.app.window, "Processing. Please Wait...")
             t.finished.connect(b.accept)
             t.errorOccurred.connect(lambda e: QMessageBox.information(self.app.window, 'Uh Oh', str(e)))

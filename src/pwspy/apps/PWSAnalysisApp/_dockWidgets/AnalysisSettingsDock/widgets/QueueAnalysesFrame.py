@@ -38,9 +38,9 @@ class QueuedAnalysesFrame(QScrollArea):
         self.listWidget.itemClicked.connect(self.highlightAssociatedCells)
 
     @property
-    def analyses(self) -> List[Tuple[str, AnalysisSettings, List[AcqDir], AcqDir, CameraCorrection]]:
+    def analyses(self) -> List[Tuple[str, AnalysisSettings, List[AcqDir], AcqDir, CameraCorrection, AnalysisListItem]]:
         items: List[AnalysisListItem] = [self.listWidget.item(i) for i in range(self.listWidget.count())]
-        return [(item.name, item.settings, item.cells, item.reference, item.cameraCorrection) for item in items]
+        return [(item.name, item.settings, item.cells, item.reference, item.cameraCorrection, item) for item in items]
 
     def addAnalysis(self, analysisName: str, cameraCorrection: CameraCorrection, settings: AnalysisSettings,
                     reference: AcqDir, cells: List[AcqDir]):

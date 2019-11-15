@@ -56,6 +56,6 @@ class AnalysisSettingsDock(QDockWidget):
     def getAnalysisName(self):
         return self.settingsFrame.analysisName
 
-    def getListedAnalyses(self) -> List[Tuple[str, AnalysisSettings, List[AcqDir], AcqDir, CameraCorrection]]:
+    def getListedAnalyses(self) -> List[Tuple[str, AnalysisSettings, List[AcqDir], AcqDir, CameraCorrection, AnalysisListItem]]:
         return self.analysesQueue.analyses
 

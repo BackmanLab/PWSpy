@@ -90,7 +90,7 @@ class CellSelectorDock(QDockWidget):
         self.pathFilter.addItems(set(paths))
         self.pathFilter.currentIndexChanged.connect(self._executeFilter)  # reconnect
 
-    def _executeFilter(self):
+    def _executeFilter(self): #TODO the filter should also hide the reference items. this will require some changes ot the referece item table code.
         path = self.pathFilter.currentText()
         path = path.replace('\\', '\\\\')
         for item in self.tableWidget.cellItems:
