@@ -54,7 +54,7 @@ class Analysis(AbstractAnalysis):
         assert cube.isCorrected()
         warns = []
         cube = self._normalizeImCube(cube)
-        interval = (max(cube.wavelengths) - min(cube.wavelengths)) / (len(cube.wavelengths) - 1)# Wavelength interval. We are assuming equally spaced wavelengths here
+        interval = (max(cube.wavelengths) - min(cube.wavelengths)) / (len(cube.wavelengths) - 1)  # Wavelength interval. We are assuming equally spaced wavelengths here
         cube.data = self._filterSignal(cube.data, 1/interval)
         # The rest of the analysis will be performed only on the selected wavelength range.
         cube = cube.selIndex(self.settings.wavelengthStart, self.settings.wavelengthStop)
@@ -102,7 +102,7 @@ class Analysis(AbstractAnalysis):
 
     def _filterSignal(self, data: np.ndarray, sampleFreq: float):
         b, a = sps.butter(self.settings.filterOrder, self.settings.filterCutoff, fs=sampleFreq)
-        return sps.filtfilt(b, a, data, axis=2)
+        return sps.filtfilt(b, a, data, axis=2).astype(data.dtype)
 
     # -- Polynomial Fit
     def _fitPolynomial(self, cube: KCube):
