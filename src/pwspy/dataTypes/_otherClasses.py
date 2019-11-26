@@ -144,7 +144,7 @@ class Roi:
     @classmethod
     def fromHDF_legacy(cls, directory: str, name: str, number: int):
         """Load an Roi from an older version of the HDF file format which did not include the vertices parameter."""
-        path = os.path.join(directory, f'roi_{name}.h5')
+        path = os.path.join(directory, f'ROI_{name}.h5')
         if not os.path.exists(path):
             raise OSError(f"File {path} does not exist.")
         with h5py.File(path, 'r') as hf:
@@ -220,7 +220,7 @@ class Roi:
     def getValidRoisInPath(path: str) -> List[Tuple[str, int, Roi.FileFormats]]:
         """Search the `path` for valid roi files and return the detected rois as a list of tuple where each tuple
         contains the `name`, `number`, and file format for the Roi."""
-        patterns = [('BW*_*.mat', Roi.FileFormats.MAT), ('roi_*.h5', Roi.FileFormats.HDF)]
+        patterns = [('BW*_*.mat', Roi.FileFormats.MAT), ('ROI_*.h5', Roi.FileFormats.HDF)]
         files = {fformat: glob(os.path.join(path, p)) for p, fformat in patterns} #Lists of the found files keyed by file format
         ret = []
         for fformat, fileNames in files.items():
@@ -238,7 +238,7 @@ class Roi:
                                 else:
                                     raise ValueError("File is missing datasets")
                             elif isinstance(hf[g], h5py.Dataset): #Legacy format
-                                name = i.split('roi_')[-1][:-3]
+                                name = i.split('ROI_')[-1][:-3]
                                 try:
                                     ret.append((name, int(g), Roi.FileFormats.HDF))
                                 except ValueError:
