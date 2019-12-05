@@ -1,1 +1,2 @@
-from pwspy.apps.PWSAnalysisApp import __main__
+from pwspy.apps.PWSAnalysisApp.__main__ import main
+main()

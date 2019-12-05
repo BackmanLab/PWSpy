@@ -4,16 +4,14 @@ import traceback
 from pwspy.apps.PWSAnalysisApp.App import PWSApp
 from pwspy.apps.PWSAnalysisApp import applicationVars
 
-
-def isIpython():
-    try:
-        return __IPYTHON__
-    except:
-        return False
-
-
-if __name__ == '__main__':
+def main():
     import sys
+
+    def isIpython():
+        try:
+            return __IPYTHON__
+        except:
+            return False
 
     # This prevents errors from happening silently. Found on stack overflow.
     sys.excepthook_backup = sys.excepthook
@@ -36,3 +34,7 @@ if __name__ == '__main__':
             traceback.print_exc(limit=None, file=f)
             print(f"Error Occurred: Please check {os.path.join(applicationVars.dataDirectory, 'crashLog.txt')}")
         raise e
+
+
+if __name__ == '__main__':
+    main()
