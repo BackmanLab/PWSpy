@@ -6,7 +6,15 @@ block_cipher = None
 a = Analysis(['PyInstallerAnalysisScript.py'],
              pathex=['C:\\Users\\backman05\\Documents\\Bitbucket\\pwspython\\installScripts\\pyInstaller'],
              binaries=[],
-             datas=[],
+             datas=[
+                ('utility/reflection/refractiveIndexFiles/*', '.'),
+                ('utility/thinFilmInterferenceFiles/*', '.'),
+                ('apps/_resources/*', '.'),
+                ('analysis/_resources/defaultAnalysisSettings/*', '.'),
+                ('apps/PWSAnalysisApp/_resources/*', '.'),
+                ('dataTypes/jsonSchemas/*', '.'),
+                ('_version', '.')
+             ],
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
