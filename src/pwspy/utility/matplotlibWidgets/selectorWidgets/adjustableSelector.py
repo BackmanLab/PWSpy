@@ -1,22 +1,14 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Feb 24 22:59:45 2019
+from typing import Type
 
-@author: Nick Anthony
-"""
-
-import matplotlib.pyplot as plt
-import numpy as np
+from matplotlib.axes import Axes
+from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
 from matplotlib.patches import Polygon
 from scipy import interpolate
-from typing import Type
-from matplotlib.pyplot import Axes
-from matplotlib.image import AxesImage
+import numpy as np
 
 from pwspy.utility.matplotlibWidgets.coreClasses import AxManager
 from pwspy.utility.matplotlibWidgets.selectorWidgets import SelectorWidgetBase
-from pwspy.utility.matplotlibWidgets.selectorWidgets.ellipse import EllipseSelector
 
 
 def pnt2line(pnt, start, end):
@@ -68,11 +60,12 @@ def pnt2line(pnt, start, end):
         x, y, z = v
         X, Y, Z = w
         return (x + X, y + Y, z + Z)
+
     line_vec = vector(start, end)
     pnt_vec = vector(start, pnt)
     line_len = length(line_vec)
     line_unitvec = unit(line_vec)
-    pnt_vec_scaled = scale(pnt_vec, 1.0/line_len)
+    pnt_vec_scaled = scale(pnt_vec, 1.0 / line_len)
     t = dot(line_unitvec, pnt_vec_scaled)
     if t < 0.0:
         t = 0.0
@@ -98,8 +91,8 @@ class PolygonInteractor(SelectorWidgetBase):
     showverts = True
     epsilon = 15  # max pixel distance to count as a vertex hit
 
-    def __init__(self, axMan, onselect = None):
-        super().__init__(axMan, None)    
+    def __init__(self, axMan, onselect=None):
+        super().__init__(axMan, None)
         self.onselect = onselect
         self.markers = Line2D([0], [0], ls="", marker='o', markerfacecolor='r', animated=True)
         self._ind = None  # the active vert
@@ -116,23 +109,22 @@ class PolygonInteractor(SelectorWidgetBase):
         the selection."""
 
     def reset(self):
-        pass #not sure what should be done here.
-        
+        pass  # not sure what should be done here.
+
     def initialize(self, verts):
         """Given a set of points this will initialize the artists to them"""
         x, y = zip(*verts)
         self.markers.set_data(x, y)
         self._interpolate()
         self.set_visible(True)
-        
+
     def _interpolate(self):
         """update the polygon to match the marker vertices."""
         x, y = self.markers.get_data()
-        tck, u = interpolate.splprep([x, y], s=0, per=True)   
+        tck, u = interpolate.splprep([x, y], s=0, per=True)
         # evaluate the spline fits for 1000 evenly spaced distance values
         xi, yi = interpolate.splev(np.linspace(0, 1, 1000), tck)
         self.poly.set_xy(list(zip(xi, yi)))
-
 
     def _get_ind_under_point(self, event):
         """get the index of the vertex under point if within epsilon tolerance"""
@@ -161,9 +153,9 @@ class PolygonInteractor(SelectorWidgetBase):
 
     def _on_key_press(self, event):
         """whenever a key is pressed"""
-#        if not event.inaxes:
-#            return
-        if event.key == 't':#Show points
+        #        if not event.inaxes:
+        #            return
+        if event.key == 't':  # Show points
             self.showverts = not self.showverts
             self.markers.set_visible(self.showverts)
             if not self.showverts:
@@ -180,15 +172,15 @@ class PolygonInteractor(SelectorWidgetBase):
             d = []
             for i in range(len(xys) - 1):
                 s0 = (xys[i][0], xys[i][1], 0)
-                s1 = (xys[i + 1][0], xys[i+1][1], 0) #Convert to 3d points.
-                d.append(pnt2line(p, s0, s1)[0]) #distance from line to click point
+                s1 = (xys[i + 1][0], xys[i + 1][1], 0)  # Convert to 3d points.
+                d.append(pnt2line(p, s0, s1)[0])  # distance from line to click point
             d = np.array(d)
             i = d.argmin()
             if d.min() <= self.epsilon:
                 x, y = self.markers.get_data()
-                self.markers.set_data(np.insert(x, i+1, event.xdata), np.insert(y, i+1, event.ydata))
+                self.markers.set_data(np.insert(x, i + 1, event.xdata), np.insert(y, i + 1, event.ydata))
                 self._interpolate()
-                print(f"Insert at {i+1}")
+                print(f"Insert at {i + 1}")
         elif event.key == 'enter':
             self.onselect(self.poly.xy, self.markers.get_data())
             return
@@ -203,7 +195,7 @@ class PolygonInteractor(SelectorWidgetBase):
             else:
                 self.markers.set_markerfacecolor('r')
         self.axMan.update()
-            
+
     def _ondrag(self, event):
         """on mouse movement"""
         if self._ind is None:
@@ -219,7 +211,7 @@ class PolygonInteractor(SelectorWidgetBase):
 
         self._interpolate()
         self.axMan.update()
-            
+
 class AdjustableSelector:
     """This class manager an roi selector. By setting `adjustable` true then when the selector calls its `onselect` function
     the results will be passed on to a PolygonInteractor for further tweaking. Tweaking can be confirmed by pressing enter.
@@ -274,13 +266,3 @@ class AdjustableSelector:
         self.setActive(False)
         if self.onfinished is not None:
             self.onfinished(verts)
-
-        
-if __name__ == '__main__':
-
-    fig, ax = plt.subplots()
-    ax.set_aspect('equal')
-
-    a= AdjustableSelector(ax, EllipseSelector)
-    # a = AdjustableSelector(ax, LassoSelector)
-    plt.show()
