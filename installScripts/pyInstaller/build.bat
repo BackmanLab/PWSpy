@@ -16,7 +16,7 @@ if errorlevel 1 (
 	echo Please create a Conda environment named %env%
 ) else (
 :: Install the pwspy package from the current directory.
-	call pyinstaller PyInstallerAnalysisScript.py
+	call pyinstaller PyInstallerAnalysisScript.spec
 )
 
 pause
