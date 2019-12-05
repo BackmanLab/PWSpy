@@ -5,7 +5,6 @@ from os.path import join
 import os
 
 srcDir = '..\\..\\src\\pwspy'
-print(f"Using {os.path.abspath(srcDir)} as source path")
 
 a = Analysis(['PyInstallerAnalysisScript.py'],
              pathex=['../../src'],
@@ -27,7 +26,7 @@ a = Analysis(['PyInstallerAnalysisScript.py'],
              win_private_assemblies=False,
              cipher=block_cipher,
              noarchive=False)
-#print("HAHAHA", a.binaries)
+
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 exe = EXE(pyz,
@@ -39,7 +38,8 @@ exe = EXE(pyz,
           bootloader_ignore_signals=False,
           strip=False,
           upx=True,
-          console=True )
+          console=True,
+          icon = join(srcDir, 'apps/PWSAnalysisApp/_resources/cellLogo.ico'))
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
