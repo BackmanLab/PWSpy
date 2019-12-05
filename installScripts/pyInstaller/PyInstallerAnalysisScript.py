@@ -1,0 +1,1 @@
+from pwspy.apps.PWSAnalysisApp import __main__
