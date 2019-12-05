@@ -6,6 +6,8 @@ import os
 
 srcDir = '..\\..\\src\\pwspy'
 
+#TODO update the _version file
+
 a = Analysis(['PyInstallerAnalysisScript.py'],
              pathex=['../../src'],
              binaries=[],
