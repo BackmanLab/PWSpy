@@ -2,11 +2,13 @@
 
 block_cipher = None
 from os.path import join
+import os
 
-srcDir = 'C:\\Users\\backman05\\Documents\\Bitbucket\\pwspython\\src\\pwspy'
+srcDir = '..\\..\\src\\pwspy'
+print(f"Using {os.path.abspath(srcDir)} as source path")
 
 a = Analysis(['PyInstallerAnalysisScript.py'],
-             pathex=['C:\\Users\\backman05\\Documents\\Bitbucket\\pwspython\\installScripts\\pyInstaller'],
+             pathex=['.'],
              binaries=[],
              datas=[
                 (join(srcDir, 'utility/reflection/refractiveIndexFiles/*'), '.'),
