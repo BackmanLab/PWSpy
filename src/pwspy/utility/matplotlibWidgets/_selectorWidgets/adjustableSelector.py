@@ -8,7 +8,7 @@ from scipy import interpolate
 import numpy as np
 
 from pwspy.utility.matplotlibWidgets.coreClasses import AxManager
-from pwspy.utility.matplotlibWidgets.selectorWidgets import SelectorWidgetBase
+from pwspy.utility.matplotlibWidgets._selectorWidgets import SelectorWidgetBase
 
 
 def pnt2line(pnt, start, end):

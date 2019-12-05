@@ -2,7 +2,7 @@ from matplotlib.image import AxesImage
 from matplotlib.patches import Rectangle
 
 from pwspy.utility.matplotlibWidgets.coreClasses import AxManager
-from pwspy.utility.matplotlibWidgets.selectorWidgets import SelectorWidgetBase
+from pwspy.utility.matplotlibWidgets._selectorWidgets import SelectorWidgetBase
 
 
 class PointSelector(SelectorWidgetBase):

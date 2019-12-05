@@ -17,7 +17,7 @@ from matplotlib import widgets
 from matplotlib import path
 import typing, numbers
 from matplotlib import animation
-from pwspy.utility.matplotlibwidg import AxManager, MyPoint
+from pwspy.utility.matplotlibWidgets import AxManager, PointSelector
 
 from pwspy.dataTypes._otherClasses import Roi
 from matplotlib import patches

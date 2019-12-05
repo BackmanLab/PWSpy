@@ -5,7 +5,7 @@ from matplotlib.patches import Rectangle, Polygon
 from shapely.geometry import Polygon as shapelyPolygon, LinearRing, MultiPolygon
 
 from pwspy.utility.matplotlibWidgets.coreClasses import AxManager
-from pwspy.utility.matplotlibWidgets.selectorWidgets import SelectorWidgetBase
+from pwspy.utility.matplotlibWidgets._selectorWidgets import SelectorWidgetBase
 
 
 class PaintSelector(SelectorWidgetBase):

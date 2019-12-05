@@ -3,7 +3,7 @@ from matplotlib.patches import Polygon
 from shapely.geometry import Polygon as shapelyPolygon, LinearRing
 
 from pwspy.utility.matplotlibWidgets.coreClasses import AxManager
-from pwspy.utility.matplotlibWidgets.selectorWidgets import SelectorWidgetBase
+from pwspy.utility.matplotlibWidgets._selectorWidgets import SelectorWidgetBase
 
 
 class LassoSelector(SelectorWidgetBase):

@@ -9,6 +9,8 @@ from matplotlib.widgets import AxesWidget
 from pwspy.utility.matplotlibWidgets.coreClasses import AxManager
 
 
+
+
 class SelectorWidgetBase(AxesWidget, ABC):
     """Base class for other selection widgets in this file. Requires to be managed by an AxManager. Inherited classes
     can implement a number of action handlers like mouse actions and keyboard presses.
