@@ -8,7 +8,7 @@ srcDir = '..\\..\\src\\pwspy'
 print(f"Using {os.path.abspath(srcDir)} as source path")
 
 a = Analysis(['PyInstallerAnalysisScript.py'],
-             pathex=['.'],
+             pathex=['../../src'],
              binaries=[],
              datas=[
                 (join(srcDir, 'utility/reflection/refractiveIndexFiles/*'), 'pwspy/utility/reflection/refractiveIndexFiles'),

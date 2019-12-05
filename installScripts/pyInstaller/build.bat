@@ -1,5 +1,5 @@
 :: This should be the name of the Conda environment you use for development of pwspython. This environment should have everything needed already installed.
-set env=pwspy
+set env=pwspython
 
 :: We assume anaconda is installed in the default location
 set root=%userprofile%\Anaconda3
