@@ -15,7 +15,7 @@ import typing
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ICMetaData
 from pwspy.dataTypes import Roi
-from pwspy.utility.matplotlibwidg import AdjustableSelector, MyLasso, MyEllipse, MyPaint, PolygonInteractor
+from pwspy.utility.matplotlibWidgets import AdjustableSelector, LassoSelector, EllipseSelector, PaintSelector, PolygonInteractor
 
 
 class RoiDrawer(QWidget):
@@ -30,11 +30,11 @@ class RoiDrawer(QWidget):
         self.buttonGroup = QButtonGroup(self)
         self.noneButton = QPushButton("Inspect")
         self.lassoButton = QPushButton("Lasso")
-        self.lassoButton.setToolTip(MyLasso.getHelpText())
+        self.lassoButton.setToolTip(LassoSelector.getHelpText())
         self.ellipseButton = QPushButton("Ellipse")
-        self.ellipseButton.setToolTip(MyEllipse.getHelpText())
+        self.ellipseButton.setToolTip(EllipseSelector.getHelpText())
         self.paintButton = QPushButton("Paint")
-        self.paintButton.setToolTip(MyPaint.getHelpText())
+        self.paintButton.setToolTip(PaintSelector.getHelpText())
         self.lastButton_ = None
         self.buttonGroup.addButton(self.noneButton)
         self.buttonGroup.addButton(self.lassoButton)
@@ -43,9 +43,10 @@ class RoiDrawer(QWidget):
         self.buttonGroup.buttonReleased.connect(self.handleButtons)
         [i.setCheckable(True) for i in self.buttonGroup.buttons()]
         self.noneButton.setChecked(True)
-        self.adjustButton = QPushButton("Adj")
+        self.adjustButton = QPushButton("Tune")
         self.adjustButton.setToolTip(PolygonInteractor.getHelpText())
         self.adjustButton.setCheckable(True)
+        self.adjustButton.setMaximumWidth(50)
         self.adjustButton.toggled.connect(self.handleAdjustButton)
         self.previousButton = QPushButton('←')
         self.nextButton = QPushButton('→')
@@ -61,7 +62,7 @@ class RoiDrawer(QWidget):
         layout.addWidget(self.nextButton, 0, 7, 1, 1)
         layout.addWidget(self.anViewer, 1, 0, 8, 8)
         self.setLayout(layout)
-        self.selector: AdjustableSelector = AdjustableSelector(self.anViewer.plotWidg.ax, self.anViewer.plotWidg.im, MyLasso, onfinished=self.finalizeRoi)
+        self.selector: AdjustableSelector = AdjustableSelector(self.anViewer.plotWidg.ax, self.anViewer.plotWidg.im, LassoSelector, onfinished=self.finalizeRoi)
         self.show()
 
     def finalizeRoi(self, verts: np.ndarray):
@@ -95,17 +96,17 @@ class RoiDrawer(QWidget):
     def handleButtons(self, button):
         if button != self.lastButton_:
             if button is self.lassoButton:
-                self.selector.setSelector(MyLasso)
+                self.selector.setSelector(LassoSelector)
                 self.selector.setActive(True)
                 self.anViewer.plotWidg.enableHoverAnnotation(False)
                 self.adjustButton.setEnabled(True)
             elif button is self.ellipseButton:
-                self.selector.setSelector(MyEllipse)
+                self.selector.setSelector(EllipseSelector)
                 self.selector.setActive(True)
                 self.anViewer.plotWidg.enableHoverAnnotation(False)
                 self.adjustButton.setEnabled(True)
             elif button is self.paintButton:
-                self.selector.setSelector(MyPaint)
+                self.selector.setSelector(PaintSelector)
                 self.selector.setActive(True)
                 self.anViewer.plotWidg.enableHoverAnnotation(False)
                 self.adjustButton.setEnabled(True)
@@ -136,6 +137,7 @@ class RoiDrawer(QWidget):
         md, analysis = self.metadatas[self.mdIndex]
         self.anViewer.setMetadata(md, analysis=analysis)
         self.anViewer.plotWidg.roiFilter.setEditText(currRoi)
+        self.selector.reset() #Make sure to get rid of all rois
         self.setWindowTitle(f"Roi Drawer - {os.path.split(md.filePath)[-1]}")
 
 class NewRoiDlg(QDialog):
