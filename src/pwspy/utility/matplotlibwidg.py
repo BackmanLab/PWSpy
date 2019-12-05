@@ -6,6 +6,7 @@ Created on Sun Feb 24 22:59:45 2019
 """
 
 import copy
+from abc import ABC, abstractmethod
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -56,7 +57,7 @@ class AxManager:
             self.background = self.canvas.copy_from_bbox(self.ax.bbox)
 
 
-class MySelectorWidget(AxesWidget):
+class MySelectorWidget(AxesWidget, ABC):
     """Base class for other selection widgets in this file. Requires to be managed by an AxManager. Inherited classes
     can implement a number of action handlers like mouse actions and keyboard presses.
     button allows the user to specify which mouse buttons are valid to trigger an event. This can be an int or list of ints.
@@ -91,8 +92,13 @@ class MySelectorWidget(AxesWidget):
         self.state = set()
 
     @staticmethod
+    @abstractmethod
     def getHelpText():
         return "This Selector has no help text."
+
+    @abstractmethod
+    def reset(self):
+        pass
 
     def set_active(self, active):
         AxesWidget.set_active(self, active)
@@ -274,6 +280,10 @@ class MyLasso(MySelectorWidget):
     def getHelpText():
         return "Click and drag to draw a freehand shape."
 
+    def reset(self):
+        self.verts = None
+        self.polygon.set_visible(False)
+
     def _press(self, event):
         self.verts = [(event.xdata, event.ydata)]
         self.set_visible(True)
@@ -310,6 +320,11 @@ class MyEllipse(MySelectorWidget):
     @staticmethod
     def getHelpText():
         return "Click and drag to draw the length of the ellipse. Then click again to set the width."
+
+    def reset(self):
+        self.started = False
+        self.settingWidth = False
+        self.startPoint = None
 
     def _press(self, event):
         if event.button!=1:
@@ -378,6 +393,13 @@ class MyPoint(MySelectorWidget):
         self.addArtist(self.patch)
         self.addArtist(self.ghostPatch)
 
+    def reset(self):
+        self.patch.set_visible(False)
+
+    @staticmethod
+    def getHelpText():
+        return "For selecting a single point with radius of `side`."
+
     def _onhover(self, event):
         self.ghostPatch.set_xy((event.xdata - self.side / 2, event.ydata - self.side / 2))
         self.axMan.update()
@@ -416,12 +438,18 @@ class MyPaint(MySelectorWidget):
         self.started = False
         self.selectionTime = False
         self.contours = []
-        self.box = Rectangle((0,0), 0, 0, facecolor = (1,0,1,.01), edgecolor=(0,0,1,.4), animated=True)
+        self.box = Rectangle((0, 0), 0, 0, facecolor = (1, 0, 1, 0.01), edgecolor=(0, 0, 1, 0.4), animated=True)
         self.addArtist(self.box)
 
     @staticmethod
     def getHelpText():
-        return "Click and drag to select a rectangular region to search for objects. Then click the object you would like to select."
+        return "Click and drag to select a rectangular region to search for objects. Then click the object you would like to select. Press `a` to select the whole image."
+
+    def reset(self):
+        self.started = False
+        [self.removeArtist(i) for i in self.contours]
+        self.contours = []
+        self.selectionTime = False
 
     def findContours(self, rect: Rectangle):
         import cv2
@@ -437,22 +465,29 @@ class MyPaint(MySelectorWidget):
         threshold, binary = cv2.threshold(image, 0, 1, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
         contImage, contours, hierarchy = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         alpha = 0.3
-        colorCycler = cycler(color=[(1,0,0,alpha), (0,1,0,alpha), (0,0,1,alpha), (1,1,0,alpha), (1,0,1,alpha)])
-        for contour, color in zip(contours, colorCycler()):
+        colorCycler = cycler(color=[(1, 0, 0, alpha), (0, 1, 0, alpha), (0, 0, 1, alpha), (1, 1, 0, alpha), (1, 0, 1, alpha)])
+        polys = []
+        for contour in contours:
             contour = contour.squeeze()  # We want a Nx2 array. We get Nx1x2 though.
             if len(contour.shape) != 2:  # Sometimes contour is 1x1x2 which squezes down to just 2
                 continue
             if contour.shape[0] < 3:  # We need a polygon, not a line
                 continue
             contour += np.array([xslice.start, yslice.start])  # Apply offset so that coordinates are globally correct.
-            p = Polygon(contour, color=color['color'], animated=True)
-            self.addArtist(p)
-            self.contours.append(p)
-            self.axMan.update()
-
+            p = shapelyPolygon(contour)
+            if p.area < 100:  # Reject small regions
+                continue
+            polys.append(p)
+        if len(polys) > 0:
+            areas, polys = zip(*sorted(zip([p.area for p in polys], polys)))  # Sort by size
+            for poly, color in zip(polys, colorCycler()):
+                p = Polygon(poly.exterior.coords, color=color['color'], animated=True)
+                self.addArtist(p)
+                self.contours.append(p)
+                self.axMan.update()
 
     def _press(self, event):
-        if event.button == 1: # Left Click
+        if event.button == 1:  # Left Click
             if not self.started and not self.selectionTime:
                 self.started = True
                 self.box.set_xy((event.xdata, event.ydata))
@@ -468,9 +503,18 @@ class MyPaint(MySelectorWidget):
                         handles = l.exterior.coords
                         self.onselect(artist.xy, handles)
                         break
-                [self.removeArtist(i) for i in self.contours]
-                self.contours = []
-                self.selectionTime = False
+                self.reset()
+
+    def _on_key_press(self, event):
+        if event.key.lower() == 'a':
+            if self.selectionTime:
+                self.reset()
+            if not self.started and not self.selectionTime:
+                self.started = True
+                self.findContours(Rectangle((0, 0), self.image.get_array().shape[0], self.image.get_array().shape[1]))
+                self.selectionTime = True
+                self.started = False
+
 
     def _ondrag(self, event):
         if self.started and event.button == 1:
@@ -588,6 +632,9 @@ class PolygonInteractor(MySelectorWidget):
         return """This Selector will become active after the primary Selector is finished. Click and drag the handle 
         points to adjust the ROI. Press 'd' to delete a point. Press 'i' to insert a new point. Press 'enter' to accept
         the selection."""
+
+    def reset(self):
+        pass #not sure what should be done here.
         
     def initialize(self, verts):
         """Given a set of points this will initialize the artists to them"""
@@ -704,6 +751,9 @@ class AdjustableSelector:
         self.adjuster.active = False
         self.adjustable = False
         self.onfinished = onfinished
+
+    def reset(self):
+        self.selector.reset()
 
     @property
     def adjustable(self):
