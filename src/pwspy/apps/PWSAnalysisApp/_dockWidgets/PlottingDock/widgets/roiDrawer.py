@@ -43,9 +43,10 @@ class RoiDrawer(QWidget):
         self.buttonGroup.buttonReleased.connect(self.handleButtons)
         [i.setCheckable(True) for i in self.buttonGroup.buttons()]
         self.noneButton.setChecked(True)
-        self.adjustButton = QPushButton("Adj")
+        self.adjustButton = QPushButton("Tune")
         self.adjustButton.setToolTip(PolygonInteractor.getHelpText())
         self.adjustButton.setCheckable(True)
+        self.adjustButton.setMaximumWidth(50)
         self.adjustButton.toggled.connect(self.handleAdjustButton)
         self.previousButton = QPushButton('←')
         self.nextButton = QPushButton('→')
@@ -136,6 +137,7 @@ class RoiDrawer(QWidget):
         md, analysis = self.metadatas[self.mdIndex]
         self.anViewer.setMetadata(md, analysis=analysis)
         self.anViewer.plotWidg.roiFilter.setEditText(currRoi)
+        self.selector.reset() #Make sure to get rid of all rois
         self.setWindowTitle(f"Roi Drawer - {os.path.split(md.filePath)[-1]}")
 
 class NewRoiDlg(QDialog):
