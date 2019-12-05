@@ -1,19 +1,21 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 block_cipher = None
+from os.path import join
 
+srcDir = 'C:\\Users\\backman05\\Documents\\Bitbucket\\pwspython\\src\\pwspy'
 
 a = Analysis(['PyInstallerAnalysisScript.py'],
              pathex=['C:\\Users\\backman05\\Documents\\Bitbucket\\pwspython\\installScripts\\pyInstaller'],
              binaries=[],
              datas=[
-                ('utility/reflection/refractiveIndexFiles/*', '.'),
-                ('utility/thinFilmInterferenceFiles/*', '.'),
-                ('apps/_resources/*', '.'),
-                ('analysis/_resources/defaultAnalysisSettings/*', '.'),
-                ('apps/PWSAnalysisApp/_resources/*', '.'),
-                ('dataTypes/jsonSchemas/*', '.'),
-                ('_version', '.')
+                (join(srcDir, 'utility/reflection/refractiveIndexFiles/*'), '.'),
+                (join(srcDir, 'utility/thinFilmInterferenceFiles/*'), '.'),
+                (join(srcDir, 'apps/_resources/*'), '.'),
+                (join(srcDir, 'analysis/_resources/defaultAnalysisSettings/*'), '.'),
+                (join(srcDir, 'apps/PWSAnalysisApp/_resources/*'), '.'),
+                (join(srcDir, 'dataTypes/jsonSchemas/*'), '.'),
+                (join(srcDir, '_version'), '.')
              ],
              hiddenimports=[],
              hookspath=[],
@@ -23,6 +25,7 @@ a = Analysis(['PyInstallerAnalysisScript.py'],
              win_private_assemblies=False,
              cipher=block_cipher,
              noarchive=False)
+#print("HAHAHA", a.binaries)
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 exe = EXE(pyz,
