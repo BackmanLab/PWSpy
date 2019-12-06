@@ -53,7 +53,7 @@ class EllipseSelector(SelectorWidgetBase):
             dx = event.xdata - self.patch.center[0]
             dy = event.ydata - self.patch.center[1]
             h = np.sqrt(dx**2 + dy**2)
-            theta = np.arctan2(dy,dx) - np.radians(self.patch.angle)
+            theta = np.arctan2(dy, dx) - np.radians(self.patch.angle)
             self.patch.width = 2*h*np.cos(theta)
             self.axMan.update()
 

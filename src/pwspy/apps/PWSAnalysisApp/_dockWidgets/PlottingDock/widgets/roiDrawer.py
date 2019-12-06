@@ -71,16 +71,15 @@ class RoiDrawer(QWidget):
         self.show()
 
     def finalizeRoi(self, verts: np.ndarray):
-        poly = patches.Polygon(verts, facecolor=(0, .5, 0.5, 0.4))
-        shape = self.anViewer.plotWidg.data.shape
-        self.anViewer.plotWidg.ax.add_patch(poly)
-        self.anViewer.plotWidg.canvas.draw_idle()
         roiName = self.anViewer.plotWidg.roiFilter.currentText()
         if roiName == '':
             QMessageBox.information(self, 'Wait', 'Please type an ROI name into the box at the bottom of the screen.')
             self.selector.setActive(True)
-            poly.remove()
             return
+        poly = patches.Polygon(verts, facecolor=(0, .5, 0.5, 0.4))
+        shape = self.anViewer.plotWidg.data.shape
+        self.anViewer.plotWidg.ax.add_patch(poly)
+        self.anViewer.plotWidg.canvas.draw_idle()
         self.newRoiDlg.show()
         self.newRoiDlg.exec()
         poly.remove()
