@@ -17,8 +17,6 @@ class FullImPaintSelector(SelectorWidgetBase):
     def __init__(self, axMan: AxManager, im: AxesImage, onselect=None):
         super().__init__(axMan, im)
         self.onselect = onselect
-        self.selectionTime = False
-
         self.dlg = AdaptivePaintDialog(self, self.ax.figure.canvas)
 
     @staticmethod
@@ -53,7 +51,7 @@ class FullImPaintSelector(SelectorWidgetBase):
                 self.axMan.update()
 
     def _press(self, event):
-        if event.button == 1 and self.selectionTime:  # Left Click
+        if event.button == 1:  # Left Click
             coord = (event.xdata, event.ydata)
             for artist in self.artists:
                 assert isinstance(artist, Polygon)
@@ -67,13 +65,11 @@ class FullImPaintSelector(SelectorWidgetBase):
                     break
 
 
-
 class AdaptivePaintDialog(QDialog):
     def __init__(self, parentSelector: FullImPaintSelector, parent: QWidget):
         super().__init__(parent=parent)
         self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.WindowTitleHint | QtCore.Qt.CustomizeWindowHint) #Get rid of the close button. this is handled by the selector widget active status
         self.parentSelector = parentSelector
-        # self.setModal(True)
         self.setWindowTitle("Adapter Painter")
 
         self._paintDebounce = QtCore.QTimer()  # This timer prevents the selectionChanged signal from firing too rapidly.
@@ -109,9 +105,6 @@ class AdaptivePaintDialog(QDialog):
         self.refreshButton = QPushButton("Refresh", self)
         self.refreshButton.released.connect(self.paint)
 
-        self.selectButton = QPushButton("Start Selecting", self)
-        self.selectButton.released.connect(self.selectButtonAction)
-
         l = QGridLayout()
         l.addWidget(QLabel("Adaptive Range (px)", self), 0, 0)
         l.addWidget(self.adptRangeSlider, 0, 1)
@@ -120,30 +113,16 @@ class AdaptivePaintDialog(QDialog):
         l.addWidget(self.subSlider, 1, 1)
         l.addWidget(self.subDisp, 1, 2)
         l.addWidget(self.refreshButton, 2, 0)
-        l.addWidget(self.selectButton, 2, 1)
         self.setLayout(l)
-
-    def selectButtonAction(self):
-        if self.selectButton.text() == "Start Selecting":
-            self.selectButton.setText("Stop Selecting")
-            for i in [self.refreshButton, self.adptRangeSlider, self.subSlider]:
-                i.setEnabled(False)
-            self.parentSelector.selectionTime = True
-        else:
-            self.selectButton.setText("Start Selecting")
-            for i in [self.refreshButton, self.adptRangeSlider, self.subSlider]:
-                i.setEnabled(True)
-            self.parentSelector.selectionTime = False
-
 
     def show(self):
         super().show()
 
     def paint(self):
-        if self.refreshButton.isEnabled(): #We use this buttons enabled state also to know if it's ok to refresh our drawing.
-            try:
-                polys = segmentAdaptive(self.parentSelector.image.get_array(), adaptiveRange=self.adptRangeSlider.value(), subtract=self.subSlider.value())
-            except Exception as e:
-                print("Warning: adaptive segmentation failed with error: ", e)
-            self.parentSelector.reset()
-            self.parentSelector.drawRois(polys)
+        try:
+            polys = segmentAdaptive(self.parentSelector.image.get_array(), adaptiveRange=self.adptRangeSlider.value(), subtract=self.subSlider.value())
+        except Exception as e:
+            print("Warning: adaptive segmentation failed with error: ", e)
+            return
+        self.parentSelector.reset()
+        self.parentSelector.drawRois(polys)
