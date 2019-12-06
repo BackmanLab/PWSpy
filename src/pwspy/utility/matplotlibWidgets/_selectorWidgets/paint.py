@@ -1,12 +1,17 @@
-import numpy as np
+from typing import List
+
+from PyQt5 import QtCore
+from PyQt5.QtCore import QPoint
+from PyQt5.QtWidgets import QDialog, QWidget, QGridLayout, QSlider, QPushButton, QLabel
 from cycler import cycler
 from matplotlib.image import AxesImage
 from matplotlib.patches import Rectangle, Polygon
 from shapely.geometry import Polygon as shapelyPolygon, LinearRing, MultiPolygon
 import shapely
-from pwspy.utility.fluorescence.segmentation import segmentOtsu
+from pwspy.utility.fluorescence.segmentation import segmentOtsu, segmentAdaptive
 from pwspy.utility.matplotlibWidgets.coreClasses import AxManager
 from pwspy.utility.matplotlibWidgets._selectorWidgets import SelectorWidgetBase
+
 
 
 class PaintSelector(SelectorWidgetBase):
@@ -30,7 +35,6 @@ class PaintSelector(SelectorWidgetBase):
         self.selectionTime = False
 
     def findContours(self, rect: Rectangle):
-        import cv2
         x, y = rect.xy
         x = int(x)
         y = int(y)
@@ -40,10 +44,12 @@ class PaintSelector(SelectorWidgetBase):
         yslice = slice(y, y2+1) if y2 > y else slice(y2, y+1)
         image = self.image.get_array()[(yslice, xslice)]
         polys = segmentOtsu(image)
-        for i in range(len(polys)): # Apply offset so that coordinates are globally correct.
+        for i in range(len(polys)):  # Apply offset so that coordinates are globally correct.
             polys[i] = shapely.affinity.translate(polys[i], xslice.start, yslice.start)
+        self.drawRois(polys)
+
+    def drawRois(self, polys: List[shapelyPolygon]):
         if len(polys) > 0:
-            areas, polys = zip(*sorted(zip([p.area for p in polys], polys)))  # Sort by size
             alpha = 0.3
             colorCycler = cycler(color=[(1, 0, 0, alpha), (0, 1, 0, alpha), (0, 0, 1, alpha), (1, 1, 0, alpha), (1, 0, 1, alpha)])
             for poly, color in zip(polys, colorCycler()):
@@ -51,6 +57,18 @@ class PaintSelector(SelectorWidgetBase):
                 self.addArtist(p)
                 self.contours.append(p)
                 self.axMan.update()
+
+    def findAdaptiveContours(self):
+        dlg = AdaptivePaintDialog(self, self.ax.figure.canvas)
+        #Move dialog to the side
+        dlg.show()
+        rect = dlg.geometry()
+        parentRect = self.ax.figure.canvas.geometry()
+        # rect.moveTo(self.ax.figure.canvas.mapToGlobal(QPoint(parentRect.x() + parentRect.width() - rect.width(), parentRect.y())))
+        rect.moveTo(self.ax.figure.canvas.mapToGlobal(QPoint(parentRect.x() - rect.width(), parentRect.y())))
+
+        dlg.setGeometry(rect)
+        dlg.exec()
 
     def _press(self, event):
         if event.button == 1:  # Left Click
@@ -77,7 +95,8 @@ class PaintSelector(SelectorWidgetBase):
                 self.reset()
             if not self.started and not self.selectionTime:
                 self.started = True
-                self.findContours(Rectangle((0, 0), self.image.get_array().shape[0], self.image.get_array().shape[1]))
+                # self.findContours(Rectangle((0, 0), self.image.get_array().shape[0], self.image.get_array().shape[1]), func=segmentAdaptive)
+                self.findAdaptiveContours()
                 self.selectionTime = True
                 self.started = False
 
@@ -96,3 +115,57 @@ class PaintSelector(SelectorWidgetBase):
             self.findContours(self.box)
             self.selectionTime = True
             self.started = False
+
+class AdaptivePaintDialog(QDialog):
+    def __init__(self, parentSelector: PaintSelector, parent: QWidget):
+        super().__init__(parent=parent)
+        self.parentSelector = parentSelector
+        self.setModal(True)
+        
+        self._paintDebounce = QtCore.QTimer()  # This timer prevents the selectionChanged signal from firing too rapidly.
+        self._paintDebounce.setInterval(200)
+        self._paintDebounce.setSingleShot(True)
+        self._paintDebounce.timeout.connect(self.paint)
+
+        self.adptRangeSlider = QSlider(QtCore.Qt.Horizontal, self)
+        self.adptRangeSlider.setMaximum(parentSelector.image.get_array().shape[0])
+        self.adptRangeSlider.setMinimum(3)
+        self.adptRangeSlider.setSingleStep(2)
+        #TODO recommend value based on expected pixel size of a nucleus. need to access metadata.
+        self.adptRangeSlider.setValue(101)
+        self.adpRangeDisp = QLabel(str(self.adptRangeSlider.value()), self)
+        def adptRangeChanged(val):
+            self.adpRangeDisp.setText(str(val))
+            if self.adptRangeSlider.value() % 2 == 0:
+                self.adptRangeSlider.setValue(self.adptRangeSlider.value()//2*2+1)#This shouldn't ever happen. but it sometimes does anyway. make sure that adptRangeSlider is an odd number
+            self._paintDebounce.start()
+        self.adptRangeSlider.valueChanged.connect(adptRangeChanged)
+
+        self.subSlider = QSlider(QtCore.Qt.Horizontal, self)
+        self.subSlider.setMinimum(-50)
+        self.subSlider.setMaximum(50)
+        self.subSlider.setValue(-10)
+        self.subDisp = QLabel(str(self.subSlider.value()), self)
+        def subRangeChanged(val):
+            self.subDisp.setText(str(val))
+            self._paintDebounce.start()
+        self.subSlider.valueChanged.connect(subRangeChanged)
+
+        self.okbutton = QPushButton("OK", self)
+
+        self.okbutton.released.connect(self.paint)
+
+        l = QGridLayout()
+        l.addWidget(QLabel("Adaptive Range", self), 0, 0)
+        l.addWidget(self.adptRangeSlider, 0, 1)
+        l.addWidget(self.adpRangeDisp, 0, 2)
+        l.addWidget(QLabel("Subb", self), 1, 0)
+        l.addWidget(self.subSlider, 1, 1)
+        l.addWidget(self.subDisp, 1, 2)
+        l.addWidget(self.okbutton)
+        self.setLayout(l)
+
+    def paint(self):
+        polys = segmentAdaptive(self.parentSelector.image.get_array(), adaptiveRange=self.adptRangeSlider.value(), subtract=self.subSlider.value())
+        self.parentSelector.reset()
+        self.parentSelector.drawRois(polys)
