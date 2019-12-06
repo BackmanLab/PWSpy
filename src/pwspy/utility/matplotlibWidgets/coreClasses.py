@@ -21,7 +21,10 @@ class AxManager:
             for artist in self.artists:
                 if artist.get_visible():
                     self.ax.draw_artist(artist)
-            self.canvas.blit(self.ax.bbox)
+            try:
+                self.canvas.blit(self.ax.bbox)
+            except AttributeError: #Sometimes this happens when first opening
+                self.canvas.draw_idle()
         else:
             self.canvas.draw_idle()
         return False
