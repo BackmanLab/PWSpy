@@ -26,9 +26,6 @@ class AxManager:
             self.canvas.draw_idle()
         return False
 
-    def draw(self):
-        self.canvas.draw_idle()
-
     def _update_background(self, event):
         """force an update of the background"""
         # If you add a call to `ignore` here, you'll want to check edge case:
