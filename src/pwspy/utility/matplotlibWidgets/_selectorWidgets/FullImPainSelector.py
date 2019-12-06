@@ -17,7 +17,6 @@ class FullImPaintSelector(SelectorWidgetBase):
     def __init__(self, axMan: AxManager, im: AxesImage, onselect=None):
         super().__init__(axMan, im)
         self.onselect = onselect
-        self.contours: List[Polygon] = []
         self.selectionTime = False
 
         self.dlg = AdaptivePaintDialog(self, self.ax.figure.canvas)
@@ -27,8 +26,7 @@ class FullImPaintSelector(SelectorWidgetBase):
         return "Segment a full image using opencv thresholding techniques."
 
     def reset(self):
-        [self.removeArtist(i) for i in self.contours]
-        self.contours = []
+        self.removeArtists()
 
     def set_active(self, active: bool):
         super().set_active(active)
@@ -49,15 +47,15 @@ class FullImPaintSelector(SelectorWidgetBase):
             alpha = 0.3
             colorCycler = cycler(color=[(1, 0, 0, alpha), (0, 1, 0, alpha), (0, 0, 1, alpha), (1, 1, 0, alpha), (1, 0, 1, alpha)])
             for poly, color in zip(polys, colorCycler()):
+                #TODO simplify the polygons?
                 p = Polygon(poly.exterior.coords, color=color['color'], animated=True)
                 self.addArtist(p)
-                self.contours.append(p)
                 self.axMan.update()
 
     def _press(self, event):
         if event.button == 1 and self.selectionTime:  # Left Click
             coord = (event.xdata, event.ydata)
-            for artist in self.contours:
+            for artist in self.artists:
                 assert isinstance(artist, Polygon)
                 if artist.get_path().contains_point(coord):
                     l = shapelyPolygon(LinearRing(artist.xy))
