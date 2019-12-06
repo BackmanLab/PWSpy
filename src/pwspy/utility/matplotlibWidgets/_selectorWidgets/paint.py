@@ -1,20 +1,19 @@
 from typing import List
 
-from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
-from PyQt5.QtWidgets import QDialog, QWidget, QGridLayout, QSlider, QPushButton, QLabel
 from cycler import cycler
 from matplotlib.image import AxesImage
 from matplotlib.patches import Rectangle, Polygon
 from shapely.geometry import Polygon as shapelyPolygon, LinearRing, MultiPolygon
 import shapely
-from pwspy.utility.fluorescence.segmentation import segmentOtsu, segmentAdaptive
+from pwspy.utility.fluorescence.segmentation import segmentOtsu
+from pwspy.utility.matplotlibWidgets._selectorWidgets.FullImPainSelector import AdaptivePaintDialog
 from pwspy.utility.matplotlibWidgets.coreClasses import AxManager
 from pwspy.utility.matplotlibWidgets._selectorWidgets import SelectorWidgetBase
 
 
 
-class PaintSelector(SelectorWidgetBase):
+class RegionalPaintSelector(SelectorWidgetBase):
     def __init__(self, axMan: AxManager, im: AxesImage, onselect=None):
         super().__init__(axMan, im)
         self.onselect = onselect
@@ -26,7 +25,7 @@ class PaintSelector(SelectorWidgetBase):
 
     @staticmethod
     def getHelpText():
-        return "Click and drag to select a rectangular region to search for objects. Then click the object you would like to select. Press `a` to select the whole image."
+        return "Click and drag to select a rectangular region to search for objects. Then click the object you would like to select."
 
     def reset(self):
         self.started = False
@@ -58,18 +57,6 @@ class PaintSelector(SelectorWidgetBase):
                 self.contours.append(p)
                 self.axMan.update()
 
-    def findAdaptiveContours(self):
-        dlg = AdaptivePaintDialog(self, self.ax.figure.canvas)
-        #Move dialog to the side
-        dlg.show()
-        rect = dlg.geometry()
-        parentRect = self.ax.figure.canvas.geometry()
-        # rect.moveTo(self.ax.figure.canvas.mapToGlobal(QPoint(parentRect.x() + parentRect.width() - rect.width(), parentRect.y())))
-        rect.moveTo(self.ax.figure.canvas.mapToGlobal(QPoint(parentRect.x() - rect.width(), parentRect.y())))
-
-        dlg.setGeometry(rect)
-        dlg.exec()
-
     def _press(self, event):
         if event.button == 1:  # Left Click
             if not self.started and not self.selectionTime:
@@ -90,18 +77,6 @@ class PaintSelector(SelectorWidgetBase):
                         break
                 self.reset()
 
-    def _on_key_press(self, event):
-        if event.key.lower() == 'a':
-            if self.selectionTime:
-                self.reset()
-            if not self.started and not self.selectionTime:
-                self.started = True
-                self.box.set_visible(False)
-                self.findAdaptiveContours()
-                self.selectionTime = True
-                self.started = False
-
-
     def _ondrag(self, event):
         if self.started and event.button == 1:
             x, y = self.box.xy
@@ -117,63 +92,3 @@ class PaintSelector(SelectorWidgetBase):
             self.selectionTime = True
             self.started = False
 
-class AdaptivePaintDialog(QDialog):
-    def __init__(self, parentSelector: PaintSelector, parent: QWidget):
-        super().__init__(parent=parent)
-        self.parentSelector = parentSelector
-        # self.setModal(True)
-        self.setWindowTitle("Adapter Painter")
-        
-        self._paintDebounce = QtCore.QTimer()  # This timer prevents the selectionChanged signal from firing too rapidly.
-        self._paintDebounce.setInterval(200)
-        self._paintDebounce.setSingleShot(True)
-        self._paintDebounce.timeout.connect(self.paint)
-
-        self.adptRangeSlider = QSlider(QtCore.Qt.Horizontal, self)
-        maxImSize = max(parentSelector.image.get_array().shape)
-        self.adptRangeSlider.setMaximum(maxImSize//2*2+1) #This must be an odd value or else its possible to set the slider to an even value. Opencv doesn't like that.
-        self.adptRangeSlider.setMinimum(3)
-        self.adptRangeSlider.setSingleStep(2)
-        #TODO recommend value based on expected pixel size of a nucleus. need to access metadata.
-        self.adptRangeSlider.setValue(551)
-        self.adpRangeDisp = QLabel(str(self.adptRangeSlider.value()), self)
-        def adptRangeChanged(val):
-            self.adpRangeDisp.setText(str(val))
-            if self.adptRangeSlider.value() % 2 == 0:
-                self.adptRangeSlider.setValue(self.adptRangeSlider.value()//2*2+1)#This shouldn't ever happen. but it sometimes does anyway. make sure that adptRangeSlider is an odd number
-            self._paintDebounce.start()
-        self.adptRangeSlider.valueChanged.connect(adptRangeChanged)
-
-        self.subSlider = QSlider(QtCore.Qt.Horizontal, self)
-        self.subSlider.setMinimum(-50)
-        self.subSlider.setMaximum(50)
-        self.subSlider.setValue(-10)
-        self.subDisp = QLabel(str(self.subSlider.value()), self)
-        def subRangeChanged(val):
-            self.subDisp.setText(str(val))
-            self._paintDebounce.start()
-        self.subSlider.valueChanged.connect(subRangeChanged)
-
-        self.okbutton = QPushButton("OK", self)
-
-        self.okbutton.released.connect(self.paint)
-
-        l = QGridLayout()
-        l.addWidget(QLabel("Adaptive Range (px)", self), 0, 0)
-        l.addWidget(self.adptRangeSlider, 0, 1)
-        l.addWidget(self.adpRangeDisp, 0, 2)
-        l.addWidget(QLabel("Threshold Offset", self), 1, 0)
-        l.addWidget(self.subSlider, 1, 1)
-        l.addWidget(self.subDisp, 1, 2)
-        l.addWidget(self.okbutton)
-        self.setLayout(l)
-
-        self.paint()
-
-    def paint(self):
-        try:
-            polys = segmentAdaptive(self.parentSelector.image.get_array(), adaptiveRange=self.adptRangeSlider.value(), subtract=self.subSlider.value())
-        except Exception as e:
-            print("Warning: adaptive segmentation failed with error: ", e)
-        self.parentSelector.reset()
-        self.parentSelector.drawRois(polys)
