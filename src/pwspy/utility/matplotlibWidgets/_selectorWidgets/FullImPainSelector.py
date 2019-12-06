@@ -5,7 +5,7 @@ from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QDialog, QWidget, QSlider, QLabel, QPushButton, QGridLayout
 from cycler import cycler
 from matplotlib.image import AxesImage
-from shapely.geometry import Polygon as shapelyPolygon
+from shapely.geometry import Polygon as shapelyPolygon, LinearRing, MultiPolygon
 from matplotlib.patches import Polygon
 
 from pwspy.utility.fluorescence.segmentation import segmentAdaptive
@@ -18,6 +18,7 @@ class FullImPaintSelector(SelectorWidgetBase):
         super().__init__(axMan, im)
         self.onselect = onselect
         self.contours: List[Polygon] = []
+        self.selectionTime = False
 
         self.dlg = AdaptivePaintDialog(self, self.ax.figure.canvas)
 
@@ -53,12 +54,26 @@ class FullImPaintSelector(SelectorWidgetBase):
                 self.contours.append(p)
                 self.axMan.update()
 
+    def _press(self, event):
+        if event.button == 1 and self.selectionTime:  # Left Click
+            coord = (event.xdata, event.ydata)
+            for artist in self.contours:
+                assert isinstance(artist, Polygon)
+                if artist.get_path().contains_point(coord):
+                    l = shapelyPolygon(LinearRing(artist.xy))
+                    l = l.simplify(l.length / 2e2, preserve_topology=False)
+                    if isinstance(l, MultiPolygon):  # There is a chance for this to convert a Polygon to a Multipolygon.
+                        l = max(l, key=lambda a: a.area)  # To fix this we extract the largest polygon from the multipolygon
+                    handles = l.exterior.coords
+                    self.onselect(artist.xy, handles)
+                    break
 
 
 
 class AdaptivePaintDialog(QDialog):
     def __init__(self, parentSelector: FullImPaintSelector, parent: QWidget):
         super().__init__(parent=parent)
+        self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.WindowTitleHint | QtCore.Qt.CustomizeWindowHint) #Get rid of the close button. this is handled by the selector widget active status
         self.parentSelector = parentSelector
         # self.setModal(True)
         self.setWindowTitle("Adapter Painter")
@@ -93,9 +108,11 @@ class AdaptivePaintDialog(QDialog):
             self._paintDebounce.start()
         self.subSlider.valueChanged.connect(subRangeChanged)
 
-        self.okbutton = QPushButton("OK", self)
+        self.refreshButton = QPushButton("Refresh", self)
+        self.refreshButton.released.connect(self.paint)
 
-        self.okbutton.released.connect(self.paint)
+        self.selectButton = QPushButton("Start Selecting", self)
+        self.selectButton.released.connect(self.selectButtonAction)
 
         l = QGridLayout()
         l.addWidget(QLabel("Adaptive Range (px)", self), 0, 0)
@@ -104,16 +121,31 @@ class AdaptivePaintDialog(QDialog):
         l.addWidget(QLabel("Threshold Offset", self), 1, 0)
         l.addWidget(self.subSlider, 1, 1)
         l.addWidget(self.subDisp, 1, 2)
-        l.addWidget(self.okbutton)
+        l.addWidget(self.refreshButton, 2, 0)
+        l.addWidget(self.selectButton, 2, 1)
         self.setLayout(l)
+
+    def selectButtonAction(self):
+        if self.selectButton.text() == "Start Selecting":
+            self.selectButton.setText("Stop Selecting")
+            for i in [self.refreshButton, self.adptRangeSlider, self.subSlider]:
+                i.setEnabled(False)
+            self.parentSelector.selectionTime = True
+        else:
+            self.selectButton.setText("Start Selecting")
+            for i in [self.refreshButton, self.adptRangeSlider, self.subSlider]:
+                i.setEnabled(True)
+            self.parentSelector.selectionTime = False
+
 
     def show(self):
         super().show()
 
     def paint(self):
-        try:
-            polys = segmentAdaptive(self.parentSelector.image.get_array(), adaptiveRange=self.adptRangeSlider.value(), subtract=self.subSlider.value())
-        except Exception as e:
-            print("Warning: adaptive segmentation failed with error: ", e)
-        self.parentSelector.reset()
-        self.parentSelector.drawRois(polys)
+        if self.refreshButton.isEnabled(): #We use this buttons enabled state also to know if it's ok to refresh our drawing.
+            try:
+                polys = segmentAdaptive(self.parentSelector.image.get_array(), adaptiveRange=self.adptRangeSlider.value(), subtract=self.subSlider.value())
+            except Exception as e:
+                print("Warning: adaptive segmentation failed with error: ", e)
+            self.parentSelector.reset()
+            self.parentSelector.drawRois(polys)
