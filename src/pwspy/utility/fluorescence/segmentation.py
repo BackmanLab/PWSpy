@@ -1,6 +1,8 @@
 import numpy as np
 import cv2
 import shapely
+from shapely.geometry import MultiPolygon
+
 
 def segmentOtsu(image: np.ndarray, minArea = 100):
     """Uses non-adaptive otsu method segmentation to find fluorescent regions (nuclei)
@@ -21,7 +23,7 @@ def segmentOtsu(image: np.ndarray, minArea = 100):
         polys.append(p)
     return polys
 
-def segmentAdaptive(image: np.ndarray, minArea = 100, adaptiveRange: int = 21, subtract: float=13):
+def segmentAdaptive(image: np.ndarray, minArea = 100, adaptiveRange: int = 21, subtract: float=13, polySimplification: int = 2):
     """Uses opencv's adaptive"""
     if adaptiveRange%2 != 1 or adaptiveRange<3:
         raise ValueError("adaptiveRange must be a positive odd integer >=3.")
@@ -36,6 +38,9 @@ def segmentAdaptive(image: np.ndarray, minArea = 100, adaptiveRange: int = 21, s
         if contour.shape[0] < 3:  # We need a polygon, not a line
             continue
         p = shapely.geometry.Polygon(contour)
+        p = p.simplify(polySimplification, preserve_topology=False)
+        if isinstance(p, MultiPolygon):  # There is a chance for this to convert a Polygon to a Multipolygon.
+            p = max(p, key=lambda a: a.area)  # To fix this we extract the largest polygon from the multipolygon
         if p.area < minArea:  # Reject small regions
             continue
         polys.append(p)
