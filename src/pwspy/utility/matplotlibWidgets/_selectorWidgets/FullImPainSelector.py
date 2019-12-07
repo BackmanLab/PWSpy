@@ -45,7 +45,6 @@ class FullImPaintSelector(SelectorWidgetBase):
             alpha = 0.3
             colorCycler = cycler(color=[(1, 0, 0, alpha), (0, 1, 0, alpha), (0, 0, 1, alpha), (1, 1, 0, alpha), (1, 0, 1, alpha)])
             for poly, color in zip(polys, colorCycler()):
-                #TODO simplify the polygons?
                 p = Polygon(poly.exterior.coords, color=color['color'], animated=True)
                 self.addArtist(p)
                 self.axMan.update()
@@ -102,6 +101,16 @@ class AdaptivePaintDialog(QDialog):
             self._paintDebounce.start()
         self.subSlider.valueChanged.connect(subRangeChanged)
 
+        self.simplificationSlider = QSlider(QtCore.Qt.Horizontal, self)
+        self.simplificationSlider.setMinimum(0)
+        self.simplificationSlider.setMaximum(20)
+        self.simplificationSlider.setValue(5)
+        self.simDisp = QLabel(str(self.simplificationSlider.value()), self)
+        def simpChanged(val):
+            self.simDisp.setText(str(val))
+            self._paintDebounce.start()
+        self.simplificationSlider.valueChanged.connect(simpChanged)
+
         self.refreshButton = QPushButton("Refresh", self)
         self.refreshButton.released.connect(self.paint)
 
@@ -112,7 +121,10 @@ class AdaptivePaintDialog(QDialog):
         l.addWidget(QLabel("Threshold Offset", self), 1, 0)
         l.addWidget(self.subSlider, 1, 1)
         l.addWidget(self.subDisp, 1, 2)
-        l.addWidget(self.refreshButton, 2, 0)
+        l.addWidget(QLabel("Simplification", self), 2, 0)
+        l.addWidget(self.simplificationSlider, 2, 1)
+        l.addWidget(self.simDisp, 2, 2)
+        l.addWidget(self.refreshButton, 3, 0)
         self.setLayout(l)
 
     def show(self):
@@ -120,7 +132,7 @@ class AdaptivePaintDialog(QDialog):
 
     def paint(self):
         try:
-            polys = segmentAdaptive(self.parentSelector.image.get_array(), adaptiveRange=self.adptRangeSlider.value(), subtract=self.subSlider.value())
+            polys = segmentAdaptive(self.parentSelector.image.get_array(), adaptiveRange=self.adptRangeSlider.value(), subtract=self.subSlider.value(), polySimplification=self.simplificationSlider.value())
         except Exception as e:
             print("Warning: adaptive segmentation failed with error: ", e)
             return
