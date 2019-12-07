@@ -83,7 +83,7 @@ class RoiDrawer(QWidget):
         self.newRoiDlg.show()
         self.newRoiDlg.exec()
         poly.remove()
-        if self.newRoiDlg.result() == QDialog.Accepted:
+        if self.newRoiDlg.result() == QDialog.Accepted: #TODO do this in a nother thread to avoid waiting for saving to happen.
             r = Roi.fromVerts(roiName, self.newRoiDlg.number, verts=np.array(verts), dataShape=shape)
             md = self.metadatas[self.mdIndex][0]
             try:
