@@ -38,7 +38,9 @@ def segmentAdaptive(image: np.ndarray, minArea = 100, adaptiveRange: int = 21, s
         if contour.shape[0] < 3:  # We need a polygon, not a line
             continue
         p = shapely.geometry.Polygon(contour)
-        p = p.simplify(polySimplification, preserve_topology=False)
+        if polySimplification != 0:
+            p = p.buffer(-polySimplification).buffer(polySimplification) #This is an erode followed by a dilate.
+        p = p.simplify(polySimplification, preserve_topology=False) #This removed unneed points to lessen the saving loading burden
         if isinstance(p, MultiPolygon):  # There is a chance for this to convert a Polygon to a Multipolygon.
             p = max(p, key=lambda a: a.area)  # To fix this we extract the largest polygon from the multipolygon
         if p.area < minArea:  # Reject small regions
