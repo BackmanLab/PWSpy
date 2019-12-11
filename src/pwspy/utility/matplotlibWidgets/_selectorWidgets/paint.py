@@ -7,7 +7,7 @@ from matplotlib.patches import Rectangle, Polygon
 from shapely.geometry import Polygon as shapelyPolygon, LinearRing, MultiPolygon
 import shapely
 from pwspy.utility.fluorescence.segmentation import segmentOtsu
-from pwspy.utility.matplotlibWidgets._selectorWidgets.FullImPainSelector import AdaptivePaintDialog
+from pwspy.utility.matplotlibWidgets._selectorWidgets.FullImPaintSelector import AdaptivePaintDialog
 from pwspy.utility.matplotlibWidgets.coreClasses import AxManager
 from pwspy.utility.matplotlibWidgets._selectorWidgets import SelectorWidgetBase
 

@@ -13,7 +13,7 @@ from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.analysisViewer 
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.bigPlot import BigPlot
 import typing
 
-from pwspy.utility.matplotlibWidgets._selectorWidgets.FullImPainSelector import FullImPaintSelector
+from pwspy.utility.matplotlibWidgets._selectorWidgets.FullImPaintSelector import FullImPaintSelector
 
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ICMetaData

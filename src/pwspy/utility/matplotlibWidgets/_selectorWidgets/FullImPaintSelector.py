@@ -71,6 +71,10 @@ class AdaptivePaintDialog(QDialog):
         self.parentSelector = parentSelector
         self.setWindowTitle("Adapter Painter")
 
+        self.stale = True #This tells us whether we can load regions from the cache or need to recalculate
+        self.cachedRegions = None
+        self.cachedImage = None
+
         self._paintDebounce = QtCore.QTimer()  # This timer prevents the selectionChanged signal from firing too rapidly.
         self._paintDebounce.setInterval(200)
         self._paintDebounce.setSingleShot(True)
@@ -85,6 +89,7 @@ class AdaptivePaintDialog(QDialog):
         self.adptRangeSlider.setValue(551)
         self.adpRangeDisp = QLabel(str(self.adptRangeSlider.value()), self)
         def adptRangeChanged(val):
+            self.stale = True
             self.adpRangeDisp.setText(str(val))
             if self.adptRangeSlider.value() % 2 == 0:
                 self.adptRangeSlider.setValue(self.adptRangeSlider.value()//2*2+1)#This shouldn't ever happen. but it sometimes does anyway. make sure that adptRangeSlider is an odd number
@@ -97,6 +102,7 @@ class AdaptivePaintDialog(QDialog):
         self.subSlider.setValue(-10)
         self.subDisp = QLabel(str(self.subSlider.value()), self)
         def subRangeChanged(val):
+            self.stale = True
             self.subDisp.setText(str(val))
             self._paintDebounce.start()
         self.subSlider.valueChanged.connect(subRangeChanged)
@@ -107,6 +113,7 @@ class AdaptivePaintDialog(QDialog):
         self.simplificationSlider.setValue(5)
         self.simDisp = QLabel(str(self.simplificationSlider.value()), self)
         def simpChanged(val):
+            self.stale = True
             self.simDisp.setText(str(val))
             self._paintDebounce.start()
         self.simplificationSlider.valueChanged.connect(simpChanged)
@@ -131,10 +138,19 @@ class AdaptivePaintDialog(QDialog):
         super().show()
 
     def paint(self):
-        try:
-            polys = segmentAdaptive(self.parentSelector.image.get_array(), adaptiveRange=self.adptRangeSlider.value(), subtract=self.subSlider.value(), polySimplification=self.simplificationSlider.value())
-        except Exception as e:
-            print("Warning: adaptive segmentation failed with error: ", e)
-            return
+        """Refresh the recommended regions. If stale is false then just repaint the cached regions without recalculating."""
+        if self.parentSelector.image.get_array() is not self.cachedImage: #The image has been changed.
+            self.cachedImage = self.parentSelector.image.get_array()
+            self.stale = True
+        if self.stale:
+            try:
+                polys = segmentAdaptive(self.parentSelector.image.get_array(), adaptiveRange=self.adptRangeSlider.value(), subtract=self.subSlider.value(), polySimplification=self.simplificationSlider.value())
+                self.cachedRegions = polys
+                self.stale = False
+            except Exception as e:
+                print("Warning: adaptive segmentation failed with error: ", e)
+                return
+        else:
+            polys = self.cachedRegions
         self.parentSelector.reset()
         self.parentSelector.drawRois(polys)
