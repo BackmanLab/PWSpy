@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import List, Tuple, Optional
 
 import numpy as np
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QWidget, QGridLayout, QButtonGroup, QPushButton, QDialog, QSpinBox, QLabel, \
     QMessageBox, QMenu, QAction
 from pwspy.dataTypes import AcqDir
@@ -154,6 +154,10 @@ class RoiDrawer(QWidget):
         self.anViewer.plotWidg.roiFilter.setEditText(currRoi)
         self.selector.reset() #Make sure to get rid of all rois
         self.setWindowTitle(f"Roi Drawer - {os.path.split(md.filePath)[-1]}")
+
+    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+        self.selector.setActive(False) #This cleans up remaining resources of the selector widgets.
+        super().closeEvent(a0)
 
 class NewRoiDlg(QDialog):
     def __init__(self, parent: RoiDrawer):
