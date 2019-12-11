@@ -279,8 +279,8 @@ class Roi:
             Y = Y[self.mask]
             coords = list(zip(X, Y))  # Get coordinates of items in the mask.
             cHull, edgePoints = _concaveHull(coords, 4)
-            return patches.Polygon(cHull.exterior.coords, facecolor=(1, 0, 0, 0.5), linewidth=3, edgecolor=(0,1,0,.9))
+            return patches.Polygon(cHull.exterior.coords, facecolor=(1, 0, 0, 0.5), linewidth=1, edgecolor=(0,1,0,.9))
         else:
-            return patches.Polygon(self.verts, facecolor=(1, 0, 0, 0.5), linewidth=3, edgecolor=(0,1,0,0.9))
+            return patches.Polygon(self.verts, facecolor=(1, 0, 0, 0.5), linewidth=1, edgecolor=(0,1,0,0.9))
 
 
