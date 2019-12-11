@@ -172,7 +172,7 @@ class SelectorWidgetBase(AxesWidget, ABC):
         self.visible = visible
         for artist in self.artists:
             artist.set_visible(visible)
-        self.axMan.draw()
+        self.axMan.update()
 
     def addArtist(self, artist):
         """Add a matplotlib artist to be managed."""
@@ -190,13 +190,13 @@ class SelectorWidgetBase(AxesWidget, ABC):
             self.axMan.artists.remove(artist)
             artist.remove()
         self.artists = []
-        self.axMan.draw()
+        self.axMan.update()
 
     def removeArtist(self, artist):
         self.artists.remove(artist)
         self.axMan.artists.remove(artist)
         artist.remove()
-        self.axMan.draw()
+        self.axMan.update()
 
     # Overridable events
     def _on_key_release(self, event):

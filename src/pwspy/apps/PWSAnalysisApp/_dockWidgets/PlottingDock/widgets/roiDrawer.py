@@ -2,9 +2,9 @@ from __future__ import annotations
 from typing import List, Tuple, Optional
 
 import numpy as np
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QWidget, QGridLayout, QButtonGroup, QPushButton, QDialog, QSpinBox, QLabel, \
-    QMessageBox
+    QMessageBox, QMenu, QAction
 from pwspy.dataTypes import AcqDir
 from matplotlib import patches
 import os
@@ -12,10 +12,13 @@ from pwspy.analysis.pws import PWSAnalysisResults
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.analysisViewer import AnalysisViewer
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.bigPlot import BigPlot
 import typing
+
+from pwspy.utility.matplotlibWidgets._selectorWidgets.FullImPaintSelector import FullImPaintSelector
+
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ICMetaData
 from pwspy.dataTypes import Roi
-from pwspy.utility.matplotlibWidgets import AdjustableSelector, LassoSelector, EllipseSelector, PaintSelector, PolygonInteractor
+from pwspy.utility.matplotlibWidgets import AdjustableSelector, LassoSelector, EllipseSelector, RegionalPaintSelector, PolygonInteractor
 
 
 class RoiDrawer(QWidget):
@@ -23,6 +26,7 @@ class RoiDrawer(QWidget):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         self.setWindowTitle("Roi Drawer 3000")
         self.metadatas = metadatas
+
         layout = QGridLayout()
         self.mdIndex = 0
         self.newRoiDlg = NewRoiDlg(self)
@@ -34,7 +38,7 @@ class RoiDrawer(QWidget):
         self.ellipseButton = QPushButton("Ellipse")
         self.ellipseButton.setToolTip(EllipseSelector.getHelpText())
         self.paintButton = QPushButton("Paint")
-        self.paintButton.setToolTip(PaintSelector.getHelpText())
+        self.paintButton.setToolTip(RegionalPaintSelector.getHelpText())
         self.lastButton_ = None
         self.buttonGroup.addButton(self.noneButton)
         self.buttonGroup.addButton(self.lassoButton)
@@ -42,7 +46,7 @@ class RoiDrawer(QWidget):
         self.buttonGroup.addButton(self.paintButton)
         self.buttonGroup.buttonReleased.connect(self.handleButtons)
         [i.setCheckable(True) for i in self.buttonGroup.buttons()]
-        self.noneButton.setChecked(True)
+        self.noneButton.setChecked(True) #This doesn't seem totrigger handle buttons. we'll do that at the end of the constructor
         self.adjustButton = QPushButton("Tune")
         self.adjustButton.setToolTip(PolygonInteractor.getHelpText())
         self.adjustButton.setCheckable(True)
@@ -63,23 +67,23 @@ class RoiDrawer(QWidget):
         layout.addWidget(self.anViewer, 1, 0, 8, 8)
         self.setLayout(layout)
         self.selector: AdjustableSelector = AdjustableSelector(self.anViewer.plotWidg.ax, self.anViewer.plotWidg.im, LassoSelector, onfinished=self.finalizeRoi)
+        self.handleButtons(self.noneButton) #Helps initialize state
         self.show()
 
     def finalizeRoi(self, verts: np.ndarray):
-        poly = patches.Polygon(verts, facecolor=(0, .5, 0.5, 0.4))
-        shape = self.anViewer.plotWidg.data.shape
-        self.anViewer.plotWidg.ax.add_patch(poly)
-        self.anViewer.plotWidg.canvas.draw_idle()
         roiName = self.anViewer.plotWidg.roiFilter.currentText()
         if roiName == '':
             QMessageBox.information(self, 'Wait', 'Please type an ROI name into the box at the bottom of the screen.')
             self.selector.setActive(True)
-            poly.remove()
             return
+        poly = patches.Polygon(verts, facecolor=(0, .5, 0.5, 0.4))
+        shape = self.anViewer.plotWidg.data.shape
+        self.anViewer.plotWidg.ax.add_patch(poly)
+        self.anViewer.plotWidg.canvas.draw_idle()
         self.newRoiDlg.show()
         self.newRoiDlg.exec()
         poly.remove()
-        if self.newRoiDlg.result() == QDialog.Accepted:
+        if self.newRoiDlg.result() == QDialog.Accepted: #TODO do this in a nother thread to avoid waiting for saving to happen.
             r = Roi.fromVerts(roiName, self.newRoiDlg.number, verts=np.array(verts), dataShape=shape)
             md = self.metadatas[self.mdIndex][0]
             try:
@@ -94,27 +98,38 @@ class RoiDrawer(QWidget):
         self.selector.setActive(True)  # Start the next roi.
 
     def handleButtons(self, button):
-        if button != self.lastButton_:
-            if button is self.lassoButton:
-                self.selector.setSelector(LassoSelector)
+        if button is self.lassoButton and self.lastButton_ is not button:
+            self.selector.setSelector(LassoSelector)
+            self.selector.setActive(True)
+            self.anViewer.plotWidg.enableHoverAnnotation(False)
+            self.adjustButton.setEnabled(True)
+        elif button is self.ellipseButton and self.lastButton_ is not button:
+            self.selector.setSelector(EllipseSelector)
+            self.selector.setActive(True)
+            self.anViewer.plotWidg.enableHoverAnnotation(False)
+            self.adjustButton.setEnabled(True)
+        elif button is self.paintButton:
+            def setSelector(sel):
+                self.selector.setSelector(sel)
                 self.selector.setActive(True)
                 self.anViewer.plotWidg.enableHoverAnnotation(False)
                 self.adjustButton.setEnabled(True)
-            elif button is self.ellipseButton:
-                self.selector.setSelector(EllipseSelector)
-                self.selector.setActive(True)
-                self.anViewer.plotWidg.enableHoverAnnotation(False)
-                self.adjustButton.setEnabled(True)
-            elif button is self.paintButton:
-                self.selector.setSelector(PaintSelector)
-                self.selector.setActive(True)
-                self.anViewer.plotWidg.enableHoverAnnotation(False)
-                self.adjustButton.setEnabled(True)
-            elif button is self.noneButton:
+
+            menu = QMenu(self)
+            regionalAction = QAction("Regional")
+            regionalAction.triggered.connect(lambda: setSelector(RegionalPaintSelector))
+            menu.addAction(regionalAction)
+            fullAction = QAction("Full Image")
+            fullAction.triggered.connect(lambda: setSelector(FullImPaintSelector))
+            menu.addAction(fullAction)
+            menu.exec(self.mapToGlobal(self.paintButton.pos()))
+
+        elif button is self.noneButton and self.lastButton_ is not button:
+            if self.selector is not None:
                 self.selector.setActive(False)
-                self.anViewer.plotWidg.enableHoverAnnotation(True)
-                self.adjustButton.setEnabled(False)
-            self.lastButton_ = button
+            self.anViewer.plotWidg.enableHoverAnnotation(True)
+            self.adjustButton.setEnabled(False)
+        self.lastButton_ = button
 
     def handleAdjustButton(self, checkstate: bool):
         if self.selector is not None:
@@ -139,6 +154,10 @@ class RoiDrawer(QWidget):
         self.anViewer.plotWidg.roiFilter.setEditText(currRoi)
         self.selector.reset() #Make sure to get rid of all rois
         self.setWindowTitle(f"Roi Drawer - {os.path.split(md.filePath)[-1]}")
+
+    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+        self.selector.setActive(False) #This cleans up remaining resources of the selector widgets.
+        super().closeEvent(a0)
 
 class NewRoiDlg(QDialog):
     def __init__(self, parent: RoiDrawer):

@@ -253,6 +253,7 @@ class AdjustableSelector:
 
     def setSelector(self, selectorClass: Type):
         self.selector.removeArtists()
+        self.selector.active = False
         self.selector = selectorClass(self.axMan, self.image)
         self.adjustable = self.adjustable
 
