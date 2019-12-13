@@ -1,4 +1,5 @@
-__all__ = ['ICMetaData', 'DynMetaData', 'ERMetadata']
+__all__ = ['ICMetaData', 'DynMetaData', 'ERMetadata', 'FluorMetaData']
 from ._DynMetaDataClass import DynMetaData
 from ._ICMetaDataClass import ICMetaData
 from ._ERMetadata import ERMetadata
+from ._FluorMetaDataClass import FluorMetaData
