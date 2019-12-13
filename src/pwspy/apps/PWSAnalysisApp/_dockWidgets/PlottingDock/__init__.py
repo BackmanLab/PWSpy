@@ -8,6 +8,7 @@ from pwspy.apps.PWSAnalysisApp._dockWidgets import CellSelectorDock
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.roiDrawer import RoiDrawer
 from pwspy.dataTypes import ICMetaData, AcqDir
 from pwspy.apps.sharedWidgets.utilityWidgets import AspectRatioWidget
+from pwspy.utility.misc import profileDec
 from .widgets.littlePlot import LittlePlot
 import os
 
@@ -81,9 +82,14 @@ class PlottingDock(QDockWidget):
 
         self.enableAnalysisPlottingButtons('false')
 
-    def addPlot(self, plot):
+    def addPlot(self, plot: QWidget):
         self.plots.append(plot)
         self.scrollContents.layout().addWidget(plot)
+        self._plotsChanged()
+
+    def addPlots(self, plots: List[QWidget]):
+        self.plots.extend(plots)
+        [self.scrollContents.layout().addWidget(plot) for plot in plots]
         self._plotsChanged()
 
     def _plotsChanged(self):
@@ -145,19 +151,20 @@ class PlottingDock(QDockWidget):
             messageBox.information(self, "Oops!", "Please select the cells you would like to plot.")
             messageBox.setFixedSize(500, 200)
         buttonState = 'false'
+        plotsToAdd = []
         for cell in cells:
             if analysisName.strip() == '': #No analysis name was entered. don't load an analysis, just the thumbnail
-                self.addPlot(LittlePlot(cell, None, f"{os.path.split(cell.filePath)[-1]}"))
+                plotsToAdd.append(LittlePlot(cell, None, f"{os.path.split(cell.filePath)[-1]}"))
                 buttonState = 'partial'
             else:
                 if analysisName in cell.pws.getAnalyses():
                     analysis = cell.pws.loadAnalysis(analysisName)
-                    self.addPlot(LittlePlot(cell, analysis, f"{analysisName} {os.path.split(cell.filePath)[-1]}"))
+                    plotsToAdd.append(LittlePlot(cell, analysis, f"{analysisName} {os.path.split(cell.filePath)[-1]}"))
                     buttonState = 'true'
                 else: #Specified analysis was not found, load a dummy widget
-                    self.addPlot(LittlePlot(cell, None, f"{analysisName} {os.path.split(cell.filePath)[-1]}", "Analysis Not Found!"))
+                    plotsToAdd.append(LittlePlot(cell, None, f"{analysisName} {os.path.split(cell.filePath)[-1]}", "Analysis Not Found!"))
+        self.addPlots(plotsToAdd)
         self.enableAnalysisPlottingButtons(buttonState)
-        self._plotsChanged()
 
     def handleButtons(self, button: QPushButton):
         if button != self._lastButton:
