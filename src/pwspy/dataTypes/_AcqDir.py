@@ -4,6 +4,7 @@ from typing import List, Tuple
 import sys
 from ._FluoresenceImg import FluorescenceImage
 from pwspy.dataTypes import ICMetaData, DynMetaData
+from ._metadata import FluorMetaData
 from ._otherClasses import Roi
 import os
 import numpy as np
@@ -37,11 +38,11 @@ class AcqDir:
             return None
 
     @cached_property
-    def fluorescence(self) -> FluorescenceImage:
+    def fluorescence(self) -> FluorMetaData:
         path = os.path.join(self.filePath, 'Fluorescence')
-        if FluorescenceImage.isValidPath(path):
-            return FluorescenceImage.fromTiff(path, acquisitionDirectory=self)
-        else:
+        try:
+            return FluorMetaData.fromTiff(path, acquisitionDirectory=self)
+        except ValueError:
             return None
 
     @property

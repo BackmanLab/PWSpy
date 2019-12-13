@@ -1,6 +1,6 @@
 from typing import Optional
 import numpy as np
-from pwspy.dataTypes import AcqDir
+from pwspy.dataTypes import AcqDir, FluorescenceImage
 from pwspy.analysis.pws import PWSAnalysisResults
 from pwspy.dataTypes import ICMetaData
 from enum import Enum, auto
@@ -36,7 +36,7 @@ class AnalysisPlotter:
             opd, opdIndex = self.analysis.opd
             self.data = opdIndex[np.argmax(opd, axis=2)]
         elif field is self.PlotFields.Fluorescence: #Open the fluorescence image.
-            self.data = self.metadata.fluorescence.data
+            self.data = FluorescenceImage.fromMetadata(self.metadata.fluorescence).data
         else:
             if self.analysis is None:
                 raise ValueError(f"Analysis Plotter for {self.metadata.filePath} does not have an analysis file.")

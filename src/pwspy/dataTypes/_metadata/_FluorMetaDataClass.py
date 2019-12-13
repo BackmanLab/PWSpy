@@ -1,11 +1,14 @@
+from __future__ import annotations
 import json
 from typing import Optional
 import os
-from pwspy.dataTypes import AcqDir
 import tifffile as tf
 from pwspy.dataTypes import _jsonSchemasPath
-from pwspy.dataTypes._metadata._MetaDataBaseClass import MetaDataBase
+from ._MetaDataBaseClass import MetaDataBase
 import numpy as np
+import typing
+if typing.TYPE_CHECKING:
+    from pwspy.dataTypes import AcqDir
 
 class FluorMetaData(MetaDataBase):
     FILENAME = 'fluor.tif'
@@ -18,12 +21,27 @@ class FluorMetaData(MetaDataBase):
     def __init__(self, md: dict, filePath: Optional[str] = None, acquisitionDirectory: Optional[AcqDir] = None):
         super().__init__(md, filePath, acquisitionDirectory)
 
+    @property
+    def idTag(self):
+        return f"Fluor_{self._dict['system']}_{self._dict['time']}"
+
     @classmethod
     def fromTiff(cls, directory: str, acquisitionDirectory: Optional[AcqDir]):
         if not FluorMetaData.isValidPath(directory):
             raise ValueError(f"Fluorescence image not found in {directory}.")
         with open(os.path.join(directory, FluorMetaData.MDPATH), 'r') as f:
             dic = json.load(f)
+
+        # Get binning from the micromanager metadata
+        binning = dic['MicroManagerMetadata']['Binning']['scalar']
+        dic['binning'] = binning
+        # Get the pixel size from the micromanager metadata
+        try:
+            dic['pixelSizeUm'] = dic['MicroManagerMetadata']['PixelSizeUm']['scalar']
+        except KeyError:
+            dic['pixelSizeUm'] = None
+        if dic['pixelSizeUm'] == 0: dic['pixelSizeUm'] = None
+
         return FluorMetaData(dic, directory, acquisitionDirectory)
 
     @staticmethod

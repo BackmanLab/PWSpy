@@ -17,7 +17,11 @@ class FluorescenceImage:
     @classmethod
     def fromTiff(cls, directory: str, acquisitionDirectory: Optional[AcqDir] = None):
         md = FluorMetaData.fromTiff(directory, acquisitionDirectory) #This will raise an error if the folder isn't valid
-        path = os.path.join(directory, FluorMetaData.FILENAME)
+        return cls.fromMetadata(md)
+
+    @classmethod
+    def fromMetadata(cls, md: FluorMetaData):
+        path = os.path.join(md.filePath, FluorMetaData.FILENAME)
         img = tf.TiffFile(path)
         return cls(img.asarray(), md)
 
