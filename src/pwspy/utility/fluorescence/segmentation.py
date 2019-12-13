@@ -23,12 +23,12 @@ def segmentOtsu(image: np.ndarray, minArea = 100):
         polys.append(p)
     return polys
 
-def segmentAdaptive(image: np.ndarray, minArea = 100, adaptiveRange: int = 21, subtract: float=13, polySimplification: int = 2) -> shapely.geometry.Polygon:
+def segmentAdaptive(image: np.ndarray, minArea = 100, adaptiveRange: int = 500, thresholdOffset: float=-10, polySimplification: int = 5) -> shapely.geometry.Polygon:
     """Uses opencv's adaptive"""
     if adaptiveRange%2 != 1 or adaptiveRange<3:
         raise ValueError("adaptiveRange must be a positive odd integer >=3.")
     image = ((image - image.min()) / (image.max() - image.min()) * 255).astype(np.uint8) # convert to 8bit
-    binary = cv2.adaptiveThreshold(image, 1, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, adaptiveRange, subtract)
+    binary = cv2.adaptiveThreshold(image, 1, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, adaptiveRange, thresholdOffset)
     contImage, contours, hierarchy = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     polys = []
     for contour in contours:

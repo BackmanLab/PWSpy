@@ -144,7 +144,7 @@ class AdaptivePaintDialog(QDialog):
             self.stale = True
         if self.stale:
             try:
-                polys = segmentAdaptive(self.parentSelector.image.get_array(), adaptiveRange=self.adptRangeSlider.value(), subtract=self.subSlider.value(), polySimplification=self.simplificationSlider.value())
+                polys = segmentAdaptive(self.parentSelector.image.get_array(), adaptiveRange=self.adptRangeSlider.value(), thresholdOffset=self.subSlider.value(), polySimplification=self.simplificationSlider.value())
                 self.cachedRegions = polys
                 self.stale = False
             except Exception as e:
