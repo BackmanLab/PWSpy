@@ -23,7 +23,7 @@ def segmentOtsu(image: np.ndarray, minArea = 100):
         polys.append(p)
     return polys
 
-def segmentAdaptive(image: np.ndarray, minArea = 100, adaptiveRange: int = 21, subtract: float=13, polySimplification: int = 2):
+def segmentAdaptive(image: np.ndarray, minArea = 100, adaptiveRange: int = 21, subtract: float=13, polySimplification: int = 2) -> shapely.geometry.Polygon:
     """Uses opencv's adaptive"""
     if adaptiveRange%2 != 1 or adaptiveRange<3:
         raise ValueError("adaptiveRange must be a positive odd integer >=3.")

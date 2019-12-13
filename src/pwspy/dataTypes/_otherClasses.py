@@ -102,7 +102,7 @@ def _concaveHull(coords: List[Tuple[int, int]], alpha):
 
 class Roi:
     """This class represents a single Roi used to select a specific region of an image. Each Roi is identified by a
-    `name` and a `number`. The reccomended file format is HDF2, in this format multiple rois of the same name but differing
+    `name` and a `number`. The recommended file format is HDF2, in this format multiple rois of the same name but differing
     numbers can be saved in a single HDF file. The Roi consists of a `mask` (a boolean array specifying which pixels are
      included in the Roi), a set of of `vertices` (a 2 x N array specifying the vertices of the polygon enclosing the
      mask, this is useful if you want to adjust the Roi later."""
@@ -124,7 +124,7 @@ class Roi:
         self.fileFormat = fileFormat
 
     @classmethod
-    def fromVerts(cls, name: str, number: int, verts: np.ndarray, dataShape: tuple, filePath: str = None, fileFormat: Roi.FileFormats = None):
+    def fromVerts(cls, name: str, number: int, verts: np.ndarray, dataShape: tuple):
         """Automatically generate the mask for an Roi using just the vertices of an enclosing polygon and the
         `dataShape` (dimensions of the full image).
         For example: myRoi = Roi.fromVerts('nucleus', 1, polyVerts, (1024, 1024))"""
@@ -139,7 +139,7 @@ class Roi:
         coords = list(zip(X.flatten(), Y.flatten()))
         matches = path.Path(verts).contains_points(coords)
         mask = matches.reshape(dataShape)
-        return cls(name, number, mask, verts, filePath=filePath, fileFormat=fileFormat)
+        return cls(name, number, mask, verts)
 
     @classmethod
     def fromHDF_legacy(cls, directory: str, name: str, number: int):
