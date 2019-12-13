@@ -109,10 +109,12 @@ class BigPlot(QWidget):
                 break
 
 
-    def _hoverCallback(self, event):
+    def _hoverCallback(self, event): #Show an annotation about the ROI when the mouse hovers over it.
         def update_annot(roi, poly):
             self.annot.xy = poly.xy.mean(axis=0) # Set the location to the center of the polygon.
             text = f"{roi.name}, {roi.number}"
+            if self.metadata.pws: # A day may come where fluorescence is not taken on the same camera as pws, in this case we will have multiple pixel sizes and ROI handling will need an update. for now just assume we'll use PWS pixel size
+                text += f"\n{self.metadata.pws.pixelSizeUm**2 * np.sum(roi.mask):.2f} $μm^2$"
             self.annot.set_text(text)
             self.annot.get_bbox_patch().set_alpha(0.4)
         vis = self.annot.get_visible()

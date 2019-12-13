@@ -17,7 +17,7 @@ class AcqDir:
     def __init__(self, directory: str):
         self.filePath = directory
         if (self.pws is None) and (self.dynamics is None): # We must have one of these two items.
-            raise OSError("Could not find a valid PWS or Dynamics Acquisition.")
+            raise OSError(f"Could not find a valid PWS or Dynamics Acquisition at {directory}.")
 
     @cached_property
     def pws(self) -> ICMetaData:
