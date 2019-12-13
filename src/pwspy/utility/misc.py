@@ -16,15 +16,18 @@ class cached_property(object):
         return value
 
 
-def profileDec(func, sort='cumtime'):
-    """profile a function call"""
-    import cProfile
-    def newFunc(*args, **kwargs):
-        pr = cProfile.Profile()
-        pr.enable()
-        ret = func(*args, **kwargs)
-        pr.disable()
-        # after your program ends
-        pr.print_stats(sort=sort)
-        return ret
-    return newFunc
+def profileDec(filePath: str):
+    def innerDec(func):
+        """decorator to profile a function call"""
+        import cProfile
+        def newFunc(*args, **kwargs):
+            pr = cProfile.Profile()
+            pr.enable()
+            ret = func(*args, **kwargs)
+            pr.disable()
+            pr.dump_stats(filePath)
+            # after your function ends
+            # pr.print_stats(sort=sort)
+            return ret
+        return newFunc
+    return innerDec
