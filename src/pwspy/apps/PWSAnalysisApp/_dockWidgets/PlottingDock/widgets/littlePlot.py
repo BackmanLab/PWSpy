@@ -1,9 +1,10 @@
 import os
 
 import numpy as np
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QPoint
-from PyQt5.QtWidgets import QMenu, QAction
+from PyQt5.QtGui import QPixmap, QImage
+from PyQt5.QtWidgets import QMenu, QAction, QWidget, QLabel, QVBoxLayout, QSizePolicy
 from pwspy.dataTypes import AcqDir
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -15,23 +16,25 @@ from pwspy.dataTypes import ImCube, ICMetaData
 from pwspy.utility import PlotNd
 
 
-class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
+class LittlePlot(AnalysisPlotter, QWidget):
     def __init__(self, metadata: AcqDir, analysis: PWSAnalysisResults, title: str, text: str = None,
                  initialField=AnalysisPlotter.PlotFields.Thumbnail):
         AnalysisPlotter.__init__(self, metadata, analysis)
-        self.fig = Figure()
-        self.ax = self.fig.add_subplot(1, 1, 1)
-        self.im = self.ax.imshow(np.zeros((100, 100)), cmap='gray')
+        QWidget.__init__(self)
+        self.setLayout(QVBoxLayout())
+        self.titleLabel = QLabel(title, self)
+        self.titleLabel.setAlignment(QtCore.Qt.AlignCenter)
+        self.imLabel = QLabel(self)#IconLabel(self)
+        self.imLabel.setScaledContents(True)
+        self.textLabel = QLabel(self)
+        self.layout().addWidget(self.titleLabel)
+        self.layout().addWidget(self.imLabel)
+        self.layout().addWidget(self.textLabel)
         self.title = title
-        self.ax.set_title(self.title, fontsize=8)
-        self.ax.yaxis.set_visible(False)
-        self.ax.xaxis.set_visible(False)
-        FigureCanvasQTAgg.__init__(self, self.fig)
-        self.mpl_connect("button_release_event", self.mouseReleaseEvent)
         self.setMinimumWidth(20)
         self.changeData(initialField)
         if text is not None:
-            self.ax.text(1, 50, text)
+            self.textLabel.setText(text)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.showContextMenu)
         self.plotnd = None #Just a reference to a plotND class instance so it isn't deleted.
@@ -42,9 +45,14 @@ class LittlePlot(FigureCanvasQTAgg, AnalysisPlotter):
 
     def changeData(self, field: AnalysisPlotter.PlotFields):
         AnalysisPlotter.changeData(self, field)
-        self.im.set_data(self.data)
-        self.im.set_clim((np.percentile(self.data, 0.1), np.percentile(self.data, 99.9)))
-        self.draw_idle()
+        data = self.data
+        data = data - np.percentile(data, 0.1)
+        data = (data / np.percentile(data, 99.9) * 255)
+        data[data<0] = 0
+        data[data>255] = 255
+        data = data.astype(np.uint8)
+        p = QPixmap.fromImage(QImage(data.data, data.shape[1], data.shape[0], data.strides[0], QImage.Format_Grayscale8))
+        self.imLabel.setPixmap(p)
 
     def showContextMenu(self, point: QPoint):
         menu = QMenu("ContextMenu", self)
