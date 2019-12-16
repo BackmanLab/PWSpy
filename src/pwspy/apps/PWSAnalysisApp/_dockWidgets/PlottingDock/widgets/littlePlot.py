@@ -26,15 +26,17 @@ class LittlePlot(AnalysisPlotter, QWidget):
         self.titleLabel.setAlignment(QtCore.Qt.AlignCenter)
         self.imLabel = QLabel(self)#IconLabel(self)
         self.imLabel.setScaledContents(True)
-        self.textLabel = QLabel(self)
         self.layout().addWidget(self.titleLabel)
+        if text is not None:
+            self.textLabel = QLabel(self)
+            self.textLabel.setStyleSheet("QLabel {color: #b40000}") #This isn't working for some reason
+            self.textLabel.setText(text)
+            self.textLabel.setAlignment(QtCore.Qt.AlignCenter)
+            self.layout().addWidget(self.textLabel)
         self.layout().addWidget(self.imLabel)
-        self.layout().addWidget(self.textLabel)
         self.title = title
         self.setMinimumWidth(20)
         self.changeData(initialField)
-        if text is not None:
-            self.textLabel.setText(text)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.showContextMenu)
         self.plotnd = None #Just a reference to a plotND class instance so it isn't deleted.
