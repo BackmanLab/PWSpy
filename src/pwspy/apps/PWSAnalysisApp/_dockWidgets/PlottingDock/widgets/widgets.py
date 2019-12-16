@@ -20,10 +20,10 @@ class AnalysisPlotter:
         Ld = 'ld'
 
     def __init__(self, metadata: AcqDir, analysis: PWSAnalysisResults = None):
-        self.analysisField = None
-        self.analysis = analysis
-        self.metadata = metadata
-        self.data = None
+        self.analysisField: AnalysisPlotter.PlotFields = None
+        self.analysis: PWSAnalysisResults = analysis
+        self.metadata: AcqDir = metadata
+        self.data: np.ndarray = None
 
     def changeData(self, field: PlotFields):
         assert isinstance(field, AnalysisPlotter.PlotFields)
