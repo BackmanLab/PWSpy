@@ -1,5 +1,5 @@
-from PyQt5 import QtGui
-from PyQt5.QtWidgets import QWidget
+from PyQt5 import QtGui, QtCore
+from PyQt5.QtWidgets import QWidget, QWIDGETSIZE_MAX
 
 
 class AspectRatioWidget(QWidget):
@@ -17,10 +17,10 @@ class AspectRatioWidget(QWidget):
         #Now determine which of the new dimensions to use.
         if width > newWidth:
             self.setMaximumWidth(newWidth)
-            self.setMaximumHeight(1000000)
+            self.setMaximumHeight(QWIDGETSIZE_MAX)
         else:
             self.setMaximumHeight(newHeight)
-            self.setMaximumWidth(1000000)
+            self.setMaximumWidth(QWIDGETSIZE_MAX)
 
     def setAspect(self, aspect: float):
         self._aspect = aspect
