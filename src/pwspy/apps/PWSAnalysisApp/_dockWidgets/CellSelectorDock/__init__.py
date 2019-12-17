@@ -82,6 +82,9 @@ class CellSelectorDock(QDockWidget):
                 continue
             cellItems.append(CellTableWidgetItem(acq, os.path.split(f)[0][len(workingDir) + 1:],
                                         int(f.split('Cell')[-1])))
+        refItems = [i for i in cellItems if i.isReference()]
+        if len(refItems)>0:
+            self.refTableWidget.updateReferences(True, refItems)
         self.tableWidget.addCellItems(cellItems)
 
 
