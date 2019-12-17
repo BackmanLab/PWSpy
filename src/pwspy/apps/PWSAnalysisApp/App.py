@@ -99,8 +99,7 @@ class PWSApp(QApplication):
     def changeDirectory(self, directory: str, files: List[str]):
         # Load Cells
         self.window.cellSelector.clearCells()
-        for i, f in enumerate(files):
-            self.window.cellSelector.addCell(f, directory)
+        self.window.cellSelector.addCells(files, directory)
         self.workingDirectory = directory
         self.window.cellSelector.updateFilters()
         #Change title

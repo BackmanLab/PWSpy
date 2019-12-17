@@ -59,8 +59,8 @@ class CellTableWidgetItem:
                 self.md = json.load(f)
         except (JSONDecodeError, FileNotFoundError):
             self.md = {'invalid': False, 'reference': False}
-        self.setInvalid(self._invalid) #Update item color based on saved status. Since invalid status overrides reference status we must do this first.
-        self.setReference(self._reference)
+        self.setInvalid(self._invalid, save=False) #Update item color based on saved status. Since invalid status overrides reference status we must do this first.
+        self.setReference(self._reference, save=False) #We override the default automatic saving of metadata since we're just loading anyway, nothing has been changed.
 
     @property
     def row(self):
@@ -68,16 +68,16 @@ class CellTableWidgetItem:
         This should return the correct row number."""
         return self.numLabel.row()
 
-    def setInvalid(self, invalid: bool):
+    def setInvalid(self, invalid: bool, save: bool = True):
         if invalid:
             self._setItemColor(QtCore.Qt.red)
             self._reference = False
         else:
             self._setItemColor(QtCore.Qt.white)
         self._invalid = invalid
-        self._saveMetadata()
+        if save: self._saveMetadata()
 
-    def setReference(self, reference: bool) -> None:
+    def setReference(self, reference: bool, save: bool = True) -> None:
         if self.isInvalid():
             return
         if reference:
@@ -85,7 +85,7 @@ class CellTableWidgetItem:
         else:
             self._setItemColor(QtCore.Qt.white)
         self._reference = reference
-        self._saveMetadata()
+        if save: self._saveMetadata()
 
     def isInvalid(self) -> bool:
         return self._invalid
@@ -209,6 +209,23 @@ class CellTableWidget(QTableWidget):
         self.setItem(row, 7, item.fLabel)
         self.setSortingEnabled(True)
         self._cellItems.append(item)
+
+    def addCellItems(self, items: List[CellTableWidgetItem]) -> None:
+        row = len(self._cellItems)
+        self.setSortingEnabled(False)
+        self.setRowCount(row + len(items))
+        for i, item in enumerate(items):
+            newrow = row + i
+            self.setItem(newrow, 0, item.pathLabel)
+            self.setItem(newrow, 1, item.numLabel)
+            self.setItem(newrow, 2, item.roiLabel)
+            self.setItem(newrow, 3, item.anLabel)
+            self.setCellWidget(newrow, 4, item.notesButton)
+            self.setItem(newrow, 5, item.pLabel)
+            self.setItem(newrow, 6, item.dLabel)
+            self.setItem(newrow, 7, item.fLabel)
+        self.setSortingEnabled(True)
+        self._cellItems.extend(items)
 
     def clearCellItems(self) -> None:
         self.setRowCount(0)

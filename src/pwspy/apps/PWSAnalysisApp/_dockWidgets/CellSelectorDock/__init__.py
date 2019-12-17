@@ -73,6 +73,19 @@ class CellSelectorDock(QDockWidget):
             self.refTableWidget.updateReferences(True, [cellItem])
         self.tableWidget.addCellItem(cellItem)
 
+    def addCells(self, fileNames: List[str], workingDir: str):
+        cellItems = []
+        for f in fileNames:
+            try:
+                acq = AcqDir(f)
+            except OSError:
+                continue
+            cellItems.append(CellTableWidgetItem(acq, os.path.split(f)[0][len(workingDir) + 1:],
+                                        int(f.split('Cell')[-1])))
+        self.tableWidget.addCellItems(cellItems)
+
+
+
     def clearCells(self):
         self._cells = []
         self.tableWidget.clearCellItems()
