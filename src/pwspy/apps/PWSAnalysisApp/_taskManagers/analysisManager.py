@@ -57,7 +57,7 @@ class AnalysisManager(QtCore.QObject):
             if anName in cell.getAnalyses():
                 conflictCells.append(cell)
         if len(conflictCells) > 0:
-            ret = QMessageBox.question(self.app.window, "File Conflict", f"The following cells already have an analysis named {anName}. Do you want to delete existing analyses and continue?: \n {', '.join([os.path.split(i.filePath)[-1] for i in conflictCells])}")
+            ret = QMessageBox.question(self.app.window, "File Conflict", f"The following cells already have an analysis named {anName}. Do you want to delete existing analyses and continue?: \n {', '.join([os.path.split(i.acquisitionDirectory.filePath)[-1] for i in conflictCells])}")
             if ret == QMessageBox.Yes:
                 [cell.removeAnalysis(anName) for cell in conflictCells]
             else:
