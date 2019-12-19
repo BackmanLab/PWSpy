@@ -46,8 +46,6 @@ def segmentAdaptive(image: np.ndarray, minArea = 100, adaptiveRange: int = 500, 
         for poly in p:
             poly = poly.buffer(dilate) #This is an erode followed by a dilate.
             poly = poly.simplify(polySimplification, preserve_topology=False) #This removed unneed points to lessen the saving/loading burden
-            #if isinstance(p, MultiPolygon):  # There is a chance for this to convert a Polygon to a Multipolygon.
-             #   for poly in p: # To fix this we loop through each polygon in the multipolygon and keep it if it is above the size limit
             if poly.area < minArea:
                 continue
             polys.append(poly)
