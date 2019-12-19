@@ -1,3 +1,5 @@
+from typing import List
+
 import numpy as np
 import cv2
 import shapely
@@ -23,7 +25,7 @@ def segmentOtsu(image: np.ndarray, minArea = 100):
         polys.append(p)
     return polys
 
-def segmentAdaptive(image: np.ndarray, minArea = 100, adaptiveRange: int = 500, thresholdOffset: float=-10, polySimplification: int = 5) -> shapely.geometry.Polygon:
+def segmentAdaptive(image: np.ndarray, minArea = 100, adaptiveRange: int = 500, thresholdOffset: float=-10, polySimplification: int = 5, dilate: int = 0, erode: int = 0) -> List[shapely.geometry.Polygon]:
     """Uses opencv's adaptive"""
     if adaptiveRange%2 != 1 or adaptiveRange<3:
         raise ValueError("adaptiveRange must be a positive odd integer >=3.")
@@ -38,12 +40,15 @@ def segmentAdaptive(image: np.ndarray, minArea = 100, adaptiveRange: int = 500, 
         if contour.shape[0] < 3:  # We need a polygon, not a line
             continue
         p = shapely.geometry.Polygon(contour)
-        if polySimplification != 0:
-            p = p.buffer(-polySimplification).buffer(polySimplification) #This is an erode followed by a dilate.
-        p = p.simplify(polySimplification, preserve_topology=False) #This removed unneed points to lessen the saving loading burden
-        if isinstance(p, MultiPolygon):  # There is a chance for this to convert a Polygon to a Multipolygon.
-            p = max(p, key=lambda a: a.area)  # To fix this we extract the largest polygon from the multipolygon
-        if p.area < minArea:  # Reject small regions
-            continue
-        polys.append(p)
+        p = p.buffer(-erode)
+        if not isinstance(p, MultiPolygon): #there is a chance for this to split a polygon into a multipolygon. we iterate over each new polygon. If it's still just a polygon put it in a list so it can be iterated over wit the same syntax
+            p = [p]
+        for poly in p:
+            poly = poly.buffer(dilate) #This is an erode followed by a dilate.
+            poly = poly.simplify(polySimplification, preserve_topology=False) #This removed unneed points to lessen the saving/loading burden
+            #if isinstance(p, MultiPolygon):  # There is a chance for this to convert a Polygon to a Multipolygon.
+             #   for poly in p: # To fix this we loop through each polygon in the multipolygon and keep it if it is above the size limit
+            if poly.area < minArea:
+                continue
+            polys.append(poly)
     return polys
