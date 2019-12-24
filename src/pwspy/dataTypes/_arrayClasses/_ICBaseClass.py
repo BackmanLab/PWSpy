@@ -119,7 +119,7 @@ class ICBase:
         units of pixels. This is useful if pixel size information is missing."""
         sigma = sigma / pixelSize #convert from microns to pixels
         for i in range(self.data.shape[2]):
-            self.data[:, :, i] = sp.ndimage.filters.gaussian_filter(self.data[:, :, i], sigma, mode='constant', cval=self.data[:, :, i].mean())
+            self.data[:, :, i] = sp.ndimage.filters.gaussian_filter(self.data[:, :, i], sigma, mode='reflect')
 
     def _indicesMatch(self, other: 'ICBase') -> bool:
         return self._index == other._index
