@@ -1,18 +1,15 @@
 from __future__ import annotations
-import json
 from typing import Tuple, List
-from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, \
-    QVBoxLayout, QPushButton, QSplitter, QMessageBox, QDialog, QGridLayout, QApplication
-from pwspy.dataTypes import CameraCorrection, AcqDir, ERMetadata
+    QVBoxLayout, QPushButton, QMessageBox
+from pwspy.dataTypes import CameraCorrection, AcqDir
 from pwspy.analysis.pws import AnalysisSettings
 from .widgets.QueueAnalysesFrame import AnalysisListItem, QueuedAnalysesFrame
-from .widgets.SettingsFrame import SettingsFrame
+from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames.PWSSettingsFrame import PWSSettingsFrame
 
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.apps.PWSAnalysisApp._dockWidgets import CellSelectorDock
-    from pwspy.dataTypes import ICMetaData
 
 
 class AnalysisSettingsDock(QDockWidget):
@@ -24,7 +21,7 @@ class AnalysisSettingsDock(QDockWidget):
         self.setObjectName('AnalysisSettingsDock')  # needed for restore state to work
         widg = QWidget()
         widg.setLayout(QVBoxLayout())
-        self.settingsFrame = SettingsFrame(self.erManager)
+        self.settingsFrame = PWSSettingsFrame(self.erManager)
         widg.layout().addWidget(self.settingsFrame)
         self.addAnalysisButton = QPushButton("Add Analysis")
         widg.layout().addWidget(self.addAnalysisButton)

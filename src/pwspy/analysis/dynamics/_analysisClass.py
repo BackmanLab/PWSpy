@@ -38,7 +38,7 @@ class DynamicsAnalysis(AbstractAnalysis):
         self.refAc = ref.getAutocorrelation()
         self.refTag = ref.metadata.idTag
         self.erTag = extraReflectance.metadata.idTag
-        self.n_medium = 1.37  # The average index of refraction for chromatin
+        self.n_medium = 1.37  # The average index of refraction for chromatin?
         self.settings = settings
         self.extraReflection = Iextra
 

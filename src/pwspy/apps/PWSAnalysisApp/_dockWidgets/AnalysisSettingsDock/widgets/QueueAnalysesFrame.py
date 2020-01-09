@@ -4,12 +4,12 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QListWidgetItem, QWidget, QScrollArea, QListWidget, QMessageBox, QMenu, QAction, QDialog, QGridLayout, QPushButton
 
-from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrame import SettingsFrame
+from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames.PWSSettingsFrame import PWSSettingsFrame
 from pwspy.dataTypes import AcqDir
 from pwspy.analysis.pws import AnalysisSettings
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import ICMetaData, CameraCorrection
+    from pwspy.dataTypes import CameraCorrection
     from pwspy.apps.PWSAnalysisApp._dockWidgets import AnalysisSettingsDock
 
 
@@ -78,7 +78,7 @@ class QueuedAnalysesFrame(QScrollArea):
         d.setModal(True)
         d.setWindowTitle(item.name)
         l = QGridLayout()
-        settingsFrame = SettingsFrame(self.parent.erManager)
+        settingsFrame = PWSSettingsFrame(self.parent.erManager)
         settingsFrame.loadFromSettings(item.settings)
         settingsFrame.loadCameraCorrection(item.cameraCorrection)
         settingsFrame._analysisNameEdit.setText(item.name)
