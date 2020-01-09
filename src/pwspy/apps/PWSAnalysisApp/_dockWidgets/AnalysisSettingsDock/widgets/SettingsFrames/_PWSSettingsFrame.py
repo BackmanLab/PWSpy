@@ -50,7 +50,7 @@ QHDoubleSpinBox = humble(QDoubleSpinBox)
 QHComboBox = humble(QComboBox)
 
 
-class PWSSettingsFrame(QScrollArea, AbstractSettingsFrame):
+class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
     def __init__(self, erManager: ERManager):
         super().__init__()
         self.ERExplorer = erManager.createSelectorWindow(self)

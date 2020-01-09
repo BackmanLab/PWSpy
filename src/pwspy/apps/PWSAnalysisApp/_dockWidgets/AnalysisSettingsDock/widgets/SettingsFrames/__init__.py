@@ -1,2 +1,2 @@
-from ._DynamicsSettingsFrame import DynamicSettingsFrame
+from ._DynamicsSettingsFrame import DynamicsSettingsFrame
 from ._PWSSettingsFrame import PWSSettingsFrame
