@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QDockWidget, QWidget, \
 from pwspy.dataTypes import CameraCorrection, AcqDir
 from pwspy.analysis.pws import AnalysisSettings
 from .widgets.QueueAnalysesFrame import AnalysisListItem, QueuedAnalysesFrame
-from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames.PWSSettingsFrame import PWSSettingsFrame
+from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames._PWSSettingsFrame import PWSSettingsFrame
 
 import typing
 if typing.TYPE_CHECKING:

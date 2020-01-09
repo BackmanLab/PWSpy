@@ -3,6 +3,9 @@ import os
 from glob import glob
 from typing import Optional
 import typing
+
+from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames._AbstractSettingsFrame import AbstractSettingsFrame
+
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager.manager import ERManager
 
@@ -41,15 +44,21 @@ def humble(clas):
                 event.ignore()
     return HumbleDoubleSpinBox
 
+
 QHSpinBox = humble(QSpinBox)
 QHDoubleSpinBox = humble(QDoubleSpinBox)
 QHComboBox = humble(QComboBox)
 
-class PWSSettingsFrame(QScrollArea):
+
+class PWSSettingsFrame(QScrollArea, AbstractSettingsFrame):
     def __init__(self, erManager: ERManager):
         super().__init__()
         self.ERExplorer = erManager.createSelectorWindow(self)
-        extraReflectionChanged = lambda md: self.RSubtractionNameLabel.setText('None') if md is None else self.RSubtractionNameLabel.setText(os.path.split(md.filePath)[-1])
+
+        def extraReflectionChanged(md: Optional[ERMetadata]):
+            if md is None: self.RSubtractionNameLabel.setText('None')
+            else: self.RSubtractionNameLabel.setText(os.path.split(md.filePath)[-1])
+            
         self.ERExplorer.selectionChanged.connect(extraReflectionChanged)
         self._frame = VerticallyCompressedWidget(self)
         self._layout = QGridLayout()
