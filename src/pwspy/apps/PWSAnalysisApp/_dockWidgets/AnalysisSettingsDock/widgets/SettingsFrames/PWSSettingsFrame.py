@@ -45,11 +45,12 @@ QHSpinBox = humble(QSpinBox)
 QHDoubleSpinBox = humble(QDoubleSpinBox)
 QHComboBox = humble(QComboBox)
 
-class SettingsFrame(QScrollArea):
+class PWSSettingsFrame(QScrollArea):
     def __init__(self, erManager: ERManager):
         super().__init__()
         self.ERExplorer = erManager.createSelectorWindow(self)
-        self.ERExplorer.selectionChanged.connect(self.extraReflectionChanged)
+        extraReflectionChanged = lambda md: self.RSubtractionNameLabel.setText('None') if md is None else self.RSubtractionNameLabel.setText(os.path.split(md.filePath)[-1])
+        self.ERExplorer.selectionChanged.connect(extraReflectionChanged)
         self._frame = VerticallyCompressedWidget(self)
         self._layout = QGridLayout()
         self._frame.setLayout(self._layout)
@@ -244,16 +245,6 @@ class SettingsFrame(QScrollArea):
         self._layout.addWidget(self.advanced, row, 0, 1, 4)
         row += 1
 
-        # for widg in [self.autoCorrStopIndex, self.polynomialOrder, self.wavelengthStart, self.wavelengthStop,
-        #              self.filterCutoff, self.filterOrder, self.numericalAperture, self.refMaterialCombo, self.darkCountBox]:
-        #     widg.setFocusPolicy(QtCore.Qt.StrongFocus) # Disable scrolling unless the box was specifically focused.
-        #     widg.wheelEvent = lambda self, event:
-
-        # if not self.hasFocus():
-        #     event.ignore()
-        # else:
-        #     QSpinBox:: wheelEvent(event)
-        #
         self._updateSize()
 
     def showEvent(self, a0: QtGui.QShowEvent) -> None:
@@ -263,12 +254,6 @@ class SettingsFrame(QScrollArea):
     @property
     def analysisName(self) -> str:
         return self._analysisNameEdit.text()
-
-    def extraReflectionChanged(self, md: Optional[ERMetadata]):
-        if md is None:
-            self.RSubtractionNameLabel.setText('None')
-        else:
-            self.RSubtractionNameLabel.setText(os.path.split(md.filePath)[-1])
 
     def _updateSize(self):
         height = 100  # give this much excess room.
