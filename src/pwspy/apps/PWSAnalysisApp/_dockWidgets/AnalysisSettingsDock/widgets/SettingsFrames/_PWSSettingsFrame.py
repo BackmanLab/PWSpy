@@ -5,6 +5,7 @@ from typing import Optional
 import typing
 
 from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames._AbstractSettingsFrame import AbstractSettingsFrame
+from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames._sharedWidgets import ExtraReflectanceSelector
 
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager.manager import ERManager
@@ -12,15 +13,13 @@ if typing.TYPE_CHECKING:
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import QPalette, QValidator, QDoubleValidator
 from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupBox, QHBoxLayout, QWidget, QRadioButton, \
-    QFrame, QSpinBox, QVBoxLayout, QPushButton, QComboBox, QDoubleSpinBox, QCheckBox, QMessageBox, QSpacerItem, QSizePolicy, QLayout
+    QFrame, QSpinBox, QVBoxLayout, QComboBox, QDoubleSpinBox, QCheckBox, QSpacerItem, QSizePolicy, QLayout
 
-from pwspy.dataTypes import CameraCorrection, ERMetadata
+from pwspy.dataTypes import CameraCorrection
 from pwspy.analysis.pws import AnalysisSettings
 from pwspy.apps.PWSAnalysisApp import applicationVars
-from pwspy.apps import resources
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.collapsibleSection import CollapsibleSection
-from pwspy.utility.reflection import reflectanceHelper
-from pwspy.moduleConsts import Material
+
 
 def humble(clas):
     """Returns a subclass of clas that will not allow scrolling unless it has been actively selected."""
@@ -53,13 +52,7 @@ QHComboBox = humble(QComboBox)
 class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
     def __init__(self, erManager: ERManager):
         super().__init__()
-        self.ERExplorer = erManager.createSelectorWindow(self)
 
-        def extraReflectionChanged(md: Optional[ERMetadata]):
-            if md is None: self.RSubtractionNameLabel.setText('None')
-            else: self.RSubtractionNameLabel.setText(os.path.split(md.filePath)[-1])
-            
-        self.ERExplorer.selectionChanged.connect(extraReflectionChanged)
         self._frame = VerticallyCompressedWidget(self)
         self._layout = QGridLayout()
         self._frame.setLayout(self._layout)
@@ -86,7 +79,7 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
             b = QRadioButton(name)
             b.released.connect(
                 lambda n=name: self.loadFromSettings(
-                AnalysisSettings.fromJson(applicationVars.analysisSettingsDirectory, n)))
+                    AnalysisSettings.fromJson(applicationVars.analysisSettingsDirectory, n)))
             _2.layout().addWidget(b)
         _ = QScrollArea()
         _.setWidget(_2)
@@ -111,7 +104,7 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
         self.linearityEdit = QLineEdit()
         self.linearityEdit.setText("1")
         self.linearityEdit.setToolTip("A comma-separated polynomial to linearize the counts from the camera."
-                                        "E.G an entry of A,B,C here will result in the data being transformed as newData = A * data + B * data^2 + C * data^3."
+                                      "E.G an entry of A,B,C here will result in the data being transformed as newData = A * data + B * data^2 + C * data^3."
                                       "Leaving this as '1' will result in no transformation (usually CMOS cameras are already linear)")
         linLabel.setToolTip(self.linearityEdit.toolTip())
         self.linearityEdit.setValidator(CsvValidator())
@@ -135,45 +128,7 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
         row += 1
 
         '''Extra Reflection'''
-        self.extraReflection = QGroupBox("Extra Reflection")
-        self.extraReflection.setToolTip("The fact that some light captured by the camera is scattered off surfaces inside the objective without ever reaching the sample means that the light intensity captured by the camera is not proportional to the reflectance of the sample. This extra reflectance varies spatially and spectrally and must be subtracted from our data in order for the analysis to be accurate. Calibration measurements of the extra reflectance are periodically uploaded to a google drive account which this software can download from. Click the folder icon to view and download the available calibration data cubes. Make sure to select one for the correct system and a date that is close to the acquisition date of your data. The `reference material` should be selected to match the material that was imaged in your reference image cube (usually Water).")
-        layout = QVBoxLayout()
-        layout.setContentsMargins(5, 1, 5, 5)
-        rsubLabel = QLabel("R Subtraction")
-        self.RSubtractionNameLabel = QLineEdit('None')
-        self.RSubtractionNameLabel.setEnabled(False)
-        self.RSubtractionBrowseButton = QPushButton(QtGui.QIcon(os.path.join(resources, 'folder.svg')), '')
-        self.RSubtractionBrowseButton.released.connect(self._browseReflection)
-        refMatLabel = QLabel("Reference Material")
-        self.refMaterialCombo = QHComboBox()
-        self.refMaterialCombo.addItems([k.name for k in reflectanceHelper.materialFiles.keys() if k.name != 'Glass'])
-        self.refMaterialCombo.addItem("Ignore")
-        naLabel = QLabel("Numerical Aperture")
-        self.numericalAperture = QHDoubleSpinBox()
-        self.numericalAperture.setRange(0, 2)
-        self.numericalAperture.setSingleStep(0.1)
-        self.numericalAperture.setToolTip("The illumination numerical aperture used. This is usually 0.52 on NU systems."
-                                          "This is used to accurately calculate the theoretically expected reflectance of "
-                                          "the reference material. We also want to check that the ExtraReflection was taken "
-                                          "at the same NA.")
-        naLabel.setToolTip(self.numericalAperture.toolTip())
-        rLayout = QHBoxLayout()
-        _ = rLayout.addWidget
-        _(rsubLabel)
-        _(self.RSubtractionNameLabel)
-        _(self.RSubtractionBrowseButton)
-        layout.addLayout(rLayout)
-        rLayout = QHBoxLayout()
-        _ = rLayout.addWidget
-        _(refMatLabel)
-        _(self.refMaterialCombo)
-        layout.addLayout(rLayout)
-        rLayout = QHBoxLayout()
-        _ = rLayout.addWidget
-        _(naLabel)
-        _(self.numericalAperture)
-        layout.addLayout(rLayout)
-        self.extraReflection.setLayout(layout)
+        self.extraReflection = ExtraReflectanceSelector(self, erManager)
         self._layout.addWidget(self.extraReflection, row, 0, 1, 4)
         row += 1
 
@@ -279,18 +234,12 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
         self.filterOrder.setValue(settings.filterOrder)
         self.filterCutoff.setValue(settings.filterCutoff)
         self.polynomialOrder.setValue(settings.polynomialOrder)
-        if settings.extraReflectanceId is not None:
-            self.ERExplorer.setSelection(settings.extraReflectanceId)
-        if settings.referenceMaterial is None:
-            self.refMaterialCombo.setCurrentText("Ignore")
-        else:
-            self.refMaterialCombo.setCurrentIndex(self.refMaterialCombo.findText(settings.referenceMaterial.name))
+        self.extraReflection.loadFromSettings(settings.numericalAperture, settings.referenceMaterial, settings.extraReflectanceId)
         self.wavelengthStop.setValue(settings.wavelengthStop)
         self.wavelengthStart.setValue(settings.wavelengthStart)
         self.advanced.setCheckState(2 if settings.skipAdvanced else 0)
         self.autoCorrStopIndex.setValue(settings.autoCorrStopIndex)
         self.minSubCheckBox.setCheckState(2 if settings.autoCorrMinSub else 0)
-        self.numericalAperture.setValue(settings.numericalAperture)
 
     def loadCameraCorrection(self, camCorr: Optional[CameraCorrection] = None):
         if camCorr is None: #Automatic camera corrections
@@ -304,15 +253,7 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
             self.darkCountBox.setValue(camCorr.darkCounts)
 
     def getSettings(self) -> AnalysisSettings:
-        if self.ERExplorer.getSelectedId() is None:
-            ans = QMessageBox.question(self, "Uh", "An extra reflectance cube has not been selected. Do you want to ignore this important correction?")
-            if ans == QMessageBox.Yes:
-                erId = None
-            else:
-                raise ValueError("An extra reflectance cube has not been selected.")
-        else:
-            erId = self.ERExplorer.getSelectedId()
-        refMaterial = None if self.refMaterialCombo.currentText() == "Ignore" else Material[self.refMaterialCombo.currentText()]
+        erId, refMaterial, numericalAperture = self.extraReflection.getSettings()
         return AnalysisSettings(filterOrder=self.filterOrder.value(),
                                  filterCutoff=self.filterCutoff.value(),
                                  polynomialOrder=self.polynomialOrder.value(),
@@ -323,7 +264,7 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
                                  skipAdvanced=self.advanced.checkState() != 0,
                                  autoCorrMinSub=self.minSubCheckBox.checkState() != 0,
                                  autoCorrStopIndex=self.autoCorrStopIndex.value(),
-                                 numericalAperture=self.numericalAperture.value())
+                                 numericalAperture=numericalAperture)
 
     def getCameraCorrection(self) -> CameraCorrection:
         if self.hardwareCorrections.checkState() == 0:
@@ -335,9 +276,6 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
         else:
             cameraCorrection = None
         return cameraCorrection
-
-    def _browseReflection(self):
-        self.ERExplorer.show()
 
 
 class CsvValidator(QValidator):
