@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import QValidator
 from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel
 
@@ -45,6 +45,10 @@ class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
         self._layout.addWidget(self.extraReflection, row, 0, 1, 4)
 
         self._updateSize()
+
+    def showEvent(self, a0: QtGui.QShowEvent) -> None:
+        super().showEvent(a0)
+        self._updateSize() #For some reason this must be done here and in the __init__ for it to start up properly.
 
     def _updateSize(self):
         height = 100  # give this much excess room.
