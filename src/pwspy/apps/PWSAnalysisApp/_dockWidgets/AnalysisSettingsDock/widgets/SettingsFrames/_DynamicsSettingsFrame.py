@@ -3,19 +3,17 @@ from __future__ import annotations
 from typing import Optional
 
 from PyQt5 import QtCore, QtGui
-from PyQt5.QtGui import QValidator
 from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel
 
 from pwspy.analysis.dynamics._analysisSettings import DynamicsAnalysisSettings
 from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames._AbstractSettingsFrame import AbstractSettingsFrame
 import typing
 
-from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames._sharedWidgets import ExtraReflectanceSelector, \
-    VerticallyCompressedWidget, HardwareCorrections
-from pwspy.dataTypes import CameraCorrection
+from ._sharedWidgets import ExtraReflectanceSelector, VerticallyCompressedWidget, HardwareCorrections
 
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
+    from pwspy.dataTypes import CameraCorrection
 
 
 class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
@@ -32,7 +30,7 @@ class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
 
         row = 0
         self._analysisNameEdit = QLineEdit()
-        self._layout.addWidget(QLabel("Analysis Name: "), row, 0, 1, 1)
+        self._layout.addWidget(QLabel("PWSAnalysis Name: "), row, 0, 1, 1)
         self._layout.addWidget(self._analysisNameEdit, row, 1, 1, 1)
         row += 1
 

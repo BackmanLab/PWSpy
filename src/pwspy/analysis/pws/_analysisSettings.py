@@ -5,7 +5,7 @@ from pwspy.analysis import AbstractAnalysisSettings
 
 
 @dataclasses.dataclass
-class AnalysisSettings(AbstractAnalysisSettings):
+class PWSAnalysisSettings(AbstractAnalysisSettings):
     filterOrder: int
     filterCutoff: float
     polynomialOrder: int
@@ -29,7 +29,7 @@ class AnalysisSettings(AbstractAnalysisSettings):
         return d
 
     @classmethod
-    def _fromDict(cls, d: dict) -> AnalysisSettings:
+    def _fromDict(cls, d: dict) -> PWSAnalysisSettings:
         if d['referenceMaterial'] is not None:
             d['referenceMaterial'] = Material[d['referenceMaterial']]  # Convert from string to enum
         return cls(**d)

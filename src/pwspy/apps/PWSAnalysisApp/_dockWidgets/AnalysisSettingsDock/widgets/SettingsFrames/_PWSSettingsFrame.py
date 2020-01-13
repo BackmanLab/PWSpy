@@ -17,7 +17,7 @@ from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupB
     QFrame, QCheckBox
 
 from pwspy.dataTypes import CameraCorrection
-from pwspy.analysis.pws import AnalysisSettings
+from pwspy.analysis.pws import PWSAnalysisSettings
 from pwspy.apps.PWSAnalysisApp import applicationVars
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.collapsibleSection import CollapsibleSection
 
@@ -38,7 +38,7 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
         """Presets"""
         row = 0
         self._analysisNameEdit = QLineEdit()
-        self._layout.addWidget(QLabel("Analysis Name: "), row, 0, 1, 1)
+        self._layout.addWidget(QLabel("PWSAnalysis Name: "), row, 0, 1, 1)
         self._layout.addWidget(self._analysisNameEdit, row, 1, 1, 1)
         row += 1
         self.presets = QGroupBox("Presets")
@@ -52,7 +52,7 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
             b = QRadioButton(name)
             b.released.connect(
                 lambda n=name: self.loadFromSettings(
-                    AnalysisSettings.fromJson(applicationVars.analysisSettingsDirectory, n)))
+                    PWSAnalysisSettings.fromJson(applicationVars.analysisSettingsDirectory, n)))
             _2.layout().addWidget(b)
         _ = QScrollArea()
         _.setWidget(_2)
@@ -137,7 +137,7 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
         row += 1
 
         '''Advanced Calculations'''
-        self.advanced = CollapsibleSection('Skip Advanced Analysis', 200, self)
+        self.advanced = CollapsibleSection('Skip Advanced PWSAnalysis', 200, self)
         self.advanced.stateChanged.connect(self._updateSize)
         self.advanced.setToolTip("If this box is ticked then some of the less common analyses will be skipped. This saves time and harddrive space.")
         self.autoCorrStopIndex = QHSpinBox()
@@ -174,7 +174,7 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
         self._frame.setFixedHeight(height)
 
     # noinspection PyTypeChecker
-    def loadFromSettings(self, settings: AnalysisSettings):
+    def loadFromSettings(self, settings: PWSAnalysisSettings):
         self.filterOrder.setValue(settings.filterOrder)
         self.filterCutoff.setValue(settings.filterCutoff)
         self.polynomialOrder.setValue(settings.polynomialOrder)
@@ -188,19 +188,19 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
     def loadCameraCorrection(self, camCorr: Optional[CameraCorrection] = None):
         self.hardwareCorrections.loadCameraCorrection(camCorr)
 
-    def getSettings(self) -> AnalysisSettings:
+    def getSettings(self) -> PWSAnalysisSettings:
         erId, refMaterial, numericalAperture = self.extraReflection.getSettings()
-        return AnalysisSettings(filterOrder=self.filterOrder.value(),
-                                 filterCutoff=self.filterCutoff.value(),
-                                 polynomialOrder=self.polynomialOrder.value(),
-                                 extraReflectanceId=erId,
-                                 referenceMaterial=refMaterial,
-                                 wavelengthStart=self.wavelengthStart.value(),
-                                 wavelengthStop=self.wavelengthStop.value(),
-                                 skipAdvanced=self.advanced.checkState() != 0,
-                                 autoCorrMinSub=self.minSubCheckBox.checkState() != 0,
-                                 autoCorrStopIndex=self.autoCorrStopIndex.value(),
-                                 numericalAperture=numericalAperture)
+        return PWSAnalysisSettings(filterOrder=self.filterOrder.value(),
+                                   filterCutoff=self.filterCutoff.value(),
+                                   polynomialOrder=self.polynomialOrder.value(),
+                                   extraReflectanceId=erId,
+                                   referenceMaterial=refMaterial,
+                                   wavelengthStart=self.wavelengthStart.value(),
+                                   wavelengthStop=self.wavelengthStop.value(),
+                                   skipAdvanced=self.advanced.checkState() != 0,
+                                   autoCorrMinSub=self.minSubCheckBox.checkState() != 0,
+                                   autoCorrStopIndex=self.autoCorrStopIndex.value(),
+                                   numericalAperture=numericalAperture)
 
     def getCameraCorrection(self) -> CameraCorrection:
         return self.hardwareCorrections.getCameraCorrection()

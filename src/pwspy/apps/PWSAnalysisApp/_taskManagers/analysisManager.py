@@ -10,8 +10,8 @@ from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox
 from pwspy.dataTypes import ImCube, CameraCorrection, ExtraReflectanceCube, AcqDir, ICMetaData
-from pwspy.analysis.pws import AnalysisSettings
-from pwspy.analysis.pws import Analysis
+from pwspy.analysis.pws import PWSAnalysisSettings
+from pwspy.analysis.pws import PWSAnalysis
 from pwspy.analysis.warnings import AnalysisWarning
 from pwspy.utility.fileIO import loadAndProcess
 import threading
@@ -32,7 +32,7 @@ def safeCallback(func):
 
 
 class AnalysisManager(QtCore.QObject):
-    analysisDone = QtCore.pyqtSignal(str, AnalysisSettings, list)
+    analysisDone = QtCore.pyqtSignal(str, PWSAnalysisSettings, list)
 
     def __init__(self, app: PWSApp):
         super().__init__()
@@ -47,8 +47,8 @@ class AnalysisManager(QtCore.QObject):
             del _
 
     @safeCallback
-    def runSingle(self, anName: str, anSettings: AnalysisSettings, cellMetas: List[AcqDir], refMeta: AcqDir,
-                  cameraCorrection: CameraCorrection) -> Tuple[str, AnalysisSettings, List[Tuple[List[AnalysisWarning], AcqDir]]]:
+    def runSingle(self, anName: str, anSettings: PWSAnalysisSettings, cellMetas: List[AcqDir], refMeta: AcqDir,
+                  cameraCorrection: CameraCorrection) -> Tuple[str, PWSAnalysisSettings, List[Tuple[List[AnalysisWarning], AcqDir]]]:
         """Run a single analysis batch"""
         refMeta = refMeta.pws #We are only interested in pws data here
         cellMetas = [i.pws for i in cellMetas]
@@ -83,7 +83,7 @@ class AnalysisManager(QtCore.QObject):
                     if ans == QMessageBox.No:
                         return
                 erCube = ExtraReflectanceCube.fromMetadata(erMeta)
-            analysis = Analysis(anSettings, ref, erCube)
+            analysis = PWSAnalysis(anSettings, ref, erCube)
             useParallelProcessing = self.app.parallelProcessing
             #TODO would be good to estimate ram usage here and make a decision on whether or not to go parallel
             if (len(cellMetas) <= 3): #No reason to start 3 parallel processes for less than 3 cells.
@@ -151,7 +151,7 @@ class AnalysisManager(QtCore.QObject):
 
 
         @staticmethod
-        def _initializer(analysis: Analysis, analysisName: str, cameraCorrection: CameraCorrection):
+        def _initializer(analysis: PWSAnalysis, analysisName: str, cameraCorrection: CameraCorrection):
             """This method is run once for each process that is spawned. it initialized _resources that are shared between each iteration of _process."""
             global pwspyAnalysisAppParallelGlobals
             print('initializing!')

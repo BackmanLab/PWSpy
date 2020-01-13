@@ -9,7 +9,7 @@ import os
 from glob import glob
 from typing import Optional, List, Tuple
 
-from pwspy.analysis.pws import AnalysisSettings
+from pwspy.analysis.pws import PWSAnalysisSettings
 from pwspy.analysis.compilation import RoiCompilationResults
 from pwspy.analysis.warnings import AnalysisWarning
 from pwspy.apps import resources
@@ -81,7 +81,7 @@ class WorkingDirDialog(QDialog):
 
 
 class AnalysisSummaryDisplay(QDialog):
-    def __init__(self, parent: Optional[QWidget], warnings: List[Tuple[List[AnalysisWarning], ICMetaData]],  analysisName: str = '', analysisSettings: AnalysisSettings = None):
+    def __init__(self, parent: Optional[QWidget], warnings: List[Tuple[List[AnalysisWarning], ICMetaData]], analysisName: str = '', analysisSettings: PWSAnalysisSettings = None):
         super().__init__(parent=parent)
         self.analysisName = analysisName
         self.analysisSettings = analysisSettings
@@ -115,7 +115,7 @@ class AnalysisSummaryDisplay(QDialog):
 
 
 class CompilationSummaryDisplay(QDialog):
-    def __init__(self, parent: Optional[QWidget], warnings: List[Tuple[ICMetaData, List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]]],  analysisName: str = '', analysisSettings: AnalysisSettings = None):
+    def __init__(self, parent: Optional[QWidget], warnings: List[Tuple[ICMetaData, List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]]], analysisName: str = '', analysisSettings: PWSAnalysisSettings = None):
         super().__init__(parent=parent)
         self.setWindowTitle("Compilation Summary")
         layout = QVBoxLayout()

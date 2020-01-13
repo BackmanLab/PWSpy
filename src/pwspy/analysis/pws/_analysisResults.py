@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Optional, Tuple
 import numpy as np
 from datetime import datetime
-from pwspy.analysis.pws._analysisSettings import AnalysisSettings
+from pwspy.analysis.pws._analysisSettings import PWSAnalysisSettings
 from pwspy.moduleConsts import dateTimeFormat
 from pwspy.utility.misc import cached_property
 from pwspy.analysis._abstract import AbstractAnalysisResults, AbstractHDFAnalysisResults
@@ -53,9 +53,9 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults): #TODO All these cached pro
         return fileName.split('analysisResults_')[1][:-3]
 
     @classmethod
-    def create(cls, settings: AnalysisSettings, reflectance: KCube, meanReflectance: np.ndarray, rms: np.ndarray,
-                polynomialRms: np.ndarray, autoCorrelationSlope: np.ndarray, rSquared: np.ndarray, ld: np.ndarray,
-                imCubeIdTag: str, referenceIdTag: str, extraReflectionTag: Optional[str]):
+    def create(cls, settings: PWSAnalysisSettings, reflectance: KCube, meanReflectance: np.ndarray, rms: np.ndarray,
+               polynomialRms: np.ndarray, autoCorrelationSlope: np.ndarray, rSquared: np.ndarray, ld: np.ndarray,
+               imCubeIdTag: str, referenceIdTag: str, extraReflectionTag: Optional[str]):
         #TODO check datatypes here
         d = {'time': datetime.now().strftime(dateTimeFormat),
             'reflectance': reflectance,
@@ -74,8 +74,8 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults): #TODO All these cached pro
     @cached_property
     @clearError
     @getFromDict
-    def settings(self) -> AnalysisSettings:
-        return AnalysisSettings.fromJsonString(bytes(np.array(self.file['settings'])).decode())
+    def settings(self) -> PWSAnalysisSettings:
+        return PWSAnalysisSettings.fromJsonString(bytes(np.array(self.file['settings'])).decode())
 
     @cached_property
     @clearError

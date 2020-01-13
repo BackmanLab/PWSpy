@@ -33,7 +33,7 @@ if typing.TYPE_CHECKING:
 class PWSApp(QApplication):
     def __init__(self, args):
         super().__init__(args)
-        self.setApplicationName("PWS Analysis V2")
+        self.setApplicationName("PWS PWSAnalysis V2")
         splash = QSplashScreen(QPixmap(os.path.join(resources, 'pwsLogo.png')))
         splash.show()
         self._setupDataDirectories()
@@ -103,7 +103,7 @@ class PWSApp(QApplication):
         self.workingDirectory = directory
         self.window.cellSelector.updateFilters()
         #Change title
-        self.window.setWindowTitle(f'PWS Analysis v2 - {directory}')
+        self.window.setWindowTitle(f'PWS PWSAnalysis v2 - {directory}')
         self.workingDirectory = directory
 
     def openBlindingDialog(self):

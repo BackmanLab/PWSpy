@@ -18,15 +18,15 @@ class DynamicsAnalysis(AbstractAnalysis):
             ref.filterDust(.75)  # Apply a blur to filter out dust particles. This is in microns. I'm not sure if this is the optimal value.
         if settings.referenceMaterial is None:
             theoryR = 1  # Having this as 1 effectively ignores it.
-            print("Warning: Analysis ignoring reference material correction")
+            print("Warning: PWSAnalysis ignoring reference material correction")
         else:
             theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, wavelengths=ref.metadata.wavelength, NA=settings.numericalAperture) #TODO is having wavelemgth as length 1 going to work?
         if extraReflectance is None:
             Iextra = np.zeros(ref.data.shape[:2])  # a bogus reflection that is all zeros
-            print("Warning: Analysis ignoring extra reflection")
+            print("Warning: PWSAnalysis ignoring extra reflection")
         else:
             if extraReflectance.metadata.numericalAperture != settings.numericalAperture:
-                print(f"Warning: The numerical aperture of your analysis does not match the NA of the Extra Reflectance Calibration. Calibration File NA: {extraReflectance.metadata.numericalAperture}. Analysis NA: {settings.numericalAperture}.")
+                print(f"Warning: The numerical aperture of your analysis does not match the NA of the Extra Reflectance Calibration. Calibration File NA: {extraReflectance.metadata.numericalAperture}. PWSAnalysis NA: {settings.numericalAperture}.")
             idx = np.where(extraReflectance.wavelengths == ref.metadata.wavelength) #The index of extra reflectance that matches the wavelength of our dynamics cube
             assert len(idx)==1
             I0 = ref.data / (theoryR + extraReflectance.data[:, :, idx]) #  I0 is the intensity of the illumination source, reconstructed in units of `counts`. this is an inversion of our assumption that reference = I0*(referenceReflectance + extraReflectance)

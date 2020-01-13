@@ -3,13 +3,16 @@ import dataclasses
 from pwspy.analysis import AbstractAnalysisSettings
 from pwspy.moduleConsts import Material
 
+
 @dataclasses.dataclass
 class DynamicsAnalysisSettings(AbstractAnalysisSettings):
     extraReflectanceId: str
     referenceMaterial: Material
     numericalAperture: float
 
-    def asDict(self) -> dict:
+    FileSuffix = "dynAnalysis"
+
+    def _asDict(self) -> dict:
         d = dataclasses.asdict(self)
         if self.referenceMaterial is None:
             d['referenceMaterial'] = None
@@ -18,7 +21,7 @@ class DynamicsAnalysisSettings(AbstractAnalysisSettings):
         return d
 
     @classmethod
-    def fromDict(cls, d: dict) -> DynamicsAnalysisSettings:
+    def _fromDict(cls, d: dict) -> DynamicsAnalysisSettings:
         if d['referenceMaterial'] is not None:
             d['referenceMaterial'] = Material[d['referenceMaterial']]  # Convert from string to enum
         return cls(**d)

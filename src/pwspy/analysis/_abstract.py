@@ -11,7 +11,7 @@ if typing.TYPE_CHECKING:
 
 
 class AbstractAnalysisSettings(ABC):
-    """This abstract class lays out the basic skeleton of what an AnalysisSettings class should implement."""
+    """This abstract class lays out the basic skeleton of what an PWSAnalysisSettings class should implement."""
     @classmethod
     def fromJson(cls, filePath: str, name: str):
         """Create a new instance of this class from a json text file."""

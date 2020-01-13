@@ -14,7 +14,7 @@ class PWSWindow(QMainWindow):
     def __init__(self, erManager: ERManager):
         QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
         super().__init__()
-        self.setWindowTitle('PWS Analysis v2')
+        self.setWindowTitle('PWS PWSAnalysis v2')
         self.setWindowIcon(QtGui.QIcon(os.path.join(resources, 'cellLogo.png')))
         self.cellSelector = CellSelectorDock()
         self.analysisSettings = AnalysisSettingsDock(self.cellSelector, erManager)
@@ -35,7 +35,7 @@ class PWSWindow(QMainWindow):
         infoAction = menu.addAction("Info")
         infoAction.triggered.connect(self.openInfoPane)
         menu = menuBar.addMenu("Config")
-        self.parallelAction = menu.addAction("Multi-Core Analysis (faster, needs more ram)")
+        self.parallelAction = menu.addAction("Multi-Core PWSAnalysis (faster, needs more ram)")
         self.parallelAction.setCheckable(True)
         menu = menuBar.addMenu("Actions")
         menu.setToolTipsVisible(True)
@@ -43,7 +43,7 @@ class PWSWindow(QMainWindow):
         self.blindAction.setToolTip("Creates a folder of symlinks to the selected data that is randomly numbered. "
                                     "This allows you to work on data anonymously without bias. You may need to run this "
                                     "software as `Admin` for this to work on Windows.")
-        self.roiConvertAction = menu.addAction("Update Roi file formats")
+        self.roiConvertAction = menu.addAction("Update ROI file formats")
         self.roiConvertAction.setToolTip("Updates old .MAT roi files to a newer .H5 format that will run more efficiently."
                                          " Warning: The old files will be deleted.")
 
@@ -71,7 +71,7 @@ class PWSWindow(QMainWindow):
         super().closeEvent(event)
 
     def openInfoPane(self):
-        msgBox = QMessageBox.information(self, "About PWS Analysis V2", f"This software is intended for the analysis of Partial Wave Spectroscopic microscopy data.\npwspy version: {pwspy.__version__}")
+        msgBox = QMessageBox.information(self, "About PWS PWSAnalysis V2", f"This software is intended for the analysis of Partial Wave Spectroscopic microscopy data.\npwspy version: {pwspy.__version__}")
 
     def _setDefaultLayout(self):
         #remove all docks then re add them

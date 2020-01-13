@@ -67,7 +67,7 @@ class PlottingDock(QDockWidget):
         self.refreshButton.released.connect(lambda: self.generatePlots(self.selector.getSelectedCellMetas()))
         self.roiButton = QPushButton("Draw Roi's")
         self.roiButton.released.connect(self.startRoiDrawing)
-        label = QLabel("Analysis Name")
+        label = QLabel("PWSAnalysis Name")
         label.setMaximumHeight(20)
         _(label)
         _(self.anNameEdit)
@@ -162,7 +162,7 @@ class PlottingDock(QDockWidget):
                     plotsToAdd.append(LittlePlot(cell, analysis, f"{analysisName} {os.path.split(cell.filePath)[-1]}"))
                     buttonState = 'true'
                 else: #Specified analysis was not found, load a dummy widget
-                    plotsToAdd.append(LittlePlot(cell, None, f"{analysisName} {os.path.split(cell.filePath)[-1]}", "Analysis Not Found!"))
+                    plotsToAdd.append(LittlePlot(cell, None, f"{analysisName} {os.path.split(cell.filePath)[-1]}", "PWSAnalysis Not Found!"))
         self.addPlots(plotsToAdd)
         self.enableAnalysisPlottingButtons(buttonState)
 

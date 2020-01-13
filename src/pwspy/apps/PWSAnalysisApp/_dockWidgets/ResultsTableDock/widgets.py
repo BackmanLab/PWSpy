@@ -47,7 +47,7 @@ class ResultsTable(CopyableTable):
         self.columns = \
             {"Path": (False, None, None),
             'Cell#': (True, None, None),
-            "Analysis": (False, None, None),
+            "PWSAnalysis": (False, None, None),
             'ROI Name': (True, None, None),
             'ROI#': (True, None, None),
             "RMS": (True, 'rms', "Primary analysis result indicating nanoscopic RI heterogeneity of sample in ROI. Defined as StdDev of the spectra"),

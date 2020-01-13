@@ -3,13 +3,14 @@ from typing import Tuple, List
 from PyQt5.QtWidgets import QDockWidget, QWidget, \
     QVBoxLayout, QPushButton, QMessageBox, QTabWidget
 from pwspy.dataTypes import CameraCorrection, AcqDir
-from pwspy.analysis.pws import AnalysisSettings
+from pwspy.analysis.pws import PWSAnalysisSettings
 from .widgets.QueueAnalysesFrame import AnalysisListItem, QueuedAnalysesFrame
 from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames._PWSSettingsFrame import PWSSettingsFrame
 
 import typing
 
 from .widgets.SettingsFrames import _DynamicsSettingsFrame, DynamicsSettingsFrame
+from .widgets.SettingsFrames._AbstractSettingsFrame import AbstractSettingsFrame
 
 if typing.TYPE_CHECKING:
     from pwspy.apps.PWSAnalysisApp._dockWidgets import CellSelectorDock
@@ -30,7 +31,7 @@ class AnalysisSettingsDock(QDockWidget):
         self.DynSettingsFrame = DynamicsSettingsFrame(self.erManager)
         self.settingsTabWidget.addTab(self.DynSettingsFrame, "Dynamics")
         widg.layout().addWidget(self.settingsTabWidget)
-        self.addAnalysisButton = QPushButton("Add Analysis")
+        self.addAnalysisButton = QPushButton("Add PWSAnalysis")
         widg.layout().addWidget(self.addAnalysisButton)
 
         self.analysesQueue = QueuedAnalysesFrame(self)
@@ -44,22 +45,23 @@ class AnalysisSettingsDock(QDockWidget):
         self.setWidget(widg)
 
     def addAnalysis(self): #TODO add the analysis from currently selected settingsframe.
+        settingsWidget: AbstractSettingsFrame = self.settingsTabWidget.currentWidget()
         try:
-            camCorr = self.PWSSettingsFrame.getCameraCorrection()
-            settings = self.PWSSettingsFrame.getSettings()
+            camCorr = settingsWidget.getCameraCorrection()
+            settings = settingsWidget.getSettings()
         except Exception as e:
             QMessageBox.information(self, 'Hold on', str(e))
             return
-        self.analysesQueue.addAnalysis(self.PWSSettingsFrame.analysisName, camCorr, settings,
+        self.analysesQueue.addAnalysis(settingsWidget.analysisName, camCorr, settings,
                                        self.selector.getSelectedReferenceMeta(),
                                        self.selector.getSelectedCellMetas())
 
-    def loadFromSettings(self, settings: AnalysisSettings):
+    def loadFromSettings(self, settings: PWSAnalysisSettings):
         self.PWSSettingsFrame.loadFromSettings(settings)
 
     def getAnalysisName(self):
         return self.PWSSettingsFrame.analysisName
 
-    def getListedAnalyses(self) -> List[Tuple[str, AnalysisSettings, List[AcqDir], AcqDir, CameraCorrection, AnalysisListItem]]:
+    def getListedAnalyses(self) -> List[Tuple[str, PWSAnalysisSettings, List[AcqDir], AcqDir, CameraCorrection, AnalysisListItem]]:
         return self.analysesQueue.analyses
 

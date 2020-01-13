@@ -13,7 +13,7 @@ from pwspy.analysis._abstract import AbstractAnalysis
 from pwspy.analysis import warnings
 from pwspy.utility.reflection import reflectanceHelper
 from pwspy.moduleConsts import Material
-from . import AnalysisSettings, PWSAnalysisResults
+from . import PWSAnalysisSettings, PWSAnalysisResults
 import pandas as pd
 
 import typing
@@ -21,9 +21,9 @@ if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ImCube, ExtraReflectanceCube
 
 
-class Analysis(AbstractAnalysis):
+class PWSAnalysis(AbstractAnalysis):
     """The standard PWS analysis routine. Initialize and then `run` for as many different ImCubes as you want."""
-    def __init__(self, settings: AnalysisSettings, ref: ImCube, extraReflectance: ExtraReflectanceCube):
+    def __init__(self, settings: PWSAnalysisSettings, ref: ImCube, extraReflectance: ExtraReflectanceCube):
         from pwspy.dataTypes import ExtraReflectionCube, ExtraReflectanceCube
         assert ref.isCorrected()
         super().__init__(settings)
@@ -32,16 +32,16 @@ class Analysis(AbstractAnalysis):
             ref.filterDust(.75)  # Apply a blur to filter out dust particles. This is in microns. I'm not sure if this is the optimal value.
         if settings.referenceMaterial is None:
             theoryR = pd.Series(np.ones((len(ref.wavelengths),)), index=ref.wavelengths) # Having this as all ones effectively ignores it.
-            print("Warning: Analysis ignoring reference material correction")
+            print("Warning: PWSAnalysis ignoring reference material correction")
         else:
             theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, wavelengths=ref.wavelengths, NA=settings.numericalAperture)
         if extraReflectance is None:
             Iextra = ExtraReflectionCube.create(ExtraReflectanceCube(np.zeros(ref.data.shape), ref.wavelengths, ExtraReflectanceCube.ERMetadata(ref.metadata._dict, settings.numericalAperture)), theoryR, ref)  # a bogus reflection that is all zeros
-            print("Warning: Analysis ignoring extra reflection")
+            print("Warning: PWSAnalysis ignoring extra reflection")
             assert np.all(Iextra.data == 0)
         else:
             if extraReflectance.metadata.numericalAperture != settings.numericalAperture:
-                print(f"Warning: The numerical aperture of your analysis does not match the NA of the Extra Reflectance Calibration. Calibration File NA: {extraReflectance.metadata.numericalAperture}. Analysis NA: {settings.numericalAperture}.")
+                print(f"Warning: The numerical aperture of your analysis does not match the NA of the Extra Reflectance Calibration. Calibration File NA: {extraReflectance.metadata.numericalAperture}. PWSAnalysis NA: {settings.numericalAperture}.")
             Iextra = ExtraReflectionCube.create(extraReflectance, theoryR, ref) #Convert from reflectance to predicted counts/ms.
         ref.subtractExtraReflection(Iextra)  # remove the extra reflection from our data#
         ref = ref / theoryR[None, None, :]  # now when we normalize by our reference we will get a result in units of physical reflectance rather than arbitrary units.

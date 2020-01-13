@@ -6,6 +6,7 @@ Created on Tue Feb 12 21:44:31 2019
 """
 __all__ = ['compilation', 'dynamics', 'pws', 'warnings', 'AbstractAnalysisSettings', 'defaultSettingsPath']
 import os
+from enum import Enum
 
 from ._abstract import AbstractAnalysisSettings, AbstractAnalysis, AbstractAnalysisResults
 
@@ -13,3 +14,8 @@ from ._abstract import AbstractAnalysisSettings, AbstractAnalysis, AbstractAnaly
 
 resources = os.path.join(os.path.split(__file__)[0], '_resources')
 defaultSettingsPath = os.path.join(resources, 'defaultAnalysisSettings')
+
+
+class AnalysisTypes(Enum):
+    PWS = "pws"
+    DYN = "dyn"
