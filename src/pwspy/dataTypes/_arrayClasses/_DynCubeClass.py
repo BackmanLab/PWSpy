@@ -20,7 +20,7 @@ class DynCube(ICRawBase):
     Contains methods for loading and saving to multiple formats as well as common operations used in analysis."""
     def __init__(self, data, metadata: DynMetaData, dtype=np.float32):
         assert isinstance(metadata, DynMetaData)
-        super().__init__(self, data, metadata, self.metadata.times, dtype=dtype)
+        super().__init__(data, metadata, self.metadata.times, dtype=dtype)
 
     @property
     def times(self):
