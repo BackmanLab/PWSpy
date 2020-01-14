@@ -78,6 +78,7 @@ class ExtraReflectanceSelector(QGroupBox):
                 raise ValueError("An extra reflectance cube has not been selected.")
         else:
             erId = self.ERExplorer.getSelectedId()
+        self.numericalAperture.clearFocus() #This should prevent an error where the value that is saved doesn't match what is actually typed in when the keyboard is still focused on the spinbox.
         numericalAperture = self.numericalAperture.value()
         refMaterial = None if self.refMaterialCombo.currentText() == "Ignore" else Material[self.refMaterialCombo.currentText()]
         return erId, refMaterial, numericalAperture

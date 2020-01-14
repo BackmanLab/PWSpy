@@ -31,7 +31,7 @@ class AnalysisSettingsDock(QDockWidget):
         self.DynSettingsFrame = DynamicsSettingsFrame(self.erManager)
         self.settingsTabWidget.addTab(self.DynSettingsFrame, "Dynamics")
         widg.layout().addWidget(self.settingsTabWidget)
-        self.addAnalysisButton = QPushButton("Add PWSAnalysis")
+        self.addAnalysisButton = QPushButton("Add Analysis")
         widg.layout().addWidget(self.addAnalysisButton)
 
         self.analysesQueue = QueuedAnalysesFrame(self)
