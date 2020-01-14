@@ -24,6 +24,7 @@ class DynCube(ICRawBase):
 
     @property
     def times(self):
+        """Unlike PWS where we operate along the dimension of wavelength, in dynamics we operate along the dimension of time."""
         return self.index
 
     @classmethod
