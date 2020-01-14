@@ -53,7 +53,7 @@ class Layer:
 
 
 class StackBase:
-    def __init__(self, wavelengths: np.ndarray, elements: Optional[List[Layer]] = None):
+    def __init__(self, wavelengths: Union[Number, np.ndarray], elements: Optional[List[Layer]] = None):
         assert len(wavelengths.shape) == 1
         self.wavelengths = wavelengths
         if elements is None:

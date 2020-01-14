@@ -76,7 +76,7 @@ def getReflectance(mat1: Material, mat2: Material, wavelengths: Union[np.ndarray
     0 to NA, this should match what is seen in the microscope."""
     index = n.index if wavelengths is None else wavelengths
     if not isinstance(index, np.ndarray):
-        index = np.array(index)
+        index = np.array([index])
     s = Stack(wavelengths=index)
     s.addLayer(Layer(mat1, 1e9))  # Add a meter thick layer
     s.addLayer(Layer(mat2, 1e9))
