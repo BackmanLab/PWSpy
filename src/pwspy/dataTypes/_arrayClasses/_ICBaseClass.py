@@ -17,6 +17,9 @@ from matplotlib import widgets
 from matplotlib import path
 import typing, numbers
 from matplotlib import animation
+
+from pwspy.dataTypes import CameraCorrection, ExtraReflectionCube
+from pwspy.dataTypes._metadata._MetaDataBaseClass import MetaDataBase
 from pwspy.utility.matplotlibWidgets import AxManager, PointSelector
 
 from pwspy.dataTypes._otherClasses import Roi
@@ -333,3 +336,87 @@ class ICBase:
             anFig.suptitle("If transforms worked, cells should not appear to move.")
             an = animation.ArtistAnimation(anFig, anims)
         return transforms, an
+
+class ICRawBase(ICBase):
+    _cameraCorrected: bool
+    _hasBeenNormalized: bool
+    _hasExtraReflectionSubtracted: bool
+    _hasBeenNormalizedByReference: bool
+
+    def __init__(self, data: np.ndarray, metadata: MetaDataBase, index: tuple, dtype=np.float32):
+        super().__init__(data, index, dtype)
+        self.metadata = metadata
+        self._hasBeenNormalized = False  # Keeps track of whether or not we have normalized by exposure so that we don't do it twice.
+        self._cameraCorrected = False
+        self._hasExtraReflectionSubtracted = False
+        self._hasBeenNormalizedByReference = False
+
+    def normalizeByExposure(self):
+        """This is one of the first steps in most analysis pipelines. Data is divided by the camera exposure.
+        This way two ImCube that were acquired at different exposure times will still be on equivalent scales."""
+        if not self._cameraCorrected:
+            raise Exception(
+                "This ImCube has not yet been corrected for camera effects. are you sure you want to normalize by exposure?")
+        if not self._hasBeenNormalized:
+            self.data = self.data / self.metadata.exposure
+        else:
+            raise Exception("The ImCube has already been normalized by exposure.")
+        self._hasBeenNormalized = True
+
+    def correctCameraEffects(self, correction: CameraCorrection = None, binning: int = None):
+        """Subtracts the darkcounts from the data. count is darkcounts per pixel. binning should be specified if
+        it wasn't saved in the micromanager metadata."""
+        if self._cameraCorrected:
+            raise Exception("This ImCube has already had it's camera correction applied!")
+        if binning is None:
+            binning = self.metadata.binning
+            if binning is None: raise ValueError('Binning metadata not found. Binning must be specified in function argument.')
+        if correction is None:
+            correction = self.metadata.cameraCorrection
+            if correction is None: raise ValueError('CameraCorrection metadata not found. Binning must be specified in function argument.')
+        count = correction.darkCounts * binning ** 2  # Account for the fact that binning multiplies the darkcount.
+        self.data = self.data - count
+        if correction.linearityPolynomial is None or correction.linearityPolynomial == (1.0,):
+            pass
+        else:
+            self.data = np.polynomial.polynomial.polyval(self.data, (0.0,) + correction.linearityPolynomial)  # The [0] item is the y-intercept (already handled by the darkcount)
+        self._cameraCorrected = True
+        return
+
+    def normalizeByReference(self, reference: ICRawBase):
+        """Normalize the raw data of this data cube by a reference cube to result in data representing
+        arbitrarily scaled reflectance."""
+        if self._hasBeenNormalizedByReference:
+            raise Exception("This ImCube has already been normalized by a reference.")
+        if not self.isCorrected():
+            print("Warning: This ImCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
+        if not self.isExposureNormalized():
+            print("Warning: This ImCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
+        if not reference.isCorrected():
+            print("Warning: The reference ImCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
+        if not reference.isExposureNormalized():
+            print("Warning: The reference ImCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
+        self.data = self.data / reference.data
+        self._hasBeenNormalizedByReference = True
+
+    def subtractExtraReflection(self, extraReflection: ExtraReflectionCube):
+        assert self.data.shape == extraReflection.data.shape
+        if not self._hasBeenNormalized:
+            raise Exception("This ImCube has not yet been normalized by exposure. are you sure you want to normalize by exposure?")
+        if not self._hasExtraReflectionSubtracted:
+            self.data = self.data - extraReflection.data
+            self._hasExtraReflectionSubtracted = True
+        else:
+            raise Exception("The ImCube has already has extra reflection subtracted.")
+
+    def isCorrected(self) -> bool:
+        """Indicates whether or not the ImCube has had camera defects corrected out."""
+        return self._cameraCorrected
+
+    def isExposureNormalized(self) -> bool:
+        """Indicates whether the ImCube has had its data normalized by exposure."""
+        return self._hasBeenNormalized
+
+    def isExtraReflectionSubtracted(self) -> bool:
+        """Indicates whether the data of this ImCube has been corrected for the extra reflectance present in the system."""
+        return self._hasExtraReflectionSubtracted

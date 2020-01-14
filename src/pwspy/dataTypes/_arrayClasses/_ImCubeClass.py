@@ -14,30 +14,18 @@ import tifffile as tf
 import os
 import typing
 from scipy.io import savemat
-if typing.TYPE_CHECKING:
-    from pwspy.dataTypes._arrayClasses._ExtraReflectanceCubeClass import ExtraReflectionCube
 from .. import CameraCorrection, ICMetaData
-from ._ICBaseClass import ICBase
+from ._ICBaseClass import ICBase, ICRawBase
 import multiprocessing as mp
 
 
-class ImCube(ICBase):
+class ImCube(ICRawBase):
     """ A class representing a single PWS acquisition. Contains methods for loading and saving to multiple formats as
     well as common operations used in analysis."""
 
-    _cameraCorrected: bool
-    _hasBeenNormalized: bool
-    _hasExtraReflectionSubtracted: bool
-    _hasBeenNormalizedByReference: bool
-
     def __init__(self, data, metadata: ICMetaData, dtype=np.float32):
         assert isinstance(metadata, ICMetaData)
-        self.metadata = metadata
-        ICBase.__init__(self, data, self.metadata.wavelengths, dtype=dtype)
-        self._hasBeenNormalized = False  # Keeps track of whether or not we have normalized by exposure so that we don't do it twice.
-        self._cameraCorrected = False
-        self._hasExtraReflectionSubtracted = False
-        self._hasBeenNormalizedByReference = False
+        super().__init__(self, data, metadata, self.metadata.wavelengths, dtype=dtype)
 
     @property
     def wavelengths(self):
@@ -69,8 +57,7 @@ class ImCube(ICBase):
                 metadata = ICMetaData.fromOldPWS(directory)
             with open(os.path.join(directory, 'image_cube'), 'rb') as f:
                 data = np.frombuffer(f.read(), dtype=np.uint16)
-            data = data.reshape((metadata._dict['imgHeight'], metadata._dict['imgWidth'], len(metadata.wavelengths)),
-                                order='F')
+            data = data.reshape((metadata._dict['imgHeight'], metadata._dict['imgWidth'], len(metadata.wavelengths)), order='F')
         finally:
             if lock is not None:
                 lock.release()
@@ -181,69 +168,6 @@ class ImCube(ICBase):
             w.save(np.rollaxis(im, -1, 0), metadata=self.metadata._dict)
         self.metadata.metadataToJson(outpath)
 
-    def normalizeByExposure(self):
-        """This is one of the first steps in most analysis pipelines. Data is divided by the camera exposure.
-        This way two ImCube that were acquired at different exposure times will still be on equivalent scales."""
-        if not self._cameraCorrected:
-            raise Exception(
-                "This ImCube has not yet been corrected for camera effects. are you sure you want to normalize by exposure?")
-        if not self._hasBeenNormalized:
-            self.data = self.data / self.metadata.exposure
-        else:
-            raise Exception("The ImCube has already been normalized by exposure.")
-        self._hasBeenNormalized = True
-
-    def correctCameraEffects(self, correction: CameraCorrection = None, binning: int = None):
-        """Subtracts the darkcounts from the data. count is darkcounts per pixel. binning should be specified if
-        it wasn't saved in the micromanager metadata."""
-        if self._cameraCorrected:
-            raise Exception("This ImCube has already had it's camera correction applied!")
-        if binning is None:
-            binning = self.metadata.binning
-            if binning is None: raise ValueError('Binning metadata not found. Binning must be specified in function argument.')
-        if correction is None:
-            correction = self.metadata.cameraCorrection
-            if correction is None: raise ValueError('CameraCorrection metadata not found. Binning must be specified in function argument.')
-        count = correction.darkCounts * binning ** 2  # Account for the fact that binning multiplies the darkcount.
-        self.data = self.data - count
-        if correction.linearityPolynomial is None or correction.linearityPolynomial == (1.0,):
-            pass
-        else:
-            self.data = np.polynomial.polynomial.polyval(self.data, (0.0,) + correction.linearityPolynomial)  # The [0] is the y-intercept (already handled by the darkcount)
-        self._cameraCorrected = True
-        return
-
-    def normalizeByReference(self, reference: ImCube):
-        if self._hasBeenNormalizedByReference:
-            raise Exception("This ImCube has already been normalized by a reference.")
-        if not self.isCorrected():
-            print("Warning: This ImCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
-        if not self.isExposureNormalized():
-            print("Warning: This ImCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
-        if not reference.isCorrected():
-            print("Warning: The reference ImCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
-        if not reference.isExposureNormalized():
-            print("Warning: The reference ImCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
-        self.data = self.data / reference.data
-        self._hasBeenNormalizedByReference = True
-
-    def subtractExtraReflection(self, extraReflection: ExtraReflectionCube):
-        assert self.data.shape == extraReflection.data.shape
-        if not self._hasBeenNormalized:
-            raise Exception("This ImCube has not yet been normalized by exposure. are you sure you want to normalize by exposure?")
-        if not self._hasExtraReflectionSubtracted:
-            self.data = self.data - extraReflection.data
-        else:
-            raise Exception("The ImCube has already has extra reflection subtracted.")
-
-    def isCorrected(self) -> bool:
-        """Indicates whether or not the ImCube has had camera defects corrected out."""
-        return self._cameraCorrected
-
-    def isExposureNormalized(self) -> bool:
-        """Indicates whether the ImCube has had its data normalized by exposure."""
-        return self._hasBeenNormalized
-
     def selIndex(self, start, stop) -> ImCube:
         """Return a copy of this ImCube only within a range of wavelengths."""
         ret = super().selIndex(start, stop)
@@ -251,10 +175,6 @@ class ImCube(ICBase):
         assert md._dict is not self.metadata._dict
         md._dict['wavelengths'] = ret.index
         return ImCube(ret.data, md)
-
-    def isExtraReflectionSubtracted(self) -> bool:
-        """Indicates whether the data of this ImCube has been corrected for the extra reflectance present in the system."""
-        return self._hasExtraReflectionSubtracted
 
     @classmethod
     def fromHdfDataset(cls, d: h5py.Dataset):
@@ -276,18 +196,3 @@ class ImCube(ICBase):
             if pixelSize is None:
                 raise ValueError("ImCube Metadata does not have a `pixelSizeUm` saved. please manually specify pixel size. use pixelSize=1 to make `kernelRadius in units of pixels.")
         super().filterDust(kernelRadius, pixelSize)
-
-
-
-
-# class FakeCube(ImCube):
-#     def __init__(self, num: int):
-#         x = y = np.arange(0, 256)
-#         z = np.arange(0, 100)
-#         Y, X, Z = np.meshgrid(y, x, z)
-#         freq = np.random.random() / 4
-#         freq2 = np.random.random() / 4
-#         data = np.exp(-np.sqrt((X - X.max() / 2) ** 2 + (Y - Y.max() / 2) ** 2) / (x.max() / 4)) * (
-#                 .75 + 0.25 * np.cos(freq2 * 2 * np.pi * Z)) * (0.5 + 0.5 * np.sin(freq * 2 * np.pi * X))
-#         md = {'wavelengths': z + 500, 'exposure': 100, 'time': '315'}
-#         super().__init__(data, md)
