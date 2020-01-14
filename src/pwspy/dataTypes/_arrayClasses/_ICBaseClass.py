@@ -6,6 +6,7 @@ Created on Sat Feb  9 16:47:22 2019
 """
 from __future__ import annotations
 
+from abc import abstractmethod, ABC
 from time import time
 from typing import Tuple, Union, Iterable
 
@@ -17,13 +18,12 @@ from matplotlib import widgets
 from matplotlib import path
 import numbers
 from matplotlib import animation
-from pwspy.dataTypes._metadata._MetaDataBaseClass import MetaDataBase
 from pwspy.utility.matplotlibWidgets import AxManager, PointSelector
 from pwspy.dataTypes._otherClasses import Roi
 import copy
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import CameraCorrection, ExtraReflectionCube
+    from pwspy.dataTypes import CameraCorrection, ExtraReflectionCube, MetaDataBase
 
 
 class ICBase:
@@ -336,7 +336,7 @@ class ICBase:
             an = animation.ArtistAnimation(anFig, anims)
         return transforms, an
 
-class ICRawBase(ICBase):
+class ICRawBase(ICBase, ABC):
     _cameraCorrected: bool
     _hasBeenNormalized: bool
     _hasExtraReflectionSubtracted: bool
@@ -382,31 +382,15 @@ class ICRawBase(ICBase):
         self._cameraCorrected = True
         return
 
+    @abstractmethod
     def normalizeByReference(self, reference: ICRawBase):
         """Normalize the raw data of this data cube by a reference cube to result in data representing
         arbitrarily scaled reflectance."""
-        if self._hasBeenNormalizedByReference:
-            raise Exception("This ImCube has already been normalized by a reference.")
-        if not self.isCorrected():
-            print("Warning: This ImCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
-        if not self.isExposureNormalized():
-            print("Warning: This ImCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
-        if not reference.isCorrected():
-            print("Warning: The reference ImCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
-        if not reference.isExposureNormalized():
-            print("Warning: The reference ImCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
-        self.data = self.data / reference.data
-        self._hasBeenNormalizedByReference = True
+        pass
 
-    def subtractExtraReflection(self, extraReflection: ExtraReflectionCube):
-        assert self.data.shape == extraReflection.data.shape
-        if not self._hasBeenNormalized:
-            raise Exception("This ImCube has not yet been normalized by exposure. are you sure you want to normalize by exposure?")
-        if not self._hasExtraReflectionSubtracted:
-            self.data = self.data - extraReflection.data
-            self._hasExtraReflectionSubtracted = True
-        else:
-            raise Exception("The ImCube has already has extra reflection subtracted.")
+    @abstractmethod
+    def subtractExtraReflection(self, extraReflection):
+        pass
 
     def isCorrected(self) -> bool:
         """Indicates whether or not the ImCube has had camera defects corrected out."""

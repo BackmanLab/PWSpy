@@ -23,7 +23,7 @@ from pwspy.analysis.pws import PWSAnalysisResults
 import typing
 if typing.TYPE_CHECKING:
     import multiprocessing as mp
-    from pwspy.dataTypes import AcqDir
+    from pwspy.dataTypes import AcqDir, ImCube
 
 
 class ICMetaData(AnalysisManagerMetaDataBase):
@@ -43,6 +43,10 @@ class ICMetaData(AnalysisManagerMetaDataBase):
         super().__init__(metadata, filePath, acquisitionDirectory=acquisitionDirectory)
         self.fileFormat: ICMetaData.FileFormats = fileFormat
         self._dict['wavelengths'] = tuple(np.array(self._dict['wavelengths']).astype(float))
+
+    def toDataClass(self) -> ImCube:
+        from pwspy.dataTypes import ImCube
+        return ImCube.fromMetadata(self)
 
     @cached_property
     def idTag(self) -> str:

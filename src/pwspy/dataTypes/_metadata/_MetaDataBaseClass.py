@@ -11,7 +11,7 @@ import json
 import numpy as np
 import pathlib
 from .. import _jsonSchemasPath
-from .._otherClasses import CameraCorrection, Roi
+from .._otherClasses import CameraCorrection
 import typing
 
 from ...analysis import AbstractAnalysisResults
@@ -19,6 +19,7 @@ from ...analysis._abstract import AbstractHDFAnalysisResults
 
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import AcqDir
+    from .._arrayClasses._ICBaseClass import ICBase
 
 class MetaDataBase(ABC):
     """This base class provides that basic functionality to store information about a PWS related acquisition on file."""
@@ -52,7 +53,12 @@ class MetaDataBase(ABC):
             self.cameraCorrection = None
 
     @abstractmethod
-    def idTag(self):
+    def toDataClass(self) -> ICBase:
+        """Convert the metadata class to a class that loads the data"""
+        pass
+
+    @abstractmethod
+    def idTag(self) -> str:
         """Return a string that uniquely identifies this data."""
         pass
 
@@ -93,6 +99,7 @@ class MetaDataBase(ABC):
         """Save this metadata object as a json string in an HDF5 dataset."""
         d.attrs['metadata'] = np.string_(json.dumps(self._dict))
         return d
+
 
 class AnalysisManagerMetaDataBase(MetaDataBase):
     """Implements the functionality to save, load, etc. analysis files."""

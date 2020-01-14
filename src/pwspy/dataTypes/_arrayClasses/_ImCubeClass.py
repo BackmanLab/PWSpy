@@ -13,9 +13,11 @@ import numpy as np
 import tifffile as tf
 import os
 import typing
+if typing.TYPE_CHECKING:
+    from .. import ExtraReflectionCube
 from scipy.io import savemat
-from .. import CameraCorrection, ICMetaData
-from ._ICBaseClass import ICBase, ICRawBase
+from .. import ICMetaData
+from ._ICBaseClass import ICRawBase
 import multiprocessing as mp
 
 
@@ -196,3 +198,29 @@ class ImCube(ICRawBase):
             if pixelSize is None:
                 raise ValueError("ImCube Metadata does not have a `pixelSizeUm` saved. please manually specify pixel size. use pixelSize=1 to make `kernelRadius in units of pixels.")
         super().filterDust(kernelRadius, pixelSize)
+
+    def normalizeByReference(self, reference: ICRawBase):
+        """Normalize the raw data of this data cube by a reference cube to result in data representing
+        arbitrarily scaled reflectance."""
+        if self._hasBeenNormalizedByReference:
+            raise Exception("This ImCube has already been normalized by a reference.")
+        if not self.isCorrected():
+            print("Warning: This ImCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
+        if not self.isExposureNormalized():
+            print("Warning: This ImCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
+        if not reference.isCorrected():
+            print("Warning: The reference ImCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
+        if not reference.isExposureNormalized():
+            print("Warning: The reference ImCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
+        self.data = self.data / reference.data
+        self._hasBeenNormalizedByReference = True
+
+    def subtractExtraReflection(self, extraReflection: ExtraReflectionCube):
+        assert self.data.shape == extraReflection.data.shape
+        if not self._hasBeenNormalized:
+            raise Exception("This ImCube has not yet been normalized by exposure. are you sure you want to normalize by exposure?")
+        if not self._hasExtraReflectionSubtracted:
+            self.data = self.data - extraReflection.data
+            self._hasExtraReflectionSubtracted = True
+        else:
+            raise Exception("The ImCube has already has extra reflection subtracted.")

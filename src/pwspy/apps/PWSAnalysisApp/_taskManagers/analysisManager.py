@@ -14,6 +14,7 @@ from pwspy.dataTypes import ImCube, CameraCorrection, ExtraReflectanceCube, AcqD
 from pwspy.analysis.pws import PWSAnalysisSettings
 from pwspy.analysis.pws import PWSAnalysis
 from pwspy.analysis.warnings import AnalysisWarning
+from pwspy.dataTypes._metadata._MetaDataBaseClass import AnalysisManagerMetaDataBase
 from pwspy.utility.fileIO import loadAndProcess
 import threading
 from multiprocessing.util import Finalize
@@ -51,11 +52,12 @@ class AnalysisManager(QtCore.QObject):
     def runSingle(self, anName: str, anSettings: PWSAnalysisSettings, cellMetas: List[AcqDir], refMeta: AcqDir,
                   cameraCorrection: CameraCorrection) -> Tuple[str, PWSAnalysisSettings, List[Tuple[List[AnalysisWarning], AcqDir]]]:
         """Run a single analysis batch"""
-        refMeta = refMeta.pws #We are only interested in pws data here
         if isinstance(anSettings, PWSAnalysisSettings):
             cellMetas = [i.pws for i in cellMetas]
+            refMeta = refMeta.pws  # We are only interested in pws data here
         elif isinstance(anSettings, DynamicsAnalysisSettings):
             cellMetas = [i.dynamics for i in cellMetas]
+            refMeta = refMeta.dynamics
         #Determine which cells already have an analysis by this name and raise a deletion dialog.
         conflictCells = []
         for cell in cellMetas:
@@ -72,7 +74,7 @@ class AnalysisManager(QtCore.QObject):
         else:
             correctionsOk = True #We're using a user provided camera correction so we assume it's good to go.
         if correctionsOk:
-            ref = ImCube.fromMetadata(refMeta)
+            ref = refMeta.toDataClass()
             if cameraCorrection is not None:
                 ref.correctCameraEffects(cameraCorrection) #Apply the user-specified correction
             else:
@@ -93,6 +95,8 @@ class AnalysisManager(QtCore.QObject):
                 analysis = PWSAnalysis(anSettings, ref, erCube)
             elif isinstance(anSettings, DynamicsAnalysisSettings):
                 analysis = DynamicsAnalysis(anSettings, ref, erCube)
+            else:
+                raise TypeError(f"Analysis settings of type: {type(anSettings)} are not supported.")
             useParallelProcessing = self.app.parallelProcessing
             #TODO would be good to estimate ram usage here and make a decision on whether or not to go parallel
             if (len(cellMetas) <= 3): #No reason to start 3 parallel processes for less than 3 cells.
@@ -123,7 +127,7 @@ class AnalysisManager(QtCore.QObject):
         else:
             raise ValueError("Hmm. There appears to be a problem with different images using different `camera corrections`. Were all images taken on the same camera?")
 
-    def _checkAutoCorrectionConsistency(self, cellMetas: List[ICMetaData]) -> bool:
+    def _checkAutoCorrectionConsistency(self, cellMetas: List[AnalysisManagerMetaDataBase]) -> bool:
         """Confirm that all metadatas in cellMetas have identical camera corrections. otherwise we can't proceed"""
         camCorrections = [i.cameraCorrection for i in cellMetas]
         names = [os.path.split(i.filePath)[-1] for i in cellMetas]

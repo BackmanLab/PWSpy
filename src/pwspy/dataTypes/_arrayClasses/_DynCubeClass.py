@@ -3,15 +3,15 @@ from __future__ import annotations
 from typing import Union
 
 
-from ._ICBaseClass import ICBase, ICRawBase
-from .._metadata import DynMetaData
+from ._ICBaseClass import ICRawBase
 import numpy as np
 import multiprocessing as mp
 import os
 import tifffile as tf
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import CameraCorrection
+    pass
+from .._metadata import DynMetaData
 
 
 class DynCube(ICRawBase):
@@ -20,7 +20,7 @@ class DynCube(ICRawBase):
     Contains methods for loading and saving to multiple formats as well as common operations used in analysis."""
     def __init__(self, data, metadata: DynMetaData, dtype=np.float32):
         assert isinstance(metadata, DynMetaData)
-        super().__init__(data, metadata, self.metadata.times, dtype=dtype)
+        super().__init__(data, metadata, metadata.times, dtype=dtype)
 
     @property
     def times(self):
@@ -87,6 +87,16 @@ class DynCube(ICRawBase):
             raise TypeError(f"`reference` must be either DynCube or numpy.ndarray, not {type(reference)}")
         self.data = self.data / mean[:, :, None]
         self._hasBeenNormalizedByReference = True
+
+    def subtractExtraReflection(self, extraReflection: np.ndarray):
+        assert self.data.shape == extraReflection.shape[:2]
+        if not self._hasBeenNormalized:
+            raise Exception("This ImCube has not yet been normalized by exposure. are you sure you want to normalize by exposure?")
+        if not self._hasExtraReflectionSubtracted:
+            self.data = self.data - extraReflection
+            self._hasExtraReflectionSubtracted = True
+        else:
+            raise Exception("The ImCube has already has extra reflection subtracted.")
 
     def selIndex(self, start, stop) -> DynCube:
         ret = super().selIndex(start, stop)

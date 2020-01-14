@@ -50,7 +50,7 @@ class DynamicsAnalysis(AbstractAnalysis):
         assert cube.isCorrected()
         warns = []
         cube.normalizeByExposure()
-        cube.data = cube.data - self.extraReflection
+        cube.subtractExtraReflection(self.extraReflection)
         cube.normalizeByReference(self.refMean)
         cubeAc = cube.getAutocorrelation()
         rms_t_squared = cubeAc[:, :, 0] - self.refAc[:, :, 0].mean() # The rms^2 noise of the reference averaged over the whole image.

@@ -8,7 +8,7 @@ from ._MetaDataBaseClass import MetaDataBase
 import numpy as np
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import AcqDir
+    from pwspy.dataTypes import AcqDir, FluorescenceImage
 
 class FluorMetaData(MetaDataBase):
     FILENAME = 'fluor.tif'
@@ -21,6 +21,10 @@ class FluorMetaData(MetaDataBase):
     def __init__(self, md: dict, filePath: Optional[str] = None, acquisitionDirectory: Optional[AcqDir] = None):
         super().__init__(md, filePath, acquisitionDirectory)
 
+    def toDataClass(self) -> FluorescenceImage:
+        from pwspy.dataTypes import FluorescenceImage
+        return FluorescenceImage.fromMetadata(self)
+    
     @property
     def idTag(self):
         return f"Fluor_{self._dict['system']}_{self._dict['time']}"

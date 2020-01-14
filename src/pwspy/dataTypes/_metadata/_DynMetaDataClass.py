@@ -2,7 +2,7 @@ from __future__ import annotations
 from enum import Enum, auto
 from typing import Optional, Tuple
 import multiprocessing as mp
-from ._MetaDataBaseClass import MetaDataBase, AnalysisManagerMetaDataBase
+from ._MetaDataBaseClass import AnalysisManagerMetaDataBase
 import os, json
 import tifffile as tf
 from pwspy.dataTypes import _jsonSchemasPath
@@ -12,7 +12,7 @@ import typing
 from ...analysis.dynamics import DynamicsAnalysisResults
 
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import AcqDir
+    from pwspy.dataTypes import AcqDir, DynCube
 
 
 class DynMetaData(AnalysisManagerMetaDataBase):
@@ -28,6 +28,10 @@ class DynMetaData(AnalysisManagerMetaDataBase):
     def __init__(self, metadata: dict, filePath: Optional[str], fileFormat: Optional[FileFormats] = None, acquisitionDirectory: Optional[AcqDir] = None):
         self.fileFormat = fileFormat
         super().__init__(metadata, filePath, acquisitionDirectory=acquisitionDirectory)
+
+    def toDataClass(self) -> DynCube:
+        from pwspy.dataTypes import DynCube
+        return DynCube.fromMetadata(self)
 
     @property
     def idTag(self) -> str:
