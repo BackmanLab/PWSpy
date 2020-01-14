@@ -91,12 +91,12 @@ class DynCube(ICRawBase):
     def subtractExtraReflection(self, extraReflection: np.ndarray):
         assert self.data.shape[:2] == extraReflection.shape
         if not self._hasBeenNormalizedByExposure:
-            raise Exception("This ImCube has not yet been normalized by exposure. are you sure you want to normalize by exposure?")
+            raise Exception("This DynCube has not yet been normalized by exposure. are you sure you want to normalize by exposure?")
         if not self._hasExtraReflectionSubtracted:
-            self.data = self.data - extraReflection
+            self.data = self.data - extraReflection[:, :, None]
             self._hasExtraReflectionSubtracted = True
         else:
-            raise Exception("The ImCube has already has extra reflection subtracted.")
+            raise Exception("The DynCube has already has extra reflection subtracted.")
 
     def selIndex(self, start, stop) -> DynCube:
         ret = super().selIndex(start, stop)
@@ -105,7 +105,7 @@ class DynCube(ICRawBase):
         return DynCube(ret.data, md)
 
     def getAutocorrelation(self) -> np.ndarray:
-        data = self.data - self.data.mean(axis=2) # By subtracting the mean we get and ACF where the 0-lag value is the variance of the signal.
+        data = self.data - self.data.mean(axis=2)[:, :, None] # By subtracting the mean we get an ACF where the 0-lag value is the variance of the signal.
         truncLength = 100
         F = np.fft.rfft(data, axis=2)
         ac = np.fft.irfft(F * np.conjugate(F), axis=2) / F.shape[2]
