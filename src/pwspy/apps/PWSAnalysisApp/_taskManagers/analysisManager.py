@@ -5,6 +5,7 @@ from typing import Tuple, List
 import typing
 from PyQt5.QtCore import QThread
 
+from pwspy.analysis.dynamics import DynamicsAnalysisSettings, DynamicsAnalysis
 from pwspy.apps.PWSAnalysisApp._sharedWidgets import ScrollableMessageBox
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from PyQt5 import QtCore
@@ -51,7 +52,10 @@ class AnalysisManager(QtCore.QObject):
                   cameraCorrection: CameraCorrection) -> Tuple[str, PWSAnalysisSettings, List[Tuple[List[AnalysisWarning], AcqDir]]]:
         """Run a single analysis batch"""
         refMeta = refMeta.pws #We are only interested in pws data here
-        cellMetas = [i.pws for i in cellMetas]
+        if isinstance(anSettings, PWSAnalysisSettings):
+            cellMetas = [i.pws for i in cellMetas]
+        elif isinstance(anSettings, DynamicsAnalysisSettings):
+            cellMetas = [i.dynamics for i in cellMetas]
         #Determine which cells already have an analysis by this name and raise a deletion dialog.
         conflictCells = []
         for cell in cellMetas:
@@ -82,8 +86,13 @@ class AnalysisManager(QtCore.QObject):
                     ans = QMessageBox.question(self.app.window, "Uh Oh", f"The reference was acquired on system: {refMeta.systemName} while the extra reflectance correction was acquired on system: {erMeta.systemName}. Are you sure you want to continue?")
                     if ans == QMessageBox.No:
                         return
+                print("Loading extraReflectanceCube")
                 erCube = ExtraReflectanceCube.fromMetadata(erMeta)
-            analysis = PWSAnalysis(anSettings, ref, erCube)
+            print("Initializing analysis")
+            if isinstance(anSettings, PWSAnalysisSettings):
+                analysis = PWSAnalysis(anSettings, ref, erCube)
+            elif isinstance(anSettings, DynamicsAnalysisSettings):
+                analysis = DynamicsAnalysis(anSettings, ref, erCube)
             useParallelProcessing = self.app.parallelProcessing
             #TODO would be good to estimate ram usage here and make a decision on whether or not to go parallel
             if (len(cellMetas) <= 3): #No reason to start 3 parallel processes for less than 3 cells.
@@ -111,6 +120,8 @@ class AnalysisManager(QtCore.QObject):
             ret = (anName, anSettings, warnings)
             self.analysisDone.emit(*ret)
             return ret
+        else:
+            raise ValueError("Hmm. There appears to be a problem with different images using different `camera corrections`. Were all images taken on the same camera?")
 
     def _checkAutoCorrectionConsistency(self, cellMetas: List[ICMetaData]) -> bool:
         """Confirm that all metadatas in cellMetas have identical camera corrections. otherwise we can't proceed"""
