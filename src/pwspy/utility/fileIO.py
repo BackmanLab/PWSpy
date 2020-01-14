@@ -15,6 +15,7 @@ from pwspy.dataTypes import ICMetaData, ImCube
 
 '''Local Functions'''
 
+#TODO add handling for DynamicsCubes
 
 def _load(loadHandle: Union[str, ICMetaData], metadataOnly: bool, lock: mp.Lock):
     if isinstance(loadHandle, str):
