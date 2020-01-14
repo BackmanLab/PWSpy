@@ -58,6 +58,9 @@ class AnalysisManager(QtCore.QObject):
         elif isinstance(anSettings, DynamicsAnalysisSettings):
             cellMetas = [i.dynamics for i in cellMetas]
             refMeta = refMeta.dynamics
+        if refMeta is None:
+            raise ValueError(f"No measurement for analysis type {type(anSettings)} found in the reference cell.")
+        cellMetas = [i for i in cellMetas if i is not None]  # Remove None items from the list of cells. This happens e.g. when you are analyzing dynamics but not all acqs have dynamics
         #Determine which cells already have an analysis by this name and raise a deletion dialog.
         conflictCells = []
         for cell in cellMetas:
@@ -69,7 +72,7 @@ class AnalysisManager(QtCore.QObject):
                 [cell.removeAnalysis(anName) for cell in conflictCells]
             else:
                 return
-        if cameraCorrection is None: # This means that the user has selected automatic cameraCorrection
+        if cameraCorrection is None:  # This means that the user has selected automatic cameraCorrection
             correctionsOk = self._checkAutoCorrectionConsistency(cellMetas + [refMeta])
         else:
             correctionsOk = True #We're using a user provided camera correction so we assume it's good to go.

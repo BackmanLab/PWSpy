@@ -90,7 +90,7 @@ class DynCube(ICRawBase):
 
     def subtractExtraReflection(self, extraReflection: np.ndarray):
         assert self.data.shape == extraReflection.shape[:2]
-        if not self._hasBeenNormalized:
+        if not self._hasBeenNormalizedByExposure:
             raise Exception("This ImCube has not yet been normalized by exposure. are you sure you want to normalize by exposure?")
         if not self._hasExtraReflectionSubtracted:
             self.data = self.data - extraReflection

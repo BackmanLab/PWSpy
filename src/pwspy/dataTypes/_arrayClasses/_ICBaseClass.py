@@ -15,7 +15,6 @@ import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
 from matplotlib import widgets
-from matplotlib import path
 import numbers
 from matplotlib import animation
 from pwspy.utility.matplotlibWidgets import AxManager, PointSelector
@@ -107,7 +106,7 @@ class ICBase:
         def select(Verts, handles):
             verts[0] = Verts
         axMan = AxManager(ax)
-        sel = MyPoint(axMan, onselect=select, side=side)
+        sel = PointSelector(axMan, onselect=select, side=side)
         sel.set_active(True)
         while plt.fignum_exists(fig.number):
             fig.canvas.flush_events()
@@ -337,35 +336,35 @@ class ICBase:
         return transforms, an
 
 class ICRawBase(ICBase, ABC):
-    _cameraCorrected: bool
-    _hasBeenNormalized: bool
+    _hasBeenCameraCorrected: bool
+    _hasBeenNormalizedByExposure: bool
     _hasExtraReflectionSubtracted: bool
     _hasBeenNormalizedByReference: bool
 
     def __init__(self, data: np.ndarray, metadata: MetaDataBase, index: tuple, dtype=np.float32):
         super().__init__(data, index, dtype)
         self.metadata = metadata
-        self._hasBeenNormalized = False  # Keeps track of whether or not we have normalized by exposure so that we don't do it twice.
-        self._cameraCorrected = False
+        self._hasBeenNormalizedByExposure = False  # Keeps track of whether or not we have normalized by exposure so that we don't do it twice.
+        self._hasBeenCameraCorrected = False
         self._hasExtraReflectionSubtracted = False
         self._hasBeenNormalizedByReference = False
 
     def normalizeByExposure(self):
         """This is one of the first steps in most analysis pipelines. Data is divided by the camera exposure.
         This way two ImCube that were acquired at different exposure times will still be on equivalent scales."""
-        if not self._cameraCorrected:
+        if not self._hasBeenCameraCorrected:
             raise Exception(
                 "This ImCube has not yet been corrected for camera effects. are you sure you want to normalize by exposure?")
-        if not self._hasBeenNormalized:
+        if not self._hasBeenNormalizedByExposure:
             self.data = self.data / self.metadata.exposure
         else:
             raise Exception("The ImCube has already been normalized by exposure.")
-        self._hasBeenNormalized = True
+        self._hasBeenNormalizedByExposure = True
 
     def correctCameraEffects(self, correction: CameraCorrection = None, binning: int = None):
         """Subtracts the darkcounts from the data. count is darkcounts per pixel. binning should be specified if
         it wasn't saved in the micromanager metadata."""
-        if self._cameraCorrected:
+        if self._hasBeenCameraCorrected:
             raise Exception("This ImCube has already had it's camera correction applied!")
         if binning is None:
             binning = self.metadata.binning
@@ -379,11 +378,11 @@ class ICRawBase(ICBase, ABC):
             pass
         else:
             self.data = np.polynomial.polynomial.polyval(self.data, (0.0,) + correction.linearityPolynomial)  # The [0] item is the y-intercept (already handled by the darkcount)
-        self._cameraCorrected = True
+        self._hasBeenCameraCorrected = True
         return
 
     @abstractmethod
-    def normalizeByReference(self, reference: ICRawBase):
+    def normalizeByReference(self, reference: 'self.__class__'):
         """Normalize the raw data of this data cube by a reference cube to result in data representing
         arbitrarily scaled reflectance."""
         pass
@@ -394,12 +393,15 @@ class ICRawBase(ICBase, ABC):
 
     def isCorrected(self) -> bool:
         """Indicates whether or not the ImCube has had camera defects corrected out."""
-        return self._cameraCorrected
+        return self._hasBeenCameraCorrected
 
     def isExposureNormalized(self) -> bool:
         """Indicates whether the ImCube has had its data normalized by exposure."""
-        return self._hasBeenNormalized
+        return self._hasBeenNormalizedByExposure
 
     def isExtraReflectionSubtracted(self) -> bool:
         """Indicates whether the data of this ImCube has been corrected for the extra reflectance present in the system."""
         return self._hasExtraReflectionSubtracted
+
+    def isNormalizedByReference(self) -> bool:
+        return self._hasBeenNormalizedByReference
