@@ -2,19 +2,24 @@ from __future__ import annotations
 from enum import Enum, auto
 from typing import Optional, Tuple
 import multiprocessing as mp
-from ._MetaDataBaseClass import MetaDataBase
+from ._MetaDataBaseClass import MetaDataBase, AnalysisManagerMetaDataBase
 import os, json
 import tifffile as tf
 from pwspy.dataTypes import _jsonSchemasPath
 import numpy as np
 import typing
+
+from ...analysis.dynamics import DynamicsAnalysisResults
+
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import AcqDir
 
 
-class DynMetaData(MetaDataBase):
+class DynMetaData(AnalysisManagerMetaDataBase):
     class FileFormats(Enum):
         Tiff = auto()
+
+    analysisResultsClass = DynamicsAnalysisResults
 
     _jsonSchemaPath = os.path.join(_jsonSchemasPath, 'DynMetaData.json')
     with open(_jsonSchemaPath) as f:

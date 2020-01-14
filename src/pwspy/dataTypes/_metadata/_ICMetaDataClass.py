@@ -6,7 +6,7 @@ Created on Tue Feb 12 19:17:14 2019
 """
 from __future__ import annotations
 
-from ._MetaDataBaseClass import MetaDataBase
+from ._MetaDataBaseClass import MetaDataBase, AnalysisManagerMetaDataBase
 from pwspy.dataTypes import _jsonSchemasPath
 from pwspy.moduleConsts import dateTimeFormat
 from pwspy.utility.misc import cached_property
@@ -19,19 +19,21 @@ import scipy.io as spio
 import tifffile as tf
 import numpy as np
 from datetime import datetime
+from pwspy.analysis.pws import PWSAnalysisResults
 import typing
 if typing.TYPE_CHECKING:
     import multiprocessing as mp
     from pwspy.dataTypes import AcqDir
-    from pwspy.analysis.pws import PWSAnalysisResults
 
 
-class ICMetaData(MetaDataBase):
+class ICMetaData(AnalysisManagerMetaDataBase):
     class FileFormats(Enum):
         RawBinary = auto()
         Tiff = auto()
         Hdf = auto()
         NanoMat = auto()
+
+    analysisResultsClass = PWSAnalysisResults
 
     _jsonSchemaPath = os.path.join(_jsonSchemasPath, 'ICMetaData.json')
     with open(_jsonSchemaPath) as f:
@@ -41,7 +43,6 @@ class ICMetaData(MetaDataBase):
         super().__init__(metadata, filePath, acquisitionDirectory=acquisitionDirectory)
         self.fileFormat: ICMetaData.FileFormats = fileFormat
         self._dict['wavelengths'] = tuple(np.array(self._dict['wavelengths']).astype(float))
-
 
     @cached_property
     def idTag(self) -> str:
@@ -151,35 +152,6 @@ class ICMetaData(MetaDataBase):
     def metadataToJson(self, directory):
         with open(os.path.join(directory, 'pwsmetadata.json'), 'w') as f:
             json.dump(self._dict, f)
-
-    def getAnalyses(self) -> typing.List[str]:
-        assert self.filePath is not None
-        return self.getAnalysesAtPath(self.filePath)
-
-    @staticmethod
-    def getAnalysesAtPath(path: str) -> typing.List[str]:
-        from pwspy.analysis.pws import PWSAnalysisResults
-        anPath = os.path.join(path, 'analyses')
-        if os.path.exists(anPath):
-            files = os.listdir(os.path.join(path, 'analyses'))
-            return [PWSAnalysisResults.fileName2Name(f) for f in files]
-        else:
-            # print(f"ImCube at {path} has no `analyses` folder.")
-            return []
-
-    def saveAnalysis(self, analysis: PWSAnalysisResults, name:str):
-        path = os.path.join(self.filePath, 'analyses')
-        if not os.path.exists(path):
-            os.mkdir(path)
-        analysis.toHDF(path, name)
-
-    def loadAnalysis(self, name: str) -> PWSAnalysisResults:
-        from pwspy.analysis.pws import PWSAnalysisResults
-        return PWSAnalysisResults.load(os.path.join(self.filePath, 'analyses'), name)
-
-    def removeAnalysis(self, name: str):
-        from pwspy.analysis.pws import PWSAnalysisResults
-        os.remove(os.path.join(self.filePath, 'analyses', PWSAnalysisResults._name2FileName(name)))
 
     @classmethod
     def fromHdf(cls, d: h5py.Dataset):

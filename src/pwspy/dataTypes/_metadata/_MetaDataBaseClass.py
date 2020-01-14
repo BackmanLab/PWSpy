@@ -13,6 +13,10 @@ import pathlib
 from .. import _jsonSchemasPath
 from .._otherClasses import CameraCorrection, Roi
 import typing
+
+from ...analysis import AbstractAnalysisResults
+from ...analysis._abstract import AbstractHDFAnalysisResults
+
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import AcqDir
 
@@ -89,3 +93,39 @@ class MetaDataBase(ABC):
         """Save this metadata object as a json string in an HDF5 dataset."""
         d.attrs['metadata'] = np.string_(json.dumps(self._dict))
         return d
+
+class AnalysisManagerMetaDataBase(MetaDataBase):
+    """Implements the functionality to save, load, etc. analysis files."""
+    def __init__(self, metadata: dict, filePath: Optional[str] = None, acquisitionDirectory: Optional[AcqDir] = None):
+        super().__init__(metadata, filePath, acquisitionDirectory)
+
+    @property
+    @abstractmethod
+    def analysisResultsClass(self) -> AbstractAnalysisResults:
+        pass
+
+    def getAnalyses(self) -> typing.List[str]:
+        assert self.filePath is not None
+        return self.getAnalysesAtPath(self.filePath)
+
+    @classmethod
+    def getAnalysesAtPath(cls, path: str) -> typing.List[str]:
+        anPath = os.path.join(path, 'analyses')
+        if os.path.exists(anPath):
+            files = os.listdir(os.path.join(path, 'analyses'))
+            return [cls.analysisResultsClass.fileName2Name(f) for f in files]
+        else:
+            # print(f"ImCube at {path} has no `analyses` folder.")
+            return []
+
+    def saveAnalysis(self, analysis: AbstractHDFAnalysisResults, name: str):
+        path = os.path.join(self.filePath, 'analyses')
+        if not os.path.exists(path):
+            os.mkdir(path)
+        analysis.toHDF(path, name)
+
+    def loadAnalysis(self, name: str) -> AbstractHDFAnalysisResults:
+        return self.analysisResultsClass.load(os.path.join(self.filePath, 'analyses'), name)
+
+    def removeAnalysis(self, name: str):
+        os.remove(os.path.join(self.filePath, 'analyses', self.analysisResultsClass._name2FileName(name)))
