@@ -1,12 +1,16 @@
+from __future__ import annotations
 from ._analysisResults import DynamicsAnalysisResults
 from ._analysisSettings import DynamicsAnalysisSettings
 from pwspy.analysis import warnings
 from pwspy.analysis._abstract import AbstractAnalysis
-from pwspy.dataTypes import DynCube, ExtraReflectanceCube
 import numpy as np
 from typing import Tuple, List
 from pwspy.utility.reflection import reflectanceHelper
 from pwspy.moduleConsts import Material
+import typing
+if typing.TYPE_CHECKING:
+    from pwspy.dataTypes import DynCube, ExtraReflectanceCube
+
 
 class DynamicsAnalysis(AbstractAnalysis):
     #TODO this is all untested

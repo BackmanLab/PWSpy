@@ -15,16 +15,15 @@ import scipy as sp
 import matplotlib.pyplot as plt
 from matplotlib import widgets
 from matplotlib import path
-import typing, numbers
+import numbers
 from matplotlib import animation
-
-from pwspy.dataTypes import CameraCorrection, ExtraReflectionCube
 from pwspy.dataTypes._metadata._MetaDataBaseClass import MetaDataBase
 from pwspy.utility.matplotlibWidgets import AxManager, PointSelector
-
 from pwspy.dataTypes._otherClasses import Roi
-from matplotlib import patches
 import copy
+import typing
+if typing.TYPE_CHECKING:
+    from pwspy.dataTypes import CameraCorrection, ExtraReflectionCube
 
 
 class ICBase:
