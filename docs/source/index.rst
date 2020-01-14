@@ -20,6 +20,10 @@ pwspy.dataTypes
 .. automodule:: pwspy.dataTypes
    :members:
    :undoc-members:
+..
+   the inheritance diagram doesn't render
+.. inheritance-diagram:: pwspy.dataTypes.ImCube
+   :top-classes: ICBase
 
 pwspy.analysis
 ===============================
