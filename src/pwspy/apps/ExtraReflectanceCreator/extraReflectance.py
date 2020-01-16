@@ -204,6 +204,18 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], ma
     for sett in settings:
         settMatCombos = allCombos[sett].keys()  # Sometime we are looking at settings which don't have all the same matCombos. Only use the combos specific to this setting.
         means = meanValues[sett]['mean']
+        fig6, scatterAx3 = plt.subplots()
+        fig6.suptitle(f'{sett}')
+        figs.append(fig6)
+        scatterAx3.set_ylabel("Theoretical Ratio")
+        scatterAx3.set_xlabel("Observed Ratio. No correction")
+        scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in settMatCombos]
+        scatterPointsX = [(meanValues[sett][matCombo]['mat1Spectra'] / meanValues[sett][matCombo]['mat2Spectra']).mean() for
+                          matCombo in settMatCombos]
+        [scatterAx3.scatter(x, y, label=f'{matCombo[0].name}/{matCombo[1].name}') for x, y, matCombo in zip(scatterPointsX, scatterPointsY, settMatCombos)]
+        x = np.array([0, max(scatterPointsX)])
+        scatterAx3.plot(x, x, label='1:1')
+        scatterAx3.legend()
 
         fig3, scatterAx = plt.subplots()  # A scatter plot of the theoretical vs observed reflectance ratio.
         fig3.suptitle(f'{sett} cFactor: {means["cFactor"]}')
