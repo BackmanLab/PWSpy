@@ -4,6 +4,7 @@ Created on Wed Aug 22 11:05:40 2018
 
 @author: Nick Anthony
 """
+from numbers import Number
 
 import pandas as pd
 import numpy as np
@@ -75,8 +76,10 @@ def getReflectance(mat1: Material, mat2: Material, wavelengths: Union[np.ndarray
     is for light with 0 degree angle of incidence. If NA is specified then the result is the disc integral from
     0 to NA, this should match what is seen in the microscope."""
     index = n.index if wavelengths is None else wavelengths
-    if not isinstance(index, np.ndarray):
+    if isinstance(index, Number):
         index = np.array([index])
+    elif not isinstance(index, np.ndarray):
+        index = np.array(index)
     s = Stack(wavelengths=index)
     s.addLayer(Layer(mat1, 1e9))  # Add a meter thick layer
     s.addLayer(Layer(mat2, 1e9))
