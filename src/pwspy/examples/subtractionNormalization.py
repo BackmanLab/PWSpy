@@ -7,7 +7,8 @@ Created on Fri Feb  8 14:10:12 2019
 import numpy as np
 from pwspy.dataTypes import ImCube, CameraCorrection
 import os.path as osp
-from pwspy.utility import reflectanceHelper, loadAndProcess
+from pwspy.utility.reflection import reflectanceHelper
+from pwspy.utility.fileIO import loadAndProcess
 import typing
 
 

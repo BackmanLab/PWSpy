@@ -67,9 +67,11 @@ class StackBase:
 
 class NonPolarizedStack(StackBase):
     """Represents a stack of 1d homogenous films. Reflectance can only be calculated at 0 incidence angle in which case
-    polarization is irrelevant. This class does not do anything that can't be done with the `Stack`. Indices of refraction must be real (no absorption)."""
+    polarization is irrelevant. This class does not do anything that can't be done with the `Stack`. Indices of refraction must
+    be real (no absorption)."""
+
     def _generateMatrix(self) -> np.ndarray:
-        """First and last items just have propagation matrices. """
+        """First and last items just have propagation matrices."""
         matrices = []
         lastItem: Layer = None
         for el in self.layers:
@@ -122,8 +124,8 @@ class NonPolarizedStack(StackBase):
     @staticmethod
     def propagationMatrix(n: pd.Series, d: float) -> np.ndarray:
         """Returns a matrix representing the propagation of light. n should be a pandas Series where the values are
-         complex refractive index and the index fo the Series is the associated wavelengths. with wavelength.
-        for a distance of "d". d and the wavelengths must use the same units."""
+        complex refractive index and the index fo the Series is the associated wavelengths. with wavelength.
+        for a distance of `d`. d and the wavelengths must use the same units."""
         wavelengths = n.index
         phi = np.array(2 * np.pi * d * n / wavelengths)
         zeroArray = 0 * phi  # Without this our matrix will not shape properly

@@ -10,7 +10,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pwspy.dataTypes import ImCube
 from pwspy.dataTypes import ExtraReflectanceCube, ExtraReflectionCube
-from pwspy.utility import reflectanceHelper
+from pwspy.utility.reflection import reflectanceHelper
 from glob import glob
 import os
 from pwspy.utility.fileIO import loadAndProcess
