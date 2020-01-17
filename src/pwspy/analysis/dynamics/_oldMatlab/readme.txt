@@ -1,0 +1,1 @@
+These are matlab scripts used by Scott Gladstein to analyze dynamics data. The python dynamics analysis is based on these scripts.
