@@ -5,6 +5,7 @@ import os, json
 from typing import Optional
 import typing
 from ._metadata import FluorMetaData
+import multiprocessing as mp
 if typing.TYPE_CHECKING:
     from ._AcqDir import AcqDir
 
@@ -20,9 +21,11 @@ class FluorescenceImage:
         return cls.fromMetadata(md)
 
     @classmethod
-    def fromMetadata(cls, md: FluorMetaData):
+    def fromMetadata(cls, md: FluorMetaData, lock: mp.Lock = None):
         path = os.path.join(md.filePath, FluorMetaData.FILENAME)
-        img = tf.TiffFile(path)
+        if lock is not None: lock.acquire()
+        try: img = tf.TiffFile(path)
+        finally: lock.release()
         return cls(img.asarray(), md)
 
     def toTiff(self, directory: str):

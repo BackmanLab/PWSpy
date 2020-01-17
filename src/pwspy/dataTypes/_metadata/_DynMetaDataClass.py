@@ -19,7 +19,8 @@ class DynMetaData(AnalysisManagerMetaDataBase):
     class FileFormats(Enum):
         Tiff = auto()
 
-    analysisResultsClass = DynamicsAnalysisResults
+    @staticmethod
+    def getAnalysisResultsClass(): return DynamicsAnalysisResults
 
     _jsonSchemaPath = os.path.join(_jsonSchemasPath, 'DynMetaData.json')
     with open(_jsonSchemaPath) as f:
@@ -29,9 +30,9 @@ class DynMetaData(AnalysisManagerMetaDataBase):
         self.fileFormat = fileFormat
         super().__init__(metadata, filePath, acquisitionDirectory=acquisitionDirectory)
 
-    def toDataClass(self) -> DynCube:
+    def toDataClass(self, lock: mp.Lock = None) -> DynCube:
         from pwspy.dataTypes import DynCube
-        return DynCube.fromMetadata(self)
+        return DynCube.fromMetadata(self, lock)
 
     @property
     def idTag(self) -> str:

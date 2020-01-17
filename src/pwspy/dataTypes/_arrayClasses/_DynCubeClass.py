@@ -72,17 +72,17 @@ class DynCube(ICRawBase):
             print("Warning: This cube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
         if not self.isExposureNormalized():
             print("Warning: This cube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
-        if not reference.isCorrected():
-            print("Warning: The reference cube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
-        if not reference.isExposureNormalized():
-            print("Warning: The reference cube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
-        if isinstance(reference, np.ndarray):
+        if isinstance(reference, DynCube):
+            if not reference.isCorrected():
+                print("Warning: The reference cube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
+            if not reference.isExposureNormalized():
+                print("Warning: The reference cube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
+            mean = reference.data.mean(axis=2)
+        elif isinstance(reference, np.ndarray):
             assert len(reference.shape) == 2
             assert reference.shape[0] == self.data.shape[0]
             assert reference.shape[1] == self.data.shape[1]
             mean = reference
-        elif isinstance(reference, DynCube):
-            mean = reference.data.mean(axis=2)
         else:
             raise TypeError(f"`reference` must be either DynCube or numpy.ndarray, not {type(reference)}")
         self.data = self.data / mean[:, :, None]

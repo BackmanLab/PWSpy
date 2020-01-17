@@ -20,6 +20,8 @@ from ...analysis._abstract import AbstractHDFAnalysisResults
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import AcqDir
     from .._arrayClasses._ICBaseClass import ICBase
+    import multiprocessing as mp
+
 
 class MetaDataBase(ABC):
     """This base class provides that basic functionality to store information about a PWS related acquisition on file."""
@@ -53,7 +55,7 @@ class MetaDataBase(ABC):
             self.cameraCorrection = None
 
     @abstractmethod
-    def toDataClass(self) -> ICBase:
+    def toDataClass(self, lock: mp.Lock) -> ICBase:
         """Convert the metadata class to a class that loads the data"""
         pass
 
@@ -106,9 +108,9 @@ class AnalysisManagerMetaDataBase(MetaDataBase):
     def __init__(self, metadata: dict, filePath: Optional[str] = None, acquisitionDirectory: Optional[AcqDir] = None):
         super().__init__(metadata, filePath, acquisitionDirectory)
 
-    @property
+    @staticmethod
     @abstractmethod
-    def analysisResultsClass(self) -> AbstractAnalysisResults:
+    def getAnalysisResultsClass() -> AbstractHDFAnalysisResults:
         pass
 
     def getAnalyses(self) -> typing.List[str]:
@@ -120,7 +122,7 @@ class AnalysisManagerMetaDataBase(MetaDataBase):
         anPath = os.path.join(path, 'analyses')
         if os.path.exists(anPath):
             files = os.listdir(os.path.join(path, 'analyses'))
-            return [cls.analysisResultsClass.fileName2Name(f) for f in files]
+            return [cls.getAnalysisResultsClass().fileName2Name(f) for f in files]
         else:
             # print(f"ImCube at {path} has no `analyses` folder.")
             return []
@@ -132,7 +134,7 @@ class AnalysisManagerMetaDataBase(MetaDataBase):
         analysis.toHDF(path, name)
 
     def loadAnalysis(self, name: str) -> AbstractHDFAnalysisResults:
-        return self.analysisResultsClass.load(os.path.join(self.filePath, 'analyses'), name)
+        return self.getAnalysisResultsClass().load(os.path.join(self.filePath, 'analyses'), name)
 
     def removeAnalysis(self, name: str):
-        os.remove(os.path.join(self.filePath, 'analyses', self.analysisResultsClass._name2FileName(name)))
+        os.remove(os.path.join(self.filePath, 'analyses', self.getAnalysisResultsClass().name2FileName(name)))

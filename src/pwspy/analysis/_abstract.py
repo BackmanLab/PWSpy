@@ -103,7 +103,7 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
 
     @staticmethod
     @abstractmethod
-    def _name2FileName(name: str) -> str:
+    def name2FileName(name: str) -> str:
         pass
 
     @staticmethod
@@ -115,7 +115,7 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
         """Save the AnalysisResults object to an HDF file in `directory`. The name of the file will be determined by `name`. If you want to know what the full file name
         will be you can use this class's `_name2FileName` method."""
         from pwspy.dataTypes import KCube #Need this for instance checking
-        fileName = osp.join(directory, self._name2FileName(name))
+        fileName = osp.join(directory, self.name2FileName(name))
         if osp.exists(fileName):
             raise OSError(f'{fileName} already exists.')
         # now save the stuff
@@ -139,7 +139,7 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
     @classmethod
     def load(cls, directory: str, name: str):
         """Load an analyisResults object from an hdf5 file located in `directory`."""
-        filePath = osp.join(directory, cls._name2FileName(name))
+        filePath = osp.join(directory, cls.name2FileName(name))
         if not osp.exists(filePath):
             raise OSError("The analysis file does not exist.")
         file = h5py.File(filePath, 'r')

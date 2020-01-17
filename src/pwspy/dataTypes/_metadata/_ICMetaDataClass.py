@@ -33,7 +33,8 @@ class ICMetaData(AnalysisManagerMetaDataBase):
         Hdf = auto()
         NanoMat = auto()
 
-    analysisResultsClass = PWSAnalysisResults
+    @staticmethod
+    def getAnalysisResultsClass(): return PWSAnalysisResults
 
     _jsonSchemaPath = os.path.join(_jsonSchemasPath, 'ICMetaData.json')
     with open(_jsonSchemaPath) as f:
@@ -44,9 +45,9 @@ class ICMetaData(AnalysisManagerMetaDataBase):
         self.fileFormat: ICMetaData.FileFormats = fileFormat
         self._dict['wavelengths'] = tuple(np.array(self._dict['wavelengths']).astype(float))
 
-    def toDataClass(self) -> ImCube:
+    def toDataClass(self, lock: mp.Lock = None) -> ImCube:
         from pwspy.dataTypes import ImCube
-        return ImCube.fromMetadata(self)
+        return ImCube.fromMetadata(self, lock)
 
     @cached_property
     def idTag(self) -> str:

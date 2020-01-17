@@ -14,6 +14,7 @@ from pwspy.dataTypes import ImCube, CameraCorrection, ExtraReflectanceCube, AcqD
 from pwspy.analysis.pws import PWSAnalysisSettings
 from pwspy.analysis.pws import PWSAnalysis
 from pwspy.analysis.warnings import AnalysisWarning
+from pwspy.dataTypes._arrayClasses._ICBaseClass import ICRawBase
 from pwspy.dataTypes._metadata._MetaDataBaseClass import AnalysisManagerMetaDataBase
 from pwspy.utility.fileIO import loadAndProcess
 import threading
@@ -119,7 +120,12 @@ class AnalysisManager(QtCore.QObject):
             t = self.AnalysisThread(cellMetas, analysis, anName, cameraCorrection, useParallelProcessing)
             b = BusyDialog(self.app.window, "Processing. Please Wait...")
             t.finished.connect(b.accept)
-            t.errorOccurred.connect(lambda e: QMessageBox.information(self.app.window, 'Uh Oh', str(e)))
+
+            def handleError(e: Exception, trace: str):
+                import traceback
+                print(trace)
+                QMessageBox.information(self.app.window, "Oh No", str(e))
+            t.errorOccurred.connect(handleError)
             t.start()
             b.exec()
             warnings = t.warnings
@@ -149,7 +155,7 @@ class AnalysisManager(QtCore.QObject):
 
 
     class AnalysisThread(QThread):
-        errorOccurred = QtCore.pyqtSignal(Exception)
+        errorOccurred = QtCore.pyqtSignal(Exception, str)
 
         def __init__(self, cellMetas, analysis, anName, cameraCorrection, parallel):
             super().__init__()
@@ -165,7 +171,9 @@ class AnalysisManager(QtCore.QObject):
                 self.warnings = loadAndProcess(self.cellMetas, processorFunc=self._process, initArgs=[self.analysis, self.anName, self.cameraCorrection],
                                      parallel=self.parallel, initializer=self._initializer, maxProcesses=3) # Returns a list of Tuples, each tuple containing a list of warnings and the ICmetadata to go with it.
             except Exception as e:
-                self.errorOccurred.emit(e)
+                import traceback
+                trace = traceback.format_exc()
+                self.errorOccurred.emit(e, trace)
 
 
         @staticmethod
@@ -177,8 +185,9 @@ class AnalysisManager(QtCore.QObject):
                                                'cameraCorrection': cameraCorrection}
 
         @staticmethod
-        def _process(im: ImCube):
-            """This method is run in parallel. once for each dataTypes that we want to analyze."""
+        def _process(im: ICRawBase):
+            """This method is run in parallel. once for each acquisition data that we want to analyze.
+            Returns a list of AnalysisWarnings objects with the associated metadat object"""
             global pwspyAnalysisAppParallelGlobals
             analysis = pwspyAnalysisAppParallelGlobals['analysis']
             analysisName = pwspyAnalysisAppParallelGlobals['analysisName']

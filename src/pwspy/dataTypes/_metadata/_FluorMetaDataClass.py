@@ -9,6 +9,7 @@ import numpy as np
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import AcqDir, FluorescenceImage
+    import multiprocessing as mp
 
 class FluorMetaData(MetaDataBase):
     FILENAME = 'fluor.tif'
@@ -21,9 +22,9 @@ class FluorMetaData(MetaDataBase):
     def __init__(self, md: dict, filePath: Optional[str] = None, acquisitionDirectory: Optional[AcqDir] = None):
         super().__init__(md, filePath, acquisitionDirectory)
 
-    def toDataClass(self) -> FluorescenceImage:
+    def toDataClass(self, lock: mp.Lock = None) -> FluorescenceImage:
         from pwspy.dataTypes import FluorescenceImage
-        return FluorescenceImage.fromMetadata(self)
+        return FluorescenceImage.fromMetadata(self, lock)
     
     @property
     def idTag(self):

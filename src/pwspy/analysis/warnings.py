@@ -2,8 +2,12 @@ from typing import Optional
 
 import numpy as np
 
+"""The purpose of this file is provide functions which check data during analysis for abnormality. If abnormal conditions are found
+then an AnalysisWarning is produced. The application can then display or record these warnings. This aspect of the program has not really
+been fully implemented."""
 
 class AnalysisWarning:
+    """Each warning should have a short description and a longer explanation."""
     def __init__(self, shortMsg: str, longMsg: str):
         self.longMsg = longMsg
         self.shortMsg = shortMsg

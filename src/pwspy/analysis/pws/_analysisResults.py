@@ -45,7 +45,7 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults): #TODO All these cached pro
                 'ld', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionTag', 'settings']
 
     @staticmethod
-    def _name2FileName(name: str) -> str:
+    def name2FileName(name: str) -> str:
         return f'analysisResults_{name}.h5'
 
     @staticmethod

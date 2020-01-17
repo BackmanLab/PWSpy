@@ -8,6 +8,10 @@ from pwspy.utility.misc import cached_property
 import numpy as np
 
 def getFromDict(func):
+    """This decorator makes it so that the function will only be evaluated if self.file is not None.
+    If self.file is None then we will just search self.dict for a value with a key matching the name of the decorated function.
+    We use this because while we often want to load data from a file for use, we also want to support the case of an object
+    that has been created but has not yet been saved to a file."""
     def newFunc(self, *args):
         if self.file is None:
             return self.dict[func.__name__]
@@ -17,13 +21,14 @@ def getFromDict(func):
     newFunc.__name__ = func.__name__
     return newFunc
 
+
 class DynamicsAnalysisResults(AbstractHDFAnalysisResults):
     @staticmethod
     def fields():
         return ['meanReflectance', 'rms_t', 'dSlope', 'time', 'settings', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionIdTag']
 
     @staticmethod
-    def _name2FileName(name: str) -> str:
+    def name2FileName(name: str) -> str:
         return f'dynAnalysisResults_{name}.h5'
 
     @staticmethod
@@ -84,5 +89,5 @@ class DynamicsAnalysisResults(AbstractHDFAnalysisResults):
 
     @cached_property
     @getFromDict
-    def extraReflectionTag(self) -> str:
-        return bytes(np.array(self.file['extraReflectionTag'])).decode()
+    def extraReflectionIdTag(self) -> str:
+        return bytes(np.array(self.file['extraReflectionIdTag'])).decode()

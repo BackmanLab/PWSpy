@@ -11,23 +11,23 @@ from time import time
 from typing import Union, Optional, List, Tuple
 import pandas as pd
 import psutil
-from pwspy.dataTypes import ICMetaData, ImCube
+from pwspy.dataTypes import ICMetaData, ImCube, MetaDataBase
 
 '''Local Functions'''
 
-#TODO add handling for DynamicsCubes
 
-def _load(loadHandle: Union[str, ICMetaData], metadataOnly: bool, lock: mp.Lock):
+def _load(loadHandle: Union[str, MetaDataBase], metadataOnly: bool, lock: mp.Lock):
+    md: MetaDataBase
     if isinstance(loadHandle, str):
-        md = ICMetaData.loadAny(loadHandle, lock=lock)
-    elif isinstance(loadHandle, ICMetaData):
+        md = ICMetaData.loadAny(loadHandle, lock=lock)  # In the case that we just have a string to work with, we assume that we are loading a PWS file and not any other type such as dynamics.
+    elif isinstance(loadHandle, MetaDataBase):
         md = loadHandle
     else:
         raise TypeError("files specified to the loader must be either str or ICMetaData")
     if metadataOnly:
         return md
     else:
-        return ImCube.fromMetadata(md, lock=lock)
+        return md.toDataClass(lock)
 
 
 def _loadIms(qout: queue.Queue, qin: queue.Queue, metadataOnly: bool, lock: th.Lock):
@@ -36,7 +36,7 @@ def _loadIms(qout: queue.Queue, qin: queue.Queue, metadataOnly: bool, lock: th.L
     while not qin.empty():
         try:
             index, row = qin.get()
-            displayStr = row['cube'].filePath if isinstance(row['cube'], ICMetaData) else row['cube']
+            displayStr = row['cube'].filePath if isinstance(row['cube'], MetaDataBase) else row['cube']
             print('Starting', displayStr)
             im = _load(row['cube'], metadataOnly=metadataOnly, lock=lock)
             row['cube'] = im
@@ -72,7 +72,7 @@ def _loadThenProcess(procFunc, procFuncArgs, metadataOnly: bool, lock: mp.Lock, 
      on each core when running in parallel. If not running in parallel then _loadIms will be used."""
     index, row = row
     im = _load(row['cube'], metadataOnly=metadataOnly, lock=lock)
-    displayStr = row['cube'].filePath if isinstance(row['cube'], ICMetaData) else row['cube']
+    displayStr = row['cube'].filePath if isinstance(row['cube'], MetaDataBase) else row['cube']
     print("Run", displayStr, mp.current_process())
     if passLock:
         ret = procFunc(im, lock, *procFuncArgs)
@@ -105,7 +105,7 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
     procArgs
         Optional arguments to pass to processorFunc
     metadataOnly:
-        Instead of passing an ImCube object to the first argument of processorFunc, pass the ICMetaData object
+        Instead of passing an ImCube or DynCube object to the first argument of processorFunc, pass the MetaData object
     passLock:
         If true then pass the multiprocessing lock object to the second argument fo processorFunc. this can be used to
         synchronize hard disk activity.

@@ -22,12 +22,12 @@ class DynamicsAnalysis(AbstractAnalysis):
             ref.filterDust(.75)  # Apply a blur to filter out dust particles. This is in microns. I'm not sure if this is the optimal value.
         if settings.referenceMaterial is None:
             theoryR = 1  # Having this as 1 effectively ignores it.
-            print("Warning: PWSAnalysis ignoring reference material correction")
+            print("Warning: DynamicsAnalysis ignoring reference material correction")
         else:
             theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, wavelengths=ref.metadata.wavelength, NA=settings.numericalAperture)
         if extraReflectance is None:
             Iextra = np.zeros(ref.data.shape[:2])  # a bogus reflection that is all zeros
-            print("Warning: PWSAnalysis ignoring extra reflection")
+            print("Warning: DynamicsAnalysis ignoring extra reflection")
         else:
             if extraReflectance.metadata.numericalAperture != settings.numericalAperture:
                 print(f"Warning: The numerical aperture of your analysis does not match the NA of the Extra Reflectance Calibration. Calibration File NA: {extraReflectance.metadata.numericalAperture}. PWSAnalysis NA: {settings.numericalAperture}.")
@@ -40,7 +40,7 @@ class DynamicsAnalysis(AbstractAnalysis):
         self.refMean = ref.data.mean(axis=2)
         self.refAc = ref.getAutocorrelation()
         self.refTag = ref.metadata.idTag
-        self.erTag = extraReflectance.metadata.idTag
+        self.erTag = extraReflectance.metadata.idTag if extraReflectance is not None else None
         self.n_medium = 1.37  # The average index of refraction for chromatin?
         self.settings = settings
         self.extraReflection = Iextra
@@ -54,19 +54,19 @@ class DynamicsAnalysis(AbstractAnalysis):
         cubeAc = cube.getAutocorrelation()
         rms_t_squared = cubeAc[:, :, 0] - self.refAc[:, :, 0].mean() # The rms^2 noise of the reference averaged over the whole image.
         # If we didn't care about noise subtraction we could get rms_t as just `cube.data.std(axis=2)`
+
         # Determine the mean-reflectance for each pixel in the cell.
         reflectance = cube.data.mean(axis=2)
-        warns.append(warnings.checkMeanReflectance(reflectance))
 
         #Diffusion
         ac = cubeAc - self.refAc  # Background subtracted autocorrelation function
-        ac = ac / ac[:, :, 0]  # Normalize by the zero-lag value
+        ac = ac / ac[:, :, 0][:, :, None]  # Normalize by the zero-lag value
         ac[ac <= 0] = 1e-323  # Before taking the log of the autocorrelation, zero values must be modified to prevent outputs of "inf" or "-inf".
         logac = np.log(ac)
 
         dt = cube.times[1] - cube.times[0]
         k = (self.n_medium * 2 * np.pi) / cube.metadata.wavelength
-        val = logac / (dt * 4 * k ^ 2)
+        val = logac / (dt * 4 * k ** 2)
         d_slope = -(val[:, :, 1] - val[:, :, 0]) #Get the slope
 
         results = DynamicsAnalysisResults.create(meanReflectance=reflectance,
