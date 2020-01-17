@@ -104,8 +104,8 @@ class Roi:
     """This class represents a single Roi used to select a specific region of an image. Each Roi is identified by a
     `name` and a `number`. The recommended file format is HDF2, in this format multiple rois of the same name but differing
     numbers can be saved in a single HDF file. The Roi consists of a `mask` (a boolean array specifying which pixels are
-     included in the Roi), a set of of `vertices` (a 2 x N array specifying the vertices of the polygon enclosing the
-     mask, this is useful if you want to adjust the Roi later."""
+    included in the Roi), a set of of `vertices` (a 2 x N array specifying the vertices of the polygon enclosing the
+    mask, this is useful if you want to adjust the Roi later."""
 
     class FileFormats(Enum):
         """An enumerator of the different file formats that an ROI can be saved to."""
