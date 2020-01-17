@@ -5,6 +5,7 @@ from typing import Tuple, List
 import typing
 from PyQt5.QtCore import QThread
 
+from pwspy.analysis import AbstractAnalysisSettings
 from pwspy.analysis.dynamics import DynamicsAnalysisSettings, DynamicsAnalysis
 from pwspy.apps.PWSAnalysisApp._sharedWidgets import ScrollableMessageBox
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
@@ -35,7 +36,7 @@ def safeCallback(func):
 
 
 class AnalysisManager(QtCore.QObject):
-    analysisDone = QtCore.pyqtSignal(str, PWSAnalysisSettings, list)
+    analysisDone = QtCore.pyqtSignal(str, AbstractAnalysisSettings, list)
 
     def __init__(self, app: PWSApp):
         super().__init__()

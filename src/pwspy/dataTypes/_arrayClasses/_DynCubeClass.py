@@ -45,6 +45,9 @@ class DynCube(ICRawBase):
 
     @classmethod
     def fromTiff(cls, directory, metadata: DynMetaData = None, lock: mp.Lock = None):
+        """Load a dyanmics acquisition from a tiff file. if the metadata for the acquisition has already been loaded then you can provide
+        is as the `metadata` argument to avoid loading it again. the `lock` argument is an optional place to provide a multiprocessing.Lock
+        which can be used when multiple files in parallel to avoid giving the hard drive too many simultaneous requests, this is probably not necessary."""
         if lock is not None:
             lock.acquire()
         try:

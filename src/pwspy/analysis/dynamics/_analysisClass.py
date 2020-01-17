@@ -78,3 +78,10 @@ class DynamicsAnalysis(AbstractAnalysis):
                                                  extraReflectionIdTag=self.erTag)
 
         return results, warns
+
+if __name__ == "__main__":
+    cubeDir = ""
+
+    settings = DynamicsAnalysisSettings(None, Material.Water, 0.5)
+    ref = DynCube.fromTiff(cubeDir)
+    an = DynamicsAnalysis(settings, ref, None)
