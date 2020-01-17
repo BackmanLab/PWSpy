@@ -124,8 +124,8 @@ class NonPolarizedStack(StackBase):
     @staticmethod
     def propagationMatrix(n: pd.Series, d: float) -> np.ndarray:
         """Returns a matrix representing the propagation of light. n should be a pandas Series where the values are
-         complex refractive index and the index fo the Series is the associated wavelengths. with wavelength.
-        for a distance of "d". d and the wavelengths must use the same units."""
+        complex refractive index and the index fo the Series is the associated wavelengths. with wavelength.
+        for a distance of `d`. d and the wavelengths must use the same units."""
         wavelengths = n.index
         phi = np.array(2 * np.pi * d * n / wavelengths)
         zeroArray = 0 * phi  # Without this our matrix will not shape properly
