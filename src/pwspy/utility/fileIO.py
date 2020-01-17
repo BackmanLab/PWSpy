@@ -98,7 +98,7 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
         A function that each loaded cell should be passed to. The first argument of processorFunc should be the loaded
         ImCube. Additional arguments can be passed to processorFunc using the procArgs variable.
     parallel
-        default is False. If True then the loading and processing will be performed in parallel on multiple cores,
+        default is `False`. If `True` then the loading and processing will be performed in parallel on multiple cores,
         otherwise it will be done using multithreading on a single core. Setting this to true can result if big speedups
         if the time to run processorFunc is greater than the time to load an ImCube from file.
     procArgs
