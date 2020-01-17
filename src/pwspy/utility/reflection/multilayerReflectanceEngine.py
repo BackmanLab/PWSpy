@@ -67,9 +67,11 @@ class StackBase:
 
 class NonPolarizedStack(StackBase):
     """Represents a stack of 1d homogenous films. Reflectance can only be calculated at 0 incidence angle in which case
-    polarization is irrelevant. This class does not do anything that can't be done with the `Stack`. Indices of refraction must be real (no absorption)."""
+    polarization is irrelevant. This class does not do anything that can't be done with the `Stack`. Indices of refraction must
+    be real (no absorption)."""
+
     def _generateMatrix(self) -> np.ndarray:
-        """First and last items just have propagation matrices. """
+        """First and last items just have propagation matrices."""
         matrices = []
         lastItem: Layer = None
         for el in self.layers:

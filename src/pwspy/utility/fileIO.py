@@ -87,7 +87,7 @@ def _loadThenProcess(procFunc, procFuncArgs, metadataOnly: bool, lock: mp.Lock, 
 def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: Optional = None, parallel: Optional=None,
                    procArgs: Optional = None, metadataOnly: bool = False, passLock: bool = False, initializer=None,
                    initArgs=None, maxProcesses: int = 1000) -> Union[pd.DataFrame, List, Tuple]:
-    """    A convenient function to load a series of ImCubes from a list or dictionary of file paths.
+    """A convenient function to load a series of ImCubes from a list or dictionary of file paths.
 
     Parameters
     ----------

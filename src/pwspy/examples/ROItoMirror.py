@@ -16,12 +16,13 @@ as a reference dataTypes with the same initial dimensions.
 Can help to make a reference when you don't actually have one for some reason
 '''
 
-a = ImCube.loadAny(r'G:\Calibrations\CellPhantom\lcpws1\5th\Cell2')
+if __name__ == '__main__':
+    a = ImCube.loadAny(r'G:\Calibrations\CellPhantom\lcpws1\5th\Cell2')
 
-mask = a.selectLassoROI()
-spec, std = a.getMeanSpectra(mask)
-newData = np.zeros(a.data.shape)
-newData[:, :, :] = spec[np.newaxis, np.newaxis, :]
-ref = ImCube(newData, a.metadata)
+    mask = a.selectLassoROI()
+    spec, std = a.getMeanSpectra(mask)
+    newData = np.zeros(a.data.shape)
+    newData[:, :, :] = spec[np.newaxis, np.newaxis, :]
+    ref = ImCube(newData, a.metadata)
 
-plt.plot(a.wavelengths, spec)
+    plt.plot(a.wavelengths, spec)
