@@ -8,15 +8,13 @@ This is a temporary script file.
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from pwspy.dataTypes import ImCube
-from pwspy.dataTypes import ExtraReflectanceCube, ExtraReflectionCube
-from pwspy.utility import reflectanceHelper
 from glob import glob
 import os
-from pwspy.utility.fileIO import loadAndProcess
+
+from pwspy.dataTypes import ImCube, ExtraReflectanceCube, ExtraReflectionCube, Roi
+from pwspy.utility.reflection import reflectanceHelper
 from pwspy.moduleConsts import Material
 from pwspy.utility import thinFilmPath
-from pwspy.dataTypes import Roi
 
 #TODO change the theoretical CSV file to use BK7 instead of SIO2. Our measurements are still not matching theory though. Is this because of all the extra scattering?
 
