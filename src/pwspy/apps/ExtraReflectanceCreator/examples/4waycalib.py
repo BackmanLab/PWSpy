@@ -8,11 +8,11 @@ This functionality has now been replaced in the ExtraREflectanceCreator applicat
 """
 
 
-from pwspy import ImCube, CameraCorrection
-from pwspy.utility import loadAndProcess, reflectanceHelper, PlotNd
+from pwspy.dataTypes import CameraCorrection
+from pwspy.utility.fileIO import loadAndProcess
+from pwspy.utility.reflection import reflectanceHelper
 import pwspy.apps.ExtraReflectanceCreator.extraReflectance as er
 from glob import glob
-import numpy as np
 import matplotlib.pyplot as plt
 import os
 from matplotlib.backends.backend_pdf import PdfPages
