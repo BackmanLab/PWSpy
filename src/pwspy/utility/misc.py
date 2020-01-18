@@ -17,8 +17,8 @@ class cached_property(object):
 
 
 def profileDec(filePath: str):
+    """decorator to profile a function call"""
     def innerDec(func):
-        """decorator to profile a function call"""
         import cProfile
         def newFunc(*args, **kwargs):
             pr = cProfile.Profile()

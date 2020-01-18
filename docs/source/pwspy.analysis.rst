@@ -7,6 +7,7 @@ Subpackages
 .. toctree::
 
    pwspy.analysis.compilation
+   pwspy.analysis.dynamics
    pwspy.analysis.pws
 
 Submodules

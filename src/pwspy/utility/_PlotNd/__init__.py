@@ -5,13 +5,13 @@ from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QPushButton, QDi
 from matplotlib.animation import FuncAnimation
 from pwspy.apps.sharedWidgets.rangeSlider import QRangeSlider
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT
-from pwspy.utility.PlotNd._plots import ImPlot, SidePlot
+from pwspy.utility._PlotNd._plots import ImPlot, SidePlot
 import numpy as np
-from pwspy.utility.PlotNd._plots import CBar
-from pwspy.utility.PlotNd._canvas import PlotNdCanvas
+from pwspy.utility._PlotNd._plots import CBar
+from pwspy.utility._PlotNd._canvas import PlotNdCanvas
 
 
-class PlotNd(QDialog): #TODO add button to save animation
+class PlotNd(QDialog): #TODO add button to save animation, Docstring
     def __init__(self, data: np.ndarray, names: Tuple[str, ...] = ('y', 'x', 'lambda'),
                  initialCoords: Tuple[int, ...] = None, title: str = '', parent: QWidget = None,
                  extraDimIndices: List[np.ndarray] = None):

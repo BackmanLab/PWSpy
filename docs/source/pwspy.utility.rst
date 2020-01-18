@@ -6,7 +6,6 @@ Subpackages
 
 .. toctree::
 
-   pwspy.utility.PlotNd
    pwspy.utility.fluorescence
    pwspy.utility.matplotlibWidgets
    pwspy.utility.micromanager
@@ -14,14 +13,6 @@ Subpackages
 
 Submodules
 ----------
-
-pwspy.utility.GoogleDriveDownloader module
-------------------------------------------
-
-.. automodule:: pwspy.utility.GoogleDriveDownloader
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 pwspy.utility.fileIO module
 ---------------------------

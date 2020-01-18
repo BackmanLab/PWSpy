@@ -14,7 +14,7 @@ from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataDirectory import ERDa
 from .ERSelectorWindow import ERSelectorWindow
 from .ERUploaderWindow import ERUploaderWindow
 from pwspy.dataTypes import ERMetadata
-from pwspy.utility.GoogleDriveDownloader import GoogleDriveDownloader
+from pwspy.utility._GoogleDriveDownloader import GoogleDriveDownloader
 from .exceptions import OfflineError
 from pwspy.apps.PWSAnalysisApp import applicationVars
 from google.auth.exceptions import TransportError

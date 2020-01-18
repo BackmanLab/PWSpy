@@ -5,3 +5,5 @@ from ._selectorWidgets.lasso import LassoSelector
 from ._selectorWidgets.paint import RegionalPaintSelector
 from ._selectorWidgets.point import PointSelector
 from .coreClasses import AxManager
+
+__all__ = ['AdjustableSelector', 'PolygonInteractor', 'EllipseSelector', 'LassoSelector', 'RegionalPaintSelector', 'PointSelector', 'AxManager']
