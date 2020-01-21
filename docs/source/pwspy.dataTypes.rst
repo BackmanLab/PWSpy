@@ -8,3 +8,6 @@ Module contents
    :members:
    :undoc-members:
    :show-inheritance:
+
+.. inheritance-diagram:: pwspy.dataTypes
+    :top-classes: pwspy.dataTypes.AcqDir
