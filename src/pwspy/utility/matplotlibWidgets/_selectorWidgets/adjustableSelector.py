@@ -81,12 +81,12 @@ class PolygonInteractor(SelectorWidgetBase):
     """
     A polygon editor.
     https://matplotlib.org/gallery/event_handling/poly_editor.html
-    Key-bindings
-      't' toggle vertex markers on and off.  When vertex markers are on,
-          you can move them, delete them
-      'd' delete the vertex under point
-      'i' insert a vertex at point.  You must be within epsilon of the
-          line connecting two existing vertices
+    Key-bindings:
+        't' toggle vertex markers on and off.  When vertex markers are on,
+            you can move them, delete them
+        'd' delete the vertex under point
+        'i' insert a vertex at point.  You must be within epsilon of the
+            line connecting two existing vertices
     """
     showverts = True
     epsilon = 15  # max pixel distance to count as a vertex hit
