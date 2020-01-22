@@ -22,8 +22,6 @@ class GenericRoiCompiler(AbstractRoiCompiler):
 
         results = GenericRoiCompilationResults(
                     roi=roi,
-                    analysisName=results.analysisName,
-                    cellIdTag=results.imCubeIdTag,
                     roiArea=roiArea)
         warns = [w for w in warns if w is not None]  # Strip None from warns list
         return results, warns
