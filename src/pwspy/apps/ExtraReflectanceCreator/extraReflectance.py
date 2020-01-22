@@ -13,7 +13,7 @@ import pandas as pd
 from dataclasses import dataclass, fields
 from matplotlib import animation
 import scipy.signal as sps
-from pwspy.utility.PlotNd import PlotNd
+from pwspy.utility._PlotNd import PlotNd
 MCombo = Tuple[Material, Material]
 
 

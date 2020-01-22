@@ -1,5 +1,5 @@
 import subprocess
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 import sys
 from ._FluoresenceImg import FluorescenceImage
@@ -13,15 +13,19 @@ from pwspy.utility.misc import cached_property
 
 
 class AcqDir:
-    """"A class handling the file structure of a single acquisition. this can include a PWS acquisition as well as colocalized Dynamics and fluorescence."""
+    """This class handles the file structure of a single acquisition. this can include a PWS acquisition as well as colocalized Dynamics and fluorescence.
+
+    Args:
+        directory: the file path the root directory of the acquisition
+    """
     def __init__(self, directory: str):
         self.filePath = directory
         if (self.pws is None) and (self.dynamics is None): # We must have one of these two items.
             raise OSError(f"Could not find a valid PWS or Dynamics Acquisition at {directory}.")
 
     @cached_property
-    def pws(self) -> ICMetaData:
-        """Returns None of the path was invalid."""
+    def pws(self) -> Optional[ICMetaData]:
+        """ICMetaData: Returns None if no PWS acquisition was found."""
         try:
             return ICMetaData.loadAny(os.path.join(self.filePath, 'PWS'), acquisitionDirectory=self)
         except:
@@ -31,7 +35,8 @@ class AcqDir:
                 return None
 
     @cached_property
-    def dynamics(self) -> DynMetaData:
+    def dynamics(self) -> Optional[DynMetaData]:
+        """DynMetaData: Returns None if no dynamics acquisition was found."""
         try:
             return DynMetaData.fromTiff(os.path.join(self.filePath, 'Dynamics'), acquisitionDirectory=self)
         except:

@@ -5,7 +5,10 @@ Created on Tue Aug  7 13:20:25 2018
 @author: Nick Anthony
 """
 
-from .PlotNd import PlotNd
+from ._PlotNd import PlotNd
+from ._GoogleDriveDownloader import GoogleDriveDownloader
 import os
 
 thinFilmPath = os.path.join(os.path.split(__file__)[0], 'thinFilmInterferenceFiles')
+
+__all__ = ['PlotNd', 'GoogleDriveDownloader']
