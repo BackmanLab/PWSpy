@@ -13,7 +13,9 @@ Utility provides useful function for parallel loading and processing of ImCube f
 ## Building from source and distributing
 `{blah}` indicates a blank spot named 'blah' that you need to fill in.
 Automatic Method:
-use the python in your `base` anaconda environment to run `installScripts\build.py`. This will update the version to the `_version` file and run the conda-build and deploy steps.
+use the python in your `base` anaconda environment to run `installScripts\build.py`. Provide the output path as the first argument. For example if you want to save the built code to the H: drive you would type `python build.py H:`.
+
+This will update the version to the `_version` file and run the conda-build and deploy steps.
 You will need to have gitpython, and conda-build installed. The version in `setup.py` and pwspy's __version__ variable come from the `_version` file. The `meta.yaml` file for the conda package
 creates the version information on it's own from GIT. they should match. It can be understood as `a.b.c.d-xyz` where `a.b.c` are numbers set in the Git tags, `d` is the number of commits since 
 `a.b.c` was tagged, `xyz` is the short sha hash for the git commit.
@@ -26,7 +28,7 @@ Copy `install.bat` from the `installScripts` folder to `{outputDestination}`. Th
 
 ## Automatically installing with the script
 Optional:
-  Create a new environment with `conda create -n {environmentName}`.
+  Create a new environment with `conda create -n {environmentName} -c python=3.7`.
   Add the new environment name to the `env` variable in the first line of `install.bat`.
 run the `install.bat`  
 
