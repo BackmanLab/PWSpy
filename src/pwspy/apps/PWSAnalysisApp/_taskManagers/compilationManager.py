@@ -28,7 +28,7 @@ class CompilationManager(QtCore.QObject):
     def run(self) -> List[Tuple[ICMetaData, List[Tuple[PWSRoiCompilationResults, Optional[List[AnalysisWarning]]]]]]:
         roiName: str = self.window.resultsTable.getRoiName()
         analysisName: str = self.window.resultsTable.getAnalysisName()
-        settings: PWSCompilerSettings = self.window.resultsTable.getSettings()
+        settings: PWSCompilerSettings = self.window.resultsTable.getSettings() #TODO make this return multiple types of settings.
         cellMetas: List[AcqDir] = self.window.cellSelector.getSelectedCellMetas()
         cellMetas: List[ICMetaData] = [i.pws for i in cellMetas]  # Just use the pws data
         if len(cellMetas) == 0:

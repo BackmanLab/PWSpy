@@ -10,7 +10,6 @@ if typing.TYPE_CHECKING:
 
 
 class ResultsTableDock(QDockWidget):
-    # noinspection PyTypeChecker
     def __init__(self):
         super().__init__("Results")
         self.setStyleSheet("QDockWidget > QWidget { border: 1px solid lightgray; }")

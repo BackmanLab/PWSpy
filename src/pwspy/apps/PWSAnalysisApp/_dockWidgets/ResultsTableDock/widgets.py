@@ -3,12 +3,13 @@ from PyQt5.QtWidgets import QTableWidgetItem, QPushButton, QApplication
 import matplotlib.pyplot as plt
 
 from pwspy.analysis.compilation import PWSRoiCompilationResults
+from pwspy.apps.PWSAnalysisApp._dockWidgets.ResultsTableDock.other import ConglomerateCompilerResults
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.tables import CopyableTable, NumberTableWidgetItem
-from pwspy.dataTypes import ICMetaData
+from pwspy.dataTypes import ICMetaData, AcqDir
 import os
 
 class ResultsTableItem:
-    def __init__(self, results: PWSRoiCompilationResults, metadata: ICMetaData):
+    def __init__(self, results: ConglomerateCompilerResults, metadata: ICMetaData): #TODO convert this to use AcqDir and comglomerate compiler classes.
         self.results = results
         self.metadata = metadata
         cellPath = os.path.split(metadata.filePath)[0][len(QApplication.instance().workingDirectory) + 1:]
