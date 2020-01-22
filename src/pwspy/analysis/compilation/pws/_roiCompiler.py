@@ -9,6 +9,7 @@ from pwspy.analysis.compilation.pws._roiCompilationResults import PWSRoiCompilat
 from pwspy.dataTypes import Roi
 from pwspy.analysis import warnings
 
+
 class PWSRoiCompiler(AbstractRoiCompiler):
     def __init__(self, settings: PWSCompilerSettings):
         super().__init__(settings)
@@ -73,6 +74,8 @@ class PWSRoiCompiler(AbstractRoiCompiler):
             varRatio = None
 
         results = PWSRoiCompilationResults(
+                    cellIdTag=results.imCubeIdTag,
+                    analysisName=results.analysisName,
                     reflectance=reflectance,
                     rms=rms,
                     polynomialRms=polynomialRms,

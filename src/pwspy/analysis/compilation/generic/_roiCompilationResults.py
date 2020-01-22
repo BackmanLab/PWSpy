@@ -10,7 +10,6 @@ if typing.TYPE_CHECKING:
 
 @dataclass
 class GenericRoiCompilationResults(AbstractRoiCompilationResults):
-        cellIdTag: str
-        analysisName: str
+        """Results for compilation that don't pertain to any specific analysis."""
         roi: Roi
         roiArea: int #the number of pixels of an ROI

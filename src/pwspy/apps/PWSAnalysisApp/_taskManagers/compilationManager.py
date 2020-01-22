@@ -15,6 +15,8 @@ if typing.TYPE_CHECKING:
     from pwspy.dataTypes import AcqDir, ICMetaData
 
 
+# TODO make this work for dynamics and generic compiler classes
+
 class CompilationManager(QtCore.QObject):
     compilationDone = QtCore.pyqtSignal(list)
 

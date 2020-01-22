@@ -18,6 +18,8 @@ class DynamicsRoiCompiler(AbstractRoiCompiler):
         rms_t = self._avgOverRoi(roi, results.rms_t) if self.settings.rms_t else None
 
         results = DynamicsRoiCompilationResults(
+                    cellIdTag=results.imCubeIdTag,
+                    analysisName=results.analysisName,
                     reflectance=reflectance,
                     rms_t=rms_t)
         warns = []  # Strip None from warns list

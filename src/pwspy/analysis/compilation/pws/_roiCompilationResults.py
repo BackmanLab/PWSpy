@@ -8,6 +8,8 @@ from pwspy.analysis.compilation.abstract import AbstractRoiCompilationResults
 
 @dataclass
 class PWSRoiCompilationResults(AbstractRoiCompilationResults):
+        cellIdTag: str
+        analysisName: str
         reflectance: float
         rms: float
         polynomialRms: float
