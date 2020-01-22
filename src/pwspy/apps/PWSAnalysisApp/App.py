@@ -26,7 +26,7 @@ from glob import glob
 from typing import List, Tuple, Optional
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.analysis.compilation import RoiCompilationResults
+    from pwspy.analysis.compilation import PWSRoiCompilationResults
     from pwspy.analysis.warnings import AnalysisWarning
 
 #TODO add relative R
@@ -79,7 +79,7 @@ class PWSApp(QApplication):
             shutil.copyfile(os.path.join(resources, 'credentials.json'), os.path.join(applicationVars.googleDriveAuthPath, 'credentials.json'))
             # shutil.copyfile(os.path.join(resources, 'driveToken.pickle'), os.path.join(applicationVars.googleDriveAuthPath, 'driveToken.pickle'))
 
-    def handleCompilationResults(self, inVal: List[Tuple[ICMetaData, List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]]]):
+    def handleCompilationResults(self, inVal: List[Tuple[ICMetaData, List[Tuple[PWSRoiCompilationResults, Optional[List[AnalysisWarning]]]]]]):
         #  Display warnings if necessary.
         warningStructure = []
         for meta, roiList in inVal:

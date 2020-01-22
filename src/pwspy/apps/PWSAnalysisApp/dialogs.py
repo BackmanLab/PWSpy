@@ -10,7 +10,7 @@ from glob import glob
 from typing import Optional, List, Tuple
 
 from pwspy.analysis.pws import PWSAnalysisSettings
-from pwspy.analysis.compilation import RoiCompilationResults
+from pwspy.analysis.compilation import PWSRoiCompilationResults
 from pwspy.analysis.warnings import AnalysisWarning
 from pwspy.apps import resources
 from PyQt5 import QtCore, QtGui
@@ -115,7 +115,7 @@ class AnalysisSummaryDisplay(QDialog):
 
 
 class CompilationSummaryDisplay(QDialog):
-    def __init__(self, parent: Optional[QWidget], warnings: List[Tuple[ICMetaData, List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]]], analysisName: str = '', analysisSettings: PWSAnalysisSettings = None):
+    def __init__(self, parent: Optional[QWidget], warnings: List[Tuple[ICMetaData, List[Tuple[PWSRoiCompilationResults, Optional[List[AnalysisWarning]]]]]], analysisName: str = '', analysisSettings: PWSAnalysisSettings = None):
         super().__init__(parent=parent)
         self.setWindowTitle("Compilation Summary")
         layout = QVBoxLayout()
@@ -126,7 +126,7 @@ class CompilationSummaryDisplay(QDialog):
         self._addWarnings(warnings)
         self.show()
 
-    def _addWarnings(self, warnings: List[Tuple[ICMetaData, List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]]]):
+    def _addWarnings(self, warnings: List[Tuple[ICMetaData, List[Tuple[PWSRoiCompilationResults, Optional[List[AnalysisWarning]]]]]]):
         for meta, roiList in warnings:
             item = QTreeWidgetItem(self.warningTree)
             item.setText(0, meta.filePath)

@@ -3,7 +3,7 @@ from typing import Tuple, List, Optional
 from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5 import QtCore
-from pwspy.analysis.compilation import RoiCompiler, RoiCompilationResults, CompilerSettings
+from pwspy.analysis.compilation import PWSRoiCompiler, PWSRoiCompilationResults, PWSCompilerSettings
 from pwspy.analysis.warnings import AnalysisWarning
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from pwspy.apps.PWSAnalysisApp._taskManagers.analysisManager import safeCallback
@@ -23,16 +23,16 @@ class CompilationManager(QtCore.QObject):
         self.app = app
 
     @safeCallback
-    def run(self) -> List[Tuple[ICMetaData, List[Tuple[RoiCompilationResults, Optional[List[AnalysisWarning]]]]]]:
+    def run(self) -> List[Tuple[ICMetaData, List[Tuple[PWSRoiCompilationResults, Optional[List[AnalysisWarning]]]]]]:
         roiName: str = self.app.window.resultsTable.getRoiName()
         analysisName: str = self.app.window.resultsTable.getAnalysisName()
-        settings: CompilerSettings = self.app.window.resultsTable.getSettings()
+        settings: PWSCompilerSettings = self.app.window.resultsTable.getSettings()
         cellMetas: List[AcqDir] = self.app.window.cellSelector.getSelectedCellMetas()
         cellMetas: List[ICMetaData] = [i.pws for i in cellMetas]  # Just use the pws data
         if len(cellMetas) == 0:
             QMessageBox.information(self.app.window, "What?", "Please select at least one cell.")
             return None
-        compiler = RoiCompiler(settings)
+        compiler = PWSRoiCompiler(settings)
         b = BusyDialog(self.app.window, "Processing. Please Wait...")
         t = self.CompilationThread(cellMetas, compiler, roiName, analysisName)
         t.finished.connect(b.accept)
@@ -49,7 +49,7 @@ class CompilationManager(QtCore.QObject):
     class CompilationThread(QThread):
         errorOccurred = QtCore.pyqtSignal(Exception)
 
-        def __init__(self, cellMetas: List[ICMetaData], compiler: RoiCompiler, roiNamePattern: str, analysisNamePattern: str):
+        def __init__(self, cellMetas: List[ICMetaData], compiler: PWSRoiCompiler, roiNamePattern: str, analysisNamePattern: str):
             super().__init__()
             self.cellMetas = cellMetas
             self.roiNamePattern = roiNamePattern
@@ -66,7 +66,7 @@ class CompilationManager(QtCore.QObject):
                 self.errorOccurred.emit(e)
 
         @staticmethod
-        def _process(md: ICMetaData, compiler: RoiCompiler, roiNamePattern: str, analysisNamePattern: str) -> Tuple[ICMetaData, List[Tuple[RoiCompilationResults, List[AnalysisWarning]]]]:
+        def _process(md: ICMetaData, compiler: PWSRoiCompiler, roiNamePattern: str, analysisNamePattern: str) -> Tuple[ICMetaData, List[Tuple[PWSRoiCompilationResults, List[AnalysisWarning]]]]:
             rois = [md.acquisitionDirectory.loadRoi(name, num, fformat) for name, num, fformat in md.acquisitionDirectory.getRois() if re.match(roiNamePattern, name)]
             analysisResults = [md.loadAnalysis(name) for name in md.getAnalyses() if re.match(analysisNamePattern, name)]
             ret = []

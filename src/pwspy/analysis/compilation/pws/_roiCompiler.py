@@ -1,18 +1,19 @@
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 import numpy as np
 
+from pwspy.analysis.compilation.abstract import AbstractRoiCompiler
 from pwspy.analysis.pws._analysisResults import PWSAnalysisResults
-from pwspy.analysis.compilation._compilerSettings import CompilerSettings
-from pwspy.analysis.compilation._roiCompilationResults import RoiCompilationResults
+from pwspy.analysis.compilation.pws._compilerSettings import PWSCompilerSettings
+from pwspy.analysis.compilation.pws._roiCompilationResults import PWSRoiCompilationResults
 from pwspy.dataTypes import Roi
 from pwspy.analysis import warnings
 
-class RoiCompiler:
-    def __init__(self, settings: CompilerSettings):
-        self.settings = settings
+class PWSRoiCompiler(AbstractRoiCompiler):
+    def __init__(self, settings: PWSCompilerSettings):
+        super().__init__(settings)
 
-    def run(self, results: PWSAnalysisResults, roi: Roi) -> Tuple[RoiCompilationResults, List[warnings.AnalysisWarning]]:
+    def run(self, results: PWSAnalysisResults, roi: Roi) -> Tuple[PWSRoiCompilationResults, List[warnings.AnalysisWarning]]:
         warns = []
         reflectance = self._avgOverRoi(roi, results.meanReflectance) if self.settings.reflectance else None
         rms = self._avgOverRoi(roi, results.rms) if self.settings.rms else None
@@ -27,8 +28,8 @@ class RoiCompiler:
         if self.settings.autoCorrelationSlope:
             try:
                 autoCorrelationSlope = self._avgOverRoi(roi, results.autoCorrelationSlope,
-                                                     condition=np.logical_and(results.rSquared > 0.9,
-                                                                              results.autoCorrelationSlope < 0))
+                    condition=np.logical_and(results.rSquared > 0.9,
+                        results.autoCorrelationSlope < 0))
             except KeyError:
                 autoCorrelationSlope = None
         else:
@@ -44,8 +45,10 @@ class RoiCompiler:
             rSquared = None
 
         if self.settings.ld:
-            try: ld = self._avgOverRoi(roi, results.ld)
-            except KeyError: ld = None
+            try:
+                ld = self._avgOverRoi(roi, results.ld)
+            except KeyError:
+                ld = None
         else:
             ld = None
 
@@ -69,14 +72,7 @@ class RoiCompiler:
         else:
             varRatio = None
 
-        if self.settings.roiArea:
-            roiArea = np.sum(roi.mask)
-        else:
-            roiArea = None
-
-        results = RoiCompilationResults(
-                    roi=roi,
-                    analysisName=results.analysisName,
+        results = PWSRoiCompilationResults(
                     reflectance=reflectance,
                     rms=rms,
                     polynomialRms=polynomialRms,
@@ -85,9 +81,7 @@ class RoiCompiler:
                     ld=ld,
                     opd=opd,
                     opdIndex=opdIndex,
-                    varRatio=varRatio,
-                    cellIdTag=results.imCubeIdTag,
-                    roiArea=roiArea)
+                    varRatio=varRatio)
         warns = [w for w in warns if w is not None]  # Strip None from warns list
         return results, warns
 

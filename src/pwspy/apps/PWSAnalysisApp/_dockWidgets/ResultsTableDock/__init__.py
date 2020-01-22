@@ -2,7 +2,7 @@ from __future__ import annotations
 from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QTableWidgetItem, QFrame, QVBoxLayout, QCheckBox, \
     QScrollArea, QPushButton, QLayout, QGridLayout, QAction, QLineEdit, QLabel, QSizePolicy
 from PyQt5 import QtCore
-from pwspy.analysis.compilation import RoiCompilationResults, CompilerSettings
+from pwspy.analysis.compilation import PWSRoiCompilationResults, PWSCompilerSettings
 from .widgets import ResultsTable, ResultsTableItem
 import typing
 if typing.TYPE_CHECKING:
@@ -55,7 +55,7 @@ class ResultsTableDock(QDockWidget):
         self._widget.layout().addWidget(self.table, 0, 1)
         self.setWidget(self._widget)
 
-    def addCompilationResult(self, result: RoiCompilationResults, metadata: ICMetaData):
+    def addCompilationResult(self, result: PWSRoiCompilationResults, metadata: ICMetaData):
         self.table.addItem(ResultsTableItem(result, metadata))
 
     def clearCompilationResults(self):
@@ -67,7 +67,7 @@ class ResultsTableDock(QDockWidget):
             defaultVisible, settingsName, tooltip = self.table.columns[checkBox.text()]
             if settingsName is not None:
                 kwargs[settingsName] = bool(checkBox.checkState())
-        return CompilerSettings(**kwargs)
+        return PWSCompilerSettings(**kwargs)
 
     def getRoiName(self) -> str:
         return self.roiNameEdit.text()

@@ -2,13 +2,13 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QTableWidgetItem, QPushButton, QApplication
 import matplotlib.pyplot as plt
 
-from pwspy.analysis.compilation import RoiCompilationResults
+from pwspy.analysis.compilation import PWSRoiCompilationResults
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.tables import CopyableTable, NumberTableWidgetItem
 from pwspy.dataTypes import ICMetaData
 import os
 
 class ResultsTableItem:
-    def __init__(self, results: RoiCompilationResults, metadata: ICMetaData):
+    def __init__(self, results: PWSRoiCompilationResults, metadata: ICMetaData):
         self.results = results
         self.metadata = metadata
         cellPath = os.path.split(metadata.filePath)[0][len(QApplication.instance().workingDirectory) + 1:]

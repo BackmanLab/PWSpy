@@ -1,3 +1,3 @@
-from ._compilerSettings import CompilerSettings
-from ._roiCompiler import RoiCompiler
-from ._roiCompilationResults import RoiCompilationResults
+from pwspy.analysis.compilation.pws._compilerSettings import PWSCompilerSettings
+from pwspy.analysis.compilation.pws._roiCompiler import PWSRoiCompiler
+from pwspy.analysis.compilation.pws._roiCompilationResults import PWSRoiCompilationResults
