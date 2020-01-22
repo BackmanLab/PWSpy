@@ -5,15 +5,15 @@ import matplotlib.pyplot as plt
 from pwspy.analysis.compilation import PWSRoiCompilationResults
 from pwspy.apps.PWSAnalysisApp._dockWidgets.ResultsTableDock.other import ConglomerateCompilerResults
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.tables import CopyableTable, NumberTableWidgetItem
-from pwspy.dataTypes import ICMetaData, AcqDir
+from pwspy.dataTypes import AcqDir
 import os
 
 class ResultsTableItem:
-    def __init__(self, results: ConglomerateCompilerResults, metadata: ICMetaData): #TODO convert this to use AcqDir and comglomerate compiler classes.
+    def __init__(self, results: ConglomerateCompilerResults, acq: AcqDir): #TODO convert this to use AcqDir and comglomerate compiler classes.
         self.results = results
-        self.metadata = metadata
-        cellPath = os.path.split(metadata.filePath)[0][len(QApplication.instance().workingDirectory) + 1:]
-        cellNumber = int(metadata.acquisitionDirectory.filePath.split('Cell')[-1])
+        self.acq = acq
+        cellPath = os.path.split(acq.filePath)[0][len(QApplication.instance().workingDirectory) + 1:]
+        cellNumber = int(acq.filePath.split('Cell')[-1])
         self.cellPathLabel = QTableWidgetItem(cellPath)
         self.cellNumLabel = NumberTableWidgetItem(cellNumber)
         self.analysisNameLabel = QTableWidgetItem(results.analysisName)
