@@ -17,7 +17,8 @@ from pwspy.utility.fileIO import loadAndProcess
 
 def proc(im: ImCube):
     """This function is run in a separate thread/process to load the files."""
-    ref = ImCube.loadAny(os.path.join(os.path.split(im.metadata.filePath)[0], 'Cell999'))
+    refPath = os.path.join(os.path.split(im.metadata.acquisitionDirectory.filePath)[0], 'Cell999')
+    ref = ImCube.fromMetadata(AcqDir(refPath).pws)
     ref.correctCameraEffects()
     im.correctCameraEffects()
     ref.normalizeByExposure()
