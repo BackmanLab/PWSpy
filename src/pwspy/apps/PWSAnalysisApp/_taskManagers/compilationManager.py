@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Tuple, List, Optional
 from PyQt5.QtCore import QThread
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox, QMainWindow
 from PyQt5 import QtCore
 from pwspy.analysis.compilation import PWSRoiCompiler, PWSRoiCompilationResults, PWSCompilerSettings
 from pwspy.analysis.warnings import AnalysisWarning
@@ -20,25 +20,25 @@ if typing.TYPE_CHECKING:
 class CompilationManager(QtCore.QObject):
     compilationDone = QtCore.pyqtSignal(list)
 
-    def __init__(self, app: PWSApp):
+    def __init__(self, window: QMainWindow):
         super().__init__()
-        self.app = app
+        self.window = window
 
     @safeCallback
     def run(self) -> List[Tuple[ICMetaData, List[Tuple[PWSRoiCompilationResults, Optional[List[AnalysisWarning]]]]]]:
-        roiName: str = self.app.window.resultsTable.getRoiName()
-        analysisName: str = self.app.window.resultsTable.getAnalysisName()
-        settings: PWSCompilerSettings = self.app.window.resultsTable.getSettings()
-        cellMetas: List[AcqDir] = self.app.window.cellSelector.getSelectedCellMetas()
+        roiName: str = self.window.resultsTable.getRoiName()
+        analysisName: str = self.window.resultsTable.getAnalysisName()
+        settings: PWSCompilerSettings = self.window.resultsTable.getSettings()
+        cellMetas: List[AcqDir] = self.window.cellSelector.getSelectedCellMetas()
         cellMetas: List[ICMetaData] = [i.pws for i in cellMetas]  # Just use the pws data
         if len(cellMetas) == 0:
-            QMessageBox.information(self.app.window, "What?", "Please select at least one cell.")
+            QMessageBox.information(self.window, "What?", "Please select at least one cell.")
             return None
         compiler = PWSRoiCompiler(settings)
-        b = BusyDialog(self.app.window, "Processing. Please Wait...")
+        b = BusyDialog(self.window, "Processing. Please Wait...")
         t = self.CompilationThread(cellMetas, compiler, roiName, analysisName)
         t.finished.connect(b.accept)
-        t.errorOccurred.connect(lambda e: QMessageBox.information(self.app.window, 'Uh Oh', str(e)))
+        t.errorOccurred.connect(lambda e: QMessageBox.information(self.window, 'Uh Oh', str(e)))
         t.start()
         b.exec()
         results = t.result

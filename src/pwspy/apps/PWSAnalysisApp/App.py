@@ -50,7 +50,7 @@ class PWSApp(QApplication):
         else:
             self.window.parallelAction.setChecked(False)
         self.anMan.analysisDone.connect(lambda name, settings, warningList: AnalysisSummaryDisplay(self.window, warningList, name, settings))
-        self.compMan = CompilationManager(self)
+        self.compMan = CompilationManager(self.window)
         self.window.resultsTable.compileButton.released.connect(self.compMan.run)
         self.compMan.compilationDone.connect(self.handleCompilationResults)
         self.window.fileDialog.directoryChanged.connect(self.changeDirectory)
