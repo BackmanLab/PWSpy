@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import QApplication, QMessageBox, QSplashScreen
 
 from pwspy.apps.PWSAnalysisApp._utilities import BlinderDialog, RoiConverter
 from pwspy.dataTypes import ICMetaData
+from ._zmqServer import Server
 from .dialogs import AnalysisSummaryDisplay, CompilationSummaryDisplay
 from ._taskManagers.analysisManager import AnalysisManager
 from ._taskManagers.compilationManager import CompilationManager
@@ -29,10 +30,12 @@ if typing.TYPE_CHECKING:
     from pwspy.analysis.compilation import RoiCompilationResults
     from pwspy.analysis.warnings import AnalysisWarning
 
+
 #TODO add relative R
 class PWSApp(QApplication):
     def __init__(self, args):
         super().__init__(args)
+        self.aboutToQuit.connect(self.cleanupOnExit)
         self.setApplicationName("PWS Analysis V2")
         splash = QSplashScreen(QPixmap(os.path.join(resources, 'pwsLogo.png')))
         splash.show()
@@ -42,6 +45,8 @@ class PWSApp(QApplication):
         splash.finish(self.window)
         self.anMan = AnalysisManager(self)
         self.window.runAction.connect(self.anMan.runList)
+        self.server = Server()
+        self.server.start()
         self.parallelProcessing: bool = None  # Determines if analysis and compilation should be run in parallel or not.
         self.window.parallelAction.toggled.connect(lambda checked: setattr(self, 'parallelProcessing', checked))
         availableRamGigs = psutil.virtual_memory().available / 1024**3
@@ -57,6 +62,9 @@ class PWSApp(QApplication):
         self.window.blindAction.triggered.connect(self.openBlindingDialog)
         self.window.roiConvertAction.triggered.connect(self.convertRois)
         self.workingDirectory = None
+
+    def cleanupOnExit(self):
+        self.server.stop()
 
     @staticmethod
     def _setupDataDirectories():

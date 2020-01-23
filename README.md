@@ -28,7 +28,7 @@ Copy `install.bat` from the `installScripts` folder to `{outputDestination}`. Th
 
 ## Automatically installing with the script
 Optional:
-  Create a new environment with `conda create -n {environmentName} -c python=3.7`.
+  Create a new environment with `conda create -n {environmentName} python=3.7`.
   Add the new environment name to the `env` variable in the first line of `install.bat`.
 run the `install.bat`  
 
