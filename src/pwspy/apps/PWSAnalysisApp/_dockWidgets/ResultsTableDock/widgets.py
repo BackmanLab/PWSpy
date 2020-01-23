@@ -2,39 +2,48 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QTableWidgetItem, QPushButton, QApplication
 import matplotlib.pyplot as plt
 
-from pwspy.analysis.compilation import PWSRoiCompilationResults
 from pwspy.apps.PWSAnalysisApp._dockWidgets.ResultsTableDock.other import ConglomerateCompilerResults
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.tables import CopyableTable, NumberTableWidgetItem
 from pwspy.dataTypes import AcqDir
 import os
 
+
 class ResultsTableItem:
-    def __init__(self, results: ConglomerateCompilerResults, acq: AcqDir): #TODO convert this to use conglomerate compiler classes.
+    def __init__(self, results: ConglomerateCompilerResults, acq: AcqDir):
         self.results = results
         self.acq = acq
         cellPath = os.path.split(acq.filePath)[0][len(QApplication.instance().workingDirectory) + 1:]
         cellNumber = int(acq.filePath.split('Cell')[-1])
         self.cellPathLabel = QTableWidgetItem(cellPath)
         self.cellNumLabel = NumberTableWidgetItem(cellNumber)
-        self.analysisNameLabel = QTableWidgetItem(results.analysisName)
-        self.roiNameLabel = QTableWidgetItem(results.roi.name)
-        self.roiNumLabel = NumberTableWidgetItem(results.roi.number)
-        self.rmsLabel = NumberTableWidgetItem(results.rms)
-        self.reflectanceLabel = NumberTableWidgetItem(results.reflectance)
-        self.polynomialRmsLabel = NumberTableWidgetItem(results.polynomialRms)
-        self.autoCorrelationSlopeLabel = NumberTableWidgetItem(results.autoCorrelationSlope)
-        self.rSquaredLabel = NumberTableWidgetItem(results.rSquared)
-        self.ldLabel = NumberTableWidgetItem(results.ld)
+        # Generic results
+        self.roiNameLabel = QTableWidgetItem(results.generic.roi.name)
+        self.roiNumLabel = NumberTableWidgetItem(results.generic.roi.number)
+        self.roiAreaLabel = NumberTableWidgetItem(results.generic.roiArea)
+        # PWS related results
+        pws = results.pws
+        self.analysisNameLabel = QTableWidgetItem(pws.analysisName)
+        self.rmsLabel = NumberTableWidgetItem(pws.rms)
+        self.reflectanceLabel = NumberTableWidgetItem(pws.reflectance)
+        self.polynomialRmsLabel = NumberTableWidgetItem(pws.polynomialRms)
+        self.autoCorrelationSlopeLabel = NumberTableWidgetItem(pws.autoCorrelationSlope)
+        self.rSquaredLabel = NumberTableWidgetItem(pws.rSquared)
+        self.ldLabel = NumberTableWidgetItem(pws.ld)
         self.opdButton = QPushButton("OPD")
         self.opdButton.released.connect(self._plotOpd)
-        if results.opd is None:
+        if pws.opd is None:
             self.opdButton.setEnabled(False)
-        self.meanSigmaRatioLabel = NumberTableWidgetItem(results.varRatio)
-        self.roiAreaLabel = NumberTableWidgetItem(results.roiArea)
+        self.meanSigmaRatioLabel = NumberTableWidgetItem(pws.varRatio)
+        # Dynamics related results
+        dyn = results.dyn
+        self.dynamicsAnalysisNameLabel = QTableWidgetItem(dyn.analysisName)
+        self.rms_tLabel = NumberTableWidgetItem(dyn.rms_t)
+        self.dynamicsReflectanceLabel = NumberTableWidgetItem(dyn.reflectance)
+
 
     def _plotOpd(self):
         fig, ax = plt.subplots()
-        ax.plot(self.results.opdIndex, self.results.opd)
+        ax.plot(self.results.pws.opdIndex, self.results.pws.opd)
         fig.suptitle(f"{self.cellPathLabel.text()}/Cell{self.cellNumLabel.text()}")
         fig.show()
 
@@ -57,7 +66,8 @@ class ResultsTable(CopyableTable):
         'OPD': (False, 'opd', "This is the Fourier transform of the spectrum. In theory this should indicate how much of the signal is contributed to by different optical path differences (OPD). Fun fact, RMS is equal to the integral of the OPD over wavenumber (k), if you are interested only in the RMS due to a specific range of OPD you can get this from summing over the appropriate range of the OPD. This is useful for removing unwanted contributions to RMS from thin films."),
         "Mean Spectra Ratio": (False, 'meanSigmaRatio', "The spectral variations that we are interested in are expected to have a short spatial correlation length (neighboring pixels should not have the same spectra. However if we look at the average spectra over a cell nucleus we find that there is an overarching spectra common to the whole region. This is a measure of how much this `mean spectra` contributes to the RMS of the ROI."),
         "Poly RMS": (False, 'polynomialRms', "In order to remove spectral features that are not due to interference (fluorescence, absorbance, etc.) we sometimes subtract a polynomial fit from the data before analysis. This indicates the StdDev of the polynomial fit. It's not clear how this is useful"),
-        "Roi Area": (False, 'roiArea', "The area of the ROI given in units of pixels. This can be converted to microns if you know the size in object space of a single pixel")}
+        "Roi Area": (False, 'roiArea', "The area of the ROI given in units of pixels. This can be converted to microns if you know the size in object space of a single pixel")
+    }
 
     def __init__(self):
         super().__init__()
