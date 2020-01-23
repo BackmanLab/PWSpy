@@ -2,14 +2,13 @@ from __future__ import annotations
 from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QTableWidgetItem, QFrame, QVBoxLayout, QCheckBox, \
     QScrollArea, QPushButton, QLayout, QGridLayout, QAction, QLineEdit, QLabel, QSizePolicy
 from PyQt5 import QtCore
-from pwspy.analysis.compilation import PWSRoiCompilationResults, PWSCompilerSettings
 from .widgets import ResultsTable, ResultsTableItem
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ICMetaData
 
 
-class ResultsTableDock(QDockWidget):
+class ResultsTableDock(QDockWidget): #TODO update this for the new conglomoerate classes.
     def __init__(self):
         super().__init__("Results")
         self.setStyleSheet("QDockWidget > QWidget { border: 1px solid lightgray; }")
@@ -61,6 +60,7 @@ class ResultsTableDock(QDockWidget):
         self.table.clearCellItems()
 
     def getSettings(self):
+        #TODO this will require some thought to get working with the new conglomerate results.
         kwargs = {}
         for checkBox in self.checkBoxes:
             defaultVisible, settingsName, tooltip = self.table.columns[checkBox.text()]

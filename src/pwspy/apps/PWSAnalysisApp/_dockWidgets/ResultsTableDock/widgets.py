@@ -22,7 +22,7 @@ class ResultsTableItem:
         self.roiAreaLabel = NumberTableWidgetItem(results.generic.roiArea)
         # PWS related results
         pws = results.pws
-        self.analysisNameLabel = QTableWidgetItem(pws.analysisName)
+        self.pwsAnalysisNameLabel = QTableWidgetItem(pws.analysisName)
         self.rmsLabel = NumberTableWidgetItem(pws.rms)
         self.reflectanceLabel = NumberTableWidgetItem(pws.reflectance)
         self.polynomialRmsLabel = NumberTableWidgetItem(pws.polynomialRms)
@@ -66,7 +66,10 @@ class ResultsTable(CopyableTable):
         'OPD': (False, 'opd', "This is the Fourier transform of the spectrum. In theory this should indicate how much of the signal is contributed to by different optical path differences (OPD). Fun fact, RMS is equal to the integral of the OPD over wavenumber (k), if you are interested only in the RMS due to a specific range of OPD you can get this from summing over the appropriate range of the OPD. This is useful for removing unwanted contributions to RMS from thin films."),
         "Mean Spectra Ratio": (False, 'meanSigmaRatio', "The spectral variations that we are interested in are expected to have a short spatial correlation length (neighboring pixels should not have the same spectra. However if we look at the average spectra over a cell nucleus we find that there is an overarching spectra common to the whole region. This is a measure of how much this `mean spectra` contributes to the RMS of the ROI."),
         "Poly RMS": (False, 'polynomialRms', "In order to remove spectral features that are not due to interference (fluorescence, absorbance, etc.) we sometimes subtract a polynomial fit from the data before analysis. This indicates the StdDev of the polynomial fit. It's not clear how this is useful"),
-        "Roi Area": (False, 'roiArea', "The area of the ROI given in units of pixels. This can be converted to microns if you know the size in object space of a single pixel")
+        "Roi Area": (False, 'roiArea', "The area of the ROI given in units of pixels. This can be converted to microns if you know the size in object space of a single pixel"),
+        "Dynamics Analysis": (False, None, None),
+        "RMS_t": (False, 'rms_t', "This is the primary analysis result for `Dynamics`. It is the standard deviation of the signal over time when looking at just a single wavelength."),
+        "Dynamics Reflectance": (False, 'meanReflectance', "This is the average reflectance of the ROI for the `Dynamics` measurement.")
     }
 
     def __init__(self):
@@ -89,7 +92,7 @@ class ResultsTable(CopyableTable):
 
         self.setItem(row, 0, item.cellPathLabel)
         self.setItem(row, 1, item.cellNumLabel)
-        self.setItem(row, 2, item.analysisNameLabel)
+        self.setItem(row, 2, item.pwsAnalysisNameLabel)
         self.setItem(row, 3, item.roiNameLabel)
         self.setItem(row, 4, item.roiNumLabel)
         self.setItem(row, 5, item.rmsLabel)
@@ -101,6 +104,9 @@ class ResultsTable(CopyableTable):
         self.setItem(row, 11, item.meanSigmaRatioLabel)
         self.setItem(row, 12, item.polynomialRmsLabel)
         self.setItem(row, 13, item.roiAreaLabel)
+        self.setItem(row, 14, item.dynamicsAnalysisNameLabel)
+        self.setItem(row, 15, item.rms_tLabel)
+        self.setItem(row, 16, item.dynamicsReflectanceLabel)
 
         self.setSortingEnabled(True)
         self._items.append(item)
