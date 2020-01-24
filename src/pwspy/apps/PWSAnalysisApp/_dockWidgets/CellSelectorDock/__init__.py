@@ -41,7 +41,7 @@ class CellSelectorDock(QDockWidget):
         width = self.pathFilter.minimumSizeHint().width()
         self.pathFilter.view().setMinimumWidth(width)
         self.expressionFilter = QLineEdit(self._filterWidget)
-        description = "Python boolean expression.\n\tCell#: {num},\n\tPWSAnalysis names: {analyses},\n\tROI names: {rois},\n\tID tag: {idTag}.\nE.G. `{num} > 5 and 'nucleus' in {rois}`"
+        description = "Python boolean expression.\n\tCell#: {num},\n\tAnalysis names: {analyses},\n\tROI names: {rois},\n\tID tag: {idTag}.\nE.G. `{num} > 5 and 'nucleus' in {rois}`"
         self.expressionFilter.setPlaceholderText(description.replace('\n', '').replace('\t', ''))  #Strip out the white space
         self.expressionFilter.setToolTip(description)
         self.expressionFilter.returnPressed.connect(self._executeFilter)
@@ -78,7 +78,9 @@ class CellSelectorDock(QDockWidget):
         for f in fileNames:
             try:
                 acq = AcqDir(f)
-            except OSError:
+            except OSError as e:
+                print(f"Failed to load {f}")
+                print(e)
                 continue
             cellItems.append(CellTableWidgetItem(acq, os.path.split(f)[0][len(workingDir) + 1:],
                                         int(f.split('Cell')[-1])))

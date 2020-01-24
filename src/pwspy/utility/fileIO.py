@@ -11,7 +11,7 @@ from time import time
 from typing import Union, Optional, List, Tuple
 import pandas as pd
 import psutil
-from pwspy.dataTypes import ICMetaData, ImCube, MetaDataBase
+from pwspy.dataTypes import ICMetaData, MetaDataBase
 
 '''Local Functions'''
 
@@ -23,7 +23,7 @@ def _load(loadHandle: Union[str, MetaDataBase], metadataOnly: bool, lock: mp.Loc
     elif isinstance(loadHandle, MetaDataBase):
         md = loadHandle
     else:
-        raise TypeError("files specified to the loader must be either str or ICMetaData")
+        raise TypeError("files specified to the loader must be either str or inherited from pwspy.dataTypes.MetaDataBase")
     if metadataOnly:
         return md
     else:

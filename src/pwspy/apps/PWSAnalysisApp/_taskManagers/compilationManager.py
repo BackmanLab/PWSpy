@@ -6,13 +6,14 @@ from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from pwspy.apps.PWSAnalysisApp._taskManagers.analysisManager import safeCallback
 from pwspy.utility.fileIO import loadAndProcess
 import re
+from pwspy.apps.PWSAnalysisApp._dockWidgets.ResultsTableDock.other import ConglomerateCompiler
 import typing
 if typing.TYPE_CHECKING:
     from typing import Tuple, List, Optional
     from pwspy.dataTypes import AcqDir
-    from pwspy.apps.PWSAnalysisApp._dockWidgets.ResultsTableDock.other import ConglomerateCompiler, ConglomerateAnalysisResults, ConglomerateCompilerSettings, ConglomerateCompilerResults
+    from pwspy.apps.PWSAnalysisApp._dockWidgets.ResultsTableDock.other import ConglomerateAnalysisResults, ConglomerateCompilerSettings, ConglomerateCompilerResults
     from pwspy.analysis.warnings import AnalysisWarning
-    
+
 
 class CompilationManager(QtCore.QObject):
     compilationDone = QtCore.pyqtSignal(list)

@@ -30,7 +30,7 @@ class AcqDir:
             return ICMetaData.loadAny(os.path.join(self.filePath, 'PWS'), acquisitionDirectory=self)
         except:
             try:
-                return ICMetaData.loadAny(os.path.join(self.filePath), acquisitionDirectory=self) #Many of the old files are saved here.
+                return ICMetaData.loadAny(os.path.join(self.filePath), acquisitionDirectory=self) #Many of the old files are saved here in the root directory.
             except:
                 return None
 

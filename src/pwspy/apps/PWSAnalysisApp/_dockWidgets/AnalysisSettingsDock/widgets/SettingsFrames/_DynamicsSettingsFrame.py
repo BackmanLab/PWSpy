@@ -30,7 +30,7 @@ class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
 
         row = 0
         self._analysisNameEdit = QLineEdit()
-        self._layout.addWidget(QLabel("PWSAnalysis Name: "), row, 0, 1, 1)
+        self._layout.addWidget(QLabel("Analysis Name: "), row, 0, 1, 1)
         self._layout.addWidget(self._analysisNameEdit, row, 1, 1, 1)
         row += 1
 

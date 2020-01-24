@@ -67,7 +67,7 @@ class PlottingDock(QDockWidget):
         self.refreshButton.released.connect(lambda: self.generatePlots(self.selector.getSelectedCellMetas()))
         self.roiButton = QPushButton("Draw Roi's")
         self.roiButton.released.connect(self.startRoiDrawing)
-        label = QLabel("PWSAnalysis Name")
+        label = QLabel("Analysis Name")
         label.setMaximumHeight(20)
         _(label)
         _(self.anNameEdit)
