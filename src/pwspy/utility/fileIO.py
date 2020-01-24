@@ -78,7 +78,7 @@ def _loadThenProcess(procFunc, procFuncArgs, lock: mp.Lock, row):
 
 def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: Optional = None, parallel: Optional = None,
                    procArgs: Optional = None, initializer=None,
-                   initArgs=None, maxProcesses: int = 1000) -> Union[pd.DataFrame, List, Tuple]:
+                   initArgs=None) -> Union[pd.DataFrame, List, Tuple]:
     """A convenient function to load a series of Data Cubes from a list or dictionary of file paths.
 
     Parameters
@@ -134,7 +134,7 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
             raise Exception("Running in parallel with no processorFunc is pointles. Set parallel to False to run in multithreaded mode.")
         m = mp.Manager()
         lock = m.Lock()
-        numProcesses = min([psutil.cpu_count(logical=False) - 1, maxProcesses])  # Use one less than number of available cores.
+        numProcesses = psutil.cpu_count(logical=False) - 1  # Use one less than number of available cores.
         po = mp.Pool(processes=numProcesses, initializer=initializer, initargs=initArgs)
         try:
             cubes = po.starmap(_loadThenProcess, zip(*zip(*[[processorFunc, procArgs, lock]] * len(fileFrame)), fileFrame.iterrows()))
