@@ -49,6 +49,7 @@ class PWSApp(QApplication):
             self.window.parallelAction.setChecked(True)
         else:
             self.window.parallelAction.setChecked(False)
+        print(f"Initializing with useParallel set to {self.parallelProcessing}.")
         self.anMan.analysisDone.connect(lambda name, settings, warningList: AnalysisSummaryDisplay(self.window, warningList, name, settings))
         self.compMan = CompilationManager(self)
         self.window.resultsTable.compileButton.released.connect(self.compMan.run)

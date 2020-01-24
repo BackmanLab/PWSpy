@@ -99,6 +99,8 @@ class AnalysisManager(QtCore.QObject):
                 iedata = np.frombuffer(iedata, dtype=np.float32).reshape(analysis.extraReflection.data.shape)
                 np.copyto(iedata, analysis.extraReflection.data)
                 analysis.extraReflection.data = iedata
+            else:
+                print("Not using parallel processing.")
             #Run parallel processing
             t = self.AnalysisThread(cellMetas, analysis, anName, cameraCorrection, useParallelProcessing)
             b = BusyDialog(self.app.window, "Processing. Please Wait...")
