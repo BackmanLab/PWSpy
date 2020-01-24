@@ -32,7 +32,8 @@ class Analysis(AbstractAnalysis):
             ref.filterDust(.75)  # Apply a blur to filter out dust particles. This is in microns. I'm not sure if this is the optimal value.
         if settings.referenceMaterial is None:
             theoryR = pd.Series(np.ones((len(ref.wavelengths),)), index=ref.wavelengths) # Having this as all ones effectively ignores it.
-            print("Warning: Analysis ignoring reference material correction")
+            print("Warning: Analysis ignoring reference material correction. Extra Reflection subtraction can not be performed.")
+            assert extraReflectance is None, "Extra reflectance calibration relies on being provided with the theoretical reflectance of our reference."
         else:
             theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, wavelengths=ref.wavelengths, NA=settings.numericalAperture)
         if extraReflectance is None:
