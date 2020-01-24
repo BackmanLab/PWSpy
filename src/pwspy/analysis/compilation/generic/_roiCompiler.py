@@ -1,12 +1,9 @@
-from typing import Tuple, List, Optional
-
+from __future__ import annotations
 import numpy as np
-
-from pwspy.analysis.compilation.abstract import AbstractRoiCompiler
-from pwspy.analysis.compilation.generic import GenericCompilerSettings, GenericRoiCompilationResults
-from pwspy.analysis.pws import PWSAnalysisResults
 from pwspy.dataTypes import Roi
-from pwspy.analysis import warnings
+import typing
+if typing.TYPE_CHECKING:
+    from pwspy.analysis.compilation.generic import GenericCompilerSettings, GenericRoiCompilationResults
 
 
 class GenericRoiCompiler:
@@ -15,7 +12,7 @@ class GenericRoiCompiler:
 
     def run(self, roi: Roi) -> GenericRoiCompilationResults:
         if self.settings.roiArea:
-            roiArea: Optional[int] = np.sum(roi.mask)
+            roiArea: typing.Optional[int] = np.sum(roi.mask)
         else:
             roiArea = None
 

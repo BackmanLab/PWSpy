@@ -1,23 +1,18 @@
 from __future__ import annotations
-from typing import Tuple, List, Optional
 from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QMessageBox, QMainWindow
 from PyQt5 import QtCore
-from pwspy.analysis.compilation import PWSRoiCompiler, PWSRoiCompilationResults, PWSCompilerSettings
-from pwspy.analysis.warnings import AnalysisWarning
-from pwspy.apps.PWSAnalysisApp._dockWidgets.ResultsTableDock import ConglomerateCompilerResults
-from pwspy.apps.PWSAnalysisApp._dockWidgets.ResultsTableDock.other import ConglomerateCompiler, ConglomerateAnalysisResults, ConglomerateCompilerSettings
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from pwspy.apps.PWSAnalysisApp._taskManagers.analysisManager import safeCallback
 from pwspy.utility.fileIO import loadAndProcess
 import re
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.apps.PWSAnalysisApp.App import PWSApp
-    from pwspy.dataTypes import AcqDir, ICMetaData
-
-
-# TODO make this work for dynamics and generic compiler classes
+    from typing import Tuple, List, Optional
+    from pwspy.dataTypes import AcqDir
+    from pwspy.apps.PWSAnalysisApp._dockWidgets.ResultsTableDock.other import ConglomerateCompiler, ConglomerateAnalysisResults, ConglomerateCompilerSettings, ConglomerateCompilerResults
+    from pwspy.analysis.warnings import AnalysisWarning
+    
 
 class CompilationManager(QtCore.QObject):
     compilationDone = QtCore.pyqtSignal(list)

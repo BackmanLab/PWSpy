@@ -1,12 +1,16 @@
+from __future__ import annotations
 from typing import Tuple, List, Optional
 
 import numpy as np
 
 from pwspy.analysis.compilation.abstract import AbstractRoiCompiler
-from pwspy.analysis.compilation.dynamics import DynamicsCompilerSettings, DynamicsRoiCompilationResults
-from pwspy.analysis.dynamics import DynamicsAnalysisResults
-from pwspy.dataTypes import Roi
-from pwspy.analysis import warnings
+from ._roiCompilationResults import DynamicsRoiCompilationResults
+import typing
+if typing.TYPE_CHECKING:
+    from pwspy.analysis.compilation.dynamics import DynamicsCompilerSettings
+    from pwspy.analysis.dynamics import DynamicsAnalysisResults
+    from pwspy.dataTypes import Roi
+    from pwspy.analysis import warnings
 
 
 class DynamicsRoiCompiler(AbstractRoiCompiler):

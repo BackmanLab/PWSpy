@@ -1,10 +1,7 @@
-from dataclasses import dataclass
-
+from __future__ import annotations
 import typing
 from typing import List, Tuple
-
 from pwspy.analysis import warnings
-from pwspy.analysis.compilation.abstract import AbstractRoiCompiler
 from pwspy.analysis.dynamics import DynamicsAnalysisResults
 from pwspy.analysis.pws import PWSAnalysisResults
 from pwspy.dataTypes import Roi

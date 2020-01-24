@@ -3,7 +3,9 @@ from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QTableWidgetItem,
     QScrollArea, QPushButton, QLayout, QGridLayout, QAction, QLineEdit, QLabel, QSizePolicy
 from PyQt5 import QtCore
 
-from pwspy.analysis.compilation.pws import PWSRoiCompilationResults
+from pwspy.analysis.compilation.dynamics import DynamicsCompilerSettings
+from pwspy.analysis.compilation.generic import GenericCompilerSettings
+from pwspy.analysis.compilation.pws import PWSRoiCompilationResults, PWSCompilerSettings
 from .other import ConglomerateCompilerResults, ConglomerateCompilerSettings
 from .widgets import ResultsTable, ResultsTableItem
 import typing
@@ -24,7 +26,7 @@ class ResultsTableDock(QDockWidget): #TODO update this for the new conglomoerate
         checkBoxFrame.layout().setContentsMargins(1, 1, 1, 1)
         checkBoxFrame.layout().setSpacing(1)
         self.checkBoxes = []
-        for i, (name, (default, settingsName, tooltip)) in enumerate(self.table.columns.items()):
+        for i, (name, (default, settingsName, compilerClass, tooltip)) in enumerate(self.table.columns.items()):
             c = QCheckBox(name)
             c.setCheckState(2) if default else c.setCheckState(0)
             c.stateChanged.connect(lambda state, j=i: self.table.setColumnHidden(j, state == 0))
@@ -63,13 +65,24 @@ class ResultsTableDock(QDockWidget): #TODO update this for the new conglomoerate
         self.table.clearCellItems()
 
     def getSettings(self) -> ConglomerateCompilerSettings:
-        #TODO this will require some thought to get working with the new conglomerate results.
-        kwargs = {}
+        pwskwargs = {}
+        dynkwargs = {}
+        genkwargs = {}
         for checkBox in self.checkBoxes:
-            defaultVisible, settingsName, tooltip = self.table.columns[checkBox.text()]
+            defaultVisible, settingsName, compilerClass, tooltip = self.table.columns[checkBox.text()]
             if settingsName is not None:
-                kwargs[settingsName] = bool(checkBox.checkState())
-        return PWSCompilerSettings(**kwargs)
+                if compilerClass == PWSCompilerSettings:
+                    pwskwargs[settingsName] = bool(checkBox.checkState())
+                elif compilerClass == DynamicsCompilerSettings:
+                    dynkwargs[settingsName] = bool(checkBox.checkState())
+                elif compilerClass == GenericCompilerSettings:
+                    genkwargs[settingsName] = bool(checkBox.checkState())
+                else:
+                    raise ValueError("All member of ResultsTable.columns that have a setting name defined must also have an associated compilerClass value")
+        pws = PWSCompilerSettings(**pwskwargs)
+        dyn = DynamicsCompilerSettings(**dynkwargs)
+        gen = GenericCompilerSettings(**genkwargs)
+        return ConglomerateCompilerSettings(pws, dyn, gen)
 
     def getRoiName(self) -> str:
         return self.roiNameEdit.text()

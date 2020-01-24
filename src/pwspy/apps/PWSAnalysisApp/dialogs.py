@@ -7,11 +7,6 @@ Created on Wed Feb 13 18:04:57 2019
 from __future__ import annotations
 import os
 from glob import glob
-from typing import Optional, List, Tuple
-
-from pwspy.analysis.pws import PWSAnalysisSettings
-from pwspy.analysis.compilation import PWSRoiCompilationResults
-from pwspy.analysis.warnings import AnalysisWarning
 from pwspy.apps import resources
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import (QGridLayout, QDialog,
@@ -20,7 +15,11 @@ from PyQt5.QtWidgets import (QGridLayout, QDialog,
 
 import typing
 if typing.TYPE_CHECKING:
+    from typing import Optional, List, Tuple
     from pwspy.dataTypes import ICMetaData
+    from pwspy.analysis.compilation.pws import PWSRoiCompilationResults
+    from pwspy.analysis.pws import PWSAnalysisSettings
+    from pwspy.analysis.warnings import AnalysisWarning
 
 
 class WorkingDirDialog(QDialog):

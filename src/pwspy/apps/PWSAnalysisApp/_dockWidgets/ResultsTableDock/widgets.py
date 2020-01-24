@@ -1,7 +1,13 @@
+from typing import Optional, Tuple, Dict
+
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QTableWidgetItem, QPushButton, QApplication
 import matplotlib.pyplot as plt
 
+from pwspy.analysis.compilation.abstract import AbstractCompilerSettings
+from pwspy.analysis.compilation.dynamics import DynamicsCompilerSettings
+from pwspy.analysis.compilation.generic import GenericCompilerSettings
+from pwspy.analysis.compilation.pws import PWSCompilerSettings
 from pwspy.apps.PWSAnalysisApp._dockWidgets.ResultsTableDock.other import ConglomerateCompilerResults
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.tables import CopyableTable, NumberTableWidgetItem
 from pwspy.dataTypes import AcqDir
@@ -51,25 +57,26 @@ class ResultsTableItem:
 class ResultsTable(CopyableTable):
     itemsCleared = QtCore.pyqtSignal()
 
-    # Columns. In the form `name`: (`defaultVisible`, `analysisFieldName`, `tooltip`)
+    # Columns. In the form `name`: (`defaultVisible`, `analysisFieldName`, `compilerSettingsClass, `tooltip`)
+    columns: Dict[str, Tuple[bool, Optional[str], Optional[AbstractCompilerSettings], Optional[str]]]
     columns = {
-        "Path": (False, None, None),
-        'Cell#': (True, None, None),
-        "PWSAnalysis": (False, None, None),
-        'ROI Name': (True, None, None),
-        'ROI#': (True, None, None),
-        "RMS": (True, 'rms', "Primary analysis result indicating nanoscopic RI heterogeneity of sample in ROI. Defined as StdDev of the spectra"),
-        'Reflectance': (True, 'reflectance', "Sample reflectance averaged over the spectrum. Calculated by dividing the acquired image cube by a reference cube and then multiplying by the expected reflectance of the reference. The expected reflectance is determined by the user's choice of reference material in the analysis settings."),
-        'ld': (False, 'ld', "Referred to as Disorder Strength. This is proportional to RMS / AutoCorr Slope. Due to the noisiness of AutoCorr Slope this is also not very useful."),
-        "AutoCorr Slope": (False, 'autoCorrelationSlope', "Slope of the natural logarithm of the autocorrelation of the spectra, This is very susceptible to noise, not very useful."),
-        'R^2': (False, 'rSquared', "A measure the linearity of the slope of the natural logarithm of the autocorrelation function. If this is low then the AutoCorr Slope value should not be trusted."),
-        'OPD': (False, 'opd', "This is the Fourier transform of the spectrum. In theory this should indicate how much of the signal is contributed to by different optical path differences (OPD). Fun fact, RMS is equal to the integral of the OPD over wavenumber (k), if you are interested only in the RMS due to a specific range of OPD you can get this from summing over the appropriate range of the OPD. This is useful for removing unwanted contributions to RMS from thin films."),
-        "Mean Spectra Ratio": (False, 'meanSigmaRatio', "The spectral variations that we are interested in are expected to have a short spatial correlation length (neighboring pixels should not have the same spectra. However if we look at the average spectra over a cell nucleus we find that there is an overarching spectra common to the whole region. This is a measure of how much this `mean spectra` contributes to the RMS of the ROI."),
-        "Poly RMS": (False, 'polynomialRms', "In order to remove spectral features that are not due to interference (fluorescence, absorbance, etc.) we sometimes subtract a polynomial fit from the data before analysis. This indicates the StdDev of the polynomial fit. It's not clear how this is useful"),
-        "Roi Area": (False, 'roiArea', "The area of the ROI given in units of pixels. This can be converted to microns if you know the size in object space of a single pixel"),
-        "Dynamics Analysis": (False, None, None),
-        "RMS_t": (False, 'rms_t', "This is the primary analysis result for `Dynamics`. It is the standard deviation of the signal over time when looking at just a single wavelength."),
-        "Dynamics Reflectance": (False, 'meanReflectance', "This is the average reflectance of the ROI for the `Dynamics` measurement.")
+        "Path": (False, None, None, None),
+        'Cell#': (True, None, None, None),
+        "PWSAnalysis": (False, None, None, None),
+        'ROI Name': (True, None, None, None),
+        'ROI#': (True, None, None, None),
+        "RMS": (True, 'rms', PWSCompilerSettings, "Primary analysis result indicating nanoscopic RI heterogeneity of sample in ROI. Defined as StdDev of the spectra"),
+        'Reflectance': (True, 'reflectance', PWSCompilerSettings, "Sample reflectance averaged over the spectrum. Calculated by dividing the acquired image cube by a reference cube and then multiplying by the expected reflectance of the reference. The expected reflectance is determined by the user's choice of reference material in the analysis settings."),
+        'ld': (False, 'ld', PWSCompilerSettings, "Referred to as Disorder Strength. This is proportional to RMS / AutoCorr Slope. Due to the noisiness of AutoCorr Slope this is also not very useful."),
+        "AutoCorr Slope": (False, 'autoCorrelationSlope', PWSCompilerSettings, "Slope of the natural logarithm of the autocorrelation of the spectra, This is very susceptible to noise, not very useful."),
+        'R^2': (False, 'rSquared', PWSCompilerSettings, "A measure the linearity of the slope of the natural logarithm of the autocorrelation function. If this is low then the AutoCorr Slope value should not be trusted."),
+        'OPD': (False, 'opd', PWSCompilerSettings, "This is the Fourier transform of the spectrum. In theory this should indicate how much of the signal is contributed to by different optical path differences (OPD). Fun fact, RMS is equal to the integral of the OPD over wavenumber (k), if you are interested only in the RMS due to a specific range of OPD you can get this from summing over the appropriate range of the OPD. This is useful for removing unwanted contributions to RMS from thin films."),
+        "Mean Spectra Ratio": (False, 'meanSigmaRatio', PWSCompilerSettings, "The spectral variations that we are interested in are expected to have a short spatial correlation length (neighboring pixels should not have the same spectra. However if we look at the average spectra over a cell nucleus we find that there is an overarching spectra common to the whole region. This is a measure of how much this `mean spectra` contributes to the RMS of the ROI."),
+        "Poly RMS": (False, 'polynomialRms', PWSCompilerSettings, "In order to remove spectral features that are not due to interference (fluorescence, absorbance, etc.) we sometimes subtract a polynomial fit from the data before analysis. This indicates the StdDev of the polynomial fit. It's not clear how this is useful"),
+        "Roi Area": (False, 'roiArea', GenericCompilerSettings, "The area of the ROI given in units of pixels. This can be converted to microns if you know the size in object space of a single pixel"),
+        "Dynamics Analysis": (False, None, None, None),
+        "RMS_t": (False, 'rms_t', DynamicsCompilerSettings, "This is the primary analysis result for `Dynamics`. It is the standard deviation of the signal over time when looking at just a single wavelength."),
+        "Dynamics Reflectance": (False, 'meanReflectance', DynamicsCompilerSettings, "This is the average reflectance of the ROI for the `Dynamics` measurement.")
     }
 
     def __init__(self):
@@ -77,7 +84,7 @@ class ResultsTable(CopyableTable):
         self.setRowCount(0)
         self.setColumnCount(len(self.columns.keys()))
         self.setHorizontalHeaderLabels(self.columns.keys())
-        for i, (default, settingsName, tooltip) in enumerate(self.columns.values()):
+        for i, (default, settingsName, compilerClass, tooltip) in enumerate(self.columns.values()):
             self.setColumnHidden(i, not default)
             self.horizontalHeaderItem(i).setToolTip(tooltip)
         self.verticalHeader().hide()
