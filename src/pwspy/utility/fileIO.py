@@ -16,7 +16,7 @@ from pwspy.dataTypes import ICMetaData, MetaDataBase
 '''Local Functions'''
 
 
-def _load(loadHandle: Union[str, MetaDataBase], metadataOnly: bool, lock: mp.Lock):
+def _load(loadHandle: Union[str, MetaDataBase], lock: mp.Lock):
     md: MetaDataBase
     if isinstance(loadHandle, str):
         md = ICMetaData.loadAny(loadHandle, lock=lock)  # In the case that we just have a string to work with, we assume that we are loading a PWS file and not any other type such as dynamics.
@@ -24,13 +24,10 @@ def _load(loadHandle: Union[str, MetaDataBase], metadataOnly: bool, lock: mp.Loc
         md = loadHandle
     else:
         raise TypeError("files specified to the loader must be either str or inherited from pwspy.dataTypes.MetaDataBase")
-    if metadataOnly:
-        return md
-    else:
-        return md.toDataClass(lock)
+    return md.toDataClass(lock)
 
 
-def _loadIms(qout: queue.Queue, qin: queue.Queue, metadataOnly: bool, lock: th.Lock):
+def _loadIms(qout: queue.Queue, qin: queue.Queue, lock: th.Lock):
     """When not running in parallel this function is executed in a separate thread to load ImCubes and populate a Queue
     with them."""
     while not qin.empty():
@@ -38,7 +35,7 @@ def _loadIms(qout: queue.Queue, qin: queue.Queue, metadataOnly: bool, lock: th.L
             index, row = qin.get()
             displayStr = row['cube'].filePath if isinstance(row['cube'], MetaDataBase) else row['cube']
             print('Starting', displayStr)
-            im = _load(row['cube'], metadataOnly=metadataOnly, lock=lock)
+            im = _load(row['cube'], lock=lock)
             row['cube'] = im
             qout.put((index, row))
             perc = psutil.virtual_memory().percent
@@ -71,7 +68,7 @@ def _loadThenProcess(procFunc, procFuncArgs, metadataOnly: bool, lock: mp.Lock, 
     """Handles loading the ImCubes from file and if needed then calling the processorFunc. This function will be executed
      on each core when running in parallel. If not running in parallel then _loadIms will be used."""
     index, row = row
-    im = _load(row['cube'], metadataOnly=metadataOnly, lock=lock)
+    im = _load(row['cube'], lock=lock)
     displayStr = row['cube'].filePath if isinstance(row['cube'], MetaDataBase) else row['cube']
     print("Run", displayStr, mp.current_process())
     if passLock:
@@ -86,7 +83,7 @@ def _loadThenProcess(procFunc, procFuncArgs, metadataOnly: bool, lock: mp.Lock, 
 
 
 def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: Optional = None, parallel: Optional=None,
-                   procArgs: Optional = None, metadataOnly: bool = False, passLock: bool = False, initializer=None,
+                   procArgs: Optional = None, passLock: bool = False, initializer=None,
                    initArgs=None, maxProcesses: int = 1000) -> Union[pd.DataFrame, List, Tuple]:
     """A convenient function to load a series of ImCubes from a list or dictionary of file paths.
 
@@ -104,8 +101,6 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
         if the time to run processorFunc is greater than the time to load an ImCube from file.
     procArgs
         Optional arguments to pass to processorFunc
-    metadataOnly:
-        Instead of passing an ImCube or DynCube object to the first argument of processorFunc, pass the MetaData object
     passLock:
         If true then pass the multiprocessing lock object to the second argument fo processorFunc. this can be used to
         synchronize hard disk activity.
@@ -148,7 +143,7 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
         numProcesses = min([psutil.cpu_count(logical=False) - 1, maxProcesses])
         po = mp.Pool(processes=numProcesses, initializer=initializer, initargs=initArgs)
         try:
-            cubes = po.starmap(_loadThenProcess, zip(*zip(*[[processorFunc, procArgs, metadataOnly, lock, passLock]] * len(fileFrame)), fileFrame.iterrows()))
+            cubes = po.starmap(_loadThenProcess, zip(*zip(*[[processorFunc, procArgs, lock, passLock]] * len(fileFrame)), fileFrame.iterrows()))
         finally:
             po.close()
             po.join()
@@ -159,7 +154,7 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
         qin = queue.Queue()
         [qin.put(f) for f in fileFrame.iterrows()]
         lock = th.Lock()
-        thread = th.Thread(target=_loadIms, args=[qout, qin, metadataOnly, lock])
+        thread = th.Thread(target=_loadIms, args=[qout, qin, lock])
         thread.start()
         cubes = []
         if processorFunc:
@@ -181,3 +176,5 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
         return ret
     else:
         return origClass(ret['cube'])
+
+
