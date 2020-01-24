@@ -95,16 +95,10 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
         if the time to run processorFunc is greater than the time to load an ImCube from file.
     procArgs
         Optional arguments to pass to processorFunc
-    passLock:
-        If true then pass the multiprocessing lock object to the second argument fo processorFunc. this can be used to
-        synchronize hard disk activity.
     initializer:
         A function that is run once at the beginning of each spawned process. Can be used for copying shared memory.
     initArgs:
         A tuple of arguments to pass to the `initializer` function.
-    maxProcesses:
-        The maximum number of processes that can be spawned. Regardless of this parameter the function will not spawn more
-        than 1 less than the total number of cores on the cpu.
 
     Returns
     -------
@@ -172,3 +166,32 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
         return origClass(ret['cube'])
 
 
+def processParallel(fileFrame: pd.DataFrame, processorFunc, initializer=None, initArgs=None, procArgs=None):
+    """A convenient function to load a series of Data Cubes from a list or dictionary of file paths.
+
+    Parameters
+    ----------
+    fileFrame
+        A dataframe. Each row of the frame will be passed as the first argument to the processorFunc.
+    processorFunc
+        A function that each row of the `fileFrame` should be passed to as the first argument. Additional arguments can be passed to processorFunc using the procArgs variable.
+    procArgs
+        Optional arguments to pass to processorFunc
+    initializer:
+        A function that is run once at the beginning of each spawned process. Can be used for copying shared memory.
+    initArgs:
+        A tuple of arguments to pass to the `initializer` function.
+
+    Returns
+    -------
+    list
+        returns an list containing the results each execution of processorFun.
+    """
+    numProcesses = psutil.cpu_count(logical=False) - 1  # Use one less than number of available cores.
+    po = mp.Pool(processes=numProcesses, initializer=initializer, initargs=initArgs)
+    try:
+        cubes = po.starmap(processorFunc, zip(*zip(*[[procArgs]] * len(fileFrame)), fileFrame.iterrows()))
+    finally:
+        po.close()
+        po.join()
+    return cubes
