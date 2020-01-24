@@ -107,7 +107,7 @@ class AnalysisManager(QtCore.QObject):
             if (len(cellMetas) <= 3): #No reason to start 3 parallel processes for less than 3 cells.
                 useParallelProcessing = False
             if useParallelProcessing:
-                #Rather than have read-only arrays that are shared between processes with shared memory. saves a few gigs of ram and speeds things up.
+                #Rather than copy arrays for each process, have read-only arrays that are shared between processes with shared memory. saves a few gigs of ram and speeds things up.
                 print("AnalysisManager: Using parallel processing. Creating shared memory.")
                 refdata = RawArray('f', analysis.ref.data.size)
                 refdata = np.frombuffer(refdata, dtype=np.float32).reshape(analysis.ref.data.shape)
@@ -117,7 +117,9 @@ class AnalysisManager(QtCore.QObject):
                 iedata = np.frombuffer(iedata, dtype=np.float32).reshape(analysis.extraReflection.data.shape)
                 np.copyto(iedata, analysis.extraReflection.data)
                 analysis.extraReflection.data = iedata
-            #Run parallel processing
+            else:
+                print("Not using parallel processing.")
+            #Run parallel/multithreaded processing
             t = self.AnalysisThread(cellMetas, analysis, anName, cameraCorrection, useParallelProcessing)
             b = BusyDialog(self.app.window, "Processing. Please Wait...")
             t.finished.connect(b.accept)
