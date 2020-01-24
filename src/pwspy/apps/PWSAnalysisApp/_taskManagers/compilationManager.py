@@ -1,10 +1,12 @@
 from __future__ import annotations
+
+import pandas
 from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QMessageBox, QMainWindow
 from PyQt5 import QtCore
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from pwspy.apps.PWSAnalysisApp._taskManagers.analysisManager import safeCallback
-from pwspy.utility.fileIO import loadAndProcess
+from pwspy.utility.fileIO import loadAndProcess, processParallel
 import re
 from pwspy.apps.PWSAnalysisApp._dockWidgets.ResultsTableDock.other import ConglomerateCompiler
 import typing
@@ -58,9 +60,9 @@ class CompilationManager(QtCore.QObject):
 
         def run(self):
             try:
-                self.result = loadAndProcess(self.cellMetas, processorFunc=self._process, procArgs=[self.compiler, self.roiNamePattern, self.analysisNamePattern],
-                                             parallel=False,
-                                             metadataOnly=True)  # A list of Tuples. each tuple containing a list of warnings and the ICMetaData to go with it.
+                self.result = []
+                for acq in self.cellMetas:
+                    self.result.append(self._process(acq, self.compiler, self.roiNamePattern, self.analysisNamePattern)) # A list of Tuples. each tuple containing a list of warnings and the Acquisition to go with it.
             except Exception as e:
                 self.errorOccurred.emit(e)
 
