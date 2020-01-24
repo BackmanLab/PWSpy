@@ -5,6 +5,8 @@ from PyQt5.QtWidgets import QMessageBox, QMainWindow
 from PyQt5 import QtCore
 from pwspy.analysis.compilation import PWSRoiCompiler, PWSRoiCompilationResults, PWSCompilerSettings
 from pwspy.analysis.warnings import AnalysisWarning
+from pwspy.apps.PWSAnalysisApp._dockWidgets.ResultsTableDock import ConglomerateCompilerResults
+from pwspy.apps.PWSAnalysisApp._dockWidgets.ResultsTableDock.other import ConglomerateCompiler, ConglomerateAnalysisResults, ConglomerateCompilerSettings
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from pwspy.apps.PWSAnalysisApp._taskManagers.analysisManager import safeCallback
 from pwspy.utility.fileIO import loadAndProcess
@@ -25,15 +27,15 @@ class CompilationManager(QtCore.QObject):
         self.window = window
 
     @safeCallback
-    def run(self) -> List[Tuple[AcqDir, List[Tuple[PWSRoiCompilationResults, Optional[List[AnalysisWarning]]]]]]:
+    def run(self) -> List[Tuple[AcqDir, List[Tuple[ConglomerateCompilerResults, Optional[List[AnalysisWarning]]]]]]:
         roiName: str = self.window.resultsTable.getRoiName()
         analysisName: str = self.window.resultsTable.getAnalysisName()
-        settings: PWSCompilerSettings = self.window.resultsTable.getSettings() #TODO make this return multiple types of settings.
+        settings: ConglomerateCompilerSettings = self.window.resultsTable.getSettings()
         cellMetas: List[AcqDir] = self.window.cellSelector.getSelectedCellMetas()
         if len(cellMetas) == 0:
             QMessageBox.information(self.window, "What?", "Please select at least one cell.")
             return None
-        compiler = PWSRoiCompiler(settings)
+        compiler = ConglomerateCompiler(settings)
         b = BusyDialog(self.window, "Processing. Please Wait...")
         t = self.CompilationThread(cellMetas, compiler, roiName, analysisName)
         t.finished.connect(b.accept)
@@ -50,7 +52,7 @@ class CompilationManager(QtCore.QObject):
     class CompilationThread(QThread):
         errorOccurred = QtCore.pyqtSignal(Exception)
 
-        def __init__(self, cellMetas: List[AcqDir], compiler: PWSRoiCompiler, roiNamePattern: str, analysisNamePattern: str):
+        def __init__(self, cellMetas: List[AcqDir], compiler: ConglomerateCompiler, roiNamePattern: str, analysisNamePattern: str):
             super().__init__()
             self.cellMetas = cellMetas
             self.roiNamePattern = roiNamePattern
@@ -67,14 +69,22 @@ class CompilationManager(QtCore.QObject):
                 self.errorOccurred.emit(e)
 
         @staticmethod
-        def _process(acq: AcqDir, compiler: PWSRoiCompiler, roiNamePattern: str, analysisNamePattern: str) -> Tuple[AcqDir, List[Tuple[PWSRoiCompilationResults, List[AnalysisWarning]]]]:
-            md = acq.pws
-            rois = [md.acquisitionDirectory.loadRoi(name, num, fformat) for name, num, fformat in md.acquisitionDirectory.getRois() if re.match(roiNamePattern, name)]
-            analysisResults = [md.loadAnalysis(name) for name in md.getAnalyses() if re.match(analysisNamePattern, name)]
+        def _process(acq: AcqDir, compiler: ConglomerateCompiler, roiNamePattern: str, analysisNamePattern: str) -> Tuple[AcqDir, List[Tuple[ConglomerateCompilerResults, List[AnalysisWarning]]]]:
+            rois = [acq.loadRoi(name, num, fformat) for name, num, fformat in acq.getRois() if re.match(roiNamePattern, name)]
+            pwsAnalysisResults = [acq.pws.loadAnalysis(name) for name in acq.pws.getAnalyses() if re.match(analysisNamePattern, name)]
+            dynamicAnalysisResults = [acq.dynamics.loadAnalysis(name) for name in acq.dynamics.getAnalyses() if re.match(analysisNamePattern, name)]
+            conglomeratedAnalysisResults = []
+            for pws in pwsAnalysisResults:  # Find the analyses with matching names and pair them.
+                for dyn in dynamicAnalysisResults:
+                    if pws.analysisName == dyn.analysisName:
+                        conglomeratedAnalysisResults.append(ConglomerateAnalysisResults(pws, dyn))
+                        pwsAnalysisResults.remove(pws) #Once an analysis has been paired remove it from the list of analyses
+                        dynamicAnalysisResults.remove(dyn)
+            conglomeratedAnalysisResults += [ConglomerateAnalysisResults(pws, None) for pws in pwsAnalysisResults] #Any remaining analyses couldn't be paired. Just add them on their own.
+            conglomeratedAnalysisResults += [ConglomerateAnalysisResults(None, dyn) for dyn in dynamicAnalysisResults]
             ret = []
-            for analysisResult in analysisResults:
+            for analysisResult in conglomeratedAnalysisResults:
                 for roi in rois:
                     cResults, warnings = compiler.run(analysisResult, roi)
                     ret.append((cResults, warnings))
             return acq, ret
-    

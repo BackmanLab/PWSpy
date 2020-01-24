@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QTableWidgetItem,
 from PyQt5 import QtCore
 
 from pwspy.analysis.compilation.pws import PWSRoiCompilationResults
+from .other import ConglomerateCompilerResults, ConglomerateCompilerSettings
 from .widgets import ResultsTable, ResultsTableItem
 import typing
 if typing.TYPE_CHECKING:
@@ -55,13 +56,13 @@ class ResultsTableDock(QDockWidget): #TODO update this for the new conglomoerate
         self._widget.layout().addWidget(self.table, 0, 1)
         self.setWidget(self._widget)
 
-    def addCompilationResult(self, result: PWSRoiCompilationResults, acquisition: AcqDir):
+    def addCompilationResult(self, result: ConglomerateCompilerResults, acquisition: AcqDir):
         self.table.addItem(ResultsTableItem(result, acquisition))
 
     def clearCompilationResults(self):
         self.table.clearCellItems()
 
-    def getSettings(self):
+    def getSettings(self) -> ConglomerateCompilerSettings:
         #TODO this will require some thought to get working with the new conglomerate results.
         kwargs = {}
         for checkBox in self.checkBoxes:

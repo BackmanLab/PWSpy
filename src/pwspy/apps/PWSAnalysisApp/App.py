@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import QApplication, QMessageBox, QSplashScreen
 
 from pwspy.apps.PWSAnalysisApp._utilities import BlinderDialog, RoiConverter
 from pwspy.dataTypes import ICMetaData, AcqDir
+from ._dockWidgets.ResultsTableDock import ConglomerateCompilerResults
 from .dialogs import AnalysisSummaryDisplay, CompilationSummaryDisplay
 from ._taskManagers.analysisManager import AnalysisManager
 from ._taskManagers.compilationManager import CompilationManager
@@ -80,7 +81,7 @@ class PWSApp(QApplication):
             shutil.copyfile(os.path.join(resources, 'credentials.json'), os.path.join(applicationVars.googleDriveAuthPath, 'credentials.json'))
             # shutil.copyfile(os.path.join(resources, 'driveToken.pickle'), os.path.join(applicationVars.googleDriveAuthPath, 'driveToken.pickle'))
 
-    def handleCompilationResults(self, inVal: List[Tuple[AcqDir, List[Tuple[PWSRoiCompilationResults, Optional[List[AnalysisWarning]]]]]]):
+    def handleCompilationResults(self, inVal: List[Tuple[AcqDir, List[Tuple[ConglomerateCompilerResults, Optional[List[AnalysisWarning]]]]]]):
         #  Display warnings if necessary.
         warningStructure = []
         for acq, roiList in inVal:

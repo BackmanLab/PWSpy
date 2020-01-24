@@ -9,12 +9,11 @@ from pwspy.dataTypes import Roi
 from pwspy.analysis import warnings
 
 
-class GenericRoiCompiler(AbstractRoiCompiler):
+class GenericRoiCompiler:
     def __init__(self, settings: GenericCompilerSettings):
-        super().__init__(settings)
+        self.settings = settings
 
-    def run(self, results: PWSAnalysisResults, roi: Roi) -> Tuple[GenericRoiCompilationResults, List[warnings.AnalysisWarning]]:
-        warns = []
+    def run(self, roi: Roi) -> GenericRoiCompilationResults:
         if self.settings.roiArea:
             roiArea: Optional[int] = np.sum(roi.mask)
         else:
@@ -23,5 +22,4 @@ class GenericRoiCompiler(AbstractRoiCompiler):
         results = GenericRoiCompilationResults(
                     roi=roi,
                     roiArea=roiArea)
-        warns = [w for w in warns if w is not None]  # Strip None from warns list
-        return results, warns
+        return results
