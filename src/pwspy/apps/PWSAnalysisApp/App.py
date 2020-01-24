@@ -13,7 +13,7 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QMessageBox, QSplashScreen
 
 from pwspy.apps.PWSAnalysisApp._utilities import BlinderDialog, RoiConverter
-from pwspy.dataTypes import ICMetaData
+from pwspy.dataTypes import ICMetaData, AcqDir
 from .dialogs import AnalysisSummaryDisplay, CompilationSummaryDisplay
 from ._taskManagers.analysisManager import AnalysisManager
 from ._taskManagers.compilationManager import CompilationManager
@@ -80,22 +80,22 @@ class PWSApp(QApplication):
             shutil.copyfile(os.path.join(resources, 'credentials.json'), os.path.join(applicationVars.googleDriveAuthPath, 'credentials.json'))
             # shutil.copyfile(os.path.join(resources, 'driveToken.pickle'), os.path.join(applicationVars.googleDriveAuthPath, 'driveToken.pickle'))
 
-    def handleCompilationResults(self, inVal: List[Tuple[ICMetaData, List[Tuple[PWSRoiCompilationResults, Optional[List[AnalysisWarning]]]]]]):
+    def handleCompilationResults(self, inVal: List[Tuple[AcqDir, List[Tuple[PWSRoiCompilationResults, Optional[List[AnalysisWarning]]]]]]):
         #  Display warnings if necessary.
         warningStructure = []
-        for meta, roiList in inVal:
+        for acq, roiList in inVal:
             metaWarnings = []
             for result, warnList in roiList:
                 if len(warnList) > 0:
                     metaWarnings.append((result, warnList))
             if len(metaWarnings) > 0:
-                warningStructure.append((meta, metaWarnings))
+                warningStructure.append((acq.pws, metaWarnings))
         if len(warningStructure) > 0:
             CompilationSummaryDisplay(self.window, warningStructure)
         #  Display the results on the table
-        results = [(meta, result) for meta, roiList in inVal for result, warnings in roiList]
+        results = [(acq, result) for acq, roiList in inVal for result, warnings in roiList]
         self.window.resultsTable.clearCompilationResults()
-        [self.window.resultsTable.addCompilationResult(r, md) for md, r in results]
+        [self.window.resultsTable.addCompilationResult(r, acq) for acq, r in results]
 
     def changeDirectory(self, directory: str, files: List[str]):
         # Load Cells

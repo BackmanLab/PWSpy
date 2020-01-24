@@ -2,10 +2,12 @@ from __future__ import annotations
 from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QTableWidgetItem, QFrame, QVBoxLayout, QCheckBox, \
     QScrollArea, QPushButton, QLayout, QGridLayout, QAction, QLineEdit, QLabel, QSizePolicy
 from PyQt5 import QtCore
+
+from pwspy.analysis.compilation.pws import PWSRoiCompilationResults
 from .widgets import ResultsTable, ResultsTableItem
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import ICMetaData
+    from pwspy.dataTypes import AcqDir
 
 
 class ResultsTableDock(QDockWidget): #TODO update this for the new conglomoerate classes.
@@ -53,8 +55,8 @@ class ResultsTableDock(QDockWidget): #TODO update this for the new conglomoerate
         self._widget.layout().addWidget(self.table, 0, 1)
         self.setWidget(self._widget)
 
-    def addCompilationResult(self, result: PWSRoiCompilationResults, metadata: ICMetaData):
-        self.table.addItem(ResultsTableItem(result, metadata))
+    def addCompilationResult(self, result: PWSRoiCompilationResults, acquisition: AcqDir):
+        self.table.addItem(ResultsTableItem(result, acquisition))
 
     def clearCompilationResults(self):
         self.table.clearCellItems()

@@ -44,7 +44,7 @@ class AnalysisSettingsDock(QDockWidget):
         self.addAnalysisButton.released.connect(self.addAnalysis)
         self.setWidget(widg)
 
-    def addAnalysis(self): #TODO add the analysis from currently selected settingsframe.
+    def addAnalysis(self):
         settingsWidget: AbstractSettingsFrame = self.settingsTabWidget.currentWidget()
         try:
             camCorr = settingsWidget.getCameraCorrection()

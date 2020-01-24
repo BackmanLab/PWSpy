@@ -25,12 +25,11 @@ class CompilationManager(QtCore.QObject):
         self.window = window
 
     @safeCallback
-    def run(self) -> List[Tuple[ICMetaData, List[Tuple[PWSRoiCompilationResults, Optional[List[AnalysisWarning]]]]]]:
+    def run(self) -> List[Tuple[AcqDir, List[Tuple[PWSRoiCompilationResults, Optional[List[AnalysisWarning]]]]]]:
         roiName: str = self.window.resultsTable.getRoiName()
         analysisName: str = self.window.resultsTable.getAnalysisName()
         settings: PWSCompilerSettings = self.window.resultsTable.getSettings() #TODO make this return multiple types of settings.
         cellMetas: List[AcqDir] = self.window.cellSelector.getSelectedCellMetas()
-        cellMetas: List[ICMetaData] = [i.pws for i in cellMetas]  # Just use the pws data
         if len(cellMetas) == 0:
             QMessageBox.information(self.window, "What?", "Please select at least one cell.")
             return None
@@ -51,7 +50,7 @@ class CompilationManager(QtCore.QObject):
     class CompilationThread(QThread):
         errorOccurred = QtCore.pyqtSignal(Exception)
 
-        def __init__(self, cellMetas: List[ICMetaData], compiler: PWSRoiCompiler, roiNamePattern: str, analysisNamePattern: str):
+        def __init__(self, cellMetas: List[AcqDir], compiler: PWSRoiCompiler, roiNamePattern: str, analysisNamePattern: str):
             super().__init__()
             self.cellMetas = cellMetas
             self.roiNamePattern = roiNamePattern
@@ -68,7 +67,8 @@ class CompilationManager(QtCore.QObject):
                 self.errorOccurred.emit(e)
 
         @staticmethod
-        def _process(md: ICMetaData, compiler: PWSRoiCompiler, roiNamePattern: str, analysisNamePattern: str) -> Tuple[ICMetaData, List[Tuple[PWSRoiCompilationResults, List[AnalysisWarning]]]]:
+        def _process(acq: AcqDir, compiler: PWSRoiCompiler, roiNamePattern: str, analysisNamePattern: str) -> Tuple[AcqDir, List[Tuple[PWSRoiCompilationResults, List[AnalysisWarning]]]]:
+            md = acq.pws
             rois = [md.acquisitionDirectory.loadRoi(name, num, fformat) for name, num, fformat in md.acquisitionDirectory.getRois() if re.match(roiNamePattern, name)]
             analysisResults = [md.loadAnalysis(name) for name in md.getAnalyses() if re.match(analysisNamePattern, name)]
             ret = []
@@ -76,4 +76,5 @@ class CompilationManager(QtCore.QObject):
                 for roi in rois:
                     cResults, warnings = compiler.run(analysisResult, roi)
                     ret.append((cResults, warnings))
-            return md, ret
+            return acq, ret
+    
