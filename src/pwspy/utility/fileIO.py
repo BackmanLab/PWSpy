@@ -47,14 +47,11 @@ def _loadIms(qout: queue.Queue, qin: queue.Queue, lock: th.Lock):
             qout.put(e) #Put the error in the queue so it can propagate to the main thread.
             raise e
 
-def _procWrap(procFunc, passLock: bool, lock: th.Lock):
+def _procWrap(procFunc, lock: th.Lock):
     def func(fromQueue, procFuncArgs=None):
         index, row = fromQueue
         im = row['cube']
-        if passLock:
-            args = (im, lock)
-        else:
-            args = (im,)
+        args = (im,)
         if procFuncArgs:
             ret = procFunc(*args, *procFuncArgs)
         else:
@@ -64,17 +61,14 @@ def _procWrap(procFunc, passLock: bool, lock: th.Lock):
     return func
 
 
-def _loadThenProcess(procFunc, procFuncArgs, metadataOnly: bool, lock: mp.Lock, passLock: bool, row):
+def _loadThenProcess(procFunc, procFuncArgs, lock: mp.Lock, row):
     """Handles loading the ImCubes from file and if needed then calling the processorFunc. This function will be executed
      on each core when running in parallel. If not running in parallel then _loadIms will be used."""
     index, row = row
     im = _load(row['cube'], lock=lock)
     displayStr = row['cube'].filePath if isinstance(row['cube'], MetaDataBase) else row['cube']
     print("Run", displayStr, mp.current_process())
-    if passLock:
-        ret = procFunc(im, lock, *procFuncArgs)
-    else:
-        ret = procFunc(im, *procFuncArgs)
+    ret = procFunc(im, *procFuncArgs)
     row['cube'] = ret
     return row
 
@@ -82,10 +76,10 @@ def _loadThenProcess(procFunc, procFuncArgs, metadataOnly: bool, lock: mp.Lock, 
 '''User Functions'''
 
 
-def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: Optional = None, parallel: Optional=None,
-                   procArgs: Optional = None, passLock: bool = False, initializer=None,
+def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: Optional = None, parallel: Optional = None,
+                   procArgs: Optional = None, initializer=None,
                    initArgs=None, maxProcesses: int = 1000) -> Union[pd.DataFrame, List, Tuple]:
-    """A convenient function to load a series of ImCubes from a list or dictionary of file paths.
+    """A convenient function to load a series of Data Cubes from a list or dictionary of file paths.
 
     Parameters
     ----------
@@ -121,8 +115,8 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
     if procArgs is None:
         procArgs = []
     if parallel is None:
-        if processorFunc is None: parallel = False
-        else: parallel = True
+        parallel = False if processorFunc is None else True  # No reason to run in parallel if we don't have a computationally expensive function to run.
+    #If the fileFrame provided is not already a pandas dataframe the convert and store a reference to the original type. We'll try to convert back at the end.
     origClass = None
     if not isinstance(fileFrame, pd.DataFrame):
         try:
@@ -137,13 +131,13 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
     sTime = time()
     if parallel:
         if processorFunc is None:
-            raise Exception("Running in parallel with no processorFunc is a bad idea.")
+            raise Exception("Running in parallel with no processorFunc is pointles. Set parallel to False to run in multithreaded mode.")
         m = mp.Manager()
         lock = m.Lock()
-        numProcesses = min([psutil.cpu_count(logical=False) - 1, maxProcesses])
+        numProcesses = min([psutil.cpu_count(logical=False) - 1, maxProcesses])  # Use one less than number of available cores.
         po = mp.Pool(processes=numProcesses, initializer=initializer, initargs=initArgs)
         try:
-            cubes = po.starmap(_loadThenProcess, zip(*zip(*[[processorFunc, procArgs, lock, passLock]] * len(fileFrame)), fileFrame.iterrows()))
+            cubes = po.starmap(_loadThenProcess, zip(*zip(*[[processorFunc, procArgs, lock]] * len(fileFrame)), fileFrame.iterrows()))
         finally:
             po.close()
             po.join()
@@ -158,7 +152,7 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
         thread.start()
         cubes = []
         if processorFunc:
-            wrappedFunc = _procWrap(processorFunc, passLock, lock)
+            wrappedFunc = _procWrap(processorFunc, lock)
         for i in range(len(fileFrame)):
             ret = qout.get()
             if isinstance(ret, Exception):
