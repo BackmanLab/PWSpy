@@ -28,23 +28,33 @@ class ResultsTableItem:
         self.roiAreaLabel = NumberTableWidgetItem(results.generic.roiArea)
         # PWS related results
         pws = results.pws
-        self.pwsAnalysisNameLabel = QTableWidgetItem(pws.analysisName)
-        self.rmsLabel = NumberTableWidgetItem(pws.rms)
-        self.reflectanceLabel = NumberTableWidgetItem(pws.reflectance)
-        self.polynomialRmsLabel = NumberTableWidgetItem(pws.polynomialRms)
-        self.autoCorrelationSlopeLabel = NumberTableWidgetItem(pws.autoCorrelationSlope)
-        self.rSquaredLabel = NumberTableWidgetItem(pws.rSquared)
-        self.ldLabel = NumberTableWidgetItem(pws.ld)
-        self.opdButton = QPushButton("OPD")
-        self.opdButton.released.connect(self._plotOpd)
-        if pws.opd is None:
+        if pws is not None:
+            self.pwsAnalysisNameLabel = QTableWidgetItem(pws.analysisName)
+            self.rmsLabel = NumberTableWidgetItem(pws.rms)
+            self.reflectanceLabel = NumberTableWidgetItem(pws.reflectance)
+            self.polynomialRmsLabel = NumberTableWidgetItem(pws.polynomialRms)
+            self.autoCorrelationSlopeLabel = NumberTableWidgetItem(pws.autoCorrelationSlope)
+            self.rSquaredLabel = NumberTableWidgetItem(pws.rSquared)
+            self.ldLabel = NumberTableWidgetItem(pws.ld)
+            self.opdButton = QPushButton("OPD")
+            self.opdButton.released.connect(self._plotOpd)
+            if pws.opd is None:
+                self.opdButton.setEnabled(False)
+            self.meanSigmaRatioLabel = NumberTableWidgetItem(pws.varRatio)
+        else:
+            self.pwsAnalysisNameLabel = QTableWidgetItem()
+            self.rmsLabel, self.reflectanceLabel, self.polynomialRmsLabel, self.autoCorrelationSlopeLabel, self.rSquaredLabel, self.ldLabel, self.meanSigmaRatioLabel = (NumberTableWidgetItem() for i in range(7))
+            self.opdButton = QPushButton("OPD")
             self.opdButton.setEnabled(False)
-        self.meanSigmaRatioLabel = NumberTableWidgetItem(pws.varRatio)
         # Dynamics related results
         dyn = results.dyn
-        self.dynamicsAnalysisNameLabel = QTableWidgetItem(dyn.analysisName)
-        self.rms_tLabel = NumberTableWidgetItem(dyn.rms_t)
-        self.dynamicsReflectanceLabel = NumberTableWidgetItem(dyn.reflectance)
+        if dyn is not None:
+            self.dynamicsAnalysisNameLabel = QTableWidgetItem(dyn.analysisName)
+            self.rms_tLabel = NumberTableWidgetItem(dyn.rms_t)
+            self.dynamicsReflectanceLabel = NumberTableWidgetItem(dyn.reflectance)
+        else:
+            self.rms_tLabel, self.dynamicsReflectanceLabel = (NumberTableWidgetItem() for i in range(2))
+            self.dynamicsAnalysisNameLabel = QTableWidgetItem()
 
 
     def _plotOpd(self):

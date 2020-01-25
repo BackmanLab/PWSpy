@@ -1,9 +1,10 @@
 from __future__ import annotations
 import numpy as np
 from pwspy.dataTypes import Roi
+from ._roiCompilationResults import GenericRoiCompilationResults
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.analysis.compilation.generic import GenericCompilerSettings, GenericRoiCompilationResults
+    from pwspy.analysis.compilation.generic import GenericCompilerSettings
 
 
 class GenericRoiCompiler:

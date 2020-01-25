@@ -37,7 +37,7 @@ class CopyableTable(QTableWidget):
 
 class NumberTableWidgetItem(QTableWidgetItem):
     """This table widget item will be sorted numerically rather than alphabetically (1, 10, 11, 2, ...)"""
-    def __init__(self, num: float):
+    def __init__(self, num: float = None):
         if num is None:
             super().__init__("None")
             num = -np.inf

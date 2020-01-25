@@ -45,10 +45,10 @@ class ConglomerateCompiler:
         if results.pws is not None:
             pwsResults, pwsWarnings = self.pws.run(results.pws, roi)
         else:
-            pwsResults, pwsWarnings = None, None
+            pwsResults, pwsWarnings = None, []
         if results.dyn is not None:
             dynResults, dynWarnings = self.dyn.run(results.dyn, roi)
         else:
-            dynResults, dynWarnings = None, None
+            dynResults, dynWarnings = None, []
         genResults = self.generic.run(roi)
         return ConglomerateCompilerResults(pwsResults, dynResults, genResults), pwsWarnings + dynWarnings

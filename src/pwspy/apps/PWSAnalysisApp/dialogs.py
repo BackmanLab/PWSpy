@@ -14,6 +14,9 @@ from PyQt5.QtWidgets import (QGridLayout, QDialog,
                              QMessageBox, QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QApplication)
 
 import typing
+
+from pwspy.apps.PWSAnalysisApp._dockWidgets.ResultsTableDock import ConglomerateCompilerResults
+
 if typing.TYPE_CHECKING:
     from typing import Optional, List, Tuple
     from pwspy.dataTypes import ICMetaData
@@ -125,14 +128,14 @@ class CompilationSummaryDisplay(QDialog):
         self._addWarnings(warnings)
         self.show()
 
-    def _addWarnings(self, warnings: List[Tuple[ICMetaData, List[Tuple[PWSRoiCompilationResults, Optional[List[AnalysisWarning]]]]]]):
+    def _addWarnings(self, warnings: List[Tuple[ICMetaData, List[Tuple[ConglomerateCompilerResults, Optional[List[AnalysisWarning]]]]]]):
         for meta, roiList in warnings:
             item = QTreeWidgetItem(self.warningTree)
             item.setText(0, meta.filePath)
             for roiResult, roiWarnList in roiList:
                 if len(roiWarnList) > 0:
                     subItem = QTreeWidgetItem(item)
-                    subItem.setText(0, f"{len(roiWarnList)} warnings: {roiResult.roi.name} {roiResult.roi.number}")
+                    subItem.setText(0, f"{len(roiWarnList)} warnings: {roiResult.generic.roi.name} {roiResult.generic.roi.number}")
                     for warn in roiWarnList:
                         subItem2 = QTreeWidgetItem(subItem)
                         subItem2.setText(0, warn.shortMsg)

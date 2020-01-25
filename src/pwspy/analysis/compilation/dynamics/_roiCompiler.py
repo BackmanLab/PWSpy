@@ -18,7 +18,7 @@ class DynamicsRoiCompiler(AbstractRoiCompiler):
         super().__init__(settings)
 
     def run(self, results: DynamicsAnalysisResults, roi: Roi) -> Tuple[DynamicsRoiCompilationResults, List[warnings.AnalysisWarning]]:
-        reflectance = self._avgOverRoi(roi, results.meanReflectance) if self.settings.reflectance else None
+        reflectance = self._avgOverRoi(roi, results.meanReflectance) if self.settings.meanReflectance else None
         rms_t = self._avgOverRoi(roi, results.rms_t) if self.settings.rms_t else None
 
         results = DynamicsRoiCompilationResults(

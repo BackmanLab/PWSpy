@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-import pandas
+import traceback
+
 from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QMessageBox, QMainWindow
 from PyQt5 import QtCore
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from pwspy.apps.PWSAnalysisApp._taskManagers.analysisManager import safeCallback
-from pwspy.utility.fileIO import loadAndProcess, processParallel
 import re
-from pwspy.apps.PWSAnalysisApp._dockWidgets.ResultsTableDock.other import ConglomerateCompiler
+from pwspy.apps.PWSAnalysisApp._dockWidgets.ResultsTableDock.other import ConglomerateCompiler, ConglomerateAnalysisResults
 import typing
 if typing.TYPE_CHECKING:
     from typing import Tuple, List, Optional
     from pwspy.dataTypes import AcqDir
-    from pwspy.apps.PWSAnalysisApp._dockWidgets.ResultsTableDock.other import ConglomerateAnalysisResults, ConglomerateCompilerSettings, ConglomerateCompilerResults
+    from pwspy.apps.PWSAnalysisApp._dockWidgets.ResultsTableDock.other import ConglomerateCompilerSettings, ConglomerateCompilerResults
     from pwspy.analysis.warnings import AnalysisWarning
 
 
@@ -64,13 +64,15 @@ class CompilationManager(QtCore.QObject):
                 for acq in self.cellMetas:
                     self.result.append(self._process(acq, self.compiler, self.roiNamePattern, self.analysisNamePattern)) # A list of Tuples. each tuple containing a list of warnings and the Acquisition to go with it.
             except Exception as e:
+                print("Compilation error:")
+                traceback.print_exc()
                 self.errorOccurred.emit(e)
 
         @staticmethod
         def _process(acq: AcqDir, compiler: ConglomerateCompiler, roiNamePattern: str, analysisNamePattern: str) -> Tuple[AcqDir, List[Tuple[ConglomerateCompilerResults, List[AnalysisWarning]]]]:
             rois = [acq.loadRoi(name, num, fformat) for name, num, fformat in acq.getRois() if re.match(roiNamePattern, name)]
-            pwsAnalysisResults = [acq.pws.loadAnalysis(name) for name in acq.pws.getAnalyses() if re.match(analysisNamePattern, name)]
-            dynamicAnalysisResults = [acq.dynamics.loadAnalysis(name) for name in acq.dynamics.getAnalyses() if re.match(analysisNamePattern, name)]
+            pwsAnalysisResults = [acq.pws.loadAnalysis(name) for name in acq.pws.getAnalyses() if re.match(analysisNamePattern, name)] if acq.pws is not None else []
+            dynamicAnalysisResults = [acq.dynamics.loadAnalysis(name) for name in acq.dynamics.getAnalyses() if re.match(analysisNamePattern, name)] if acq.dynamics is not None else []
             conglomeratedAnalysisResults = []
             for pws in pwsAnalysisResults:  # Find the analyses with matching names and pair them.
                 for dyn in dynamicAnalysisResults:
