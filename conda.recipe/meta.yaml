@@ -1,4 +1,3 @@
-{% set data = load_setup_py_data() %}
 
 package:
   name: pwspy
@@ -8,7 +7,7 @@ source:
   path: .. #tells conda-build that the source code is in the parent directory.
 
 build:
-  noarch_python: True
+  noarch: python
   number: {{ GIT_DESCRIBE_NUMBER }}
   string: {{environ['GIT_DESCRIBE_HASH']}}
   script: python setup.py install --single-version-externally-managed --record=record.txt
@@ -37,13 +36,13 @@ requirements:
     - pyqt =5
 
 about:
-  home: data['url']
-  summary: data['description']
-  description: data['long_description']
-  dev_url: data['url']
+  home: https://bitbucket.org/backmanlab/pwspython/src/master/
+  summary: A framework for working with Partial Wave Spectroscopy files.
+  description: A framework for working with Partial Wave Spectroscopy files.
+  dev_url: https://bitbucket.org/backmanlab/pwspython/src/master/
   
 app:
   entry: python -m pwspy.apps.PWSAnalysisApp
-  icon: ..\src\pwspy\apps\PWSAnalysisApp\_resources\cellLogo.icon
+  icon: cellLogo.png
   summary: "PWS Analysis GUI"
-  own_environment: True #Not sure if this is the right choice
+  own_environment: False

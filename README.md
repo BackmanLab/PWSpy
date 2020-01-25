@@ -2,7 +2,7 @@
 
 A python module supporting operations related to Partial Wave Spectroscopy.
 
-#Documentation
+## Documentation
 This project is automatically documented by Sphinx.
 
 ## Setting up your computer to build the source code.
@@ -46,6 +46,6 @@ If you have conda installed then you can install the package with the following 
 
 ### Installing Manually
 If you have the built package then you can install the package by pointing `conda install` to the it.
-Install the package with `conda install -c file://{buildDestination} -c conda-forge pwspy`.
+Install the package with `conda install -c file:///{buildDestination} -c conda-forge pwspy`.
 
 
