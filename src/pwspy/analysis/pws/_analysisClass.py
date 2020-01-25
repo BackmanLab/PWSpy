@@ -18,7 +18,7 @@ import pandas as pd
 
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import ImCube, ExtraReflectanceCube
+    from pwspy.dataTypes import ImCube, ExtraReflectanceCube, KCube
 
 
 class PWSAnalysis(AbstractAnalysis):
