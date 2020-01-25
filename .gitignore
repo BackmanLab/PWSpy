@@ -4,3 +4,4 @@ src/pwspy.egg-info/
 docs/build/
 installScripts/pyInstaller/build/
 installScripts/pyInstaller/dist/
+build/
