@@ -5,11 +5,11 @@ package:
   version: {{ environ['GIT_DESCRIBE_TAG'] + '.' + environ.get('GIT_DESCRIBE_NUMBER', '')  }}
 
 source:
-  path: ..
+  path: .. #tells conda-build that the source code is in the parent directory.
 
 build:
   noarch_python: True
-  number: 0
+  number: {{ GIT_DESCRIBE_NUMBER }}
   string: {{environ['GIT_DESCRIBE_HASH']}}
   script: python setup.py install --single-version-externally-managed --record=record.txt
 
@@ -17,6 +17,7 @@ requirements:
   build:
     - python
     - setuptools
+    - gitpython
 
   run:
     - python #We seem to only be compatible with python 3.7 right now. can't specify here.
@@ -37,7 +38,12 @@ requirements:
 
 about:
   home: data['url']
-
   summary: data['description']
   description: data['long_description']
   dev_url: data['url']
+  
+app:
+  entry: python -m pwspy.apps.PWSAnalysisApp
+  icon: ..\src\pwspy\apps\PWSAnalysisApp\_resources\cellLogo.icon
+  summary: "PWS Analysis GUI"
+  own_environment: True #Not sure if this is the right choice

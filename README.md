@@ -14,6 +14,7 @@ In addition you will need:
  - gitpython: `conda install -c conda-forge gitpython`
  
 ## Building from source and distributing
+
 ### Automatic Method (Recommended):
 use the python in your `base` anaconda environment to run `installScripts\build.py`. Provide the output path as the first argument. For example if you want to save the built code to the H: drive you would type `python build.py H:`.
 This will update the version to the `_version` file and run the conda-build and deploy steps.
@@ -36,9 +37,12 @@ Optional:
 run the `install.bat`  
 
 ## Additional Install Methods
+It is best to install `pwspy` to its own Conda environment to avoid incompatibility issues.
+To create a new environment named `pwspyEnv` with the appropriate version of python use: `conda create -n pwspyEnv python=3.7`
+You will then want to activate the new environment using `conda activate pwspyEnv`
 
 ### Installing from Anaconda Cloud
-If you have conda installed then you can install the package with the following command: `conda install -c backmanlab -c conda-forge pwspy`
+If you have conda installed then you can install the package with the following command: `conda install pwspy -c backmanlab -c conda-forge`
 
 ### Installing Manually
 If you have the built package then you can install the package by pointing `conda install` to the it.
