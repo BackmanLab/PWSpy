@@ -19,6 +19,7 @@ setup(name='pwspy',
       author='Nick Anthony',
       author_email='nicholas.anthony@northwestern.edu',
       url='https://bitbucket.org/backmanlab/pwspython/src/master/',
+      python_requires='>3.7'
       install_requires=['numpy',
                         'scipy',
                         'matplotlib',
