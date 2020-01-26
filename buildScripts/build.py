@@ -23,14 +23,18 @@ if os.path.exists(buildDir):
 os.mkdir(buildDir)
 
 # Build and save to the outputDirectory
-proc = subprocess.Popen(f"conda-build {rootDir} --output-folder {buildDir} -c conda-forge", stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+proc = subprocess.Popen(f"conda-build {rootDir} --output-folder {buildDir} -c conda-forge", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 print("Waiting for conda-build")
 proc.wait()
 result, error = proc.communicate() #Unfortunately conda-build returns errors in STDERR even if the build succeeds.
-#TODO need to find a way to catch errors here.
-
+if proc.returncode != 0:
+    raise OSError(error.decode())
+else:
+    print("Success")
+    
 #Upload to Anaconda
-#TODO
+#The user can enable conda upload in order to automatically do this after build.
+    
 
 #Copy the other scripts
 for fname in ['install Windows.bat', 'Run Analysis Windows.bat', 'Run Analysis Mac.sh', 'install Mac.sh']:

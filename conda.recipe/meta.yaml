@@ -37,12 +37,12 @@ requirements:
 
 about:
   home: https://bitbucket.org/backmanlab/pwspython/src/master/
-  summary: A framework for working with Partial Wave Spectroscopy files.
-  description: A framework for working with Partial Wave Spectroscopy files.
+  summary: "A framework for working with Partial Wave Spectroscopy files."
+  description: "A framework for working with Partial Wave Spectroscopy files."
   dev_url: https://bitbucket.org/backmanlab/pwspython/src/master/
   
 app:
   entry: python -m pwspy.apps.PWSAnalysisApp
-  icon: cellLogo.png
-  summary: "PWS Analysis GUI"
+  icon: cellLogo64.png
+  summary: 'PWS Analysis GUI'
   own_environment: False
