@@ -42,7 +42,7 @@ about:
   
 app:
   entry: python -m pwspy.apps.PWSAnalysisApp
-  icon: veusz_64.png
+  icon: cellLogo64.png
   summary: PWS Analysis GUI
   type: desk
   own_environment: False
