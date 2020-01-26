@@ -23,7 +23,7 @@ if os.path.exists(buildDir):
 os.mkdir(buildDir)
 
 # Build and save to the outputDirectory
-proc = subprocess.Popen(f"conda-build {rootDir} --output-folder {buildDir} -c conda-forge", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+proc = subprocess.Popen(f"conda-build {rootDir} --output-folder {buildDir} -c conda-forge", stdout=None, stderr=subprocess.PIPE)
 print("Waiting for conda-build")
 proc.wait()
 result, error = proc.communicate() #Unfortunately conda-build returns errors in STDERR even if the build succeeds.
