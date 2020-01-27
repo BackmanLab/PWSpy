@@ -36,8 +36,9 @@ def getFromDict(func):
     return newFunc
 
 
-class PWSAnalysisResults(AbstractHDFAnalysisResults): #TODO All these cached properties stay in memory once they are loaded. It may be necessary to add a mechanism to decache them when memory is needed.
+class PWSAnalysisResults(AbstractHDFAnalysisResults):
     """A loader for analysis results that will only load them from hard disk as needed."""
+    # All these cached properties stay in memory once they are loaded. It may be necessary to add a mechanism to decache them when memory is needed.
 
     @staticmethod
     def fields():
@@ -57,7 +58,7 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults): #TODO All these cached pro
                polynomialRms: np.ndarray, autoCorrelationSlope: np.ndarray, rSquared: np.ndarray, ld: np.ndarray,
                imCubeIdTag: str, referenceIdTag: str, extraReflectionTag: Optional[str]):
         #TODO check datatypes here
-        #TODO implement relative relfectance.
+        #TODO implement relative relfectance. Might need to make a new class for compatibility sake.
         d = {'time': datetime.now().strftime(dateTimeFormat),
             'reflectance': reflectance,
             'meanReflectance': meanReflectance,
