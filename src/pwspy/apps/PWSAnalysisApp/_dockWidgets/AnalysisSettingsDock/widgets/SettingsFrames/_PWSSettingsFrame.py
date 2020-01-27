@@ -78,7 +78,7 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
         '''Use relative or absolute units of reflectance'''
         self.scaling = QGroupBox("Scaling")
         self.scaling.setLayout(QHBoxLayout())
-        self.scaling.layout().setContentsMargins(0, 0, 0, 5)
+        self.scaling.layout().setContentsMargins(2, 2, 2, 5)
         self.relativeUnits = QCheckBox("Use Relative Units", self)
         self.relativeUnits.setToolTip("If checked then reflectance (and therefore all other parameters) will be scaled such that any reflectance matching that\n"
                                       "of the reference image will be 1. If left unchecked then the `Reference Material` will be used to scale reflectance to\n"
