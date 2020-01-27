@@ -9,10 +9,9 @@ from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.Setting
     QHSpinBox, QHDoubleSpinBox, VerticallyCompressedWidget
 
 if typing.TYPE_CHECKING:
-    from pwspy.apps.sharedWidgets.extraReflectionManager.manager import ERManager
+    from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 
 from PyQt5 import QtCore, QtGui
-from PyQt5.QtGui import QValidator
 from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupBox, QHBoxLayout, QWidget, QRadioButton, \
     QFrame, QCheckBox
 
@@ -76,10 +75,22 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
         self._layout.addWidget(self.extraReflection, row, 0, 1, 4)
         row += 1
 
+        '''Use relative or absolute units of reflectance'''
+        self.scaling = QGroupBox("Scaling")
+        self.scaling.setLayout(QHBoxLayout())
+        self.relativeUnits = QCheckBox("Use Relative Units", self)
+        self.relativeUnits.setToolTip("If checked then reflectance (and therefore all other parameters) will be scaled such that any reflectance matching that\n"
+                                      "of the reference image will be 1. If left unchecked then the `Reference Material` will be used to scale reflectance to\n"
+                                      "match the actual physical reflectance of the sample.")
+        self.scaling.layout().addWidget(self.relativeUnits)
+        self._layout.addWidget(self.scaling, row, 0, 1, 4)
+        row += 1
+
         '''SignalPreparations'''
         self.signalPrep = QGroupBox("Signal Prep")
         self.signalPrep.setFixedSize(175, 75)
-        self.signalPrep.setToolTip("In order to reduce the effects of measurement noise we filter out the high frequencies from our signal. We do this using a Buttersworth low-pass filter. Best to stick with the defaults on this one.")
+        self.signalPrep.setToolTip("In order to reduce the effects of measurement noise we filter out the high frequencies from our signal. We do this using a\n"
+                                   "Buttersworth low-pass filter. Best to stick with the defaults on this one.")
         layout = QGridLayout()
         layout.setContentsMargins(5, 1, 5, 5)
         _ = layout.addWidget
@@ -168,12 +179,12 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
         height += self.presets.height()
         height += self.hardwareCorrections.height()
         height += self.extraReflection.height()
+        height += self.scaling.height()
         height += self.signalPrep.height()
         height += self.polySub.height()
         height += self.advanced.height()
         self._frame.setFixedHeight(height)
 
-    # noinspection PyTypeChecker
     def loadFromSettings(self, settings: PWSAnalysisSettings):
         self.filterOrder.setValue(settings.filterOrder)
         self.filterCutoff.setValue(settings.filterCutoff)
@@ -184,6 +195,7 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
         self.advanced.setCheckState(2 if settings.skipAdvanced else 0)
         self.autoCorrStopIndex.setValue(settings.autoCorrStopIndex)
         self.minSubCheckBox.setCheckState(2 if settings.autoCorrMinSub else 0)
+        self.relativeUnits.setCheckState(2 if settings.relativeUnits else 0)
 
     def loadCameraCorrection(self, camCorr: Optional[CameraCorrection] = None):
         self.hardwareCorrections.loadCameraCorrection(camCorr)
@@ -200,7 +212,8 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
                                    skipAdvanced=self.advanced.checkState() != 0,
                                    autoCorrMinSub=self.minSubCheckBox.checkState() != 0,
                                    autoCorrStopIndex=self.autoCorrStopIndex.value(),
-                                   numericalAperture=numericalAperture)
+                                   numericalAperture=numericalAperture,
+                                   relativeUnits=self.relativeUnits.checkState() != 0)
 
     def getCameraCorrection(self) -> CameraCorrection:
         return self.hardwareCorrections.getCameraCorrection()

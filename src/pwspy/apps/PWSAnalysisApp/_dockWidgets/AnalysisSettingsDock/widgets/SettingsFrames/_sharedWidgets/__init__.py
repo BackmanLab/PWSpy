@@ -30,7 +30,13 @@ class ExtraReflectanceSelector(QGroupBox):
 
         self.ERExplorer.selectionChanged.connect(extraReflectionChanged)
 
-        self.setToolTip("The fact that some light captured by the camera is scattered off surfaces inside the objective without ever reaching the sample means that the light intensity captured by the camera is not proportional to the reflectance of the sample. This extra reflectance varies spatially and spectrally and must be subtracted from our data in order for the analysis to be accurate. Calibration measurements of the extra reflectance are periodically uploaded to a google drive account which this software can download from. Click the folder icon to view and download the available calibration data cubes. Make sure to select one for the correct system and a date that is close to the acquisition date of your data. The `reference material` should be selected to match the material that was imaged in your reference image cube (usually Water).")
+        self.setToolTip("The fact that some light captured by the camera is scattered off surfaces inside the objective without ever reaching the sample means\n"
+                        "that the light intensity captured by the camera is not proportional to the reflectance of the sample. This extra reflectance varies\n"
+                        "spatially and spectrally and must be subtracted from our data in order for the analysis to be accurate. Calibration measurements of\n"
+                        "the extra reflectance are periodically uploaded to a google drive account which this software can download from. Click the folder icon\n"
+                        "to view and download the available calibration data cubes. Make sure to select one for the correct system and a date that is close to\n"
+                        "the acquisition date of your data. The `reference material` should be selected to match the material that was imaged in your reference\n"
+                        "image cube (usually Water).")
         layout = QVBoxLayout()
         layout.setContentsMargins(5, 1, 5, 5)
         rsubLabel = QLabel("R Subtraction")
@@ -41,7 +47,6 @@ class ExtraReflectanceSelector(QGroupBox):
         refMatLabel = QLabel("Reference Material")
         self.refMaterialCombo = QHComboBox()
         self.refMaterialCombo.addItems([k.name for k in reflectanceHelper.materialFiles.keys() if k.name != 'Glass'])
-        self.refMaterialCombo.addItem("Ignore")
         naLabel = QLabel("Numerical Aperture")
         self.numericalAperture = QHDoubleSpinBox()
         self.numericalAperture.setRange(0, 2)
@@ -80,13 +85,13 @@ class ExtraReflectanceSelector(QGroupBox):
             erId = self.ERExplorer.getSelectedId()
         self.numericalAperture.clearFocus() #This should prevent an error where the value that is saved doesn't match what is actually typed in when the keyboard is still focused on the spinbox.
         numericalAperture = self.numericalAperture.value()
-        refMaterial = None if self.refMaterialCombo.currentText() == "Ignore" else Material[self.refMaterialCombo.currentText()]
+        refMaterial = Material[self.refMaterialCombo.currentText()]
         return erId, refMaterial, numericalAperture
 
     def loadFromSettings(self, numericalAperture: float, referenceMaterial: Material, extraReflectanceId: str):
         if extraReflectanceId is not None:
             self.ERExplorer.setSelection(extraReflectanceId)
-        if referenceMaterial is None:
+        if referenceMaterial is None: #Even though choosing a refereneMaterial of None is no longer an option, it was in the past, we still support loading these settings.
             self.refMaterialCombo.setCurrentText("Ignore")
         else:
             self.refMaterialCombo.setCurrentIndex(self.refMaterialCombo.findText(referenceMaterial.name))

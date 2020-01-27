@@ -1,3 +1,5 @@
+from typing import Union
+
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QWidget, QCheckBox, QFrame, QScrollArea, QGridLayout, QSizePolicy, QLayout
 
@@ -53,7 +55,7 @@ class CollapsibleSection(QWidget):
     def checkState(self):
         return self._toggleButton.checkState()
 
-    def setCheckState(self, state: bool):
+    def setCheckState(self, state: Union[bool, int]):
         self._toggleButton.setCheckState(state)
 
     def _setLayout(self, contentLayout: QLayout):

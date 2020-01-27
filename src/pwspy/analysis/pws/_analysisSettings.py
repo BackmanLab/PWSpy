@@ -17,6 +17,7 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
     autoCorrStopIndex: int
     autoCorrMinSub: bool  # Determines if the autocorrelation should have it's minimum subtracted from it before processing. These is mathematically nonsense but is needed if the autocorrelation has negative values in it.
     numericalAperture: float
+    relativeUnits: bool #determines if reflectance (and therefore the other parameters) should be calculated in absolute units of reflectance or just relative to the reflectance of the reference image.
 
     FileSuffix = 'analysis'
 

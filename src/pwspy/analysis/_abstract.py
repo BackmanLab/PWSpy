@@ -2,13 +2,30 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 import json
 import os.path as osp
-from typing import List, Optional
+from typing import List, Optional, Type
 import h5py
 import numpy as np
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ICBase
 
+
+class AbstractAnalysisGroup(ABC):
+    """This class is simply used to group together analysis classes that are compatible with eachother."""
+    @staticmethod
+    @abstractmethod
+    def settingsClass() -> Type[AbstractAnalysisSettings]:
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def resultsClass() -> Type[AbstractAnalysisResults]:
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def analysisClass() -> Type[AbstractAnalysis]:
+        pass
 
 class AbstractAnalysisSettings(ABC):
     """This abstract class lays out the basic skeleton of what an PWSAnalysisSettings class should implement."""

@@ -18,14 +18,16 @@ import pandas as pd
 
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import ImCube, ExtraReflectanceCube
+    from pwspy.dataTypes import ImCube, ExtraReflectanceCube, KCube
 
 
 class PWSAnalysis(AbstractAnalysis):
-    """The standard PWS analysis routine. Initialize and then `run` for as many different ImCubes as you want."""
+    """The standard PWS analysis routine. Initialize and then `run` for as many different ImCubes as you want.
+    For a given set of settings and reference you only need to instantiate one instance of this class. You can then perform `run`
+    on as many data cubes as you want."""
     def __init__(self, settings: PWSAnalysisSettings, ref: ImCube, extraReflectance: ExtraReflectanceCube):
         from pwspy.dataTypes import ExtraReflectionCube, ExtraReflectanceCube
-        assert ref.isCorrected()
+        assert ref.isCorrected(), "Before attempting to analyze using this reference make sure that it has had camera darkcounts and non-linearity corrected for."
         super().__init__(settings)
         ref.normalizeByExposure()
         if ref.metadata.pixelSizeUm is not None: #Only works if pixel size was saved in the metadata.
@@ -45,7 +47,8 @@ class PWSAnalysis(AbstractAnalysis):
                 print(f"Warning: The numerical aperture of your analysis does not match the NA of the Extra Reflectance Calibration. Calibration File NA: {extraReflectance.metadata.numericalAperture}. PWSAnalysis NA: {settings.numericalAperture}.")
             Iextra = ExtraReflectionCube.create(extraReflectance, theoryR, ref) #Convert from reflectance to predicted counts/ms.
         ref.subtractExtraReflection(Iextra)  # remove the extra reflection from our data#
-        ref = ref / theoryR[None, None, :]  # now when we normalize by our reference we will get a result in units of physical reflectance rather than arbitrary units.
+        if not settings.relativeUnits:
+            ref = ref / theoryR[None, None, :]  # now when we normalize by our reference we will get a result in units of physical reflectance rather than arbitrary units.
         self.ref = ref
         self.extraReflection = Iextra
 
