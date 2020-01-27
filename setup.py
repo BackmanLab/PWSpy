@@ -5,16 +5,21 @@ Created on Sat Feb  9 20:14:25 2019
 @author: Nick Anthony
 """
 from setuptools import setup, find_packages
-import os.path as osp
+import os
 
-with open(osp.join(osp.split(__file__)[0], 'src', 'pwspy', '_version'), 'r') as f: #Read the version number from the _version file. this file is updated by our build script.
-    version = str(f.readline())
+pwspydir = os.path.join(os.path.split(__file__)[0], 'src', 'pwspy')
+
+
+with open(os.path.join(pwspydir, '_version'), 'r') as f:
+    version = f.readline()
 
 setup(name='pwspy',
       version=version,
       description='A framework for working with Partial Wave Spectroscopy files.',
       author='Nick Anthony',
       author_email='nicholas.anthony@northwestern.edu',
+      url='https://bitbucket.org/backmanlab/pwspython/src/master/',
+      python_requires='>3.7',
       install_requires=['numpy',
                         'scipy',
                         'matplotlib',

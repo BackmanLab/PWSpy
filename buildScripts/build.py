@@ -2,34 +2,40 @@ from git import Repo
 import os
 import shutil
 import subprocess
-import argparse
-"""This builds the pwpsy conda package and saves it to `outputDir`
+"""This builds the pwpsy conda package and saves it to `build`
 It should be run from the base conda env."""
 
-parser = argparse.ArgumentParser(description="Build `pwspy` as a conda package and save it to a specified directory along with some useful installation scripts.")
-parser.add_argument("outputDirectory", type=str, help="The directory that the built conda package should be saved to.")
-args = parser.parse_args()
-outputDir = args.outputDirectory
-print(outputDir)
-assert os.path.isdir(outputDir), f"Error: The directory, {outputDir}, does not exist."
-
 buildScriptDir = os.path.dirname(os.path.abspath(__file__)) #Location of build scripts
-buildDir = os.path.split(buildScriptDir)[0] #Parent directory of project.
+rootDir = os.path.split(buildScriptDir)[0] #Parent directory of project.
+buildDir = os.path.join(rootDir, 'build')
 
 # Set the version number of the package. this should be shared by the package itself, the setup.py file, and the conda package `yaml`
-repo = Repo(buildDir)
+repo = Repo(rootDir)
 version = repo.git.describe('--tags') #Get the output of the command `git describe --tags` serves as a good version number
-pwspydir = os.path.join(repo.working_tree_dir, 'src', 'pwspy')
-with open(os.path.join(pwspydir, '_version'), 'w') as f: #Overwrite the version file
+with open(os.path.join(rootDir, 'src', '_version'), 'w') as f: #Overwrite the version file
     f.write(version)
 print(f"Saved version, {version}, to the `_version` file.")
 
+
+#Clean
+if os.path.exists(buildDir):
+    shutil.rmtree(buildDir)
+os.mkdir(buildDir)
+
 # Build and save to the outputDirectory
-proc = subprocess.Popen(f"conda-build {buildDir} --output-folder {outputDir}", stdin=None, stderr=None)
+proc = subprocess.Popen(f"conda-build {rootDir} --output-folder {buildDir} -c conda-forge", stdout=None, stderr=subprocess.PIPE)
 print("Waiting for conda-build")
 proc.wait()
-result, error = proc.communicate()
+result, error = proc.communicate() #Unfortunately conda-build returns errors in STDERR even if the build succeeds.
+if proc.returncode != 0:
+    raise OSError(error.decode())
+else:
+    print("Success")
+    
+#Upload to Anaconda
+#The user can enable conda upload in order to automatically do this after build.
+    
 
 #Copy the other scripts
 for fname in ['install Windows.bat', 'Run Analysis Windows.bat', 'Run Analysis Mac.sh', 'install Mac.sh']:
-    shutil.copyfile(os.path.join(buildScriptDir, fname), os.path.join(outputDir, fname))
+    shutil.copyfile(os.path.join(buildScriptDir, fname), os.path.join(buildDir, fname))
