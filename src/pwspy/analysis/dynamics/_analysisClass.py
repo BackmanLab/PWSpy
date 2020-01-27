@@ -4,6 +4,7 @@ from ._analysisSettings import DynamicsAnalysisSettings
 from pwspy.analysis import warnings
 from pwspy.analysis._abstract import AbstractAnalysis
 import numpy as np
+import pandas as pd
 from typing import Tuple, List
 from pwspy.utility.reflection import reflectanceHelper
 from pwspy.moduleConsts import Material
@@ -21,7 +22,7 @@ class DynamicsAnalysis(AbstractAnalysis):
         if ref.metadata.pixelSizeUm is not None:  # Only works if pixel size was saved in the metadata.
             ref.filterDust(.75)  # Apply a blur to filter out dust particles. This is in microns. I'm not sure if this is the optimal value.
         if settings.referenceMaterial is None:
-            theoryR = 1  # Having this as 1 effectively ignores it.
+            theoryR = pd.Series(np.ones((len(ref.times),)), index=ref.times) # Having this as all ones effectively ignores it.
             print("Warning: DynamicsAnalysis ignoring reference material correction")
         else:
             theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, wavelengths=ref.metadata.wavelength, NA=settings.numericalAperture)
@@ -35,7 +36,7 @@ class DynamicsAnalysis(AbstractAnalysis):
             I0 = ref.data.mean(axis=2) / (float(theoryR) + extraReflectance.data[:, :, idx]) #  I0 is the intensity of the illumination source, reconstructed in units of `counts`. this is an inversion of our assumption that reference = I0*(referenceReflectance + extraReflectance)
             Iextra = I0 * extraReflectance.data[:, :, idx] #  Convert from reflectance to predicted counts/ms.
         ref.subtractExtraReflection(Iextra)  # remove the extra reflection from our data#
-        if settings.relativeUnits:
+        if not settings.relativeUnits:
             ref = ref / theoryR[None, None, :]  # now when we normalize by our reference we will get a result in units of physical reflectance rather than arbitrary units.
 
         self.refMean = ref.data.mean(axis=2)
