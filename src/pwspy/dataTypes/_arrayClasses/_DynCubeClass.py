@@ -31,6 +31,8 @@ class DynCube(ICRawBase):
     def fromMetadata(cls, meta: DynMetaData, lock: mp.Lock = None) -> DynCube:
         if meta.fileFormat == DynMetaData.FileFormats.Tiff:
             return cls.fromTiff(meta.filePath, metadata=meta, lock=lock)
+        elif meta.fileFormat == DynMetaData.FileFormats.RawBinary:
+            return cls.fromOldPWS(meta.filePath, metadata=meta, lock=lock)
         elif meta.fileFormat is None:
             return cls.loadAny(meta.filePath, metadata=meta, lock=lock)
         else:
