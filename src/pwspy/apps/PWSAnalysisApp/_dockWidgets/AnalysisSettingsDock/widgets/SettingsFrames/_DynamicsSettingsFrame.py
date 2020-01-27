@@ -64,7 +64,7 @@ class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
         height = 100  # give this much excess room.
         height += self.hardwareCorrections.height()
         height += self.extraReflection.height()
-        height += self.scaling
+        height += self.scaling.height()
         self._frame.setFixedHeight(height)
 
     @property
