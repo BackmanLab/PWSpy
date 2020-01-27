@@ -41,7 +41,29 @@ class DynCube(ICRawBase):
         try:
             return DynCube.fromTiff(directory, metadata=metadata, lock=lock)
         except:
-            raise OSError(f"Could not find a valid PWS image cube file at {directory}.")
+            try:
+                return DynCube.fromOldPWS(directory, metadata=metadata, lock=lock)
+            except:
+                raise OSError(f"Could not find a valid PWS image cube file at {directory}.")
+
+    @classmethod
+    def fromOldPWS(cls, directory, metadata: DynMetaData = None,  lock: mp.Lock = None):
+        """Loads from the file format that was saved by the all-matlab version of the Basis acquisition code.
+        Data was saved in raw binary to a file called `image_cube`. Some metadata was saved to .mat files called
+        `info2` and `info3`."""
+        if lock is not None:
+            lock.acquire()
+        try:
+            if metadata is None:
+                metadata = DynMetaData.fromOldPWS(directory)
+            with open(os.path.join(directory, 'image_cube'), 'rb') as f:
+                data = np.frombuffer(f.read(), dtype=np.uint16)
+            data = data.reshape((metadata._dict['imgHeight'], metadata._dict['imgWidth'], len(metadata.times)), order='F')
+        finally:
+            if lock is not None:
+                lock.release()
+        data = data.copy(order='C')
+        return cls(data, metadata)
 
     @classmethod
     def fromTiff(cls, directory, metadata: DynMetaData = None, lock: mp.Lock = None):

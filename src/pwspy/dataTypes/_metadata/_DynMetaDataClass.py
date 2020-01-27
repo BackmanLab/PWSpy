@@ -8,6 +8,7 @@ import tifffile as tf
 from pwspy.dataTypes import _jsonSchemasPath
 import numpy as np
 import typing
+import scipy.io as spio
 
 from ...analysis.dynamics import DynamicsAnalysisResults
 
@@ -18,6 +19,7 @@ if typing.TYPE_CHECKING:
 class DynMetaData(AnalysisManagerMetaDataBase):
     class FileFormats(Enum):
         Tiff = auto()
+        RawBinary = auto()
 
     @staticmethod
     def getAnalysisResultsClass(): return DynamicsAnalysisResults
@@ -45,6 +47,39 @@ class DynMetaData(AnalysisManagerMetaDataBase):
     @property
     def times(self) -> Tuple[float, ...]:
         return self._dict['times']
+
+    @classmethod
+    def fromOldPWS(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> DynMetaData:
+        """Loads old dynamics cubes which were saved the same as old pws cubes. a raw binary file with some metadata saved in random .mat files. Does not support
+        automatic detection of binning, pixel size, camera dark counts, system name."""
+        if lock is not None:
+            lock.acquire()
+        try:
+            info2 = list(spio.loadmat(os.path.join(directory, 'info2.mat'))['info2'].squeeze())
+            info3 = list(spio.loadmat(os.path.join(directory, 'info3.mat'))['info3'].squeeze())
+            wv = list(spio.loadmat(os.path.join(directory, 'WV.mat'))['WV'].squeeze())
+            wv = [int(i) for i in wv]  # We will have issues saving later if these are numpy int types.
+            assert all([i == wv[0] for i in wv]), "The wavelengths of the dynamics cube are not all identical."
+            md = {
+                #RequiredMetadata
+                'exposure': info2[3],
+                'time': '{:d}-{:d}-{:d} {:d}:{:d}:{:d}'.format(
+                    *[int(i) for i in [info3[8], info3[7], info3[6], info3[9], info3[10], info3[11]]]),
+                'system': str(info3[0]),
+                'binning': None,
+                'pixelSizeUm': None,
+                'wavelength': wv[0],
+                'times': (i*info2[3] for i in range(len(wv))),  # We don't have any record of the times so we just have to assume it matches exactly with the exposure time, this is in milliseconds.
+                #Extra metadata
+                'startWv': info2[0], 'stepWv': info2[1], 'stopWv': info2[2],
+                'systemId': info3[0],
+                'imgHeight': int(info3[2]), 'imgWidth': int(info3[3]), 'wavelengths': wv
+                }
+        finally:
+            if lock is not None:
+                lock.release()
+        return cls(md, filePath=directory, fileFormat=DynMetaData.FileFormats.RawBinary, acquisitionDirectory=acquisitionDirectory)
+
 
     @classmethod
     def fromTiff(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None):
