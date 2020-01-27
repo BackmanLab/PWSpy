@@ -65,6 +65,14 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
         self._layout.addWidget(self.presets, row, 0, 1, 4)
         row += 1
 
+        '''Use relative or absolute units of reflectance'''
+        self.relativeUnits = QCheckBox("Use Relative Units", self)
+        self.relativeUnits.setToolTip("If checked then reflectance (and therefore all other parameters) will be scaled such that any reflectance matching that "
+                                      "of the reference image will be 1. If left unchecked then the theoretical reflectance of the `Reference Material` will "
+                                      "be used to scale reflectance to match the actual physical reflectance of the sample.")
+        self._layout.addWidget(self.relativeUnits, row, 0, 1, 4)
+        row += 1
+
         '''Hardwarecorrections'''
         self.hardwareCorrections = HardwareCorrections(self)
         self.hardwareCorrections.stateChanged.connect(self._updateSize)
@@ -166,6 +174,7 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
     def _updateSize(self):
         height = 100  # give this much excess room.
         height += self.presets.height()
+        height += self.relativeUnits.height()
         height += self.hardwareCorrections.height()
         height += self.extraReflection.height()
         height += self.signalPrep.height()
@@ -173,7 +182,6 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
         height += self.advanced.height()
         self._frame.setFixedHeight(height)
 
-    # noinspection PyTypeChecker
     def loadFromSettings(self, settings: PWSAnalysisSettings):
         self.filterOrder.setValue(settings.filterOrder)
         self.filterCutoff.setValue(settings.filterCutoff)
@@ -184,6 +192,7 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
         self.advanced.setCheckState(2 if settings.skipAdvanced else 0)
         self.autoCorrStopIndex.setValue(settings.autoCorrStopIndex)
         self.minSubCheckBox.setCheckState(2 if settings.autoCorrMinSub else 0)
+        self.relativeUnits.setCheckState(2 if settings.relativeUnits else 0)
 
     def loadCameraCorrection(self, camCorr: Optional[CameraCorrection] = None):
         self.hardwareCorrections.loadCameraCorrection(camCorr)
@@ -200,7 +209,8 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
                                    skipAdvanced=self.advanced.checkState() != 0,
                                    autoCorrMinSub=self.minSubCheckBox.checkState() != 0,
                                    autoCorrStopIndex=self.autoCorrStopIndex.value(),
-                                   numericalAperture=numericalAperture)
+                                   numericalAperture=numericalAperture,
+                                   relativeUnits=self.relativeUnits.checkState() != 0)
 
     def getCameraCorrection(self) -> CameraCorrection:
         return self.hardwareCorrections.getCameraCorrection()
