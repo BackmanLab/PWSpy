@@ -172,7 +172,7 @@ class AnalysisManager(QtCore.QObject):
         def run(self):
             try:
                 self.warnings = loadAndProcess(self.cellMetas, processorFunc=self._process, initArgs=[self.analysis, self.anName, self.cameraCorrection],
-                                     parallel=self.parallel, initializer=self._initializer, maxProcesses=3) # Returns a list of Tuples, each tuple containing a list of warnings and the ICmetadata to go with it.
+                                     parallel=self.parallel, initializer=self._initializer) # Returns a list of Tuples, each tuple containing a list of warnings and the ICmetadata to go with it.
             except Exception as e:
                 import traceback
                 trace = traceback.format_exc()
