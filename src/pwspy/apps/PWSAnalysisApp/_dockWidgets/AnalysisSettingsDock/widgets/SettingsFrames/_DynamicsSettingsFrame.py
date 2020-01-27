@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Optional
 
 from PyQt5 import QtCore, QtGui
-from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel
+from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupBox, QHBoxLayout, QCheckBox
 
 from pwspy.analysis.dynamics._analysisSettings import DynamicsAnalysisSettings
 from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames._AbstractSettingsFrame import AbstractSettingsFrame
@@ -41,6 +41,18 @@ class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
 
         self.extraReflection = ExtraReflectanceSelector(self, erManager)
         self._layout.addWidget(self.extraReflection, row, 0, 1, 4)
+        row += 1
+
+        '''Use relative or absolute units of reflectance'''
+        self.scaling = QGroupBox("Scaling")
+        self.scaling.setLayout(QHBoxLayout())
+        self.scaling.layout().setContentsMargins(2, 2, 2, 5)
+        self.relativeUnits = QCheckBox("Use Relative Units", self)
+        self.relativeUnits.setToolTip("If checked then reflectance (and therefore all other parameters) will be scaled such that any reflectance matching that\n"
+                                      "of the reference image will be 1. If left unchecked then the `Reference Material` will be used to scale reflectance to\n"
+                                      "match the actual physical reflectance of the sample.")
+        self.scaling.layout().addWidget(self.relativeUnits)
+        self._layout.addWidget(self.scaling, row, 0, 1, 4)
 
         self._updateSize()
 
@@ -52,6 +64,7 @@ class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
         height = 100  # give this much excess room.
         height += self.hardwareCorrections.height()
         height += self.extraReflection.height()
+        height += self.scaling
         self._frame.setFixedHeight(height)
 
     @property
@@ -60,6 +73,7 @@ class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
 
     def loadFromSettings(self, settings: DynamicsAnalysisSettings):
         self.extraReflection.loadFromSettings(settings.numericalAperture, settings.referenceMaterial, settings.extraReflectanceId)
+        self.relativeUnits.setCheckState(2 if settings.relativeUnits else 0)
 
     def loadCameraCorrection(self, camCorr: Optional[CameraCorrection] = None):
         self.hardwareCorrections.loadCameraCorrection(camCorr)
@@ -68,7 +82,9 @@ class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
         erId, refMaterial, numericalAperture = self.extraReflection.getSettings()
         return DynamicsAnalysisSettings(extraReflectanceId=erId,
                                 referenceMaterial=refMaterial,
-                                numericalAperture=numericalAperture)
+                                numericalAperture=numericalAperture,
+                                relativeUnits=self.relativeUnits.checkState() != 0)
 
     def getCameraCorrection(self) -> CameraCorrection:
         return self.hardwareCorrections.getCameraCorrection()
+    

@@ -9,6 +9,7 @@ class DynamicsAnalysisSettings(AbstractAnalysisSettings):
     extraReflectanceId: str
     referenceMaterial: Material
     numericalAperture: float
+    relativeUnits: bool
 
     FileSuffix = "dynAnalysis"
 
