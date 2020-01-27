@@ -9,10 +9,9 @@ from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.Setting
     QHSpinBox, QHDoubleSpinBox, VerticallyCompressedWidget
 
 if typing.TYPE_CHECKING:
-    from pwspy.apps.sharedWidgets.extraReflectionManager.manager import ERManager
+    from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 
 from PyQt5 import QtCore, QtGui
-from PyQt5.QtGui import QValidator
 from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupBox, QHBoxLayout, QWidget, QRadioButton, \
     QFrame, QCheckBox
 
@@ -65,14 +64,6 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
         self._layout.addWidget(self.presets, row, 0, 1, 4)
         row += 1
 
-        '''Use relative or absolute units of reflectance'''
-        self.relativeUnits = QCheckBox("Use Relative Units", self)
-        self.relativeUnits.setToolTip("If checked then reflectance (and therefore all other parameters) will be scaled such that any reflectance matching that "
-                                      "of the reference image will be 1. If left unchecked then the theoretical reflectance of the `Reference Material` will "
-                                      "be used to scale reflectance to match the actual physical reflectance of the sample.")
-        self._layout.addWidget(self.relativeUnits, row, 0, 1, 4)
-        row += 1
-
         '''Hardwarecorrections'''
         self.hardwareCorrections = HardwareCorrections(self)
         self.hardwareCorrections.stateChanged.connect(self._updateSize)
@@ -84,10 +75,19 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
         self._layout.addWidget(self.extraReflection, row, 0, 1, 4)
         row += 1
 
+        '''Use relative or absolute units of reflectance'''
+        self.relativeUnits = QCheckBox("Use Relative Units", self)
+        self.relativeUnits.setToolTip("If checked then reflectance (and therefore all other parameters) will be scaled such that any reflectance matching that\n"
+                                      "of the reference image will be 1. If left unchecked then the `Reference Material` will be used to scale reflectance to\n"
+                                      "match the actual physical reflectance of the sample.")
+        self._layout.addWidget(self.relativeUnits, row, 0, 1, 4)
+        row += 1
+
         '''SignalPreparations'''
         self.signalPrep = QGroupBox("Signal Prep")
         self.signalPrep.setFixedSize(175, 75)
-        self.signalPrep.setToolTip("In order to reduce the effects of measurement noise we filter out the high frequencies from our signal. We do this using a Buttersworth low-pass filter. Best to stick with the defaults on this one.")
+        self.signalPrep.setToolTip("In order to reduce the effects of measurement noise we filter out the high frequencies from our signal. We do this using a\n"
+                                   "Buttersworth low-pass filter. Best to stick with the defaults on this one.")
         layout = QGridLayout()
         layout.setContentsMargins(5, 1, 5, 5)
         _ = layout.addWidget
@@ -174,9 +174,9 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
     def _updateSize(self):
         height = 100  # give this much excess room.
         height += self.presets.height()
-        height += self.relativeUnits.height()
         height += self.hardwareCorrections.height()
         height += self.extraReflection.height()
+        height += self.relativeUnits.height()
         height += self.signalPrep.height()
         height += self.polySub.height()
         height += self.advanced.height()
