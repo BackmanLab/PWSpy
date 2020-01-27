@@ -12,18 +12,18 @@ if typing.TYPE_CHECKING:
 
 class AbstractAnalysisGroup(ABC):
     """This class is simply used to group together analysis classes that are compatible with eachother."""
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def settingsClass() -> Type[AbstractAnalysisSettings]:
         pass
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def resultsClass() -> Type[AbstractAnalysisResults]:
         pass
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def analysisClass() -> Type[AbstractAnalysis]:
         pass
 
