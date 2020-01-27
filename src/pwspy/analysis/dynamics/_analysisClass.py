@@ -68,7 +68,7 @@ class DynamicsAnalysis(AbstractAnalysis):
         ac[ac <= 0] = 1e-323  # Before taking the log of the autocorrelation, zero values must be modified to prevent outputs of "inf" or "-inf".
         logac = np.log(ac)
 
-        dt = cube.times[1] - cube.times[0]
+        dt = (cube.times[1] - cube.times[-1]) / (len(cube.time) - 1)
         k = (self.n_medium * 2 * np.pi) / cube.metadata.wavelength
         val = logac / (dt * 4 * k ** 2)
         d_slope = -(val[:, :, 1] - val[:, :, 0]) #Get the slope
