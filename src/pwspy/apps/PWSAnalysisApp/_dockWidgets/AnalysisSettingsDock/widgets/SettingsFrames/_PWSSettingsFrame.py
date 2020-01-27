@@ -76,11 +76,15 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
         row += 1
 
         '''Use relative or absolute units of reflectance'''
+        self.scaling = QGroupBox("Scaling")
+        self.scaling.setLayout(QHBoxLayout())
+        self.scaling.layout().setContentsMargins(0, 0, 0, 5)
         self.relativeUnits = QCheckBox("Use Relative Units", self)
         self.relativeUnits.setToolTip("If checked then reflectance (and therefore all other parameters) will be scaled such that any reflectance matching that\n"
                                       "of the reference image will be 1. If left unchecked then the `Reference Material` will be used to scale reflectance to\n"
                                       "match the actual physical reflectance of the sample.")
-        self._layout.addWidget(self.relativeUnits, row, 0, 1, 4)
+        self.scaling.layout().addWidget(self.relativeUnits)
+        self._layout.addWidget(self.scaling, row, 0, 1, 4)
         row += 1
 
         '''SignalPreparations'''
@@ -176,7 +180,7 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
         height += self.presets.height()
         height += self.hardwareCorrections.height()
         height += self.extraReflection.height()
-        height += self.relativeUnits.height()
+        height += self.scaling.height()
         height += self.signalPrep.height()
         height += self.polySub.height()
         height += self.advanced.height()
