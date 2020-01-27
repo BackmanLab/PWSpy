@@ -87,4 +87,3 @@ class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
 
     def getCameraCorrection(self) -> CameraCorrection:
         return self.hardwareCorrections.getCameraCorrection()
-    
