@@ -40,6 +40,7 @@ class DynamicsAnalysis(AbstractAnalysis):
             ref = ref / theoryR[None, None, :]  # now when we normalize by our reference we will get a result in units of physical reflectance rather than arbitrary units.
 
         self.refMean = ref.data.mean(axis=2)
+        ref.normalizeByReference(self.refMean) #We normalize so that the average is 1. This is for scaling purposes with the AC. Seems like the AC should be scale independent though, not sure.
         self.refAc = ref.getAutocorrelation()
         self.refTag = ref.metadata.idTag
         self.erTag = extraReflectance.metadata.idTag if extraReflectance is not None else None
@@ -53,6 +54,7 @@ class DynamicsAnalysis(AbstractAnalysis):
         cube.normalizeByExposure()
         cube.subtractExtraReflection(self.extraReflection)
         cube.normalizeByReference(self.refMean)
+
         cubeAc = cube.getAutocorrelation()
         rms_t_squared = cubeAc[:, :, 0] - self.refAc[:, :, 0].mean() # The rms^2 noise of the reference averaged over the whole image.
         # If we didn't care about noise subtraction we could get rms_t as just `cube.data.std(axis=2)`
