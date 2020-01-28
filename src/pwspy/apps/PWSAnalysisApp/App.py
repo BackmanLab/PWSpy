@@ -11,7 +11,7 @@ import shutil
 import psutil
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QMessageBox, QSplashScreen
-
+import pwspy.__version__ as version
 from pwspy.apps.PWSAnalysisApp._utilities import BlinderDialog, RoiConverter
 from pwspy.dataTypes import ICMetaData, AcqDir
 from ._dockWidgets.ResultsTableDock import ConglomerateCompilerResults
@@ -30,11 +30,11 @@ if typing.TYPE_CHECKING:
     from pwspy.analysis.compilation import PWSRoiCompilationResults
     from pwspy.analysis.warnings import AnalysisWarning
 
-#TODO add relative R
+
 class PWSApp(QApplication):
     def __init__(self, args):
         super().__init__(args)
-        self.setApplicationName("PWS PWSAnalysis V2")
+        self.setApplicationName(f"PWS Analysis v{version.split('-')[0]}")
         splash = QSplashScreen(QPixmap(os.path.join(resources, 'pwsLogo.png')))
         splash.show()
         self._setupDataDirectories()
@@ -105,7 +105,7 @@ class PWSApp(QApplication):
         self.workingDirectory = directory
         self.window.cellSelector.updateFilters()
         #Change title
-        self.window.setWindowTitle(f'PWS PWSAnalysis v2 - {directory}')
+        self.window.setWindowTitle(f'{QApplication.instance().applicationName()} - {directory}')
         self.workingDirectory = directory
 
     def openBlindingDialog(self):

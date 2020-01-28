@@ -75,8 +75,8 @@ class DynamicsAnalysis(AbstractAnalysis):
 
         results = DynamicsAnalysisResults.create(meanReflectance=reflectance,
                                                  rms_t=np.sqrt(rms_t_squared),
-                                                 reflectance= cube,
-                                                 dSlope=d_slope,
+                                                 reflectance=cube,
+                                                 diffusion=d_slope,
                                                  settings=self.settings,
                                                  imCubeIdTag=cube.metadata.idTag,
                                                  referenceIdTag=self.refTag,

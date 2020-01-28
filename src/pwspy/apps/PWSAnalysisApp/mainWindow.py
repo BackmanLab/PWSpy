@@ -14,7 +14,7 @@ class PWSWindow(QMainWindow):
     def __init__(self, erManager: ERManager):
         QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
         super().__init__()
-        self.setWindowTitle('PWS PWSAnalysis v2')
+        self.setWindowTitle(QApplication.instance().applicationName())
         self.setWindowIcon(QtGui.QIcon(os.path.join(resources, 'cellLogo.png')))
         self.cellSelector = CellSelectorDock()
         self.analysisSettings = AnalysisSettingsDock(self.cellSelector, erManager)
