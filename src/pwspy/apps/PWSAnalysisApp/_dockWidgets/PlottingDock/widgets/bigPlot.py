@@ -83,8 +83,8 @@ class BigPlot(QWidget):
     def setImageData(self, data: np.ndarray):
         self.data = data
         self.im.set_data(data)
-        self.slider.setMax(self.data.max())
-        self.slider.setMin(self.data.min())
+        self.slider.setMax(np.nanmax(self.data))
+        self.slider.setMin(np.nanmin(self.data))
         self.canvas.draw_idle()
 
     def setMetadata(self, metadata: AcqDir):
@@ -191,8 +191,8 @@ class BigPlot(QWidget):
 
     def setSaturation(self):
         percentage = self.autoDlg.value
-        m = np.percentile(self.data, percentage)
-        M = np.percentile(self.data, 100 - percentage)
+        m = np.nanpercentile(self.data, percentage)
+        M = np.nanpercentile(self.data, 100 - percentage)
         self.slider.setStart(m)
         self.slider.setEnd(M)
 
