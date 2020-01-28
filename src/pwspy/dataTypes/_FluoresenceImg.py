@@ -23,9 +23,13 @@ class FluorescenceImage:
     @classmethod
     def fromMetadata(cls, md: FluorMetaData, lock: mp.Lock = None):
         path = os.path.join(md.filePath, FluorMetaData.FILENAME)
-        if lock is not None: lock.acquire()
-        try: img = tf.TiffFile(path)
-        finally: lock.release()
+        if lock is not None:
+            lock.acquire()
+        try:
+            img = tf.TiffFile(path)
+        finally:
+            if lock is not None:
+                lock.release()
         return cls(img.asarray(), md)
 
     def toTiff(self, directory: str):
