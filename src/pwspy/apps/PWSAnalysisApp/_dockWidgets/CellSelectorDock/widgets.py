@@ -110,12 +110,16 @@ class CellTableWidgetItem:
         """Set the number of roi's and analyses. Update the tooltips."""
         rois = self.acqDir.getRois()
         self.roiLabel.setNumber(len(rois))
+        anNumber = 0 #This is in case the next few statements evaluate to false.
+        anToolTip = ""
         if self.acqDir.pws is not None:
-            pwsAnalyses = self.acqDir.pws.getAnalyses()
-            self.anLabel.setNumber(len(pwsAnalyses))
-            self.anLabel.setToolTip(', '.join(pwsAnalyses))
-        else:
-            self.anLabel.setNumber(0)
+            anNumber += len(self.acqDir.pws.getAnalyses())
+            anToolTip += "PWS:" + ', '.join(self.acqDir.pws.getAnalyses())
+        if self.acqDir.dynamics is not None:
+            anNumber += len(self.acqDir.dynamics.getAnalyses())
+            anToolTip += "\nDYN:" + ', '.join(self.acqDir.dynamics.getAnalyses())
+        self.anLabel.setNumber(anNumber)
+        self.anLabel.setToolTip(anToolTip)
         if self.acqDir.getNotes() != '':
             self.notesButton.setStyleSheet('QPushButton { background-color: lightgreen;}')
         else:
