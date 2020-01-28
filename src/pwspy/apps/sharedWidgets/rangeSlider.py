@@ -1,4 +1,7 @@
 import sys, os
+from numbers import Number
+from typing import Tuple
+
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 __all__ = ['QRangeSlider']
@@ -31,8 +34,16 @@ QRangeSlider > QSplitter::handle:pressed {
 }
 """
 
-def scale(val, src, dst):
-    return float(((val - src[0]) / float(src[1]-src[0])) * (dst[1]-dst[0]) + dst[0])
+def scale(val: Number, src: Tuple[Number, Number], dst: Tuple[Number, Number]):
+    """src is a tuple containing the original minimum and maximum values.
+    dst is a tuple containing the new min and max values.
+    This function will return the value of val scaled from src to dst"""
+    if src[1] != src[0]: #These cases will result in a nan value.
+        return (dst[1] + dst[0])/2
+    elif dst[0] != dst[1]:
+        return dst[0]
+    else:
+        return float(((val - src[0]) / float(src[1]-src[0])) * (dst[1]-dst[0]) + dst[0])
 
 
 class Ui_Form(object):
