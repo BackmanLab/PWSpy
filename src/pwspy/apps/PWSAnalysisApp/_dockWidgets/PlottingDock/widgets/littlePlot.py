@@ -21,6 +21,7 @@ from pwspy.utility import PlotNd
 class LittlePlot(AnalysisPlotter, QWidget):
     def __init__(self, acquisition: AcqDir, analysis: ConglomerateAnalysisResults, title: str, text: str = None,
                  initialField=AnalysisPlotter.PlotFields.Thumbnail):
+        assert analysis is not None #The member of the conglomerateAnalysisResults can be None but the way this class is written requires that the object itself exists.
         AnalysisPlotter.__init__(self, acquisition, analysis)
         QWidget.__init__(self)
         self.setLayout(QVBoxLayout())

@@ -1,6 +1,6 @@
 from __future__ import annotations
 import typing
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from pwspy.analysis import warnings
 from pwspy.analysis.dynamics import DynamicsAnalysisResults
 from pwspy.analysis.pws import PWSAnalysisResults
@@ -31,7 +31,7 @@ class ConglomerateCompilerResults:
 
 
 class ConglomerateAnalysisResults:
-    def __init__(self, pws: PWSAnalysisResults, dyn: DynamicsAnalysisResults):
+    def __init__(self, pws: Optional[PWSAnalysisResults], dyn: Optional[DynamicsAnalysisResults]):
         self.pws = pws
         self.dyn = dyn
 

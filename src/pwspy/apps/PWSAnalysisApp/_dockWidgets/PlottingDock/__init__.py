@@ -13,6 +13,8 @@ from pwspy.utility.misc import profileDec
 from .widgets.littlePlot import LittlePlot
 import os
 
+from ..._utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
+
 
 class PlottingDock(QDockWidget):
     def __init__(self, selector: CellSelectorDock):
@@ -156,15 +158,22 @@ class PlottingDock(QDockWidget):
             plotsToAdd = []
             for cell in cells:
                 if analysisName.strip() == '': #No analysis name was entered. don't load an analysis, just the thumbnail
-                    plotsToAdd.append(LittlePlot(cell, None, f"{os.path.split(cell.filePath)[-1]}"))
+                    plotsToAdd.append(LittlePlot(cell, ConglomerateAnalysisResults(None, None), f"{os.path.split(cell.filePath)[-1]}"))
                     buttonState = 'partial'
                 else:
-                    if analysisName in cell.pws.getAnalyses():
-                        analysis = cell.pws.loadAnalysis(analysisName)
+                    dynAnalysis = pwsAnalysis = None
+                    if cell.pws is not None:
+                        if analysisName in cell.pws.getAnalyses():
+                            pwsAnalysis = cell.pws.loadAnalysis(analysisName)
+                    if cell.dynamics is not None:
+                        if analysisName in cell.dynamics.getAnalyses():
+                            dynAnalysis = cell.dynamics.loadAnalysis(analysisName)
+                    analysis = ConglomerateAnalysisResults(pwsAnalysis, dynAnalysis)
+                    if pwsAnalysis is None and dynAnalysis is None: #Specified analysis was not found, load a dummy widget
+                        plotsToAdd.append(LittlePlot(cell, ConglomerateAnalysisResults(None, None), f"{analysisName} {os.path.split(cell.filePath)[-1]}", "Analysis Not Found!"))
+                    else:
                         plotsToAdd.append(LittlePlot(cell, analysis, f"{analysisName} {os.path.split(cell.filePath)[-1]}"))
                         buttonState = 'true'
-                    else: #Specified analysis was not found, load a dummy widget
-                        plotsToAdd.append(LittlePlot(cell, None, f"{analysisName} {os.path.split(cell.filePath)[-1]}", "Analysis Not Found!"))
             self.addPlots(plotsToAdd)
             self.enableAnalysisPlottingButtons(buttonState)
         except Exception as e:
