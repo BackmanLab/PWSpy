@@ -1,11 +1,16 @@
+from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
 from ._analysisSettings import DynamicsAnalysisSettings
 from pwspy.moduleConsts import dateTimeFormat
-from pwspy.analysis._abstract import AbstractAnalysisResults, AbstractHDFAnalysisResults
+from pwspy.analysis._abstract import AbstractHDFAnalysisResults
 from pwspy.utility.misc import cached_property
 import numpy as np
+import typing
+if typing.TYPE_CHECKING:
+    from ...dataTypes import DynCube
+
 
 def getFromDict(func):
     """This decorator makes it so that the function will only be evaluated if self.file is not None.
@@ -25,7 +30,7 @@ def getFromDict(func):
 class DynamicsAnalysisResults(AbstractHDFAnalysisResults):
     @staticmethod
     def fields():
-        return ['meanReflectance', 'rms_t', 'dSlope', 'time', 'settings', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionIdTag']
+        return ['meanReflectance', 'reflectance', 'rms_t', 'dSlope', 'time', 'settings', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionIdTag']
 
     @staticmethod
     def name2FileName(name: str) -> str:
@@ -36,11 +41,12 @@ class DynamicsAnalysisResults(AbstractHDFAnalysisResults):
         return fileName.split('dynAnalysisResults_')[1][:-3]
 
     @classmethod
-    def create(cls, settings: DynamicsAnalysisSettings, meanReflectance: np.ndarray, rms_t: np.ndarray, dSlope: np.ndarray,
+    def create(cls, settings: DynamicsAnalysisSettings, meanReflectance: np.ndarray, rms_t: np.ndarray, reflectance: DynCube, dSlope: np.ndarray,
                 imCubeIdTag: str, referenceIdTag: str, extraReflectionIdTag: Optional[str]):
         #TODO check datatypes here
         d = {'time': datetime.now().strftime(dateTimeFormat),
             'meanReflectance': meanReflectance,
+            'reflectance': reflectance,
             'dSlope': dSlope,
             'rms_t': rms_t,
             'imCubeIdTag': imCubeIdTag,
@@ -65,6 +71,12 @@ class DynamicsAnalysisResults(AbstractHDFAnalysisResults):
     @getFromDict
     def settings(self) -> DynamicsAnalysisSettings:
         return DynamicsAnalysisSettings.fromJsonString(self.file['settings'])
+
+    @cached_property
+    @getFromDict
+    def reflectance(self) -> DynCube:
+        dset = self.file['reflectance']
+        return DynCube.fromHdfDataset(dset)
 
     @cached_property
     @getFromDict

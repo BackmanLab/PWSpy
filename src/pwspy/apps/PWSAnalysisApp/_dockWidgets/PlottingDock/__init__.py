@@ -1,3 +1,4 @@
+import traceback
 from typing import List
 
 from PyQt5 import QtCore
@@ -139,32 +140,36 @@ class PlottingDock(QDockWidget):
             raise ValueError("`enable` string not recognized.")
 
     def generatePlots(self, cells: List[AcqDir]):
-        self.cellMetas = cells
-        analysisName = self.anNameEdit.text()
-        #clear Plots
-        for i in self.plots:
-            self.scrollContents.layout().removeWidget(i)
-            i.deleteLater()
-        self.plots = []
-        if len(self.cellMetas) == 0:
-            messageBox = QMessageBox(self)
-            messageBox.information(self, "Oops!", "Please select the cells you would like to plot.")
-            messageBox.setFixedSize(500, 200)
-        buttonState = 'false'
-        plotsToAdd = []
-        for cell in cells:
-            if analysisName.strip() == '': #No analysis name was entered. don't load an analysis, just the thumbnail
-                plotsToAdd.append(LittlePlot(cell, None, f"{os.path.split(cell.filePath)[-1]}"))
-                buttonState = 'partial'
-            else:
-                if analysisName in cell.pws.getAnalyses():
-                    analysis = cell.pws.loadAnalysis(analysisName)
-                    plotsToAdd.append(LittlePlot(cell, analysis, f"{analysisName} {os.path.split(cell.filePath)[-1]}"))
-                    buttonState = 'true'
-                else: #Specified analysis was not found, load a dummy widget
-                    plotsToAdd.append(LittlePlot(cell, None, f"{analysisName} {os.path.split(cell.filePath)[-1]}", "PWSAnalysis Not Found!"))
-        self.addPlots(plotsToAdd)
-        self.enableAnalysisPlottingButtons(buttonState)
+        try:
+            self.cellMetas = cells
+            analysisName = self.anNameEdit.text()
+            #clear Plots
+            for i in self.plots:
+                self.scrollContents.layout().removeWidget(i)
+                i.deleteLater()
+            self.plots = []
+            if len(self.cellMetas) == 0:
+                messageBox = QMessageBox(self)
+                messageBox.information(self, "Oops!", "Please select the cells you would like to plot.")
+                messageBox.setFixedSize(500, 200)
+            buttonState = 'false'
+            plotsToAdd = []
+            for cell in cells:
+                if analysisName.strip() == '': #No analysis name was entered. don't load an analysis, just the thumbnail
+                    plotsToAdd.append(LittlePlot(cell, None, f"{os.path.split(cell.filePath)[-1]}"))
+                    buttonState = 'partial'
+                else:
+                    if analysisName in cell.pws.getAnalyses():
+                        analysis = cell.pws.loadAnalysis(analysisName)
+                        plotsToAdd.append(LittlePlot(cell, analysis, f"{analysisName} {os.path.split(cell.filePath)[-1]}"))
+                        buttonState = 'true'
+                    else: #Specified analysis was not found, load a dummy widget
+                        plotsToAdd.append(LittlePlot(cell, None, f"{analysisName} {os.path.split(cell.filePath)[-1]}", "Analysis Not Found!"))
+            self.addPlots(plotsToAdd)
+            self.enableAnalysisPlottingButtons(buttonState)
+        except Exception as e:
+            traceback.print_exc()
+            QMessageBox.information(self, "Error!", str(e))
 
     def handleButtons(self, button: QPushButton):
         if button != self._lastButton:

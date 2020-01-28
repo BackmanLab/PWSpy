@@ -48,7 +48,7 @@ class AnalysisViewer(AnalysisPlotter, QWidget):
         if self.analysis is not None:
             if 'reflectance' in self.analysis.file.keys(): #This is the normalized 3d data cube. needed to generate the opd.
                 items.append(_.OpdPeak)
-        if self.metadata.fluorescence is not None:
+        if self.acq.fluorescence is not None:
             items.append(_.Fluorescence)
         self.analysisCombo.addItems([i.name for i in items])
         if currField in [i.name for i in items]:

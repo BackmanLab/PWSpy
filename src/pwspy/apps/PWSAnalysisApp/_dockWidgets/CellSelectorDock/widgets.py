@@ -108,10 +108,12 @@ class CellTableWidgetItem:
 
     def refresh(self):
         """Set the number of roi's and analyses. Update the tooltips."""
-        self.roiLabel.setNumber(len(self.acqDir.getRois()))
+        rois = self.acqDir.getRois()
+        self.roiLabel.setNumber(len(rois))
         if self.acqDir.pws is not None:
-            self.anLabel.setNumber(len(self.acqDir.pws.getAnalyses()))
-            self.anLabel.setToolTip(', '.join(self.acqDir.pws.getAnalyses()))
+            pwsAnalyses = self.acqDir.pws.getAnalyses()
+            self.anLabel.setNumber(len(pwsAnalyses))
+            self.anLabel.setToolTip(', '.join(pwsAnalyses))
         else:
             self.anLabel.setNumber(0)
         if self.acqDir.getNotes() != '':
@@ -119,7 +121,7 @@ class CellTableWidgetItem:
         else:
             self.notesButton.setStyleSheet('QPushButton { background-color: lightgrey;}')
 
-        nameNums = [(name, num) for name, num, fformat in self.acqDir.getRois()]
+        nameNums = [(name, num) for name, num, fformat in rois]
         if len(nameNums) > 0:
             names = set(list(zip(*nameNums))[0])
             d = {name: [num for nname, num in nameNums if nname == name] for name in names}

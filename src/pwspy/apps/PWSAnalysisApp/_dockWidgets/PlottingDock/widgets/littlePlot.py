@@ -17,9 +17,9 @@ from pwspy.utility import PlotNd
 
 
 class LittlePlot(AnalysisPlotter, QWidget):
-    def __init__(self, metadata: AcqDir, analysis: PWSAnalysisResults, title: str, text: str = None,
+    def __init__(self, acquisition: AcqDir, analysis: PWSAnalysisResults, title: str, text: str = None,
                  initialField=AnalysisPlotter.PlotFields.Thumbnail):
-        AnalysisPlotter.__init__(self, metadata, analysis)
+        AnalysisPlotter.__init__(self, acquisition, analysis)
         QWidget.__init__(self)
         self.setLayout(QVBoxLayout())
         self.titleLabel = QLabel(title, self)
@@ -43,7 +43,7 @@ class LittlePlot(AnalysisPlotter, QWidget):
 
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
-            AnalysisViewer(metadata=self.metadata, analysisLoader=self.analysis, title=self.title, parent=self, initialField=self.analysisField)
+            AnalysisViewer(metadata=self.acq, analysisLoader=self.analysis, title=self.title, parent=self, initialField=self.analysisField)
 
     def changeData(self, field: AnalysisPlotter.PlotFields):
         AnalysisPlotter.changeData(self, field)
@@ -72,15 +72,15 @@ class LittlePlot(AnalysisPlotter, QWidget):
         menu.exec(self.mapToGlobal(point))
 
     def plotAn3d(self):
-        self.plotnd = PlotNd(self.analysis.reflectance.data, title=os.path.split(self.metadata.filePath)[-1],
+        self.plotnd = PlotNd(self.analysis.reflectance.data, title=os.path.split(self.acq.filePath)[-1],
                              names=('y', 'x', 'k'), extraDimIndices=[self.analysis.reflectance.wavenumbers])
 
     def plotRaw3d(self):
-        im = ImCube.fromMetadata(self.metadata.pws)
-        self.plotnd = PlotNd(im.data, title=os.path.split(self.metadata.filePath)[-1],
+        im = ImCube.fromMetadata(self.acq.pws)
+        self.plotnd = PlotNd(im.data, title=os.path.split(self.acq.filePath)[-1],
                              extraDimIndices=[im.wavelengths])
 
     def plotOpd3d(self):
         opd, opdIndex = self.analysis.opd
-        self.plotnd = PlotNd(opd, names=('y', 'x', '(um)'), title=os.path.split(self.metadata.filePath)[-1],
+        self.plotnd = PlotNd(opd, names=('y', 'x', '(um)'), title=os.path.split(self.acq.filePath)[-1],
                              extraDimIndices=[opdIndex])

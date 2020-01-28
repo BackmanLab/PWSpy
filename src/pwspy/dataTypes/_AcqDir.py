@@ -40,7 +40,10 @@ class AcqDir:
         try:
             return DynMetaData.fromTiff(os.path.join(self.filePath, 'Dynamics'), acquisitionDirectory=self)
         except:
-            return None
+            try:
+                return DynMetaData.fromOldPWS(self.filePath) #This is just for old acquisitions where they were saved in their own folder that was indistinguishable from a PWS acquisitison.
+            except:
+                return None
 
     @cached_property
     def fluorescence(self) -> FluorMetaData:

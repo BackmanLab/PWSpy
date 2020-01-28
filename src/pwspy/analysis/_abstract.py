@@ -11,6 +11,7 @@ if typing.TYPE_CHECKING:
 
 
 class AbstractAnalysisGroup(ABC):
+    #TODO these are pretty much unused. Get rid of them?
     """This class is simply used to group together analysis classes that are compatible with eachother."""
     @staticmethod
     @abstractmethod
@@ -131,7 +132,7 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
     def toHDF(self, directory: str, name: str):
         """Save the AnalysisResults object to an HDF file in `directory`. The name of the file will be determined by `name`. If you want to know what the full file name
         will be you can use this class's `_name2FileName` method."""
-        from pwspy.dataTypes import KCube #Need this for instance checking
+        from pwspy.dataTypes import ICBase #Need this for instance checking
         fileName = osp.join(directory, self.name2FileName(name))
         if osp.exists(fileName):
             raise OSError(f'{fileName} already exists.')
@@ -144,7 +145,7 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
                     v = v.toJsonString()
                 if isinstance(v, str):
                     hf.create_dataset(k, data=np.string_(v))  # h5py recommends encoding strings this way for compatability.
-                elif isinstance(v, KCube):
+                elif isinstance(v, ICBase):
                     hf = v.toFixedPointHdfDataset(hf, k)
                 elif isinstance(v, np.ndarray):
                     hf.create_dataset(k, data=v)
