@@ -247,6 +247,8 @@ class Roi:
             elif fformat == Roi.FileFormats.MAT:
                 for i in fileNames: #list in files
                     i = os.path.split(i)[-1]
+                    if len(i.split("_")) != 2:  # Some old data has files that are not ROIs but are named almost identically, this helps us avoid bugs with them.
+                        continue
                     num = int(i.split('_')[0][2:])
                     name = i.split('_')[1][:-4]
                     ret.append((name, num, Roi.FileFormats.MAT))

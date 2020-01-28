@@ -115,11 +115,13 @@ class CellTableWidgetItem:
         if self.acqDir.pws is not None:
             pwsAnalyses = self.acqDir.pws.getAnalyses()
             anNumber += len(pwsAnalyses)
-            anToolTip += "PWS:" + ', '.join(pwsAnalyses)
+            if len(pwsAnalyses) != 0:
+                anToolTip += "PWS:" + ', '.join(pwsAnalyses)
         if self.acqDir.dynamics is not None:
             dynAnalyses = self.acqDir.dynamics.getAnalyses()
             anNumber += len(dynAnalyses)
-            anToolTip += "\nDYN:" + ', '.join(dynAnalyses)
+            if len(dynAnalyses) != 0:
+                anToolTip += "\nDYN:" + ', '.join(dynAnalyses)
         self.anLabel.setNumber(anNumber)
         self.anLabel.setToolTip(anToolTip)
         if self.acqDir.getNotes() != '':

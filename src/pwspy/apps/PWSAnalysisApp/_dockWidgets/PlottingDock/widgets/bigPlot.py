@@ -1,5 +1,6 @@
 from __future__ import annotations
 import re
+import traceback
 
 import numpy as np
 from PyQt5 import QtCore
@@ -160,7 +161,11 @@ class BigPlot(QWidget):
         self.clearRois()
         for name, num, fformat in self.metadata.getRois():
             if re.fullmatch(pattern, name):
-                self.addRoi(self.metadata.loadRoi(name, num, fformat))
+                try:
+                    self.addRoi(self.metadata.loadRoi(name, num, fformat))
+                except Exception as e:
+                    print(f"Failed to load Roi with name: {name}, number: {num}, format: {fformat.name}")
+                    traceback.print_exc()
         self.canvas.draw_idle()
 
     def clearRois(self):
