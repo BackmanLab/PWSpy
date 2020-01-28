@@ -14,7 +14,7 @@ from ._abstract import AbstractAnalysisSettings, AbstractAnalysis, AbstractAnaly
 resources = os.path.join(os.path.split(__file__)[0], '_resources')
 defaultSettingsPath = os.path.join(resources, 'defaultAnalysisSettings')
 
-__all__ = ['AbstractAnalysisResults', 'AbstractAnalysis', 'AbstractAnalysisResults', 'resources', 'defaultSettingsPath']
+__all__ = ['AbstractAnalysisResults', 'AbstractAnalysis', 'AbstractAnalysisResults', 'resources', 'defaultSettingsPath', 'AnalysisTypes']
 
 
 class AnalysisTypes(Enum):

@@ -3,19 +3,18 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QWidget, QGridLayout, QComboBox
 from typing import Optional
 
+from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
 from pwspy.dataTypes import AcqDir
 
 from .widgets import AnalysisPlotter
 from .bigPlot import BigPlot
 import typing
-if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import ICMetaData
 from pwspy.analysis.pws import PWSAnalysisResults
 
 
 class AnalysisViewer(AnalysisPlotter, QWidget):
     """This class is a window that provides convenient viewing of a pws acquisition, analysis, and related images."""
-    def __init__(self, metadata: AcqDir, analysisLoader: Optional[PWSAnalysisResults], title: str, parent=None,
+    def __init__(self, metadata: AcqDir, analysisLoader: Optional[ConglomerateAnalysisResults], title: str, parent=None,
                  initialField=AnalysisPlotter.PlotFields.Thumbnail):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         AnalysisPlotter.__init__(self, metadata, analysisLoader)
@@ -41,12 +40,18 @@ class AnalysisViewer(AnalysisPlotter, QWidget):
         items = [_.Thumbnail]
         for i in [_.MeanReflectance, _.RMS, _.AutoCorrelationSlope, _.RSquared, _.Ld]:
             try:
-                if hasattr(self.analysis, i.value):  # This will raise a key error if the analysis object exists but the requested item is not found
+                if hasattr(self.analysis.pws, i.value[1]):  # This will raise a key error if the analysis object exists but the requested item is not found
                     items.append(i)
             except KeyError:
                 pass
-        if self.analysis is not None:
-            if 'reflectance' in self.analysis.file.keys(): #This is the normalized 3d data cube. needed to generate the opd.
+        for i in [_.RMS_t, _.Diffusion, _.DynamicsReflectance]:
+            try:
+                if hasattr(self.analysis.dyn, i.value[1]):  # This will raise a key error if the analysis object exists but the requested item is not found
+                    items.append(i)
+            except KeyError:
+                pass
+        if self.analysis.pws is not None:
+            if 'reflectance' in self.analysis.pws.file.keys(): #This is the normalized 3d data cube. needed to generate the opd.
                 items.append(_.OpdPeak)
         if self.acq.fluorescence is not None:
             items.append(_.Fluorescence)
@@ -68,7 +73,7 @@ class AnalysisViewer(AnalysisPlotter, QWidget):
         self.plotWidg.setImageData(self.data)
         self.plotWidg.setSaturation()
 
-    def setMetadata(self, md: AcqDir, analysis: Optional[PWSAnalysisResults] = None):
+    def setMetadata(self, md: AcqDir, analysis: Optional[ConglomerateAnalysisResults] = None):
         """Change this widget to display data for a different acquisition and optionally an analysis."""
         try:
             super().setMetadata(md, analysis)

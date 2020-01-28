@@ -13,6 +13,8 @@ if typing.TYPE_CHECKING:
     from pwspy.analysis.compilation.generic import GenericCompilerSettings, GenericRoiCompilationResults
     from pwspy.analysis.compilation.pws import PWSCompilerSettings, PWSRoiCompilationResults
 
+"""These utility classes are used to conveniently treat analysis objects of different types that belong together as a single object."""
+
 
 class ConglomerateCompilerSettings:
     def __init__(self, pwsSettings: PWSCompilerSettings, dynSettings: DynamicsCompilerSettings, genSettings: GenericCompilerSettings):

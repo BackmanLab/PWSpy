@@ -1,12 +1,12 @@
 from __future__ import annotations
-from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QTableWidgetItem, QFrame, QVBoxLayout, QCheckBox, \
-    QScrollArea, QPushButton, QLayout, QGridLayout, QAction, QLineEdit, QLabel, QSizePolicy
+from PyQt5.QtWidgets import QDockWidget, QWidget, QFrame, QVBoxLayout, QCheckBox, \
+    QScrollArea, QPushButton, QGridLayout, QLineEdit, QLabel
 from PyQt5 import QtCore
 
 from pwspy.analysis.compilation.dynamics import DynamicsCompilerSettings
 from pwspy.analysis.compilation.generic import GenericCompilerSettings
-from pwspy.analysis.compilation.pws import PWSRoiCompilationResults, PWSCompilerSettings
-from .other import ConglomerateCompilerResults, ConglomerateCompilerSettings
+from pwspy.analysis.compilation.pws import PWSCompilerSettings
+from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateCompilerResults, ConglomerateCompilerSettings
 from .widgets import ResultsTable, ResultsTableItem
 import typing
 if typing.TYPE_CHECKING:

@@ -30,7 +30,7 @@ def getFromDict(func):
 class DynamicsAnalysisResults(AbstractHDFAnalysisResults):
     @staticmethod
     def fields():
-        return ['meanReflectance', 'reflectance', 'rms_t', 'dSlope', 'time', 'settings', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionIdTag']
+        return ['meanReflectance', 'reflectance', 'rms_t', 'diffusion', 'time', 'settings', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionIdTag']
 
     @staticmethod
     def name2FileName(name: str) -> str:
@@ -41,13 +41,13 @@ class DynamicsAnalysisResults(AbstractHDFAnalysisResults):
         return fileName.split('dynAnalysisResults_')[1][:-3]
 
     @classmethod
-    def create(cls, settings: DynamicsAnalysisSettings, meanReflectance: np.ndarray, rms_t: np.ndarray, reflectance: DynCube, dSlope: np.ndarray,
+    def create(cls, settings: DynamicsAnalysisSettings, meanReflectance: np.ndarray, rms_t: np.ndarray, reflectance: DynCube, diffusion: np.ndarray,
                 imCubeIdTag: str, referenceIdTag: str, extraReflectionIdTag: Optional[str]):
         #TODO check datatypes here
         d = {'time': datetime.now().strftime(dateTimeFormat),
             'meanReflectance': meanReflectance,
             'reflectance': reflectance,
-            'dSlope': dSlope,
+            'diffusion': diffusion,
             'rms_t': rms_t,
             'imCubeIdTag': imCubeIdTag,
             'referenceIdTag': referenceIdTag,
@@ -80,8 +80,8 @@ class DynamicsAnalysisResults(AbstractHDFAnalysisResults):
 
     @cached_property
     @getFromDict
-    def dSlope(self) -> np.ndarray:
-        dset = self.file['dSlope']
+    def diffusion(self) -> np.ndarray:
+        dset = self.file['diffusion']
         return np.array(dset)
 
     @cached_property

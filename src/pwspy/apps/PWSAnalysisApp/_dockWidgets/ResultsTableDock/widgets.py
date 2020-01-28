@@ -8,7 +8,7 @@ from pwspy.analysis.compilation.abstract import AbstractCompilerSettings
 from pwspy.analysis.compilation.dynamics import DynamicsCompilerSettings
 from pwspy.analysis.compilation.generic import GenericCompilerSettings
 from pwspy.analysis.compilation.pws import PWSCompilerSettings
-from pwspy.apps.PWSAnalysisApp._dockWidgets.ResultsTableDock.other import ConglomerateCompilerResults
+from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateCompilerResults
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.tables import CopyableTable, NumberTableWidgetItem
 from pwspy.dataTypes import AcqDir
 import os
