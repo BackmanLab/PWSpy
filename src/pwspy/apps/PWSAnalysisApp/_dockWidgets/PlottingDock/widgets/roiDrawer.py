@@ -5,6 +5,8 @@ import numpy as np
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QWidget, QGridLayout, QButtonGroup, QPushButton, QDialog, QSpinBox, QLabel, \
     QMessageBox, QMenu, QAction
+
+from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
 from pwspy.dataTypes import AcqDir
 from matplotlib import patches
 import os
@@ -22,7 +24,7 @@ from pwspy.utility.matplotlibWidgets import AdjustableSelector, LassoSelector, E
 
 
 class RoiDrawer(QWidget):
-    def __init__(self, metadatas: List[Tuple[AcqDir, Optional[PWSAnalysisResults]]], parent=None):
+    def __init__(self, metadatas: List[Tuple[AcqDir, Optional[ConglomerateAnalysisResults]]], parent=None):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         self.setWindowTitle("Roi Drawer 3000")
         self.metadatas = metadatas
