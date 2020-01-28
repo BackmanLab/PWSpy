@@ -113,11 +113,13 @@ class CellTableWidgetItem:
         anNumber = 0 #This is in case the next few statements evaluate to false.
         anToolTip = ""
         if self.acqDir.pws is not None:
-            anNumber += len(self.acqDir.pws.getAnalyses())
-            anToolTip += "PWS:" + ', '.join(self.acqDir.pws.getAnalyses())
+            pwsAnalyses = self.acqDir.pws.getAnalyses()
+            anNumber += len(pwsAnalyses)
+            anToolTip += "PWS:" + ', '.join(pwsAnalyses)
         if self.acqDir.dynamics is not None:
-            anNumber += len(self.acqDir.dynamics.getAnalyses())
-            anToolTip += "\nDYN:" + ', '.join(self.acqDir.dynamics.getAnalyses())
+            dynAnalyses = self.acqDir.dynamics.getAnalyses()
+            anNumber += len(dynAnalyses)
+            anToolTip += "\nDYN:" + ', '.join(dynAnalyses)
         self.anLabel.setNumber(anNumber)
         self.anLabel.setToolTip(anToolTip)
         if self.acqDir.getNotes() != '':
