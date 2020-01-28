@@ -47,7 +47,7 @@ class ResultsTableDock(QDockWidget): #TODO update this for the new conglomoerate
         sidebar = QWidget()
         l = QGridLayout()
         l.addWidget(scroll, 0, 0, 1, 2)
-        l.addWidget(QLabel('PWSAnalysis:'), 1, 0, 1, 1)
+        l.addWidget(QLabel('Analysis:'), 1, 0, 1, 1)
         l.addWidget(self.analysisNameEdit, 1, 1, 1, 1)
         l.addWidget(QLabel("Roi:"), 2, 0, 1, 1)
         l.addWidget(self.roiNameEdit, 2, 1, 1, 1)

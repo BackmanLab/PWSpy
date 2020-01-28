@@ -11,7 +11,7 @@ import shutil
 import psutil
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QMessageBox, QSplashScreen
-import pwspy.__version__ as version
+from pwspy import __version__ as version
 from pwspy.apps.PWSAnalysisApp._utilities import BlinderDialog, RoiConverter
 from pwspy.dataTypes import ICMetaData, AcqDir
 from ._dockWidgets.ResultsTableDock import ConglomerateCompilerResults

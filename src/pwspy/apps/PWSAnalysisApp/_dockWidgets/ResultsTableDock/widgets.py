@@ -72,7 +72,7 @@ class ResultsTable(CopyableTable):
     columns = {
         "Path": (False, None, None, None),
         'Cell#': (True, None, None, None),
-        "PWSAnalysis": (False, None, None, None),
+        "PWS Analysis": (False, None, None, None),
         'ROI Name': (True, None, None, None),
         'ROI#': (True, None, None, None),
         "RMS": (True, 'rms', PWSCompilerSettings, "Primary analysis result indicating nanoscopic RI heterogeneity of sample in ROI. Defined as StdDev of the spectra"),

@@ -149,7 +149,7 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
         row += 1
 
         '''Advanced Calculations'''
-        self.advanced = CollapsibleSection('Skip Advanced PWSAnalysis', 200, self)
+        self.advanced = CollapsibleSection('Skip Advanced Analysis', 200, self)
         self.advanced.stateChanged.connect(self._updateSize)
         self.advanced.setToolTip("If this box is ticked then some of the less common analyses will be skipped. This saves time and harddrive space.")
         self.autoCorrStopIndex = QHSpinBox()
