@@ -14,7 +14,6 @@ if typing.TYPE_CHECKING:
 
 
 class DynamicsAnalysis(AbstractAnalysis):
-    #TODO this is all untested
     def __init__(self, settings: DynamicsAnalysisSettings, ref: DynCube, extraReflectance: ExtraReflectanceCube):
         super().__init__(settings)
         assert ref.isCorrected()
@@ -63,6 +62,7 @@ class DynamicsAnalysis(AbstractAnalysis):
         reflectance = cube.data.mean(axis=2)
 
         #Diffusion
+        cubeAc[cubeAc[:, :, 0] < np.sqrt(2)*self.refAc[:,:,0]] = np.nan # Remove pixels with low SNR. Default threshold removes values where 1st point of acf is less than sqrt(2) of background acf
         ac = cubeAc - self.refAc  # Background subtracted autocorrelation function
         ac = ac / ac[:, :, 0][:, :, None]  # Normalize by the zero-lag value
         ac[ac <= 0] = np.nan  # Before taking the log of the autocorrelation, zero values must be modified to prevent outputs of "inf" or "-inf".
@@ -71,7 +71,7 @@ class DynamicsAnalysis(AbstractAnalysis):
         dt = (cube.times[-1] - cube.times[1]) / (len(cube.times) - 1) / 1e3  # Convert to seconds
         k = (self.n_medium * 2 * np.pi) / (cube.metadata.wavelength / 1e3)  # expressing wavelength in microns to match up with old matlab code.
         val = logac / (dt * 4 * k ** 2)
-        d_slope = -(val[:, :, 1] - val[:, :, 0]) #Get the slope
+        d_slope = -(val[:, :, 1] - val[:, :, 0]) # Get the slope of the autocorrelation. This is related to the diffusion in the cell.
 
         results = DynamicsAnalysisResults.create(meanReflectance=reflectance,
                                                  rms_t=np.sqrt(rms_t_squared),
