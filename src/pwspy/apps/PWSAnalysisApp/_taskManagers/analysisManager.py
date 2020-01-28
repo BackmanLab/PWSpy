@@ -1,7 +1,7 @@
 from __future__ import annotations
 import os
 import traceback
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 import typing
 from PyQt5.QtCore import QThread
 
@@ -10,7 +10,7 @@ from pwspy.analysis.dynamics import DynamicsAnalysisSettings, DynamicsAnalysis
 from pwspy.apps.PWSAnalysisApp._sharedWidgets import ScrollableMessageBox
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox, QInputDialog
 from pwspy.dataTypes import ImCube, CameraCorrection, ExtraReflectanceCube, AcqDir, ICMetaData
 from pwspy.analysis.pws import PWSAnalysisSettings
 from pwspy.analysis.pws import PWSAnalysis
@@ -54,6 +54,7 @@ class AnalysisManager(QtCore.QObject):
     def runSingle(self, anName: str, anSettings: PWSAnalysisSettings, cellMetas: List[AcqDir], refMeta: AcqDir,
                   cameraCorrection: CameraCorrection) -> Tuple[str, PWSAnalysisSettings, List[Tuple[List[AnalysisWarning], AcqDir]]]:
         """Run a single analysis batch"""
+        userSpecifiedBinning: Optional[int] = None
         if isinstance(anSettings, PWSAnalysisSettings):
             cellMetas = [i.pws for i in cellMetas]
             refMeta = refMeta.pws  # We are only interested in pws data here
@@ -63,6 +64,7 @@ class AnalysisManager(QtCore.QObject):
         if refMeta is None:
             raise ValueError(f"No measurement for analysis type {type(anSettings)} found in the reference cell.")
         cellMetas = [i for i in cellMetas if i is not None]  # Remove None items from the list of cells. This happens e.g. when you are analyzing dynamics but not all acqs have dynamics
+        if len(cellMetas) == 0: return  # If all item were `None` then there is no point moving forward.
         #Determine which cells already have an analysis by this name and raise a deletion dialog.
         conflictCells = []
         for cell in cellMetas:
@@ -81,7 +83,13 @@ class AnalysisManager(QtCore.QObject):
         if correctionsOk:
             ref = refMeta.toDataClass()
             if cameraCorrection is not None:
-                ref.correctCameraEffects(cameraCorrection) #Apply the user-specified correction
+                try:
+                    ref.correctCameraEffects(cameraCorrection) #Apply the user-specified correction. This will fail if the image doesn't have binning metadata.
+                except ValueError:
+                    userSpecifiedBinning, pressedOk = QInputDialog.getInt(self.app.window, "Specify binning", "Please specify the camera binning that was used for these acquisitions.", 1, 1, 4)
+                    if not pressedOk: #User pressed cancel
+                        return
+                    ref.correctCameraEffects(cameraCorrection, binning=userSpecifiedBinning)
             else:
                 print("Using automatically detected camera corrections")
                 ref.correctCameraEffects()
@@ -116,7 +124,7 @@ class AnalysisManager(QtCore.QObject):
             else:
                 print("Not using parallel processing.")
             #Run parallel/multithreaded processing
-            t = self.AnalysisThread(cellMetas, analysis, anName, cameraCorrection, useParallelProcessing)
+            t = self.AnalysisThread(cellMetas, analysis, anName, cameraCorrection, userSpecifiedBinning, useParallelProcessing)
             b = BusyDialog(self.app.window, "Processing. Please Wait...")
             t.finished.connect(b.accept)
 
@@ -156,18 +164,19 @@ class AnalysisManager(QtCore.QObject):
     class AnalysisThread(QThread):
         errorOccurred = QtCore.pyqtSignal(Exception, str)
 
-        def __init__(self, cellMetas, analysis, anName, cameraCorrection, parallel):
+        def __init__(self, cellMetas, analysis, anName, cameraCorrection, userSpecifiedBinning, parallel):
             super().__init__()
             self.cellMetas = cellMetas
             self.analysis = analysis
             self.anName = anName
             self.cameraCorrection = cameraCorrection
+            self.userSpecifiedBinning = userSpecifiedBinning
             self.warnings = None
             self.parallel = parallel
 
         def run(self):
             try:
-                self.warnings = loadAndProcess(self.cellMetas, processorFunc=self._process, initArgs=[self.analysis, self.anName, self.cameraCorrection],
+                self.warnings = loadAndProcess(self.cellMetas, processorFunc=self._process, initArgs=[self.analysis, self.anName, self.cameraCorrection, self.userSpecifiedBinning],
                                      parallel=self.parallel, initializer=self._initializer) # Returns a list of Tuples, each tuple containing a list of warnings and the ICmetadata to go with it.
             except Exception as e:
                 import traceback
@@ -176,12 +185,12 @@ class AnalysisManager(QtCore.QObject):
 
 
         @staticmethod
-        def _initializer(analysis: PWSAnalysis, analysisName: str, cameraCorrection: CameraCorrection):
+        def _initializer(analysis: PWSAnalysis, analysisName: str, cameraCorrection: CameraCorrection, userSpecifiedBinning: Optional[int] = None):
             """This method is run once for each process that is spawned. it initialized _resources that are shared between each iteration of _process."""
             global pwspyAnalysisAppParallelGlobals
             print('initializing!')
             pwspyAnalysisAppParallelGlobals = {'analysis': analysis, 'analysisName': analysisName,
-                                               'cameraCorrection': cameraCorrection}
+                                               'cameraCorrection': cameraCorrection, 'binning': userSpecifiedBinning}
 
         @staticmethod
         def _process(im: ICRawBase):
@@ -191,8 +200,12 @@ class AnalysisManager(QtCore.QObject):
             analysis = pwspyAnalysisAppParallelGlobals['analysis']
             analysisName = pwspyAnalysisAppParallelGlobals['analysisName']
             cameraCorrection = pwspyAnalysisAppParallelGlobals['cameraCorrection']
+            userSpecifiedBinning = pwspyAnalysisAppParallelGlobals['binning']
             if cameraCorrection is not None:
-                im.correctCameraEffects(cameraCorrection)
+                if userSpecifiedBinning is None:
+                    im.correctCameraEffects(cameraCorrection)
+                else:
+                    im.correctCameraEffects(cameraCorrection, binning=userSpecifiedBinning)
             else:
                 im.correctCameraEffects()
             results, warnings = analysis.run(im)
