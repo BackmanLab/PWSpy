@@ -45,6 +45,9 @@ class FullImPaintSelector(SelectorWidgetBase):
             alpha = 0.3
             colorCycler = cycler(color=[(1, 0, 0, alpha), (0, 1, 0, alpha), (0, 0, 1, alpha), (1, 1, 0, alpha), (1, 0, 1, alpha)])
             for poly, color in zip(polys, colorCycler()):
+                if isinstance(poly, MultiPolygon):
+                    print("Error: FullImPaintSelecte.drawROis tried to draw a polygon of a shapely.MultiPolygon object.")
+                    continue
                 p = Polygon(poly.exterior.coords, color=color['color'], animated=True)
                 self.addArtist(p)
                 self.axMan.update()
