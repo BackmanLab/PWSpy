@@ -9,3 +9,4 @@ class DynamicsRoiCompilationResults(AbstractRoiCompilationResults):
     analysisName: str
     reflectance: float
     rms_t: float
+    diffusion: float

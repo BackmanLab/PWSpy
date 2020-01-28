@@ -82,6 +82,12 @@ class AbstractAnalysis(ABC):
         """Given an ImCube to analyze this function returns an instanse of AnalysisResults. In the PWSAnalysisApp this function is run in parallel by the AnalysisManager."""
         pass
 
+    @abstractmethod
+    def copySharedDataToSharedMemory(self):
+        """When running the `run` method in parallel memory for the object used must be copied to each new process. We can avoid that and save a lot of Ram by moving data
+        that is shared between processes to shared memory. If you don't want to implement this then just override it and raise NotImplementedError"""
+        pass
+
 class AbstractAnalysisResults(ABC):
     """This abstract class lays out the most basic skeleton of what an AnalysisResults object should implement."""
     @classmethod

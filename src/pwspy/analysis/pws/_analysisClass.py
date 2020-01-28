@@ -5,6 +5,8 @@ Created on Tue Feb 12 23:10:35 2019
 @author: Nick Anthony
 """
 from __future__ import annotations
+
+from multiprocessing.sharedctypes import RawArray
 from typing import List, Tuple
 
 import numpy as np
@@ -136,3 +138,13 @@ class PWSAnalysis(AbstractAnalysis):
         ld = ((A2 / A1) * fact) * (rms / (-1 * slope.reshape(rms.shape)))
         return ld
 
+    def copySharedDataToSharedMemory(self):
+        refdata = RawArray('f', self.ref.data.size)
+        refdata = np.frombuffer(refdata, dtype=np.float32).reshape(self.ref.data.shape)
+        np.copyto(refdata, self.ref.data)
+        self.ref.data = refdata
+
+        iedata = RawArray('f', self.extraReflection.data.size)
+        iedata = np.frombuffer(iedata, dtype=np.float32).reshape(self.extraReflection.data.shape)
+        np.copyto(iedata, self.extraReflection.data)
+        self.extraReflection.data = iedata

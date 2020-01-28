@@ -52,10 +52,10 @@ class ResultsTableItem:
             self.dynamicsAnalysisNameLabel = QTableWidgetItem(dyn.analysisName)
             self.rms_tLabel = NumberTableWidgetItem(dyn.rms_t)
             self.dynamicsReflectanceLabel = NumberTableWidgetItem(dyn.reflectance)
+            self.diffusionLabel = NumberTableWidgetItem(dyn.diffusion)
         else:
-            self.rms_tLabel, self.dynamicsReflectanceLabel = (NumberTableWidgetItem() for i in range(2))
+            self.rms_tLabel, self.dynamicsReflectanceLabel, self.diffusionLabel = (NumberTableWidgetItem() for i in range(3))
             self.dynamicsAnalysisNameLabel = QTableWidgetItem()
-
 
     def _plotOpd(self):
         fig, ax = plt.subplots()
@@ -86,7 +86,8 @@ class ResultsTable(CopyableTable):
         "Roi Area": (False, 'roiArea', GenericCompilerSettings, "The area of the ROI given in units of pixels. This can be converted to microns if you know the size in object space of a single pixel"),
         "Dynamics Analysis": (False, None, None, None),
         "RMS_t": (False, 'rms_t', DynamicsCompilerSettings, "This is the primary analysis result for `Dynamics`. It is the standard deviation of the signal over time when looking at just a single wavelength."),
-        "Dynamics Reflectance": (False, 'meanReflectance', DynamicsCompilerSettings, "This is the average reflectance of the ROI for the `Dynamics` measurement.")
+        "Dynamics Reflectance": (False, 'meanReflectance', DynamicsCompilerSettings, "This is the average reflectance of the ROI for the `Dynamics` measurement."),
+        "Diffusion": (False, 'diffusion', DynamicsCompilerSettings, "Diffusion is calculated as the slope of the log of the autocorrelation function of a `Dynamics` measurement.")
     }
 
     def __init__(self):
@@ -124,6 +125,7 @@ class ResultsTable(CopyableTable):
         self.setItem(row, 14, item.dynamicsAnalysisNameLabel)
         self.setItem(row, 15, item.rms_tLabel)
         self.setItem(row, 16, item.dynamicsReflectanceLabel)
+        self.setItem(row, 17, item.diffusionLabel)
 
         self.setSortingEnabled(True)
         self._items.append(item)

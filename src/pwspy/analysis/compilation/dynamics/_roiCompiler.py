@@ -19,13 +19,15 @@ class DynamicsRoiCompiler(AbstractRoiCompiler):
 
     def run(self, results: DynamicsAnalysisResults, roi: Roi) -> Tuple[DynamicsRoiCompilationResults, List[warnings.AnalysisWarning]]:
         reflectance = self._avgOverRoi(roi, results.meanReflectance) if self.settings.meanReflectance else None
-        rms_t = self._avgOverRoi(roi, results.rms_t) if self.settings.rms_t else None
+        rms_t = self._avgOverRoi(roi, results.rms_t) if self.settings.rms_t else None  # Unlike with diffusion we should not have any nan values for rms_t. If we get nan then something is wrong with the analysis.
+        diffusion = self._avgOverRoi(roi, results.diffusion, np.isnan(results.diffusion)) if self.settings.diffusion else None  # Don't include nan values in the average.
 
         results = DynamicsRoiCompilationResults(
                     cellIdTag=results.imCubeIdTag,
                     analysisName=results.analysisName,
                     reflectance=reflectance,
-                    rms_t=rms_t)
+                    rms_t=rms_t,
+                    diffusion=diffusion)
         warns = []  # Strip None from warns list
         return results, warns
 

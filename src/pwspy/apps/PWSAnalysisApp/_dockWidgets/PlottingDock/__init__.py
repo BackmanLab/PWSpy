@@ -100,7 +100,6 @@ class PlottingDock(QDockWidget):
             self.scrollContents.setAspect(1 / len(self.plots))
 
     def startRoiDrawing(self):
-        # self.generatePlots(self.anNameEdit.text())
         metadatas = [(p.metadata, p.analysis) for p in self.plots]
         if len(metadatas) > 0: # Otherwise we crash
             self.roiDrawer = RoiDrawer(metadatas)

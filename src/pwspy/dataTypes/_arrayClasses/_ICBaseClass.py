@@ -208,14 +208,9 @@ class ICBase:
         return new
 
     def toHdfDataset(self, g: h5py.Group, name: str) -> h5py.Group:
-        tim = time()
-        # dset = g.create_dataset(name, data=self.data, chunks=(64, 64, self.data.shape[2]), compression=3)
         dset = g.create_dataset(name, data=self.data)
-        print(f"{self.__class__.__name__} chunking shape: {dset.chunks}")
-        print(f"Data type is {self.data.dtype}")
         dset.attrs['index'] = np.array(self.index)
         dset.attrs['type'] = np.string_(self.__class__.__name__)
-        print(f"Saving {self.__class__.__name__} HDF took {time()-tim} seconds.")
         return g
 
     def toFixedPointHdfDataset(self, g: h5py.Group, name: str) -> h5py.Group:

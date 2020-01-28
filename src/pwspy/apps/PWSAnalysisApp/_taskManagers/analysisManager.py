@@ -109,14 +109,10 @@ class AnalysisManager(QtCore.QObject):
             if useParallelProcessing:
                 #Rather than copy arrays for each process, have read-only arrays that are shared between processes with shared memory. saves a few gigs of ram and speeds things up.
                 print("AnalysisManager: Using parallel processing. Creating shared memory.")
-                refdata = RawArray('f', analysis.ref.data.size)
-                refdata = np.frombuffer(refdata, dtype=np.float32).reshape(analysis.ref.data.shape)
-                np.copyto(refdata, analysis.ref.data)
-                analysis.ref.data = refdata
-                iedata = RawArray('f', analysis.extraReflection.data.size)
-                iedata = np.frombuffer(iedata, dtype=np.float32).reshape(analysis.extraReflection.data.shape)
-                np.copyto(iedata, analysis.extraReflection.data)
-                analysis.extraReflection.data = iedata
+                try:
+                    analysis.copySharedDataToSharedMemory()
+                except NotImplementedError:
+                    pass
             else:
                 print("Not using parallel processing.")
             #Run parallel/multithreaded processing
