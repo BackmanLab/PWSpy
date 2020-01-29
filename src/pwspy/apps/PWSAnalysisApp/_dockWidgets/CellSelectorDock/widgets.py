@@ -9,9 +9,8 @@ from PyQt5.QtGui import QPalette
 from PyQt5.QtWidgets import QPushButton, QTableWidgetItem, QTableWidget, QAbstractItemView, QMenu, QWidget, QMessageBox
 from pwspy.dataTypes import AcqDir
 
-from pwspy.apps.PWSAnalysisApp._sharedWidgets.dictDisplayTree import DictDisplayTree, DictDisplayTreeDialog
+from pwspy.apps.PWSAnalysisApp._sharedWidgets.dictDisplayTree import DictDisplayTreeDialog
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.tables import NumberTableWidgetItem
-from pwspy.dataTypes import ICMetaData
 
 def evalToolTip(cls: Type[QWidget], method):
     """Given a QWidget and a function that returns a string, this decorator returns a modified class that will evaluate

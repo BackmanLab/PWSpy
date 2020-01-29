@@ -115,6 +115,7 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
     class should implement:  the `fields` property, a list of string names of the datafields that the analysis involves. The `_name2Filename` method which, given an analysis id name,
      returns the file name for the hdf5 file. And the `fileName2Name` method which does the opposite operation."""
 
+    #TODO this holds onto the reference to the h5py.File meaning that the file can't be deleted until the object has been deleted. Maybe that's good. but it causes some problems.
     def __init__(self, file: h5py.File, variablesDict: dict, analysisName: Optional[str] = None):
         """"Can be instantiated with one of the two arguments. To load from file provide the h5py file. To create from variable provide a dictionary keyed by all the field names.
         This initializer should not be run directly, it should only be used by the `create` and `load` class methods."""
@@ -153,7 +154,6 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
         fileName = osp.join(directory, self.name2FileName(name))
         if osp.exists(fileName):
             raise OSError(f'{fileName} already exists.')
-        # now save the stuff
         with h5py.File(fileName, 'w') as hf:
             # Save version
             hf.create_dataset('pwspy_version', data=np.string_(self._currentmoduleversion))

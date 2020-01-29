@@ -4,6 +4,7 @@ class cached_property(object):
         property.
         Source: https://github.com/bottlepy/bottle/commit/fa7733e075da0d790d809aa3d2f53071897e6f76
         """
+    #TODO this is probably better implemented by cachetools.LRUCache
 
     def __init__(self, func):
         self.__doc__ = getattr(func, '__doc__')
