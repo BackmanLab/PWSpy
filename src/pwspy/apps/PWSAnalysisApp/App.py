@@ -27,7 +27,6 @@ from glob import glob
 from typing import List, Tuple, Optional
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.analysis.compilation import PWSRoiCompilationResults
     from pwspy.analysis.warnings import AnalysisWarning
 
 #TODO sometimes analysisResults will claim access to a file and then we aren't able to delete those files when trying to overwrite with a new analysis.

@@ -58,7 +58,6 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
                polynomialRms: np.ndarray, autoCorrelationSlope: np.ndarray, rSquared: np.ndarray, ld: np.ndarray,
                imCubeIdTag: str, referenceIdTag: str, extraReflectionTag: Optional[str]):
         #TODO check datatypes here
-        #TODO implement relative relfectance. Might need to make a new class for compatibility sake.
         d = {'time': datetime.now().strftime(dateTimeFormat),
             'reflectance': reflectance,
             'meanReflectance': meanReflectance,

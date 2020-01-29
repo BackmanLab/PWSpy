@@ -6,6 +6,9 @@ from typing import List, Optional, Type
 import h5py
 import numpy as np
 import typing
+from pwspy import __version__ as pwspyversion
+from pwspy.utility.misc import cached_property
+
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ICBase
 
@@ -27,6 +30,7 @@ class AbstractAnalysisGroup(ABC):
     @abstractmethod
     def analysisClass() -> Type[AbstractAnalysis]:
         pass
+
 
 class AbstractAnalysisSettings(ABC):
     """This abstract class lays out the basic skeleton of what an AnalysisSettings class should implement."""
@@ -90,6 +94,9 @@ class AbstractAnalysis(ABC):
 
 class AbstractAnalysisResults(ABC):
     """This abstract class lays out the most basic skeleton of what an AnalysisResults object should implement."""
+
+    _currentmoduleversion = pwspyversion
+
     @classmethod
     @abstractmethod
     def create(cls):
@@ -119,6 +126,10 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
         self.dict = variablesDict
         self.analysisName = analysisName
 
+    @cached_property
+    def moduleVersion(self) -> str:
+        """Return the version of pwspy that this file was saved with."""
+        return bytes(np.array(self.file['pwspy_version'])).decode()
 
     @staticmethod
     @abstractmethod
@@ -138,12 +149,15 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
     def toHDF(self, directory: str, name: str):
         """Save the AnalysisResults object to an HDF file in `directory`. The name of the file will be determined by `name`. If you want to know what the full file name
         will be you can use this class's `_name2FileName` method."""
-        from pwspy.dataTypes import ICBase #Need this for instance checking
+        from pwspy.dataTypes import ICBase  # Need this for instance checking
         fileName = osp.join(directory, self.name2FileName(name))
         if osp.exists(fileName):
             raise OSError(f'{fileName} already exists.')
         # now save the stuff
         with h5py.File(fileName, 'w') as hf:
+            # Save version
+            hf.create_dataset('pwspy_version', data=np.string_(self._currentmoduleversion))
+            # Save fields defined by implementing subclass
             for field in self.fields():
                 k = field
                 v = getattr(self, field)
