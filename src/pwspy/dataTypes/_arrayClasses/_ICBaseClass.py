@@ -331,6 +331,8 @@ class ICBase:
         return transforms, an
 
 class ICRawBase(ICBase, ABC):
+    """This class represents data cubes which are not derived from other data cubes. They represent raw acquired data that exists as data files on the computer.
+    For this reason they may need to have hardware specific corrections applied to them such as normalizing out exposure time, linearizing camera counts, subtracting dark counts, etc."""
     _hasBeenCameraCorrected: bool
     _hasBeenNormalizedByExposure: bool
     _hasExtraReflectionSubtracted: bool
