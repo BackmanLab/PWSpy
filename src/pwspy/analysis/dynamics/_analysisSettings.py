@@ -28,9 +28,13 @@ class DynamicsAnalysisSettings(AbstractAnalysisSettings):
     referenceMaterial: Material
     numericalAperture: float
     relativeUnits: bool
-    diffusionRegressionLength: int
+    diffusionRegressionLength: int = 3
 
-    FileSuffix = "dynAnalysis" # This is used to determine how to save
+    FileSuffix = "dynAnalysis"  # This is used for saving and loading to json
+
+    def __post_init__(self):
+        assert self.diffusionRegressionLength > 0
+        assert self.diffusionRegressionLength < 20  # Even 20 is probably way too long, unless a system is created with extremely low noise.
 
     def _asDict(self) -> dict:
         d = dataclasses.asdict(self)
