@@ -41,7 +41,7 @@ class AcqDir:
             return DynMetaData.fromTiff(os.path.join(self.filePath, 'Dynamics'), acquisitionDirectory=self)
         except:
             try:
-                return DynMetaData.fromOldPWS(self.filePath) #This is just for old acquisitions where they were saved in their own folder that was indistinguishable from a PWS acquisitison.
+                return DynMetaData.fromOldPWS(self.filePath, acquisitionDirectory=self) #This is just for old acquisitions where they were saved in their own folder that was indistinguishable from a PWS acquisitison.
             except:
                 return None
 
