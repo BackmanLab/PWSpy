@@ -6,6 +6,7 @@ from pwspy.analysis import AbstractAnalysisSettings
 
 @dataclasses.dataclass
 class PWSAnalysisSettings(AbstractAnalysisSettings):
+    """Document me!""" #TODO document
     filterOrder: int
     filterCutoff: float
     polynomialOrder: int
@@ -15,18 +16,18 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
     wavelengthStop: int
     skipAdvanced: bool
     autoCorrStopIndex: int
-    autoCorrMinSub: bool  # Determines if the autocorrelation should have it's minimum subtracted from it before processing. These is mathematically nonsense but is needed if the autocorrelation has negative values in it.
+    autoCorrMinSub: bool  # Determines if the autocorrelation should have it's minimum subtracted from it before processing. This is mathematically nonsense but is needed if the autocorrelation has negative values in it.
     numericalAperture: float
     relativeUnits: bool #determines if reflectance (and therefore the other parameters) should be calculated in absolute units of reflectance or just relative to the reflectance of the reference image.
 
-    FileSuffix = 'analysis'
+    FileSuffix = 'analysis'  # This is used for saving and loading to json
 
     def _asDict(self) -> dict:
         d = dataclasses.asdict(self)
         if self.referenceMaterial is None:
             d['referenceMaterial'] = None
         else:
-            d['referenceMaterial'] = self.referenceMaterial.name # Convert from enum to string
+            d['referenceMaterial'] = self.referenceMaterial.name  # Convert from enum to string
         return d
 
     @classmethod
