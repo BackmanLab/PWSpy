@@ -132,11 +132,11 @@ class DynCube(ICRawBase):
         return DynCube(ret.data, md)
 
     def getAutocorrelation(self) -> np.ndarray:
+        """Returns the autocorrelation function of dynamics data along the time axis"""
         data = self.data - self.data.mean(axis=2)[:, :, None]  # By subtracting the mean we get an ACF where the 0-lag value is the variance of the signal.
-        truncLength = 100
         F = np.fft.rfft(data, axis=2)
         ac = np.fft.irfft(F * np.conjugate(F), axis=2) / data.shape[2]
-        return np.real(ac[:, :, :truncLength])
+        return np.real(ac)
 
     def filterDust(self, kernelRadius: float, pixelSize: float = None) -> None:
         """This method blurs the data of the cube along the X and Y dimensions. This is useful if the cube is being
