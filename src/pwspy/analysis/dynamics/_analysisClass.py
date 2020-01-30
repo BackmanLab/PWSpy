@@ -43,7 +43,7 @@ class DynamicsAnalysis(AbstractAnalysis):
 
         self.refMean = ref.data.mean(axis=2)
         ref.normalizeByReference(self.refMean) #We normalize so that the average is 1. This is for scaling purposes with the AC. Seems like the AC should be scale independent though, not sure.
-        self.refAc = ref.getAutocorrelation()
+        self.refAc = ref.getAutocorrelation().mean(axis=(0, 1))  # We find the average autocorrlation of the background to cut down on noise, presumably this is uniform accross the field of view any way, right?
         self.refTag = ref.metadata.idTag
         self.erTag = extraReflectance.metadata.idTag if extraReflectance is not None else None
         self.n_medium = 1.37  # The average index of refraction for chromatin?
@@ -58,7 +58,7 @@ class DynamicsAnalysis(AbstractAnalysis):
         cube.normalizeByReference(self.refMean)
 
         cubeAc = cube.getAutocorrelation()
-        rms_t_squared = cubeAc[:, :, 0] - self.refAc[:, :, 0].mean()  # The rms^2 noise of the reference averaged over the whole image.
+        rms_t_squared = cubeAc[:, :, 0] - self.refAc[0]  # The rms^2 noise of the reference averaged over the whole image.
         rms_t_squared[rms_t_squared < 0] = 0  # Sometimes the above noise subtraction can cause some of our values to be barely below 0, that's going to be a problem.
         # If we didn't care about noise subtraction we could get rms_t as just `cube.data.std(axis=2)`
 
@@ -66,8 +66,8 @@ class DynamicsAnalysis(AbstractAnalysis):
         reflectance = cube.data.mean(axis=2)
 
         #Diffusion
-        cubeAc[cubeAc[:, :, 0] < np.sqrt(2)*self.refAc[:,:,0]] = np.nan # Remove pixels with low SNR. Default threshold removes values where 1st point of acf is less than sqrt(2) of background acf
-        ac = cubeAc - self.refAc  # Background subtracted autocorrelation function
+        cubeAc[cubeAc[:, :, 0] < np.sqrt(2)*self.refAc[0]] = np.nan # Remove pixels with low SNR. Default threshold removes values where 1st point of acf is less than sqrt(2) of background acf
+        ac = cubeAc - self.refAc  # Background subtracted autocorrelation function.
         ac = ac / ac[:, :, 0][:, :, None]  # Normalize by the zero-lag value
         ac[ac <= 0] = np.nan  # Before taking the log of the autocorrelation, zero values must be modified to prevent outputs of "inf" or "-inf".
 
