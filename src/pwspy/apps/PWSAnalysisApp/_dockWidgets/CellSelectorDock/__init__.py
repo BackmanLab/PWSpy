@@ -121,7 +121,12 @@ class CellSelectorDock(QDockWidget):
             expr = self.expressionFilter.text()
             if expr.strip() != '':
                 try:
-                    ret = bool(eval(expr.format(num=item.num, analyses=item.acqDir.pws.getAnalyses(), rois=[i[0] for i in item.acqDir.getRois()], idTag=item.acqDir.idTag)))
+                    analyses = []
+                    if item.acqDir.pws:
+                        analyses += item.acqDir.pws.getAnalyses()
+                    if item.acqDir.dynamics:
+                        analyses += item.acqDir.dynamics.getAnalyses()
+                    ret = bool(eval(expr.format(num=item.num, analyses=analyses, rois=[i[0] for i in item.acqDir.getRois()], idTag=item.acqDir.idTag)))
                 except Exception as e:
                     QMessageBox.information(self, 'Hmm', f'{expr} is not a valid boolean expression.')
                     return
