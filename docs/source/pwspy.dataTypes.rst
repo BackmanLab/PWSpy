@@ -9,5 +9,6 @@ Module contents
    :undoc-members:
    :show-inheritance:
 
-.. inheritance-diagram:: pwspy.dataTypes
-    :top-classes: pwspy.dataTypes.AcqDir
+.. inheritance-diagram:: ImCube DynCube ICMetaData DynMetaData FluorescenceImage CameraCorrection Roi ERMetadata ExtraReflectionCube ExtraReflectanceCube KCube AcqDir FluorMetaData
+    :top-classes: ICBase, ICMetaData
+    :parts: 1
