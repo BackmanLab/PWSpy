@@ -268,18 +268,37 @@ class PositionList(JsonAble):
         print(matPositions.shape)
         spio.savemat(path, {'list': matPositions[:,None]})
     
-    def getAffineTransform(self, other: PositionList):
-        """Calculate the partial affine transformation between this position list and another position list. Must have the same length"""
+    def getAffineTransform(self, otherList: PositionList) -> np.ndarray:
+        """Calculate the partial affine transformation between this position list and another position list. Both position lists must have the same length
+        Args:
+            otherList (PositionList): A position list of the same length as this position list. Each position is assumed to correspond to the position of the
+                same index in this list.
+
+        Returns:
+            np.ndarray: A 2x3 array representing the partial affine transform (rotation, scaling, and translation, but no skew)
+
+        Examples:
+            a = PositionList.fromNanoMatFile(r'F:\Data\AirDryingSystemComparison\NanoPreDry\corners\positions.mat', "TIXYDRIVE")
+            b = PositionList.fromNanoMatFile(r'F:\Data\AirDryingSystemComparison\NanoPostDry\corners\positions.mat',"TIXYDRIVE")
+            t = a.getAffineTransform(b)
+            origPos = PositionList.fromNanoMatFile(r'F:\Data\AirDryingSystemComparison\NanoPreDry\0_8NA\position_list1.mat',"TIXYDRIVE")
+            newPos = origPos.applyAffineTransform(t)
+        """
         import cv2
-        assert len(other) == len(self)
+        assert len(otherList) == len(self)
         selfXY = [pos.getXYPosition() for pos in self.positions]
-        otherXY = [pos.getXYPosition() for pos in other.positions]
+        otherXY = [pos.getXYPosition() for pos in otherList.positions]
         selfArr = np.array([(pos.x, pos.y) for pos in selfXY], dtype=np.float32)
         otherArr = np.array([(pos.x, pos.y) for pos in otherXY], dtype=np.float32)
         transform, inliers = cv2.estimateAffinePartial2D(selfArr, otherArr)
         return transform
 
     def applyAffineTransform(self, t: np.ndarray):
+        """Given an affine transformation array this method will transform all positions in this position list.
+        Args:
+            t (np.ndarray): A 2x3 array representing the partial affine transform (rotation, scaling, and translation, but no skew)
+        """
+
         import cv2
         assert isinstance(t, np.ndarray)
         assert t.shape == (2, 3)
