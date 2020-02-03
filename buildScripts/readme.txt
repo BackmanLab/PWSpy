@@ -1,1 +1,1 @@
-to build run `build.py` from your base anaconda env. Provide the directory you want the built code to go to as the first argument. E.G. "python build.py H:" Would save to a USB drive at H.
+to build run `build.py` from your base anaconda env.

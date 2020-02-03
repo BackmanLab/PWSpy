@@ -11,6 +11,8 @@ build:
   number: {{ GIT_DESCRIBE_NUMBER }}
   string: {{environ['GIT_DESCRIBE_HASH']}}
   script: python setup.py install --single-version-externally-managed --record=record.txt
+  entry_points:
+    - PWSAnalysis = pwspy.apps.PWSAnalysisApp.__main__:main
 
 requirements:
   build:
@@ -41,8 +43,8 @@ about:
   dev_url: https://bitbucket.org/backmanlab/pwspython/src/master/
   
 app:
-  entry: python -m pwspy.apps.PWSAnalysisApp
+  entry: PWSAnalysis
   icon: cellLogo64.png
-  summary: PWS Analysis GUI
+  summary: "PWS Analysis GUI"
   type: desk
   own_environment: False
