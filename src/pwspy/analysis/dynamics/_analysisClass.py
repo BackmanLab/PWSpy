@@ -18,7 +18,7 @@ if typing.TYPE_CHECKING:
 
 
 class DynamicsAnalysis(AbstractAnalysis):
-    """This class performs the analysis of RMS_t and D described in the paper: "Multimodal interferometric imaging of nanoscale structure and
+    """This class performs the analysis of RMS_t_squared and D described in the paper: "Multimodal interferometric imaging of nanoscale structure and
     macromolecular motion uncovers UV induced cellular paroxysm". It is based on a set of matlab scripts written by the author of that paper, Scott Gladstein.
      The original scripts can be found in the `_oldMatlab` subpackage."""
     def __init__(self, settings: DynamicsAnalysisSettings, ref: DynCube, extraReflectance: ExtraReflectanceCube):
@@ -83,7 +83,7 @@ class DynamicsAnalysis(AbstractAnalysis):
         d_slope = -self._maskedLinearRegression(val, dt) # Get the slope of the autocorrelation. This is related to the diffusion in the cell. The minus is here to make the number positive, the slope is really negative.
 
         results = DynamicsAnalysisResults.create(meanReflectance=reflectance,
-                                                 rms_t=np.sqrt(rms_t_squared),
+                                                 rms_t_squared=rms_t_squared,
                                                  reflectance=cube,
                                                  diffusion=d_slope,
                                                  settings=self.settings,

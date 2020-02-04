@@ -23,7 +23,7 @@ class AnalysisPlotter:
         RSquared = (AnalysisTypes.PWS, 'rSquared')
         Ld = (AnalysisTypes.PWS, 'ld')
         #Dynamics specific
-        RMS_t = (AnalysisTypes.DYN, 'rms_t')
+        RMS_t_squared = (AnalysisTypes.DYN, 'rms_t_squared')
         Diffusion = (AnalysisTypes.DYN, 'diffusion')
         DynamicsReflectance = (AnalysisTypes.DYN, 'meanReflectance')
 

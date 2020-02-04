@@ -44,7 +44,7 @@ class AnalysisViewer(AnalysisPlotter, QWidget):
                     items.append(i)
             except KeyError:
                 pass
-        for i in [_.RMS_t, _.Diffusion, _.DynamicsReflectance]:
+        for i in [_.RMS_t_squared, _.Diffusion, _.DynamicsReflectance]:
             try:
                 if hasattr(self.analysis.dyn, i.value[1]):  # This will raise a key error if the analysis object exists but the requested item is not found
                     items.append(i)

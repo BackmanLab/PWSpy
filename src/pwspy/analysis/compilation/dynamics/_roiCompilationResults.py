@@ -8,5 +8,5 @@ class DynamicsRoiCompilationResults(AbstractRoiCompilationResults):
     cellIdTag: str
     analysisName: str
     reflectance: float
-    rms_t: float
+    rms_t_squared: float
     diffusion: float

@@ -50,7 +50,7 @@ class ResultsTableItem:
         dyn = results.dyn
         if dyn is not None:
             self.dynamicsAnalysisNameLabel = QTableWidgetItem(dyn.analysisName)
-            self.rms_tLabel = NumberTableWidgetItem(dyn.rms_t)
+            self.rms_tLabel = NumberTableWidgetItem(dyn.rms_t_squared)
             self.dynamicsReflectanceLabel = NumberTableWidgetItem(dyn.reflectance)
             self.diffusionLabel = NumberTableWidgetItem(dyn.diffusion)
         else:
@@ -85,7 +85,7 @@ class ResultsTable(CopyableTable):
         "Poly RMS": (False, 'polynomialRms', PWSCompilerSettings, "In order to remove spectral features that are not due to interference (fluorescence, absorbance, etc.) we sometimes subtract a polynomial fit from the data before analysis. This indicates the StdDev of the polynomial fit. It's not clear how this is useful"),
         "Roi Area": (False, 'roiArea', GenericCompilerSettings, "The area of the ROI given in units of pixels. This can be converted to microns if you know the size in object space of a single pixel"),
         "Dynamics Analysis": (False, None, None, None),
-        "RMS_t": (False, 'rms_t', DynamicsCompilerSettings, "This is the primary analysis result for `Dynamics`. It is the standard deviation of the signal over time when looking at just a single wavelength."),
+        "RMS_t^2": (False, 'rms_t_squared', DynamicsCompilerSettings, "This is the primary analysis result for `Dynamics`. It is the standard deviation of the signal over time when looking at just a single wavelength."),
         "Dynamics Reflectance": (False, 'meanReflectance', DynamicsCompilerSettings, "This is the average reflectance of the ROI for the `Dynamics` measurement."),
         "Diffusion": (False, 'diffusion', DynamicsCompilerSettings, "Diffusion is calculated as the slope of the log of the autocorrelation function of a `Dynamics` measurement.")
     }
