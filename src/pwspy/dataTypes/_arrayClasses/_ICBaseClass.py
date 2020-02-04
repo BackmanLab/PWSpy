@@ -207,36 +207,40 @@ class ICBase:
         new.data = ret
         return new
 
-    def toHdfDataset(self, g: h5py.Group, name: str) -> h5py.Group:
-        dset = g.create_dataset(name, data=self.data)
-        dset.attrs['index'] = np.array(self.index)
-        dset.attrs['type'] = np.string_(self.__class__.__name__)
-        return g
-
-    def toFixedPointHdfDataset(self, g: h5py.Group, name: str) -> h5py.Group:
-        """Scale data to span the full range of an unsigned 16bit integer. save as integer and save the min and max
-        needed to scale back to the original data. Testing has shown that this has a maximum conversion error of 1.4e-3 percent.
-        Saving is ~10% faster but requires only 50% the hard drive space. Time can be traded for space by using compression
-        when creating the dataset"""
-        tim = time()
-        m = self.data.min()
-        M = self.data.max()
-        fpData = self.data - m
-        fpData = fpData / (M - m)
-        fpData *= (2 ** 16 - 1)
-        fpData = fpData.astype(np.uint16)
-        dset = g.create_dataset(name, data=fpData)#, chunks=(64,64,self.data.shape[2]), compression=2)
-        print(f"{self.__class__.__name__} chunking shape: {dset.chunks}")
-        print(f"Data type is {fpData.dtype}")
-        dset.attrs['index'] = np.array(self.index)
-        dset.attrs['type'] = np.string_(f"{self.__class__.__name__}_fp")
-        dset.attrs['min'] = m
-        dset.attrs['max'] = M
-        print(f"Saving {self.__class__.__name__} HDF took {time() - tim} seconds.")
+    def toHdfDataset(self, g: h5py.Group, name: str, fixedPointCompression: bool = True) -> h5py.Group:
+        """Save the data of this class to a new HDF dataset.
+            Args:
+                g (h5py.Group): the parent HDF Group of the new dataset.
+                name (str): the name of the new HDF dataset in group `g`.
+                fixedPointCompression (bool): if True then save the data in a special 16bit fixed-point format. Testing has shown that this has a
+                    maximum conversion error of 1.4e-3 percent. Saving is ~10% faster but requires only 50% the hard drive space.
+            Returns:
+                (h5py.Group): This is the the same h5py.Group that was passed in a `g`. It should now have a new dataset by the name of 'name'
+        """
+        if fixedPointCompression:
+            # Scale data to span the full range of an unsigned 16bit integer. save as integer and save the min and max
+            # needed to scale back to the original data. Testing has shown that this has a maximum conversion error of 1.4e-3 percent.
+            # Saving is ~10% faster but requires only 50% the hard drive space. Time can be traded for space by using compression
+            # when creating the dataset
+            m = self.data.min()
+            M = self.data.max()
+            fpData = self.data - m
+            fpData = fpData / (M - m)
+            fpData *= (2 ** 16 - 1)
+            fpData = fpData.astype(np.uint16)
+            dset = g.create_dataset(name, data=fpData)  # , chunks=(64,64,self.data.shape[2]), compression=2)
+            dset.attrs['index'] = np.array(self.index)
+            dset.attrs['type'] = np.string_(f"{self.__class__.__name__}_fp")
+            dset.attrs['min'] = m
+            dset.attrs['max'] = M
+        else:
+            dset = g.create_dataset(name, data=self.data)
+            dset.attrs['index'] = np.array(self.index)
+            dset.attrs['type'] = np.string_(self.__class__.__name__)
         return g
 
     @classmethod
-    def _decodeHdf(cls, d: h5py.Dataset) -> Tuple[np.array, Tuple[float, ...]]:
+    def decodeHdf(cls, d: h5py.Dataset) -> Tuple[np.array, Tuple[float, ...]]:
         assert 'type' in d.attrs
         assert 'index' in d.attrs
         if d.attrs['type'].decode() == cls.__name__: #standard decoding
@@ -252,10 +256,6 @@ class ICBase:
             return arr, tuple(d.attrs['index'])
         else:
             raise TypeError(f"Got {d.attrs['type'].decode()} instead of {cls.__name__}")
-
-    @classmethod
-    def fromHdfDataset(cls, d: h5py.Dataset):
-        return cls(*cls._decodeHdf(d))
 
     def getTransform(self, other: Iterable['self.__class__'], mask: np.ndarray = None, debugPlots: bool = False) -> Iterable[np.ndarray]:
         """Given an array of other ICBase type objects this function will use OpenCV to calculate the transform from
@@ -327,13 +327,15 @@ class ICBase:
             an = animation.ArtistAnimation(anFig, anims)
         return transforms, an
 
+
 class ICRawBase(ICBase, ABC):
     """This class represents data cubes which are not derived from other data cubes. They represent raw acquired data that exists as data files on the computer.
-    For this reason they may need to have hardware specific corrections applied to them such as normalizing out exposure time, linearizing camera counts, subtracting dark counts, etc."""
+    For this reason they may need to have hardware specific corrections applied to them such as normalizing out exposure time, linearizing camera counts,
+    subtracting dark counts, etc. The most important change is the addition of `metadata`"""
     _hasBeenCameraCorrected: bool
     _hasBeenNormalizedByExposure: bool
     _hasExtraReflectionSubtracted: bool
-    _hasBeenNormalizedByReference: bool
+    _hasBeenNormalizedByReference: bool #TODO save/load these for HDF
 
     def __init__(self, data: np.ndarray, index: tuple, metadata: MetaDataBase, dtype=np.float32):
         super().__init__(data, index, dtype)
@@ -384,6 +386,19 @@ class ICRawBase(ICBase, ABC):
     @abstractmethod
     def subtractExtraReflection(self, extraReflection):
         pass
+
+    def toHdfDataset(self, g: h5py.Group, name: str, fixedPointCompression: bool = True) -> h5py.Group:
+        g = ICBase.toHdfDataset(self, g, name, fixedPointCompression)
+        self.metadata.encodeHdfMetadata(g[name])
+        g[name].attrs['processingStatus'] = {'erSubtracted': self._hasExtraReflectionSubtracted, 'exposureNormed': self._hasBeenNormalizedByExposure, 'refNormed': self._hasBeenNormalizedByReference, 'camCorrected': self._hasBeenCameraCorrected}
+        return g
+
+    @classmethod
+    def decodeHdf(cls, d: h5py.Dataset) -> Tuple[np.array, Tuple[float, ...], dict, dict]:
+        arr, index = ICBase.decodeHdf(d)
+        mdDict = MetaDataBase.decodeHdfMetadata(d) #Rather than pointing to MetaDataBase, wouldn't it be best to to something like cls.metadataClass, of course this isn't implement yet though. might be hard. don't want to do it.
+        processingStatusDict = d.attrs['processingStatus']
+        return arr, index, mdDict, processingStatusDict
 
     def isCorrected(self) -> bool:
         """Indicates whether or not the ImCube has had camera defects corrected out."""

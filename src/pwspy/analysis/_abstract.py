@@ -166,7 +166,7 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
                 if isinstance(v, str):
                     hf.create_dataset(k, data=np.string_(v))  # h5py recommends encoding strings this way for compatability.
                 elif isinstance(v, ICBase):
-                    hf = v.toFixedPointHdfDataset(hf, k)
+                    hf = v.toHdfDataset(hf, k, fixedPointCompression=True)
                 elif isinstance(v, np.ndarray):
                     hf.create_dataset(k, data=v)
                 elif v is None:

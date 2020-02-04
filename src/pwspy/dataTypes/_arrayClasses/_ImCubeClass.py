@@ -179,13 +179,13 @@ class ImCube(ICRawBase):
         return ImCube(ret.data, md)
 
     @classmethod
-    def fromHdfDataset(cls, d: h5py.Dataset):
+    def fromHdfDataset(cls, d: h5py.Dataset): #TODO this is from before the changes
         """Load an Imcube from an HDF5 dataset."""
-        data, index = cls._decodeHdf(d)
+        data, index = cls.decodeHdf(d)
         md = ICMetaData.fromHdf(d)
         return cls(data, md)
 
-    def toHDF(self, g: h5py.Group, name: str) -> None:
+    def toHDF(self, g: h5py.Group, name: str) -> None: #TODO this is from before the changes
         """Save the ImCube to an HDF5 dataset in HDF5 group `g`"""
         g = super().toHdfDataset(g, name=name)
         d = self.metadata.encodeHdfMetadata(g[name])

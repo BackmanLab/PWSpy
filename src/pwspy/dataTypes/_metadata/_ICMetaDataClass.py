@@ -160,7 +160,7 @@ class ICMetaData(AnalysisManagerMetaDataBase):
 
     @classmethod
     def fromHdf(cls, d: h5py.Dataset):
-        return cls(cls._decodeHdfMetadata(d), fileFormat=ICMetaData.FileFormats.Hdf)
+        return cls(cls.decodeHdfMetadata(d), fileFormat=ICMetaData.FileFormats.Hdf)
 
     def getThumbnail(self) -> np.ndarray:
         if self.fileFormat == ICMetaData.FileFormats.NanoMat:

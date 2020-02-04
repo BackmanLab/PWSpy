@@ -77,7 +77,7 @@ class DynamicsAnalysisResults(AbstractHDFAnalysisResults):
     def reflectance(self) -> DynCube:
         from pwspy.dataTypes import DynCube
         dset = self.file['reflectance']
-        return DynCube.fromHdfDataset(dset)
+        return DynCube.fromHdfDataset(dset) #TODO this method doesn't exist.
 
     @cached_property
     @getFromDict

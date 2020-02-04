@@ -92,7 +92,7 @@ class MetaDataBase(ABC):
         return self._dict['system']
 
     @staticmethod
-    def _decodeHdfMetadata(d: h5py.Dataset) -> dict:
+    def decodeHdfMetadata(d: h5py.Dataset) -> dict:
         """Attempt to extract a dictionary of metadata from an HDF5 dataset."""
         assert 'metadata' in d.attrs
         return json.loads(d.attrs['metadata'])
