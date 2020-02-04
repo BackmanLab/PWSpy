@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import Union
+from typing import Union, Type
 
+import h5py
 
 from ._ICBaseClass import ICRawBase
 import numpy as np
@@ -18,9 +19,13 @@ class DynCube(ICRawBase):
     """A class representing a single acquisition of PWS Dynamics. In which the wavelength is held constant and the 3rd
     dimension of the data is time rather than wavelength. This can be analyzed to reveal information about diffusion rate.
     Contains methods for loading and saving to multiple formats as well as common operations used in analysis."""
-    def __init__(self, data, metadata: DynMetaData, dtype=np.float32):
+    def __init__(self, data, metadata: DynMetaData, processingStatus: ICRawBase.ProcessingStatus=None, dtype=np.float32):
         assert isinstance(metadata, DynMetaData)
-        super().__init__(data, metadata.times, metadata, dtype=dtype)
+        super().__init__(data, metadata.times, metadata, processingStatus=processingStatus, dtype=dtype)
+
+    @staticmethod
+    def getMetadataClass() -> Type[DynMetaData]:
+        return DynMetaData
 
     @property
     def times(self):
@@ -146,3 +151,10 @@ class DynCube(ICRawBase):
             if pixelSize is None:
                 raise ValueError("DynCube Metadata does not have a `pixelSizeUm` saved. please manually specify pixel size. use pixelSize=1 to make `kernelRadius in units of pixels.")
         super().filterDust(kernelRadius, pixelSize)
+
+    @classmethod
+    def fromHdfDataset(cls, d: h5py.Dataset):
+        """Load an Imcube from an HDF5 dataset."""
+        data, index, mdDict, processingStatus = cls.decodeHdf(d)
+        md = DynMetaData(mdDict, fileFormat=DynMetaData.FileFormats.Hdf)
+        return cls(data, md, processingStatus=processingStatus)

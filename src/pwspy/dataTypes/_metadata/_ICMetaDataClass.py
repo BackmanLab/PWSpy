@@ -158,10 +158,6 @@ class ICMetaData(AnalysisManagerMetaDataBase):
         with open(os.path.join(directory, 'pwsmetadata.json'), 'w') as f:
             json.dump(self._dict, f)
 
-    @classmethod
-    def fromHdf(cls, d: h5py.Dataset):
-        return cls(cls.decodeHdfMetadata(d), fileFormat=ICMetaData.FileFormats.Hdf)
-
     def getThumbnail(self) -> np.ndarray:
         if self.fileFormat == ICMetaData.FileFormats.NanoMat:
             with h5py.File(os.path.join(self.filePath, 'image_bd.mat'), 'r') as hf:

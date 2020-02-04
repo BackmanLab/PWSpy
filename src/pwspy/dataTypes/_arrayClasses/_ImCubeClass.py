@@ -7,6 +7,7 @@ Created on Thu Aug  9 11:41:32 2018
 from __future__ import annotations
 
 import copy
+from typing import Type
 
 import h5py
 import numpy as np
@@ -25,9 +26,9 @@ class ImCube(ICRawBase):
     """ A class representing a single PWS acquisition. Contains methods for loading and saving to multiple formats as
     well as common operations used in analysis."""
 
-    def __init__(self, data, metadata: ICMetaData, dtype=np.float32):
+    def __init__(self, data, metadata: ICMetaData, processingStatus: ICRawBase.ProcessingStatus=None, dtype=np.float32):
         assert isinstance(metadata, ICMetaData)
-        super().__init__(data, metadata.wavelengths, metadata, dtype=dtype)
+        super().__init__(data, metadata.wavelengths, metadata, processingStatus=processingStatus, dtype=dtype)
 
     @property
     def wavelengths(self):
@@ -178,17 +179,16 @@ class ImCube(ICRawBase):
         md._dict['wavelengths'] = ret.index
         return ImCube(ret.data, md)
 
-    @classmethod
-    def fromHdfDataset(cls, d: h5py.Dataset): #TODO this is from before the changes
-        """Load an Imcube from an HDF5 dataset."""
-        data, index = cls.decodeHdf(d)
-        md = ICMetaData.fromHdf(d)
-        return cls(data, md)
+    @staticmethod
+    def getMetadataClass() -> Type[ICMetaData]:
+        return ICMetaData
 
-    def toHDF(self, g: h5py.Group, name: str) -> None: #TODO this is from before the changes
-        """Save the ImCube to an HDF5 dataset in HDF5 group `g`"""
-        g = super().toHdfDataset(g, name=name)
-        d = self.metadata.encodeHdfMetadata(g[name])
+    @classmethod
+    def fromHdfDataset(cls, d: h5py.Dataset):
+        """Load an Imcube from an HDF5 dataset."""
+        data, index, mdDict, processingStatus = cls.decodeHdf(d)
+        md = ICMetaData(mdDict, fileFormat=ICMetaData.FileFormats.Hdf)
+        return cls(data, md, processingStatus=processingStatus)
 
     def filterDust(self, kernelRadius: float, pixelSize: float = None) -> None:
         """This method blurs the data of the ImCube along the X and Y dimensions. This is useful if the ImCube is being

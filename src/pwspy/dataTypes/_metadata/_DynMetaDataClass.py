@@ -28,7 +28,7 @@ class DynMetaData(AnalysisManagerMetaDataBase):
     with open(_jsonSchemaPath) as f:
         _jsonSchema = json.load(f)
 
-    def __init__(self, metadata: dict, filePath: Optional[str], fileFormat: Optional[FileFormats] = None, acquisitionDirectory: Optional[AcqDir] = None):
+    def __init__(self, metadata: dict, filePath: Optional[str] = None, fileFormat: Optional[FileFormats] = None, acquisitionDirectory: Optional[AcqDir] = None):
         self.fileFormat = fileFormat
         super().__init__(metadata, filePath, acquisitionDirectory=acquisitionDirectory)
 

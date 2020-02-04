@@ -14,7 +14,6 @@ from .. import _jsonSchemasPath
 from .._otherClasses import CameraCorrection
 import typing
 
-from ...analysis import AbstractAnalysisResults
 from ...analysis._abstract import AbstractHDFAnalysisResults
 
 if typing.TYPE_CHECKING:
