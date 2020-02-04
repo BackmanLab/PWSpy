@@ -7,6 +7,7 @@ Created on Sat Feb  9 16:47:22 2019
 from __future__ import annotations
 
 from abc import abstractmethod, ABC
+from dataclasses import dataclass
 from time import time
 from typing import Tuple, Union, Iterable
 
@@ -332,35 +333,46 @@ class ICRawBase(ICBase, ABC):
     """This class represents data cubes which are not derived from other data cubes. They represent raw acquired data that exists as data files on the computer.
     For this reason they may need to have hardware specific corrections applied to them such as normalizing out exposure time, linearizing camera counts,
     subtracting dark counts, etc. The most important change is the addition of `metadata`"""
-    _hasBeenCameraCorrected: bool
-    _hasBeenNormalizedByExposure: bool
-    _hasExtraReflectionSubtracted: bool
-    _hasBeenNormalizedByReference: bool #TODO save/load these for HDF
 
-    def __init__(self, data: np.ndarray, index: tuple, metadata: MetaDataBase, dtype=np.float32):
+    @dataclass
+    class ProcessingStatus:
+        """By default none of these things have been done for raw data"""
+        cameraCorrected: bool = False
+        normalizedByExposure: bool = False
+        extraReflectionSubtracted: bool = False
+        normalizedByReference: bool = False
+
+        def toDict(self) -> dict:
+            return {'camCorrected': self.cameraCorrected, 'exposureNormed': self.normalizedByExposure, 'erSubtracted': self.extraReflectionSubtracted, 'refNormed': self.normalizedByReference}
+
+        @classmethod
+        def fromDict(cls, d: dict) -> 'ProcessingStatus':
+            return cls(cameraCorrected=d['camCorrected'], normalizedByExposure=d['exposureNormed'], extraReflectionSubtracted=d['erSubtracted'], normalizedByReference=d['refNormed'])
+
+    def __init__(self, data: np.ndarray, index: tuple, metadata: MetaDataBase, processingStatus: ProcessingStatus=None, dtype=np.float32):
         super().__init__(data, index, dtype)
         self.metadata = metadata
-        self._hasBeenNormalizedByExposure = False  # Keeps track of whether or not we have normalized by exposure so that we don't do it twice.
-        self._hasBeenCameraCorrected = False
-        self._hasExtraReflectionSubtracted = False
-        self._hasBeenNormalizedByReference = False
+        if processingStatus:
+            self.processingStatus = processingStatus
+        else:
+            self.processingStatus = ICRawBase.ProcessingStatus(False, False, False, False)
 
     def normalizeByExposure(self):
         """This is one of the first steps in most analysis pipelines. Data is divided by the camera exposure.
         This way two ImCube that were acquired at different exposure times will still be on equivalent scales."""
-        if not self._hasBeenCameraCorrected:
+        if not self.processingStatus.cameraCorrected:
             raise Exception(
                 "This ImCube has not yet been corrected for camera effects. are you sure you want to normalize by exposure?")
-        if not self._hasBeenNormalizedByExposure:
+        if not self.processingStatus.normalizedByExposure:
             self.data = self.data / self.metadata.exposure
         else:
             raise Exception("The ImCube has already been normalized by exposure.")
-        self._hasBeenNormalizedByExposure = True
+        self.processingStatus.normalizedByExposure = True
 
     def correctCameraEffects(self, correction: CameraCorrection = None, binning: int = None):
         """Subtracts the darkcounts from the data. count is darkcounts per pixel. binning should be specified if
         it wasn't saved in the micromanager metadata."""
-        if self._hasBeenCameraCorrected:
+        if self.processingStatus.cameraCorrected:
             raise Exception("This ImCube has already had it's camera correction applied!")
         if binning is None:
             binning = self.metadata.binning
@@ -374,7 +386,7 @@ class ICRawBase(ICBase, ABC):
             pass
         else:
             self.data = np.polynomial.polynomial.polyval(self.data, (0.0,) + correction.linearityPolynomial)  # The [0] item is the y-intercept (already handled by the darkcount)
-        self._hasBeenCameraCorrected = True
+        self.processingStatus.cameraCorrected = True
         return
 
     @abstractmethod
@@ -390,27 +402,12 @@ class ICRawBase(ICBase, ABC):
     def toHdfDataset(self, g: h5py.Group, name: str, fixedPointCompression: bool = True) -> h5py.Group:
         g = ICBase.toHdfDataset(self, g, name, fixedPointCompression)
         self.metadata.encodeHdfMetadata(g[name])
-        g[name].attrs['processingStatus'] = {'erSubtracted': self._hasExtraReflectionSubtracted, 'exposureNormed': self._hasBeenNormalizedByExposure, 'refNormed': self._hasBeenNormalizedByReference, 'camCorrected': self._hasBeenCameraCorrected}
+        g[name].attrs['processingStatus'] = self.processingStatus.toDict()
         return g
 
     @classmethod
-    def decodeHdf(cls, d: h5py.Dataset) -> Tuple[np.array, Tuple[float, ...], dict, dict]:
+    def decodeHdf(cls, d: h5py.Dataset) -> Tuple[np.array, Tuple[float, ...], dict, ProcessingStatus]:
         arr, index = ICBase.decodeHdf(d)
         mdDict = MetaDataBase.decodeHdfMetadata(d) #Rather than pointing to MetaDataBase, wouldn't it be best to to something like cls.metadataClass, of course this isn't implement yet though. might be hard. don't want to do it.
-        processingStatusDict = d.attrs['processingStatus']
-        return arr, index, mdDict, processingStatusDict
-
-    def isCorrected(self) -> bool:
-        """Indicates whether or not the ImCube has had camera defects corrected out."""
-        return self._hasBeenCameraCorrected
-
-    def isExposureNormalized(self) -> bool:
-        """Indicates whether the ImCube has had its data normalized by exposure."""
-        return self._hasBeenNormalizedByExposure
-
-    def isExtraReflectionSubtracted(self) -> bool:
-        """Indicates whether the data of this ImCube has been corrected for the extra reflectance present in the system."""
-        return self._hasExtraReflectionSubtracted
-
-    def isNormalizedByReference(self) -> bool:
-        return self._hasBeenNormalizedByReference
+        processingStatus = ICRawBase.ProcessingStatus.fromDict(d.attrs['processingStatus'])
+        return arr, index, mdDict, processingStatus

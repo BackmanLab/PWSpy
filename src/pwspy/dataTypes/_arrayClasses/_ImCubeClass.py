@@ -202,25 +202,25 @@ class ImCube(ICRawBase):
     def normalizeByReference(self, reference: ICRawBase):
         """Normalize the raw data of this data cube by a reference cube to result in data representing
         arbitrarily scaled reflectance."""
-        if self._hasBeenNormalizedByReference:
+        if self.processingStatus.normalizedByReference:
             raise Exception("This ImCube has already been normalized by a reference.")
-        if not self.isCorrected():
+        if not self.processingStatus.cameraCorrected:
             print("Warning: This ImCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
-        if not self.isExposureNormalized():
+        if not self.processingStatus.normalizedByExposure:
             print("Warning: This ImCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
-        if not reference.isCorrected():
+        if not reference.processingStatus.cameraCorrected:
             print("Warning: The reference ImCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
-        if not reference.isExposureNormalized():
+        if not reference.processingStatus.normalizedByExposure:
             print("Warning: The reference ImCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
         self.data = self.data / reference.data
-        self._hasBeenNormalizedByReference = True
+        self.processingStatus.normalizedByReference = True
 
     def subtractExtraReflection(self, extraReflection: ExtraReflectionCube):
         assert self.data.shape == extraReflection.data.shape
-        if not self._hasBeenNormalizedByExposure:
+        if not self.processingStatus.normalizedByExposure:
             raise Exception("This ImCube has not yet been normalized by exposure. are you sure you want to normalize by exposure?")
-        if not self._hasExtraReflectionSubtracted:
+        if not self.processingStatus.extraReflectionSubtracted:
             self.data = self.data - extraReflection.data
-            self._hasExtraReflectionSubtracted = True
+            self.processingStatus.extraReflectionSubtracted = True
         else:
             raise Exception("The ImCube has already has extra reflection subtracted.")

@@ -93,16 +93,16 @@ class DynCube(ICRawBase):
         """This method can accept either a DynCube (in which case it's average over time will be calculated and used for
         normalization) or a 2d numpy Array which should represent the average over time of a reference DynCube. The array
         should be 2D and its shape should match the first two dimensions of this DynCube."""
-        if self._hasBeenNormalizedByReference:
+        if self.processingStatus.normalizedByReference:
             raise Exception("This cube has already been normalized by a reference.")
-        if not self.isCorrected():
+        if not self.processingStatus.cameraCorrected:
             print("Warning: This cube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
-        if not self.isExposureNormalized():
+        if not self.processingStatus.normalizedByExposure:
             print("Warning: This cube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
         if isinstance(reference, DynCube):
-            if not reference.isCorrected():
+            if not reference.processingStatus.cameraCorrected:
                 print("Warning: The reference cube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
-            if not reference.isExposureNormalized():
+            if not reference.processingStatus.normalizedByExposure:
                 print("Warning: The reference cube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
             mean = reference.data.mean(axis=2)
         elif isinstance(reference, np.ndarray):
@@ -113,15 +113,15 @@ class DynCube(ICRawBase):
         else:
             raise TypeError(f"`reference` must be either DynCube or numpy.ndarray, not {type(reference)}")
         self.data = self.data / mean[:, :, None]
-        self._hasBeenNormalizedByReference = True
+        self.processingStatus.normalizedByReference = True
 
     def subtractExtraReflection(self, extraReflection: np.ndarray):
         assert self.data.shape[:2] == extraReflection.shape
-        if not self._hasBeenNormalizedByExposure:
+        if not self.processingStatus.normalizedByExposure:
             raise Exception("This DynCube has not yet been normalized by exposure. are you sure you want to normalize by exposure?")
-        if not self._hasExtraReflectionSubtracted:
+        if not self.processingStatus.extraReflectionSubtracted:
             self.data = self.data - extraReflection[:, :, None]
-            self._hasExtraReflectionSubtracted = True
+            self.processingStatus.extraReflectionSubtracted = True
         else:
             raise Exception("The DynCube has already has extra reflection subtracted.")
 

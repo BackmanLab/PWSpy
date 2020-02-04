@@ -23,7 +23,7 @@ class DynamicsAnalysis(AbstractAnalysis):
      The original scripts can be found in the `_oldMatlab` subpackage."""
     def __init__(self, settings: DynamicsAnalysisSettings, ref: DynCube, extraReflectance: ExtraReflectanceCube):
         super().__init__(settings)
-        assert ref.isCorrected()
+        assert ref.processingStatus.cameraCorrected
         ref.normalizeByExposure()
         if ref.metadata.pixelSizeUm is not None:  # Only works if pixel size was saved in the metadata.
             ref.filterDust(.75)  # Apply a blur to filter out dust particles. This is in microns. I'm not sure if this is the optimal value.
