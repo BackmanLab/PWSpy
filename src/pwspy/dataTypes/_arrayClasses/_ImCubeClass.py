@@ -27,7 +27,7 @@ class ImCube(ICRawBase):
 
     def __init__(self, data, metadata: ICMetaData, dtype=np.float32):
         assert isinstance(metadata, ICMetaData)
-        super().__init__(data, metadata, metadata.wavelengths, dtype=dtype)
+        super().__init__(data, metadata.wavelengths, metadata, dtype=dtype)
 
     @property
     def wavelengths(self):

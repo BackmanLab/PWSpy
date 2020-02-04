@@ -9,7 +9,7 @@ from pwspy.utility.misc import cached_property
 import numpy as np
 import typing
 if typing.TYPE_CHECKING:
-    from ...dataTypes import DynCube
+    from pwspy.dataTypes import DynCube
 
 
 def getFromDict(func):
@@ -75,6 +75,7 @@ class DynamicsAnalysisResults(AbstractHDFAnalysisResults):
     @cached_property
     @getFromDict
     def reflectance(self) -> DynCube:
+        from pwspy.dataTypes import DynCube
         dset = self.file['reflectance']
         return DynCube.fromHdfDataset(dset)
 

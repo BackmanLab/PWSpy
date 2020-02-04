@@ -236,7 +236,7 @@ class ICBase:
         return g
 
     @classmethod
-    def _decodeHdf(cls, d: h5py.Dataset):
+    def _decodeHdf(cls, d: h5py.Dataset) -> Tuple[np.array, Tuple[float, ...]]:
         assert 'type' in d.attrs
         assert 'index' in d.attrs
         if d.attrs['type'].decode() == cls.__name__: #standard decoding
@@ -253,14 +253,11 @@ class ICBase:
         else:
             raise TypeError(f"Got {d.attrs['type'].decode()} instead of {cls.__name__}")
 
-    def _decodeFixedPointHdf(self, d: h5py.Dataset):
-        pass
-
     @classmethod
     def fromHdfDataset(cls, d: h5py.Dataset):
         return cls(*cls._decodeHdf(d))
 
-    def getTransform(self, other: Iterable['self.__class__'], mask:np.ndarray = None, debugPlots: bool = False) -> Iterable[np.ndarray]:
+    def getTransform(self, other: Iterable['self.__class__'], mask: np.ndarray = None, debugPlots: bool = False) -> Iterable[np.ndarray]:
         """Given an array of other ICBase type objects this function will use OpenCV to calculate the transform from
         each of the other objects to self. The transforms can be inverted using cv2.invertAffineTransform().
         It will return a list of transforms. Each transform is a 2x3 array in the form returned
@@ -338,7 +335,7 @@ class ICRawBase(ICBase, ABC):
     _hasExtraReflectionSubtracted: bool
     _hasBeenNormalizedByReference: bool
 
-    def __init__(self, data: np.ndarray, metadata: MetaDataBase, index: tuple, dtype=np.float32):
+    def __init__(self, data: np.ndarray, index: tuple, metadata: MetaDataBase, dtype=np.float32):
         super().__init__(data, index, dtype)
         self.metadata = metadata
         self._hasBeenNormalizedByExposure = False  # Keeps track of whether or not we have normalized by exposure so that we don't do it twice.
