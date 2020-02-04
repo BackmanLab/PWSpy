@@ -29,7 +29,7 @@ class PWSAnalysis(AbstractAnalysis):
     on as many data cubes as you want."""
     def __init__(self, settings: PWSAnalysisSettings, ref: ImCube, extraReflectance: ExtraReflectanceCube):
         from pwspy.dataTypes import ExtraReflectionCube, ExtraReflectanceCube
-        assert ref.isCorrected(), "Before attempting to analyze using this reference make sure that it has had camera darkcounts and non-linearity corrected for."
+        assert ref.processingStatus.cameraCorrected, "Before attempting to analyze using this reference make sure that it has had camera darkcounts and non-linearity corrected for."
         super().__init__(settings)
         ref.normalizeByExposure()
         if ref.metadata.pixelSizeUm is not None: #Only works if pixel size was saved in the metadata.
@@ -57,7 +57,7 @@ class PWSAnalysis(AbstractAnalysis):
     def run(self, cube: ImCube) -> Tuple[PWSAnalysisResults, List[warnings.AnalysisWarning]]:
         """Runs analysis on `cube` returns a list of warnings indicating abnormal results and an analyisResults object which can be saved."""
         from pwspy.dataTypes import KCube
-        assert cube.isCorrected()
+        assert cube.processingStatus.cameraCorrected
         warns = []
         cube = self._normalizeImCube(cube)
         interval = (max(cube.wavelengths) - min(cube.wavelengths)) / (len(cube.wavelengths) - 1)  # Wavelength interval. We are assuming equally spaced wavelengths here

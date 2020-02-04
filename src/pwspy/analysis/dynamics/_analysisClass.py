@@ -55,7 +55,7 @@ class DynamicsAnalysis(AbstractAnalysis):
         self.extraReflection = Iextra
 
     def run(self, cube: DynCube) -> Tuple[DynamicsAnalysisResults, List[warnings.AnalysisWarning]]:
-        assert cube.isCorrected()
+        assert cube.processingStatus.cameraCorrected
         warns = []
         cube.normalizeByExposure()
         cube.subtractExtraReflection(self.extraReflection)

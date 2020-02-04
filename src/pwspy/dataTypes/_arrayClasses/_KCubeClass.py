@@ -6,6 +6,8 @@ Created on Sat Feb  9 15:54:29 2019
 """
 from typing import Tuple
 
+import h5py
+
 from ._ICBaseClass import ICBase
 from ._ImCubeClass import ImCube
 from pwspy.dataTypes import ICMetaData
@@ -195,6 +197,11 @@ class KCube(ICBase):
     #     md = copy.deepcopy(self.metadata)
     #     md['wavelengths'] = evenWavelengths.astype(np.float32)
     #     return ImCube(data, md, dtype=np.float32)
+
+    @classmethod
+    def fromHdfDataset(cls, d: h5py.Dataset):
+        arr, index = cls.decodeHdf(d)
+        return cls(arr, index)
 
     def __add__(self, other):
         ret = self._add(other)
