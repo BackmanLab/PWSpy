@@ -6,6 +6,7 @@ Created on Sat Feb  9 16:47:22 2019
 """
 from __future__ import annotations
 
+import json
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
 from time import time
@@ -408,15 +409,15 @@ class ICRawBase(ICBase, ABC):
     def toHdfDataset(self, g: h5py.Group, name: str, fixedPointCompression: bool = True) -> h5py.Group:
         g = ICBase.toHdfDataset(self, g, name, fixedPointCompression)
         self.metadata.encodeHdfMetadata(g[name])
-        g[name].attrs['processingStatus'] = self.processingStatus.toDict()
+        g[name].attrs['processingStatus'] = np.string_(json.dumps(self.processingStatus.toDict()))
         return g
 
     @classmethod
     def decodeHdf(cls, d: h5py.Dataset) -> Tuple[np.array, Tuple[float, ...], dict, ProcessingStatus]:
-        arr, index = ICBase.decodeHdf(d)
-        mdDict = cls.getMetadataClass().decodeHdfMetadata(d) #Rather than pointing to MetaDataBase, wouldn't it be best to to something like cls.metadataClass, of course this isn't implement yet though. might be hard. don't want to do it.
+        arr, index = super().decodeHdf(d)
+        mdDict = cls.getMetadataClass().decodeHdfMetadata(d)
         if 'processingStatus' in d.attrs:
-            processingStatus = cls.ProcessingStatus.fromDict(d.attrs['processingStatus'])
+            processingStatus = cls.ProcessingStatus.fromDict(json.loads(d.attrs['processingStatus']))
         else:  # Some old hdf files won't have this field, that's ok.
             processingStatus = None
         return arr, index, mdDict, processingStatus

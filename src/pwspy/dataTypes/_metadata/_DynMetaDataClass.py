@@ -20,6 +20,7 @@ class DynMetaData(AnalysisManagerMetaDataBase):
     class FileFormats(Enum):
         Tiff = auto()
         RawBinary = auto()
+        Hdf = auto()
 
     @staticmethod
     def getAnalysisResultsClass(): return DynamicsAnalysisResults
