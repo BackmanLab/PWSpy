@@ -278,10 +278,10 @@ class PositionList(JsonAble):
             np.ndarray: A 2x3 array representing the partial affine transform (rotation, scaling, and translation, but no skew)
 
         Examples:
-            a = PositionList.fromNanoMatFile(r'F:\Data\AirDryingSystemComparison\NanoPreDry\corners\positions.mat', "TIXYDRIVE")
-            b = PositionList.fromNanoMatFile(r'F:\Data\AirDryingSystemComparison\NanoPostDry\corners\positions.mat',"TIXYDRIVE")
+            a = PositionList.fromNanoMatFile(r'F:/Data/AirDryingSystemComparison/NanoPreDry/corners/positions.mat', "TIXYDRIVE")
+            b = PositionList.fromNanoMatFile(r'F:/Data/AirDryingSystemComparison/NanoPostDry/corners/positions.mat',"TIXYDRIVE")
             t = a.getAffineTransform(b)
-            origPos = PositionList.fromNanoMatFile(r'F:\Data\AirDryingSystemComparison\NanoPreDry\0_8NA\position_list1.mat',"TIXYDRIVE")
+            origPos = PositionList.fromNanoMatFile(r'F:/Data/AirDryingSystemComparison/NanoPreDry/0_8NA/position_list1.mat',"TIXYDRIVE")
             newPos = origPos.applyAffineTransform(t)
         """
         import cv2
@@ -322,7 +322,7 @@ class PositionList(JsonAble):
         return s
 
     def __add__(self, other: Position2d) -> 'PositionList':
-        assert isinstance(other, Position2d)
+        assert isinstance(other, Position2d) #TODO make this more flexible with translating between MSP and P2d
         return PositionList([i + other for i in self.positions])
 
     def __sub__(self, other: Position2d) -> 'PositionList':
