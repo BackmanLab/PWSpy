@@ -221,6 +221,7 @@ class PositionList(JsonAble):
         self.positions = positions
 
     def toDict(self):
+        """Returns the position list as a dict that is formatted just like a `PropertyMap` from Micro-Manager."""
         return {"encoding": "UTF-8",
                    'format': 'Micro-Manager Property Map',
                    'major_version': 2,
