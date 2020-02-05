@@ -275,6 +275,9 @@ class PositionList(JsonAble):
             else:
                 return dct
             return PositionList(positions)
+
+        if filePath[-4:] != '.pos':
+            filePath += '.pos'
         with open(filePath, 'r') as f:
             return json.load(f, object_hook=_decode)
 
@@ -388,7 +391,6 @@ class PositionList(JsonAble):
     def __eq__(self, other: PositionList):
         return all([len(self) == len(other)] +
                    [self[i] == other[i] for i in range(len(self))])
-
 
     def plot(self):
         fig, ax = plt.subplots()
