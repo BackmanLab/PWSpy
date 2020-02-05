@@ -30,7 +30,12 @@ class MetaDataBase(ABC):
 
     def __init__(self, metadata: dict, filePath: Optional[str] = None, acquisitionDirectory: Optional[AcqDir] = None):
         self.filePath = filePath
-        self.acquisitionDirectory = acquisitionDirectory
+        if acquisitionDirectory is None:
+            if filePath is not None:
+                from pwspy.dataTypes import AcqDir
+                self.acquisitionDirectory = AcqDir(filePath)  # If we weren't provided with an acquisition directory but we did geta  file path, then assume that the filepath is the same as the directory.
+        else:
+            self.acquisitionDirectory = acquisitionDirectory
         refResolver = jsonschema.RefResolver(pathlib.Path(self._jsonSchemaPath).as_uri(), None)  # This resolver is used to allow derived json schemas to refer to the base schema.
         jsonschema.validate(instance=metadata, schema=self._jsonSchema, types={'array': (list, tuple)}, resolver=refResolver)
         self._dict: dict = metadata

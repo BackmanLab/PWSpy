@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import typing
 from dataclasses import dataclass
+from numbers import Number
 from typing import Union
 
 import numpy as np
@@ -60,7 +61,7 @@ class PropertyMap(JsonAble):
 @dataclass   
 class Position1d(JsonAble):  
     z: float    
-    zStage: str  = ''
+    zStage: str = ''
 
     def __post_init__(self):
         assert isinstance(self.z, float)
@@ -82,8 +83,8 @@ class Position2d(JsonAble):
     xyStage: str = ''
 
     def __post_init__(self):
-        assert isinstance(self.x, float)
-        assert isinstance(self.y, float)
+        assert isinstance(self.x, Number)
+        assert isinstance(self.y, Number)
         assert isinstance(self.xyStage, str)
 
     def toDict(self):

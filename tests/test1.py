@@ -11,7 +11,7 @@ import os.path as osp
 import os
 from pwspy.utility.micromanager.positions import PositionList, Position2d
 
-resources = osp.join(osp.split(__file__)[0], '_resources')
+resources = osp.join(osp.split(__file__)[0], 'resources')
 testCellPath = osp.join(resources, 'Cell1')
 posListPath = osp.join(resources, 'testPositions.pos')
 
@@ -20,7 +20,7 @@ class myTest(unittest.TestCase):
     def test_process(self):
         try:
             im = ImCube.loadAny(testCellPath)
-            im.filterDust(4)
+            im.filterDust(4, pixelSize=1)
             im.correctCameraEffects(CameraCorrection(2000, (1, 2, 3)), binning=1)
             spec, std = im.getMeanSpectra()
         except Exception as e:
@@ -29,9 +29,9 @@ class myTest(unittest.TestCase):
     def test_meta(self):
         try:
             im = ImCube.loadAny(testCellPath)
-            print(im.getRois())
-            im.loadRoi('nuc', 1)
-            im.metadataToJson(testCellPath)
+            print(im.metadata.acquisitionDirectory.getRois())
+            im.metadata.acquisitionDirectory.loadRoi('nuc', 1)
+            im.metadata.metadataToJson(testCellPath)
         except Exception as e:
             self.fail(f'test_meta raised {e}')
 
