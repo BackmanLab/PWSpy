@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import typing
 from dataclasses import dataclass
+from typing import Union
 
 import numpy as np
 import copy
@@ -16,11 +17,12 @@ import matplotlib as mpl
 from abc import ABC, abstractmethod
 import scipy.io as spio
 
+
 class JsonAble(ABC):
-    
     @abstractmethod
     def toDict(self) -> dict:
         pass
+
 
 @dataclass
 class Property(JsonAble):
@@ -101,17 +103,31 @@ class Position2d(JsonAble):
     def __repr__(self):
         return f"Position2d({self.xyStage}, {self.x}, {self.y})"
 
-    def __add__(self, other: 'Position2d') -> 'Position2d':
-        assert isinstance(other, Position2d)
-        return Position2d(self.x + other.x,
+    def __add__(self, other: Union[PositionList, Position2d, MultiStagePosition]) -> Union[PositionList, Position2d, MultiStagePosition]:
+        if isinstance(other, PositionList):
+            return other.__add__(self)
+        elif isinstance(other, MultiStagePosition):
+            return other.__add__(self)
+        elif isinstance(other, Position2d):
+            return Position2d(self.x + other.x,
                           self.y + other.y,
                           self.xyStage)
+        else:
+            raise TypeError(f"Type {type(other)} is not supported.")
 
-    def __sub__(self, other: 'Position2d') -> 'Position2d':
-        assert isinstance(other, Position2d)
-        return Position2d(self.x - other.x,
-                          self.y - other.y,
-                          self.xyStage)
+    def __sub__(self, other: Union[PositionList, Position2d, MultiStagePosition]) -> Union[PositionList, Position2d, MultiStagePosition]:
+        if isinstance(other, PositionList):
+            return other.copy().mirrorX().mirrorY().__add__(self)  # a-b == -b + a
+        elif isinstance(other, MultiStagePosition):
+            other = other.copy()  # Don't change the original object
+            other.getXYPosition().mirrorX().mirrorY()  # invert the object.
+            return other.__add__(self)  # a-b == -b + a
+        elif isinstance(other, Position2d):
+            return Position2d(self.x - other.x,
+                              self.y - other.y,
+                              self.xyStage)
+        else:
+            raise TypeError(f"Type {type(other)} is not supported.")
 
     def __eq__(self, other: 'Position2d'):
         return all([self.x == other.x,
@@ -120,6 +136,8 @@ class Position2d(JsonAble):
 
 @dataclass
 class MultiStagePosition(JsonAble):
+    """Mirrors the class of the same name from Micro-Manager. Can contain multiple Positon1d or Position2d objects. Ideal for a system with multiple translation
+    stages."""
     label: str
     xyStage: str
     zStage: str
@@ -149,24 +167,35 @@ class MultiStagePosition(JsonAble):
     def renameXYStage(self, label: str):
         self.xyStage = label
         self.getXYPosition().renameStage(label)
-        
-    def __add__(self, other: Position2d) -> MultiStagePosition:
+
+    def copy(self) -> MultiStagePosition:
+        return copy.deepcopy(self)
+
+    def __add__(self, other: Union[Position2d, MultiStagePosition, PositionList]) -> Union[MultiStagePosition, PositionList]:
         if isinstance(other, Position2d):
             newPos = self.getXYPosition().__add__(other)
             positions = copy.copy(self.positions)
             positions.remove(self.getXYPosition())
             positions.append(newPos)
             return MultiStagePosition(self.label, self.xyStage, self.zStage, positions=positions)
+        elif isinstance(other, MultiStagePosition):
+            return self.__add__(other.getXYPosition())
+        elif isinstance(other, PositionList):
+            return other.__add__(self)
         else:
             raise NotImplementedError
             
-    def __sub__(self, other: Position2d) -> MultiStagePosition:
+    def __sub__(self, other: Union[Position2d, MultiStagePosition, PositionList]) -> Union[MultiStagePosition, PositionList]:
         if isinstance(other, Position2d):
             newPos = self.getXYPosition().__sub__(other)
             positions = copy.copy(self.positions)
             positions.remove(self.getXYPosition())
             positions.append(newPos)
             return MultiStagePosition(self.label, self.xyStage, self.zStage, positions=positions)
+        elif isinstance(other, MultiStagePosition):
+            self.__sub__(other.getXYPosition())
+        elif isinstance(other, PositionList):
+            return other.copy().mirrorX().mirrorY().__add__(self)  # a-b == -b + a
         else:
             raise NotImplementedError
     
@@ -198,19 +227,22 @@ class PositionList(JsonAble):
                    'minor_version': 0,
                    "map": {"StagePositions": PropertyMap("StagePositions", self.positions)}}
 
-    def mirrorX(self):
+    def mirrorX(self) -> PositionList:
         for i in self.positions:
             i.getXYPosition().mirrorX()
+        return self
 
-    def mirrorY(self):
+    def mirrorY(self) -> PositionList:
         for i in self.positions:
             i.getXYPosition().mirrorY()
+        return self
 
-    def renameStage(self, newName):
+    def renameStage(self, newName) -> PositionList:
         for i in self.positions:
             i.renameXYStage(newName)
+        return self
 
-    def copy(self) -> 'PositionList':
+    def copy(self) -> PositionList:
         return copy.deepcopy(self)
 
     def save(self, savePath: str):
@@ -321,13 +353,21 @@ class PositionList(JsonAble):
         s += '])'
         return s
 
-    def __add__(self, other: Position2d) -> 'PositionList':
-        assert isinstance(other, Position2d) #TODO make this more flexible with translating between MSP and P2d
-        return PositionList([i + other for i in self.positions])
+    def __add__(self, other: Union[Position2d, MultiStagePosition]) -> PositionList:
+        if isinstance(other, Position2d):
+            return PositionList([i + other for i in self.positions])
+        elif isinstance(other, MultiStagePosition):
+            self.__add__(other.getXYPosition())
+        else:
+            raise NotImplementedError
 
-    def __sub__(self, other: Position2d) -> 'PositionList':
-        assert isinstance(other, Position2d)
-        return PositionList([i - other for i in self.positions])
+    def __sub__(self, other: Union[Position2d, MultiStagePosition]) -> PositionList:
+        if isinstance(other, Position2d):
+            return PositionList([i - other for i in self.positions])
+        elif isinstance(other, MultiStagePosition):
+            return self.__sub__(other.getXYPosition())
+        else:
+            raise NotImplementedError
 
     class Encoder(json.JSONEncoder):
         """Allows for the position list and related objects to be jsonified."""
@@ -342,10 +382,10 @@ class PositionList(JsonAble):
     def __len__(self):
         return len(self.positions)
 
-    def __getitem__(self, idx: Union[slice, int]):
+    def __getitem__(self, idx: Union[slice, int]) -> MultiStagePosition:
         return self.positions[idx]
 
-    def __eq__(self, other: 'PositionList'):
+    def __eq__(self, other: PositionList):
         return all([len(self) == len(other)] +
                    [self[i] == other[i] for i in range(len(self))])
 
