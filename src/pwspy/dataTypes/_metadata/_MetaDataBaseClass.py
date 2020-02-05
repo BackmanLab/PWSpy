@@ -115,6 +115,11 @@ class AnalysisManagerMetaDataBase(MetaDataBase):
     @staticmethod
     @abstractmethod
     def getAnalysisResultsClass() -> AbstractHDFAnalysisResults:
+        """
+
+        Returns:
+            AbstractHDFAnalysisResults: The class that contains analysis results for this acquisition type
+        """
         pass
 
     def getAnalyses(self) -> typing.List[str]:

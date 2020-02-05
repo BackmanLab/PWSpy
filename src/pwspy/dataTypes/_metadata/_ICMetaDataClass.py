@@ -37,8 +37,8 @@ class ICMetaData(AnalysisManagerMetaDataBase):
     def getAnalysisResultsClass(): return PWSAnalysisResults
 
     _jsonSchemaPath = os.path.join(_jsonSchemasPath, 'ICMetaData.json')
-    with open(_jsonSchemaPath) as f:
-        _jsonSchema = json.load(f)
+    with open(_jsonSchemaPath) as _f:
+        _jsonSchema = json.load(_f)
 
     def __init__(self, metadata: dict, filePath: Optional[str] = None, fileFormat: ICMetaData.FileFormats = None, acquisitionDirectory: Optional[AcqDir] = None):
         super().__init__(metadata, filePath, acquisitionDirectory=acquisitionDirectory)

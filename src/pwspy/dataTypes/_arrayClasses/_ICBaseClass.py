@@ -50,13 +50,17 @@ class ICBase:
 
     @property
     def index(self) -> Tuple[float, ...]:
-        """Returns:
+        """
+
+        Returns:
             Tuple[float, ...]: The values of the datacube's index
         """
         return self._index
 
     def plotMean(self) -> Tuple[plt.Figure, plt.Axes]:
-        """Returns:
+        """
+
+        Returns:
             Tuple[plt.Figure, plt.Axes]: A figure and attached axes plotting the mean of the data along the index axis.
                 corresponds to the mean reflectance in most cases."""
         fig, ax = plt.subplots()
@@ -81,7 +85,8 @@ class ICBase:
         return mean, std
 
     def selectLassoROI(self, displayIndex: int = None) -> np.ndarray:
-        """Args:
+        """
+        Args:
             displayIndex (Optional[int]): Display a particular z-slice of the array for mask drawing. If `None` then the mean along Z is displayed.
         Returns:
             np.ndarray: An array of vertices of the polygon drawn."""
@@ -101,7 +106,8 @@ class ICBase:
         return np.array(Verts[0])
 
     def selectRectangleROI(self, displayIndex: int = None) ->np.ndarray:
-        """Args:
+        """
+        Args:
             displayIndex (int): is used to display a particular z-slice for mask drawing. If None then the mean along Z is displayed. Returns an array of vertices of the rectangle."""
         verts = [None]
 
@@ -239,7 +245,7 @@ class ICBase:
                 fixedPointCompression (bool): if True then save the data in a special 16bit fixed-point format. Testing has shown that this has a
                     maximum conversion error of 1.4e-3 percent. Saving is ~10% faster but requires only 50% the hard drive space.
             Returns:
-                (h5py.Group): This is the the same h5py.Group that was passed in a `g`. It should now have a new dataset by the name of 'name'
+                h5py.Group: This is the the same h5py.Group that was passed in a `g`. It should now have a new dataset by the name of 'name'
         """
         if fixedPointCompression:
             # Scale data to span the full range of an unsigned 16bit integer. save as integer and save the min and max

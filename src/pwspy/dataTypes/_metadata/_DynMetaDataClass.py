@@ -17,7 +17,9 @@ if typing.TYPE_CHECKING:
 
 
 class DynMetaData(AnalysisManagerMetaDataBase):
+    """A class that represents the metadata of a Dynamics Acquisition."""
     class FileFormats(Enum):
+        """An enumerator identifying the types of file formats that this class can be loaded from."""
         Tiff = auto()
         RawBinary = auto()
         Hdf = auto()
@@ -26,19 +28,30 @@ class DynMetaData(AnalysisManagerMetaDataBase):
     def getAnalysisResultsClass(): return DynamicsAnalysisResults
 
     _jsonSchemaPath = os.path.join(_jsonSchemasPath, 'DynMetaData.json')
-    with open(_jsonSchemaPath) as f:
-        _jsonSchema = json.load(f)
+    with open(_jsonSchemaPath) as _f:
+        _jsonSchema = json.load(_f)
 
     def __init__(self, metadata: dict, filePath: Optional[str] = None, fileFormat: Optional[FileFormats] = None, acquisitionDirectory: Optional[AcqDir] = None):
         self.fileFormat = fileFormat
         super().__init__(metadata, filePath, acquisitionDirectory=acquisitionDirectory)
 
     def toDataClass(self, lock: mp.Lock = None) -> DynCube:
+        """
+        Args:
+            lock (mp.Lock): A multiprocessing `lock` that can prevent help us synchronize demands on the hard drive when loading many files in parallel. Probably not needed.
+        Returns:
+            DynCube: The data object associated with this metadata object.
+        """
         from pwspy.dataTypes import DynCube
         return DynCube.fromMetadata(self, lock)
 
     @property
     def idTag(self) -> str:
+        """
+
+        Returns:
+            str: A unique string identifying this acquisition.
+        """
         return f"DynCube_{self._dict['system']}_{self._dict['time']}"
 
     @property
