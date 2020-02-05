@@ -146,9 +146,12 @@ class ICBase:
         return self.data[slic]
 
     def filterDust(self, sigma: float, pixelSize: float) -> None:
-        """Both args are in microns. setting `pixelSize` to one will effectively mean that `kernelRadius` is in
-        units of pixels. This is useful if pixel size information is missing."""
-        sigma = sigma / pixelSize #convert from microns to pixels
+        """
+        
+        Args:
+            sigma (float): This specifies the radius of the gaussian filter used for blurring. The units of the value are determined by `pixelSize`
+            pixelSize (float): The pixel size in microns. Settings this to 1 will effectively causes sigma to be in units of pixels rather than microns."""
+        sigma = sigma / pixelSize  # convert from microns to pixels
         for i in range(self.data.shape[2]):
             self.data[:, :, i] = sp.ndimage.filters.gaussian_filter(self.data[:, :, i], sigma, mode='reflect')
 
