@@ -10,7 +10,7 @@ import json
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
 from time import time
-from typing import Tuple, Union, Iterable
+from typing import Tuple, Union, Iterable, Optional
 
 import h5py
 import numpy as np
@@ -30,7 +30,14 @@ if typing.TYPE_CHECKING:
 class ICBase:
     """A class to handle the data operations common to PWS related `image cubes`. Does not contain any file specific
     functionality. uses the generic `index` attribute which can be overridden by derived classes to be wavelength, wavenumber,
-    time, etc."""
+    time, etc.
+
+    Args:
+        data (np.ndarray): A 3-dimensional array containing the data the dimensions should be [Y, X, Z] where X and Y are the spatial coordinates of the image
+            and Z corresponds to the `index` dimension, e.g. wavelength, wavenumber, time, etc.
+        index (tuple(Number)): A tuple containing the values of the index for the data. This could be a tuple of wavelength values, times (in the case of Dyanmics), etc.
+        dtype (type): the data type that the data should be stored as. The default is numpy.float32.
+    """
     _index: tuple
     data: np.ndarray
 
@@ -43,17 +50,28 @@ class ICBase:
 
     @property
     def index(self) -> Tuple[float, ...]:
+        """Returns:
+            Tuple[float, ...]: The values of the datacube's index
+        """
         return self._index
 
     def plotMean(self) -> Tuple[plt.Figure, plt.Axes]:
-        """return a figure and attached axes plotting the mean of the data along the index axis. corresponds to the mean reflectance in most cases."""
+        """Returns:
+            Tuple[plt.Figure, plt.Axes]: A figure and attached axes plotting the mean of the data along the index axis.
+                corresponds to the mean reflectance in most cases."""
         fig, ax = plt.subplots()
         mean = np.mean(self.data, axis=2)
         im = ax.imshow(mean)
         plt.colorbar(im, ax=ax)
         return fig, ax
 
-    def getMeanSpectra(self, mask: Union[Roi, np.ndarray] = None) ->Tuple[np.ndarray, np.ndarray]:
+    def getMeanSpectra(self, mask: Optional[Union[Roi, np.ndarray]] = None) ->Tuple[np.ndarray, np.ndarray]:
+        """Calculate the average spectra within a region of the data.
+        Args:
+            mask: An optional Roi or boolean numpy array used to select pixels from the X and Y dimensions of the data array.
+                If left as None then the full data array will be used as the region.
+        Returns:
+            Tuple[np.ndarray, np.ndarray]: The average spectra within the region, the standard deviation of the spectra within the region"""
         if isinstance(mask, Roi):
             mask = mask.mask
         if mask is None: #Make a mask that includes everything
@@ -62,8 +80,11 @@ class ICBase:
         std = self.data[mask].std(axis=0)
         return mean, std
 
-    def selectLassoROI(self, displayIndex=None):
-        """`displayIndex` is used to display a particular z-slice for mask drawing. If None then the mean along Z is displayed. Returns an array of vertices of the polygon."""
+    def selectLassoROI(self, displayIndex: int = None) -> np.ndarray:
+        """Args:
+            displayIndex (Optional[int]): Display a particular z-slice of the array for mask drawing. If `None` then the mean along Z is displayed.
+        Returns:
+            np.ndarray: An array of vertices of the polygon drawn."""
         Verts = [None]
         if displayIndex is None:
             displayIndex = self.data.shape[2]//2
@@ -79,8 +100,9 @@ class ICBase:
             fig.canvas.flush_events()
         return np.array(Verts[0])
 
-    def selectRectangleROI(self, displayIndex=None) ->np.ndarray:
-        """`displayIndex` is used to display a particular z-slice for mask drawing. If None then the mean along Z is displayed. Returns an array of vertices of the rectangle."""
+    def selectRectangleROI(self, displayIndex: int = None) ->np.ndarray:
+        """Args:
+            displayIndex (int): is used to display a particular z-slice for mask drawing. If None then the mean along Z is displayed. Returns an array of vertices of the rectangle."""
         verts = [None]
 
         if displayIndex is None:

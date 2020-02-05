@@ -9,8 +9,8 @@ preTreatRefPositions = PositionList.load(r'experimentPath\preCorners.pos')  # Lo
 postTreatRefPositions = PositionList.load(r'experimentPath\postCorners.pos') # Load the position list of the coverslip corners after placing the dish back on the microscope after treatment.
 transformMatrix = preTreatRefPositions.getAffineTransform(postTreatRefPositions)  # Generate an affine transform describing the difference between the two position lists.
 preTreatCellPositions = PositionList.load(r'experimentPath\position_list1.pos')  # Load the positions of the cells we are measuring before the dish was removed.
-postTreatCellPositions = preTreatCellPositions.applyAffineTransform(transformMatrix) # Transform the cell positions to the new expected locations.
-postTreatCellPositions.save(r'experimentPath\transformedPositions.pos') # Save the new positions to a file that can be loaded by Micro-Manager.
+postTreatCellPositions = preTreatCellPositions.applyAffineTransform(transformMatrix)  # Transform the cell positions to the new expected locations.
+postTreatCellPositions.save(r'experimentPath\transformedPositions.pos')  # Save the new positions to a file that can be loaded by Micro-Manager.
 
 preTreatRefPositions.plot()
 postTreatRefPositions.plot()
