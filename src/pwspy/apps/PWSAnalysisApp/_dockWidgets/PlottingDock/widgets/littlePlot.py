@@ -94,7 +94,7 @@ class LittlePlot(AnalysisPlotter, QWidget):
 
     def plotOpd3d(self):
         opd, opdIndex = self.analysis.pws.opd
-        self.plotnd = PlotNd(opd, names=('y', 'x', '(um)'), title=os.path.split(self.acq.filePath)[-1],
+        self.plotnd = PlotNd(opd, names=('y', 'x', 'um'), title=os.path.split(self.acq.filePath)[-1],
                              extraDimIndices=[opdIndex])
 
     def plotDynAn3d(self):
