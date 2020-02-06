@@ -5,3 +5,4 @@ docs/build/
 installScripts/pyInstaller/build/
 installScripts/pyInstaller/dist/
 build/
+tests/resources/Cell1/pwsmetadata.json
