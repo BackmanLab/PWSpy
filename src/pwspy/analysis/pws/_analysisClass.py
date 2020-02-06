@@ -122,7 +122,7 @@ class PWSAnalysis(AbstractAnalysis):
         polydata = np.polyfit(cube.wavenumbers, flattenedData, order)
         for i in range(order + 1):
             # Populate cubePoly with the fit values.
-            cubePoly += (np.array(cube.wavenumbers)[:, np.newaxis] ** i) * polydata[i, :]
+            cubePoly += (np.array(cube.wavenumbers)[:, np.newaxis] ** i) * polydata[order - i, :]
         cubePoly = np.moveaxis(cubePoly, 0, 1)
         cubePoly = cubePoly.reshape(cube.data.shape)  # reshape back to a cube.
         return cubePoly
