@@ -1,6 +1,6 @@
 from __future__ import annotations
 import hashlib
-import os
+import os, io
 from enum import Enum
 from glob import glob
 from typing import List
@@ -54,7 +54,8 @@ class ERDataDirectory(ERAbstractDirectory):
         super().__init__()
 
     def updateIndex(self):
-        self.index = ERIndex.loadFromFile(os.path.join(self._directory, 'index.json'))
+        with open(os.path.join(self._directory, 'index.json'), 'r') as f:
+            self.index = ERIndex.load(f)
 
     def updateStatusFromFiles(self):
         files = glob(os.path.join(self._directory, f'*{ERMetadata.FILESUFFIX}'))
@@ -119,16 +120,19 @@ class EROnlineDirectory(ERAbstractDirectory):
         super().__init__()
 
     def updateIndex(self):
-        tempDir = tempfile.mkdtemp()
-        indexPath = os.path.join(tempDir, 'index.json')
-        try:
-            self._downloader.download('index.json', indexPath)
-            index = ERIndex.loadFromFile(indexPath)
-            self.index = index
-        finally:
-            if os.path.exists(indexPath):
-                os.remove(indexPath)
-            os.rmdir(tempDir)
+        with io.StringIO() as f:
+            self._downloader.downloadToRam('index.json', f)
+            self.index = ERIndex.load(f)
+        # tempDir = tempfile.mkdtemp()
+        # indexPath = os.path.join(tempDir, 'index.json')
+        # try:
+        #     self._downloader.download('index.json', indexPath)
+        #     index = ERIndex.loadFromFile(indexPath)
+        #     self.index = index
+        # finally:
+        #     if os.path.exists(indexPath):
+        #         os.remove(indexPath)
+        #     os.rmdir(tempDir)
 
     def updateStatusFromFiles(self):
         calculatedIndex = self._buildIndexFromOnlineFiles()

@@ -1,5 +1,6 @@
 from __future__ import annotations
 import os
+from io import IOBase
 from typing import Optional, Dict, List
 
 import httplib2
@@ -41,7 +42,7 @@ class ERManager:
     def __init__(self, filePath: str):
         self._directory = filePath
         self.offlineMode = False
-        creds = _QtGoogleDriveDownloader.getCredentials(applicationVars.googleDriveAuthPath)
+        creds = ERDownloader.getCredentials(applicationVars.googleDriveAuthPath)
         if creds is None:  # Check if the google drive credentials exists and if they don't then give the user a message.
             msg = QMessageBox.information(None, "Time to log in!", "Please log in to the google drive account containing the PWS Calibration Database. This is currently backman.lab@gmail.com")
         try:
@@ -83,30 +84,10 @@ class ERManager:
         return ERMetadata.fromHdfFile(self._directory, match.name)
 
 
-class _QtGoogleDriveDownloader(GoogleDriveDownloader, QObject):
-    """Same as the standard google drive downloader except it emits a progress signal after each chunk downloaded. This can be used to update a progress bar."""
-    progress = QtCore.pyqtSignal(int) # gives an estimate of download progress percentage
-
-    def __init__(self, authPath: str):
-        GoogleDriveDownloader.__init__(self, authPath)
-        QObject.__init__(self)
-
-    def downloadFile(self, Id: int, savePath: str):
-        """Save the file with googledrive file identifier `Id` to `savePath` while emitting the `progress` signal
-        which can be connected to a progress bar or whatever."""
-        fileRequest = self.api.files().get_media(fileId=Id)
-        with open(savePath, 'wb') as f:
-            downloader = MediaIoBaseDownload(f, fileRequest)
-            done = False
-            while done is False:
-                status, done = downloader.next_chunk()
-                self.progress.emit(int(status.progress() * 100))
-
-
 class ERDownloader:
     """Implements downloading functionality specific to the structure that we have calibration files stored on our google drive account."""
     def __init__(self, authPath: str):
-        self._downloader = _QtGoogleDriveDownloader(authPath)
+        self._downloader = self._QtGoogleDriveDownloader(authPath)
 
     def download(self, fileName: str, directory: str, parentWidget: Optional[QWidget] = None):
         """Begin downloading `fileName` in a separate thread. Use the main thread to update a progress bar.
@@ -119,6 +100,21 @@ class ERDownloader:
         t.start()
         b.exec()
 
+    def downloadToRam(self, fileName: str, stream: IOBase) -> IOBase:
+        """Download a file directly to a stream in ram rather than saving to file, best for small temporary files.
+        Args:
+            fileName (str): The name of the file stored on google drive, must be in the Extra reflectance directory.
+            stream (IOBase): An empty stream that the file contents will be loaded into.
+        Returns:
+            IOBase: The same stream that was passed in as `stream`."""
+        files = self._downloader.getFolderIdContents(
+            self._downloader.getIdByName('PWSAnalysisAppHostedFiles'))
+        files = self._downloader.getFolderIdContents(
+            self._downloader.getIdByName('ExtraReflectanceCubes', fileList=files))
+        fileId = self._downloader.getIdByName(fileName, fileList=files)  
+        self._downloader.downloadFile(fileId, stream)
+        return stream
+
     def upload(self, filePath: str):
         parentId = self._downloader.getIdByName("ExtraReflectanceCubes")
         self._downloader.uploadFile(filePath, parentId)
@@ -130,6 +126,10 @@ class ERDownloader:
         files = self._downloader.getFolderIdContents(
             self._downloader.getIdByName('ExtraReflectanceCubes', fileList=files))
         return files
+
+    @staticmethod
+    def getCredentials(authPath: str):
+        return ERDownloader._QtGoogleDriveDownloader.getCredentials(authPath)
 
     class _DownloadThread(QThread):
         """A QThread to download from google drive"""
@@ -148,8 +148,27 @@ class ERDownloader:
                 files = self.downloader.getFolderIdContents(
                     self.downloader.getIdByName('ExtraReflectanceCubes', fileList=files))
                 fileId = self.downloader.getIdByName(self.fileName, fileList=files)
-                self.downloader.downloadFile(fileId, os.path.join(self.directory, self.fileName))
+                with open(os.path.join(self.directory, self.fileName), 'wb') as f:
+                    self.downloader.downloadFile(fileId, f)
             except Exception as e:
                 self.errorOccurred.emit(e)
+
+    class _QtGoogleDriveDownloader(GoogleDriveDownloader, QObject):
+        """Same as the standard google drive downloader except it emits a progress signal after each chunk downloaded. This can be used to update a progress bar."""
+        progress = QtCore.pyqtSignal(int)  # gives an estimate of download progress percentage
+
+        def __init__(self, authPath: str):
+            GoogleDriveDownloader.__init__(self, authPath)
+            QObject.__init__(self)
+
+        def downloadFile(self, Id: str, file: IOBase):
+            """Save the file with googledrive file identifier `Id` to `savePath` while emitting the `progress` signal
+            which can be connected to a progress bar or whatever."""
+            fileRequest = self.api.files().get_media(fileId=Id)
+            downloader = MediaIoBaseDownload(file, fileRequest)
+            done = False
+            while done is False:
+                status, done = downloader.next_chunk()
+                self.progress.emit(int(status.progress() * 100))
 
 

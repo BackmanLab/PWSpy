@@ -2,7 +2,7 @@ from __future__ import annotations
 import json
 import os
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, TextIO
 
 import jsonschema
 
@@ -41,10 +41,8 @@ class ERIndex:
             self.creationDate = creationDate
 
     @classmethod
-    def loadFromFile(cls, filePath: str) -> ERIndex:
-        os.path.exists(filePath)
-        with open(filePath, 'r') as f:
-            indexFile = json.load(f)
+    def load(cls, f: TextIO) -> ERIndex:
+        indexFile = json.load(f)
         jsonschema.validate(indexFile, schema=cls._indexSchema)
         cubes = [ERIndexCube.fromDict(i) for i in indexFile['reflectanceCubes']]
         return cls(cubes, indexFile['creationDate'])

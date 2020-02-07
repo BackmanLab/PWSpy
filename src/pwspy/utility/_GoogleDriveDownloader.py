@@ -1,5 +1,6 @@
 import os
 import pickle
+from io import IOBase
 from typing import Optional, List, Dict
 
 from googleapiclient.discovery import build
@@ -66,15 +67,14 @@ class GoogleDriveDownloader:
         files = [i for i in self._allFiles if 'parents' in i] # Get rid of parentless files. they will cause errors.
         return [i for i in files if Id in i['parents']]
 
-    def downloadFile(self, Id: str, savePath: str):
+    def downloadFile(self, Id: str, file: IOBase):
         """Save the file with `id` to `savePath`"""
         fileRequest = self.api.files().get_media(fileId=Id)
-        with open(savePath, 'wb') as f:
-            downloader = MediaIoBaseDownload(f, fileRequest)
-            done = False
-            while done is False:
-                status, done = downloader.next_chunk()
-                print("Download %d%%." % int(status.progress() * 100))
+        downloader = MediaIoBaseDownload(file, fileRequest)
+        done = False
+        while done is False:
+            status, done = downloader.next_chunk()
+            print("Download %d%%." % int(status.progress() * 100))
 
     def createFolder(self, name: str, parentId: Optional[str] = None) -> str:
         """Creates a folder with name `name` and returns the id number of the folder
