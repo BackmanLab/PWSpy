@@ -4,20 +4,20 @@ import typing
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataDirectory import ERDataDirectory, EROnlineDirectory
-import numpy as np
 from enum import Enum
 
 
 class ERDataComparator:
+    """A class to compare the local directory to the online directory."""
+
     class ComparisonStatus(Enum):
         LocalOnly = "Local Only"
         OnlineOnly = "Online Only"
         Md5Mismatch = 'MD5 Mismatch'
-        Match = "Match"
+        Match = "Match"  # This is what we hope to see.
 
-    """A class to compare the local directory to the online directory."""
     def __init__(self, manager: ERManager, directory: str):
-        self.local = ERDataDirectory(directory, manager)
+        self.local = ERDataDirectory(directory)
         if manager.offlineMode:
             self.online = None
         else:
@@ -42,10 +42,14 @@ class ERDataComparator:
             self.status = self.status[['idTag', 'Local Status', 'Index Comparison']]  # Set the column order
 
     def _dataFrameCompare(self, row) -> str:
-        try: self.local.index.getItemFromIdTag(row['idTag'])
-        except: return self.ComparisonStatus.OnlineOnly.value
-        try: self.online.index.getItemFromIdTag(row['idTag'])
-        except: return self.ComparisonStatus.LocalOnly.value
+        try:
+            self.local.index.getItemFromIdTag(row['idTag'])
+        except:
+            return self.ComparisonStatus.OnlineOnly.value
+        try:
+            self.online.index.getItemFromIdTag(row['idTag'])
+        except:
+            return self.ComparisonStatus.LocalOnly.value
         if self.local.index.getItemFromIdTag(row['idTag']).md5 != self.online.index.getItemFromIdTag(row['idTag']).md5:
             return self.ComparisonStatus.Md5Mismatch.value
         else:

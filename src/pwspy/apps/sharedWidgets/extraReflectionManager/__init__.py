@@ -24,13 +24,13 @@ from google.auth.exceptions import TransportError
 
 
 def _offlineDecorator(func):
-    """Functions decorated with this will raise an OfflineError if there are attempted to be called while the ERManager is in offline mode."""
+    """Functions decorated with this will raise an OfflineError if they are attempted to be called while the ERManager
+    is in offline mode. Only works on instance methods."""
     def wrappedFunc(self, *args, **kwargs):
         if self.offlineMode:
             print("Warning: Attempting to download when ERManager is in offline mode.")
             raise OfflineError("Is Offline")
         func(self, *args, **kwargs)
-
     return wrappedFunc
 
 
@@ -42,7 +42,7 @@ class ERManager:
         self._directory = filePath
         self.offlineMode = False
         creds = _QtGoogleDriveDownloader.getCredentials(applicationVars.googleDriveAuthPath)
-        if creds is None: #Check if the google drive credentials exists and if they don't then give the user a message.
+        if creds is None:  # Check if the google drive credentials exists and if they don't then give the user a message.
             msg = QMessageBox.information(None, "Time to log in!", "Please log in to the google drive account containing the PWS Calibration Database. This is currently backman.lab@gmail.com")
         try:
             self._downloader = _QtGoogleDriveDownloader(applicationVars.googleDriveAuthPath)
@@ -53,7 +53,7 @@ class ERManager:
         indexPath = os.path.join(self._directory, 'index.json')
         if not os.path.exists(indexPath):
             self.download('index.json')
-        self.dataComparator = ERDataComparator(self, self._directory)
+        self.dataComparator = ERDataComparator(self, self._directory) #TODO circular reference!
 
     def createSelectorWindow(self, parent: QWidget):
         return ERSelectorWindow(self, parent)
@@ -62,7 +62,8 @@ class ERManager:
         return ERUploaderWindow(self, parent)
 
     def rescan(self):
-        """Scans local and online files to put together an idea of the status. Do the data files match the index file? etc. It's really over complicated."""
+        """Scans local and online files to put together an idea of the status. Do the data files match the
+        index file? etc. It's really over complicated. Could use some work"""
         self.dataComparator.rescan()
 
     @_offlineDecorator
@@ -74,10 +75,10 @@ class ERManager:
         if fileName not in [i['name'] for i in self._downloader.allFiles]:
             raise ValueError(f"File {fileName} does not exist on google drive")
         t = _DownloadThread(self._downloader, fileName, directory)
-        b = BusyDialog(parentWidget, f"Downloading {fileName}. Please Wait...", progressBar=True)
-        t.finished.connect(b.accept)
-        self._downloader.progress.connect(b.setProgress)
-        t.errorOccurred.connect(lambda e: QMessageBox.information(parentWidget, 'Drive Downloader Thread', str(e)))
+        b = BusyDialog(parentWidget, f"Downloading {fileName}. Please Wait...", progressBar=True) # This dialog blocks the screen until the download thread is completed.
+        t.finished.connect(b.accept)  # When the thread finishes, close the busy dialog.
+        self._downloader.progress.connect(b.setProgress)  # Progress from the downloader updates a progress bar on the busy dialog.
+        t.errorOccurred.connect(lambda e: QMessageBox.information(parentWidget, 'Error in Drive Downloader Thread', str(e)))
         t.start()
         b.exec()
 
@@ -88,21 +89,21 @@ class ERManager:
         filePath = os.path.join(self._directory, fileName)
         self._downloader.uploadFile(filePath, parentId)
 
-    def getMetadataFromId(self, Id: str) -> ERMetadata:
-        """Given the Id string for an ExtraReflectanceCube this will search the index.json and return the ERMetadata file. If it cannot be found then an
-        `IndexError will be raised."""
+    def getMetadataFromId(self, idTag: str) -> ERMetadata:
+        """Given the unique idTag string for an ExtraReflectanceCube this will search the index.json and return the
+        ERMetadata file. If it cannot be found then an `IndexError will be raised."""
         try:
-            match = [item for item in self.dataComparator.local.index.cubes if item.idTag == Id][0]
+            match = [item for item in self.dataComparator.local.index.cubes if item.idTag == idTag][0]
         except IndexError:
-            raise IndexError(f"An ExtraReflectanceCube with idTag {Id} was not found in the index.json file at {self._directory}.")
+            raise IndexError(f"An ExtraReflectanceCube with idTag {idTag} was not found in the index.json file at {self._directory}.")
         return ERMetadata.fromHdfFile(self._directory, match.name)
 
 
 class _DownloadThread(QThread):
     """A QThread to download from google drive"""
-    errorOccurred = QtCore.pyqtSignal(Exception)
+    errorOccurred = QtCore.pyqtSignal(Exception) # If an exception occurs it can be passed to another thread with this signal
 
-    def __init__(self, downloader, fileName, directory):
+    def __init__(self, downloader: GoogleDriveDownloader, fileName: str, directory: str):
         super().__init__()
         self.downloader = downloader
         self.fileName = fileName
@@ -122,13 +123,15 @@ class _DownloadThread(QThread):
 
 class _QtGoogleDriveDownloader(GoogleDriveDownloader, QObject):
     """Same as the standard google drive downloader except it emits a progress signal after each chunk downloaded. This can be used to update a progress bar."""
-    progress = QtCore.pyqtSignal(int)
+    progress = QtCore.pyqtSignal(int) # gives an estimate of download progress percentage
+
     def __init__(self, authPath: str):
         GoogleDriveDownloader.__init__(self, authPath)
         QObject.__init__(self)
 
     def downloadFile(self, Id: int, savePath: str):
-        """Save the file with `id` to `savePath`"""
+        """Save the file with googledrive file identifier `Id` to `savePath` while emitting the `progress` signal
+        which can be connected to a progress bar or whatever."""
         fileRequest = self.api.files().get_media(fileId=Id)
         with open(savePath, 'wb') as f:
             downloader = MediaIoBaseDownload(f, fileRequest)

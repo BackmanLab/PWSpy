@@ -13,10 +13,13 @@ import typing
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 from .exceptions import OfflineError
-from abc import ABC
+from abc import ABC, abstractmethod
 import time
 
 class ERAbstractDirectory(ABC):
+    """This class keeps track of the status of a directory that contains our extra reflection subtraction cubes.
+    This can be a local directory on a hard drive or a folder on Google Drive, etc."""
+
     class DataStatus(Enum):
         md5Confict = 'Data MD5 mismatch'
         found = 'Found'
@@ -28,24 +31,22 @@ class ERAbstractDirectory(ABC):
         self.status: pandas.DataFrame = None
         self.rescan()
 
+    @abstractmethod
+    def scanIndexFile(self):
+        """update self.index from the index file."""
+        pass
+    
+    @abstractmethod
+    def rescan(self):
+        """Update self.index and self.status from the directory being managed. """
+        pass
+
+
 class ERDataDirectory(ERAbstractDirectory):
     """A class representing the locally stored data file directory for ExtraReflectanceCube files."""
-    def __init__(self, directory: str, manager: ERManager):
+    def __init__(self, directory: str):
         self._directory = directory
-        self._manager = manager
         super().__init__()
-
-    @staticmethod
-    def buildIndexFromFiles(files: List[ERMetadata]) -> ERIndex:
-        """Scan the data files in the directory and construct an ERIndex from the metadata. The `description` field is left blank though. This function is quite slow, 1.6 seconds."""
-        cubes = []
-        for erCube in files:
-            md5hash = hashlib.md5()
-            with open(erCube.filePath, 'rb') as f:
-                md5hash.update(f.read())
-            md5 = md5hash.hexdigest()  # The md5 checksum as a string of hex.
-            cubes.append(ERIndexCube(erCube.filePath, erCube.inheritedMetadata['description'], erCube.idTag, erCube.directory2dirName(erCube.filePath)[-1], md5))
-        return ERIndex(cubes)
 
     def rescan(self):
         """Scan the local files and compare them to the contents of the local index file. store the comparison results in `self.status`."""
@@ -54,14 +55,28 @@ class ERDataDirectory(ERAbstractDirectory):
         files = [(f, ERMetadata.validPath(f)) for f in files]  # validPath returns True/False in awhether the datacube was found.
         files = [(directory, name) for f, (valid, directory, name) in files if valid]
         self.files = [ERMetadata.fromHdfFile(directory, name) for directory, name in files]
-        calculatedIndex = self.buildIndexFromFiles(self.files)
-        d = self.compareIndexes(calculatedIndex, self.index)
+        calculatedIndex = self._buildIndexFromFiles(self.files)
+        d = self._compareIndexes(calculatedIndex, self.index)
         d = pandas.DataFrame(d).transpose()
         d.columns.values[1] = 'Local Status'
         self.status = d
 
     @staticmethod
-    def compareIndexes(ind1: ERIndex, ind2: ERIndex) -> dict:
+    def _buildIndexFromFiles(files: List[ERMetadata]) -> ERIndex:
+        """Scan the data files in the directory and construct an ERIndex from the metadata. The `description` field is left blank though."""
+        # TODO This function is quite slow, 1.6 seconds. profile it
+        cubes = []
+        for erCube in files:
+            md5hash = hashlib.md5()
+            with open(erCube.filePath, 'rb') as f:
+                md5hash.update(f.read())
+            md5 = md5hash.hexdigest()  # The md5 checksum as a string of hex.
+            cubes.append(ERIndexCube(erCube.filePath, erCube.inheritedMetadata['description'], erCube.idTag,
+                                     erCube.directory2dirName(erCube.filePath)[-1], md5))
+        return ERIndex(cubes)
+
+    @staticmethod
+    def _compareIndexes(ind1: ERIndex, ind2: ERIndex) -> dict:
         """A utility function to compare two `ERIndex` objects and return a `dict` containing the status for each file. """
         foundTags = set([cube.idTag for cube in ind1.cubes])
         indTags = set([cube.idTag for cube in ind2.cubes])
@@ -74,7 +89,7 @@ class ERDataDirectory(ERAbstractDirectory):
             indCube = [cube for cube in ind2.cubes if cube.idTag == ID][0]
             if cube.md5 != indCube.md5:
                 dataMismatch.append(ID)
-        #  Construct a dataframe
+        # Construct a dataframe
         d = {}
         for i, tag, in enumerate(foundTags | indTags):
             if tag in missing:

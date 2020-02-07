@@ -35,7 +35,7 @@ class PWSWindow(QMainWindow):
         infoAction = menu.addAction("Info")
         infoAction.triggered.connect(self.openInfoPane)
         menu = menuBar.addMenu("Config")
-        self.parallelAction = menu.addAction("Multi-Core Analysis (faster, needs more ram)")
+        self.parallelAction = menu.addAction("Multi-Core Analysis (faster, needs more RAM)")
         self.parallelAction.setCheckable(True)
         menu = menuBar.addMenu("Actions")
         menu.setToolTipsVisible(True)
@@ -71,7 +71,7 @@ class PWSWindow(QMainWindow):
         super().closeEvent(event)
 
     def openInfoPane(self):
-        msgBox = QMessageBox.information(self, "About PWS PWSAnalysis V2", f"This software is intended for the analysis of Partial Wave Spectroscopic microscopy data.\npwspy version: {pwspy.__version__}")
+        msgBox = QMessageBox.information(self, "About PWS Analysis", f"This software is intended for the analysis of Partial Wave Spectroscopic microscopy data.\npwspy version: {pwspy.__version__}")
 
     def _setDefaultLayout(self):
         #remove all docks then re add them
