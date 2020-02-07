@@ -56,9 +56,9 @@ class ERTreeWidgetItem(QTreeWidgetItem):
         return self.checkState(0) == QtCore.Qt.Checked
 
 
-
 class ERSelectorWindow(QDialog):
     selectionChanged = QtCore.pyqtSignal(object) #Usually an ERMetadata object, sometimes None
+
     def __init__(self, manager: ERManager, parent: Optional[QWidget] = None):
         self._manager = manager
         self._selectedId: str = None
@@ -92,10 +92,11 @@ class ERSelectorWindow(QDialog):
     def _initialize(self):
         self._items: List[ERTreeWidgetItem] = []
         self.tree.clear()
-        self._manager.dataComparator.local.rescan()
+        self._manager.dataComparator.local.updateIndex()
+        self.fileStatus = self._manager.dataComparator.local.getFileStatus()
         for item in self._manager.dataComparator.local.index.cubes:
             self._addItem(item)
-        #Sort items by date
+        # Sort items by date
         for item in [self.tree.invisibleRootItem().child(i) for i in range(self.tree.invisibleRootItem().childCount())]:
             item.sortChildren(0, QtCore.Qt.AscendingOrder)
         ig = QTreeWidgetItem()
@@ -103,9 +104,8 @@ class ERSelectorWindow(QDialog):
         self.tree.invisibleRootItem().addChild(ig)
 
     def _addItem(self, item: ERIndexCube):
-        status = self._manager.dataComparator.local.status
         treeItem = ERTreeWidgetItem(fileName=item.fileName, description=item.description, idTag=item.idTag, name=item.name,
-                                      downloaded=status[status['idTag'] == item.idTag].iloc[0]['Local Status'] == self._manager.dataComparator.local.DataStatus.found.value)
+                                    downloaded=self.fileStatus[self.fileStatus['idTag'] == item.idTag].iloc[0]['Local Status'] == self._manager.dataComparator.local.DataStatus.found.value)
         self._items.append(treeItem)
         _ = self.tree.invisibleRootItem()
         if treeItem.systemName not in [_.child(i).text(0) for i in range(_.childCount())]:

@@ -34,9 +34,9 @@ class ERDataComparator:
 
     def compare(self) -> pandas.DataFrame:
         """Scans local and online files to put together an idea of the status."""
-        localStatus = self.local.updateStatusFromFiles()
+        localStatus = self.local.getFileStatus()
         if self.online is not None:
-            onlineStatus = self.online.updateStatusFromFiles()
+            onlineStatus = self.online.getFileStatus()
             status = pandas.merge(localStatus, onlineStatus, how='outer', on='idTag')
             status['Index Comparison'] = status.apply(lambda row: self._dataFrameCompare(row), axis=1)
             status = status[['idTag', 'Local Status', 'Online Status', 'Index Comparison']]  # Set the column order

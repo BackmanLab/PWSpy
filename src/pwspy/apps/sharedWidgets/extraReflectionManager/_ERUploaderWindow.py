@@ -33,7 +33,8 @@ class ERUploaderWindow(QDialog):
         self.setWindowTitle("Extra Reflectance File Manager")
         self.setLayout(QVBoxLayout())
         self.table = QTableView(self)
-        self.table.setModel(PandasModel(self._manager.dataComparator.status))
+        self.fileStatus = self._manager.dataComparator.compare()
+        self.table.setModel(PandasModel(self.fileStatus))
         self.table.setSelectionMode(QTableView.SingleSelection)
         self.table.setSelectionBehavior(QTableView.SelectRows)
         self.table.customContextMenuRequested.connect(self.openContextMenu)
@@ -55,10 +56,10 @@ class ERUploaderWindow(QDialog):
         self.table.setMinimumWidth(sum(self.table.columnWidth(i)for i in range(self.table.model().columnCount())) + self.table.verticalHeader().width() + 20)
 
     def displayInfo(self, index: QModelIndex):
-        msg = QMessageBox.information(self, 'Info', repr(self._manager.dataComparator.status.iloc[index.row()]))
+        msg = QMessageBox.information(self, 'Info', repr(self.fileStatus.iloc[index.row()]))
 
     def plotData(self, index: QModelIndex):
-        idTag = self._manager.dataComparator.status.iloc[index.row()]['idTag']
+        idTag = self.fileStatus.iloc[index.row()]['idTag']
         md = self._manager.getMetadataFromId(idTag)
         erCube = ExtraReflectanceCube.fromMetadata(md)
         self.plotHandle = PlotNd(erCube.data)
@@ -66,7 +67,7 @@ class ERUploaderWindow(QDialog):
     def openContextMenu(self, pos: QPoint):
         """This method opens a context menu, it should be called when the user right clicks."""
         index = self.table.indexAt(pos)
-        row = self._manager.dataComparator.status.iloc[index.row()]
+        row = self.fileStatus.iloc[index.row()]
         menu = QMenu()
         displayAction = QAction("Display Info")
         displayAction.triggered.connect(lambda: self.displayInfo(index))
@@ -80,7 +81,7 @@ class ERUploaderWindow(QDialog):
     def _updateGDrive(self):
         """Checks for all files taht are present locally but not on the server. Uploads those file and then overwrites the index."""
         try:
-            status = self._manager.dataComparator.status
+            status = self.fileStatus
             if not np.all(status['Local Status'] == ERDataDirectory.DataStatus.found.value):
                 raise ValueError("Uploading cannot be performed if the local directory status is not perfect.")
             uploadableRows = np.logical_or(status['Index Comparison'] == ERDataComparator.ComparisonStatus.LocalOnly.value, status['Online Status'] == ERDataDirectory.DataStatus.missing.value)
@@ -97,8 +98,9 @@ class ERUploaderWindow(QDialog):
 
     def refresh(self):
         """Scans local and online files to refresh the display."""
-        self._manager.dataComparator.rescan()
-        self.table.setModel(PandasModel(self._manager.dataComparator.status))
+        self._manager.dataComparator.updateIndexes()
+        self.fileStatus = self._manager.dataComparator.compare()
+        self.table.setModel(PandasModel(self.fileStatus))
 
 
 class PandasModel(QtCore.QAbstractTableModel):
