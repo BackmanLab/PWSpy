@@ -31,7 +31,6 @@ class ERAbstractDirectory(ABC):
 
     def __init__(self):
         self.index: ERIndex = None
-        self.status: pandas.DataFrame = None
         self.updateIndex()
 
     @abstractmethod
@@ -40,8 +39,8 @@ class ERAbstractDirectory(ABC):
         pass
 
     @abstractmethod
-    def updateStatusFromFiles(self):
-        """Update self.status by scanning the files in the directory being managed. Assumes that self.index is
+    def updateStatusFromFiles(self) -> pandas.DataFrame:
+        """return a dataframe indicating directory status by scanning the files in the directory being managed. Assumes that self.index is
         already up to date. In theory the `index.json` file has all the info we need, this method verifies that the
         `index.json` file is actually accurate."""
         pass
@@ -57,7 +56,7 @@ class ERDataDirectory(ERAbstractDirectory):
         with open(os.path.join(self._directory, 'index.json'), 'r') as f:
             self.index = ERIndex.load(f)
 
-    def updateStatusFromFiles(self):
+    def updateStatusFromFiles(self) -> pandas.DataFrame:
         files = glob(os.path.join(self._directory, f'*{ERMetadata.FILESUFFIX}'))
         files = [(f, ERMetadata.validPath(f)) for f in files]  # validPath returns True/False in awhether the datacube was found.
         files = [(directory, name) for f, (valid, directory, name) in files if valid]  # Get rid of invalid files.
@@ -66,7 +65,7 @@ class ERDataDirectory(ERAbstractDirectory):
         d = self._compareIndexes(calculatedIndex, self.index)
         d = pandas.DataFrame(d).transpose()
         d.columns.values[1] = 'Local Status'
-        self.status = d
+        return d
 
     @staticmethod
     def _buildIndexFromFiles(files: List[ERMetadata]) -> ERIndex:
@@ -135,12 +134,12 @@ class EROnlineDirectory(ERAbstractDirectory):
         #         os.remove(indexPath)
         #     os.rmdir(tempDir)
 
-    def updateStatusFromFiles(self):
+    def updateStatusFromFiles(self) -> pandas.DataFrame:
         calculatedIndex = self._buildIndexFromOnlineFiles()
         d2 = self._compareIndexes(calculatedIndex, self.index)
         d2 = pandas.DataFrame(d2).transpose()
         d2.columns.values[1] = 'Online Status'
-        self.status = d2
+        return d2
 
     def _buildIndexFromOnlineFiles(self) -> ERIndex:
         """Return an ERIndex object from the HDF5 data files saved on Google Drive. No downloading required, just scanning metadata."""
