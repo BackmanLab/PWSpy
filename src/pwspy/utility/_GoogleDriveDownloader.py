@@ -54,7 +54,7 @@ class GoogleDriveDownloader:
         files with the same name the first match that is found will be returned."""
         if fileList is None:
             fileList = self._allFiles
-        matches = [i['id'] for i in fileList if i['name'] == name][0]
+        matches = [i['id'] for i in fileList if i['name'] == name]
         if len(matches) > 1:
             raise ValueError(f"Google Drive found multiple files matching file name: {name}")
         elif len(matches) == 0:

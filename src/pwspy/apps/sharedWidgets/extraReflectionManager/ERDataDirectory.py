@@ -120,8 +120,9 @@ class EROnlineDirectory(ERAbstractDirectory):
         super().__init__()
 
     def updateIndex(self):
-        with io.StringIO() as f:
-            self._downloader.downloadToRam('index.json', f)
+        with io.BytesIO() as f:
+            f = self._downloader.downloadToRam('index.json', f)
+            f.seek(0) #Move back to the beginning of the stream for reading.
             self.index = ERIndex.load(f)
         # tempDir = tempfile.mkdtemp()
         # indexPath = os.path.join(tempDir, 'index.json')
