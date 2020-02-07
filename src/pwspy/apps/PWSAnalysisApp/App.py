@@ -42,13 +42,13 @@ class PWSApp(QApplication):
         splash.finish(self.window)
         self.anMan = AnalysisManager(self)
         self.window.runAction.connect(self.anMan.runList)
-        self.parallelProcessing: bool = None  # Determines if analysis and compilation should be run in parallel or not.
-        self.window.parallelAction.toggled.connect(lambda checked: setattr(self, 'parallelProcessing', checked))
         availableRamGigs = psutil.virtual_memory().available / 1024**3
         if availableRamGigs > 16:  # Default to parallel analysis if we have more than 16 Gb of ram available.
-            self.window.parallelAction.setChecked(True)
+            self.parallelProcessing = True  # Determines if analysis and compilation should be run in parallel or not.
         else:
-            self.window.parallelAction.setChecked(False)
+            self.parallelProcessing = False  # Determines if analysis and compilation should be run in parallel or not.
+        self.window.parallelAction.setChecked(self.parallelProcessing)
+        self.window.parallelAction.toggled.connect(lambda checked: setattr(self, 'parallelProcessing', checked))
         print(f"Initializing with useParallel set to {self.parallelProcessing}.")
         self.anMan.analysisDone.connect(lambda name, settings, warningList: AnalysisSummaryDisplay(self.window, warningList, name, settings))
         self.compMan = CompilationManager(self.window)
