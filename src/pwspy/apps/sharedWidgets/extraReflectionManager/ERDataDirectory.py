@@ -36,13 +36,14 @@ class ERAbstractDirectory(ABC):
 
     @abstractmethod
     def updateIndex(self):
-        """update self.index from the index file."""
+        """update self.index from the `index.json` file."""
         pass
 
     @abstractmethod
     def updateStatusFromFiles(self):
         """Update self.status by scanning the files in the directory being managed. Assumes that self.index is
-        already up to date."""
+        already up to date. In theory the `index.json` file has all the info we need, this method verifies that the
+        `index.json` file is actually accurate."""
         pass
 
 
@@ -119,13 +120,14 @@ class EROnlineDirectory(ERAbstractDirectory):
 
     def updateIndex(self):
         tempDir = tempfile.mkdtemp()
+        indexPath = os.path.join(tempDir, 'index.json')
         try:
-            indexPath = os.path.join(tempDir, 'index.json')
             self._downloader.download('index.json', indexPath)
             index = ERIndex.loadFromFile(indexPath)
             self.index = index
         finally:
-            os.remove(indexPath)
+            if os.path.exists(indexPath):
+                os.remove(indexPath)
             os.rmdir(tempDir)
 
     def updateStatusFromFiles(self):

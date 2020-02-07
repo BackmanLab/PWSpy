@@ -1,4 +1,7 @@
 from __future__ import annotations
+
+from typing import Optional
+
 import pandas
 import typing
 if typing.TYPE_CHECKING:
@@ -8,7 +11,11 @@ from enum import Enum
 
 
 class ERDataComparator:
-    """A class to compare the local directory to the online directory."""
+    """A class to compare the local directory to the online directory.
+    Args:
+        downloader (Optional[ERDownloader]): Handles communication with GoogleDrive, if operating in offline mode this should be None
+        directory (str): The file path where the files are stored locally.
+    """
 
     class ComparisonStatus(Enum):
         LocalOnly = "Local Only"
@@ -16,16 +23,15 @@ class ERDataComparator:
         Md5Mismatch = 'MD5 Mismatch'
         Match = "Match"  # This is what we hope to see.
 
-    def __init__(self, downloader: ERDownloader, directory: str):
+    def __init__(self, downloader: Optional[ERDownloader], directory: str):
         self.local = ERDataDirectory(directory)
-        if manager.offlineMode:
-            self.online = None
-        else:
-            self.online = EROnlineDirectory(downloader)
+        self.online = None if downloader is None else EROnlineDirectory(downloader)
         self.status: pandas.DataFrame = None
         self.compare()
 
     def rescan(self):
+        """Scans local and online files to put together an idea of the status. Do the data files match the
+        index file? etc. It's really over complicated. Could use some work"""
         self.local.rescan()
         if self.online is not None:
             self.online.rescan()

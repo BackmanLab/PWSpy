@@ -11,10 +11,10 @@ from googleapiclient.http import MediaIoBaseDownload
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataComparator import ERDataComparator
 from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataDirectory import ERDataDirectory, EROnlineDirectory
-from .ERSelectorWindow import ERSelectorWindow
-from .ERUploaderWindow import ERUploaderWindow
+from ._ERSelectorWindow import ERSelectorWindow
+from ._ERUploaderWindow import ERUploaderWindow
 from pwspy.dataTypes import ERMetadata
-from pwspy.utility._GoogleDriveDownloader import GoogleDriveDownloader
+from pwspy.utility import GoogleDriveDownloader
 from .exceptions import OfflineError
 from pwspy.apps.PWSAnalysisApp import applicationVars
 from google.auth.exceptions import TransportError
@@ -48,23 +48,18 @@ class ERManager:
             self._downloader = ERDownloader(applicationVars.googleDriveAuthPath)
         except (TransportError, httplib2.ServerNotFoundError):
             self.offlineMode = True
-            print("Google Drive connection failed. Proceeding in offline mode.")
+            msg = QMessageBox.information(None, "Internet?", "Google Drive connection failed. Proceeding in offline mode.")
             self._downloader: ERDownloader = None
         indexPath = os.path.join(self._directory, 'index.json')
-        if not os.path.exists(indexPath):
+        if not os.path.exists(indexPath) and not self.offlineMode:
             self.download('index.json')
-        self.dataComparator = ERDataComparator(self._downloader, self._directory) #TODO circular reference!
+        self.dataComparator = ERDataComparator(self._downloader, self._directory)
 
     def createSelectorWindow(self, parent: QWidget):
         return ERSelectorWindow(self, parent)
 
     def createManagerWindow(self, parent: QWidget):
         return ERUploaderWindow(self, parent)
-
-    def rescan(self):
-        """Scans local and online files to put together an idea of the status. Do the data files match the
-        index file? etc. It's really over complicated. Could use some work"""
-        self.dataComparator.rescan()
 
     @_offlineDecorator
     def download(self, fileName: str, parentWidget: Optional[QWidget] = None):
@@ -113,7 +108,6 @@ class ERDownloader:
     def __init__(self, authPath: str):
         self._downloader = _QtGoogleDriveDownloader(authPath)
 
-
     def download(self, fileName: str, directory: str, parentWidget: Optional[QWidget] = None):
         """Begin downloading `fileName` in a separate thread. Use the main thread to update a progress bar.
         If directory is left blank then file will be downloaded to the ERManager main directory"""
@@ -139,8 +133,7 @@ class ERDownloader:
 
     class _DownloadThread(QThread):
         """A QThread to download from google drive"""
-        errorOccurred = QtCore.pyqtSignal(
-            Exception)  # If an exception occurs it can be passed to another thread with this signal
+        errorOccurred = QtCore.pyqtSignal(Exception)  # If an exception occurs it can be passed to another thread with this signal
 
         def __init__(self, downloader: GoogleDriveDownloader, fileName: str, directory: str):
             super().__init__()

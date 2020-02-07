@@ -97,7 +97,7 @@ class ERUploaderWindow(QDialog):
 
     def refresh(self):
         """Scans local and online files to refresh the display."""
-        self._manager.rescan()
+        self._manager.dataComparator.rescan()
         self.table.setModel(PandasModel(self._manager.dataComparator.status))
 
 
