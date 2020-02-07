@@ -1,6 +1,6 @@
 from __future__ import annotations
 import os
-from typing import Optional
+from typing import Optional, Dict, List
 
 import httplib2
 from PyQt5 import QtCore
@@ -117,8 +117,6 @@ class ERDownloader:
     def download(self, fileName: str, directory: str, parentWidget: Optional[QWidget] = None):
         """Begin downloading `fileName` in a separate thread. Use the main thread to update a progress bar.
         If directory is left blank then file will be downloaded to the ERManager main directory"""
-        if fileName not in [i['name'] for i in self._downloader.allFiles]:
-            raise ValueError(f"File {fileName} does not exist on google drive")
         t = self._DownloadThread(self._downloader, fileName, directory)
         b = BusyDialog(parentWidget, f"Downloading {fileName}. Please Wait...", progressBar=True)  # This dialog blocks the screen until the download thread is completed.
         t.finished.connect(b.accept)  # When the thread finishes, close the busy dialog.
@@ -130,6 +128,14 @@ class ERDownloader:
     def upload(self, filePath: str):
         parentId = self._downloader.getIdByName("ExtraReflectanceCubes")
         self._downloader.uploadFile(filePath, parentId)
+
+    def getFileMetadata(self) -> List[Dict]:
+        """Return GoogleDrive metadata about the files in the extra reflectance drive folder"""
+        files = self._downloader.getFolderIdContents(
+            self._downloader.getIdByName('PWSAnalysisAppHostedFiles'))
+        files = self._downloader.getFolderIdContents(
+            self._downloader.getIdByName('ExtraReflectanceCubes', fileList=files))
+        return files
 
     class _DownloadThread(QThread):
         """A QThread to download from google drive"""

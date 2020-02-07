@@ -1,6 +1,6 @@
 import os
 import pickle
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -14,7 +14,7 @@ class GoogleDriveDownloader:
         `credentials.json` in the authPath. You can get this file from the online Google Drive api console. Create an Oauth 2.0 credential with access to the drive.file api.
         Upon initializing an instance of this class you will be asked for username and password if you don't already have
         authentication saved from a previous login."""
-        self.allFiles = None
+        self._allFiles = None
         self.authPath = authPath
         tokenPath = os.path.join(self.authPath, 'driveToken.pickle')
         credPath = os.path.join(self.authPath, 'credentials.json')
@@ -30,7 +30,7 @@ class GoogleDriveDownloader:
             with open(tokenPath, 'wb') as token: # Save the credentials for the next run
                 pickle.dump(creds, token)
         self.api = build('drive', 'v3', credentials=creds) #this returns access to the drive api. see google documentation
-        self.updateFilesList()
+        self._updateFilesList()
 
     @staticmethod
     def getCredentials(authPath: str):
@@ -41,21 +41,29 @@ class GoogleDriveDownloader:
                 creds = pickle.load(token)
         return creds
 
-    def updateFilesList(self):
-        """Update the list of all files in the google drive account. This is automatically called during initialization."""
+    def _updateFilesList(self):
+        """Update the list of all files in the google drive account. This is automatically called during initialization and after uploading a new file.
+        I don't think it should be needed anywhere else."""
         results = self.api.files().list(fields="nextPageToken, files(id, name, parents, md5Checksum)").execute()
-        self.allFiles = results.get('files', [])
+        self._allFiles = results.get('files', [])
 
     def getIdByName(self, name: str, fileList: Optional = None) -> str:
         """Return the file id associated with a filename. fileList can be a collection of metadata such as is returned by
         getFolderIDContents. If left blank then all files of the google drive account will be searched. If there are multiple
         files with the same name the first match that is found will be returned."""
-        if fileList is None: fileList = self.allFiles
-        return [i['id'] for i in fileList if i['name'] == name][0]
+        if fileList is None:
+            fileList = self._allFiles
+        matches = [i['id'] for i in fileList if i['name'] == name][0]
+        if len(matches) > 1:
+            raise ValueError(f"Google Drive found multiple files matching file name: {name}")
+        elif len(matches) == 0:
+            raise ValueError(f"Google Drive found not files matching file name: {name}")
+        else:
+            return matches[0]
 
-    def getFolderIdContents(self, Id: str) -> List:
+    def getFolderIdContents(self, Id: str) -> List[Dict]:
         """Return the api metadata for all files contained within the folder associated with `id`."""
-        files = [i for i in self.allFiles if 'parents' in i] # Get rid of parentless files. they will cause errors.
+        files = [i for i in self._allFiles if 'parents' in i] # Get rid of parentless files. they will cause errors.
         return [i for i in files if Id in i['parents']]
 
     def downloadFile(self, Id: str, savePath: str):
@@ -87,6 +95,7 @@ class GoogleDriveDownloader:
         fileMetadata = {'name': fileName, 'parents': [parentId]}
         media = MediaFileUpload(filePath)
         file = self.api.files().create(body=fileMetadata, media_body=media, fields='id').execute()
+        self._updateFilesList()
         return file.get('id')
 
     def moveFile(self, fileId: str, newFolderId: str):

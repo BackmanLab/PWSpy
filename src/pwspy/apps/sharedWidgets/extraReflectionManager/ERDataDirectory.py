@@ -121,7 +121,6 @@ class EROnlineDirectory(ERAbstractDirectory):
         tempDir = tempfile.mkdtemp()
         try:
             indexPath = os.path.join(tempDir, 'index.json')
-            self._downloader.updateFilesList() #TODO is this needed?
             self._downloader.download('index.json', indexPath)
             index = ERIndex.loadFromFile(indexPath)
             self.index = index
@@ -130,20 +129,15 @@ class EROnlineDirectory(ERAbstractDirectory):
             os.rmdir(tempDir)
 
     def updateStatusFromFiles(self):
-        self._downloader.updateFilesList()
         calculatedIndex = self._buildIndexFromOnlineFiles()
         d2 = self._compareIndexes(calculatedIndex, self.index)
         d2 = pandas.DataFrame(d2).transpose()
         d2.columns.values[1] = 'Online Status'
         self.status = d2
 
-
     def _buildIndexFromOnlineFiles(self) -> ERIndex:
         """Return an ERIndex object from the HDF5 data files saved on Google Drive. No downloading required, just scanning metadata."""
-        files = self._downloader.getFolderIdContents(
-            self._downloader.getIdByName('PWSAnalysisAppHostedFiles'))
-        files = self._downloader.getFolderIdContents(
-            self._downloader.getIdByName('ExtraReflectanceCubes', fileList=files))
+        files = self._downloader.getFileMetadata()
         files = [f for f in files if ERMetadata.FILESUFFIX in f['name']]  # Select the dictionaries that correspond to a extra reflectance data file
         files = [ERIndexCube(fileName=f['name'], md5=f['md5Checksum'], name=ERMetadata.directory2dirName(f['name'])[-1], description=None, idTag=None) for f in files]
         return ERIndex(files)
