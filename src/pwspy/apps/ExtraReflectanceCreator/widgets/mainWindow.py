@@ -3,7 +3,7 @@ from datetime import datetime
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QListWidget, QComboBox, QPushButton, \
-    QLabel, QListWidgetItem, QDoubleSpinBox
+    QLabel, QListWidgetItem, QDoubleSpinBox, QCheckBox
 
 from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 
@@ -18,6 +18,8 @@ class MainWindow(QMainWindow):
         self.selListWidg = QListWidget(self)
         self.binningCombo = QComboBox()
         self.binningCombo.addItems(['Auto', '1x1', '2x2', '3x3'])
+        self.parallelCheckBox = QCheckBox("Parallel Process", self)
+        self.parallelCheckBox.setToolTip("Uses significantly more ram but may be significantly faster")
         self.compareDatesButton = QPushButton("Compare Dates")
         self.plotButton = QPushButton("Plot Details")
         self.saveButton = QPushButton("Save Checked Dates")
@@ -37,6 +39,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.deleteFigsButton, row, 2, 1, 1)
         layout.addWidget(QLabel("Binning"), row, 4, 1, 1)
         layout.addWidget(self.binningCombo, row, 5, 1, 1)
+        layout.addWidget(self.parallelCheckBox, row, 6, 1, 1)
         row += 1
         layout.addWidget(self.saveButton, row, 0, 1, 1)
         layout.addWidget(self.viewFilesButton, row, 1, 1, 1)
@@ -48,9 +51,13 @@ class MainWindow(QMainWindow):
         self.show()
 
     @property
-    def binning(self):
+    def binning(self) -> int:
         num = self.binningCombo.currentIndex()
         return num if num != 0 else None
+
+    @property
+    def parallelProcessing(self) -> bool:
+        return self.parallelCheckBox.isChecked()
 
     @property
     def checkedSettings(self):

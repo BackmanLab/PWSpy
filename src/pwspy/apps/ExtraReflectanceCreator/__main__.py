@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QApplication, QFileDialog, QListWidgetItem
+from PyQt5.QtWidgets import QApplication, QFileDialog, QListWidgetItem, QMessageBox
 from pwspy.apps.ExtraReflectanceCreator.ERWorkFlow import ERWorkFlow
 import matplotlib.pyplot as plt
 
@@ -55,7 +55,7 @@ class ERApp(QApplication):
 
     def loadIfNeeded(self):
         if self.workflow.cubes is None:
-            self.workflow.loadCubes(self.window.checkedSettings, self.window.binning)
+            self.workflow.loadCubes(self.window.checkedSettings, self.window.binning, self.window.parallelProcessing)
 
     def _cb(self, func):
         """Return a wrapped function with extra gui stuff."""
@@ -67,6 +67,7 @@ class ERApp(QApplication):
                 func()
             except:
                 traceback.print_exc()
+                msg = QMessageBox.warning(self.window, "Don't panic", "An error occurred. Please see the console for details.")
             finally:
                 self.window.setEnabled(True)
         return newfunc

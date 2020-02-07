@@ -88,7 +88,7 @@ class ERWorkFlow:
                 raise TypeError(f"Type {type(fig)} shouldn't be here, what's going on?")
         self.figs = []
 
-    def loadCubes(self, includeSettings: List[str], binning: int):
+    def loadCubes(self, includeSettings: List[str], binning: int, parallelProcessing: bool):
         df = self.df[self.df['setting'].isin(includeSettings)]
         if binning is None:
             args = {'correction': None, 'binning': None}
@@ -100,7 +100,7 @@ class ERWorkFlow:
                     raise Exception("No camera correction metadata found. Please specify a binning setting, in this case the application will use the camera correction stored in the cameraCorrection.json file of the calibration folder")
         else:
             args = {'correction': self.cameraCorrection, 'binning': binning}
-        self.cubes = loadAndProcess(df, _processIm, parallel=True, procArgs=[args])
+        self.cubes = loadAndProcess(df, _processIm, parallel=parallelProcessing, procArgs=[args])
 
     def plot(self, numericalAperture: float, saveToPdf: bool = False, saveDir: str = None):
         cubes = self.cubes
