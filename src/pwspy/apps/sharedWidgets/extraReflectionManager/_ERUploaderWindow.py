@@ -3,14 +3,12 @@ from __future__ import annotations
 import traceback
 from typing import Optional
 
-import pandas
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QModelIndex, QPoint
 from PyQt5.QtWidgets import QDialog, QWidget, QHBoxLayout, QPushButton, QAbstractItemView, QTableView, QVBoxLayout, \
     QMenu, QAction, QMessageBox
 import pandas as pd
 import typing
-import os
 import numpy as np
 
 from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataDirectory import ERDataDirectory

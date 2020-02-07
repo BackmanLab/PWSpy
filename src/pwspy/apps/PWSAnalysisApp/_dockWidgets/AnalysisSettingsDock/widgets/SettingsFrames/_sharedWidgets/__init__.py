@@ -20,15 +20,8 @@ if typing.TYPE_CHECKING:
 class ExtraReflectanceSelector(QGroupBox):
     def __init__(self, parent: QWidget, erManager: ERManager):
         super().__init__("Extra Reflection", parent)
-        self.ERExplorer = erManager.createSelectorWindow(self)
-
-        def extraReflectionChanged(md: Optional[ERMetadata]):
-            if md is None:
-                self.RSubtractionNameLabel.setText('None')
-            else:
-                self.RSubtractionNameLabel.setText(os.path.split(md.filePath)[-1])
-
-        self.ERExplorer.selectionChanged.connect(extraReflectionChanged)
+        self.ERExplorer = None # We delay the instantiation of this window because its __init__ triggers some somewhat slow processes that aren't needed if the window is never opened.
+        self._erManager = erManager
 
         self.setToolTip("The fact that some light captured by the camera is scattered off surfaces inside the objective without ever reaching the sample means\n"
                         "that the light intensity captured by the camera is not proportional to the reflectance of the sample. This extra reflectance varies\n"
@@ -75,6 +68,7 @@ class ExtraReflectanceSelector(QGroupBox):
         self.setLayout(layout)
 
     def getSettings(self):
+        self._initializeERSelector()
         if self.ERExplorer.getSelectedId() is None:
             ans = QMessageBox.question(self, "Uh", "An extra reflectance cube has not been selected. Do you want to ignore this important correction?")
             if ans == QMessageBox.Yes:
@@ -90,6 +84,7 @@ class ExtraReflectanceSelector(QGroupBox):
 
     def loadFromSettings(self, numericalAperture: float, referenceMaterial: Material, extraReflectanceId: str):
         if extraReflectanceId is not None:
+            self._initializeERSelector()
             self.ERExplorer.setSelection(extraReflectanceId)
         if referenceMaterial is None: #Even though choosing a refereneMaterial of None is no longer an option, it was in the past, we still support loading these settings.
             self.refMaterialCombo.setCurrentText("Ignore")
@@ -98,8 +93,20 @@ class ExtraReflectanceSelector(QGroupBox):
         self.numericalAperture.setValue(numericalAperture)
 
     def _browseReflection(self):
+        self._initializeERSelector()
         self.ERExplorer.show()
 
+    def _initializeERSelector(self):
+        if self.ERExplorer is None:  # Don't initialize the ERSelector window until we actually need it. It can be slow to initiate
+            self.ERExplorer = self._erManager.createSelectorWindow(self)
+
+            def extraReflectionChanged(md: Optional[ERMetadata]):
+                if md is None:
+                    self.RSubtractionNameLabel.setText('None')
+                else:
+                    self.RSubtractionNameLabel.setText(os.path.split(md.filePath)[-1])
+
+            self.ERExplorer.selectionChanged.connect(extraReflectionChanged)
 
 class HardwareCorrections(CollapsibleSection):
     def __init__(self, parent: QWidget):
