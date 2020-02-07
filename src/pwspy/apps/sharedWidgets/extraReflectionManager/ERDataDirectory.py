@@ -10,8 +10,11 @@ import pandas, tempfile
 from pwspy.apps.sharedWidgets.extraReflectionManager.ERIndex import ERIndex, ERIndexCube
 from pwspy.dataTypes import ERMetadata
 import typing
+
+from pwspy.utility import GoogleDriveDownloader
+
 if typing.TYPE_CHECKING:
-    from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
+    from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager, ERDownloader
 from .exceptions import OfflineError
 from abc import ABC, abstractmethod
 import time
@@ -29,16 +32,17 @@ class ERAbstractDirectory(ABC):
     def __init__(self):
         self.index: ERIndex = None
         self.status: pandas.DataFrame = None
-        self.rescan()
+        self.updateIndex()
 
     @abstractmethod
-    def scanIndexFile(self):
+    def updateIndex(self):
         """update self.index from the index file."""
         pass
-    
+
     @abstractmethod
-    def rescan(self):
-        """Update self.index and self.status from the directory being managed. """
+    def updateStatusFromFiles(self):
+        """Update self.status by scanning the files in the directory being managed. Assumes that self.index is
+        already up to date."""
         pass
 
 
@@ -48,14 +52,15 @@ class ERDataDirectory(ERAbstractDirectory):
         self._directory = directory
         super().__init__()
 
-    def rescan(self):
-        """Scan the local files and compare them to the contents of the local index file. store the comparison results in `self.status`."""
+    def updateIndex(self):
         self.index = ERIndex.loadFromFile(os.path.join(self._directory, 'index.json'))
+
+    def updateStatusFromFiles(self):
         files = glob(os.path.join(self._directory, f'*{ERMetadata.FILESUFFIX}'))
         files = [(f, ERMetadata.validPath(f)) for f in files]  # validPath returns True/False in awhether the datacube was found.
-        files = [(directory, name) for f, (valid, directory, name) in files if valid]
-        self.files = [ERMetadata.fromHdfFile(directory, name) for directory, name in files]
-        calculatedIndex = self._buildIndexFromFiles(self.files)
+        files = [(directory, name) for f, (valid, directory, name) in files if valid]  # Get rid of invalid files.
+        files = [ERMetadata.fromHdfFile(directory, name) for directory, name in files]
+        calculatedIndex = self._buildIndexFromFiles(files)
         d = self._compareIndexes(calculatedIndex, self.index)
         d = pandas.DataFrame(d).transpose()
         d.columns.values[1] = 'Local Status'
@@ -108,57 +113,43 @@ class ERDataDirectory(ERAbstractDirectory):
 
 class EROnlineDirectory(ERAbstractDirectory):
     """A class representing the status of the google drive directory"""
-    def __init__(self, manager: ERManager):
-        self._manager = manager
-        if self._manager.offlineMode:
-            raise Exception("The EROnlineDirectory cannot be used when the ERManager is in offline mode.")
+    def __init__(self, downloader: ERDownloader):
+        self._downloader = downloader
         super().__init__()
 
-    def rescan(self):
-        """Compare the status of the online index file and online files. store the results in `self.status`"""
-        if self._manager._downloader is not None:
-            self._manager._downloader.updateFilesList()
-        self.index = self.getIndexFile()
-        calculatedIndex = self.buildIndexFromOnlineFiles()
-        d2 = self.compareIndexes(calculatedIndex, self.index)
+    def updateIndex(self):
+        tempDir = tempfile.mkdtemp()
+        try:
+            indexPath = os.path.join(tempDir, 'index.json')
+            self._downloader.updateFilesList() #TODO is this needed?
+            self._downloader.download('index.json', indexPath)
+            index = ERIndex.loadFromFile(indexPath)
+            self.index = index
+        finally:
+            os.remove(indexPath)
+            os.rmdir(tempDir)
+
+    def updateStatusFromFiles(self):
+        self._downloader.updateFilesList()
+        calculatedIndex = self._buildIndexFromOnlineFiles()
+        d2 = self._compareIndexes(calculatedIndex, self.index)
         d2 = pandas.DataFrame(d2).transpose()
         d2.columns.values[1] = 'Online Status'
         self.status = d2
 
-    def getIndexFile(self) -> ERIndex:
-        """Return an ERIndex object from the 'index.json' file saved on Google Drive."""
-        tempDir = tempfile.mkdtemp()
-        indexDir = os.path.join(tempDir, 'index.json')
-        if os.path.exists(indexDir):
-            os.remove(indexDir)
-        try:
-            self._manager._downloader.updateFilesList()
-            self._manager.download('index.json', tempDir)
-        except OfflineError:
-            return None
-        except ValueError: # File doesn't exist
-            print("Index file was not found on google drive. Uploading from local data directory.")
-            self._manager.upload(os.path.join(self._manager._directory, 'index.json'))
-            time.sleep(3)
-            return self.getIndexFile() #Try downloading again.
-        index = ERIndex.loadFromFile(indexDir)
-        os.remove(indexDir)
-        os.rmdir(tempDir)
-        return index
 
-    def buildIndexFromOnlineFiles(self) -> ERIndex:
+    def _buildIndexFromOnlineFiles(self) -> ERIndex:
         """Return an ERIndex object from the HDF5 data files saved on Google Drive. No downloading required, just scanning metadata."""
-        downloader = self._manager._downloader
-        files = downloader.getFolderIdContents(
-            downloader.getIdByName('PWSAnalysisAppHostedFiles'))
-        files = downloader.getFolderIdContents(
-            downloader.getIdByName('ExtraReflectanceCubes', fileList=files))
+        files = self._downloader.getFolderIdContents(
+            self._downloader.getIdByName('PWSAnalysisAppHostedFiles'))
+        files = self._downloader.getFolderIdContents(
+            self._downloader.getIdByName('ExtraReflectanceCubes', fileList=files))
         files = [f for f in files if ERMetadata.FILESUFFIX in f['name']]  # Select the dictionaries that correspond to a extra reflectance data file
         files = [ERIndexCube(fileName=f['name'], md5=f['md5Checksum'], name=ERMetadata.directory2dirName(f['name'])[-1], description=None, idTag=None) for f in files]
         return ERIndex(files)
 
     @staticmethod
-    def compareIndexes(calculatedIndex: ERIndex, jsonIndex: ERIndex) -> dict:
+    def _compareIndexes(calculatedIndex: ERIndex, jsonIndex: ERIndex) -> dict:
         """A utility function to compare two `ERIndex` objects and return a `dict` containing the status for each file.
         In this case we are not able to extract the idTags from the dataFiles without downloading them. use filenames instead"""
         foundNames = set([cube.fileName for cube in calculatedIndex.cubes])

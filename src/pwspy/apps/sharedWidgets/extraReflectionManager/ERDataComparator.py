@@ -2,7 +2,7 @@ from __future__ import annotations
 import pandas
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
+    from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager, ERDownloader
 from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataDirectory import ERDataDirectory, EROnlineDirectory
 from enum import Enum
 
@@ -16,12 +16,12 @@ class ERDataComparator:
         Md5Mismatch = 'MD5 Mismatch'
         Match = "Match"  # This is what we hope to see.
 
-    def __init__(self, manager: ERManager, directory: str):
+    def __init__(self, downloader: ERDownloader, directory: str):
         self.local = ERDataDirectory(directory)
         if manager.offlineMode:
             self.online = None
         else:
-            self.online = EROnlineDirectory(manager)
+            self.online = EROnlineDirectory(downloader)
         self.status: pandas.DataFrame = None
         self.compare()
 

@@ -45,15 +45,15 @@ class ERManager:
         if creds is None:  # Check if the google drive credentials exists and if they don't then give the user a message.
             msg = QMessageBox.information(None, "Time to log in!", "Please log in to the google drive account containing the PWS Calibration Database. This is currently backman.lab@gmail.com")
         try:
-            self._downloader = _QtGoogleDriveDownloader(applicationVars.googleDriveAuthPath)
+            self._downloader = ERDownloader(applicationVars.googleDriveAuthPath)
         except (TransportError, httplib2.ServerNotFoundError):
             self.offlineMode = True
             print("Google Drive connection failed. Proceeding in offline mode.")
-            self._downloader: GoogleDriveDownloader = None
+            self._downloader: ERDownloader = None
         indexPath = os.path.join(self._directory, 'index.json')
         if not os.path.exists(indexPath):
             self.download('index.json')
-        self.dataComparator = ERDataComparator(self, self._directory) #TODO circular reference!
+        self.dataComparator = ERDataComparator(self._downloader, self._directory) #TODO circular reference!
 
     def createSelectorWindow(self, parent: QWidget):
         return ERSelectorWindow(self, parent)
@@ -67,27 +67,16 @@ class ERManager:
         self.dataComparator.rescan()
 
     @_offlineDecorator
-    def download(self, fileName: str, directory: Optional[str] = None, parentWidget: Optional[QWidget] = None):
+    def download(self, fileName: str, parentWidget: Optional[QWidget] = None):
         """Begin downloading `fileName` in a separate thread. Use the main thread to update a progress bar.
         If directory is left blank then file will be downloaded to the ERManager main directory"""
-        if directory is None:
-            directory = self._directory  # Use the main directory
-        if fileName not in [i['name'] for i in self._downloader.allFiles]:
-            raise ValueError(f"File {fileName} does not exist on google drive")
-        t = _DownloadThread(self._downloader, fileName, directory)
-        b = BusyDialog(parentWidget, f"Downloading {fileName}. Please Wait...", progressBar=True) # This dialog blocks the screen until the download thread is completed.
-        t.finished.connect(b.accept)  # When the thread finishes, close the busy dialog.
-        self._downloader.progress.connect(b.setProgress)  # Progress from the downloader updates a progress bar on the busy dialog.
-        t.errorOccurred.connect(lambda e: QMessageBox.information(parentWidget, 'Error in Drive Downloader Thread', str(e)))
-        t.start()
-        b.exec()
+        self._downloader.download(fileName, self._directory, parentWidget)
 
     @_offlineDecorator
     def upload(self, fileName: str):
         """Uploads the file at `fileName` to the `ExtraReflectanceCubes` folder of the google drive account"""
-        parentId = self._downloader.getIdByName("ExtraReflectanceCubes")
         filePath = os.path.join(self._directory, fileName)
-        self._downloader.uploadFile(filePath, parentId)
+        self._downloader.upload(filePath)
 
     def getMetadataFromId(self, idTag: str) -> ERMetadata:
         """Given the unique idTag string for an ExtraReflectanceCube this will search the index.json and return the
@@ -97,28 +86,6 @@ class ERManager:
         except IndexError:
             raise IndexError(f"An ExtraReflectanceCube with idTag {idTag} was not found in the index.json file at {self._directory}.")
         return ERMetadata.fromHdfFile(self._directory, match.name)
-
-
-class _DownloadThread(QThread):
-    """A QThread to download from google drive"""
-    errorOccurred = QtCore.pyqtSignal(Exception) # If an exception occurs it can be passed to another thread with this signal
-
-    def __init__(self, downloader: GoogleDriveDownloader, fileName: str, directory: str):
-        super().__init__()
-        self.downloader = downloader
-        self.fileName = fileName
-        self.directory = directory
-
-    def run(self):
-        try:
-            files = self.downloader.getFolderIdContents(
-                self.downloader.getIdByName('PWSAnalysisAppHostedFiles'))
-            files = self.downloader.getFolderIdContents(
-                self.downloader.getIdByName('ExtraReflectanceCubes', fileList=files))
-            fileId = self.downloader.getIdByName(self.fileName, fileList=files)
-            self.downloader.downloadFile(fileId, os.path.join(self.directory, self.fileName))
-        except Exception as e:
-            self.errorOccurred.emit(e)
 
 
 class _QtGoogleDriveDownloader(GoogleDriveDownloader, QObject):
@@ -140,5 +107,50 @@ class _QtGoogleDriveDownloader(GoogleDriveDownloader, QObject):
                 status, done = downloader.next_chunk()
                 self.progress.emit(int(status.progress() * 100))
 
+
+class ERDownloader:
+    """Implements downloading functionality specific to the structure that we have calibration files stored on our google drive account."""
+    def __init__(self, authPath: str):
+        self._downloader = _QtGoogleDriveDownloader(authPath)
+
+
+    def download(self, fileName: str, directory: str, parentWidget: Optional[QWidget] = None):
+        """Begin downloading `fileName` in a separate thread. Use the main thread to update a progress bar.
+        If directory is left blank then file will be downloaded to the ERManager main directory"""
+        if fileName not in [i['name'] for i in self._downloader.allFiles]:
+            raise ValueError(f"File {fileName} does not exist on google drive")
+        t = self._DownloadThread(self._downloader, fileName, directory)
+        b = BusyDialog(parentWidget, f"Downloading {fileName}. Please Wait...", progressBar=True)  # This dialog blocks the screen until the download thread is completed.
+        t.finished.connect(b.accept)  # When the thread finishes, close the busy dialog.
+        self._downloader.progress.connect(b.setProgress)  # Progress from the downloader updates a progress bar on the busy dialog.
+        t.errorOccurred.connect(lambda e: QMessageBox.information(parentWidget, 'Error in Drive Downloader Thread', str(e)))
+        t.start()
+        b.exec()
+
+    def upload(self, filePath: str):
+        parentId = self._downloader.getIdByName("ExtraReflectanceCubes")
+        self._downloader.uploadFile(filePath, parentId)
+
+    class _DownloadThread(QThread):
+        """A QThread to download from google drive"""
+        errorOccurred = QtCore.pyqtSignal(
+            Exception)  # If an exception occurs it can be passed to another thread with this signal
+
+        def __init__(self, downloader: GoogleDriveDownloader, fileName: str, directory: str):
+            super().__init__()
+            self.downloader = downloader
+            self.fileName = fileName
+            self.directory = directory
+
+        def run(self):
+            try:
+                files = self.downloader.getFolderIdContents(
+                    self.downloader.getIdByName('PWSAnalysisAppHostedFiles'))
+                files = self.downloader.getFolderIdContents(
+                    self.downloader.getIdByName('ExtraReflectanceCubes', fileList=files))
+                fileId = self.downloader.getIdByName(self.fileName, fileList=files)
+                self.downloader.downloadFile(fileId, os.path.join(self.directory, self.fileName))
+            except Exception as e:
+                self.errorOccurred.emit(e)
 
 
