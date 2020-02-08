@@ -59,7 +59,7 @@ class DynamicsAnalysisSettings(AbstractAnalysisSettings):
 @dataclasses.dataclass
 class DynamicsRuntimeAnalysisSettings(AbstractRuntimeAnalysisSettings):
     settings: DynamicsAnalysisSettings
-    extraReflectanceMetaData: Optional[ERMetadata]
+    extraReflectanceMetadata: Optional[ERMetadata]
 
     def getSaveableSettings(self) -> DynamicsAnalysisSettings:
         return self.settings

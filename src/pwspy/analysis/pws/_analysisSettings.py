@@ -45,7 +45,7 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
 @dataclasses.dataclass
 class PWSRuntimeAnalysisSettings(AbstractRuntimeAnalysisSettings):
     settings: PWSAnalysisSettings
-    extraReflectanceMetaData: Optional[ERMetadata]
+    extraReflectanceMetadata: Optional[ERMetadata]
 
     def getSaveableSettings(self) -> PWSAnalysisSettings:
         return self.settings
