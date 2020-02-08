@@ -11,7 +11,7 @@ from googleapiclient.http import MediaIoBaseDownload
 
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataComparator import ERDataComparator
-from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataDirectory import ERDataDirectory, EROnlineDirectory
+from pwspy.apps.sharedWidgets.extraReflectionManager._ERDataDirectory import ERDataDirectory, EROnlineDirectory
 from ._ERSelectorWindow import ERSelectorWindow
 from ._ERUploaderWindow import ERUploaderWindow
 from pwspy.dataTypes import ERMetadata
