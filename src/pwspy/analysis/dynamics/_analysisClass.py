@@ -24,7 +24,7 @@ class DynamicsAnalysis(AbstractAnalysis):
     def __init__(self, settings: DynamicsRuntimeAnalysisSettings, ref: DynCube):
         super().__init__()
         from pwspy.dataTypes import ExtraReflectanceCube
-        extraReflectance = ExtraReflectanceCube.fromMetadata(settings.extraReflectanceMetadata)
+        extraReflectance = ExtraReflectanceCube.fromMetadata(settings.extraReflectanceMetadata) if settings.extraReflectanceMetadata is not None else None
         settings = settings.getSaveableSettings()
         assert ref.processingStatus.cameraCorrected
         ref.normalizeByExposure()
