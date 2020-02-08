@@ -29,9 +29,11 @@ class ERTreeWidgetItem(QTreeWidgetItem):
         self.fileName = fileName
         self.description = description
         self.idTag = idTag
-        self.systemName = self.idTag.split('_')[1]
+        self.systemName = self.idTag.split('_')[1]  # We used to categorize the calibrations by system name but this is confusing because a single system can have multiple configurations
         self.datetime = datetime.strptime(self.idTag.split('_')[2], moduleConsts.dateTimeFormat)
         self.name = name
+        configurationName = name.split("-")[:-1]  # We now categorize by configurationName, however this isn't explicitly saved in the index so we extract it from the file name. Of course, this breaks if anyone puts a "-" in the configuration name. It would be better to explicitly save it from the ERCreator app
+        self.configurationName = configurationName[0] if len(configurationName) == 1 else "-".join(configurationName)
 
         self.setText(0, datetime.strftime(self.datetime, '%B %d, %Y'))
         self.setToolTip(0, '\n'.join([f'File Name: {self.fileName}', f'ID: {self.idTag}', f'Description: {self.description}']))
@@ -94,7 +96,7 @@ class ERSelectorWindow(QDialog):
         self._items: List[ERTreeWidgetItem] = []
         self.tree.clear()
         self._manager.dataComparator.local.updateIndex()
-        self.fileStatus = self._manager.dataComparator.local.getFileStatus(skipMD5=True) # Skipping the md5 hash check should speed things up here.
+        self.fileStatus = self._manager.dataComparator.local.getFileStatus(skipMD5=True)  # Skipping the md5 hash check should speed things up here.
         for item in self._manager.dataComparator.local.index.cubes:
             self._addItem(item)
         # Sort items by date
@@ -109,11 +111,11 @@ class ERSelectorWindow(QDialog):
                                     downloaded=self.fileStatus[self.fileStatus['idTag'] == item.idTag].iloc[0]['Local Status'] == self._manager.dataComparator.local.DataStatus.found.value)
         self._items.append(treeItem)
         _ = self.tree.invisibleRootItem()
-        if treeItem.systemName not in [_.child(i).text(0) for i in range(_.childCount())]:
-            sysNameItem = QTreeWidgetItem(_, [treeItem.systemName])
+        if treeItem.configurationName not in [_.child(i).text(0) for i in range(_.childCount())]:
+            sysNameItem = QTreeWidgetItem(_, [treeItem.configurationName])
             sysNameItem.setFlags(QtCore.Qt.ItemIsEnabled)  # Don't allow selecting
             _.addChild(sysNameItem)
-        parent = [i for i in [_.child(i) for i in range(_.childCount())] if i.text(0) == treeItem.systemName][0]
+        parent = [i for i in [_.child(i) for i in range(_.childCount())] if i.text(0) == treeItem.configurationName][0]
         parent.addChild(treeItem)
 
     def showContextMenu(self, pos: QPoint):

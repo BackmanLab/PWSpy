@@ -77,10 +77,13 @@ class ERDataDirectory(ERAbstractDirectory):
             ERIndex: A new ERIndex representing the state of the extra reflectance files in `files`."""
         cubes = []
         for erCube in files:
-            md5hash = hashlib.md5()
-            with open(erCube.filePath, 'rb') as f:
-                md5hash.update(f.read())
-            md5 = md5hash.hexdigest() if not skipMD5 else None  # The md5 checksum as a string of hex.
+            if skipMD5:
+                md5 = None
+            else:
+                md5hash = hashlib.md5()
+                with open(erCube.filePath, 'rb') as f:
+                    md5hash.update(f.read())
+                md5 = md5hash.hexdigest()
             cubes.append(ERIndexCube(erCube.filePath, erCube.inheritedMetadata['description'], erCube.idTag,
                                      erCube.directory2dirName(erCube.filePath)[-1], md5))
         return ERIndex(cubes)
