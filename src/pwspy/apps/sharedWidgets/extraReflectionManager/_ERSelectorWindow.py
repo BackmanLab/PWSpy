@@ -92,7 +92,7 @@ class ERSelectorWindow(QDialog):
         self._items: List[ERTreeWidgetItem] = []
         self.tree.clear()
         self._manager.dataComparator.local.updateIndex()
-        self.fileStatus = self._manager.dataComparator.local.getFileStatus()
+        self.fileStatus = self._manager.dataComparator.local.getFileStatus(skipMD5=True) # Skipping the md5 hash check should speed things up here.
         for item in self._manager.dataComparator.local.index.cubes:
             self._addItem(item)
         # Sort items by date
@@ -154,7 +154,8 @@ class ERSelectorWindow(QDialog):
             super().accept()
         else:
             try:
-                self.setSelection(self.tree.selectedItems()[0])
+                md = self._manager.getMetadataFromId(self.tree.selectedItems()[0].idTag)
+                self.setSelection(md)
                 super().accept()
             except IndexError:  # Nothing was selected
                 msg = QMessageBox.information(self, 'Uh oh!', 'No item was selected!')

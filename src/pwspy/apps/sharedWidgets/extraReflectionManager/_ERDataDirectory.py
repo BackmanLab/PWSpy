@@ -56,34 +56,44 @@ class ERDataDirectory(ERAbstractDirectory):
         with open(os.path.join(self._directory, 'index.json'), 'r') as f:
             self.index = ERIndex.load(f)
 
-    def getFileStatus(self) -> pandas.DataFrame:
+    def getFileStatus(self, skipMD5: bool = False) -> pandas.DataFrame:
         files = glob(os.path.join(self._directory, f'*{ERMetadata.FILESUFFIX}'))
         files = [(f, ERMetadata.validPath(f)) for f in files]  # validPath returns True/False in awhether the datacube was found.
         files = [(directory, name) for f, (valid, directory, name) in files if valid]  # Get rid of invalid files.
         files = [ERMetadata.fromHdfFile(directory, name) for directory, name in files]
-        calculatedIndex = self._buildIndexFromFiles(files)
-        d = self._compareIndexes(calculatedIndex, self.index)
+        calculatedIndex = self._buildIndexFromFiles(files, skipMD5=skipMD5)
+        d = self._compareIndexes(calculatedIndex, self.index, skipMD5=skipMD5)
         d = pandas.DataFrame(d).transpose()
         d.columns.values[1] = 'Local Status'
         return d
 
     @staticmethod
-    def _buildIndexFromFiles(files: List[ERMetadata]) -> ERIndex:
-        """Scan the data files in the directory and construct an ERIndex from the metadata. The `description` field is left blank though."""
-        # TODO This function is quite slow, 1.6 seconds. Maybe we don't need to be MD5ing the whole file, maybe no md5 at all?
+    def _buildIndexFromFiles(files: List[ERMetadata], skipMD5: bool = False) -> ERIndex:
+        """Scan the data files in the directory and construct an ERIndex from the metadata. The `description` field is left blank though.
+        Args:
+            files (List[ERMetadata]): A list of the all the extra reflectance file objects that we want to construct an index from.
+            skipMD5 (bool): If True then don't calculate the md5 hash for the files. This can be quite slow. Defaults to False.
+        Returns:
+            ERIndex: A new ERIndex representing the state of the extra reflectance files in `files`."""
         cubes = []
         for erCube in files:
             md5hash = hashlib.md5()
             with open(erCube.filePath, 'rb') as f:
                 md5hash.update(f.read())
-            md5 = md5hash.hexdigest()  # The md5 checksum as a string of hex.
+            md5 = md5hash.hexdigest() if not skipMD5 else None  # The md5 checksum as a string of hex.
             cubes.append(ERIndexCube(erCube.filePath, erCube.inheritedMetadata['description'], erCube.idTag,
                                      erCube.directory2dirName(erCube.filePath)[-1], md5))
         return ERIndex(cubes)
 
     @staticmethod
-    def _compareIndexes(ind1: ERIndex, ind2: ERIndex) -> dict:
-        """A utility function to compare two `ERIndex` objects and return a `dict` containing the status for each file. """
+    def _compareIndexes(ind1: ERIndex, ind2: ERIndex, skipMD5: bool = False) -> dict:
+        """A utility function to compare two `ERIndex` objects and return a `dict` containing the status for each file.
+        Args:
+            ind1 (ERIndex): One of the ERIndexes to be compared.
+            ind2 (ERIndex: The other ERIndex to be compared.
+            skipMD5 (bool): If True then don't check if the MD5 hashes between the two indexes match. Sometimes we don't measure the MD5 index because it's slow. Defaults to False.
+        Returns:
+            pandas.Dataframe: A dataframe showing the results of the comparison for each item contained in at least on of the indexes."""
         foundTags = set([cube.idTag for cube in ind1.cubes])
         indTags = set([cube.idTag for cube in ind2.cubes])
         notIndexed = foundTags - indTags  # Tags in foundTags but not in indTags
@@ -93,8 +103,9 @@ class ERDataDirectory(ERAbstractDirectory):
         for ID in matched:
             cube = [cube for cube in ind1.cubes if cube.idTag == ID][0]
             indCube = [cube for cube in ind2.cubes if cube.idTag == ID][0]
-            if cube.md5 != indCube.md5:
-                dataMismatch.append(ID)
+            if not skipMD5:
+                if cube.md5 != indCube.md5:
+                    dataMismatch.append(ID)
         # Construct a dataframe
         d = {}
         for i, tag, in enumerate(foundTags | indTags):

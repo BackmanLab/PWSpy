@@ -27,7 +27,7 @@ class ERIndex:
                         'name': {'type': 'string'},
                         'md5': {'type': 'string'}
                     },
-                    'required': ['fileName', 'description', 'idTag', 'name', 'md5']
+                    'required': ['fileName', 'description', 'idTag', 'name']
                 }
             },
             'creationDate': {'type': 'string'}
@@ -58,7 +58,7 @@ class ERIndex:
 
 
 class ERIndexCube:
-    def __init__(self, fileName: str, description: str, idTag: str, name: str, md5: str):
+    def __init__(self, fileName: str, description: str, idTag: str, name: str, md5: Optional[str]):
         self.fileName = fileName
         self.description = description
         self.idTag = idTag

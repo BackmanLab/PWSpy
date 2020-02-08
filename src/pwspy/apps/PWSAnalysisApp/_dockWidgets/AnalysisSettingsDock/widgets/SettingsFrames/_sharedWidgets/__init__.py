@@ -34,7 +34,7 @@ class ExtraReflectanceSelector(QGroupBox):
         layout.setContentsMargins(5, 1, 5, 5)
         rsubLabel = QLabel("R Subtraction")
         self.RSubtractionNameLabel = QLineEdit('None')
-        self.RSubtractionNameLabel.setEnabled(False)
+        self.RSubtractionNameLabel.setReadOnly(True)
         self.RSubtractionBrowseButton = QPushButton(QtGui.QIcon(os.path.join(resources, 'folder.svg')), '')
         self.RSubtractionBrowseButton.released.connect(self._browseReflection)
         refMatLabel = QLabel("Reference Material")
