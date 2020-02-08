@@ -204,7 +204,7 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
 
     def getSettings(self) -> PWSRuntimeAnalysisSettings:
         erMetadata, refMaterial, numericalAperture = self.extraReflection.getSettings()
-        return PWSRuntimeAnalysisSettings(settings=PWSAnalysisSettings(filterOrder=self.filterOrder.value(),  # TODO we break with the abstract class by returning settings and a metadata. This is because we need the metadata but it isn't compatible with the saving/loading capability of analysis settings. Ultimately we should probably split analysis settings into saveable/loadable type and a runtime-only type that will contain things like Extra reflectance metadata, camera corrections etc.
+        return PWSRuntimeAnalysisSettings(settings=PWSAnalysisSettings(filterOrder=self.filterOrder.value(),  # TODO include reference and camera correction with this object.
                                                                        filterCutoff=self.filterCutoff.value(),
                                                                        polynomialOrder=self.polynomialOrder.value(),
                                                                        extraReflectanceId=erMetadata.idTag,
