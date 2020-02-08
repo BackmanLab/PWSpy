@@ -46,7 +46,7 @@ class AnalysisPlotter:
             if field is self.PlotFields.OpdPeak:  # Return the index corresponding to the max of that pixel's opd funtion.
                 if self.analysis is None:
                     raise ValueError(f"Analysis Plotter for {self.acq.filePath} does not have an analysis file.")
-                opd, opdIndex = self.analysis.opd
+                opd, opdIndex = self.analysis.pws.opd
                 self.data = opdIndex[np.argmax(opd, axis=2)]
             else:
                 anType, paramName = field.value
