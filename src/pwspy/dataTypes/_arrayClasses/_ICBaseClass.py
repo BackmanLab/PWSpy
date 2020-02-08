@@ -263,7 +263,7 @@ class ICBase:
             fpData = fpData.astype(np.uint16)
             dset = g.create_dataset(name, data=fpData)  # , chunks=(64,64,self.data.shape[2]), compression=2)
             dset.attrs['index'] = np.array(self.index)
-            dset.attrs['type'] = np.string_(f"{self.__class__.__name__}_fp")
+            dset.attrs['type'] = np.string_(f"{self.__class__.__name__}_fp") #TODO if the classes get renamed then this will break. need to use a different identifier that won't be accidentally changed
             dset.attrs['min'] = m
             dset.attrs['max'] = M
         else:
@@ -276,7 +276,7 @@ class ICBase:
     def decodeHdf(cls, d: h5py.Dataset) -> Tuple[np.array, Tuple[float, ...]]:
         assert 'type' in d.attrs
         assert 'index' in d.attrs
-        if d.attrs['type'].decode() == cls.__name__: #standard decoding
+        if d.attrs['type'].decode() == cls.__name__: #standard decoding #TODO if the classes get renamed then this will break. need to use a different identifier that won't be accidentally changed
             return np.array(d), tuple(d.attrs['index'])
         elif d.attrs['type'].decode() == f"{cls.__name__}_fp": #Fixed point decoding
             print("Decoding fixed point")

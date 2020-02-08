@@ -1,6 +1,6 @@
 from __future__ import annotations
 import os
-from typing import Optional
+from typing import Optional, Tuple
 
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtGui import QPalette, QValidator, QDoubleValidator
@@ -67,26 +67,33 @@ class ExtraReflectanceSelector(QGroupBox):
         layout.addLayout(rLayout)
         self.setLayout(layout)
 
-    def getSettings(self):
+    def getSettings(self) -> Tuple[ERMetadata, Material, float]:
         self._initializeERSelector()
-        if self.ERExplorer.getSelectedId() is None:
+        if self.ERExplorer.getSelectedMetadata() is None:
             ans = QMessageBox.question(self, "Uh", "An extra reflectance cube has not been selected. Do you want to ignore this important correction?")
             if ans == QMessageBox.Yes:
-                erId = None
+                erMd = None
             else:
                 raise ValueError("An extra reflectance cube has not been selected.")
         else:
-            erId = self.ERExplorer.getSelectedId()
+            erMd = self.ERExplorer.getSelectedMetadata()
         self.numericalAperture.clearFocus() #This should prevent an error where the value that is saved doesn't match what is actually typed in when the keyboard is still focused on the spinbox.
         numericalAperture = self.numericalAperture.value()
         refMaterial = Material[self.refMaterialCombo.currentText()]
-        return erId, refMaterial, numericalAperture
+        return erMd, refMaterial, numericalAperture
+
+    def getSelectedERMetadata(self) -> Optional[ERMetadata]:
+        return self.ERExplorer.getSelectedMetadata()
 
     def loadFromSettings(self, numericalAperture: float, referenceMaterial: Material, extraReflectanceId: str):
         if extraReflectanceId is not None:
             self._initializeERSelector()
-            self.ERExplorer.setSelection(extraReflectanceId)
-        if referenceMaterial is None: #Even though choosing a refereneMaterial of None is no longer an option, it was in the past, we still support loading these settings.
+            try:
+                md = self._erManager.getMetadataFromId(extraReflectanceId)
+                self.ERExplorer.setSelection(md)
+            except IndexError:  # Metadata matching that ID was not found by the ERManager
+                self.RSubtractionNameLabel.setText(f"Failed to find ID: {extraReflectanceId}")
+        if referenceMaterial is None:  # Even though choosing a referenceMaterial of None is no longer an option, it was in the past, we still support loading these settings.
             self.refMaterialCombo.setCurrentText("Ignore")
         else:
             self.refMaterialCombo.setCurrentIndex(self.refMaterialCombo.findText(referenceMaterial.name))

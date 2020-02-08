@@ -5,8 +5,11 @@ from typing import Tuple, List, Optional
 import typing
 from PyQt5.QtCore import QThread
 
-from pwspy.analysis import AbstractAnalysisSettings
+from pwspy.analysis import AbstractAnalysisSettings, AbstractAnalysis
+from pwspy.analysis._abstract import AbstractRuntimeAnalysisSettings
 from pwspy.analysis.dynamics import DynamicsAnalysisSettings, DynamicsAnalysis
+from pwspy.analysis.dynamics._analysisSettings import DynamicsRuntimeAnalysisSettings
+from pwspy.analysis.pws._analysisSettings import PWSRuntimeAnalysisSettings
 from pwspy.apps.PWSAnalysisApp._sharedWidgets import ScrollableMessageBox
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from PyQt5 import QtCore
@@ -51,14 +54,14 @@ class AnalysisManager(QtCore.QObject):
             del _
 
     @safeCallback
-    def runSingle(self, anName: str, anSettings: PWSAnalysisSettings, cellMetas: List[AcqDir], refMeta: AcqDir,
-                  cameraCorrection: CameraCorrection) -> Tuple[str, PWSAnalysisSettings, List[Tuple[List[AnalysisWarning], AcqDir]]]:
+    def runSingle(self, anName: str, anSettings: AbstractRuntimeAnalysisSettings, cellMetas: List[AcqDir], refMeta: AcqDir,
+                  cameraCorrection: CameraCorrection) -> Tuple[str, AbstractAnalysisSettings, List[Tuple[List[AnalysisWarning], AcqDir]]]:
         """Run a single analysis batch"""
         userSpecifiedBinning: Optional[int] = None
-        if isinstance(anSettings, PWSAnalysisSettings):
+        if isinstance(anSettings, PWSRuntimeAnalysisSettings):
             cellMetas = [i.pws for i in cellMetas]
             refMeta = refMeta.pws  # We are only interested in pws data here
-        elif isinstance(anSettings, DynamicsAnalysisSettings):
+        elif isinstance(anSettings, DynamicsRuntimeAnalysisSettings):
             cellMetas = [i.dynamics for i in cellMetas]
             refMeta = refMeta.dynamics
         if refMeta is None:
@@ -93,21 +96,16 @@ class AnalysisManager(QtCore.QObject):
             else:
                 print("Using automatically detected camera corrections")
                 ref.correctCameraEffects()
-            if anSettings.extraReflectanceId is None: #the id is None, this means we are skipping the Extra reflection correction.
-                erCube = None
-            else:
-                erMeta = self.app.ERManager.getMetadataFromId(anSettings.extraReflectanceId)
-                if refMeta.systemName != erMeta.systemName:
-                    ans = QMessageBox.question(self.app.window, "Uh Oh", f"The reference was acquired on system: {refMeta.systemName} while the extra reflectance correction was acquired on system: {erMeta.systemName}. Are you sure you want to continue?")
+            if anSettings.extraReflectanceMetadata is not None: #if the ER is None, this means we are skipping the Extra reflection correction.
+                if refMeta.systemName != anSettings.extraReflectanceMetadata.systemName:
+                    ans = QMessageBox.question(self.app.window, "Uh Oh", f"The reference was acquired on system: {refMeta.systemName} while the extra reflectance correction was acquired on system: {anSettings.extraReflectanceMetadata.systemName}. Are you sure you want to continue?")
                     if ans == QMessageBox.No:
                         return
-                print("Loading extraReflectanceCube")
-                erCube = ExtraReflectanceCube.fromMetadata(erMeta)
             print("Initializing analysis")
-            if isinstance(anSettings, PWSAnalysisSettings):
-                analysis = PWSAnalysis(anSettings, ref, erCube)
-            elif isinstance(anSettings, DynamicsAnalysisSettings):
-                analysis = DynamicsAnalysis(anSettings, ref, erCube)
+            if isinstance(anSettings, PWSRuntimeAnalysisSettings):
+                analysis = PWSAnalysis(anSettings, ref)
+            elif isinstance(anSettings, DynamicsRuntimeAnalysisSettings):
+                analysis = DynamicsAnalysis(anSettings, ref)
             else:
                 raise TypeError(f"Analysis settings of type: {type(anSettings)} are not supported.")
             useParallelProcessing = self.app.parallelProcessing
@@ -137,7 +135,7 @@ class AnalysisManager(QtCore.QObject):
             b.exec()
             warnings = t.warnings
             warnings = [(warn, md) for warn, md in warnings if md is not None]
-            ret = (anName, anSettings, warnings)
+            ret = (anName, anSettings.getSaveableSettings(), warnings)
             self.analysisDone.emit(*ret)
             return ret
         else:
@@ -185,7 +183,7 @@ class AnalysisManager(QtCore.QObject):
 
 
         @staticmethod
-        def _initializer(analysis: PWSAnalysis, analysisName: str, cameraCorrection: CameraCorrection, userSpecifiedBinning: Optional[int] = None):
+        def _initializer(analysis: AbstractAnalysis, analysisName: str, cameraCorrection: CameraCorrection, userSpecifiedBinning: Optional[int] = None):
             """This method is run once for each process that is spawned. it initialized _resources that are shared between each iteration of _process."""
             global pwspyAnalysisAppParallelGlobals
             print('initializing!')

@@ -61,7 +61,7 @@ class ERSelectorWindow(QDialog):
 
     def __init__(self, manager: ERManager, parent: Optional[QWidget] = None):
         self._manager = manager
-        self._selectedId: str = None
+        self._selectedMetadata: Optional[ERMetadata] = None
         super().__init__(parent)
         self.setModal(False)
         self.setWindowTitle("Extra Reflectance Selector")
@@ -155,19 +155,15 @@ class ERSelectorWindow(QDialog):
             super().accept()
         else:
             try:
-                self.setSelection(self.tree.selectedItems()[0].idTag)
+                self.setSelection(self.tree.selectedItems()[0])
                 super().accept()
             except IndexError:  # Nothing was selected
                 msg = QMessageBox.information(self, 'Uh oh!', 'No item was selected!')
 
-    def getSelectedId(self):
-        return self._selectedId
+    def getSelectedMetadata(self) -> Optional[ERMetadata]:
+        return self._selectedMetadata
 
-    def setSelection(self, idTag: str):
-        if idTag is None:
-            md = None
-        else:
-            md = self._manager.getMetadataFromId(idTag)
-        self._selectedId = idTag
+    def setSelection(self, md: ERMetadata):
+        self._selectedMetadata = md
         self.selectionChanged.emit(md)
 

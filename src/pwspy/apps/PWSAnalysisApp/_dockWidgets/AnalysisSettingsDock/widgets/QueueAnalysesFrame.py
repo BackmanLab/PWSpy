@@ -5,8 +5,10 @@ from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QListWidgetItem, QWidget, QScrollArea, QListWidget, QMessageBox, QMenu, QAction, QDialog, QGridLayout, QPushButton
 
 from pwspy.analysis import AbstractAnalysisSettings, AnalysisTypes
-from pwspy.analysis.dynamics._analysisSettings import DynamicsAnalysisSettings
+from pwspy.analysis._abstract import AbstractRuntimeAnalysisSettings
+from pwspy.analysis.dynamics._analysisSettings import DynamicsAnalysisSettings, DynamicsRuntimeAnalysisSettings
 from pwspy.analysis.pws import PWSAnalysisSettings
+from pwspy.analysis.pws._analysisSettings import PWSRuntimeAnalysisSettings
 from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames import DynamicsSettingsFrame, PWSSettingsFrame
 from pwspy.dataTypes import AcqDir
 import typing
@@ -16,12 +18,12 @@ if typing.TYPE_CHECKING:
 
 
 class AnalysisListItem(QListWidgetItem):
-    def __init__(self, cameraCorrection: CameraCorrection, settings: AbstractAnalysisSettings, reference: AcqDir, cells: List[AcqDir], analysisName: str,
+    def __init__(self, cameraCorrection: CameraCorrection, settings: AbstractRuntimeAnalysisSettings, reference: AcqDir, cells: List[AcqDir], analysisName: str,
                  parent: Optional[QWidget] = None):
-        if isinstance(settings, PWSAnalysisSettings):
+        if isinstance(settings, PWSRuntimeAnalysisSettings):
             prefix = "PWS: "
             self.type = AnalysisTypes.PWS
-        elif isinstance(settings, DynamicsAnalysisSettings):
+        elif isinstance(settings, DynamicsRuntimeAnalysisSettings):
             prefix = "DYN: "
             self.type = AnalysisTypes.DYN
         else:
@@ -48,11 +50,11 @@ class QueuedAnalysesFrame(QScrollArea):
         self.listWidget.itemClicked.connect(self.highlightAssociatedCells)
 
     @property
-    def analyses(self) -> List[Tuple[str, AbstractAnalysisSettings, List[AcqDir], AcqDir, CameraCorrection, AnalysisListItem]]:
+    def analyses(self) -> List[Tuple[str, AbstractRuntimeAnalysisSettings, List[AcqDir], AcqDir, CameraCorrection, AnalysisListItem]]:
         items: List[AnalysisListItem] = [self.listWidget.item(i) for i in range(self.listWidget.count())]
         return [(item.name, item.settings, item.cells, item.reference, item.cameraCorrection, item) for item in items]
 
-    def addAnalysis(self, analysisName: str, cameraCorrection: CameraCorrection, settings: AbstractAnalysisSettings,
+    def addAnalysis(self, analysisName: str, cameraCorrection: CameraCorrection, settings: AbstractRuntimeAnalysisSettings,
                     reference: AcqDir, cells: List[AcqDir]):
         if reference is None:
             QMessageBox.information(self, '!', 'Please select a reference Cell.')

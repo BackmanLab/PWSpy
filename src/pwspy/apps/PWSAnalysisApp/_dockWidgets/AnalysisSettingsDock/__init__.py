@@ -2,6 +2,9 @@ from __future__ import annotations
 from typing import Tuple, List
 from PyQt5.QtWidgets import QDockWidget, QWidget, \
     QVBoxLayout, QPushButton, QMessageBox, QTabWidget
+
+from pwspy.analysis import AbstractAnalysisSettings
+from pwspy.analysis._abstract import AbstractRuntimeAnalysisSettings
 from pwspy.dataTypes import CameraCorrection, AcqDir
 from pwspy.analysis.pws import PWSAnalysisSettings
 from .widgets.QueueAnalysesFrame import AnalysisListItem, QueuedAnalysesFrame
@@ -56,12 +59,6 @@ class AnalysisSettingsDock(QDockWidget):
                                        self.selector.getSelectedReferenceMeta(),
                                        self.selector.getSelectedCellMetas())
 
-    def loadFromSettings(self, settings: PWSAnalysisSettings):
-        self.PWSSettingsFrame.loadFromSettings(settings)
-
-    def getAnalysisName(self):
-        return self.PWSSettingsFrame.analysisName
-
-    def getListedAnalyses(self) -> List[Tuple[str, PWSAnalysisSettings, List[AcqDir], AcqDir, CameraCorrection, AnalysisListItem]]:
+    def getListedAnalyses(self) -> List[Tuple[str, AbstractRuntimeAnalysisSettings, List[AcqDir], AcqDir, CameraCorrection, AnalysisListItem]]:
         return self.analysesQueue.analyses
 

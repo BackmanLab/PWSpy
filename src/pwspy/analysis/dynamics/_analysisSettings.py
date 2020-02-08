@@ -1,6 +1,10 @@
 from __future__ import annotations
 import dataclasses
+from typing import Optional
+
 from pwspy.analysis import AbstractAnalysisSettings
+from pwspy.analysis._abstract import AbstractRuntimeAnalysisSettings
+from pwspy.dataTypes import ERMetadata
 from pwspy.moduleConsts import Material
 
 
@@ -49,3 +53,12 @@ class DynamicsAnalysisSettings(AbstractAnalysisSettings):
         if d['referenceMaterial'] is not None:
             d['referenceMaterial'] = Material[d['referenceMaterial']]  # Convert from string to enum
         return cls(**d)
+
+
+@dataclasses.dataclass
+class DynamicsRuntimeAnalysisSettings(AbstractRuntimeAnalysisSettings):
+    settings: DynamicsAnalysisSettings
+    extraReflectanceMetaData: Optional[ERMetadata]
+
+    def getSaveableSettings(self) -> DynamicsAnalysisSettings:
+        return self.settings

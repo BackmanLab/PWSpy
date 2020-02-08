@@ -33,7 +33,10 @@ class AbstractAnalysisGroup(ABC):
 
 
 class AbstractAnalysisSettings(ABC):
-    """This abstract class lays out the basic skeleton of what an AnalysisSettings class should implement."""
+    """This abstract class lays out the basic skeleton of what an AnalysisSettings class should implement.
+    These classes represent everything about the settings of an anlysis that can be reliably saved and then loaded again.
+    The settings that are actually passed to the analyiss are the RuntimeSettings which can contain items that can't reliably be
+    loaded from a json file (for example, references to data files which may not still be at the same file path if someone tried to load the settings"""
     @classmethod
     def fromJson(cls, filePath: str, name: str):
         """Create a new instance of this class from a json text file."""
@@ -74,12 +77,19 @@ class AbstractAnalysisSettings(ABC):
         pass
 
 
+class AbstractRuntimeAnalysisSettings(ABC):
+    """This represents the settings that get passed to an analysis. Unlike AnalysisSettings they can contain objects which cannot be loaded."""
+    @abstractmethod
+    def getSaveableSettings(self) -> AbstractAnalysisSettings:
+        pass
+
+
 class AbstractAnalysis(ABC):
     """This abstract class lays out the basic skeleton that an analysis class should implement."""
     @abstractmethod
-    def __init__(self, settings: AbstractAnalysisSettings):
+    def __init__(self):
         """Does all of the one-time tasks needed to start running an analysis. e.g. prepare the reference, load the extrareflection cube, etc."""
-        self.settings = settings
+        pass
 
     @abstractmethod
     def run(self, cube: ICBase) -> AbstractAnalysisResults:
@@ -91,6 +101,7 @@ class AbstractAnalysis(ABC):
         """When running the `run` method in parallel memory for the object used must be copied to each new process. We can avoid that and save a lot of Ram by moving data
         that is shared between processes to shared memory. If you don't want to implement this then just override it and raise NotImplementedError"""
         pass
+
 
 class AbstractAnalysisResults(ABC):
     """This abstract class lays out the most basic skeleton of what an AnalysisResults object should implement."""

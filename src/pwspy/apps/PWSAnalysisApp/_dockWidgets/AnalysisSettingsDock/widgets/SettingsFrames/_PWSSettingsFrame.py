@@ -1,9 +1,10 @@
 from __future__ import annotations
 import os
 from glob import glob
-from typing import Optional
+from typing import Optional, Tuple
 import typing
 
+from pwspy.analysis.pws._analysisSettings import PWSRuntimeAnalysisSettings
 from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames._AbstractSettingsFrame import AbstractSettingsFrame
 from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames._sharedWidgets import ExtraReflectanceSelector, HardwareCorrections, \
     QHSpinBox, QHDoubleSpinBox, VerticallyCompressedWidget
@@ -15,7 +16,7 @@ from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupBox, QHBoxLayout, QWidget, QRadioButton, \
     QFrame, QCheckBox
 
-from pwspy.dataTypes import CameraCorrection
+from pwspy.dataTypes import CameraCorrection, ERMetadata
 from pwspy.analysis.pws import PWSAnalysisSettings
 from pwspy.apps.PWSAnalysisApp import applicationVars
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.collapsibleSection import CollapsibleSection
@@ -201,25 +202,24 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
     def loadCameraCorrection(self, camCorr: Optional[CameraCorrection] = None):
         self.hardwareCorrections.loadCameraCorrection(camCorr)
 
-    def getSettings(self) -> PWSAnalysisSettings:
-        erId, refMaterial, numericalAperture = self.extraReflection.getSettings()
-        return PWSAnalysisSettings(filterOrder=self.filterOrder.value(),
-                                   filterCutoff=self.filterCutoff.value(),
-                                   polynomialOrder=self.polynomialOrder.value(),
-                                   extraReflectanceId=erId,
-                                   referenceMaterial=refMaterial,
-                                   wavelengthStart=self.wavelengthStart.value(),
-                                   wavelengthStop=self.wavelengthStop.value(),
-                                   skipAdvanced=self.advanced.checkState() != 0,
-                                   autoCorrMinSub=self.minSubCheckBox.checkState() != 0,
-                                   autoCorrStopIndex=self.autoCorrStopIndex.value(),
-                                   numericalAperture=numericalAperture,
-                                   relativeUnits=self.relativeUnits.checkState() != 0)
+    def getSettings(self) -> PWSRuntimeAnalysisSettings:
+        erMetadata, refMaterial, numericalAperture = self.extraReflection.getSettings()
+        return PWSRuntimeAnalysisSettings(settings=PWSAnalysisSettings(filterOrder=self.filterOrder.value(),  # TODO we break with the abstract class by returning settings and a metadata. This is because we need the metadata but it isn't compatible with the saving/loading capability of analysis settings. Ultimately we should probably split analysis settings into saveable/loadable type and a runtime-only type that will contain things like Extra reflectance metadata, camera corrections etc.
+                                                                       filterCutoff=self.filterCutoff.value(),
+                                                                       polynomialOrder=self.polynomialOrder.value(),
+                                                                       extraReflectanceId=erMetadata.idTag,
+                                                                       referenceMaterial=refMaterial,
+                                                                       wavelengthStart=self.wavelengthStart.value(),
+                                                                       wavelengthStop=self.wavelengthStop.value(),
+                                                                       skipAdvanced=self.advanced.checkState() != 0,
+                                                                       autoCorrMinSub=self.minSubCheckBox.checkState() != 0,
+                                                                       autoCorrStopIndex=self.autoCorrStopIndex.value(),
+                                                                       numericalAperture=numericalAperture,
+                                                                       relativeUnits=self.relativeUnits.checkState() != 0),
+                                          extraReflectanceMetaData=erMetadata)
 
     def getCameraCorrection(self) -> CameraCorrection:
         return self.hardwareCorrections.getCameraCorrection()
-
-
 
 
 

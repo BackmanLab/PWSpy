@@ -19,6 +19,9 @@ from . import PWSAnalysisSettings, PWSAnalysisResults
 import pandas as pd
 
 import typing
+
+from ._analysisSettings import PWSRuntimeAnalysisSettings
+
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ImCube, ExtraReflectanceCube, KCube
 
@@ -27,10 +30,13 @@ class PWSAnalysis(AbstractAnalysis):
     """The standard PWS analysis routine. Initialize and then `run` for as many different ImCubes as you want.
     For a given set of settings and reference you only need to instantiate one instance of this class. You can then perform `run`
     on as many data cubes as you want."""
-    def __init__(self, settings: PWSAnalysisSettings, ref: ImCube, extraReflectance: ExtraReflectanceCube):
+    def __init__(self, runtimeSettings: PWSRuntimeAnalysisSettings, ref: ImCube): #TODO it would make sense to include the reference in the runtime settings too.
         from pwspy.dataTypes import ExtraReflectionCube, ExtraReflectanceCube
         assert ref.processingStatus.cameraCorrected, "Before attempting to analyze using this reference make sure that it has had camera darkcounts and non-linearity corrected for."
-        super().__init__(settings)
+        super().__init__()
+        extraReflectance = ExtraReflectanceCube.fromMetadata(runtimeSettings.extraReflectanceMetaData)
+        settings = runtimeSettings.getSaveableSettings()
+        self.settings = settings
         ref.normalizeByExposure()
         if ref.metadata.pixelSizeUm is not None: #Only works if pixel size was saved in the metadata.
             ref.filterDust(.75)  # Apply a blur to filter out dust particles. This is in microns. I'm not sure if this is the optimal value.

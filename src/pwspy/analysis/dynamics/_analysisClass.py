@@ -4,7 +4,7 @@ from multiprocessing.sharedctypes import RawArray
 from numpy import ma
 
 from ._analysisResults import DynamicsAnalysisResults
-from ._analysisSettings import DynamicsAnalysisSettings
+from ._analysisSettings import DynamicsAnalysisSettings, DynamicsRuntimeAnalysisSettings
 from pwspy.analysis import warnings
 from pwspy.analysis._abstract import AbstractAnalysis
 import numpy as np
@@ -21,8 +21,10 @@ class DynamicsAnalysis(AbstractAnalysis):
     """This class performs the analysis of RMS_t_squared and D described in the paper: "Multimodal interferometric imaging of nanoscale structure and
     macromolecular motion uncovers UV induced cellular paroxysm". It is based on a set of matlab scripts written by the author of that paper, Scott Gladstein.
      The original scripts can be found in the `_oldMatlab` subpackage."""
-    def __init__(self, settings: DynamicsAnalysisSettings, ref: DynCube, extraReflectance: ExtraReflectanceCube):
-        super().__init__(settings)
+    def __init__(self, settings: DynamicsRuntimeAnalysisSettings, ref: DynCube):
+        super().__init__()
+        extraReflectance = ExtraReflectanceCube.fromMetadata(settings.extraReflectanceMetaData)
+        settings = settings.getSaveableSettings()
         assert ref.processingStatus.cameraCorrected
         ref.normalizeByExposure()
         if ref.metadata.pixelSizeUm is not None:  # Only works if pixel size was saved in the metadata.
@@ -47,7 +49,7 @@ class DynamicsAnalysis(AbstractAnalysis):
 
         self.refMean = ref.data.mean(axis=2)
         ref.normalizeByReference(self.refMean)  # We normalize so that the average is 1. This is for scaling purposes with the AC. Seems like the AC should be scale independent though, not sure.
-        self.refAc = ref.getAutocorrelation()[:, :, :self.settings.diffusionRegressionLength+1].mean(axis=(0, 1))  # We find the average autocorrlation of the background to cut down on noise, presumably this is uniform accross the field of view any way, right?
+        self.refAc = ref.getAutocorrelation()[:, :, :settings.diffusionRegressionLength+1].mean(axis=(0, 1))  # We find the average autocorrlation of the background to cut down on noise, presumably this is uniform accross the field of view any way, right?
         self.refTag = ref.metadata.idTag
         self.erTag = extraReflectance.metadata.idTag if extraReflectance is not None else None
         self.n_medium = 1.37  # The average index of refraction for chromatin?

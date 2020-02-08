@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Tuple
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupBox, QHBoxLayout, QCheckBox
 
-from pwspy.analysis.dynamics._analysisSettings import DynamicsAnalysisSettings
+from pwspy.analysis.dynamics._analysisSettings import DynamicsAnalysisSettings, DynamicsRuntimeAnalysisSettings
 from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames._AbstractSettingsFrame import AbstractSettingsFrame
 import typing
 
@@ -13,7 +13,7 @@ from ._sharedWidgets import ExtraReflectanceSelector, VerticallyCompressedWidget
 
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
-    from pwspy.dataTypes import CameraCorrection
+    from pwspy.dataTypes import CameraCorrection, ERMetadata
 
 
 class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
@@ -78,12 +78,13 @@ class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
     def loadCameraCorrection(self, camCorr: Optional[CameraCorrection] = None):
         self.hardwareCorrections.loadCameraCorrection(camCorr)
 
-    def getSettings(self) -> DynamicsAnalysisSettings:
-        erId, refMaterial, numericalAperture = self.extraReflection.getSettings()
-        return DynamicsAnalysisSettings(extraReflectanceId=erId,
-                                referenceMaterial=refMaterial,
-                                numericalAperture=numericalAperture,
-                                relativeUnits=self.relativeUnits.checkState() != 0)
+    def getSettings(self) -> DynamicsRuntimeAnalysisSettings:
+        erMetadata, refMaterial, numericalAperture = self.extraReflection.getSettings()
+        return DynamicsRuntimeAnalysisSettings(settings=DynamicsAnalysisSettings(extraReflectanceId=erMetadata.idTag,
+                                                                                referenceMaterial=refMaterial,
+                                                                                numericalAperture=numericalAperture,
+                                                                                relativeUnits=self.relativeUnits.checkState() != 0),
+                                               extraReflectanceMetaData=erMetadata)
 
     def getCameraCorrection(self) -> CameraCorrection:
         return self.hardwareCorrections.getCameraCorrection()
