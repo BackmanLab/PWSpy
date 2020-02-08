@@ -113,7 +113,7 @@ class ERWorkFlow:
         print("Select an ROI")
         verts = cubes['cube'].sample(n=1).iloc[0].selectLassoROI()  # Select an ROI to analyze
         mask = Roi.fromVerts('doesntmatter', 1, verts, cubes['cube'].sample(n=1).iloc[0].data.shape[:-1])
-        self.figs.extend(er.plotExtraReflection(cubes, theoryR, matCombos, numericalAperture, mask, plotReflectionImages=True))
+        self.figs.extend(er.plotExtraReflection(cubes, theoryR, matCombos, numericalAperture, mask, plotReflectionImages=True))  # TODO rather than opening a million new figures open a single window that lets you flip through them.
         if saveToPdf:
             with PdfPages(os.path.join(saveDir, f"fig_{datetime.strftime(datetime.now(), '%d-%m-%Y %HH%MM%SS')}.pdf")) as pp:
                 for i in plt.get_fignums():
