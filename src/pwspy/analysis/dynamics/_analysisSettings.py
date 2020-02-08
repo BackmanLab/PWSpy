@@ -1,11 +1,12 @@
 from __future__ import annotations
 import dataclasses
 from typing import Optional
-
 from pwspy.analysis import AbstractAnalysisSettings
 from pwspy.analysis._abstract import AbstractRuntimeAnalysisSettings
-from pwspy.dataTypes import ERMetadata
 from pwspy.moduleConsts import Material
+import typing
+if typing.TYPE_CHECKING:
+    from pwspy.dataTypes import ERMetadata
 
 
 @dataclasses.dataclass

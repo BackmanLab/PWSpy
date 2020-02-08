@@ -96,7 +96,7 @@ class QueuedAnalysesFrame(QScrollArea):
             settingsFrame = DynamicsSettingsFrame(self.parent.erManager)
         else:
             raise TypeError(f"Analysis of type {item.type} is not supported.")
-        settingsFrame.loadFromSettings(item.settings)
+        settingsFrame.loadFromSettings(item.settings.getSaveableSettings())
         settingsFrame.loadCameraCorrection(item.cameraCorrection)
         settingsFrame._analysisNameEdit.setText(item.name)
         settingsFrame._analysisNameEdit.setEnabled(False)  # Don't allow changing the name.

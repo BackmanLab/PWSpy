@@ -88,7 +88,6 @@ class ERSelectorWindow(QDialog):
             print('Offline Mode: Could not update `Extra Reflectance` index file. Connection to Google Drive failed.')
         self._initialize()
 
-
     def _initialize(self):
         self._items: List[ERTreeWidgetItem] = []
         self.tree.clear()
