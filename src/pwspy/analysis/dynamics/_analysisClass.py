@@ -14,7 +14,7 @@ from pwspy.utility.reflection import reflectanceHelper
 from pwspy.moduleConsts import Material
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import DynCube, ExtraReflectanceCube
+    from pwspy.dataTypes import DynCube
 
 
 class DynamicsAnalysis(AbstractAnalysis):
@@ -23,7 +23,8 @@ class DynamicsAnalysis(AbstractAnalysis):
      The original scripts can be found in the `_oldMatlab` subpackage."""
     def __init__(self, settings: DynamicsRuntimeAnalysisSettings, ref: DynCube):
         super().__init__()
-        extraReflectance = ExtraReflectanceCube.fromMetadata(settings.extraReflectanceMetaData)
+        from pwspy.dataTypes import ExtraReflectanceCube
+        extraReflectance = ExtraReflectanceCube.fromMetadata(settings.extraReflectanceMetadata)
         settings = settings.getSaveableSettings()
         assert ref.processingStatus.cameraCorrected
         ref.normalizeByExposure()

@@ -34,7 +34,7 @@ class PWSAnalysis(AbstractAnalysis):
         from pwspy.dataTypes import ExtraReflectionCube, ExtraReflectanceCube
         assert ref.processingStatus.cameraCorrected, "Before attempting to analyze using this reference make sure that it has had camera darkcounts and non-linearity corrected for."
         super().__init__()
-        extraReflectance = ExtraReflectanceCube.fromMetadata(runtimeSettings.extraReflectanceMetaData)
+        extraReflectance = ExtraReflectanceCube.fromMetadata(runtimeSettings.extraReflectanceMetadata)
         settings = runtimeSettings.getSaveableSettings()
         self.settings = settings
         ref.normalizeByExposure()
