@@ -6,7 +6,7 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QDialog, QTableWidget, QTableWidgetItem, QMessageBox, QWidget, QCheckBox, QVBoxLayout, \
     QPushButton, QLineEdit, QComboBox, QGridLayout, QLabel, QDialogButtonBox, QHBoxLayout, QAbstractItemView, QMenu, \
-    QAction, QTreeWidget, QTreeWidgetItem
+    QAction, QTreeWidget, QTreeWidgetItem, QFileDialog
 
 from pwspy import moduleConsts
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.tables import DatetimeTableWidgetItem
@@ -75,16 +75,14 @@ class ERSelectorWindow(QDialog):
         self.tree.itemSelectionChanged.connect(self._setAcceptButtonEnabled)
         self.downloadButton = QPushButton("Download Checked Items")
         self.downloadButton.released.connect(self._downloadCheckedItems)
+        self.selectLocalButton = QPushButton("Select From File")
+        self.selectLocalButton.released.connect(self._selectLocalFile)
         self.acceptSelectionButton = QPushButton("Accept Selection")
-        self.acceptSelectionButton.released.connect(self.accept)
+        self.acceptSelectionButton.released.connect(self.acceptCurrentSelection)
         self.acceptSelectionButton.setEnabled(False)  # This will become enabled once a valid button is selected.
         self.layout().addWidget(self.tree)
-        l = QHBoxLayout()
-        l.setContentsMargins(0, 0, 0, 0)
-        l.addWidget(self.downloadButton)
-        w = QWidget()
-        w.setLayout(l)
-        self.layout().addWidget(w)
+        self.layout().addWidget(self.downloadButton)
+        self.layout().addWidget(self.selectLocalButton)
         self.layout().addWidget(self.acceptSelectionButton)
         try:
             self._manager.download('index.json', parentWidget=self)
@@ -148,7 +146,18 @@ class ERSelectorWindow(QDialog):
                 self._manager.download(item.fileName, parentWidget=self)
         self._initialize()
 
-    def accept(self) -> None:
+    def _selectLocalFile(self):
+        import os
+        filePath, filterPattern = QFileDialog.getOpenFileName(self, "Select an ExtraReflectance file.", os.path.expanduser("~"), "*.h5")
+        try:
+            wDir, name = ERMetadata.directory2dirName(filePath)
+            md = ERMetadata.fromHdfFile(wDir, name)
+            self.setSelection(md)
+            self.accept()
+        except Exception as e:
+            msg = QMessageBox.warning(self, "Error", str(e))
+
+    def acceptCurrentSelection(self) -> None:
         items = self.tree.selectedItems()
         if len(items) == 0:
             self.setSelection(None)
