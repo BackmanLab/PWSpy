@@ -70,10 +70,12 @@ class ERSelectorWindow(QDialog):
         self.tree.setHeaderHidden(True)
         self.tree.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.tree.customContextMenuRequested.connect(self.showContextMenu)
+        self.tree.itemSelectionChanged.connect(self._setAcceptButtonEnabled)
         self.downloadButton = QPushButton("Download Checked Items")
         self.downloadButton.released.connect(self._downloadCheckedItems)
         self.acceptSelectionButton = QPushButton("Accept Selection")
         self.acceptSelectionButton.released.connect(self.accept)
+        self.acceptSelectionButton.setEnabled(False)  # This will become enabled once a valid button is selected.
         self.layout().addWidget(self.tree)
         l = QHBoxLayout()
         l.setContentsMargins(0, 0, 0, 0)
@@ -166,4 +168,12 @@ class ERSelectorWindow(QDialog):
     def setSelection(self, md: ERMetadata):
         self._selectedMetadata = md
         self.selectionChanged.emit(md)
+
+    def _setAcceptButtonEnabled(self):
+        item = None
+        items = self.tree.selectedItems()
+        if len(items) > 0:
+            item = items[0] # There should never be more than one item selected.
+        #If a selectable item was selected then we'll have it as item here. Otherwise item will be None
+        self.acceptSelectionButton.setEnabled(item is not None)
 

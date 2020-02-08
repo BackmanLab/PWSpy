@@ -21,9 +21,6 @@ from pwspy.apps.PWSAnalysisApp import applicationVars
 from google.auth.exceptions import TransportError
 
 
-#TODO this whole submodule is kind of a fragile mess and probably not organized in a smart way.
-
-
 def _offlineDecorator(func):
     """Functions decorated with this will raise an OfflineError if they are attempted to be called while the ERManager
     is in offline mode. Only works on instance methods."""
@@ -165,7 +162,7 @@ class ERDownloader:
             """Save the file with googledrive file identifier `Id` to `savePath` while emitting the `progress` signal
             which can be connected to a progress bar or whatever."""
             fileRequest = self.api.files().get_media(fileId=Id)
-            downloader = MediaIoBaseDownload(file, fileRequest)
+            downloader = MediaIoBaseDownload(file, fileRequest, chunksize=1024*1024*5) # Downloading in 5mb chunks instead of the default 100mb chunk just so that the progress bar looks smoother
             done = False
             while done is False:
                 status, done = downloader.next_chunk()
