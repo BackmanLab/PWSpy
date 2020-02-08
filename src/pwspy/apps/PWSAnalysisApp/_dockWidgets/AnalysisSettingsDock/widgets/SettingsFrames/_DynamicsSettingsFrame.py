@@ -80,11 +80,11 @@ class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
 
     def getSettings(self) -> DynamicsRuntimeAnalysisSettings:
         erMetadata, refMaterial, numericalAperture = self.extraReflection.getSettings()
-        return DynamicsRuntimeAnalysisSettings(settings=DynamicsAnalysisSettings(extraReflectanceId=erMetadata.idTag,
+        return DynamicsRuntimeAnalysisSettings(settings=DynamicsAnalysisSettings(extraReflectanceId=erMetadata.idTag if erMetadata is not None else None,
                                                                                 referenceMaterial=refMaterial,
                                                                                 numericalAperture=numericalAperture,
                                                                                 relativeUnits=self.relativeUnits.checkState() != 0),
-                                               extraReflectanceMetaData=erMetadata)
+                                               extraReflectanceMetadata=erMetadata)
 
     def getCameraCorrection(self) -> CameraCorrection:
         return self.hardwareCorrections.getCameraCorrection()

@@ -207,7 +207,7 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
         return PWSRuntimeAnalysisSettings(settings=PWSAnalysisSettings(filterOrder=self.filterOrder.value(),  # TODO include reference and camera correction with this object.
                                                                        filterCutoff=self.filterCutoff.value(),
                                                                        polynomialOrder=self.polynomialOrder.value(),
-                                                                       extraReflectanceId=erMetadata.idTag,
+                                                                       extraReflectanceId=erMetadata.idTag if erMetadata is not None else None,
                                                                        referenceMaterial=refMaterial,
                                                                        wavelengthStart=self.wavelengthStart.value(),
                                                                        wavelengthStop=self.wavelengthStop.value(),
@@ -216,7 +216,7 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
                                                                        autoCorrStopIndex=self.autoCorrStopIndex.value(),
                                                                        numericalAperture=numericalAperture,
                                                                        relativeUnits=self.relativeUnits.checkState() != 0),
-                                          extraReflectanceMetaData=erMetadata)
+                                          extraReflectanceMetadata=erMetadata)
 
     def getCameraCorrection(self) -> CameraCorrection:
         return self.hardwareCorrections.getCameraCorrection()
