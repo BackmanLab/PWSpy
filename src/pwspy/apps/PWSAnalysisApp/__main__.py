@@ -3,6 +3,8 @@ import traceback
 
 from pwspy.apps.PWSAnalysisApp.App import PWSApp
 from pwspy.apps.PWSAnalysisApp import applicationVars
+from datetime import datetime
+from pwspy.moduleConsts import dateTimeFormat
 
 def main():
     import sys
@@ -30,7 +32,8 @@ def main():
             print("Application setup complete")
             sys.exit(app.exec_())
     except Exception as e: # Save error to text file.
-        with open(os.path.join(applicationVars.dataDirectory, 'crashLog.txt'), 'w') as f:
+        with open(os.path.join(applicationVars.dataDirectory, 'crashLog.txt'), 'a') as f:
+            f.writelines([datetime.now().strftime(dateTimeFormat)])
             traceback.print_exc(limit=None, file=f)
             print(f"Error Occurred: Please check {os.path.join(applicationVars.dataDirectory, 'crashLog.txt')}")
         raise e
