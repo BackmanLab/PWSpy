@@ -26,7 +26,7 @@ if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ImCube, ExtraReflectanceCube, KCube
 
 
-class PWSAnalysis(AbstractAnalysis):
+class PWSAnalysis(AbstractAnalysis): #TODO Handle the case where pixels are 0, mark them as nan
     """The standard PWS analysis routine. Initialize and then `run` for as many different ImCubes as you want.
     For a given set of settings and reference you only need to instantiate one instance of this class. You can then perform `run`
     on as many data cubes as you want."""
@@ -34,7 +34,7 @@ class PWSAnalysis(AbstractAnalysis):
         from pwspy.dataTypes import ExtraReflectionCube, ExtraReflectanceCube
         assert ref.processingStatus.cameraCorrected, "Before attempting to analyze using this reference make sure that it has had camera darkcounts and non-linearity corrected for."
         super().__init__()
-        extraReflectance = ExtraReflectanceCube.fromMetadata(runtimeSettings.extraReflectanceMetadata)
+        extraReflectance = ExtraReflectanceCube.fromMetadata(runtimeSettings.extraReflectanceMetadata) if runtimeSettings.extraReflectanceMetadata is not None else None
         settings = runtimeSettings.getSaveableSettings()
         self.settings = settings
         ref.normalizeByExposure()
@@ -47,14 +47,13 @@ class PWSAnalysis(AbstractAnalysis):
         else:
             theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, wavelengths=ref.wavelengths, NA=settings.numericalAperture)
         if extraReflectance is None:
-            Iextra = ExtraReflectionCube.create(ExtraReflectanceCube(np.zeros(ref.data.shape), ref.wavelengths, ExtraReflectanceCube.ERMetadata(ref.metadata._dict, settings.numericalAperture)), theoryR, ref)  # a bogus reflection that is all zeros
+            Iextra = None
             print("Warning: PWSAnalysis ignoring extra reflection")
-            assert np.all(Iextra.data == 0)
         else:
             if extraReflectance.metadata.numericalAperture != settings.numericalAperture:
                 print(f"Warning: The numerical aperture of your analysis does not match the NA of the Extra Reflectance Calibration. Calibration File NA: {extraReflectance.metadata.numericalAperture}. PWSAnalysis NA: {settings.numericalAperture}.")
             Iextra = ExtraReflectionCube.create(extraReflectance, theoryR, ref) #Convert from reflectance to predicted counts/ms.
-        ref.subtractExtraReflection(Iextra)  # remove the extra reflection from our data#
+            ref.subtractExtraReflection(Iextra)  # remove the extra reflection from our data#
         if not settings.relativeUnits:
             ref = ref / theoryR[None, None, :]  # now when we normalize by our reference we will get a result in units of physical reflectance rather than arbitrary units.
         self.ref = ref
@@ -102,13 +101,14 @@ class PWSAnalysis(AbstractAnalysis):
             settings=self.settings,
             imCubeIdTag=cube.metadata.idTag,
             referenceIdTag=self.ref.metadata.idTag,
-            extraReflectionTag=self.extraReflection.metadata.idTag)
-        warns = [warn for warn in warns if warn is not None] #Filter out null values.
+            extraReflectionTag=self.extraReflection.metadata.idTag if self.extraReflection is not None else None)
+        warns = [warn for warn in warns if warn is not None]  # Filter out null values.
         return results, warns
 
     def _normalizeImCube(self, cube: ImCube) -> ImCube:
         cube.normalizeByExposure()
-        cube.subtractExtraReflection(self.extraReflection)
+        if self.extraReflection is not None:
+            cube.subtractExtraReflection(self.extraReflection)
         cube.normalizeByReference(self.ref)
         return cube
 
@@ -139,7 +139,7 @@ class PWSAnalysis(AbstractAnalysis):
         assert rms.shape == slope.shape
         k = 2 * np.pi / 0.55
         fact = 1.38 * 1.38 / 2 / k / k
-        A1 = 0.008 # TODO Determine what these constants are. Are they still valid for the newer analysis where we are using actual reflectance rather than just normalizing to reflectance ~= 1 ?
+        A1 = 0.008  # TODO Determine what these constants are. Are they still valid for the newer analysis where we are using actual reflectance rather than just normalizing to reflectance ~= 1 ?
         A2 = 4
         ld = ((A2 / A1) * fact) * (rms / (-1 * slope.reshape(rms.shape)))
         return ld
@@ -150,7 +150,8 @@ class PWSAnalysis(AbstractAnalysis):
         np.copyto(refdata, self.ref.data)
         self.ref.data = refdata
 
-        iedata = RawArray('f', self.extraReflection.data.size)
-        iedata = np.frombuffer(iedata, dtype=np.float32).reshape(self.extraReflection.data.shape)
-        np.copyto(iedata, self.extraReflection.data)
-        self.extraReflection.data = iedata
+        if self.extraReflection is not None:
+            iedata = RawArray('f', self.extraReflection.data.size)
+            iedata = np.frombuffer(iedata, dtype=np.float32).reshape(self.extraReflection.data.shape)
+            np.copyto(iedata, self.extraReflection.data)
+            self.extraReflection.data = iedata

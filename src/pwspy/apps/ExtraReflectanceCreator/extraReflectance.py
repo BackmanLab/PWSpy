@@ -182,7 +182,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], ma
                 ax.plot(cubes[mat1].wavelengths, combo.rExtra, color=colors[i],
                         label=f'{sett} {mat1}:{int(cubes[mat1].metadata.exposure)}ms {mat2}:{int(cubes[mat2].metadata.exposure)}ms')
                 i += 1
-        ax.plot(cubes[mat1].wavelengths, meanValues[sett]['mean']['rExtra'], color='k', label=f'{sett} mean')
+        ax.plot(cubes[mat1].wavelengths, meanValues[sett]['mean']['rExtra'], color='k', label=f'{sett} mean')  # TODO Add a hover annotation since all of the lines are black it's impossible to know which one is which.
     ax.legend()
 
     fig2, ratioAxes = plt.subplots(nrows=len(matCombos))  # for correction factor
