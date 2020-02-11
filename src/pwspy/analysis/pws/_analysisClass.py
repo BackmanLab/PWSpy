@@ -26,7 +26,7 @@ if typing.TYPE_CHECKING:
     from pwspy.dataTypes import ImCube, ExtraReflectanceCube, KCube
 
 
-class PWSAnalysis(AbstractAnalysis):
+class PWSAnalysis(AbstractAnalysis): #TODO if extra reflectance is none then just allow skipping of this step rather than creating a fake cube. Handle the case where pixels are 0, mark them as nan
     """The standard PWS analysis routine. Initialize and then `run` for as many different ImCubes as you want.
     For a given set of settings and reference you only need to instantiate one instance of this class. You can then perform `run`
     on as many data cubes as you want."""
