@@ -12,7 +12,6 @@ from ._dockWidgets import CellSelectorDock, AnalysisSettingsDock, ResultsTableDo
 
 class PWSWindow(QMainWindow):
     def __init__(self, erManager: ERManager):
-        QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
         super().__init__()
         self.setWindowTitle(QApplication.instance().applicationName())
         self.setWindowIcon(QtGui.QIcon(os.path.join(resources, 'cellLogo.png')))
