@@ -50,8 +50,8 @@ class AnalysisManager(QtCore.QObject):
         for anName, anSettings, cellMetas, refMeta, camCorrection, widgetHandle in self.app.window.analysisSettings.getListedAnalyses():
             self.runSingle(anName, anSettings, cellMetas, refMeta, camCorrection)
             [cellItem.refresh() for cellMeta in cellMetas for cellItem in self.app.window.cellSelector.tableWidget.cellItems if cellMeta == cellItem.acqDir] #Refresh our displayed cell info
-            _ = widgetHandle.listWidget().takeItem(widgetHandle.listWidget().row(widgetHandle)) #remove the analysis item once it has been run
-            del _
+            # _ = widgetHandle.listWidget().takeItem(widgetHandle.listWidget().row(widgetHandle)) #remove the analysis item once it has been run. This was commented out because it's annoying.
+            # del _
 
     @safeCallback
     def runSingle(self, anName: str, anSettings: AbstractRuntimeAnalysisSettings, cellMetas: List[AcqDir], refMeta: AcqDir,
