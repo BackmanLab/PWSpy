@@ -5,6 +5,7 @@ Created on Tue Nov 20 13:13:34 2018
 @author: Nick Anthony
 
 This functionality has now been replaced in the ERCreator application. This is just an example script.
+This script is now outdated and will not work. See the `generateExtraReflectance` example for a more up to date example.
 """
 
 

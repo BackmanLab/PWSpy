@@ -9,7 +9,9 @@ from functools import reduce
 import pandas as pd
 from dataclasses import dataclass
 from matplotlib import animation
-from pwspy.utility._PlotNd import PlotNd
+from pwspy.utility import PlotNd
+
+#TODO document me!!
 
 """A collection of functions dedicated to the purpose of generate Extra Reflectance calibrations from images of materials with known reflectances (e.g. air/glass interface, water/glass interface.)
 These functions are relied on heavily in the pwspy.apps.ERCreator app."""
@@ -164,7 +166,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], ma
     fig, ax = plt.subplots()  # For extra reflections
     fig.suptitle("Extra Reflection")
     figs.append(fig)
-    ax.set_ylabel("%")
+    ax.set_ylabel("Reflectance (1 = total reflection)")
     ax.set_xlabel("nm")
     i = 0
     numLines = []
