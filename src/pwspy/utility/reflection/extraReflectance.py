@@ -104,13 +104,18 @@ def getAllCubeCombos(matCombos: Iterable[MCombo], df: pd.DataFrame) -> Dict[MCom
 
 
 def calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theoryR: Dict[Material, pd.Series],
-                               numericalAperture: float, mask: Roi = None) ->\
+                               numericalAperture: float, mask: Optional[Roi] = None) ->\
         Tuple[Dict[Union[MCombo, str], Dict[str, Any]], Dict[MCombo, List[ComboSummary]]]:
-    """Expects a dictionary as created by `getAllCubeCombos` and a dictionary of theoretical reflections.
+    """This is used to examine the output of extra reflection calculation before using saveRExtra to save a cube for each setting.
+    Expects a dictionary as created by `getAllCubeCombos` and a dictionary of theoretical reflections.
 
-    This is used to examine the output of extra reflection calculation before using saveRExtra to save a cube for each setting.
-    Returns a dictionary containing
-    :param numericalAperture:
+    Args:
+        cubeCombos (Dict[MCombo, List[CubeCombo]]): A dictionary containing all possible combinations of ImCubes measured at different materials. Keyed by the material combo.
+        theoryR: (Dict[Material, pd.Series]): A dictionary containing the theoretical reflectances for all `Materials` in use. Should be accurate for the `numericalAperture` in question.
+        numericalAperture (float): The illumination numerial aperture that the images were taken at.
+        mask (Optional[Roi]): An ROI that limits the region of the ImCubes that is analyzed. The spectra will be averaged over this region. If `None` the spectra will be average over the full XY FOV.
+
+    Returns: Dict[str, Any]], Dict[MCombo, List[ComboSummary]]]: A dictionary containing a bunch of information. TODO I can't remember.
     """
 
     # Save the results of relevant calculations to a dictionary, this dictionary will be returned to the user along with
@@ -228,8 +233,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], ma
         scatterPointsX = [means['cFactor'] * (
                 meanValues[sett][matCombo]['mat1Spectra'] / meanValues[sett][matCombo]['mat2Spectra']).mean() for
                           matCombo in settMatCombos]
-        [scatterAx.scatter(x, y, label=f'{matCombo[0].name}/{matCombo[1].name}') for x, y, matCombo in
-         zip(scatterPointsX, scatterPointsY, settMatCombos)]
+        [scatterAx.scatter(x, y, label=f'{matCombo[0].name}/{matCombo[1].name}') for x, y, matCombo in zip(scatterPointsX, scatterPointsY, settMatCombos)]
         x = np.array([0, max(scatterPointsX)])
         scatterAx.plot(x, x, label='1:1')
         scatterAx.legend()
