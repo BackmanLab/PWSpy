@@ -1,7 +1,9 @@
-from PyQt5.QtWidgets import QDialog, QWidget, QTextEdit, QLineEdit, QGridLayout, QLabel, QPushButton
+from PyQt5.QtWidgets import QDialog, QWidget, QTextEdit, QGridLayout, QLabel, QPushButton
 
 
 class IndexInfoForm(QDialog):
+    """This dialog is used to collect a description about the circumstances surrounding the collection of data for an Extra Reflectance calibration.
+    This description is ultimately saved to an index which is acts as a sort of database for all of the calibrations."""
     def __init__(self, name, idTag, parent: QWidget = None):
         super().__init__(parent=parent)
         self.description = None

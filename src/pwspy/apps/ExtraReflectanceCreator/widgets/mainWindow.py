@@ -1,13 +1,14 @@
-import traceback
-from datetime import datetime
 
-from PyQt5 import QtCore
-from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QListWidget, QComboBox, QPushButton, \
-    QLabel, QListWidgetItem, QDoubleSpinBox, QCheckBox
+from PyQt5.QtWidgets import QMainWindow, QWidget, QGridLayout, QListWidget, QComboBox, QPushButton, \
+    QLabel, QDoubleSpinBox, QCheckBox
 
 from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 
+
 class MainWindow(QMainWindow):
+    """This is the main window of the ERCreator app.
+    Args:
+        manager (ERmanager): The class which handles organization of the Extra reflectance database locally an online."""
     def __init__(self, manager: ERManager):
         super().__init__()
         self.explorerWindow = manager.createManagerWindow(self)

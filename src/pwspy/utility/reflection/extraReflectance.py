@@ -1,7 +1,4 @@
-from typing import Dict, List, Tuple, Iterable, Any, Sequence, Iterator, Union, Optional, Set
-
-import matplotlib
-
+from typing import Dict, List, Tuple, Iterable, Any, Iterator, Union, Optional, Set
 from pwspy.dataTypes import ImCube, ExtraReflectanceCube, Roi, ERMetadata
 from pwspy.utility.reflection import reflectanceHelper
 from pwspy.moduleConsts import Material
@@ -10,10 +7,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from functools import reduce
 import pandas as pd
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 from matplotlib import animation
-import scipy.signal as sps
 from pwspy.utility._PlotNd import PlotNd
+
+"""A collection of functions dedicated to the purpose of generate Extra Reflectance calibrations from images of materials with known reflectances (e.g. air/glass interface, water/glass interface.)
+These functions are relied on heavily in the pwspy.apps.ERCreator app."""
+
 MCombo = Tuple[Material, Material]
 
 
