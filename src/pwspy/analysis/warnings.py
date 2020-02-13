@@ -1,7 +1,7 @@
 from typing import Optional
 
 import numpy as np
-
+#TODO actually use these!
 """The purpose of this file is provide functions which check data during analysis for abnormality. If abnormal conditions are found
 then an AnalysisWarning is produced. The application can then display or record these warnings. This aspect of the program has not really
 been fully implemented."""

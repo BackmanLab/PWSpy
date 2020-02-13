@@ -34,6 +34,7 @@ class PWSAnalysis(AbstractAnalysis): #TODO Handle the case where pixels are 0, m
         from pwspy.dataTypes import ExtraReflectionCube, ExtraReflectanceCube
         assert ref.processingStatus.cameraCorrected, "Before attempting to analyze using this reference make sure that it has had camera darkcounts and non-linearity corrected for."
         super().__init__()
+        self._initWarnings = []
         extraReflectance = ExtraReflectanceCube.fromMetadata(runtimeSettings.extraReflectanceMetadata) if runtimeSettings.extraReflectanceMetadata is not None else None
         settings = runtimeSettings.getSaveableSettings()
         self.settings = settings
@@ -42,16 +43,16 @@ class PWSAnalysis(AbstractAnalysis): #TODO Handle the case where pixels are 0, m
             ref.filterDust(.75)  # Apply a blur to filter out dust particles. This is in microns. I'm not sure if this is the optimal value.
         if settings.referenceMaterial is None:
             theoryR = pd.Series(np.ones((len(ref.wavelengths),)), index=ref.wavelengths) # Having this as all ones effectively ignores it.
-            print("Warning: Analysis ignoring reference material correction. Extra Reflection subtraction can not be performed.")
+            self._initWarnings.append(warnings.AnalysisWarning("Ignoring reference material", "Analysis ignoring reference material correction. Extra Reflection subtraction can not be performed."))
             assert extraReflectance is None, "Extra reflectance calibration relies on being provided with the theoretical reflectance of our reference."
         else:
             theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, wavelengths=ref.wavelengths, NA=settings.numericalAperture)
         if extraReflectance is None:
             Iextra = None
-            print("Warning: PWSAnalysis ignoring extra reflection")
+            self._initWarnings.append(warnings.AnalysisWarning("Ignoring extra reflection correction.", "That's all"))
         else:
             if extraReflectance.metadata.numericalAperture != settings.numericalAperture:
-                print(f"Warning: The numerical aperture of your analysis does not match the NA of the Extra Reflectance Calibration. Calibration File NA: {extraReflectance.metadata.numericalAperture}. PWSAnalysis NA: {settings.numericalAperture}.")
+                self._initWarnings.append(warnings.AnalysisWarning("NA mismatch!", f"The numerical aperture of your analysis does not match the NA of the Extra Reflectance Calibration. Calibration File NA: {extraReflectance.metadata.numericalAperture}. PWSAnalysis NA: {settings.numericalAperture}."))
             Iextra = ExtraReflectionCube.create(extraReflectance, theoryR, ref) #Convert from reflectance to predicted counts/ms.
             ref.subtractExtraReflection(Iextra)  # remove the extra reflection from our data#
         if not settings.relativeUnits:
@@ -63,7 +64,7 @@ class PWSAnalysis(AbstractAnalysis): #TODO Handle the case where pixels are 0, m
         """Runs analysis on `cube` returns a list of warnings indicating abnormal results and an analyisResults object which can be saved."""
         from pwspy.dataTypes import KCube
         assert cube.processingStatus.cameraCorrected
-        warns = []
+        warns = self._initWarnings
         cube = self._normalizeImCube(cube)
         interval = (max(cube.wavelengths) - min(cube.wavelengths)) / (len(cube.wavelengths) - 1)  # Wavelength interval. We are assuming equally spaced wavelengths here
         cube.data = self._filterSignal(cube.data, 1/interval)
