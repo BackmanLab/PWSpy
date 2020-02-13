@@ -36,7 +36,7 @@ if __name__ == '__main__':
     plotResults = True  # Do you want to plot information about the calibration?
 
     materials = [('air', Material.Air), ('water', Material.Water)]  # Map folder names to a "pwspy.moduleConsts.Material" value
-    settings = [('matchedNAi_largeNAc', 0.5), ('matchedNAi_smallNAc', 0.5), ('smallNAi_largeNAc', ), ('smallNAi_smallNAc', )] #The folder names and NAi for each setting tested.
+    settings = [os.path.split(f)[-1] for f in glob(os.path.join(rootDir, '*')) if os.path.exists(os.path.join(f, 'er'))]  # Determine which settings are available by scanning the folders
 
     fig, axes = plt.subplots(ncols=2)
     axes[0].set_ylabel('n')
@@ -51,12 +51,12 @@ if __name__ == '__main__':
      matName, mat in materials]
     axes[1].legend()
 
-    fileFrame = pd.DataFrame([{'setting': setting, 'na': na, 'material': m[1], 'cube': cube} for setting, na in settings for m in materials for cube in glob(
+    fileFrame = pd.DataFrame([{'setting': setting, 'material': m[1], 'cube': cube} for setting in settings for m in materials for cube in glob(
         os.path.join(rootDir, setting, 'er', m[0],
                      'Cell*'))])  # Convert the folder structure to a dataframe labeled with NA setting, Material, and the ImCube objects.
     df = loadAndProcess(fileFrame, processIm, parallel=True)  # Returns a dataframe matching the form of `fileFrame` except the filepaths have been replaced with ImCube objects (The filepaths have been loaded and processed using the `processIms` function.).
 
-    theoryR = er.getTheoreticalReflectances(list(zip(*materials))[1], df['cube'][0].wavelengths)
+    theoryR = er.getTheoreticalReflectances(list(zip(*materials))[1], df['cube'][0].wavelengths, 0.52)
     matCombos = er.generateMaterialCombos(list(zip(*materials))[1])
     if plotResults:
         verts = random.choice(df['cube']).selectLassoROI()
@@ -70,5 +70,5 @@ if __name__ == '__main__':
     if produceRextraCube:
         for sett in set(df['setting']):
             allCombos = er.getAllCubeCombos(matCombos, df[df['setting'] == sett])
-            erCube, rextras, plots = er.generateRExtraCubes(allCombos, theoryR)
+            erCube, rextras, plots = er.generateRExtraCubes(allCombos, theoryR, 0.52)
             erCube.toHdfFile(rootDir, f'rextra_{sett}')
