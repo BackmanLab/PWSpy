@@ -62,7 +62,9 @@ def _processIm(im: ImCube, args) -> ImCube:
         im.filterDust(6, pixelSize=1) #Do the filtering in units of pixels if no auto pixelsize was found
     return im
 
+
 class ERWorkFlow:
+    """This class serves as an adapter between the complication operations available in the pwspy.utility.relfection.extraReflectance module and the UI of the ERCreator app."""
     def __init__(self, workingDir: str, homeDir: str):
         self.cubes = self.fileStruct = self.df = self.cameraCorrection = self.currDir = self.plotnds = self.anims = None
         self.figs = []
