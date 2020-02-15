@@ -8,8 +8,6 @@ from pwspy.dataTypes import AcqDir
 
 from .widgets import AnalysisPlotter
 from .bigPlot import BigPlot
-import typing
-from pwspy.analysis.pws import PWSAnalysisResults
 
 
 class AnalysisViewer(AnalysisPlotter, QWidget):

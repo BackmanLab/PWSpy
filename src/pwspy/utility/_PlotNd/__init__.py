@@ -1,26 +1,90 @@
 from typing import Tuple, List
 
-from PyQt5 import QtCore
-from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QPushButton, QDialog, QSpinBox, QLabel
+from PyQt5 import QtCore, QtGui
+from PyQt5.QtCore import QSize, QSizeF
+from PyQt5.QtGui import QResizeEvent, QPen, QBrush
+from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QPushButton, QDialog, QSpinBox, QLabel, QMainWindow, \
+    QSizePolicy, QGraphicsWidget, QGraphicsGridLayout, QGraphicsView, QGraphicsScene
 from matplotlib.animation import FuncAnimation
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+
 from pwspy.apps.sharedWidgets.rangeSlider import QRangeSlider
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT
+
 from pwspy.utility._PlotNd._plots import ImPlot, SidePlot
 import numpy as np
 from pwspy.utility._PlotNd._plots import CBar
 from pwspy.utility._PlotNd._canvas import PlotNdCanvas
 
 
-class PlotNd(QDialog): #TODO add button to save animation, Docstring
+class AspectRatioWidget(QWidget):
+    def __init__(self, aspect: float, parent: QWidget = None):
+        super().__init__(parent)
+        self._aspect = aspect
+        self.enabled = True
+
+    def resizeEvent(self, event: QtGui.QResizeEvent):
+        w, h = event.size().width(), event.size().height()
+        self._resize(w, h)
+
+    def _resize(self, width, height=None):
+        if self.enabled:
+            self.enabled=False
+
+            newHeight = width / self._aspect #The ideal height based on the new commanded width
+            newWidth = height * self._aspect #the ideal width based on the new commanded height
+
+            #Now determine which of the new dimensions to use.
+            if width > newWidth:
+                newHeight = newWidth / self._aspect
+            else:
+                newWidth = newHeight * self._aspect
+            super().resize(newWidth, newHeight)
+            self.enabled=True
+
+    def setAspect(self, aspect: float):
+        self._aspect = aspect
+        self._resize(self.width(), self.height())
+
+
+class MyView(QGraphicsView):
+    def __init__(self, plot: PlotNdCanvas):
+        super().__init__()
+        scene = QGraphicsScene(self)
+        scene.addWidget(plot)
+        self.plot = plot
+        self.plot.resize(1024, 1024) #To avoid pixelation
+        self.setScene(scene)
+
+    def resizeEvent(self, event: QtGui.QResizeEvent) -> None:
+        w,h = event.size().width(), event.size().height()
+        r = self.scene().sceneRect()
+        s = min([w,h])
+        r.setSize(QSizeF(s,s))
+        self.plot.resize(s,s)
+        self.scene().setSceneRect(r)
+        # self.fitInView(self.scene().sceneRect(), QtCore.Qt.KeepAspectRatio) $This was orignally all that was needed but the resolution of the plot wasn't right which caused render issues.
+
+
+    def drawBackground(self, painter: QtGui.QPainter, rect: QtCore.QRectF) -> None:
+        #Draw border around the scene for debug purposes
+        painter.save()
+        painter.setPen(QPen(QtCore.Qt.darkGray, 5))
+        # painter.setBrush(QBrush())
+        painter.drawRect(self.scene().sceneRect())
+        painter.restore()
+        super().drawBackground(painter, rect)
+
+
+class PlotNd(QWidget): #TODO add button to save animation, Docstring
     def __init__(self, data: np.ndarray, names: Tuple[str, ...] = ('y', 'x', 'lambda'),
                  initialCoords: Tuple[int, ...] = None, title: str = '', parent: QWidget = None,
                  extraDimIndices: List[np.ndarray] = None):
         super().__init__(parent=parent)
-        title = str(title) #Convert to string just in case
-        self.setWindowTitle(title)
+        self.setWindowTitle(str(title))  # Convert to string just in case
 
         self.canvas = PlotNdCanvas(data, names, initialCoords, extraDimIndices)
-
+        self.view = MyView(self.canvas)
         self.slider = QRangeSlider(self)
         self.slider.setMaximumHeight(20)
         self.slider.setMax(np.nanmax(data))
@@ -30,19 +94,22 @@ class PlotNd(QDialog): #TODO add button to save animation, Docstring
         self.slider.startValueChanged.connect(self._updateLimits)
         self.slider.endValueChanged.connect(self._updateLimits)
 
-        self.resizeButton = QPushButton("Resize")
-        self.resizeButton.released.connect(self._resizeDlg)
+        # self.resizeButton = QPushButton("Resize")
+        # self.resizeButton.released.connect(self._resizeDlg)
 
+        self.arWidget = QWidget(self)#AspectRatioWidget(1, self)#AspectRatioWidget(1, self)
         layout = QGridLayout()
-        layout.addWidget(self.canvas, 0, 0, 8, 8)
+        layout.addWidget(self.view, 0, 0, 8, 8)
+        # layout.addWidget(self.canvas, 0, 0, 8, 8)
         layout.addWidget(NavigationToolbar2QT(self.canvas, self), 10, 0, 1, 8)
         layout.setRowStretch(0, 1)
         layout.addWidget(self.slider, 8, 0, 1, 7)
-        layout.addWidget(self.resizeButton, 8, 7, 1, 1)
-        self.setLayout(layout)
+        # layout.addWidget(self.resizeButton, 8, 7, 1, 1)
+        self.arWidget.setLayout(layout)
+        self.setLayout(QGridLayout())
+        self.layout().addWidget(self.arWidget)
 
         self.show()
-        self.setFixedSize(self.size())
         self.ar = self.height() / self.width()
 
     def _updateLimits(self):

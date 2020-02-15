@@ -2,9 +2,14 @@ from typing import Tuple
 
 import numpy as np
 from PyQt5 import QtCore
+from PyQt5.QtCore import QSize
+from PyQt5.QtGui import QResizeEvent
+from PyQt5.QtWidgets import QWidget
 from matplotlib import pyplot as plt, gridspec
+from matplotlib.backend_bases import ResizeEvent
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from ._plots import ImPlot, SidePlot, CBar
+
 
 
 class PlotNdCanvas(FigureCanvasQTAgg):
@@ -69,7 +74,8 @@ class PlotNdCanvas(FigureCanvasQTAgg):
         self.mpl_connect('motion_notify_event', self.ondrag)
         self.mpl_connect('scroll_event', self.onscroll)
         self.mpl_connect('draw_event', self._updateBackground)
-        plt.tight_layout()
+        plt.tight_layout() # THis doesn't really do anything.
+        gs.update(left=0, right=1, bottom=0, top=1)
         self.updatePlots(blit=False)
 
 
@@ -121,7 +127,10 @@ class PlotNdCanvas(FigureCanvasQTAgg):
     def onscroll(self, event):
         if (event.button == 'up') or (event.button == 'down'):
             step = int(4 * event.step)
-            plot = [plot for plot in self.artistManagers if plot.ax == event.inaxes][0]
+            try:
+                plot = [plot for plot in self.artistManagers if plot.ax == event.inaxes][0]
+            except IndexError: # No plot is being moused over
+                return
             self.coords = tuple((c + step) % self.data.shape[plot.dimensions[0]] if i in plot.dimensions else c for i, c in enumerate(self.coords))
             self.updatePlots()
 

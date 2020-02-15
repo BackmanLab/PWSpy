@@ -41,7 +41,7 @@ class PlotBase(ABC):
 
 
 class ImPlot(PlotBase):
-    def __init__(self, ax, shape: Tuple[int, int], dims: Tuple[int ,int]):
+    def __init__(self, ax, shape: Tuple[int, int], dims: Tuple[int, int]):
         assert len(shape) == 2
         self.shape = shape
         super().__init__(ax, dims)
