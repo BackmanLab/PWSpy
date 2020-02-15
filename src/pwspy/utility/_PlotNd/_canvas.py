@@ -149,11 +149,11 @@ class PlotNdCanvas(FigureCanvasQTAgg):
 
     def processMouse(self, ax, x, y, button, colorbar):
         if ax == self.image.ax:
-            self.coords = (int(y), int(x)) + self.coords[2:]
+            self.coords = (int(np.round(y)), int(np.round(x))) + self.coords[2:]
         elif ax == self.spY.ax:
-            self.coords = (int(y),) + self.coords[1:]
+            self.coords = (int(np.round(y)),) + self.coords[1:]
         elif ax == self.spX.ax:
-            self.coords = (self.coords[0], int(x)) + self.coords[2:]
+            self.coords = (self.coords[0], int(np.round(x))) + self.coords[2:]
         elif ax in [sp.ax for sp in self.extra]:
             idx = [sp.ax for sp in self.extra].index(ax)
             sp = [sp for sp in self.extra if sp.ax is ax][0]
