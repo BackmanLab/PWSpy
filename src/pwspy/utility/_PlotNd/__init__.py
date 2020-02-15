@@ -1,7 +1,7 @@
 from typing import Tuple, List
 
 from PyQt5 import QtCore, QtGui
-from PyQt5.QtCore import QSize, QSizeF
+from PyQt5.QtCore import QSize, QSizeF, QTimer
 from PyQt5.QtGui import QResizeEvent, QPen, QBrush
 from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QPushButton, QDialog, QSpinBox, QLabel, QMainWindow, \
     QSizePolicy, QGraphicsWidget, QGraphicsGridLayout, QGraphicsView, QGraphicsScene, QGroupBox, QVBoxLayout
@@ -53,16 +53,25 @@ class MyView(QGraphicsView):
         scene = QGraphicsScene(self)
         scene.addWidget(plot)
         self.plot = plot
-        self.plot.resize(1024, 1024) #To avoid pixelation
         self.setScene(scene)
+        # self.resize(1024, 1024)
+        # self.resizeEvent(QResizeEvent(self.size(),self.size()))
+        self.debounce = QTimer()
+        self.debounce.setSingleShot(True)
+        self.debounce.setInterval(50)
+        self.debounce.timeout.connect(self.resizePlot)
 
-    def resizeEvent(self, event: QtGui.QResizeEvent) -> None:
-        w,h = event.size().width(), event.size().height()
+    def resizePlot(self):
+        w,h = self.size().width(), self.size().height()
         r = self.scene().sceneRect()
         s = min([w,h])
         r.setSize(QSizeF(s,s))
         self.plot.resize(s,s)
         self.scene().setSceneRect(r)
+
+    def resizeEvent(self, event: QtGui.QResizeEvent) -> None:
+        self.debounce.start()
+        super().resizeEvent(event)
 
         # self.fitInView(self.scene().sceneRect(), QtCore.Qt.KeepAspectRatio) $This was orignally all that was needed but the resolution of the plot wasn't right which caused render issues.
 
@@ -169,8 +178,8 @@ if __name__ == '__main__':
     z = np.linspace(0, 1, num=101)
     t = np.linspace(0, 1, num=3)
     X, Y, Z, T = np.meshgrid(x, y, z, t)
-    arr = np.sin(2 * np.pi * 4 * Z) + .5 * X
+    arr = np.sin(2 * np.pi * 4 * Z) + .5 * X + np.cos(2*np.pi*4*Y)
     app = QApplication(sys.argv)
-    p = PlotNd(arr, names=('y', 'x', 'z', 't'), extraDimIndices=[z,t])
+    p = PlotNd(arr[:,:,:,0], names=('y', 'x', 'z'), extraDimIndices=[z])
     sys.exit(app.exec_())
 
