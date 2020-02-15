@@ -4,7 +4,7 @@ from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QSize, QSizeF
 from PyQt5.QtGui import QResizeEvent, QPen, QBrush
 from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QPushButton, QDialog, QSpinBox, QLabel, QMainWindow, \
-    QSizePolicy, QGraphicsWidget, QGraphicsGridLayout, QGraphicsView, QGraphicsScene
+    QSizePolicy, QGraphicsWidget, QGraphicsGridLayout, QGraphicsView, QGraphicsScene, QGroupBox, QVBoxLayout
 from matplotlib.animation import FuncAnimation
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 
@@ -63,6 +63,7 @@ class MyView(QGraphicsView):
         r.setSize(QSizeF(s,s))
         self.plot.resize(s,s)
         self.scene().setSceneRect(r)
+
         # self.fitInView(self.scene().sceneRect(), QtCore.Qt.KeepAspectRatio) $This was orignally all that was needed but the resolution of the plot wasn't right which caused render issues.
 
 
@@ -94,13 +95,17 @@ class PlotNd(QWidget): #TODO add button to save animation, Docstring
         self.slider.startValueChanged.connect(self._updateLimits)
         self.slider.endValueChanged.connect(self._updateLimits)
 
+        self.buttonWidget = QGroupBox("buttons", self)
+        self.buttonWidget.setLayout(QVBoxLayout())
+        self.buttonWidget.layout().addWidget(QPushButton("The button"))
+
         # self.resizeButton = QPushButton("Resize")
         # self.resizeButton.released.connect(self._resizeDlg)
 
         self.arWidget = QWidget(self)#AspectRatioWidget(1, self)#AspectRatioWidget(1, self)
         layout = QGridLayout()
         layout.addWidget(self.view, 0, 0, 8, 8)
-        # layout.addWidget(self.canvas, 0, 0, 8, 8)
+        layout.addWidget(self.buttonWidget, 0, 8, 8, 1)
         layout.addWidget(NavigationToolbar2QT(self.canvas, self), 10, 0, 1, 8)
         layout.setRowStretch(0, 1)
         layout.addWidget(self.slider, 8, 0, 1, 7)
