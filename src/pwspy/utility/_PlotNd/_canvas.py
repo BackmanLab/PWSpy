@@ -16,7 +16,7 @@ class PlotNdCanvas(FigureCanvasQTAgg):
     def __init__(self, data: np.ndarray, names: Tuple[str, ...] = ('y', 'x', 'lambda'),
                  initialCoords: Tuple[int, ...] = None, extraDimIndices=None):
         assert len(names) == len(data.shape)
-        fig = plt.Figure(figsize=(6, 6))
+        fig = plt.Figure(figsize=(6, 6), tight_layout=True)
         self.fig = fig
         super().__init__(self.fig)
 
@@ -74,8 +74,6 @@ class PlotNdCanvas(FigureCanvasQTAgg):
         self.mpl_connect('motion_notify_event', self.ondrag)
         self.mpl_connect('scroll_event', self.onscroll)
         self.mpl_connect('draw_event', self._updateBackground)
-        plt.tight_layout() # THis doesn't really do anything.
-        gs.update(left=0, right=1, bottom=0, top=1)
         self.updatePlots(blit=False)
 
 
