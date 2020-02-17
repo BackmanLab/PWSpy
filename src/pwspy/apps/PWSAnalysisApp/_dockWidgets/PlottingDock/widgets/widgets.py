@@ -56,7 +56,8 @@ class AnalysisPlotter:
                     analysis = self.analysis.dyn
                 else:
                     raise TypeError("Unidentified analysis type")
-                self.data = getattr(analysis, paramName)
+                if analysis is not None: # If we try to set data from a nonexistent analysis we'll have a crash.
+                    self.data = getattr(analysis, paramName)
         assert len(self.data.shape) == 2
 
     def setMetadata(self, md: AcqDir, analysis: Optional[ConglomerateAnalysisResults] = None):
