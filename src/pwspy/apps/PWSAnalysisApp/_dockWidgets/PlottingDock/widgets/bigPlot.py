@@ -6,7 +6,7 @@ import numpy as np
 from PyQt5 import QtCore
 from PyQt5.QtGui import QCursor, QValidator
 from PyQt5.QtWidgets import QWidget, QDialog, QVBoxLayout, QDoubleSpinBox, QPushButton, QLabel, QGridLayout, QComboBox, \
-    QAction, QMenu
+    QAction, QMenu, QApplication
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -21,6 +21,7 @@ import os
 
 class BigPlot(QWidget):
     def __init__(self, acqDir: AcqDir, data: np.ndarray, title: str, parent=None):
+        """A widget that displays an image and also provides handling for ROI display."""
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         self.setWindowTitle(title)
         layout = QGridLayout()
@@ -178,10 +179,10 @@ class BigPlot(QWidget):
     def addRoi(self, roi: Roi):
         if roi.verts is not None:
             poly = roi.getBoundingPolygon()
-            poly.set_picker(0) # allow the polygon to trigger a pickevent
+            poly.set_picker(0)  # allow the polygon to trigger a pickevent
             self.ax.add_patch(poly)
             self._rois.append((roi, None, poly))
-        else:
+        else:  # In the case of old ROI files where the vertices of the outline are not available we have to back-calculate the polygon which does not look good. We make this polygon invisible so it is only used for click detection. we then display an image of the binary mask array.
             overlay = roi.getImage(self.ax) # an image showing the exact shape of the ROI
             poly = roi.getBoundingPolygon() # A polygon used for mouse event handling
             poly.set_visible(False)#poly.set_facecolor((0,0,0,0)) # Make polygon invisible
@@ -278,3 +279,13 @@ class WhiteSpaceValidator(QValidator):
 
     def fixup(self, a0: str) -> str:
         return a0.strip()
+
+if __name__ == '__main__':
+    fPath = r'G:\Aya_NAstudy\matchedNAi_largeNAc\cells\Cell2'
+    from pwspy.dataTypes import AcqDir
+    acq = AcqDir(fPath)
+    import sys
+    app = QApplication(sys.argv)
+    b = BigPlot(acq, acq.pws.getThumbnail(), "Test")
+    b.show()
+    sys.exit(app.exec())

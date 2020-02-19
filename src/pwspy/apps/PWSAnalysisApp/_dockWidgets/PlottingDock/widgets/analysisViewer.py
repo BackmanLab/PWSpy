@@ -4,17 +4,15 @@ from PyQt5.QtWidgets import QWidget, QGridLayout, QComboBox
 from typing import Optional
 
 from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
-from pwspy.dataTypes import AcqDir
 
-from .widgets import AnalysisPlotter
-from .bigPlot import BigPlot
-import typing
-from pwspy.analysis.pws import PWSAnalysisResults
+from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.widgets import AnalysisPlotter
+from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.bigPlot import BigPlot
 
 
 class AnalysisViewer(AnalysisPlotter, QWidget):
-    """This class is a window that provides convenient viewing of a pws acquisition, analysis, and related images."""
-    def __init__(self, metadata: AcqDir, analysisLoader: Optional[ConglomerateAnalysisResults], title: str, parent=None,
+    """This class is a window that provides convenient viewing of a pws acquisition, analysis, and related images.
+    It expands upon the functionality of `BigPlot` which handles ROIs but not analysis images."""
+    def __init__(self, metadata: AcqDir, analysisLoader: ConglomerateAnalysisResults, title: str, parent=None,
                  initialField=AnalysisPlotter.PlotFields.Thumbnail):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         AnalysisPlotter.__init__(self, metadata, analysisLoader)
@@ -82,3 +80,14 @@ class AnalysisViewer(AnalysisPlotter, QWidget):
             super().setMetadata(md, analysis)
         self.plotWidg.setMetadata(md)
         self._populateFields()
+
+if __name__ == '__main__':
+    fPath = r'G:\Aya_NAstudy\matchedNAi_largeNAc\cells\Cell2'
+    from pwspy.dataTypes import AcqDir
+    from PyQt5.QtWidgets import QApplication
+    acq = AcqDir(fPath)
+    import sys
+    app = QApplication(sys.argv)
+    b = AnalysisViewer(acq, ConglomerateAnalysisResults(None, None), "Test")
+    b.show()
+    sys.exit(app.exec())
