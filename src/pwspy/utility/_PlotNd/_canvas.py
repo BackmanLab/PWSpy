@@ -28,8 +28,8 @@ class PlotNdCanvas(FigureCanvasQTAgg):
 
         h, w = data.shape[:2]
         gs = gridspec.GridSpec(3, 2 + extraDims + 1, hspace=0,
-                               width_ratios=[w * .2 / (extraDims + 1)] * (extraDims + 1) + [w, w * .2],
-                               height_ratios=[h * .1, h, h * .2], wspace=0)
+                               width_ratios=[.2 / (extraDims + 1)] * (extraDims + 1) + [1, .2],
+                               height_ratios=[.1, 1, .2], wspace=0)
         ax: plt.Axes = fig.add_subplot(gs[1, extraDims + 1])
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
@@ -43,9 +43,10 @@ class PlotNdCanvas(FigureCanvasQTAgg):
 
         ax: plt.Axes = fig.add_subplot(gs[2, extraDims + 1], sharex=self.image.ax)
         ax.set_xlabel(names[1])
+        ax.xaxis.set_label_coords(.5, .95)
         ax.get_yaxis().set_visible(False)
         self.spX = SidePlot(ax, data.shape[1], False, 1)
-        self.spX.ax.set_xlabel(self.names[1])
+        # self.spX.ax.set_xlabel(self.names[1])
 
         ax: plt.Axes = fig.add_subplot(gs[0, extraDims + 1])
         self.cbar = CBar(ax, self.image.im)
