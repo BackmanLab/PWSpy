@@ -12,7 +12,6 @@ from matplotlib import patches
 import os
 from pwspy.analysis.pws import PWSAnalysisResults
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.analysisViewer import AnalysisViewer
-from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.bigPlot import BigPlot
 import typing
 
 from pwspy.utility.matplotlibWidgets._selectorWidgets.FullImPaintSelector import FullImPaintSelector

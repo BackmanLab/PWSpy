@@ -6,7 +6,7 @@ from typing import Optional
 from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
 
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.widgets import AnalysisPlotter
-from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.bigPlot import BigPlot
+from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.roiPlot import RoiPlot
 
 
 class AnalysisViewer(AnalysisPlotter, QWidget):
@@ -18,7 +18,7 @@ class AnalysisViewer(AnalysisPlotter, QWidget):
         AnalysisPlotter.__init__(self, metadata, analysisLoader)
         self.setWindowTitle(title)
         layout = QGridLayout()
-        self.plotWidg = BigPlot(metadata, metadata.getThumbnail(), 'title')
+        self.plotWidg = RoiPlot(metadata, metadata.getThumbnail(), 'title')
         self.analysisCombo = QComboBox(self)
         self._populateFields()
         layout.addWidget(self.analysisCombo, 0, 0, 1, 1)
