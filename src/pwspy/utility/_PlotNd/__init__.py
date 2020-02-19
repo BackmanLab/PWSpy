@@ -1,12 +1,11 @@
 from typing import Tuple, List
 
 from PyQt5 import QtCore, QtGui
-from PyQt5.QtCore import QSize, QSizeF, QTimer
-from PyQt5.QtGui import QResizeEvent, QPen, QBrush
-from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QPushButton, QDialog, QSpinBox, QLabel, QMainWindow, \
-    QSizePolicy, QGraphicsWidget, QGraphicsGridLayout, QGraphicsView, QGraphicsScene, QGroupBox, QVBoxLayout
+from PyQt5.QtCore import QSizeF, QTimer
+from PyQt5.QtGui import QPen
+from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QPushButton, QDialog, QSpinBox, QLabel, QGraphicsView, \
+    QGraphicsScene, QGroupBox, QVBoxLayout, QCheckBox
 from matplotlib.animation import FuncAnimation
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 
 from pwspy.apps.sharedWidgets.rangeSlider import QRangeSlider
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT
@@ -15,36 +14,6 @@ from pwspy.utility._PlotNd._plots import ImPlot, SidePlot
 import numpy as np
 from pwspy.utility._PlotNd._plots import CBar
 from pwspy.utility._PlotNd._canvas import PlotNdCanvas
-
-
-class AspectRatioWidget(QWidget):
-    def __init__(self, aspect: float, parent: QWidget = None):
-        super().__init__(parent)
-        self._aspect = aspect
-        self.enabled = True
-
-    def resizeEvent(self, event: QtGui.QResizeEvent):
-        w, h = event.size().width(), event.size().height()
-        self._resize(w, h)
-
-    def _resize(self, width, height=None):
-        if self.enabled:
-            self.enabled=False
-
-            newHeight = width / self._aspect #The ideal height based on the new commanded width
-            newWidth = height * self._aspect #the ideal width based on the new commanded height
-
-            #Now determine which of the new dimensions to use.
-            if width > newWidth:
-                newHeight = newWidth / self._aspect
-            else:
-                newWidth = newHeight * self._aspect
-            super().resize(newWidth, newHeight)
-            self.enabled=True
-
-    def setAspect(self, aspect: float):
-        self._aspect = aspect
-        self._resize(self.width(), self.height())
 
 
 class MyView(QGraphicsView):
@@ -78,11 +47,10 @@ class MyView(QGraphicsView):
 
     def drawBackground(self, painter: QtGui.QPainter, rect: QtCore.QRectF) -> None:
         #Draw border around the scene for debug purposes
-        painter.save()
-        painter.setPen(QPen(QtCore.Qt.darkGray, 5))
-        # painter.setBrush(QBrush())
-        painter.drawRect(self.scene().sceneRect())
-        painter.restore()
+        # painter.save()
+        # painter.setPen(QPen(QtCore.Qt.darkGray, 5))
+        # painter.drawRect(self.scene().sceneRect())
+        # painter.restore()
         super().drawBackground(painter, rect)
 
 
@@ -106,10 +74,11 @@ class PlotNd(QWidget): #TODO add button to save animation, Docstring
 
         self.buttonWidget = QGroupBox("buttons", self)
         self.buttonWidget.setLayout(QVBoxLayout())
-        self.buttonWidget.layout().addWidget(QPushButton("The button"))
-
-        # self.resizeButton = QPushButton("Resize")
-        # self.resizeButton.released.connect(self._resizeDlg)
+        check = QCheckBox("Cursor Active")
+        self.buttonWidget.layout().addWidget(check)
+        check.setChecked(self.canvas.spectraViewActive) #Get the right initial value
+        check.stateChanged.connect(lambda state: self.canvas.setSpectraViewActive(state!=0))
+        # check.released.connect(lambda: self.canvas.setSpectraViewActive(not self.canvas.spectraViewActive))
 
         self.arWidget = QWidget(self)#AspectRatioWidget(1, self)#AspectRatioWidget(1, self)
         layout = QGridLayout()
