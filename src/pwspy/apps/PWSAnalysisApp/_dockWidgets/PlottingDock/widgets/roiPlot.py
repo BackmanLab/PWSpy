@@ -3,7 +3,7 @@ import traceback
 import re
 import numpy as np
 from PyQt5.QtGui import QCursor, QValidator
-from PyQt5.QtWidgets import QMenu, QAction, QComboBox, QLabel, QPushButton, QGridLayout, QHBoxLayout
+from PyQt5.QtWidgets import QMenu, QAction, QComboBox, QLabel, QPushButton, QHBoxLayout
 from PyQt5 import QtCore
 
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.bigPlot import BigPlot
@@ -11,7 +11,7 @@ from pwspy.dataTypes import Roi, AcqDir
 
 
 class RoiPlot(BigPlot):
-    """Adds handling for ROIs to the BigPlot class"""
+    """Adds handling for ROIs to the BigPlot class. It might be smarter to encapsulate Bigplot rather than inherit"""
     def __init__(self, acqDir: AcqDir, data: np.ndarray, title: str, parent=None):
         super().__init__(data, title, parent)
         self._rois = []
