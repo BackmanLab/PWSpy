@@ -59,8 +59,6 @@ class CollapsibleSection(QWidget):
         self._toggleButton.setCheckState(state)
 
     def _setLayout(self, contentLayout: QLayout):
-        oldLayout = self._contentArea.layout()
-        del oldLayout
         self._contentArea.setLayout(contentLayout)
         collapsedHeight = self.sizeHint().height() - self._contentArea.maximumHeight()
         contentHeight = contentLayout.sizeHint().height()
