@@ -3,7 +3,7 @@ import traceback
 import re
 import numpy as np
 from PyQt5.QtGui import QCursor, QValidator
-from PyQt5.QtWidgets import QMenu, QAction, QComboBox, QLabel
+from PyQt5.QtWidgets import QMenu, QAction, QComboBox, QLabel, QPushButton, QGridLayout, QHBoxLayout
 from PyQt5 import QtCore
 
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.bigPlot import BigPlot
@@ -11,15 +11,23 @@ from pwspy.dataTypes import Roi, AcqDir
 
 
 class RoiPlot(BigPlot):
-
+    """Adds handling for ROIs to the BigPlot class"""
     def __init__(self, acqDir: AcqDir, data: np.ndarray, title: str, parent=None):
         super().__init__(data, title, parent)
         self._rois = []
+
         self.roiFilter = QComboBox(self)
         self.roiFilter.setEditable(True)
         self.roiFilter.setValidator(WhiteSpaceValidator())
-        self.layout().addWidget(QLabel("Roi"), 10, 4, 1, 1, alignment=QtCore.Qt.AlignRight)
-        self.layout().addWidget(self.roiFilter, 10, 5, 1, 1)
+
+        self.exportButton = QPushButton("Export")
+        self.exportButton.released.connect(self._exportAction)
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Roi"), alignment=QtCore.Qt.AlignRight)
+        layout.addWidget(self.roiFilter)
+        layout.addWidget(self.exportButton)
+        self.layout().insertLayout(0, layout)
 
         self.setMetadata(acqDir)
 
@@ -133,6 +141,8 @@ class RoiPlot(BigPlot):
             self.ax.add_patch(poly)
             self._rois.append((roi, overlay, poly))
 
+    def _exportAction(self):
+        pass
 
 class WhiteSpaceValidator(QValidator):
     stateChanged = QtCore.pyqtSignal(QValidator.State)

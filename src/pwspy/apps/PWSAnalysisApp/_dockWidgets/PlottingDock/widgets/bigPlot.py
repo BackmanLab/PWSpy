@@ -19,7 +19,7 @@ if typing.TYPE_CHECKING:
 
 class BigPlot(QWidget):
     def __init__(self, data: np.ndarray, title: str, parent=None):
-        """A widget that displays an image and also provides handling for ROI display."""
+        """A widget that displays an image."""
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         self.setWindowTitle(title)
         layout = QGridLayout()
@@ -58,10 +58,13 @@ class BigPlot(QWidget):
         layout.addWidget(QLabel("Color Map"), 10, 6, 1, 1, alignment=QtCore.Qt.AlignRight)
         layout.addWidget(self.cmapCombo, 10, 7, 1, 1)
         layout.setRowStretch(0, 1)  # This causes the plot to take up all the space that isn't needed by the other widgets.
-        self.setLayout(layout)
+        l = QVBoxLayout()
+        l.addLayout(layout)
+        self.setLayout(l)
 
         self.setImageData(data)
         self.setSaturation()
+
 
     def setImageData(self, data: np.ndarray):
         self.data = data
