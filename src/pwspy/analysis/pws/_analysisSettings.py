@@ -39,6 +39,8 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
     def _fromDict(cls, d: dict) -> PWSAnalysisSettings:
         if d['referenceMaterial'] is not None:
             d['referenceMaterial'] = Material[d['referenceMaterial']]  # Convert from string to enum
+        if 'relativeUnits' not in d.keys():
+            d['relativeUnits'] = None #For a while this setting was missing from the code. Allow us to still load old files.
         return cls(**d)
 
 

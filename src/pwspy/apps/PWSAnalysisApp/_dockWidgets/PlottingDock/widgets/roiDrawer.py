@@ -10,15 +10,8 @@ from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import Conglomer
 from pwspy.dataTypes import AcqDir
 from matplotlib import patches
 import os
-from pwspy.analysis.pws import PWSAnalysisResults
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.analysisViewer import AnalysisViewer
-from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.bigPlot import BigPlot
-import typing
-
 from pwspy.utility.matplotlibWidgets._selectorWidgets.FullImPaintSelector import FullImPaintSelector
-
-if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import ICMetaData
 from pwspy.dataTypes import Roi
 from pwspy.utility.matplotlibWidgets import AdjustableSelector, LassoSelector, EllipseSelector, RegionalPaintSelector, PolygonInteractor
 

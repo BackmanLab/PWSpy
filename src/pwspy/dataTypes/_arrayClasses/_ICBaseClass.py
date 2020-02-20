@@ -62,7 +62,8 @@ class ICBase:
 
         Returns:
             Tuple[plt.Figure, plt.Axes]: A figure and attached axes plotting the mean of the data along the index axis.
-                corresponds to the mean reflectance in most cases."""
+                corresponds to the mean reflectance in most cases.
+        """
         fig, ax = plt.subplots()
         mean = np.mean(self.data, axis=2)
         im = ax.imshow(mean)
@@ -71,11 +72,14 @@ class ICBase:
 
     def getMeanSpectra(self, mask: Optional[Union[Roi, np.ndarray]] = None) ->Tuple[np.ndarray, np.ndarray]:
         """Calculate the average spectra within a region of the data.
+
         Args:
             mask: An optional Roi or boolean numpy array used to select pixels from the X and Y dimensions of the data array.
                 If left as None then the full data array will be used as the region.
+
         Returns:
-            Tuple[np.ndarray, np.ndarray]: The average spectra within the region, the standard deviation of the spectra within the region"""
+            Tuple[np.ndarray, np.ndarray]: The average spectra within the region, the standard deviation of the spectra within the region
+        """
         if isinstance(mask, Roi):
             mask = mask.mask
         if mask is None: #Make a mask that includes everything
@@ -85,11 +89,13 @@ class ICBase:
         return mean, std
 
     def selectLassoROI(self, displayIndex: int = None) -> np.ndarray:
-        """
+        """ Allow the user to draw a `freehand` ROI on an image of the acquisition.
         Args:
             displayIndex (Optional[int]): Display a particular z-slice of the array for mask drawing. If `None` then the mean along Z is displayed.
+
         Returns:
-            np.ndarray: An array of vertices of the polygon drawn."""
+            np.ndarray: An array of vertices of the polygon drawn.
+        """
         Verts = [None]
         if displayIndex is None:
             displayIndex = self.data.shape[2]//2
@@ -105,10 +111,15 @@ class ICBase:
             fig.canvas.flush_events()
         return np.array(Verts[0])
 
-    def selectRectangleROI(self, displayIndex: int = None) ->np.ndarray:
-        """
+    def selectRectangleROI(self, displayIndex: int = None) -> np.ndarray:
+        """ Allow the user to draw a rectangular ROI on an image of the acquisition.
+
         Args:
-            displayIndex (int): is used to display a particular z-slice for mask drawing. If None then the mean along Z is displayed. Returns an array of vertices of the rectangle."""
+            displayIndex (int): is used to display a particular z-slice for mask drawing. If None then the mean along Z is displayed. Returns an array of vertices of the rectangle.
+
+        Returns:
+            np.ndarray: An array of the 4 XY vertices of the rectangle.
+        """
         verts = [None]
 
         if displayIndex is None:
@@ -126,7 +137,16 @@ class ICBase:
             fig.canvas.flush_events()
         return np.array(verts[0])
 
-    def selectPointROI(self, side: int = 3, displayIndex: int = None):
+    def selectPointROI(self, side: int = 3, displayIndex: Optional[int] = None):
+        """ Allow the user to select a single point on an image of the acquisition.
+
+        Args:
+            side (int): The length (in pixels) of the sides of the square that is used for selection.
+            displayIndex (Optional[int]): The z-slice of the 3d array which should be displayed
+
+        Returns:
+            np.ndarray: An array of the 4 XY vertices of the square.
+        """
         verts = [None]
         if displayIndex is None:
            displayIndex = self.data.shape[2]//2
@@ -136,7 +156,7 @@ class ICBase:
         def select(Verts, handles):
             verts[0] = Verts
         axMan = AxManager(ax)
-        sel = PointSelector(axMan, onselect=select, side=side)
+        sel = PointSelector(axMan, onselect=select, sideLength=side)
         sel.set_active(True)
         while plt.fignum_exists(fig.number):
             fig.canvas.flush_events()
@@ -146,7 +166,7 @@ class ICBase:
         return self.data[slic]
 
     def filterDust(self, sigma: float, pixelSize: float) -> None:
-        """
+        """Blurs the data cube in the X and Y dimensions. Often used to remove the effects of dust on a normalization.
         
         Args:
             sigma (float): This specifies the radius of the gaussian filter used for blurring. The units of the value are determined by `pixelSize`
@@ -156,9 +176,11 @@ class ICBase:
             self.data[:, :, i] = sp.ndimage.filters.gaussian_filter(self.data[:, :, i], sigma, mode='reflect')
 
     def _indicesMatch(self, other: 'ICBase') -> bool:
+        """This check is performed before allowing many arithmetic operations between two data cubes. Makes sure that the Z-axis of the two cubes match."""
         return self._index == other._index
 
     def selIndex(self, start, stop) -> ICBase:
+
         wv = np.array(self.index)
         iStart = np.argmin(np.abs(wv - start))
         iStop = np.argmin(np.abs(wv - stop))

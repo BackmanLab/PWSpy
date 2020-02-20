@@ -5,15 +5,15 @@ from glob import glob
 from typing import List, Any, Dict
 import json
 
-from PyQt5.QtWidgets import QDialog, QWidget
+from PyQt5.QtWidgets import QWidget
 
-from pwspy.dataTypes import ImCube, CameraCorrection, ExtraReflectanceCube, AcqDir
+from pwspy.dataTypes import ImCube, CameraCorrection, AcqDir
 from pwspy.apps.ExtraReflectanceCreator.widgets.dialog import IndexInfoForm
 from pwspy.dataTypes import ICMetaData
 from pwspy.dataTypes import Roi
 from pwspy.moduleConsts import dateTimeFormat, Material
 from pwspy.utility.fileIO import loadAndProcess
-import pwspy.apps.ExtraReflectanceCreator.extraReflectance  as er
+import pwspy.utility.reflection.extraReflectance  as er
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -62,7 +62,9 @@ def _processIm(im: ImCube, args) -> ImCube:
         im.filterDust(6, pixelSize=1) #Do the filtering in units of pixels if no auto pixelsize was found
     return im
 
+
 class ERWorkFlow:
+    """This class serves as an adapter between the complication operations available in the pwspy.utility.relfection.extraReflectance module and the UI of the ERCreator app."""
     def __init__(self, workingDir: str, homeDir: str):
         self.cubes = self.fileStruct = self.df = self.cameraCorrection = self.currDir = self.plotnds = self.anims = None
         self.figs = []

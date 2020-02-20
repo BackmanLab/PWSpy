@@ -11,7 +11,7 @@ from time import time
 from typing import Union, Optional, List, Tuple
 import pandas as pd
 import psutil
-from pwspy.dataTypes import ICMetaData, MetaDataBase
+from pwspy.dataTypes import ICMetaData, MetaDataBase, AcqDir
 
 '''Local Functions'''
 
@@ -19,7 +19,7 @@ from pwspy.dataTypes import ICMetaData, MetaDataBase
 def _load(loadHandle: Union[str, MetaDataBase], lock: mp.Lock):
     md: MetaDataBase
     if isinstance(loadHandle, str):
-        md = ICMetaData.loadAny(loadHandle, lock=lock)  # In the case that we just have a string to work with, we assume that we are loading a PWS file and not any other type such as dynamics.
+        md = AcqDir(loadHandle).pws # In the case that we just have a string to work with, we assume that we are loading a PWS file and not any other type such as dynamics.
     elif isinstance(loadHandle, MetaDataBase):
         md = loadHandle
     else:

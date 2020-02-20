@@ -4,14 +4,15 @@ Created on Tue Nov 20 13:13:34 2018
 
 @author: Nick Anthony
 
-This functionality has now been replaced in the ExtraREflectanceCreator application. This is just an example script.
+This functionality has now been replaced in the ERCreator application. This is just an example script.
+This script is now outdated and will not work. See the `generateExtraReflectance` example for a more up to date example.
 """
 
 
 from pwspy.dataTypes import CameraCorrection
 from pwspy.utility.fileIO import loadAndProcess
 from pwspy.utility.reflection import reflectanceHelper
-import pwspy.apps.ExtraReflectanceCreator.extraReflectance as er
+import pwspy.utility.reflection.extraReflectance as er
 from glob import glob
 import matplotlib.pyplot as plt
 import os

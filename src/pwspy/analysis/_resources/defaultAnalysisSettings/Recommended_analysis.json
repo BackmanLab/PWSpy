@@ -9,4 +9,4 @@
   "autoCorrStopIndex": 7,
   "autoCorrMinSub": true,
   "numericalAperture": 0.52,
-  "relativeUnits": false}
+  "relativeUnits": true}

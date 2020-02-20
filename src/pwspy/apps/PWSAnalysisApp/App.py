@@ -66,11 +66,11 @@ class PWSApp(QApplication):
             os.mkdir(applicationVars.dataDirectory)
         if not os.path.exists(applicationVars.analysisSettingsDirectory):
             os.mkdir(applicationVars.analysisSettingsDirectory)
-            settingsFiles = glob(os.path.join(defaultSettingsPath, '*.json'))
-            if len(settingsFiles) == 0:
-                print("Warning: Could not find any analysis settings presets.")
-            for f in settingsFiles:
-                shutil.copyfile(f, os.path.join(applicationVars.analysisSettingsDirectory, os.path.split(f)[-1]))
+        settingsFiles = glob(os.path.join(defaultSettingsPath, '*.json'))
+        if len(settingsFiles) == 0:
+            raise Exception("Warning: Could not find any analysis settings presets.")
+        for f in settingsFiles:
+            shutil.copyfile(f, os.path.join(applicationVars.analysisSettingsDirectory, os.path.split(f)[-1]))
         if not os.path.exists(applicationVars.extraReflectionDirectory):
             os.mkdir(applicationVars.extraReflectionDirectory)
             with open('readme.txt', 'w') as f:

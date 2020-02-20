@@ -115,10 +115,6 @@ class DynamicsAnalysis(AbstractAnalysis):
         Slope = np.reshape(Slope, (origShape[0], origShape[1])) # Reshape back to a 2d image
         return Slope
 
-
-
-
-
     def copySharedDataToSharedMemory(self):
         refdata = RawArray('f', self.refAc.size)
         refdata = np.frombuffer(refdata, dtype=np.float32).reshape(self.refAc.shape)
