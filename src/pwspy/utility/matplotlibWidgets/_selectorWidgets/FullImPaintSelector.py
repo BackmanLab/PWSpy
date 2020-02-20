@@ -72,7 +72,7 @@ class AdaptivePaintDialog(QDialog):
         super().__init__(parent=parent)
         self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.WindowTitleHint | QtCore.Qt.CustomizeWindowHint) #Get rid of the close button. this is handled by the selector widget active status
         self.parentSelector = parentSelector
-        self.setWindowTitle("Adapter Painter")
+        self.setWindowTitle("Adaptive Painter")
 
         self.stale = True #This tells us whether we can load regions from the cache or need to recalculate
         self.cachedRegions = None
