@@ -9,20 +9,17 @@ from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.widgets import 
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.roiPlot import RoiPlot
 
 
-class AnalysisViewer(AnalysisPlotter, QWidget):
+class AnalysisViewer(AnalysisPlotter, RoiPlot):
     """This class is a window that provides convenient viewing of a pws acquisition, analysis, and related images.
     It expands upon the functionality of `BigPlot` which handles ROIs but not analysis images."""
     def __init__(self, metadata: AcqDir, analysisLoader: ConglomerateAnalysisResults, title: str, parent=None,
                  initialField=AnalysisPlotter.PlotFields.Thumbnail):
-        QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
+        RoiPlot.__init__(self, metadata, metadata.getThumbnail(), 'title', parent=parent)
         AnalysisPlotter.__init__(self, metadata, analysisLoader)
         self.setWindowTitle(title)
-        self.plotWidg = RoiPlot(metadata, metadata.getThumbnail(), 'title')
         self.analysisCombo = QComboBox(self)
         self._populateFields()
-        l = self.plotWidg.layout()
-        l.itemAt(0).insertWidget(0, self.analysisCombo)
-        self.setLayout(l)
+        self.layout().itemAt(0).insertWidget(0, self.analysisCombo)
         self.changeData(initialField)
         self.show()
 
@@ -67,8 +64,8 @@ class AnalysisViewer(AnalysisPlotter, QWidget):
         super().changeData(field)
         if self.analysisCombo.currentText() != field.name:
             self.analysisCombo.setCurrentText(field.name)
-        self.plotWidg.setImageData(self.data)
-        self.plotWidg.setSaturation()
+        self.setImageData(self.data)
+        self.setSaturation()
 
     def setMetadata(self, md: AcqDir, analysis: Optional[ConglomerateAnalysisResults] = None):
         """Change this widget to display data for a different acquisition and optionally an analysis."""
@@ -77,7 +74,7 @@ class AnalysisViewer(AnalysisPlotter, QWidget):
         except ValueError:  # Trying to set new metadata may result in an error if the new analysis/metadata can't plot the currently set analysisField
             self.changeData(self.PlotFields.Thumbnail)  # revert back to thumbnail which should always be possible
             super().setMetadata(md, analysis)
-        self.plotWidg.setMetadata(md)
+        self.setRoiPlotMetadata(md)
         self._populateFields()
 
 if __name__ == '__main__':

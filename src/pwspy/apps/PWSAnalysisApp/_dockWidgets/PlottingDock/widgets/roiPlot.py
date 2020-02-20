@@ -6,8 +6,11 @@ import matplotlib
 import numpy as np
 from PyQt5.QtGui import QCursor, QValidator
 from PyQt5.QtWidgets import QMenu, QAction, QComboBox, QLabel, QPushButton, QHBoxLayout, QDialog, QWidget, QSlider, QGridLayout, QSpinBox, QDoubleSpinBox, \
-    QMessageBox
+    QMessageBox, QVBoxLayout
 from PyQt5 import QtCore
+from matplotlib.backend_bases import NavigationToolbar2
+from matplotlib.backends.backend_qt5 import NavigationToolbar2QT
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.bigPlot import BigPlot
 from pwspy.dataTypes import Roi, AcqDir
@@ -33,7 +36,7 @@ class RoiPlot(BigPlot):
         layout.addWidget(self.exportButton)
         self.layout().insertLayout(0, layout)
 
-        self.setMetadata(acqDir)
+        self.setRoiPlotMetadata(acqDir)
 
         self.annot = self.ax.annotate("", xy=(0, 0), xytext=(20, 20), textcoords="offset points",
                             bbox=dict(boxstyle="round", fc="w"),
@@ -43,7 +46,7 @@ class RoiPlot(BigPlot):
         self.enableHoverAnnotation(True)
 
 
-    def setMetadata(self, metadata: AcqDir):
+    def setRoiPlotMetadata(self, metadata: AcqDir):
         """Refresh the ROIs based on a new metadata. Also needs to be provided with the data for the image to display."""
         self.metadata = metadata
         self.clearRois()
@@ -147,12 +150,12 @@ class RoiPlot(BigPlot):
         def showSinCityDlg():
             dlg = SinCityDlg(self, self)
             dlg.show()
-            # dlg.exec()
         menu = QMenu("Export Menu")
         act = QAction("Sin City Style")
         act.triggered.connect(showSinCityDlg)
         menu.addAction(act)
         menu.exec(self.mapToGlobal(self.exportButton.pos()))
+
 
 class WhiteSpaceValidator(QValidator):
     stateChanged = QtCore.pyqtSignal(QValidator.State)
@@ -171,6 +174,7 @@ class WhiteSpaceValidator(QValidator):
     def fixup(self, a0: str) -> str:
         return a0.strip()
 
+
 class SinCityDlg(QDialog):
     def __init__(self, parentRoiPlot: RoiPlot, parent: QWidget = None):
         super().__init__(parent=parent)
@@ -182,6 +186,12 @@ class SinCityDlg(QDialog):
         self.cachedImage = None
 
         self.fig, self.ax = matplotlib.pyplot.subplots()
+        c = FigureCanvasQTAgg(self.fig)
+        self.plotWidg = QWidget(self)
+        self.plotWidg.setLayout(QVBoxLayout())
+        self.plotWidg.layout().addWidget(c)
+        self.plotWidg.layout().addWidget(NavigationToolbar2QT(c, self))
+
         self.ax.xaxis.set_visible(False)
         self.ax.yaxis.set_visible(False)
         self.im = self.ax.imshow(self.parentRoiPlot.data)
@@ -273,13 +283,12 @@ class SinCityDlg(QDialog):
         l.addWidget(QLabel("Scale Bar", self), 5, 0)
         l.addWidget(self.scaleBar, 5, 1)
         l.addWidget(self.refreshButton, 6, 0)
-        self.setLayout(l)
+        layout = QHBoxLayout()
+        layout.addLayout(l)
+        layout.addWidget(self.plotWidg)
+        self.setLayout(layout)
 
         self.paint()
-
-    def show(self):
-        self.fig.show()
-        super().show()
 
     def paint(self):
         """Refresh the recommended regions. If stale is false then just repaint the cached regions without recalculating."""
