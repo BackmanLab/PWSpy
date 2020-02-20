@@ -5,13 +5,14 @@ import matplotlib.pyplot as plt
 import matplotlib
 
 
-def roiColor(data, rois: List[Roi], vmin, vmax, scale_bg, exponent=1, numScaleBarPix=0):
+def roiColor(data, rois: List[Roi], vmin, vmax, scale_bg, hue=0, exponent=1, numScaleBarPix=0):
     """Given a 2D image of data this funciton will scale the data, apply an exponential curve, and color the ROI regions with Hue.
     Args:
         data (np.ndarray): an MxN array of data to be imaged
         rois (List[Roi]): a list of Roi objects. the regions inside a roi will be colored.
         vmin (float): the minimum value in the data that will be set to black
         vmax (float): the maximum value in the data that will be set to white
+        hue (float): A value of 0-1 indicating the hue of the colored regions.
         exponent (float): The exponent used to curve the color map for more pleasing results.
         numScaleBarPix (float): The length of the scale bar in number of pixels.
     Returns:
@@ -28,14 +29,11 @@ def roiColor(data, rois: List[Roi], vmin, vmax, scale_bg, exponent=1, numScaleBa
     data = data ** exponent
     data = data * 1 / ((vmax - vmin) ** exponent) # normalize image so maximum value is 1
 
-    hue = 0
-
     # make the nucs red and everything else gray scale
     hsv = np.ones((data.shape[0], data.shape[1], 3))
     hsv[:,:,2] = data * scale_bg
     hsv[:,:,0] = hue
     hsv[:,:,1][~mask] = 0
-    # out[:,:,0] = out[:,:,0] + (mask * data)
     out = matplotlib.colors.hsv_to_rgb(hsv)
 
     if (numScaleBarPix > 0):
