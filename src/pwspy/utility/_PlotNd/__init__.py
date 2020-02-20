@@ -1,26 +1,72 @@
 from typing import Tuple, List
 
-from PyQt5 import QtCore
-from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QPushButton, QDialog, QSpinBox, QLabel
+from PyQt5 import QtCore, QtGui
+from PyQt5.QtCore import QSizeF, QTimer
+from PyQt5.QtGui import QPen
+from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QPushButton, QDialog, QSpinBox, QLabel, QGraphicsView, \
+    QGraphicsScene, QGroupBox, QVBoxLayout, QCheckBox, QButtonGroup
+from matplotlib import pyplot
 from matplotlib.animation import FuncAnimation
+
 from pwspy.apps.sharedWidgets.rangeSlider import QRangeSlider
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT
+
 from pwspy.utility._PlotNd._plots import ImPlot, SidePlot
 import numpy as np
 from pwspy.utility._PlotNd._plots import CBar
 from pwspy.utility._PlotNd._canvas import PlotNdCanvas
+from pwspy.utility.matplotlibWidgets import LassoSelector, PointSelector, AdjustableSelector
 
 
-class PlotNd(QDialog): #TODO add button to save animation, Docstring
+class MyView(QGraphicsView):
+    def __init__(self, plot: PlotNdCanvas):
+        super().__init__()
+        scene = QGraphicsScene(self)
+        scene.addWidget(plot)
+        self.plot = plot
+        self.setScene(scene)
+        # self.resize(1024, 1024)
+        # self.resizeEvent(QResizeEvent(self.size(),self.size()))
+        self.debounce = QTimer()
+        self.debounce.setSingleShot(True)
+        self.debounce.setInterval(50)
+        self.debounce.timeout.connect(self.resizePlot)
+
+    def resizePlot(self):
+        w,h = self.size().width(), self.size().height()
+        r = self.scene().sceneRect()
+        s = min([w,h])
+        r.setSize(QSizeF(s,s))
+        self.plot.resize(s,s)
+        self.scene().setSceneRect(r)
+
+    def resizeEvent(self, event: QtGui.QResizeEvent) -> None:
+        self.debounce.start()
+        super().resizeEvent(event)
+
+        # self.fitInView(self.scene().sceneRect(), QtCore.Qt.KeepAspectRatio) $This was orignally all that was needed but the resolution of the plot wasn't right which caused render issues.
+
+
+    def drawBackground(self, painter: QtGui.QPainter, rect: QtCore.QRectF) -> None:
+        #Draw border around the scene for debug purposes
+        # painter.save()
+        # painter.setPen(QPen(QtCore.Qt.darkGray, 5))
+        # painter.drawRect(self.scene().sceneRect())
+        # painter.restore()
+        super().drawBackground(painter, rect)
+
+
+class PlotNd(QWidget): #TODO add button to save animation, Docstring
     def __init__(self, data: np.ndarray, names: Tuple[str, ...] = ('y', 'x', 'lambda'),
                  initialCoords: Tuple[int, ...] = None, title: str = '', parent: QWidget = None,
                  extraDimIndices: List[np.ndarray] = None):
         super().__init__(parent=parent)
-        title = str(title) #Convert to string just in case
-        self.setWindowTitle(title)
+
+
+        self.setWindowTitle(str(title))  # Convert to string just in case
 
         self.canvas = PlotNdCanvas(data, names, initialCoords, extraDimIndices)
-
+        self.view = MyView(self.canvas)
         self.slider = QRangeSlider(self)
         self.slider.setMaximumHeight(20)
         self.slider.setMax(np.nanmax(data))
@@ -30,32 +76,50 @@ class PlotNd(QDialog): #TODO add button to save animation, Docstring
         self.slider.startValueChanged.connect(self._updateLimits)
         self.slider.endValueChanged.connect(self._updateLimits)
 
-        self.resizeButton = QPushButton("Resize")
-        self.resizeButton.released.connect(self._resizeDlg)
+        self._lastButton = None
+        self.selector = AdjustableSelector(self.canvas.image.ax, self.canvas.image.im, LassoSelector, onfinished=self.selectorFinished)
 
+        self.buttonWidget = QGroupBox("buttons", self)
+        self.buttonWidget.setLayout(QVBoxLayout())
+        check = QCheckBox("Cursor Active")
+        self.buttonWidget.layout().addWidget(check)
+        check.setChecked(self.canvas.spectraViewActive) #Get the right initial value
+        check.stateChanged.connect(lambda state: self.canvas.setSpectraViewActive(state!=0))
+
+        self.buttonGroup = QButtonGroup()
+        self.pointButton = QPushButton("Point")
+        self.buttonGroup.addButton(self.pointButton)
+        self.buttonWidget.layout().addWidget(self.pointButton)
+
+        self.lassoButton = QPushButton("Lasso")
+        self.buttonGroup.addButton(self.lassoButton)
+        self.buttonWidget.layout().addWidget(self.lassoButton)
+
+        self.noneButton = QPushButton("None")
+        self.buttonGroup.addButton(self.noneButton)
+        self.buttonWidget.layout().addWidget(self.noneButton)
+
+        for b in self.buttonGroup.buttons():
+            b.setCheckable(True)
+        self.buttonGroup.buttonReleased.connect(self.handleButtons)
+
+        self.arWidget = QWidget(self)#AspectRatioWidget(1, self)#AspectRatioWidget(1, self)
         layout = QGridLayout()
-        layout.addWidget(self.canvas, 0, 0, 8, 8)
+        layout.addWidget(self.view, 0, 0, 8, 8)
+        layout.addWidget(self.buttonWidget, 0, 8, 8, 1)
         layout.addWidget(NavigationToolbar2QT(self.canvas, self), 10, 0, 1, 8)
         layout.setRowStretch(0, 1)
         layout.addWidget(self.slider, 8, 0, 1, 7)
-        layout.addWidget(self.resizeButton, 8, 7, 1, 1)
-        self.setLayout(layout)
+        self.arWidget.setLayout(layout)
+        self.setLayout(QGridLayout())
+        self.layout().addWidget(self.arWidget)
 
         self.show()
-        self.setFixedSize(self.size())
         self.ar = self.height() / self.width()
 
     def _updateLimits(self):
         self.canvas.updateLimits(self.slider.end(), self.slider.start())
 
-    def _resizeDlg(self):
-        dlg = ResizeDlg(self, self.height())
-        dlg.exec()
-        if dlg.result() == QDialog.Accepted:
-            size = dlg.sizeValue
-            print(size)
-            self.setFixedHeight(size)
-            self.setFixedWidth(int(size / self.ar))
 
     def getAnimation(self, interval: int = 50):
         def f(self: PlotNdCanvas, z: int):
@@ -65,29 +129,30 @@ class PlotNd(QDialog): #TODO add button to save animation, Docstring
         ani = FuncAnimation(self.canvas.fig, lambda z: f(self.canvas, z), frames=list(range(self.canvas.data.shape[2])), blit=False, interval=interval)
         return ani
 
+    def handleButtons(self, button):
 
-class ResizeDlg(QDialog):
-    def __init__(self, parent: QWidget, initialSize: int):
-        super().__init__(parent, flags=QtCore.Qt.FramelessWindowHint)
-        self.setWindowTitle("Set Size")
-        self.okButton = QPushButton("Ok")
-        self.okButton.released.connect(self.accept)
-        self.sizeBox = QSpinBox(self)
-        self.sizeBox.setMaximum(3000)
-        self.sizeBox.setMinimum(200)
-        self.sizeBox.setValue(initialSize)
+        if button is self.pointButton and button is not self._lastButton:
+            print("Poin")
+            self.selector.setSelector(PointSelector)
+            self.selector.setActive(True)
+        if button is self.lassoButton and button is not self._lastButton:
+            self.selector.setSelector(LassoSelector)
+            self.selector.setActive(True)
+        if button is self.noneButton and button is not self._lastButton:
+            self.selector.setActive(False)
 
-        layout = QGridLayout()
-        layout.addWidget(QLabel("Pixels: "), 0, 0, 1, 1)
-        layout.addWidget(self.sizeBox, 0, 1, 1, 1)
-        layout.addWidget(self.okButton, 1, 0, 1, 2)
-        self.setLayout(layout)
+        self._lastButton = button
 
-        self.sizeValue = initialSize
+    def selectorFinished(self, verts: np.ndarray):
+        from pwspy.dataTypes import Roi
 
-    def accept(self) -> None:
-        self.sizeValue = self.sizeBox.value()
-        super().accept()
+        roi = Roi.fromVerts('nomatter', 0, np.array(verts), self.canvas.data.shape[:2])
+        selected = self.canvas.data[roi.mask]
+        spec = selected.mean(axis=0)
+        fig, ax = pyplot.subplots()
+        ax.plot(spec)
+        fig.show()
+        self.selector.setActive(True)
 
 if __name__ == '__main__':
     import sys
@@ -97,8 +162,8 @@ if __name__ == '__main__':
     z = np.linspace(0, 1, num=101)
     t = np.linspace(0, 1, num=3)
     X, Y, Z, T = np.meshgrid(x, y, z, t)
-    arr = np.sin(2 * np.pi * 4 * Z) + .5 * X
+    arr = np.sin(2 * np.pi * 4 * Z) + .5 * X + np.cos(2*np.pi*4*Y)
     app = QApplication(sys.argv)
-    p = PlotNd(arr, names=('y', 'x', 'z', 't'), extraDimIndices=[z,t])
+    p = PlotNd(arr[:,:,:,0], names=('y', 'x', 'z'), extraDimIndices=[z])
     sys.exit(app.exec_())
 

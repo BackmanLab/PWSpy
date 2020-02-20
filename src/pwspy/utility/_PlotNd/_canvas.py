@@ -2,16 +2,27 @@ from typing import Tuple
 
 import numpy as np
 from PyQt5 import QtCore
+from PyQt5.QtCore import QSize
+from PyQt5.QtGui import QResizeEvent
+from PyQt5.QtWidgets import QWidget
 from matplotlib import pyplot as plt, gridspec
+from matplotlib.backend_bases import ResizeEvent
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from ._plots import ImPlot, SidePlot, CBar
 
+#class SpecSel
+
+def ifactive(func):
+    def newfunc(self, event):
+        if self.spectraViewActive:
+            return func(self, event)
+    return newfunc
 
 class PlotNdCanvas(FigureCanvasQTAgg):
     def __init__(self, data: np.ndarray, names: Tuple[str, ...] = ('y', 'x', 'lambda'),
                  initialCoords: Tuple[int, ...] = None, extraDimIndices=None):
         assert len(names) == len(data.shape)
-        fig = plt.Figure(figsize=(6, 6))
+        fig = plt.Figure(figsize=(6, 6), tight_layout=True)
         self.fig = fig
         super().__init__(self.fig)
 
@@ -22,27 +33,28 @@ class PlotNdCanvas(FigureCanvasQTAgg):
         extraDims = len(data.shape[2:])  # the first two axes are the image dimensions. Any axes after that are extra dimensions that can be scanned through
 
         h, w = data.shape[:2]
-        gs = gridspec.GridSpec(3, 2 + extraDims + 1, hspace=0,
-                               width_ratios=[w * .2 / (extraDims + 1)] * (extraDims + 1) + [w, w * .2],
-                               height_ratios=[h * .1, h, h * .2], wspace=0)
-        ax: plt.Axes = fig.add_subplot(gs[1, extraDims + 1])
+        gs = gridspec.GridSpec(3, 2 + extraDims, hspace=0,
+                               width_ratios=[.2 / (extraDims)] * extraDims + [1, .2],
+                               height_ratios=[.1, 1, .2], wspace=0)
+
+        ax: plt.Axes = fig.add_subplot(gs[1, extraDims])
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
         self.image = ImPlot(ax, data.shape[:2], (0, 1))
 
-        ax: plt.Axes = fig.add_subplot(gs[1, extraDims + 2], sharey=self.image.ax)
+        ax: plt.Axes = fig.add_subplot(gs[1, extraDims + 1], sharey=self.image.ax)
         ax.set_title(names[0])
         ax.yaxis.set_ticks_position('right')
         ax.get_xaxis().set_visible(False)
         self.spY = SidePlot(ax, data.shape[0], True, 0)
 
-        ax: plt.Axes = fig.add_subplot(gs[2, extraDims + 1], sharex=self.image.ax)
+        ax: plt.Axes = fig.add_subplot(gs[2, extraDims], sharex=self.image.ax)
         ax.set_xlabel(names[1])
+        ax.xaxis.set_label_coords(.5, .95)
         ax.get_yaxis().set_visible(False)
         self.spX = SidePlot(ax, data.shape[1], False, 1)
-        self.spX.ax.set_xlabel(self.names[1])
 
-        ax: plt.Axes = fig.add_subplot(gs[0, extraDims + 1])
+        ax: plt.Axes = fig.add_subplot(gs[0, extraDims])
         self.cbar = CBar(ax, self.image.im)
 
         extra = [fig.add_subplot(gs[1, i]) for i in range(extraDims)]
@@ -65,13 +77,17 @@ class PlotNdCanvas(FigureCanvasQTAgg):
         self.resetColor()
         self.coords = tuple(i // 2 for i in data.shape) if initialCoords is None else initialCoords
 
+        self.spectraViewActive = True
         self.mpl_connect('button_press_event', self.onclick)
         self.mpl_connect('motion_notify_event', self.ondrag)
         self.mpl_connect('scroll_event', self.onscroll)
         self.mpl_connect('draw_event', self._updateBackground)
-        plt.tight_layout()
         self.updatePlots(blit=False)
 
+    def setSpectraViewActive(self, active: bool):
+        self.spectraViewActive = active
+        if not active:
+            self.draw() #This will clear the spectraviewer related crosshairs and plots.
 
     def _updateBackground(self, event):
         for artistManager in self.artistManagers:
@@ -118,13 +134,18 @@ class PlotNdCanvas(FigureCanvasQTAgg):
         Min = np.percentile(self.data[np.logical_not(np.isnan(self.data))], 0.01)
         self.updateLimits(Max, Min)
 
+    @ifactive
     def onscroll(self, event):
         if (event.button == 'up') or (event.button == 'down'):
             step = int(4 * event.step)
-            plot = [plot for plot in self.artistManagers if plot.ax == event.inaxes][0]
+            try:
+                plot = [plot for plot in self.artistManagers if plot.ax == event.inaxes][0]
+            except IndexError: # No plot is being moused over
+                return
             self.coords = tuple((c + step) % self.data.shape[plot.dimensions[0]] if i in plot.dimensions else c for i, c in enumerate(self.coords))
             self.updatePlots()
 
+    @ifactive
     def onclick(self, event):
         if event.inaxes is None:
             return
@@ -154,6 +175,7 @@ class PlotNdCanvas(FigureCanvasQTAgg):
             self.coords = self.coords[:2 + idx] + (int(ycoord),) + self.coords[3 + idx:]
         self.updatePlots()
 
+    @ifactive
     def ondrag(self, event):
         if event.inaxes is None:
             return
