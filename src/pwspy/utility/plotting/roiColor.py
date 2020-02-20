@@ -12,6 +12,7 @@ def roiColor(data, rois: List[Roi], vmin, vmax, scale_bg, hue=0, exponent=1, num
         rois (List[Roi]): a list of Roi objects. the regions inside a roi will be colored.
         vmin (float): the minimum value in the data that will be set to black
         vmax (float): the maximum value in the data that will be set to white
+        scale_bg (float): Scales the brightness of the background (non-roi) region.
         hue (float): A value of 0-1 indicating the hue of the colored regions.
         exponent (float): The exponent used to curve the color map for more pleasing results.
         numScaleBarPix (float): The length of the scale bar in number of pixels.
@@ -31,7 +32,8 @@ def roiColor(data, rois: List[Roi], vmin, vmax, scale_bg, hue=0, exponent=1, num
 
     # make the nucs red and everything else gray scale
     hsv = np.ones((data.shape[0], data.shape[1], 3))
-    hsv[:,:,2] = data * scale_bg
+    hsv[:,:,2] = data
+    hsv[:,:,2][~mask] *= scale_bg
     hsv[:,:,0] = hue
     hsv[:,:,1][~mask] = 0
     out = matplotlib.colors.hsv_to_rgb(hsv)

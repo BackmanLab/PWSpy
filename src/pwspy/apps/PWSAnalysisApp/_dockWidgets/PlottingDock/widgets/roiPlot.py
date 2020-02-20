@@ -1,20 +1,24 @@
 import os
 import traceback
 import re
+
+import matplotlib
 import numpy as np
 from PyQt5.QtGui import QCursor, QValidator
-from PyQt5.QtWidgets import QMenu, QAction, QComboBox, QLabel, QPushButton, QHBoxLayout, QDialog, QWidget, QSlider
+from PyQt5.QtWidgets import QMenu, QAction, QComboBox, QLabel, QPushButton, QHBoxLayout, QDialog, QWidget, QSlider, QGridLayout, QSpinBox, QDoubleSpinBox, \
+    QMessageBox
 from PyQt5 import QtCore
 
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.bigPlot import BigPlot
 from pwspy.dataTypes import Roi, AcqDir
+from pwspy.utility.plotting.roiColor import roiColor
 
 
 class RoiPlot(BigPlot):
     """Adds handling for ROIs to the BigPlot class. It might be smarter to encapsulate Bigplot rather than inherit"""
     def __init__(self, acqDir: AcqDir, data: np.ndarray, title: str, parent=None):
         super().__init__(data, title, parent)
-        self._rois = []
+        self.rois = []  # Contains tuples in the form (roi, overlay, poly)
 
         self.roiFilter = QComboBox(self)
         self.roiFilter.setEditable(True)
@@ -72,7 +76,7 @@ class RoiPlot(BigPlot):
 
         vis = self.annot.get_visible()
         if event.inaxes == self.ax:
-            for roi, overlay, poly in self._rois:
+            for roi, overlay, poly in self.rois:
                 contained, _ = poly.contains(event)
                 if contained:
                     if not vis:
@@ -91,12 +95,10 @@ class RoiPlot(BigPlot):
             popMenu.addAction(delAction)
 
             cursor = QCursor()
-            # self.connect(self.figure_canvas, SIGNAL("clicked()"), self.context_menu)
-            # self.popMenu.exec_(self.mapToGlobal(event.globalPos()))
             popMenu.popup(cursor.pos())
 
     def deleteRoiFromPolygon(self, artist):
-        for roi, overlay, poly in self._rois:
+        for roi, overlay, poly in self.rois:
             if artist is poly:
                 roi.deleteRoi(os.path.split(roi.filePath)[0], roi.name, roi.number)
         self.showRois()
@@ -121,29 +123,31 @@ class RoiPlot(BigPlot):
         self.canvas.draw_idle()
 
     def clearRois(self):
-        for roi, overlay, poly in self._rois:
+        for roi, overlay, poly in self.rois:
             if overlay is not None:
                 overlay.remove()
             poly.remove()
-        self._rois = []
+        self.rois = []
 
     def addRoi(self, roi: Roi):
         if roi.verts is not None:
             poly = roi.getBoundingPolygon()
             poly.set_picker(0)  # allow the polygon to trigger a pickevent
             self.ax.add_patch(poly)
-            self._rois.append((roi, None, poly))
+            self.rois.append((roi, None, poly))
         else:  # In the case of old ROI files where the vertices of the outline are not available we have to back-calculate the polygon which does not look good. We make this polygon invisible so it is only used for click detection. we then display an image of the binary mask array.
             overlay = roi.getImage(self.ax) # an image showing the exact shape of the ROI
             poly = roi.getBoundingPolygon() # A polygon used for mouse event handling
             poly.set_visible(False)#poly.set_facecolor((0,0,0,0)) # Make polygon invisible
             poly.set_picker(0) # allow the polygon to trigger a pickevent
             self.ax.add_patch(poly)
-            self._rois.append((roi, overlay, poly))
+            self.rois.append((roi, overlay, poly))
 
     def _exportAction(self):
         def showSinCityDlg():
-
+            dlg = SinCityDlg(self, self)
+            dlg.show()
+            # dlg.exec()
         menu = QMenu("Export Menu")
         act = QAction("Sin City Style")
         act.triggered.connect(showSinCityDlg)
@@ -168,103 +172,84 @@ class WhiteSpaceValidator(QValidator):
         return a0.strip()
 
 class SinCityDlg(QDialog):
-    def __init__(self, parent: QWidget = None):
+    def __init__(self, parentRoiPlot: RoiPlot, parent: QWidget = None):
         super().__init__(parent=parent)
-        self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.WindowTitleHint | QtCore.Qt.CustomizeWindowHint)  # Get rid of the close button. this is handled by the selector widget active status
+        # self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.WindowTitleHint | QtCore.Qt.CustomizeWindowHint)  # Get rid of the close button. this is handled by the selector widget active status
         self.setWindowTitle("Sin City Image Export")
+        self.setModal(False)
 
+        self.parentRoiPlot = parentRoiPlot
         self.cachedImage = None
+
+        self.fig, self.ax = matplotlib.pyplot.subplots()
+        self.ax.xaxis.set_visible(False)
+        self.ax.yaxis.set_visible(False)
+        self.im = self.ax.imshow(self.parentRoiPlot.data)
 
         self._paintDebounce = QtCore.QTimer()  # This timer prevents the selectionChanged signal from firing too rapidly.
         self._paintDebounce.setInterval(200)
         self._paintDebounce.setSingleShot(True)
         self._paintDebounce.timeout.connect(self.paint)
 
-        self.adptRangeSlider = QSlider(QtCore.Qt.Horizontal, self)
-        self.adptRangeSlider.setToolTip("The image is adaptively thresholded by comparing each pixel value to the average pixel value of gaussian window around the pixel. This value determines how large the area that is averaged will be. Lower values cause the threshold to adapt more quickly.")
-        maxImSize = max(parentSelector.image.get_array().shape)
-        self.adptRangeSlider.setMaximum(
-            maxImSize // 2 * 2 + 1)  # This must be an odd value or else its possible to set the slider to an even value. Opencv doesn't like that.
-        self.adptRangeSlider.setMinimum(3)
-        self.adptRangeSlider.setSingleStep(2)
-        self.adptRangeSlider.setValue(551)
-        self.adpRangeDisp = QLabel(str(self.adptRangeSlider.value()), self)
-
-        def adptRangeChanged(val):
+        self.vmin = QDoubleSpinBox(self)
+        self.vmin.setValue(0)
+        self.vmin.setDecimals(3)
+        self.vmin.setMaximum(10000)
+        self.vmin.setSingleStep(0.001)
+        def vminChanged(val):
             self.stale = True
-            self.adpRangeDisp.setText(str(val))
-            if self.adptRangeSlider.value() % 2 == 0:
-                self.adptRangeSlider.setValue(
-                    self.adptRangeSlider.value() // 2 * 2 + 1)  # This shouldn't ever happen. but it sometimes does anyway. make sure that adptRangeSlider is an odd number
             self._paintDebounce.start()
+        self.vmin.valueChanged.connect(vminChanged)
 
-        self.adptRangeSlider.valueChanged.connect(adptRangeChanged)
-
-        self.subSlider = QSlider(QtCore.Qt.Horizontal, self)
-        self.subSlider.setMinimum(-50)
-        self.subSlider.setMaximum(50)
-        self.subSlider.setValue(-10)
-        self.subDisp = QLabel(str(self.subSlider.value()), self)
-
-        def subRangeChanged(val):
+        self.vmax = QDoubleSpinBox(self)
+        self.vmax.setValue(.1)
+        self.vmax.setDecimals(3)
+        self.vmax.setMaximum(10000)
+        self.vmax.setSingleStep(0.001)
+        def vmaxChanged(val):
             self.stale = True
-            self.subDisp.setText(str(val))
             self._paintDebounce.start()
+        self.vmax.valueChanged.connect(vmaxChanged)
 
-        self.subSlider.valueChanged.connect(subRangeChanged)
-
-        self.erodeSlider = QSlider(QtCore.Qt.Horizontal, self)
-        self.erodeSlider.setMinimum(0)
-        self.erodeSlider.setMaximum(50)
-        self.erodeSlider.setValue(10)
-        self.erodeDisp = QLabel(str(self.erodeSlider.value()), self)
-
-        def erodeChanged(val):
+        self.scaleBg = QDoubleSpinBox(self)
+        self.scaleBg.setValue(.33)
+        self.scaleBg.setMinimum(0)
+        self.scaleBg.setDecimals(2)
+        self.scaleBg.setMaximum(3)
+        self.scaleBg.setSingleStep(0.01)
+        def scaleBgChanged(val):
             self.stale = True
-            self.erodeDisp.setText(str(val))
-            self.dilateSlider.setMaximum(val)
             self._paintDebounce.start()
+        self.scaleBg.valueChanged.connect(scaleBgChanged)
 
-        self.erodeSlider.valueChanged.connect(erodeChanged)
-
-        self.dilateSlider = QSlider(QtCore.Qt.Horizontal, self)
-        self.dilateSlider.setMinimum(0)
-        self.dilateSlider.setMaximum(self.erodeSlider.value())
-        self.dilateSlider.setValue(10)
-        self.dilateDisp = QLabel(str(self.dilateSlider.value()), self)
-
-        def dilateChanged(val):
+        self.hue = QDoubleSpinBox(self)
+        self.hue.setMinimum(0)
+        self.hue.setMaximum(1)
+        self.hue.setValue(0)
+        self.hue.setSingleStep(0.05)
+        def hueRangeChanged(val):
             self.stale = True
-            self.dilateDisp.setText(str(val))
             self._paintDebounce.start()
+        self.hue.valueChanged.connect(hueRangeChanged)
 
-        self.dilateSlider.valueChanged.connect(dilateChanged)
-
-        self.simplificationSlider = QSlider(QtCore.Qt.Horizontal, self)
-        self.simplificationSlider.setMinimum(0)
-        self.simplificationSlider.setMaximum(20)
-        self.simplificationSlider.setValue(5)
-        self.simDisp = QLabel(str(self.simplificationSlider.value()), self)
-
-        def simpChanged(val):
+        self.exp = QDoubleSpinBox(self)
+        self.exp.setMinimum(0.5)
+        self.exp.setMaximum(3)
+        self.exp.setValue(1)
+        self.exp.setSingleStep(0.05)
+        def expRangeChanged(val):
             self.stale = True
-            self.simDisp.setText(str(val))
             self._paintDebounce.start()
+        self.exp.valueChanged.connect(expRangeChanged)
 
-        self.simplificationSlider.valueChanged.connect(simpChanged)
 
-        self.minAreaSlider = QSlider(QtCore.Qt.Horizontal, self)
-        self.minAreaSlider.setMinimum(5)
-        self.minAreaSlider.setMaximum(300)
-        self.minAreaSlider.setValue(100)
-        self.minAreaDisp = QLabel(str(self.minAreaSlider.value()), self)
-
-        def minAreaChanged(val):
+        self.scaleBar = QSpinBox(self)
+        self.scaleBar.setValue(0)
+        self.scaleBar.setMaximum(10000)
+        def scaleBarChanged(val):
             self.stale = True
-            self.minAreaDisp.setText(str(val))
             self._paintDebounce.start()
-
-        self.minAreaSlider.valueChanged.connect(minAreaChanged)
+        self.scaleBar.valueChanged.connect(scaleBarChanged)
 
         self.refreshButton = QPushButton("Refresh", self)
 
@@ -275,50 +260,42 @@ class SinCityDlg(QDialog):
         self.refreshButton.released.connect(refreshAction)
 
         l = QGridLayout()
-        l.addWidget(QLabel("Adaptive Range (px)", self), 0, 0)
-        l.addWidget(self.adptRangeSlider, 0, 1)
-        l.addWidget(self.adpRangeDisp, 0, 2)
-        l.addWidget(QLabel("Threshold Offset", self), 1, 0)
-        l.addWidget(self.subSlider, 1, 1)
-        l.addWidget(self.subDisp, 1, 2)
-        l.addWidget(QLabel("Erode (px)", self), 2, 0)
-        l.addWidget(self.erodeSlider, 2, 1)
-        l.addWidget(self.erodeDisp, 2, 2)
-        l.addWidget(QLabel("Dilate (px)", self), 3, 0)
-        l.addWidget(self.dilateSlider, 3, 1)
-        l.addWidget(self.dilateDisp, 3, 2)
-        l.addWidget(QLabel("Simplification", self), 4, 0)
-        l.addWidget(self.simplificationSlider, 4, 1)
-        l.addWidget(self.simDisp, 4, 2)
-        l.addWidget(QLabel("Minimum Area (px)", self), 5, 0)
-        l.addWidget(self.minAreaSlider, 5, 1)
-        l.addWidget(self.minAreaDisp, 5, 2)
+        l.addWidget(QLabel("Minimum Value", self), 0, 0)
+        l.addWidget(self.vmin, 0, 1)
+        l.addWidget(QLabel("Maximum Value", self), 1, 0)
+        l.addWidget(self.vmax, 1, 1)
+        l.addWidget(QLabel("Scale Background", self), 2, 0)
+        l.addWidget(self.scaleBg, 2, 1)
+        l.addWidget(QLabel("Hue", self), 3, 0)
+        l.addWidget(self.hue, 3, 1)
+        l.addWidget(QLabel("Exponent", self), 4, 0)
+        l.addWidget(self.exp, 4, 1)
+        l.addWidget(QLabel("Scale Bar", self), 5, 0)
+        l.addWidget(self.scaleBar, 5, 1)
         l.addWidget(self.refreshButton, 6, 0)
         self.setLayout(l)
 
+        self.paint()
+
     def show(self):
+        self.fig.show()
         super().show()
 
     def paint(self):
         """Refresh the recommended regions. If stale is false then just repaint the cached regions without recalculating."""
-        if self.parentSelector.image.get_array() is not self.cachedImage:  # The image has been changed.
-            self.cachedImage = self.parentSelector.image.get_array()
+        if self.parentRoiPlot.data is not self.cachedImage:  # The image has been changed.
+            self.cachedImage = self.parentRoiPlot.data
             self.stale = True
         if self.stale:
             try:
-                polys = segmentAdaptive(self.parentSelector.image.get_array(), minArea=self.minAreaSlider.value(), adaptiveRange=self.adptRangeSlider.value(),
-                                        thresholdOffset=self.subSlider.value(), polySimplification=self.simplificationSlider.value(),
-                                        erode=self.erodeSlider.value(), dilate=self.dilateSlider.value())
-                self.cachedRegions = polys
+                rois = [roi for roi, overlay, polygon in self.parentRoiPlot.rois]
+                data = roiColor(self.parentRoiPlot.data, rois, self.vmin.value(), self.vmax.value(), self.scaleBg.value(), hue=self.hue.value(), exponent=self.exp.value(), numScaleBarPix=self.scaleBar.value())
+                self.im.set_data(data)
+                self.fig.canvas.draw_idle()
                 self.stale = False
             except Exception as e:
-                print("Warning: adaptive segmentation failed with error: ", e)
+                msg = QMessageBox.information(self, "Error", f"Warning: Sin City export failed with error: {str(e)}")
                 return
-        else:
-            polys = self.cachedRegions
-        self.parentSelector.reset()
-        self.parentSelector.drawRois(polys)
-
 
 
 if __name__ == '__main__':
