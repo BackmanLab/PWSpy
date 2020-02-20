@@ -95,7 +95,11 @@ class PlotNd(QWidget): #TODO add button to save animation, Docstring
         self.buttonGroup.addButton(self.lassoButton)
         self.buttonWidget.layout().addWidget(self.lassoButton)
 
-        for b in [self.lassoButton, self.pointButton]:
+        self.noneButton = QPushButton("None")
+        self.buttonGroup.addButton(self.noneButton)
+        self.buttonWidget.layout().addWidget(self.noneButton)
+
+        for b in self.buttonGroup.buttons():
             b.setCheckable(True)
         self.buttonGroup.buttonReleased.connect(self.handleButtons)
 
@@ -131,9 +135,11 @@ class PlotNd(QWidget): #TODO add button to save animation, Docstring
             print("Poin")
             self.selector.setSelector(PointSelector)
             self.selector.setActive(True)
-        if button is self.lassoButton and  button is not self._lastButton:
+        if button is self.lassoButton and button is not self._lastButton:
             self.selector.setSelector(LassoSelector)
             self.selector.setActive(True)
+        if button is self.noneButton and button is not self._lastButton:
+            self.selector.setActive(False)
 
         self._lastButton = button
 
