@@ -2,9 +2,20 @@ from typing import List
 import numpy as np
 from pwspy.dataTypes import Roi, AcqDir
 import matplotlib.pyplot as plt
+import matplotlib
 
-def roiColor(data, rois: List[Roi], vmin, vmax, scale_bg, nuc_power_scale=1, scale_bar_nmperpixel=0):
 
+def roiColor(data, rois: List[Roi], vmin, vmax, scale_bg, exponent=1, numScaleBarPix=0):
+    """Given a 2D image of data this funciton will scale the data, apply an exponential curve, and color the ROI regions with Hue.
+    Args:
+        data (np.ndarray): an MxN array of data to be imaged
+        rois (List[Roi]): a list of Roi objects. the regions inside a roi will be colored.
+        vmin (float): the minimum value in the data that will be set to black
+        vmax (float): the maximum value in the data that will be set to white
+        exponent (float): The exponent used to curve the color map for more pleasing results.
+        numScaleBarPix (float): The length of the scale bar in number of pixels.
+    Returns:
+        np.ndarray: MxNx3 RGB array of the image"""
 
     mask = np.zeros(rois[0].mask.shape, dtype=np.bool)
     for roi in rois:
@@ -14,27 +25,33 @@ def roiColor(data, rois: List[Roi], vmin, vmax, scale_bg, nuc_power_scale=1, sca
     data = data - vmin
     data[data < 0] = 0
     data[data > (vmax - vmin)] = vmax - vmin
-    data = data**nuc_power_scale
-    data = data * 1 / ((vmax - vmin)**nuc_power_scale) # normalize image so maximum value is 1
+    data = data ** exponent
+    data = data * 1 / ((vmax - vmin) ** exponent) # normalize image so maximum value is 1
+
+    hue = 0
 
     # make the nucs red and everything else gray scale
-    out = np.ones((data.shape[0], data.shape[1], 3)) * data[:, :, None] * scale_bg
-    out[mask] = 0
-    out[:,:,0] = out[:,:,0] + (mask * data)
+    hsv = np.ones((data.shape[0], data.shape[1], 3))
+    hsv[:,:,2] = data * scale_bg
+    hsv[:,:,0] = hue
+    hsv[:,:,1][~mask] = 0
+    # out[:,:,0] = out[:,:,0] + (mask * data)
+    out = matplotlib.colors.hsv_to_rgb(hsv)
 
-    if (scale_bar_nmperpixel > 0):
-        out[round(out.shape[0]*.965):round(out.shape[0]*.975), round(out.shape[0]*.03):round(out.shape[0]*.03+scale_bar_nmperpixel), :] = 1
+    if (numScaleBarPix > 0):
+        out[round(out.shape[0]*.965):round(out.shape[0]*.975), round(out.shape[0]*.03):round(out.shape[0] * .03 + numScaleBarPix), :] = 1
 
-    fig, ax = plt.subplots()
-    ax.xaxis.set_visible(False)
-    ax.yaxis.set_visible(False)
-    ax.imshow(out)#, vmax=vmax, vmin=vmin)
-    fig.show()
+    return out
 
 if __name__ == "__main__":
     #TODO what is the purpose of scale_bg
     acq = AcqDir(r'G:\Aya_NAstudy\matchedNAi_largeNAc\cells\Cell3')
     an = acq.pws.loadAnalysis('p0')
     rois = [acq.loadRoi(name, num) for name, num, fformat in acq.getRois() if name=='nucleus']
-    roiColor(an.rms, rois, 0.04, .3, 1, nuc_power_scale=1.6, scale_bar_nmperpixel=100)
+    out = roiColor(an.rms, rois, 0.04, .3, 1, exponent=1.1, numScaleBarPix=100)
+    fig, ax = plt.subplots()
+    ax.xaxis.set_visible(False)
+    ax.yaxis.set_visible(False)
+    ax.imshow(out)#, vmax=vmax, vmin=vmin)
+    fig.show()
     a = 1
