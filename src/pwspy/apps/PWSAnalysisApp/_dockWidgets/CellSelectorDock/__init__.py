@@ -179,3 +179,6 @@ class CellSelectorDock(QDockWidget):
                 refitem.setHighlighted(True)
             else:
                 refitem.setHighlighted(False)
+
+    def refreshCellItems(self):
+        self.tableWidget.refreshCellItems()

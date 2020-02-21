@@ -122,3 +122,4 @@ class PWSApp(QApplication):
             QMessageBox.information(self.window, "No Cells Selected", "Please select cells to act upon.")
             return
         rc = RoiConverter(metas)
+        self.window.cellSelector.refreshCellItems()

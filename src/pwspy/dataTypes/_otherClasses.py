@@ -13,7 +13,7 @@ import typing
 import dataclasses
 from enum import Enum, auto
 from glob import glob
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 import matplotlib.pyplot as plt
 import h5py
 import numpy as np
@@ -109,9 +109,9 @@ class Roi:
 
     class FileFormats(Enum):
         """An enumerator of the different file formats that an ROI can be saved to."""
-        HDF = auto()
-        MAT = auto()
-        HDF2 = auto()
+        MAT = auto() # The oldest file format. Each ROI was saved to its own matlab .mat file as a boolean mask.
+        HDF = auto() # This was originally the default file format of this Python software. Each ROI of the same name was saved as a dataset in an HDF file. The dataset contained the boolean mask.
+        HDF2 = auto() # This is the best file format and is the current default. Each ROI of the same name is saved as an H5PY.Group in an HDF file. Each ROI group contains a dataset for the boolean mask as well as a dataset for the XY coordinates of the enclosing polygon. This saves us from having to constantly recalculate the outline of the ROI for processing purposes.
 
     def __init__(self, name: str, number: int, mask: np.ndarray, verts: np.ndarray, filePath: str = None, fileFormat: Roi.FileFormats = None):
         assert isinstance(mask, np.ndarray), f"data is a {type(mask)}"
@@ -203,18 +203,41 @@ class Roi:
         self.fileFormat = Roi.FileFormats.HDF2
 
     @staticmethod
-    def deleteRoi(directory: str, name: str, num: int):
-        """Only supports HDF files. Delete the dataset associated with the Roi object specified by `name` and `num`."""
-        path = os.path.join(directory, f"ROI_{name}.h5")
+    def deleteRoi(directory: str, name: str, num: int, fformat: Optional[Roi.FileFormats] = None):
+        """Delete the dataset associated with the Roi object specified by `name` and `num`."""
+        assert os.path.isdir(directory)
+        if fformat is Roi.FileFormats.MAT:
+            path = os.path.join(directory, f"BW{num}_{name}.mat")
+        elif fformat is Roi.FileFormats.HDF or Roi.FileFormats.HDF2:
+            path = os.path.join(directory, f"ROI_{name}.h5")
+        elif fformat is None:  # AutoDetect the file format
+            try:
+                Roi.deleteRoi(directory, name, num, fformat=Roi.FileFormats.MAT)
+                return
+            except FileNotFoundError:
+                try:
+                    Roi.deleteRoi(directory, name, num, fformat=Roi.FileFormats.HDF)
+                    return
+                except FileNotFoundError as e:
+                    raise e
+        else:
+            raise Exception(f"fformat of {fformat} is not accepted")
+
         if not os.path.exists(path):
-            raise OSError(f"The file {path} does not exist.")
-        with h5py.File(path, 'a') as hf:
-            if np.string_(str(num)) not in hf.keys():
-                raise ValueError(f"The file {path} does not contain ROI number {num}.")
-            del hf[np.string_(str(num))]
-            remaining = len(list(hf.keys()))
-        if remaining == 0: #  If the file is empty then remove it.
+            raise FileNotFoundError(f"The ROI file {name},{num} and format {fformat} was not found in {directory}.")
+
+        if fformat is Roi.FileFormats.HDF or fformat is Roi.FileFormats.HDF2:
+            with h5py.File(path, 'a') as hf:
+                if np.string_(str(num)) not in hf.keys():
+                    raise ValueError(f"The file {path} does not contain ROI number {num}.")
+                del hf[np.string_(str(num))]
+                remaining = len(list(hf.keys()))
+            if remaining == 0: #  If the file is empty then remove it.
+                os.remove(path)
+        elif fformat is Roi.FileFormats.MAT:
             os.remove(path)
+        else:
+            raise Exception("Programming error.")
 
     @staticmethod
     def getValidRoisInPath(path: str) -> List[Tuple[str, int, Roi.FileFormats]]:
