@@ -1,7 +1,7 @@
 import sys, os
 from numbers import Number
 from typing import Tuple
-
+import numpy as np
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 __all__ = ['QRangeSlider']
@@ -12,25 +12,22 @@ QRangeSlider * {
     padding: 0px;
 }
 QRangeSlider #Head {
-    background: #222;
-}
-QRangeSlider #Span {
-    background: #393;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #222, stop:1 #333);
 }
 QRangeSlider #Span:active {
-    background: #282;
+    background: #339099;
 }
 QRangeSlider #Tail {
-    background: #222;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #222, stop:1 #333);
 }
 QRangeSlider > QSplitter::handle {
-    background: #393;
+    background: #d42a04;
 }
 QRangeSlider > QSplitter::handle:vertical {
     height: 4px;
 }
 QRangeSlider > QSplitter::handle:pressed {
-    background: #ca5;
+    background: #691401;
 }
 """
 
@@ -46,7 +43,7 @@ def scale(val: Number, src: Tuple[Number, Number], dst: Tuple[Number, Number]):
         return float(((val - src[0]) / float(src[1]-src[0])) * (dst[1]-dst[0]) + dst[0])
 
 
-class Ui_Form(object):
+class UiForm(object):
     def setupUi(self, Form):
         Form.setObjectName("QRangeSlider")
         Form.resize(300, 30)
@@ -104,6 +101,13 @@ class Element(QtWidgets.QGroupBox):
             self.drawText(event, qp)
         qp.end()
 
+def numFormat(num: Number) -> str:
+    num = np.abs(num)
+    if num < 1 or num>=1000:
+        return f"{num:.2E}"
+    else:
+        return f"{num:.2f}"
+
 
 class Head(Element):
     def __init__(self, parent, main):
@@ -112,7 +116,7 @@ class Head(Element):
     def drawText(self, event, qp):
         qp.setPen(self.textColor())
         qp.setFont(QtGui.QFont('Arial', 10))
-        qp.drawText(event.rect(), QtCore.Qt.AlignLeft, f"{self.main.min():.2E}")
+        qp.drawText(event.rect(), QtCore.Qt.AlignLeft, numFormat(self.main.min()))
 
 
 class Tail(Element):
@@ -122,7 +126,7 @@ class Tail(Element):
     def drawText(self, event, qp):
         qp.setPen(self.textColor())
         qp.setFont(QtGui.QFont('Arial', 10))
-        qp.drawText(event.rect(), QtCore.Qt.AlignRight, f"{self.main.max():.2E}")
+        qp.drawText(event.rect(), QtCore.Qt.AlignRight, numFormat(self.main.max()))
 
 
 class Handle(Element):
@@ -132,8 +136,8 @@ class Handle(Element):
     def drawText(self, event, qp):
         qp.setPen(self.textColor())
         qp.setFont(QtGui.QFont('Arial', 10))
-        qp.drawText(event.rect(), QtCore.Qt.AlignLeft, f"{self.main.start():.2E}")
-        qp.drawText(event.rect(), QtCore.Qt.AlignRight, f"{self.main.end():.2E}")
+        qp.drawText(event.rect(), QtCore.Qt.AlignLeft, numFormat(self.main.start()))
+        qp.drawText(event.rect(), QtCore.Qt.AlignRight, numFormat(self.main.end()))
 
     def mouseMoveEvent(self, event):
         event.accept()
@@ -158,7 +162,7 @@ class Handle(Element):
             self.main.setRange(s, e)
 
 
-class QRangeSlider(QtWidgets.QWidget, Ui_Form):
+class QRangeSlider(QtWidgets.QWidget, UiForm):
     endValueChanged = QtCore.pyqtSignal(int)
     maxValueChanged = QtCore.pyqtSignal(int)
     minValueChanged = QtCore.pyqtSignal(int)
