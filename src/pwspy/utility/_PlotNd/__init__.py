@@ -79,7 +79,7 @@ class PlotNd(QWidget): #TODO add button to save animation, Docstring
         self._lastButton = None
         self.selector = AdjustableSelector(self.canvas.image.ax, self.canvas.image.im, LassoSelector, onfinished=self.selectorFinished)
 
-        self.buttonWidget = QGroupBox("buttons", self)
+        self.buttonWidget = QGroupBox("Control", self)
         self.buttonWidget.setLayout(QVBoxLayout())
         check = QCheckBox("Cursor Active")
         self.buttonWidget.layout().addWidget(check)
