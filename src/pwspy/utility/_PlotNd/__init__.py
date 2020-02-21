@@ -101,6 +101,7 @@ class PlotNd(QWidget): #TODO add button to save animation, Docstring
 
         for b in self.buttonGroup.buttons():
             b.setCheckable(True)
+        self.noneButton.setChecked(True)
         self.buttonGroup.buttonReleased.connect(self.handleButtons)
 
         self.arWidget = QWidget(self)#AspectRatioWidget(1, self)#AspectRatioWidget(1, self)
@@ -132,7 +133,6 @@ class PlotNd(QWidget): #TODO add button to save animation, Docstring
     def handleButtons(self, button):
 
         if button is self.pointButton and button is not self._lastButton:
-            print("Poin")
             self.selector.setSelector(PointSelector)
             self.selector.setActive(True)
         if button is self.lassoButton and button is not self._lastButton:
