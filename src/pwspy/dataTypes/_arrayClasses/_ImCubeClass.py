@@ -103,8 +103,8 @@ class ImCube(ICRawBase):
                 metadata = ICMetaData.fromNano(directory)
             with h5py.File(path, 'r') as hf:
                 data = np.array(hf['imageCube'])
-                data = np.rollaxis(data, 0, 3)
-                data = data.copy(order='C')
+                data = data.transpose((2, 1, 0))  # Re-order axes to match the shape of ROIs and thumbnails.
+                data = data.copy(order='C')  # Copying the data to 'C' order has shows to provide some benefit for performance in selecting out spectra.
         finally:
             if lock is not None:
                 lock.release()
