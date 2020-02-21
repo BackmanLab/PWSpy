@@ -161,7 +161,7 @@ class ICMetaData(AnalysisManagerMetaDataBase):
     def getThumbnail(self) -> np.ndarray:
         if self.fileFormat == ICMetaData.FileFormats.NanoMat:
             with h5py.File(os.path.join(self.filePath, 'image_bd.mat'), 'r') as hf:
-                return np.array(hf['image_bd'])
+                return np.array(hf['image_bd']).T.copy()  # For some reason these are saved transposed?
         else:
             with tf.TiffFile(os.path.join(self.filePath, 'image_bd.tif')) as f:
                 return f.asarray()
