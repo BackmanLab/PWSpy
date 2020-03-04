@@ -78,7 +78,7 @@ class RoiDrawer(QWidget):
         self.newRoiDlg.show()
         self.newRoiDlg.exec()
         poly.remove()
-        if self.newRoiDlg.result() == QDialog.Accepted: #TODO do this in a nother thread to avoid waiting for saving to happen.
+        if self.newRoiDlg.result() == QDialog.Accepted: #TODO do this in another thread to avoid waiting for saving to happen.
             r = Roi.fromVerts(roiName, self.newRoiDlg.number, verts=np.array(verts), dataShape=shape)
             md = self.metadatas[self.mdIndex][0]
             try:
@@ -146,7 +146,7 @@ class RoiDrawer(QWidget):
         currRoi = self.anViewer.roiFilter.currentText() #Since the next cell we look at will likely not have rois of the current name we want to manually force the ROI name to stay the same.
         md, analysis = self.metadatas[self.mdIndex]
         self.anViewer.setMetadata(md, analysis=analysis)
-        self.anViewer.roiFilter.setEditText(currRoi)
+        self.anViewer.roiFilter.setEditText(currRoi) #manually force the ROI name to stay the same.
         self.selector.reset() #Make sure to get rid of all rois
         self.setWindowTitle(f"Roi Drawer - {os.path.split(md.filePath)[-1]}")
 
