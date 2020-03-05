@@ -6,7 +6,7 @@ from pwspy.apps.PWSAnalysisApp import applicationVars
 from datetime import datetime
 from pwspy.moduleConsts import dateTimeFormat
 
-def main():
+def main(): #TODO add logging since terminal isn't always available
     import sys
 
     def isIpython():
