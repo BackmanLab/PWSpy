@@ -199,9 +199,13 @@ class ImCube(ICRawBase):
                 raise ValueError("ImCube Metadata does not have a `pixelSizeUm` saved. please manually specify pixel size. use pixelSize=1 to make `kernelRadius in units of pixels.")
         super().filterDust(kernelRadius, pixelSize)
 
-    def normalizeByReference(self, reference: ICRawBase):
+    def normalizeByReference(self, reference: ImCube):
         """Normalize the raw data of this data cube by a reference cube to result in data representing
-        arbitrarily scaled reflectance."""
+        arbitrarily scaled reflectance.
+
+        Args:
+            reference (ImCube): A reference acquisition (Usually a blank spot on a dish). The data of this acquisition will be divided by the data of the reference
+        """
         if self.processingStatus.normalizedByReference:
             raise Exception("This ImCube has already been normalized by a reference.")
         if not self.processingStatus.cameraCorrected:
@@ -224,3 +228,6 @@ class ImCube(ICRawBase):
             self.processingStatus.extraReflectionSubtracted = True
         else:
             raise Exception("The ImCube has already has extra reflection subtracted.")
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(id={self.metadata.idTag})"
