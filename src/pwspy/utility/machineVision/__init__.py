@@ -2,7 +2,22 @@ import typing
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
+from skimage import feature
 
+from pwspy.utility.plotting.multiPlot import MultiPlot
+
+
+def to8bit(arr: np.ndarray):
+    if arr.dtype == bool:
+        arr = arr.astype(np.uint8) * 255
+    else:
+        Min = np.percentile(arr, 0.1)
+        arr -= Min
+        Max = np.percentile(arr, 99.9)
+        arr = arr / Max * 255
+        arr[arr < 0] = 0
+        arr[arr > 255] = 255
+    return arr.astype(np.uint8)
 
 def calculateTransforms(reference: np.ndarray, other: typing.Iterable[np.ndarray], mask: np.ndarray = None, debugPlots: bool = False) -> typing.Iterable[np.ndarray]:
     """Given a 2D reference image and a list of other images of the same scene but shifted a bit this function will use OpenCV to calculate the transform from
@@ -12,18 +27,11 @@ def calculateTransforms(reference: np.ndarray, other: typing.Iterable[np.ndarray
     in calculating the transform. This seems to work much better for normalized images.
     This code is basically a copy of this example, it can probably be improved upon:
     https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_feature2d/py_feature_homography/py_feature_homography.html"""
+    #TODO this function does some weird stuff in the case that MIN_MATTCH_COUNT is not met for some of the images.
     import cv2
-    def to8bit(arr: np.ndarray):
-        Min = np.percentile(arr, 0.1)
-        arr -= Min
-        Max = np.percentile(arr, 99.9)
-        arr = arr / Max * 255
-        arr[arr < 0] = 0
-        arr[arr > 255] = 255
-        return arr.astype(np.uint8)
 
     refImg = to8bit(reference)
-    MIN_MATCH_COUNT = 5
+    MIN_MATCH_COUNT = 10
     FLANN_INDEX_KDTREE = 0
 
     # Initiate SIFT detector
@@ -75,3 +83,42 @@ def calculateTransforms(reference: np.ndarray, other: typing.Iterable[np.ndarray
         anFig.suptitle("If transforms worked, cells should not appear to move.")
         an = animation.ArtistAnimation(anFig, anims)
     return transforms, an
+
+
+def edgeDetectAndXCorr(reference: np.ndarray, other: typing.Iterable[np.ndarray], mask: np.ndarray = None, debugPlots: bool = False, sigma: float = 3) -> typing.Iterable[np.ndarray]:
+    """This function is used to find the relative translation between a reference image and a list of other similar images. Unlike `calculateTransforms` this function
+    will not work for images that are rotated relative to the reference. However, it does provide more robust performance for images that do not look identical.
+
+    Args:
+        reference (np.ndarray): The 2d reference image.
+        other (Iterable[np.ndarray]): An iterable containing the images that you want to calculate the translations for.
+        mask (np.ndarray): A boolean array indicating which parts of the reference image should be analyzed. If `None` then the whole image will be used.
+        debugPlots (bool): Indicates if extra plots should be openend showing the process of the function.
+        sigma (float): this parameter is passed to skimage.feature.canny to detect edges.
+
+    Returns:
+        Iterable[np.ndarray]:  Returns a list of transforms. Each transform is a 2x3 array in the form returned by opencv.estimateAffinePartial2d(). Note that even
+        though they are returned as affine transforms they will only contain translation information, no scaling, shear, or rotation.
+    """
+    import cv2
+    refEd = feature.canny(reference, sigma=sigma)
+    if mask is not None: refEd[~mask] = False #Clear any detected edges outside of the mask
+    imEd = [feature.canny(im, sigma=sigma) for im in other]
+    if debugPlots:
+        anEdFig, anEdAx = plt.subplots()
+        anFig, anAx = plt.subplots()
+        anims = [[anAx.imshow(to8bit(reference), 'gray'), anAx.text(100, 100, "Reference")]]
+        animsEd = [[anEdAx.imshow(to8bit(refEd), 'gray'), anEdAx.text(100, 100, "Reference",  color='w')]]
+    for i, (im, edgeIm) in enumerate(zip(other, imEd)):
+        shifts, error, phasediff = feature.register_translation(refEd, edgeIm)
+        print(shifts, error, phasediff)
+        shifts = np.array([[1, 0, shifts[1]],
+                           [0, 1, shifts[0]]], dtype=float) # Convert the shift to an affine transform
+        if debugPlots:
+            plt.figure()
+            animsEd.append([anEdAx.imshow(cv2.warpAffine(to8bit(edgeIm), shifts, edgeIm.shape), 'gray'),  anEdAx.text(100, 100, str(i),  color='w')])
+            anims.append([anAx.imshow(cv2.warpAffine(to8bit(im), shifts, im.shape), 'gray'),  anAx.text(100, 100, str(i))])
+    if debugPlots:
+        an = [MultiPlot(anims, "If transforms worked, cells should not appear to move."), MultiPlot(animsEd, "If transforms worked, cells should not appear to move.")]
+        [i.show() for i in an]
+    return an

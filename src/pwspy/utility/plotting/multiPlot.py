@@ -8,6 +8,7 @@ from matplotlib.axes import Axes
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 from matplotlib.image import AxesImage
 
 
@@ -18,7 +19,8 @@ class MultiPlot(QWidget):
         self.setWindowTitle(title)
         layout = QGridLayout()
         self.artists = artists
-        self.figure = artists[0][0].figure
+        self.figure: Figure = artists[0][0].figure
+        plt.close(self.figure.number) #Get rid of the old window for the figure
         self.ax: Axes = self.artists[0][0].axes
 
         self.canvas = FigureCanvasQTAgg(self.figure)
