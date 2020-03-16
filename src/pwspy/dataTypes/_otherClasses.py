@@ -115,6 +115,9 @@ class Roi:
 
     def __init__(self, name: str, number: int, mask: np.ndarray, verts: np.ndarray, filePath: str = None, fileFormat: Roi.FileFormats = None):
         assert isinstance(mask, np.ndarray), f"data is a {type(mask)}"
+        assert len(mask.shape) == 2
+        assert len(verts.shape) == 2
+        assert verts.shape[1] == 2
         assert mask.dtype == np.bool
         self.verts = verts
         self.name = name
@@ -208,7 +211,7 @@ class Roi:
         assert os.path.isdir(directory)
         if fformat is Roi.FileFormats.MAT:
             path = os.path.join(directory, f"BW{num}_{name}.mat")
-        elif fformat is Roi.FileFormats.HDF or Roi.FileFormats.HDF2:
+        elif fformat is Roi.FileFormats.HDF or fformat is Roi.FileFormats.HDF2:
             path = os.path.join(directory, f"ROI_{name}.h5")
         elif fformat is None:  # AutoDetect the file format
             try:
@@ -281,8 +284,10 @@ class Roi:
         """return a copy of this Roi that has been transformed by an affine transform matrix like the one returned by
         opencv.estimateRigidTransform. This can be obtained using ICBase's getTransform method."""
         mask = cv2.warpAffine(self.mask.astype(np.uint8), matrix, self.mask.shape).astype(np.bool)
-        if self.verts is not None: verts = cv2.transform(self.verts, matrix)
-        else: verts = None
+        if self.verts is not None:
+            verts = cv2.transform(self.verts[None, :, :], matrix)[0, :, :] #For some reason this needs to be 3d for opencv to work.
+        else:
+            verts = None
         return Roi(self.name, self.number, mask=mask, verts=verts) #intentionally ditching the filepath and fileformat data here since the new roi is not associated with a saved file.
 
     def getImage(self, ax: plt.Axes) -> AxesImage:
