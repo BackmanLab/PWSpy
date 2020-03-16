@@ -66,7 +66,6 @@ def calculateTransforms(reference: np.ndarray, other: typing.Iterable[np.ndarray
             matchesMask = None
             # M = None
         if debugPlots:
-            plt.figure()
             anims.append([anAx.imshow(cv2.warpAffine(otherImg, cv2.invertAffineTransform(M), otherImg.shape), 'gray')])
             h, w = refImg.shape
             pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
@@ -85,7 +84,7 @@ def calculateTransforms(reference: np.ndarray, other: typing.Iterable[np.ndarray
     return transforms, an
 
 
-def edgeDetectAndXCorr(reference: np.ndarray, other: typing.Iterable[np.ndarray], mask: np.ndarray = None, debugPlots: bool = False, sigma: float = 3) -> typing.Iterable[np.ndarray]:
+def calculateTranslations(reference: np.ndarray, other: typing.Iterable[np.ndarray], mask: np.ndarray = None, debugPlots: bool = False, sigma: float = 3) -> typing.Tuple[typing.Iterable[np.ndarray], typing.List]:
     """This function is used to find the relative translation between a reference image and a list of other similar images. Unlike `calculateTransforms` this function
     will not work for images that are rotated relative to the reference. However, it does provide more robust performance for images that do not look identical.
 
@@ -102,23 +101,27 @@ def edgeDetectAndXCorr(reference: np.ndarray, other: typing.Iterable[np.ndarray]
     """
     import cv2
     refEd = feature.canny(reference, sigma=sigma)
-    if mask is not None: refEd[~mask] = False #Clear any detected edges outside of the mask
+    if mask is not None: refEd[~mask] = False  # Clear any detected edges outside of the mask
     imEd = [feature.canny(im, sigma=sigma) for im in other]
+    affineTransforms = []
     if debugPlots:
         anEdFig, anEdAx = plt.subplots()
         anFig, anAx = plt.subplots()
         anims = [[anAx.imshow(to8bit(reference), 'gray'), anAx.text(100, 100, "Reference")]]
         animsEd = [[anEdAx.imshow(to8bit(refEd), 'gray'), anEdAx.text(100, 100, "Reference",  color='w')]]
     for i, (im, edgeIm) in enumerate(zip(other, imEd)):
-        shifts, error, phasediff = feature.register_translation(refEd, edgeIm)
-        print(shifts, error, phasediff)
+        shifts, error, phasediff = feature.register_translation(edgeIm, refEd)
+        print(f"Translation: {shifts}, RMS Error: {error}, Phase Difference:{phasediff}")
         shifts = np.array([[1, 0, shifts[1]],
                            [0, 1, shifts[0]]], dtype=float) # Convert the shift to an affine transform
+        affineTransforms.append(shifts)
         if debugPlots:
             plt.figure()
-            animsEd.append([anEdAx.imshow(cv2.warpAffine(to8bit(edgeIm), shifts, edgeIm.shape), 'gray'),  anEdAx.text(100, 100, str(i),  color='w')])
-            anims.append([anAx.imshow(cv2.warpAffine(to8bit(im), shifts, im.shape), 'gray'),  anAx.text(100, 100, str(i))])
+            animsEd.append([anEdAx.imshow(cv2.warpAffine(to8bit(edgeIm), cv2.invertAffineTransform(shifts), edgeIm.shape), 'gray'),  anEdAx.text(100, 100, str(i),  color='w')])
+            anims.append([anAx.imshow(cv2.warpAffine(to8bit(im), cv2.invertAffineTransform(shifts), im.shape), 'gray'),  anAx.text(100, 100, str(i))])
     if debugPlots:
         an = [MultiPlot(anims, "If transforms worked, cells should not appear to move."), MultiPlot(animsEd, "If transforms worked, cells should not appear to move.")]
         [i.show() for i in an]
-    return an
+    else:
+        an = []
+    return affineTransforms, an
