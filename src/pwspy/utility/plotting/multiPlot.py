@@ -1,10 +1,11 @@
 import os
+import traceback
 from enum import Enum, auto
 from typing import List
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QWidget, QGridLayout, QPushButton, QApplication, QDialog, QVBoxLayout, QHBoxLayout, QComboBox, QSpinBox, QLabel, QLineEdit, \
-    QFileDialog
+    QFileDialog, QMessageBox
 import numpy as np
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
@@ -133,7 +134,11 @@ class AnimationDlg(QDialog):
         ani = animation.ArtistAnimation(self.figure, self.artists, interval=self.intervalSpinBox.value())
         Writer = animation.writers[self.methodCombo.currentData().value]
         writer = Writer()
-        ani.save(self.fPath.text(), writer=writer)
+        try:
+            ani.save(self.fPath.text(), writer=writer)
+        except Exception as e:
+            traceback.print_exc()
+            msg = QMessageBox.warning(self, 'Warning', str(e))
         self.accept()
 
     def browseFile(self):
