@@ -107,8 +107,9 @@ class ICBase:
             Verts[0] = verts
 
         l = widgets.LassoSelector(ax, onSelect, lineprops={'color': 'r'})
-        while plt.fignum_exists(fig.number):
-            fig.canvas.flush_events()
+        # while plt.fignum_exists(fig.number): # This didn't seems to work in non-interactive mode.
+        #     fig.canvas.flush_events()
+        plt.show(block=True)
         return np.array(Verts[0])
 
     def selectRectangleROI(self, displayIndex: int = None) -> np.ndarray:
@@ -133,8 +134,10 @@ class ICBase:
 
         r = widgets.RectangleSelector(ax, rectSelect)
 
-        while plt.fignum_exists(fig.number):
-            fig.canvas.flush_events()
+        # while plt.fignum_exists(fig.number):
+        #     fig.canvas.flush_events()
+        plt.show(block=True)
+
         return np.array(verts[0])
 
     def selectPointROI(self, side: int = 3, displayIndex: Optional[int] = None):
@@ -158,8 +161,10 @@ class ICBase:
         axMan = AxManager(ax)
         sel = PointSelector(axMan, onselect=select, sideLength=side)
         sel.set_active(True)
-        while plt.fignum_exists(fig.number):
-            fig.canvas.flush_events()
+        # while plt.fignum_exists(fig.number):
+        #     fig.canvas.flush_events()
+        plt.show(block=True)
+
         return np.array(verts[0])
 
     def __getitem__(self, slic):
