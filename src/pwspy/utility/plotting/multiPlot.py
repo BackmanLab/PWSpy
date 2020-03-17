@@ -144,9 +144,6 @@ class AnimationDlg(QDialog):
 if __name__ == '__main__':
     import sys
     import matplotlib.pyplot as plt
-    plt.ion()
-    # a: AxesImage = None
-    # a.se
     app = QApplication(sys.argv)
     sh = (1024, 1024)
     ims = [[plt.imshow(np.random.random(sh)), plt.text(100, 100, str(i))] for i in range(3)]
