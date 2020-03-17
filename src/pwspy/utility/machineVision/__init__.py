@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
 from skimage import feature
+from skimage import morphology
 
 from pwspy.utility.plotting.multiPlot import MultiPlot
 
@@ -107,7 +108,7 @@ def calculateTranslations(reference: np.ndarray, other: typing.Iterable[np.ndarr
     if debugPlots:
         anEdFig, anEdAx = plt.subplots()
         anFig, anAx = plt.subplots()
-        anims = [[anAx.imshow(to8bit(reference), 'gray'), anAx.text(100, 100, "Reference")]]
+        anims = [[anAx.imshow(to8bit(reference), 'gray'), anAx.text(100, 100, "Reference", color='r')]]
         animsEd = [[anEdAx.imshow(to8bit(refEd), 'gray'), anEdAx.text(100, 100, "Reference",  color='w')]]
     for i, (im, edgeIm) in enumerate(zip(other, imEd)):
         shifts, error, phasediff = feature.register_translation(edgeIm, refEd)
@@ -118,7 +119,7 @@ def calculateTranslations(reference: np.ndarray, other: typing.Iterable[np.ndarr
         if debugPlots:
             plt.figure()
             animsEd.append([anEdAx.imshow(cv2.warpAffine(to8bit(edgeIm), cv2.invertAffineTransform(shifts), edgeIm.shape), 'gray'),  anEdAx.text(100, 100, str(i),  color='w')])
-            anims.append([anAx.imshow(cv2.warpAffine(to8bit(im), cv2.invertAffineTransform(shifts), im.shape), 'gray'),  anAx.text(100, 100, str(i))])
+            anims.append([anAx.imshow(cv2.warpAffine(to8bit(im), cv2.invertAffineTransform(shifts), im.shape), 'gray'),  anAx.text(100, 100, str(i), color='r')])
     if debugPlots:
         an = [MultiPlot(anims, "If transforms worked, cells should not appear to move."), MultiPlot(animsEd, "If transforms worked, cells should not appear to move.")]
         [i.show() for i in an]
