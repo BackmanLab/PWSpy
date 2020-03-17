@@ -3,8 +3,9 @@ from typing import List, Tuple, Optional
 
 import numpy as np
 from PyQt5 import QtCore, QtGui
+from PyQt5.QtCore import QThread, QObject, pyqtSignal
 from PyQt5.QtWidgets import QWidget, QGridLayout, QButtonGroup, QPushButton, QDialog, QSpinBox, QLabel, \
-    QMessageBox, QMenu, QAction
+    QMessageBox, QMenu, QAction, QApplication
 
 from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
 from pwspy.dataTypes import AcqDir
@@ -66,30 +67,75 @@ class RoiDrawer(QWidget):
         self.show()
 
     def finalizeRoi(self, verts: np.ndarray):
+        class RoiSaverController(QObject):
+            """Instantiation this class begins the process of saving a ROI. This class handles the GUI related stuff in the main thread."""
+            class RoiSaverWorker(QObject):
+                """This class handles the actual saving fo the roi and everything that can be performed in a separate thread."""
+                roiFinished = pyqtSignal(Roi) #Either this signal or `roiNeedOverwrite` will be fired depending on the situation.
+                roiNeedsOverwrite = pyqtSignal(Roi)
+                def __init__(self, name: str, num: int, verts, datashape, acq: AcqDir):
+                    super().__init__()
+                    self.name = name; self.num = num; self.verts=verts; self.datashape=datashape; self.acq=acq
+                def doWork(self):
+                    """This runs in a separate thread. The mask of the ROI is calculated from the supplied vertices and then it is attempted to be saved."""
+                    roi = Roi.fromVerts(self.name, self.num, self.verts, self.datashape)
+                    try:
+                        self.acq.saveRoi(roi)
+                        self.roiFinished.emit(roi)
+                    except OSError:
+                        self.roiNeedsOverwrite.emit(roi)
+            def __init__(self, name: str, num: int, verts, datashape, acq: AcqDir, anViewer, parent: QWidget):
+                """Thiis initializer starts a separate thread and runs RoiSaverWorker.doWork on that thread. GUI related work is linked to the appropriate signals from the other thread."""
+                super().__init__(parent)
+                self.anViewer = anViewer; self.acq = acq
+                self.placeHolderPoly = patches.Polygon(verts, facecolor=(0, .5, 0.5, 0.4)) #this is a temporary polygon display until the ROI file is actually ready to be read.
+                self.anViewer.ax.add_patch(self.placeHolderPoly)
+                self.anViewer.canvas.draw_idle()
+                self.worker = self.RoiSaverWorker(name, num, verts, datashape, acq)
+                self.thread = QThread(self)
+                self.worker.moveToThread(self.thread)
+                self.worker.roiFinished.connect(self.drawSavedRoi)
+                self.worker.roiNeedsOverwrite.connect(self.overWriteRoi)
+                self.thread.started.connect(self.worker.doWork)
+                self.thread.start()
+
+            def overWriteRoi(self, roi: Roi):
+                """If the worker raised an `OSError` then we need to ask the user if they want to overwrite. This must be done in the main thread."""
+                self.thread.quit()
+                ans = QMessageBox.question(self.anViewer, 'Overwrite?', f"Roi {roi.name}:{roi.number} already exists. Overwrite?")
+                if ans == QMessageBox.Yes:
+                    self.acq.saveRoi(roi, overwrite=True)
+                    self.anViewer.showRois() #Refresh all rois since we just deleted one as well.
+                    self.roiIsSaved()
+                self.finish()
+
+            def drawSavedRoi(self, roi: Roi):
+                """The worker successfully save the roi, now display it."""
+                self.thread.quit()
+                self.anViewer.addRoi(roi)
+                self.roiIsSaved()
+                self.finish()
+
+            def roiIsSaved(self):
+                """Either way, once a  new roi has been saved we want to do this."""
+                QApplication.instance().window.cellSelector.refreshCellItems()  # Refresh the cell selection table.
+
+            def finish(self):
+                """Even if the roi wasn't ultimately saved we want to do this."""
+                self.placeHolderPoly.remove()
+                self.anViewer.canvas.draw_idle()
+
         roiName = self.anViewer.roiFilter.currentText()
         if roiName == '':
-            QMessageBox.information(self, 'Wait', 'Please type an ROI name into the box at the bottom of the screen.')
+            QMessageBox.information(self, 'Wait', 'Please type an ROI name into the box at the top of the screen.')
             self.selector.setActive(True)
             return
-        poly = patches.Polygon(verts, facecolor=(0, .5, 0.5, 0.4))
         shape = self.anViewer.data.shape
-        self.anViewer.ax.add_patch(poly)
-        self.anViewer.canvas.draw_idle()
         self.newRoiDlg.show()
         self.newRoiDlg.exec()
-        poly.remove()
-        if self.newRoiDlg.result() == QDialog.Accepted: #TODO do this in another thread to avoid waiting for saving to happen.
-            r = Roi.fromVerts(roiName, self.newRoiDlg.number, verts=np.array(verts), dataShape=shape)
+        if self.newRoiDlg.result() == QDialog.Accepted:
             md = self.metadatas[self.mdIndex][0]
-            try:
-                md.saveRoi(r)
-                self.anViewer.addRoi(r)
-            except OSError: #We must already have this roi saved
-                ans = QMessageBox.question(self, 'Overwrite?', f"Roi {r.name}:{r.number} already exists. Overwrite?")
-                if ans == QMessageBox.Yes:
-                    md.saveRoi(r, overwrite=True)
-                    self.anViewer.showRois() #Refresh all rois since we just deleted one as well.
-        self.anViewer.canvas.draw_idle()
+            saver = RoiSaverController(roiName, self.newRoiDlg.number, np.array(verts), shape, md, self.anViewer, self)
         self.selector.setActive(True)  # Start the next roi.
 
     def handleButtons(self, button):
