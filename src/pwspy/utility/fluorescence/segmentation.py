@@ -11,7 +11,7 @@ def segmentOtsu(image: np.ndarray, minArea = 100):
     Returns a list of shapely polygons."""
     image = ((image - image.min()) / (image.max() - image.min()) * 255).astype(np.uint8)
     threshold, binary = cv2.threshold(image, 0, 1, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-    contImage, contours, hierarchy = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    contours, hierarchy = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     polys = []
     for contour in contours:
         contour = contour.squeeze()  # We want a Nx2 array. We get Nx1x2 though.
@@ -31,7 +31,7 @@ def segmentAdaptive(image: np.ndarray, minArea = 100, adaptiveRange: int = 500, 
         raise ValueError("adaptiveRange must be a positive odd integer >=3.")
     image = ((image - image.min()) / (image.max() - image.min()) * 255).astype(np.uint8) # convert to 8bit
     binary = cv2.adaptiveThreshold(image, 1, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, adaptiveRange, thresholdOffset)
-    contImage, contours, hierarchy = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    contours, hierarchy = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     polys = []
     for contour in contours:
         contour = contour.squeeze()  # We want a Nx2 array. We get Nx1x2 though.
