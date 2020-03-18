@@ -65,7 +65,6 @@ class AnalysisViewer(AnalysisPlotter, RoiPlot):
         if self.analysisCombo.currentText() != field.name:
             self.analysisCombo.setCurrentText(field.name)
         self.setImageData(self.data)
-        self.setSaturation()
 
     def setMetadata(self, md: AcqDir, analysis: Optional[ConglomerateAnalysisResults] = None):
         """Change this widget to display data for a different acquisition and optionally an analysis."""

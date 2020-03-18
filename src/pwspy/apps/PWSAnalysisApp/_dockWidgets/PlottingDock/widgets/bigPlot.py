@@ -6,7 +6,7 @@ import numpy as np
 from PyQt5 import QtCore
 from PyQt5.QtGui import QCursor, QValidator
 from PyQt5.QtWidgets import QWidget, QDialog, QVBoxLayout, QDoubleSpinBox, QPushButton, QLabel, QGridLayout, QComboBox, \
-    QAction, QMenu, QApplication
+    QAction, QMenu, QApplication, QCheckBox
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -71,6 +71,8 @@ class BigPlot(QWidget):
         self.im.set_data(data)
         self.slider.setMax(np.nanmax(self.data))
         self.slider.setMin(np.nanmin(self.data))
+        if self.autoDlg.autoSaturateCheckBox.isChecked():
+            self.setSaturation()
         self.canvas.draw_idle()
 
     def setSaturation(self):
@@ -97,16 +99,19 @@ class SaturationDialog(QDialog):
     def __init__(self, parent):
         super().__init__(parent=parent, flags=QtCore.Qt.FramelessWindowHint)
         self.setModal(True)
-        l = QVBoxLayout()
+        l = QGridLayout()
         self.numBox = QDoubleSpinBox()
         self.numBox.setValue(0.1)
         self.numBox.setMinimum(0)
         self.numBox.setSingleStep(0.1)
+        self.autoSaturateCheckBox = QCheckBox("Update contrast when image is changed", self)
+        self.autoSaturateCheckBox.setChecked(True)
         self.okButton = QPushButton("Ok")
         self.okButton.released.connect(self.accept)
-        l.addWidget(QLabel("Saturation %"))
-        l.addWidget(self.numBox)
-        l.addWidget(self.okButton)
+        l.addWidget(QLabel("Saturation %"), 0, 0)
+        l.addWidget(self.numBox, 0, 1)
+        l.addWidget(self.autoSaturateCheckBox, 1, 0, 1, 2)
+        l.addWidget(self.okButton, 2, 0, 1, 2)
         self.setLayout(l)
 
     @property
