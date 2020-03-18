@@ -20,15 +20,29 @@ def to8bit(arr: np.ndarray):
         arr[arr > 255] = 255
     return arr.astype(np.uint8)
 
-def calculateTransforms(reference: np.ndarray, other: typing.Iterable[np.ndarray], mask: np.ndarray = None, debugPlots: bool = False) -> typing.Iterable[np.ndarray]:
+def SIFTRegisterTransform(reference: np.ndarray, other: typing.Iterable[np.ndarray], mask: np.ndarray = None, debugPlots: bool = False) -> typing.Tuple[typing.List[np.ndarray], animation.ArtistAnimation]:
     """Given a 2D reference image and a list of other images of the same scene but shifted a bit this function will use OpenCV to calculate the transform from
     each of the other images to the reference. The transforms can be inverted using cv2.invertAffineTransform().
     It will return a list of transforms. Each transform is a 2x3 array in the form returned
     by opencv.estimateAffinePartial2d(). a boolean mask can be used to select which areas will be searched for features to be used
     in calculating the transform. This seems to work much better for normalized images.
     This code is basically a copy of this example, it can probably be improved upon:
-    https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_feature2d/py_feature_homography/py_feature_homography.html"""
-    #TODO this function does some weird stuff in the case that MIN_MATTCH_COUNT is not met for some of the images.
+    https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_feature2d/py_feature_homography/py_feature_homography.html
+
+    Args:
+        reference (np.ndarray): The 2d reference image.
+        other (Iterable[np.ndarray]): An iterable containing the images that you want to calculate the translations for.
+        mask (np.ndarray): A boolean array indicating which parts of the reference image should be analyzed. If `None` then the whole image will be used.
+        debugPlots (bool): Indicates if extra plots should be openend showing the process of the function.
+
+    Returns:
+        tuple: A tuple containing:
+            List[np.ndarray]:  Returns a list of transforms. Each transform is a 2x3 array in the form returned by opencv.estimateAffinePartial2d(). Note that even
+            though they are returned as affine transforms they will only contain translation information, no scaling, shear, or rotation.
+
+            ArtistAnimation: A reference the animation used to diplay the results of the function.
+        """
+    #TODO this function does some weird stuff in the case that MIN_MATTCH_COUNT is not met for some of the images due to variables not being defined.
     import cv2
 
     refImg = to8bit(reference)
@@ -85,7 +99,7 @@ def calculateTransforms(reference: np.ndarray, other: typing.Iterable[np.ndarray
     return transforms, an
 
 
-def calculateTranslations(reference: np.ndarray, other: typing.Iterable[np.ndarray], mask: np.ndarray = None, debugPlots: bool = False, sigma: float = 3) -> typing.Tuple[typing.Iterable[np.ndarray], typing.List]:
+def edgeDetectRegisterTranslation(reference: np.ndarray, other: typing.Iterable[np.ndarray], mask: np.ndarray = None, debugPlots: bool = False, sigma: float = 3) -> typing.Tuple[typing.Iterable[np.ndarray], typing.List]:
     """This function is used to find the relative translation between a reference image and a list of other similar images. Unlike `calculateTransforms` this function
     will not work for images that are rotated relative to the reference. However, it does provide more robust performance for images that do not look identical.
 
@@ -97,8 +111,11 @@ def calculateTranslations(reference: np.ndarray, other: typing.Iterable[np.ndarr
         sigma (float): this parameter is passed to skimage.feature.canny to detect edges.
 
     Returns:
-        Iterable[np.ndarray]:  Returns a list of transforms. Each transform is a 2x3 array in the form returned by opencv.estimateAffinePartial2d(). Note that even
-        though they are returned as affine transforms they will only contain translation information, no scaling, shear, or rotation.
+        tuple: A tuple containing:
+            list[np.ndarray]:  Returns a list of transforms. Each transform is a 2x3 array in the form returned by opencv.estimateAffinePartial2d(). Note that even
+            though they are returned as affine transforms they will only contain translation information, no scaling, shear, or rotation.
+
+            list: A list of references to the plotting widgets used to display the results of the function.
     """
     import cv2
     refEd = feature.canny(reference, sigma=sigma)
@@ -107,7 +124,11 @@ def calculateTranslations(reference: np.ndarray, other: typing.Iterable[np.ndarr
     affineTransforms = []
     if debugPlots:
         anEdFig, anEdAx = plt.subplots()
+        anEdAx.get_xaxis().set_visible(False)
+        anEdAx.get_yaxis().set_visible(False)
         anFig, anAx = plt.subplots()
+        anAx.get_xaxis().set_visible(False)
+        anAx.get_yaxis().set_visible(False)
         anims = [[anAx.imshow(to8bit(reference), 'gray'), anAx.text(100, 100, "Reference", color='r')]]
         animsEd = [[anEdAx.imshow(to8bit(refEd), 'gray'), anEdAx.text(100, 100, "Reference",  color='w')]]
     for i, (im, edgeIm) in enumerate(zip(other, imEd)):

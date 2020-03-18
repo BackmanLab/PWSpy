@@ -107,6 +107,7 @@ class ICBase:
             Verts[0] = verts
 
         l = widgets.LassoSelector(ax, onSelect, lineprops={'color': 'r'})
+        fig.show()
         while plt.fignum_exists(fig.number):
             fig.canvas.flush_events()
         return np.array(Verts[0])
@@ -132,7 +133,7 @@ class ICBase:
             verts[0] = ((mins.ydata, mins.xdata), (maxes.ydata, mins.xdata), (maxes.ydata, maxes.xdata), (mins.ydata, maxes.xdata))
 
         r = widgets.RectangleSelector(ax, rectSelect)
-
+        fig.show()
         while plt.fignum_exists(fig.number):
             fig.canvas.flush_events()
         return np.array(verts[0])
@@ -158,6 +159,7 @@ class ICBase:
         axMan = AxManager(ax)
         sel = PointSelector(axMan, onselect=select, sideLength=side)
         sel.set_active(True)
+        fig.show()
         while plt.fignum_exists(fig.number):
             fig.canvas.flush_events()
         return np.array(verts[0])

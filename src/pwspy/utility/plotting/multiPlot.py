@@ -20,13 +20,17 @@ from matplotlib import animation
 
 class MultiPlot(QWidget):
     def __init__(self, artists: List[List[Artist]], title: str, parent=None):
-        """A widget that displays an image."""
+        """A widget that displays a set of images.
+        Args:
+            artists: A list of lists of matplotlib 'Artists`. each list will comptrise a single frame, just like the matplotlib `ArtistAnimation` works.
+            title (str): The name for the title of the window
+        """
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         self.setWindowTitle(title)
         layout = QGridLayout()
         self.artists = artists
         self.figure: Figure = artists[0][0].figure
-        plt.close(self.figure.number) #Get rid of the old window for the figure
+        # plt.close(self.figure.number) #Get rid of the old window for the figure
         self.ax: Axes = self.artists[0][0].axes
 
         self.canvas = FigureCanvasQTAgg(self.figure)

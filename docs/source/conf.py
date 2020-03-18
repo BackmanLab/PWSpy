@@ -14,6 +14,8 @@
 #
 import os
 import sys
+import pwspy
+
 sys.path.insert(0, os.path.abspath('../../src')) #Point to the pwspy source code folder
 
 
@@ -24,9 +26,9 @@ copyright = '2020, Nick Anthony'
 author = 'Nick Anthony'
 
 # The short X.Y version
-version = '0.1' #TODO get version information from the actual module
+version = pwspy.__version__
 # The full version, including alpha/beta/rc tags
-release = '0.0.0.0.0.0.0.1'
+release = version
 
 
 # -- General configuration ---------------------------------------------------
@@ -45,8 +47,7 @@ extensions = [
     'sphinx.ext.viewcode',
     "sphinx_rtd_theme",
     'sphinx.ext.napoleon',
-    'sphinx.ext.graphviz', #Need to add graphviz/bin to the path for this to work.
-    'sphinx.ext.inheritance_diagram'
+    'sphinx.ext.inheritance_diagram'  #Need to add graphviz/bin to the path for this to work.
 ]
 
 # Add any paths that contain templates here, relative to this directory.
