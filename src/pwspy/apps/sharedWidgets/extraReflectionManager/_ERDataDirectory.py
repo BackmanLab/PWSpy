@@ -57,7 +57,7 @@ class ERDataDirectory(ERAbstractDirectory):
             self.index = ERIndex.load(f)
 
     def getFileStatus(self, skipMD5: bool = False) -> pandas.DataFrame:
-        files = glob(os.path.join(self._directory, f'*{ERMetadata.FILESUFFIX}'))
+        files = glob(ERMetadata.dirName2Directory(self._directory, '*'))
         files = [(f, ERMetadata.validPath(f)) for f in files]  # validPath returns True/False in awhether the datacube was found.
         files = [(directory, name) for f, (valid, directory, name) in files if valid]  # Get rid of invalid files.
         files = [ERMetadata.fromHdfFile(directory, name) for directory, name in files]
@@ -158,7 +158,7 @@ class EROnlineDirectory(ERAbstractDirectory):
     def _buildIndexFromOnlineFiles(self) -> ERIndex:
         """Return an ERIndex object from the HDF5 data files saved on Google Drive. No downloading required, just scanning metadata."""
         files = self._downloader.getFileMetadata()
-        files = [f for f in files if ERMetadata.FILESUFFIX in f['name']]  # Select the dictionaries that correspond to a extra reflectance data file
+        files = [f for f in files if ERMetadata._FILESUFFIX in f['name']]  # Select the dictionaries that correspond to a extra reflectance data file
         files = [ERIndexCube(fileName=f['name'], md5=f['md5Checksum'], name=ERMetadata.directory2dirName(f['name'])[-1], description=None, idTag=None) for f in files]
         return ERIndex(files)
 

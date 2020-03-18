@@ -37,12 +37,12 @@ class ExtraReflectanceCube(ICBase):
         """Load an ExtraReflectanceCube from an HDF5 file. `name` should be the file name, excluding the '_ExtraReflectance.h5' suffix."""
         filePath = ERMetadata.dirName2Directory(directory, name)
         with h5py.File(filePath, 'r') as hf:
-            dset = hf[ERMetadata.DATASETTAG]
+            dset = hf[ERMetadata._DATASETTAG]
             return cls.fromHdfDataset(dset, filePath=filePath)
 
     def toHdfFile(self, directory: str, name: str) -> None:
         """Save an ExtraReflectanceCube to an HDF5 file. The filename will be `name` with the '_ExtraReflectance.h5' suffix."""
-        savePath = os.path.join(directory, f'{name}{ERMetadata.FILESUFFIX}')
+        savePath = ERMetadata.dirName2Directory(directory, name)
         if os.path.exists(savePath):
             raise OSError(f"The path {savePath} already exists.")
         with h5py.File(savePath, 'w') as hf:
@@ -50,7 +50,7 @@ class ExtraReflectanceCube(ICBase):
 
     def toHdfDataset(self, g: h5py.Group) -> h5py.Group:
         """Save the ExtraReflectanceCube to an HDF5 dataset. `g` should be an h5py Group or File."""
-        g = super().toHdfDataset(g, ERMetadata.DATASETTAG)
+        g = super().toHdfDataset(g, ERMetadata._DATASETTAG)
         g = self.metadata.toHdfDataset(g)
         return g
 
