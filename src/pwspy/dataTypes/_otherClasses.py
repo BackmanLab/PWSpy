@@ -313,4 +313,5 @@ class Roi:
         else:
             return patches.Polygon(self.verts, facecolor=(1, 0, 0, 0.5), linewidth=1, edgecolor=(0,1,0,0.9))
 
-
+    def __repr__(self):
+        return f"Roi({self.name}, {self.number})"

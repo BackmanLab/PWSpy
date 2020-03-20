@@ -199,8 +199,13 @@ class KCube(ICBase):
     #     return ImCube(data, md, dtype=np.float32)
 
     @classmethod
-    def fromHdfDataset(cls, d: h5py.Dataset):
-        arr, index = cls.decodeHdf(d)
+    def fromHdfDataset(cls, dataset: h5py.Dataset):
+        """Load the KCube object from an `h5py.Dataset` in an HDF5 file
+        Args:
+            dataset (h5py.Dataset): The `h5py.Dataset` that the KCube data is stored in.
+        Returns:
+            KCube: A new instance of this class."""
+        arr, index = cls.decodeHdf(dataset)
         return cls(arr, index)
 
     def __add__(self, other):
