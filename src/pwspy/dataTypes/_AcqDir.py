@@ -19,7 +19,7 @@ class AcqDir:
         directory: the file path the root directory of the acquisition
     """
     def __init__(self, directory: str):
-        self.filePath = directory
+        self.filePath = directory #TODO should this be absolute?
         if (self.pws is None) and (self.dynamics is None): # We must have one of these two items.
             raise OSError(f"Could not find a valid PWS or Dynamics Acquisition at {directory}.")
 
