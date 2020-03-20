@@ -5,7 +5,7 @@ from matplotlib import animation
 from skimage import feature
 from skimage import morphology
 
-from pwspy.utility.plotting.multiPlot import MultiPlot
+from pwspy.utility.plotting._multiPlot import MultiPlot
 
 
 def to8bit(arr: np.ndarray):

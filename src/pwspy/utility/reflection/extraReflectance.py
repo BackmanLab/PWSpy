@@ -9,7 +9,7 @@ from functools import reduce
 import pandas as pd
 from dataclasses import dataclass
 from matplotlib import animation
-from pwspy.utility import PlotNd
+from pwspy.utility.plotting import PlotNd
 
 #TODO document me!!
 

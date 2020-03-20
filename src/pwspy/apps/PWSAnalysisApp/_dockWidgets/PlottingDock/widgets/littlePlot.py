@@ -15,7 +15,7 @@ from pwspy.analysis.pws import PWSAnalysisResults
 from .widgets import AnalysisPlotter
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.analysisViewer import AnalysisViewer
 from pwspy.dataTypes import ImCube, ICMetaData
-from pwspy.utility import PlotNd
+from pwspy.utility.plotting import PlotNd
 
 
 class LittlePlot(AnalysisPlotter, QWidget):

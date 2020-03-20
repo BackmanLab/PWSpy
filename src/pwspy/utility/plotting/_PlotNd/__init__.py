@@ -2,8 +2,7 @@ from typing import Tuple, List
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QSizeF, QTimer
-from PyQt5.QtGui import QPen
-from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QPushButton, QDialog, QSpinBox, QLabel, QGraphicsView, \
+from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QPushButton, QSpinBox, QLabel, QGraphicsView, \
     QGraphicsScene, QGroupBox, QVBoxLayout, QCheckBox, QButtonGroup
 from matplotlib import pyplot
 from matplotlib.animation import FuncAnimation
@@ -11,10 +10,8 @@ from matplotlib.animation import FuncAnimation
 from pwspy.apps.sharedWidgets.rangeSlider import QRangeSlider
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT
 
-from pwspy.utility._PlotNd._plots import ImPlot, SidePlot
 import numpy as np
-from pwspy.utility._PlotNd._plots import CBar
-from pwspy.utility._PlotNd._canvas import PlotNdCanvas
+from pwspy.utility.plotting._PlotNd import PlotNdCanvas
 from pwspy.utility.matplotlibWidgets import LassoSelector, PointSelector, AdjustableSelector
 
 

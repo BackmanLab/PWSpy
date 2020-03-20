@@ -14,7 +14,7 @@ import numpy as np
 from pwspy.apps.sharedWidgets.extraReflectionManager._ERDataDirectory import ERDataDirectory
 from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataComparator import ERDataComparator
 from pwspy.dataTypes import ExtraReflectanceCube
-from pwspy.utility import PlotNd
+from pwspy.utility.plotting import PlotNd
 
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
