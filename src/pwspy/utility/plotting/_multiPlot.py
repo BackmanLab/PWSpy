@@ -1,21 +1,15 @@
-import os
-import traceback
-from enum import Enum, auto
 from typing import List
 
-from PyQt5 import QtCore, QtGui
-from PyQt5.QtWidgets import QWidget, QGridLayout, QPushButton, QApplication, QDialog, QVBoxLayout, QHBoxLayout, QComboBox, QSpinBox, QLabel, QLineEdit, \
-    QFileDialog, QMessageBox
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import QWidget, QGridLayout, QPushButton, QApplication
 import numpy as np
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-import matplotlib.pyplot as plt
-from matplotlib.image import AxesImage
-from pwspy.apps import resources
-from matplotlib import animation
+
+from pwspy.utility.plotting._sharedWidgets import AnimationDlg
 
 
 class MultiPlot(QWidget):
@@ -81,74 +75,6 @@ class MultiPlot(QWidget):
                 artist.set_visible(self.index==i)
         self.canvas.draw_idle()
 
-
-class AnimationDlg(QDialog):
-    class SaveMethods(Enum):
-        GIF = 'pillow'
-        HTML = 'html'
-        MP4 = 'ffmpeg'
-
-    def __init__(self, fig, artists: List[List[Artist]], parent: QWidget):
-        super().__init__(parent)
-        self.setModal(True)
-        self.setWindowTitle("Save Animation")
-
-        self.artists = artists
-        self.figure = fig
-
-        self.intervalSpinBox = QSpinBox(self)
-        self.intervalSpinBox.setMinimum(0)
-        self.intervalSpinBox.setMaximum(10000)
-        self.intervalSpinBox.setSingleStep(50)
-        self.intervalSpinBox.setValue(100)
-
-        self.fPath = QLineEdit(self)
-        self.browseButton = QPushButton(QtGui.QIcon(os.path.join(resources, 'folder.svg')), '')
-        self.browseButton.released.connect(self.browseFile)
-
-
-        self.methodCombo = QComboBox(self)
-        [self.methodCombo.addItem(i.name, i) for i in self.SaveMethods]
-
-        self.saveButton = QPushButton("Save", self)
-        self.saveButton.released.connect(self.save)
-
-        layout = QVBoxLayout()
-        bottomLay = QHBoxLayout()
-
-        lay = QHBoxLayout()
-        lay.addWidget(QLabel("Frame Interval (ms):"))
-        lay.addWidget(self.intervalSpinBox)
-        layout.addLayout(lay)
-
-        lay = QHBoxLayout()
-        lay.addWidget(self.fPath)
-        lay.addWidget(self.browseButton)
-        layout.addLayout(lay)
-
-        bottomLay.addStretch()
-        bottomLay.addWidget(self.methodCombo)
-        bottomLay.addWidget(self.saveButton)
-        bottomLay.addStretch()
-        layout.addLayout(bottomLay)
-
-        self.setLayout(layout)
-
-    def save(self):
-        ani = animation.ArtistAnimation(self.figure, self.artists, interval=self.intervalSpinBox.value())
-        Writer = animation.writers[self.methodCombo.currentData().value]
-        writer = Writer()
-        try:
-            ani.save(self.fPath.text(), writer=writer)
-        except Exception as e:
-            traceback.print_exc()
-            msg = QMessageBox.warning(self, 'Warning', str(e))
-        self.accept()
-
-    def browseFile(self):
-        fname, extension = QFileDialog.getSaveFileName(self, 'Save Location', os.getcwd())
-        if fname != '':
-            self.fPath.setText(fname)
 
 if __name__ == '__main__':
     import sys
