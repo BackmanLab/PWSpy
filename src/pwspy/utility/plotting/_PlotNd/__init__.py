@@ -11,8 +11,9 @@ from pwspy.apps.sharedWidgets.rangeSlider import QRangeSlider
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT
 
 import numpy as np
-from pwspy.utility.plotting._PlotNd import PlotNdCanvas
+from ._canvas import PlotNdCanvas
 from pwspy.utility.matplotlibWidgets import LassoSelector, PointSelector, AdjustableSelector
+from .._sharedWidgets import AnimationDlg
 
 
 class MyView(QGraphicsView):
@@ -101,10 +102,14 @@ class PlotNd(QWidget): #TODO add button to save animation, Docstring
         self.noneButton.setChecked(True)
         self.buttonGroup.buttonReleased.connect(self.handleButtons)
 
+        self.saveButton = QPushButton("Save Animation")
+        self.saveButton.released.connect(lambda: AnimationDlg(self.canvas.fig, (self._animationUpdaterFunc, range(self.canvas.data.shape[2])), self).exec())
+
         self.arWidget = QWidget(self)#AspectRatioWidget(1, self)#AspectRatioWidget(1, self)
         layout = QGridLayout()
         layout.addWidget(self.view, 0, 0, 8, 8)
-        layout.addWidget(self.buttonWidget, 0, 8, 8, 1)
+        layout.addWidget(self.buttonWidget, 0, 8, 4, 1)
+        layout.addWidget(self.saveButton, 4, 8)
         layout.addWidget(NavigationToolbar2QT(self.canvas, self), 10, 0, 1, 8)
         layout.setRowStretch(0, 1)
         layout.addWidget(self.slider, 8, 0, 1, 7)
@@ -118,13 +123,12 @@ class PlotNd(QWidget): #TODO add button to save animation, Docstring
     def _updateLimits(self):
         self.canvas.updateLimits(self.slider.end(), self.slider.start())
 
+    def _animationUpdaterFunc(self, z: int):
+        self.canvas.coords = self.canvas.coords[:2] + (z,) + self.canvas.coords[3:]
+        self.canvas.updatePlots()
 
     def getAnimation(self, interval: int = 50):
-        def f(self: PlotNdCanvas, z: int):
-            self.coords = self.coords[:2] + (z,) + self.coords[3:]
-            self.updatePlots()
-
-        ani = FuncAnimation(self.canvas.fig, lambda z: f(self.canvas, z), frames=list(range(self.canvas.data.shape[2])), blit=False, interval=interval)
+        ani = FuncAnimation(self.canvas.fig, self._animationUpdaterFunc, frames=list(range(self.canvas.data.shape[2])), blit=False, interval=interval)
         return ani
 
     def handleButtons(self, button):
