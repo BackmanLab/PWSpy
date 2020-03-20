@@ -85,7 +85,7 @@ class LittlePlot(AnalysisPlotter, QWidget):
 
     def plotAn3d(self):
         self.plotnd = PlotNd(self.analysis.pws.reflectance.data, title=os.path.split(self.acq.filePath)[-1],
-                             names=('y', 'x', 'k'), extraDimIndices=[self.analysis.pws.reflectance.wavenumbers])
+                             names=('y', 'x', 'k (rad/um)'), extraDimIndices=[self.analysis.pws.reflectance.wavenumbers])
 
     def plotRaw3d(self):
         im = ImCube.fromMetadata(self.acq.pws)
