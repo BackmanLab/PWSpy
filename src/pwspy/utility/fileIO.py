@@ -14,8 +14,6 @@ import psutil
 from pwspy.dataTypes import ICMetaData, MetaDataBase, AcqDir
 
 '''Local Functions'''
-
-
 def _load(loadHandle: Union[str, MetaDataBase], lock: mp.Lock):
     md: MetaDataBase
     if isinstance(loadHandle, str):
@@ -79,7 +77,8 @@ def _loadThenProcess(procFunc, procFuncArgs, lock: mp.Lock, row):
 def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: Optional = None, parallel: Optional = None,
                    procArgs: Optional = None, initializer=None,
                    initArgs=None) -> Union[pd.DataFrame, List, Tuple]:
-    """A convenient function to load a series of Data Cubes from a list or dictionary of file paths.
+    """DEPRECATED! This over-complicated function should be replaced with usage of processParallel.
+    A convenient function to load a series of Data Cubes from a list or dictionary of file paths.
 
     Parameters
     ----------
@@ -190,7 +189,8 @@ def processParallel(fileFrame: pd.DataFrame, processorFunc, initializer=None, in
     numProcesses = psutil.cpu_count(logical=False) - 1  # Use one less than number of available cores.
     po = mp.Pool(processes=numProcesses, initializer=initializer, initargs=initArgs)
     try:
-        cubes = po.starmap(processorFunc, zip(*zip(*[[procArgs]] * len(fileFrame)), fileFrame.iterrows()))
+        vars = fileFrame.iterrows() if procArgs is None else zip(fileFrame.iterrows(), *zip(*[[procArgs]] * len(fileFrame)))
+        cubes = po.starmap(processorFunc, vars)
     finally:
         po.close()
         po.join()
