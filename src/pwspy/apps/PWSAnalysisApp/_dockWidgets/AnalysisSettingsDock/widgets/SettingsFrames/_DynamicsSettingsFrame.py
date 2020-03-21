@@ -13,7 +13,7 @@ from ._sharedWidgets import ExtraReflectanceSelector, VerticallyCompressedWidget
 
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
-    from pwspy.dataTypes import CameraCorrection, ERMetadata
+    from pwspy.dataTypes import CameraCorrection, ERMetaData
 
 
 class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):

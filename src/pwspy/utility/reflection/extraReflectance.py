@@ -1,5 +1,5 @@
 from typing import Dict, List, Tuple, Iterable, Any, Iterator, Union, Optional, Set
-from pwspy.dataTypes import ImCube, ExtraReflectanceCube, Roi, ERMetadata
+from pwspy.dataTypes import ImCube, ExtraReflectanceCube, Roi, ERMetaData
 from pwspy.utility.reflection import reflectanceHelper
 from pwspy.moduleConsts import Material
 import itertools
@@ -321,7 +321,7 @@ def generateRExtraCubes(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict,
     rExtra['mean'] = (weightedMean, meanWeight)
     sampleCube: ImCube = list(allCombos.values())[0][0].data1
     plots = [PlotNd(rExtra[k][0], title=k, extraDimIndices=[sampleCube.wavelengths]) for k in rExtra.keys()]
-    md = ERMetadata(sampleCube.metadata._dict, numericalAperture)
+    md = ERMetaData(sampleCube.metadata._dict, numericalAperture)
     erCube = ExtraReflectanceCube(rExtra['mean'][0], sampleCube.wavelengths, md)
     return erCube, rExtra, plots
 

@@ -8,7 +8,7 @@ from typing import List
 import pandas, tempfile
 
 from pwspy.apps.sharedWidgets.extraReflectionManager.ERIndex import ERIndex, ERIndexCube
-from pwspy.dataTypes import ERMetadata
+from pwspy.dataTypes import ERMetaData
 import typing
 
 from pwspy.utility import GoogleDriveDownloader
@@ -57,10 +57,10 @@ class ERDataDirectory(ERAbstractDirectory):
             self.index = ERIndex.load(f)
 
     def getFileStatus(self, skipMD5: bool = False) -> pandas.DataFrame:
-        files = glob(ERMetadata.dirName2Directory(self._directory, '*'))
-        files = [(f, ERMetadata.validPath(f)) for f in files]  # validPath returns True/False in awhether the datacube was found.
+        files = glob(ERMetaData.dirName2Directory(self._directory, '*'))
+        files = [(f, ERMetaData.validPath(f)) for f in files]  # validPath returns True/False in awhether the datacube was found.
         files = [(directory, name) for f, (valid, directory, name) in files if valid]  # Get rid of invalid files.
-        files = [ERMetadata.fromHdfFile(directory, name) for directory, name in files]
+        files = [ERMetaData.fromHdfFile(directory, name) for directory, name in files]
         calculatedIndex = self._buildIndexFromFiles(files, skipMD5=skipMD5)
         d = self._compareIndexes(calculatedIndex, self.index, skipMD5=skipMD5)
         d = pandas.DataFrame(d).transpose()
@@ -68,10 +68,10 @@ class ERDataDirectory(ERAbstractDirectory):
         return d
 
     @staticmethod
-    def _buildIndexFromFiles(files: List[ERMetadata], skipMD5: bool = False) -> ERIndex:
+    def _buildIndexFromFiles(files: List[ERMetaData], skipMD5: bool = False) -> ERIndex:
         """Scan the data files in the directory and construct an ERIndex from the metadata. The `description` field is left blank though.
         Args:
-            files (List[ERMetadata]): A list of the all the extra reflectance file objects that we want to construct an index from.
+            files (List[ERMetaData]): A list of the all the extra reflectance file objects that we want to construct an index from.
             skipMD5 (bool): If True then don't calculate the md5 hash for the files. This can be quite slow. Defaults to False.
         Returns:
             ERIndex: A new ERIndex representing the state of the extra reflectance files in `files`."""
@@ -158,8 +158,8 @@ class EROnlineDirectory(ERAbstractDirectory):
     def _buildIndexFromOnlineFiles(self) -> ERIndex:
         """Return an ERIndex object from the HDF5 data files saved on Google Drive. No downloading required, just scanning metadata."""
         files = self._downloader.getFileMetadata()
-        files = [f for f in files if ERMetadata._FILESUFFIX in f['name']]  # Select the dictionaries that correspond to a extra reflectance data file
-        files = [ERIndexCube(fileName=f['name'], md5=f['md5Checksum'], name=ERMetadata.directory2dirName(f['name'])[-1], description=None, idTag=None) for f in files]
+        files = [f for f in files if ERMetaData._FILESUFFIX in f['name']]  # Select the dictionaries that correspond to a extra reflectance data file
+        files = [ERIndexCube(fileName=f['name'], md5=f['md5Checksum'], name=ERMetaData.directory2dirName(f['name'])[-1], description=None, idTag=None) for f in files]
         return ERIndex(files)
 
     @staticmethod

@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Tuple
 
 import h5py
-from .._metadata import ERMetadata
+from .._metadata import ERMetaData
 
 from ._ICBaseClass import ICBase
 import numpy as np
@@ -15,13 +15,13 @@ if typing.TYPE_CHECKING:
 
 class ExtraReflectanceCube(ICBase):
     """This class represents a 3D data cube of the extra reflectance in a PWS system. It's values are in units of
-    reflectance (between 0 and 1). It has a `metadata` attribute which is of ERMetadata. It also has a `data` attribute
+    reflectance (between 0 and 1). It has a `metadata` attribute which is of ERMetaData. It also has a `data` attribute
     of numpy.ndarray type."""
 
-    ERMetadata = ERMetadata
+    ERMetaData = ERMetaData
 
-    def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], metadata: ERMetadata):
-        assert isinstance(metadata, ERMetadata)
+    def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], metadata: ERMetaData):
+        assert isinstance(metadata, ERMetaData)
         if data.max() > 1 or data.min() < 0:
             print("Warning!: Reflectance values must be between 0 and 1")
         self.metadata = metadata
@@ -35,14 +35,14 @@ class ExtraReflectanceCube(ICBase):
     @classmethod
     def fromHdfFile(cls, directory: str, name: str) -> ExtraReflectanceCube:
         """Load an ExtraReflectanceCube from an HDF5 file. `name` should be the file name, excluding the '_ExtraReflectance.h5' suffix."""
-        filePath = ERMetadata.dirName2Directory(directory, name)
+        filePath = ERMetaData.dirName2Directory(directory, name)
         with h5py.File(filePath, 'r') as hf:
-            dset = hf[ERMetadata._DATASETTAG]
+            dset = hf[ERMetaData._DATASETTAG]
             return cls.fromHdfDataset(dset, filePath=filePath)
 
     def toHdfFile(self, directory: str, name: str) -> None:
         """Save an ExtraReflectanceCube to an HDF5 file. The filename will be `name` with the '_ExtraReflectance.h5' suffix."""
-        savePath = ERMetadata.dirName2Directory(directory, name)
+        savePath = ERMetaData.dirName2Directory(directory, name)
         if os.path.exists(savePath):
             raise OSError(f"The path {savePath} already exists.")
         with h5py.File(savePath, 'w') as hf:
@@ -50,7 +50,7 @@ class ExtraReflectanceCube(ICBase):
 
     def toHdfDataset(self, g: h5py.Group) -> h5py.Group:
         """Save the ExtraReflectanceCube to an HDF5 dataset. `g` should be an h5py Group or File."""
-        g = super().toHdfDataset(g, ERMetadata._DATASETTAG)
+        g = super().toHdfDataset(g, ERMetaData._DATASETTAG)
         g = self.metadata.toHdfDataset(g)
         return g
 
@@ -58,13 +58,13 @@ class ExtraReflectanceCube(ICBase):
     def fromHdfDataset(cls, d: h5py.Dataset, filePath: str = None):
         """Load the ExtraReflectanceCube from `d`, an HDF5 dataset."""
         data, index = cls.decodeHdf(d)
-        md = ERMetadata.fromHdfDataset(d, filePath=filePath)
+        md = ERMetaData.fromHdfDataset(d, filePath=filePath)
         return cls(data, index, md)
 
     @classmethod
-    def fromMetadata(cls, md: ERMetadata):
-        """Load an ExtraReflectanceCube from an ERMetadata object corresponding to an HDF5 file."""
-        directory, name = ERMetadata.directory2dirName(md.filePath)
+    def fromMetadata(cls, md: ERMetaData):
+        """Load an ExtraReflectanceCube from an ERMetaData object corresponding to an HDF5 file."""
+        directory, name = ERMetaData.directory2dirName(md.filePath)
         return cls.fromHdfFile(directory, name)
 
 
@@ -72,7 +72,7 @@ class ExtraReflectionCube(ICBase):
     """This class is meant to be constructed from an ExtraReflectanceCube along with additional reference measurement
     information. Rather than being in units of reflectance (between 0 and 1) it is in the same units as the reference measurement
     that is provided with, usually counts/ms or just counts."""
-    def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], metadata: ERMetadata):
+    def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], metadata: ERMetaData):
         super().__init__(data, wavelengths)
         self.metadata = metadata
 

@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QGroupBox, QWidget, QVBoxLayout, QLabel, QLineEdit, 
 
 from pwspy.apps import resources
 from pwspy.apps.PWSAnalysisApp._sharedWidgets import CollapsibleSection
-from pwspy.dataTypes import ERMetadata, CameraCorrection
+from pwspy.dataTypes import ERMetaData, CameraCorrection
 from pwspy.moduleConsts import Material
 from pwspy.utility.reflection import reflectanceHelper
 import typing
@@ -67,7 +67,7 @@ class ExtraReflectanceSelector(QGroupBox):
         layout.addLayout(rLayout)
         self.setLayout(layout)
 
-    def getSettings(self) -> Tuple[ERMetadata, Material, float]:
+    def getSettings(self) -> Tuple[ERMetaData, Material, float]:
         self._initializeERSelector()
         if self.ERExplorer.getSelectedMetadata() is None:
             ans = QMessageBox.question(self, "Uh", "An extra reflectance cube has not been selected. Do you want to ignore this important correction?")
@@ -82,7 +82,7 @@ class ExtraReflectanceSelector(QGroupBox):
         refMaterial = Material[self.refMaterialCombo.currentText()]
         return erMd, refMaterial, numericalAperture
 
-    def getSelectedERMetadata(self) -> Optional[ERMetadata]:
+    def getSelectedERMetadata(self) -> Optional[ERMetaData]:
         return self.ERExplorer.getSelectedMetadata()
 
     def loadFromSettings(self, numericalAperture: float, referenceMaterial: Material, extraReflectanceId: str):
@@ -107,7 +107,7 @@ class ExtraReflectanceSelector(QGroupBox):
         if self.ERExplorer is None:  # Don't initialize the ERSelector window until we actually need it. It can be slow to initiate
             self.ERExplorer = self._erManager.createSelectorWindow(self)
 
-            def extraReflectionChanged(md: Optional[ERMetadata]):
+            def extraReflectionChanged(md: Optional[ERMetaData]):
                 if md is None:
                     self.RSubtractionNameLabel.setText('None')
                 else:

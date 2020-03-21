@@ -30,13 +30,6 @@ pwspy.utility.misc module
    :undoc-members:
    :show-inheritance:
 
-pwspy.utility.toD module
-------------------------
-
-.. automodule:: pwspy.utility.toD
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 
 Module contents

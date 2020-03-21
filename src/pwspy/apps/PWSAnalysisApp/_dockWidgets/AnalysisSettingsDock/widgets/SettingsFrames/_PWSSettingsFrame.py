@@ -16,7 +16,7 @@ from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupBox, QHBoxLayout, QWidget, QRadioButton, \
     QFrame, QCheckBox
 
-from pwspy.dataTypes import CameraCorrection, ERMetadata
+from pwspy.dataTypes import CameraCorrection, ERMetaData
 from pwspy.analysis.pws import PWSAnalysisSettings
 from pwspy.apps.PWSAnalysisApp import applicationVars
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.collapsibleSection import CollapsibleSection

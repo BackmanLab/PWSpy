@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QDialog, QTableWidget, QTableWidgetItem, QMessageBox
 
 from pwspy import moduleConsts
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.tables import DatetimeTableWidgetItem
-from pwspy.dataTypes import ExtraReflectanceCube, ERMetadata
+from pwspy.dataTypes import ExtraReflectanceCube, ERMetaData
 import numpy as np
 from .exceptions import OfflineError
 
@@ -59,11 +59,11 @@ class ERTreeWidgetItem(QTreeWidgetItem):
 
 
 class ERSelectorWindow(QDialog):
-    selectionChanged = QtCore.pyqtSignal(object) #Usually an ERMetadata object, sometimes None
+    selectionChanged = QtCore.pyqtSignal(object) #Usually an ERMetaData object, sometimes None
 
     def __init__(self, manager: ERManager, parent: Optional[QWidget] = None):
         self._manager = manager
-        self._selectedMetadata: Optional[ERMetadata] = None
+        self._selectedMetadata: Optional[ERMetaData] = None
         super().__init__(parent)
         self.setModal(False)
         self.setWindowTitle("Extra Reflectance Selector")
@@ -150,8 +150,8 @@ class ERSelectorWindow(QDialog):
         import os
         filePath, filterPattern = QFileDialog.getOpenFileName(self, "Select an ExtraReflectance file.", os.path.expanduser("~"), "*.h5")
         try:
-            wDir, name = ERMetadata.directory2dirName(filePath)
-            md = ERMetadata.fromHdfFile(wDir, name)
+            wDir, name = ERMetaData.directory2dirName(filePath)
+            md = ERMetaData.fromHdfFile(wDir, name)
             self.setSelection(md)
             self.accept()
         except Exception as e:
@@ -173,10 +173,10 @@ class ERSelectorWindow(QDialog):
             except IndexError:  # Nothing was selected
                 msg = QMessageBox.information(self, 'Uh oh!', 'No item was selected!')
 
-    def getSelectedMetadata(self) -> Optional[ERMetadata]:
+    def getSelectedMetadata(self) -> Optional[ERMetaData]:
         return self._selectedMetadata
 
-    def setSelection(self, md: ERMetadata):
+    def setSelection(self, md: ERMetaData):
         self._selectedMetadata = md
         self.selectionChanged.emit(md)
 

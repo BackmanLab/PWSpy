@@ -10,7 +10,7 @@ from pwspy.analysis._abstract import AbstractRuntimeAnalysisSettings
 
 if typing.TYPE_CHECKING:
     from pwspy.analysis import AbstractAnalysisSettings
-    from pwspy.dataTypes import CameraCorrection, ERMetadata
+    from pwspy.dataTypes import CameraCorrection, ERMetaData
 
 
 class QtAbstractMeta(ABCMeta, type(QObject)):

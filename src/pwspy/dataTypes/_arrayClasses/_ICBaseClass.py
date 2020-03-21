@@ -274,6 +274,7 @@ class ICBase:
             Returns:
                 h5py.Group: This is the the same h5py.Group that was passed in a `g`. It should now have a new dataset by the name of 'name'
         """
+
         if fixedPointCompression:
             # Scale data to span the full range of an unsigned 16bit integer. save as integer and save the min and max
             # needed to scale back to the original data. Testing has shown that this has a maximum conversion error of 1.4e-3 percent.
@@ -318,7 +319,8 @@ class ICBase:
 class ICRawBase(ICBase, ABC):
     """This class represents data cubes which are not derived from other data cubes. They represent raw acquired data that exists as data files on the computer.
     For this reason they may need to have hardware specific corrections applied to them such as normalizing out exposure time, linearizing camera counts,
-    subtracting dark counts, etc. The most important change is the addition of `metadata`"""
+    subtracting dark counts, etc. The most important change is the addition of `metadata`
+    """
 
     @dataclass
     class ProcessingStatus:

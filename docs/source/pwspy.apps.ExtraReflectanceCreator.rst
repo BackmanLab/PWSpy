@@ -20,14 +20,6 @@ pwspy.apps.ExtraReflectanceCreator.ERWorkFlow module
    :undoc-members:
    :show-inheritance:
 
-pwspy.apps.ExtraReflectanceCreator.extraReflectance module
-----------------------------------------------------------
-
-.. automodule:: pwspy.apps.ExtraReflectanceCreator.extraReflectance
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 
 Module contents
 ---------------

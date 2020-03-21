@@ -10,4 +10,4 @@ import os
 
 thinFilmPath = os.path.join(os.path.split(__file__)[0], 'thinFilmInterferenceFiles')
 
-__all__ = ['GoogleDriveDownloader', 'plotting', 'DConversion', 'fluorescence', 'machineVision', 'matplotlibWidgets', 'micromanager', 'reflection', 'fileIO', 'misc']
+__all__ = ['GoogleDriveDownloader', 'fileIO', 'misc']

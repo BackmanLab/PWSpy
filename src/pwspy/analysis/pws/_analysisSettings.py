@@ -6,7 +6,7 @@ from pwspy.moduleConsts import Material
 from pwspy.analysis import AbstractAnalysisSettings
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import ERMetadata
+    from pwspy.dataTypes import ERMetaData
 
 
 @dataclasses.dataclass
@@ -47,7 +47,7 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
 @dataclasses.dataclass
 class PWSRuntimeAnalysisSettings(AbstractRuntimeAnalysisSettings):
     settings: PWSAnalysisSettings
-    extraReflectanceMetadata: Optional[ERMetadata]
+    extraReflectanceMetadata: Optional[ERMetaData]
 
     def getSaveableSettings(self) -> PWSAnalysisSettings:
         return self.settings

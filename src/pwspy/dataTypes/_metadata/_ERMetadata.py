@@ -7,7 +7,7 @@ import jsonschema
 import numpy as np
 
 
-class ERMetadata:
+class ERMetaData:
     """A class representing the extra information related to an ExtraReflectanceCube file. This can be useful as a object
      to keep track of a ExtraReflectanceCube without having to have the data from the file loaded into memory."""
     _jsonSchema = {"$schema": "http://json-schema.org/schema#",
