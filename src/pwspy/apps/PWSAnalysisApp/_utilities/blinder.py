@@ -5,10 +5,11 @@ from PyQt5 import QtGui
 from PyQt5.QtWidgets import QDialog, QFileDialog, QWidget, QLineEdit, QPushButton, QLabel, QGridLayout, QMessageBox
 
 from pwspy.apps import resources
-from pwspy.dataTypes import ICMetaData
+from pwspy.dataTypes.metadata import ICMetaData
 from typing import List
 import os
 import random
+
 
 class Blinder:
     """A class that, given a list of ICMetadata and the root directory that their files are under, will create randomly

@@ -19,8 +19,9 @@ from scipy import io as spio
 from pwspy.analysis._abstract import AbstractHDFAnalysisResults
 from pwspy.analysis.dynamics import DynamicsAnalysisResults
 from pwspy.analysis.pws import PWSAnalysisResults
-from pwspy.dataTypes import _jsonSchemasPath, FluorescenceImage, CameraCorrection, Roi
-from pwspy.dataTypes.data import DynCube, ICBase, ImCube
+from pwspy.dataTypes import _jsonSchemasPath
+from pwspy.dataTypes.other import CameraCorrection, Roi
+import pwspy.dataTypes.data as pwsdtd
 from pwspy.moduleConsts import dateTimeFormat
 from pwspy.utility.misc import cached_property
 
@@ -54,14 +55,14 @@ class MetaDataBase(abc.ABC):
             print("Warning: The `system` name in the metadata is blank. Check that the PWS System is saving the proper calibration values.")
         if all([i in self._dict for i in ['darkCounts', 'linearityPoly']]):
             if self._dict['darkCounts'] == 0:
-                print("Warning: Detected a darkCounts value of 0 in the ImCube Metadata. Check that the PWS System is saving the proper calibration values.")
+                print("Warning: Detected a darkCounts value of 0 in the pwsdtd.ImCube Metadata. Check that the PWS System is saving the proper calibration values.")
             self.cameraCorrection = CameraCorrection(darkCounts=self._dict['darkCounts'],
                                                      linearityPolynomial=self._dict['linearityPoly'])
         else:
             self.cameraCorrection = None
 
     @abc.abstractmethod
-    def toDataClass(self, lock: mp.Lock) -> ICBase:
+    def toDataClass(self, lock: mp.Lock) -> pwsdtd.ICBase:
         """Convert the metadata class to a class that loads the data"""
         pass
 
@@ -135,7 +136,7 @@ class AnalysisManagerMetaDataBase(MetaDataBase):
             files = os.listdir(os.path.join(path, 'analyses'))
             return [cls.getAnalysisResultsClass().fileName2Name(f) for f in files]
         else:
-            # print(f"ImCube at {path} has no `analyses` folder.")
+            # print(f"pwsdtd.ImCube at {path} has no `analyses` folder.")
             return []
 
     def saveAnalysis(self, analysis: AbstractHDFAnalysisResults, name: str):
@@ -155,9 +156,9 @@ class DynMetaData(AnalysisManagerMetaDataBase):
     """A class that represents the metadata of a Dynamics Acquisition."""
     class FileFormats(enum.Enum):
         """An enumerator identifying the types of file formats that this class can be loaded from."""
-        Tiff = auto()
-        RawBinary = auto()
-        Hdf = auto()
+        Tiff = enum.auto()
+        RawBinary = enum.auto()
+        Hdf = enum.auto()
 
     @staticmethod
     def getAnalysisResultsClass(): return DynamicsAnalysisResults
@@ -170,15 +171,15 @@ class DynMetaData(AnalysisManagerMetaDataBase):
         self.fileFormat = fileFormat
         super().__init__(metadata, filePath, acquisitionDirectory=acquisitionDirectory)
 
-    def toDataClass(self, lock: mp.Lock = None) -> DynCube:
+    def toDataClass(self, lock: mp.Lock = None) -> pwsdtd.DynCube:
         """
         Args:
             lock (mp.Lock): A multiprocessing `lock` that can prevent help us synchronize demands on the hard drive when loading many files in parallel. Probably not needed.
         Returns:
-            DynCube: The data object associated with this metadata object.
+            pwsdtmd.DynCube: The data object associated with this metadata object.
         """
-        from pwspy.dataTypes import DynCube
-        return DynCube.fromMetadata(self, lock)
+        # from pwspy.dataTypes.data import DynCube
+        return pwsdtd.DynCube.fromMetadata(self, lock)
 
     @property
     def idTag(self) -> str:
@@ -187,7 +188,7 @@ class DynMetaData(AnalysisManagerMetaDataBase):
         Returns:
             str: A unique string identifying this acquisition.
         """
-        return f"DynCube_{self._dict['system']}_{self._dict['time']}"
+        return f"pwsdtmd.DynCube_{self._dict['system']}_{self._dict['time']}"
 
     @property
     def wavelength(self) -> int:
@@ -280,9 +281,9 @@ class ERMetaData:
     _MDTAG = 'metadata'
 
     def __init__(self, inheritedMetadata: dict, numericalAperture: float, filePath: str=None):
-        """The metadata dictionary will often just be inherited information from one of the ImCubes that was used to create
+        """The metadata dictionary will often just be inherited information from one of the pwsdtd.ImCubes that was used to create
         this ER Cube. While this data can be useful it should be taken with a grain of salt. E.G. the metadata will contain
-        an `exposure` field. In reality this ER Cube will have been created from ImCubes at a variety of exposures."""
+        an `exposure` field. In reality this ER Cube will have been created from pwsdtd.ImCubes at a variety of exposures."""
         self.inheritedMetadata = inheritedMetadata
         self.inheritedMetadata['numericalAperture'] = numericalAperture
         jsonschema.validate(instance=inheritedMetadata, schema=self._jsonSchema, types={'array': (list, tuple)})
@@ -348,9 +349,9 @@ class FluorMetaData(MetaDataBase):
     def __init__(self, md: dict, filePath: Optional[str] = None, acquisitionDirectory: Optional[AcqDir] = None):
         super().__init__(md, filePath, acquisitionDirectory)
 
-    def toDataClass(self, lock: mp.Lock = None) -> FluorescenceImage:
-        from pwspy.dataTypes import FluorescenceImage
-        return FluorescenceImage.fromMetadata(self, lock)
+    def toDataClass(self, lock: mp.Lock = None) -> pwsdtd.FluorescenceImage:
+        # from pwspy.dataTypes import pwsdtd.FluorescenceImage
+        return pwsdtd.FluorescenceImage.fromMetadata(self, lock)
 
     @property
     def idTag(self):
@@ -405,13 +406,13 @@ class ICMetaData(AnalysisManagerMetaDataBase):
         self.fileFormat: ICMetaData.FileFormats = fileFormat
         self._dict['wavelengths'] = tuple(np.array(self._dict['wavelengths']).astype(float))
 
-    def toDataClass(self, lock: mp.Lock = None) -> ImCube:
-        from pwspy.dataTypes import ImCube
-        return ImCube.fromMetadata(self, lock)
+    def toDataClass(self, lock: mp.Lock = None) -> pwsdtd.ImCube:
+        # from pwspy.dataTypes import pwsdtd.ImCube
+        return pwsdtd.ImCube.fromMetadata(self, lock)
 
     @cached_property
     def idTag(self) -> str:
-        return f"ImCube_{self._dict['system']}_{self._dict['time']}"
+        return f"pwsdtd.ImCube_{self._dict['system']}_{self._dict['time']}"
 
     @property
     def wavelengths(self) -> Tuple[float, ...]:

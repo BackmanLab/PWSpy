@@ -7,9 +7,7 @@ Created on Sat Feb  9 15:57:52 2019
 from __future__ import annotations
 import json
 import os
-import re
 from matplotlib import patches, path
-import typing
 import dataclasses
 from enum import Enum, auto
 from glob import glob
