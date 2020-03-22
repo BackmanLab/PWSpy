@@ -10,7 +10,7 @@ from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import Conglomer
 from .widgets import ResultsTable, ResultsTableItem
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import AcqDir
+    from pwspy.dataTypes.metadata import AcqDir
 
 
 class ResultsTableDock(QDockWidget): #TODO update this for the new conglomoerate classes.

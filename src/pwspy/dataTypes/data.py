@@ -1,3 +1,4 @@
+from __future__ import annotations
 import copy
 import json
 import multiprocessing as mp
@@ -16,249 +17,9 @@ import tifffile as tf
 from matplotlib import pyplot as plt, widgets
 from scipy import interpolate as spi
 from scipy.io import savemat
-
-from .. import Roi, CameraCorrection, ICMetaData
-from ..metadata import DynMetaData, ERMetaData, MetaDataBase
-from ...utility.matplotlibWidgets import AxManager, PointSelector
-
-
-class ICRawBase(ICBase, ABC):
-    """This class represents data cubes which are not derived from other data cubes. They represent raw acquired data that exists as data files on the computer.
-    For this reason they may need to have hardware specific corrections applied to them such as normalizing out exposure time, linearizing camera counts,
-    subtracting dark counts, etc. The most important change is the addition of `metadata`
-    """
-
-    @dataclass
-    class ProcessingStatus:
-        """By default none of these things have been done for raw data"""
-        cameraCorrected: bool = False
-        normalizedByExposure: bool = False
-        extraReflectionSubtracted: bool = False
-        normalizedByReference: bool = False
-
-        def toDict(self) -> dict:
-            return {'camCorrected': self.cameraCorrected, 'exposureNormed': self.normalizedByExposure, 'erSubtracted': self.extraReflectionSubtracted, 'refNormed': self.normalizedByReference}
-
-        @classmethod
-        def fromDict(cls, d: dict) -> 'ProcessingStatus':
-            return cls(cameraCorrected=d['camCorrected'], normalizedByExposure=d['exposureNormed'], extraReflectionSubtracted=d['erSubtracted'], normalizedByReference=d['refNormed'])
-
-    def __init__(self, data: np.ndarray, index: tuple, metadata: MetaDataBase, processingStatus: ProcessingStatus=None, dtype=np.float32):
-        super().__init__(data, index, dtype)
-        self.metadata = metadata
-        if processingStatus:
-            self.processingStatus = processingStatus
-        else:
-            self.processingStatus = ICRawBase.ProcessingStatus(False, False, False, False)
-
-    def normalizeByExposure(self):
-        """This is one of the first steps in most analysis pipelines. Data is divided by the camera exposure.
-        This way two ImCube that were acquired at different exposure times will still be on equivalent scales."""
-        if not self.processingStatus.cameraCorrected:
-            raise Exception(
-                "This ImCube has not yet been corrected for camera effects. are you sure you want to normalize by exposure?")
-        if not self.processingStatus.normalizedByExposure:
-            self.data = self.data / self.metadata.exposure
-        else:
-            raise Exception("The ImCube has already been normalized by exposure.")
-        self.processingStatus.normalizedByExposure = True
-
-    def correctCameraEffects(self, correction: CameraCorrection = None, binning: int = None):
-        """Subtracts the darkcounts from the data. count is darkcounts per pixel. binning should be specified if
-        it wasn't saved in the micromanager metadata."""
-        if self.processingStatus.cameraCorrected:
-            raise Exception("This ImCube has already had it's camera correction applied!")
-        if binning is None:
-            binning = self.metadata.binning
-            if binning is None: raise ValueError('Binning metadata not found. Binning must be specified in function argument.')
-        if correction is None:
-            correction = self.metadata.cameraCorrection
-            if correction is None: raise ValueError('CameraCorrection metadata not found. Binning must be specified in function argument.')
-        count = correction.darkCounts * binning ** 2  # Account for the fact that binning multiplies the darkcount.
-        self.data = self.data - count
-        if correction.linearityPolynomial is None or correction.linearityPolynomial == (1.0,):
-            pass
-        else:
-            self.data = np.polynomial.polynomial.polyval(self.data, (0.0,) + correction.linearityPolynomial)  # The [0] item is the y-intercept (already handled by the darkcount)
-        self.processingStatus.cameraCorrected = True
-        return
-
-    @abstractmethod
-    def normalizeByReference(self, reference: 'self.__class__'):
-        """Normalize the raw data of this data cube by a reference cube to result in data representing
-        arbitrarily scaled reflectance."""
-        pass
-
-    @abstractmethod
-    def subtractExtraReflection(self, extraReflection):
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def getMetadataClass() -> MetaDataBase:
-        """Return the metadata class associated with this subclass of ICRawBase"""
-        pass
-
-    def toHdfDataset(self, g: h5py.Group, name: str, fixedPointCompression: bool = True) -> h5py.Group:
-        g = ICBase.toHdfDataset(self, g, name, fixedPointCompression)
-        self.metadata.encodeHdfMetadata(g[name])
-        g[name].attrs['processingStatus'] = np.string_(json.dumps(self.processingStatus.toDict()))
-        return g
-
-    @classmethod
-    def decodeHdf(cls, d: h5py.Dataset) -> Tuple[np.array, Tuple[float, ...], dict, ProcessingStatus]:
-        arr, index = super().decodeHdf(d)
-        mdDict = cls.getMetadataClass().decodeHdfMetadata(d)
-        if 'processingStatus' in d.attrs:
-            processingStatus = cls.ProcessingStatus.fromDict(json.loads(d.attrs['processingStatus']))
-        else:  # Some old hdf files won't have this field, that's ok.
-            processingStatus = None
-        return arr, index, mdDict, processingStatus
-
-
-class DynCube(ICRawBase):
-    """A class representing a single acquisition of PWS Dynamics. In which the wavelength is held constant and the 3rd
-    dimension of the data is time rather than wavelength. This can be analyzed to reveal information about diffusion rate.
-    Contains methods for loading and saving to multiple formats as well as common operations used in analysis."""
-    def __init__(self, data, metadata: DynMetaData, processingStatus: ICRawBase.ProcessingStatus=None, dtype=np.float32):
-        assert isinstance(metadata, DynMetaData)
-        super().__init__(data, metadata.times, metadata, processingStatus=processingStatus, dtype=dtype)
-
-    @staticmethod
-    def getMetadataClass() -> typing.Type[DynMetaData]:
-        return DynMetaData
-
-    @property
-    def times(self):
-        """Unlike PWS where we operate along the dimension of wavelength, in dynamics we operate along the dimension of time."""
-        return self.index
-
-    @classmethod
-    def fromMetadata(cls, meta: DynMetaData, lock: mp.Lock = None) -> DynCube:
-        if meta.fileFormat == DynMetaData.FileFormats.Tiff:
-            return cls.fromTiff(meta.filePath, metadata=meta, lock=lock)
-        elif meta.fileFormat == DynMetaData.FileFormats.RawBinary:
-            return cls.fromOldPWS(meta.filePath, metadata=meta, lock=lock)
-        elif meta.fileFormat is None:
-            return cls.loadAny(meta.filePath, metadata=meta, lock=lock)
-        else:
-            raise TypeError("Invalid FileFormat")
-
-    @classmethod
-    def loadAny(cls, directory: str, metadata: DynMetaData = None, lock: mp.Lock = None):
-        try:
-            return DynCube.fromTiff(directory, metadata=metadata, lock=lock)
-        except:
-            try:
-                return DynCube.fromOldPWS(directory, metadata=metadata, lock=lock)
-            except:
-                raise OSError(f"Could not find a valid PWS image cube file at {directory}.")
-
-    @classmethod
-    def fromOldPWS(cls, directory, metadata: DynMetaData = None,  lock: mp.Lock = None):
-        """Loads from the file format that was saved by the all-matlab version of the Basis acquisition code.
-        Data was saved in raw binary to a file called `image_cube`. Some metadata was saved to .mat files called
-        `info2` and `info3`."""
-        if lock is not None:
-            lock.acquire()
-        try:
-            if metadata is None:
-                metadata = DynMetaData.fromOldPWS(directory)
-            with open(os.path.join(directory, 'image_cube'), 'rb') as f:
-                data = np.frombuffer(f.read(), dtype=np.uint16)
-            data = data.reshape((metadata._dict['imgHeight'], metadata._dict['imgWidth'], len(metadata.times)), order='F')
-        finally:
-            if lock is not None:
-                lock.release()
-        data = data.copy(order='C')
-        return cls(data, metadata)
-
-    @classmethod
-    def fromTiff(cls, directory, metadata: DynMetaData = None, lock: mp.Lock = None):
-        """Load a dyanmics acquisition from a tiff file. if the metadata for the acquisition has already been loaded then you can provide
-        is as the `metadata` argument to avoid loading it again. the `lock` argument is an optional place to provide a multiprocessing.Lock
-        which can be used when multiple files in parallel to avoid giving the hard drive too many simultaneous requests, this is probably not necessary."""
-        if lock is not None:
-            lock.acquire()
-        try:
-            if metadata is None:
-                metadata = DynMetaData.fromTiff(directory)
-            if os.path.exists(os.path.join(directory, 'dyn.tif')):
-                path = os.path.join(directory, 'dyn.tif')
-            else:
-                raise OSError("No Tiff file was found at:", directory)
-            with tf.TiffFile(path) as tif:
-                data = np.rollaxis(tif.asarray(), 0, 3)  # Swap axes to match y,x,lambda convention.
-        finally:
-            if lock is not None:
-                lock.release()
-        data = data.copy(order='C')
-        return cls(data, metadata)
-
-    def normalizeByReference(self, reference: Union[DynCube, np.ndarray]):
-        """This method can accept either a DynCube (in which case it's average over time will be calculated and used for
-        normalization) or a 2d numpy Array which should represent the average over time of a reference DynCube. The array
-        should be 2D and its shape should match the first two dimensions of this DynCube."""
-        if self.processingStatus.normalizedByReference:
-            raise Exception("This cube has already been normalized by a reference.")
-        if not self.processingStatus.cameraCorrected:
-            print("Warning: This cube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
-        if not self.processingStatus.normalizedByExposure:
-            print("Warning: This cube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
-        if isinstance(reference, DynCube):
-            if not reference.processingStatus.cameraCorrected:
-                print("Warning: The reference cube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
-            if not reference.processingStatus.normalizedByExposure:
-                print("Warning: The reference cube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
-            mean = reference.data.mean(axis=2)
-        elif isinstance(reference, np.ndarray):
-            assert len(reference.shape) == 2
-            assert reference.shape[0] == self.data.shape[0]
-            assert reference.shape[1] == self.data.shape[1]
-            mean = reference
-        else:
-            raise TypeError(f"`reference` must be either DynCube or numpy.ndarray, not {type(reference)}")
-        self.data = self.data / mean[:, :, None]
-        self.processingStatus.normalizedByReference = True
-
-    def subtractExtraReflection(self, extraReflection: np.ndarray):
-        assert self.data.shape[:2] == extraReflection.shape
-        if not self.processingStatus.normalizedByExposure:
-            raise Exception("This DynCube has not yet been normalized by exposure. are you sure you want to normalize by exposure?")
-        if not self.processingStatus.extraReflectionSubtracted:
-            self.data = self.data - extraReflection[:, :, None]
-            self.processingStatus.extraReflectionSubtracted = True
-        else:
-            raise Exception("The DynCube has already has extra reflection subtracted.")
-
-    def selIndex(self, start, stop) -> DynCube:
-        ret = super().selIndex(start, stop)
-        md = self.metadata
-        md._dict['times'] = ret.index
-        return DynCube(ret.data, md)
-
-    def getAutocorrelation(self) -> np.ndarray:
-        """Returns the autocorrelation function of dynamics data along the time axis. The ACF is calculated using fourier transforms using IFFT(FFT(data)*conj(FFT(data)))/length(data)"""
-        data = self.data - self.data.mean(axis=2)[:, :, None]  # By subtracting the mean we get an ACF where the 0-lag value is the variance of the signal.
-        F = np.fft.rfft(data, axis=2)
-        ac = np.fft.irfft(F * np.conjugate(F), axis=2) / data.shape[2]
-        return ac
-
-    def filterDust(self, kernelRadius: float, pixelSize: float = None) -> None:
-        """This method blurs the data of the cube along the X and Y dimensions. This is useful if the cube is being
-        used as a reference to normalize other cube. It helps blur out dust adn other unwanted small features."""
-        if pixelSize is None:
-            pixelSize = self.metadata.pixelSizeUm
-            if pixelSize is None:
-                raise ValueError("DynCube Metadata does not have a `pixelSizeUm` saved. please manually specify pixel size. use pixelSize=1 to make `kernelRadius in units of pixels.")
-        super().filterDust(kernelRadius, pixelSize)
-
-    @classmethod
-    def fromHdfDataset(cls, d: h5py.Dataset):
-        """Load an Imcube from an HDF5 dataset."""
-        data, index, mdDict, processingStatus = cls.decodeHdf(d)
-        md = DynMetaData(mdDict, fileFormat=DynMetaData.FileFormats.Hdf)
-        return cls(data, md, processingStatus=processingStatus)
+from . import metadata as pwsdtmd
+from . import other
+from pwspy.utility.matplotlibWidgets import AxManager, PointSelector
 
 
 class ICBase:
@@ -304,17 +65,17 @@ class ICBase:
         plt.colorbar(im, ax=ax)
         return fig, ax
 
-    def getMeanSpectra(self, mask: Optional[Union[Roi, np.ndarray]] = None) ->Tuple[np.ndarray, np.ndarray]:
+    def getMeanSpectra(self, mask: Optional[Union[other.Roi, np.ndarray]] = None) ->Tuple[np.ndarray, np.ndarray]:
         """Calculate the average spectra within a region of the data.
 
         Args:
-            mask: An optional Roi or boolean numpy array used to select pixels from the X and Y dimensions of the data array.
+            mask: An optional other.Roi or boolean numpy array used to select pixels from the X and Y dimensions of the data array.
                 If left as None then the full data array will be used as the region.
 
         Returns:
             Tuple[np.ndarray, np.ndarray]: The average spectra within the region, the standard deviation of the spectra within the region
         """
-        if isinstance(mask, Roi):
+        if isinstance(mask, other.Roi):
             mask = mask.mask
         if mask is None: #Make a mask that includes everything
             mask = np.ones(self.data.shape[:-1], dtype=np.bool)
@@ -550,15 +311,252 @@ class ICBase:
             raise TypeError(f"Got {d.attrs['type'].decode()} instead of {cls.__name__}")
 
 
+class ICRawBase(ICBase, ABC):
+    """This class represents data cubes which are not derived from other data cubes. They represent raw acquired data that exists as data files on the computer.
+    For this reason they may need to have hardware specific corrections applied to them such as normalizing out exposure time, linearizing camera counts,
+    subtracting dark counts, etc. The most important change is the addition of `metadata`
+    """
+
+    @dataclass
+    class ProcessingStatus:
+        """By default none of these things have been done for raw data"""
+        cameraCorrected: bool = False
+        normalizedByExposure: bool = False
+        extraReflectionSubtracted: bool = False
+        normalizedByReference: bool = False
+
+        def toDict(self) -> dict:
+            return {'camCorrected': self.cameraCorrected, 'exposureNormed': self.normalizedByExposure, 'erSubtracted': self.extraReflectionSubtracted, 'refNormed': self.normalizedByReference}
+
+        @classmethod
+        def fromDict(cls, d: dict) -> 'ProcessingStatus':
+            return cls(cameraCorrected=d['camCorrected'], normalizedByExposure=d['exposureNormed'], extraReflectionSubtracted=d['erSubtracted'], normalizedByReference=d['refNormed'])
+
+    def __init__(self, data: np.ndarray, index: tuple, metadata: pwsdtmd.MetaDataBase, processingStatus: ProcessingStatus=None, dtype=np.float32):
+        super().__init__(data, index, dtype)
+        self.metadata = metadata
+        if processingStatus:
+            self.processingStatus = processingStatus
+        else:
+            self.processingStatus = ICRawBase.ProcessingStatus(False, False, False, False)
+
+    def normalizeByExposure(self):
+        """This is one of the first steps in most analysis pipelines. Data is divided by the camera exposure.
+        This way two ImCube that were acquired at different exposure times will still be on equivalent scales."""
+        if not self.processingStatus.cameraCorrected:
+            raise Exception(
+                "This ImCube has not yet been corrected for camera effects. are you sure you want to normalize by exposure?")
+        if not self.processingStatus.normalizedByExposure:
+            self.data = self.data / self.metadata.exposure
+        else:
+            raise Exception("The ImCube has already been normalized by exposure.")
+        self.processingStatus.normalizedByExposure = True
+
+    def correctCameraEffects(self, correction: other.CameraCorrection = None, binning: int = None):
+        """Subtracts the darkcounts from the data. count is darkcounts per pixel. binning should be specified if
+        it wasn't saved in the micromanager metadata."""
+        if self.processingStatus.cameraCorrected:
+            raise Exception("This ImCube has already had it's camera correction applied!")
+        if binning is None:
+            binning = self.metadata.binning
+            if binning is None: raise ValueError('Binning metadata not found. Binning must be specified in function argument.')
+        if correction is None:
+            correction = self.metadata.cameraCorrection
+            if correction is None: raise ValueError('other.CameraCorrection metadata not found. Binning must be specified in function argument.')
+        count = correction.darkCounts * binning ** 2  # Account for the fact that binning multiplies the darkcount.
+        self.data = self.data - count
+        if correction.linearityPolynomial is None or correction.linearityPolynomial == (1.0,):
+            pass
+        else:
+            self.data = np.polynomial.polynomial.polyval(self.data, (0.0,) + correction.linearityPolynomial)  # The [0] item is the y-intercept (already handled by the darkcount)
+        self.processingStatus.cameraCorrected = True
+        return
+
+    @abstractmethod
+    def normalizeByReference(self, reference: 'self.__class__'):
+        """Normalize the raw data of this data cube by a reference cube to result in data representing
+        arbitrarily scaled reflectance."""
+        pass
+
+    @abstractmethod
+    def subtractExtraReflection(self, extraReflection):
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def getMetadataClass() -> pwsdtmd.MetaDataBase:
+        """Return the metadata class associated with this subclass of ICRawBase"""
+        pass
+
+    def toHdfDataset(self, g: h5py.Group, name: str, fixedPointCompression: bool = True) -> h5py.Group:
+        g = ICBase.toHdfDataset(self, g, name, fixedPointCompression)
+        self.metadata.encodeHdfMetadata(g[name])
+        g[name].attrs['processingStatus'] = np.string_(json.dumps(self.processingStatus.toDict()))
+        return g
+
+    @classmethod
+    def decodeHdf(cls, d: h5py.Dataset) -> Tuple[np.array, Tuple[float, ...], dict, ProcessingStatus]:
+        arr, index = super().decodeHdf(d)
+        mdDict = cls.getMetadataClass().decodeHdfMetadata(d)
+        if 'processingStatus' in d.attrs:
+            processingStatus = cls.ProcessingStatus.fromDict(json.loads(d.attrs['processingStatus']))
+        else:  # Some old hdf files won't have this field, that's ok.
+            processingStatus = None
+        return arr, index, mdDict, processingStatus
+
+
+class DynCube(ICRawBase):
+    """A class representing a single acquisition of PWS Dynamics. In which the wavelength is held constant and the 3rd
+    dimension of the data is time rather than wavelength. This can be analyzed to reveal information about diffusion rate.
+    Contains methods for loading and saving to multiple formats as well as common operations used in analysis."""
+    def __init__(self, data, metadata: pwsdtmd.DynMetaData, processingStatus: ICRawBase.ProcessingStatus=None, dtype=np.float32):
+        assert isinstance(metadata, pwsdtmd.DynMetaData)
+        super().__init__(data, metadata.times, metadata, processingStatus=processingStatus, dtype=dtype)
+
+    @staticmethod
+    def getMetadataClass() -> typing.Type[pwsdtmd.DynMetaData]:
+        return pwsdtmd.DynMetaData
+
+    @property
+    def times(self):
+        """Unlike PWS where we operate along the dimension of wavelength, in dynamics we operate along the dimension of time."""
+        return self.index
+
+    @classmethod
+    def fromMetadata(cls, meta: pwsdtmd.DynMetaData, lock: mp.Lock = None) -> DynCube:
+        if meta.fileFormat == pwsdtmd.DynMetaData.FileFormats.Tiff:
+            return cls.fromTiff(meta.filePath, metadata=meta, lock=lock)
+        elif meta.fileFormat == pwsdtmd.DynMetaData.FileFormats.RawBinary:
+            return cls.fromOldPWS(meta.filePath, metadata=meta, lock=lock)
+        elif meta.fileFormat is None:
+            return cls.loadAny(meta.filePath, metadata=meta, lock=lock)
+        else:
+            raise TypeError("Invalid FileFormat")
+
+    @classmethod
+    def loadAny(cls, directory: str, metadata: pwsdtmd.DynMetaData = None, lock: mp.Lock = None):
+        try:
+            return DynCube.fromTiff(directory, metadata=metadata, lock=lock)
+        except:
+            try:
+                return DynCube.fromOldPWS(directory, metadata=metadata, lock=lock)
+            except:
+                raise OSError(f"Could not find a valid PWS image cube file at {directory}.")
+
+    @classmethod
+    def fromOldPWS(cls, directory, metadata: pwsdtmd.DynMetaData = None,  lock: mp.Lock = None):
+        """Loads from the file format that was saved by the all-matlab version of the Basis acquisition code.
+        Data was saved in raw binary to a file called `image_cube`. Some metadata was saved to .mat files called
+        `info2` and `info3`."""
+        if lock is not None:
+            lock.acquire()
+        try:
+            if metadata is None:
+                metadata = pwsdtmd.DynMetaData.fromOldPWS(directory)
+            with open(os.path.join(directory, 'image_cube'), 'rb') as f:
+                data = np.frombuffer(f.read(), dtype=np.uint16)
+            data = data.reshape((metadata._dict['imgHeight'], metadata._dict['imgWidth'], len(metadata.times)), order='F')
+        finally:
+            if lock is not None:
+                lock.release()
+        data = data.copy(order='C')
+        return cls(data, metadata)
+
+    @classmethod
+    def fromTiff(cls, directory, metadata: pwsdtmd.DynMetaData = None, lock: mp.Lock = None):
+        """Load a dyanmics acquisition from a tiff file. if the metadata for the acquisition has already been loaded then you can provide
+        is as the `metadata` argument to avoid loading it again. the `lock` argument is an optional place to provide a multiprocessing.Lock
+        which can be used when multiple files in parallel to avoid giving the hard drive too many simultaneous requests, this is probably not necessary."""
+        if lock is not None:
+            lock.acquire()
+        try:
+            if metadata is None:
+                metadata = pwsdtmd.DynMetaData.fromTiff(directory)
+            if os.path.exists(os.path.join(directory, 'dyn.tif')):
+                path = os.path.join(directory, 'dyn.tif')
+            else:
+                raise OSError("No Tiff file was found at:", directory)
+            with tf.TiffFile(path) as tif:
+                data = np.rollaxis(tif.asarray(), 0, 3)  # Swap axes to match y,x,lambda convention.
+        finally:
+            if lock is not None:
+                lock.release()
+        data = data.copy(order='C')
+        return cls(data, metadata)
+
+    def normalizeByReference(self, reference: Union[DynCube, np.ndarray]):
+        """This method can accept either a DynCube (in which case it's average over time will be calculated and used for
+        normalization) or a 2d numpy Array which should represent the average over time of a reference DynCube. The array
+        should be 2D and its shape should match the first two dimensions of this DynCube."""
+        if self.processingStatus.normalizedByReference:
+            raise Exception("This cube has already been normalized by a reference.")
+        if not self.processingStatus.cameraCorrected:
+            print("Warning: This cube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
+        if not self.processingStatus.normalizedByExposure:
+            print("Warning: This cube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
+        if isinstance(reference, DynCube):
+            if not reference.processingStatus.cameraCorrected:
+                print("Warning: The reference cube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
+            if not reference.processingStatus.normalizedByExposure:
+                print("Warning: The reference cube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
+            mean = reference.data.mean(axis=2)
+        elif isinstance(reference, np.ndarray):
+            assert len(reference.shape) == 2
+            assert reference.shape[0] == self.data.shape[0]
+            assert reference.shape[1] == self.data.shape[1]
+            mean = reference
+        else:
+            raise TypeError(f"`reference` must be either DynCube or numpy.ndarray, not {type(reference)}")
+        self.data = self.data / mean[:, :, None]
+        self.processingStatus.normalizedByReference = True
+
+    def subtractExtraReflection(self, extraReflection: np.ndarray):
+        assert self.data.shape[:2] == extraReflection.shape
+        if not self.processingStatus.normalizedByExposure:
+            raise Exception("This DynCube has not yet been normalized by exposure. are you sure you want to normalize by exposure?")
+        if not self.processingStatus.extraReflectionSubtracted:
+            self.data = self.data - extraReflection[:, :, None]
+            self.processingStatus.extraReflectionSubtracted = True
+        else:
+            raise Exception("The DynCube has already has extra reflection subtracted.")
+
+    def selIndex(self, start, stop) -> DynCube:
+        ret = super().selIndex(start, stop)
+        md = self.metadata
+        md._dict['times'] = ret.index
+        return DynCube(ret.data, md)
+
+    def getAutocorrelation(self) -> np.ndarray:
+        """Returns the autocorrelation function of dynamics data along the time axis. The ACF is calculated using fourier transforms using IFFT(FFT(data)*conj(FFT(data)))/length(data)"""
+        data = self.data - self.data.mean(axis=2)[:, :, None]  # By subtracting the mean we get an ACF where the 0-lag value is the variance of the signal.
+        F = np.fft.rfft(data, axis=2)
+        ac = np.fft.irfft(F * np.conjugate(F), axis=2) / data.shape[2]
+        return ac
+
+    def filterDust(self, kernelRadius: float, pixelSize: float = None) -> None:
+        """This method blurs the data of the cube along the X and Y dimensions. This is useful if the cube is being
+        used as a reference to normalize other cube. It helps blur out dust adn other unwanted small features."""
+        if pixelSize is None:
+            pixelSize = self.metadata.pixelSizeUm
+            if pixelSize is None:
+                raise ValueError("DynCube Metadata does not have a `pixelSizeUm` saved. please manually specify pixel size. use pixelSize=1 to make `kernelRadius in units of pixels.")
+        super().filterDust(kernelRadius, pixelSize)
+
+    @classmethod
+    def fromHdfDataset(cls, d: h5py.Dataset):
+        """Load an Imcube from an HDF5 dataset."""
+        data, index, mdDict, processingStatus = cls.decodeHdf(d)
+        md = pwsdtmd.DynMetaData(mdDict, fileFormat=pwsdtmd.DynMetaData.FileFormats.Hdf)
+        return cls(data, md, processingStatus=processingStatus)
+
+
 class ExtraReflectanceCube(ICBase):
     """This class represents a 3D data cube of the extra reflectance in a PWS system. It's values are in units of
-    reflectance (between 0 and 1). It has a `metadata` attribute which is of ERMetaData. It also has a `data` attribute
+    reflectance (between 0 and 1). It has a `metadata` attribute which is of type ERMetaData. It also has a `data` attribute
     of numpy.ndarray type."""
 
-    ERMetaData = ERMetaData
-
-    def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], metadata: ERMetaData):
-        assert isinstance(metadata, ERMetaData)
+    def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], metadata: pwsdtmd.ERMetaData):
+        assert isinstance(metadata, pwsdtmd.ERMetaData)
         if data.max() > 1 or data.min() < 0:
             print("Warning!: Reflectance values must be between 0 and 1")
         self.metadata = metadata
@@ -572,14 +570,14 @@ class ExtraReflectanceCube(ICBase):
     @classmethod
     def fromHdfFile(cls, directory: str, name: str) -> ExtraReflectanceCube:
         """Load an ExtraReflectanceCube from an HDF5 file. `name` should be the file name, excluding the '_ExtraReflectance.h5' suffix."""
-        filePath = ERMetaData.dirName2Directory(directory, name)
+        filePath = pwsdtmd.ERMetaData.dirName2Directory(directory, name)
         with h5py.File(filePath, 'r') as hf:
-            dset = hf[ERMetaData._DATASETTAG]
+            dset = hf[pwsdtmd.ERMetaData._DATASETTAG]
             return cls.fromHdfDataset(dset, filePath=filePath)
 
     def toHdfFile(self, directory: str, name: str) -> None:
         """Save an ExtraReflectanceCube to an HDF5 file. The filename will be `name` with the '_ExtraReflectance.h5' suffix."""
-        savePath = ERMetaData.dirName2Directory(directory, name)
+        savePath = pwsdtmd.ERMetaData.dirName2Directory(directory, name)
         if os.path.exists(savePath):
             raise OSError(f"The path {savePath} already exists.")
         with h5py.File(savePath, 'w') as hf:
@@ -587,7 +585,7 @@ class ExtraReflectanceCube(ICBase):
 
     def toHdfDataset(self, g: h5py.Group) -> h5py.Group:
         """Save the ExtraReflectanceCube to an HDF5 dataset. `g` should be an h5py Group or File."""
-        g = super().toHdfDataset(g, ERMetaData._DATASETTAG)
+        g = super().toHdfDataset(g, pwsdtmd.ERMetaData._DATASETTAG)
         g = self.metadata.toHdfDataset(g)
         return g
 
@@ -595,13 +593,13 @@ class ExtraReflectanceCube(ICBase):
     def fromHdfDataset(cls, d: h5py.Dataset, filePath: str = None):
         """Load the ExtraReflectanceCube from `d`, an HDF5 dataset."""
         data, index = cls.decodeHdf(d)
-        md = ERMetaData.fromHdfDataset(d, filePath=filePath)
+        md = pwsdtmd.ERMetaData.fromHdfDataset(d, filePath=filePath)
         return cls(data, index, md)
 
     @classmethod
-    def fromMetadata(cls, md: ERMetaData):
+    def fromMetadata(cls, md: pwsdtmd.ERMetaData):
         """Load an ExtraReflectanceCube from an ERMetaData object corresponding to an HDF5 file."""
-        directory, name = ERMetaData.directory2dirName(md.filePath)
+        directory, name = pwsdtmd.ERMetaData.directory2dirName(md.filePath)
         return cls.fromHdfFile(directory, name)
 
 
@@ -609,7 +607,7 @@ class ExtraReflectionCube(ICBase):
     """This class is meant to be constructed from an ExtraReflectanceCube along with additional reference measurement
     information. Rather than being in units of reflectance (between 0 and 1) it is in the same units as the reference measurement
     that is provided with, usually counts/ms or just counts."""
-    def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], metadata: ERMetaData):
+    def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], metadata: pwsdtmd.ERMetaData):
         super().__init__(data, wavelengths)
         self.metadata = metadata
 
@@ -628,8 +626,8 @@ class ImCube(ICRawBase):
     """ A class representing a single PWS acquisition. Contains methods for loading and saving to multiple formats as
     well as common operations used in analysis."""
 
-    def __init__(self, data, metadata: ICMetaData, processingStatus: ICRawBase.ProcessingStatus=None, dtype=np.float32):
-        assert isinstance(metadata, ICMetaData)
+    def __init__(self, data, metadata: pwsdtmd.ICMetaData, processingStatus: ICRawBase.ProcessingStatus=None, dtype=np.float32):
+        assert isinstance(metadata, pwsdtmd.ICMetaData)
         super().__init__(data, metadata.wavelengths, metadata, processingStatus=processingStatus, dtype=dtype)
 
     @property
@@ -637,7 +635,7 @@ class ImCube(ICRawBase):
         return self.index
 
     @classmethod
-    def loadAny(cls, directory, metadata: ICMetaData = None,  lock: mp.Lock = None):
+    def loadAny(cls, directory, metadata: pwsdtmd.ICMetaData = None,  lock: mp.Lock = None):
         """Attempt loading any of the known file formats."""
         try:
             return ImCube.fromTiff(directory, metadata=metadata, lock=lock)
@@ -651,7 +649,7 @@ class ImCube(ICRawBase):
                     raise OSError(f"Could not find a valid PWS image cube file at {directory}.")
 
     @classmethod
-    def fromOldPWS(cls, directory, metadata: ICMetaData = None,  lock: mp.Lock = None):
+    def fromOldPWS(cls, directory, metadata: pwsdtmd.ICMetaData = None,  lock: mp.Lock = None):
         """Loads from the file format that was saved by the all-matlab version of the Basis acquisition code.
         Data was saved in raw binary to a file called `image_cube`. Some metadata was saved to .mat files called
         `info2` and `info3`."""
@@ -659,7 +657,7 @@ class ImCube(ICRawBase):
             lock.acquire()
         try:
             if metadata is None:
-                metadata = ICMetaData.fromOldPWS(directory)
+                metadata = pwsdtmd.ICMetaData.fromOldPWS(directory)
             with open(os.path.join(directory, 'image_cube'), 'rb') as f:
                 data = np.frombuffer(f.read(), dtype=np.uint16)
             data = data.reshape((metadata._dict['imgHeight'], metadata._dict['imgWidth'], len(metadata.wavelengths)), order='F')
@@ -670,7 +668,7 @@ class ImCube(ICRawBase):
         return cls(data, metadata)
 
     @classmethod
-    def fromTiff(cls, directory, metadata: ICMetaData = None,  lock: mp.Lock = None):
+    def fromTiff(cls, directory, metadata: pwsdtmd.ICMetaData = None,  lock: mp.Lock = None):
         """Loads from a 3D tiff file named `pws.tif`, or in some older data `MMStack.ome.tif`. Metadata can be stored in
         the tags of the tiff file but if there is a pwsmetadata.json file found then this is preferred.
         A multiprocessing.Lock object can be passed to this function so that it will acquire a lock during the
@@ -679,7 +677,7 @@ class ImCube(ICRawBase):
             lock.acquire()
         try:
             if metadata is None:
-                metadata = ICMetaData.fromTiff(directory)
+                metadata = pwsdtmd.ICMetaData.fromTiff(directory)
             if os.path.exists(os.path.join(directory, 'MMStack.ome.tif')):
                 path = os.path.join(directory, 'MMStack.ome.tif')
             elif os.path.exists(os.path.join(directory, 'pws.tif')):
@@ -695,14 +693,14 @@ class ImCube(ICRawBase):
         return cls(data, metadata)
 
     @classmethod
-    def fromNano(cls, directory: str, metadata: ICMetaData = None, lock: mp.Lock = None):
+    def fromNano(cls, directory: str, metadata: pwsdtmd.ICMetaData = None, lock: mp.Lock = None):
         """Loads from the file format used at NanoCytomics. all data and metdata is contained in a .mat file."""
         path = os.path.join(directory, 'imageCube.mat')
         if lock is not None:
             lock.acquire()
         try:
             if metadata is None:
-                metadata = ICMetaData.fromNano(directory)
+                metadata = pwsdtmd.ICMetaData.fromNano(directory)
             with h5py.File(path, 'r') as hf:
                 data = np.array(hf['imageCube'])
                 data = data.transpose((2, 1, 0))  # Re-order axes to match the shape of ROIs and thumbnails.
@@ -713,15 +711,15 @@ class ImCube(ICRawBase):
         return cls(data, metadata)
 
     @classmethod
-    def fromMetadata(cls, meta: ICMetaData,  lock: mp.Lock = None) -> ImCube:
+    def fromMetadata(cls, meta: pwsdtmd.ICMetaData,  lock: mp.Lock = None) -> ImCube:
         """If provided with an ICMetadata object this function will automatically select the correct file loading method
         and will return the associated ImCube."""
-        assert isinstance(meta, ICMetaData)
-        if meta.fileFormat == ICMetaData.FileFormats.Tiff:
+        assert isinstance(meta, pwsdtmd.ICMetaData)
+        if meta.fileFormat == pwsdtmd.ICMetaData.FileFormats.Tiff:
             return cls.fromTiff(meta.filePath, metadata=meta, lock=lock)
-        elif meta.fileFormat == ICMetaData.FileFormats.RawBinary:
+        elif meta.fileFormat == pwsdtmd.ICMetaData.FileFormats.RawBinary:
             return cls.fromOldPWS(meta.filePath, metadata=meta, lock=lock)
-        elif meta.fileFormat == ICMetaData.FileFormats.NanoMat:
+        elif meta.fileFormat == pwsdtmd.ICMetaData.FileFormats.NanoMat:
             return cls.fromNano(meta.filePath, metadata=meta, lock=lock)
         elif meta.fileFormat is None:
             return cls.loadAny(meta.filePath, metadata=meta, lock=lock)
@@ -782,14 +780,14 @@ class ImCube(ICRawBase):
         return ImCube(ret.data, md)
 
     @staticmethod
-    def getMetadataClass() -> Type[ICMetaData]:
-        return ICMetaData
+    def getMetadataClass() -> Type[pwsdtmd.ICMetaData]:
+        return pwsdtmd.ICMetaData
 
     @classmethod
     def fromHdfDataset(cls, d: h5py.Dataset):
         """Load an Imcube from an HDF5 dataset."""
         data, index, mdDict, processingStatus = cls.decodeHdf(d)
-        md = ICMetaData(mdDict, fileFormat=ICMetaData.FileFormats.Hdf)
+        md = pwsdtmd.ICMetaData(mdDict, fileFormat=pwsdtmd.ICMetaData.FileFormats.Hdf)
         return cls(data, md, processingStatus=processingStatus)
 
     def filterDust(self, kernelRadius: float, pixelSize: float = None) -> None:
@@ -839,7 +837,7 @@ class KCube(ICBase):
     """A class representing an ImCube after being transformed from being described in terms of wavelength to
     wavenumber (k-space). Much of the analysis operated in terms of k-space."""
 
-    def __init__(self, data: np.ndarray, wavenumbers: Tuple[float], metadata: ICMetaData = None):
+    def __init__(self, data: np.ndarray, wavenumbers: Tuple[float], metadata: pwsdtmd.ICMetaData = None):
         self.metadata = metadata #Just saving a reference to the original imcube in case we want to reference it.
         ICBase.__init__(self, data, wavenumbers, dtype=np.float32)
 
@@ -1043,3 +1041,32 @@ class KCube(ICBase):
     def __truediv__(self, other):
         ret = self._truediv(other)
         return KCube(ret, self.wavenumbers, metadata=self.metadata)
+
+
+class FluorescenceImage:
+    def __init__(self, data: np.ndarray, md: pwsdtmd.FluorMetaData):
+        self.data = data
+        self.metadata = md
+
+    @classmethod
+    def fromTiff(cls, directory: str, acquisitionDirectory: Optional[pwsdtmd.AcqDir] = None):
+        md = pwsdtmd.FluorMetaData.fromTiff(directory, acquisitionDirectory) #This will raise an error if the folder isn't valid
+        return cls.fromMetadata(md)
+
+    @classmethod
+    def fromMetadata(cls, md: pwsdtmd.FluorMetaData, lock: mp.Lock = None):
+        path = os.path.join(md.filePath, pwsdtmd.FluorMetaData.FILENAME)
+        if lock is not None:
+            lock.acquire()
+        try:
+            img = tf.TiffFile(path)
+        finally:
+            if lock is not None:
+                lock.release()
+        return cls(img.asarray(), md)
+
+    def toTiff(self, directory: str):
+        with open(os.path.join(directory, pwsdtmd.FluorMetaData.FILENAME), 'wb') as f:
+            tf.imsave(f, self.data)
+        with open(os.path.join(directory, pwsdtmd.FluorMetaData.MDPATH), 'w') as f:
+            json.dump(self.metadata, f)

@@ -8,14 +8,12 @@ This module contains all custom datatypes that are commonly used in the analysis
 
 import os
 _jsonSchemasPath = os.path.join(os.path.split(__file__)[0], 'jsonSchemas')
-from .metadata import ICMetaData
-from . import DynMetaData, ERMetaData, FluorMetaData, MetaDataBase, AnalysisManagerMetaDataBase, DynCube, \
-    ExtraReflectanceCube, ExtraReflectionCube, ICBase, ICRawBase, ImCube, KCube
-from ._otherClasses import Roi, CameraCorrection
-from ._FluoresenceImg import FluorescenceImage
-from ._AcqDir import AcqDir
+from .metadata import ICMetaData, AcqDir, DynMetaData, ERMetaData, FluorMetaData
+from .other import Roi, CameraCorrection
+from .data import FluorescenceImage, ExtraReflectanceCube, ExtraReflectionCube, ImCube, KCube, DynCube
 
-__all__ = ['Roi', 'CameraCorrection', 'FluorescenceImage', 'AcqDir']
+__all__ = ['ICMetaData', 'AcqDir', 'DynMetaData', 'ERMetaData', 'FluorMetaData', 'Roi', 'CameraCorrection',
+           'FluorescenceImage', 'ExtraReflectionCube', 'ExtraReflectanceCube', 'ImCube', 'KCube', 'DynCube']
 
 
 
