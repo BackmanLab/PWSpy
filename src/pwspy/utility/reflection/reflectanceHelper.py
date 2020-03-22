@@ -67,9 +67,6 @@ def getRefractiveIndex(mat: Material, wavelengths=None) -> pd.Series:
     return refractiveIndex
 
 
-
-
-
 def getReflectance(mat1: Material, mat2: Material, wavelengths: Union[np.ndarray, List, Tuple] = None, NA: float = 0) -> pd.Series:
     """Given the names of two interfaces this provides the reflectance in units of percent.
     If given a series as index the data will be interpolated and reindexed to match the index. If NA is None the result

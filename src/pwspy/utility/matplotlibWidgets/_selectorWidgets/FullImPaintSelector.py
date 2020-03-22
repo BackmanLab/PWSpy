@@ -8,7 +8,7 @@ from matplotlib.image import AxesImage
 from shapely.geometry import Polygon as shapelyPolygon, LinearRing, MultiPolygon
 from matplotlib.patches import Polygon
 
-from pwspy.utility.fluorescence.segmentation import segmentAdaptive
+from pwspy.utility.fluorescence import segmentAdaptive
 from pwspy.utility.matplotlibWidgets.coreClasses import AxManager
 from pwspy.utility.matplotlibWidgets._selectorWidgets import SelectorWidgetBase
 

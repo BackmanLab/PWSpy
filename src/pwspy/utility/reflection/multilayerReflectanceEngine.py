@@ -295,6 +295,7 @@ class Stack(StackBase):
         ax4.legend()
         fig4.show()
 
+
 if __name__ == '__main__':
     num = 40
     wv = np.linspace(500, 700, num=100)

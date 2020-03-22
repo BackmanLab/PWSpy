@@ -1,9 +1,14 @@
+import os
+from glob import glob
 from typing import List
 
-import numpy as np
 import cv2
+import numpy as np
 import shapely
+import tifffile as tf
 from shapely.geometry import MultiPolygon
+
+from pwspy.dataTypes import FluorescenceImage
 
 
 def segmentOtsu(image: np.ndarray, minArea = 100):
@@ -24,6 +29,7 @@ def segmentOtsu(image: np.ndarray, minArea = 100):
             continue
         polys.append(p)
     return polys
+
 
 def segmentAdaptive(image: np.ndarray, minArea = 100, adaptiveRange: int = 500, thresholdOffset: float=-10, polySimplification: int = 5, dilate: int = 0, erode: int = 0) -> List[shapely.geometry.Polygon]:
     """Uses opencv's adaptive"""
@@ -50,3 +56,30 @@ def segmentAdaptive(image: np.ndarray, minArea = 100, adaptiveRange: int = 500, 
                 continue
             polys.append(poly)
     return polys
+
+
+def updateFolderStructure(rootDirectory: str, rotate: int, flipX: bool, flipY: bool):
+    """Used to translate old fluorescence images to the new file organization that is recognized by the code.
+
+    Args:
+        rootDirectory: The top level directory containing fluorescence images that were saved in the old `FL_Cell{X}` folder format
+        rotate: The number of times that the images should be rotated clockwise to match up with the PWS images they go with
+        flipX: Should the images be mirrored over the X-axis after being rotated?
+        flipY: Should the images be mirrored over the Y-axis after being rotated?
+
+    """
+
+    files = glob(os.path.join(rootDirectory, '**', 'FL_Cell*'), recursive=True)
+    for file in files:
+        cellNum = int(file.split('FL_Cell')[-1])
+        parentPath = file.split("FL_Cell")[0]
+        data = tf.imread(os.path.join(file, 'image_bd.tif'))
+        data = np.rot90(data, k=rotate)
+        if flipX:
+            data = np.flip(data, axis=1)
+        if flipY:
+            data = np.flip(data, axis=0)
+        fl = FluorescenceImage(data, {'exposure': None})
+        newPath = os.path.join(parentPath, f'Cell{cellNum}', 'Fluorescence')
+        os.mkdir(newPath)
+        fl.toTiff(newPath)
