@@ -7,8 +7,7 @@ from PyQt5.QtWidgets import QListWidgetItem, QWidget, QScrollArea, QListWidget, 
 from pwspy.analysis import AbstractAnalysisSettings, AnalysisTypes
 from pwspy.analysis._abstract import AbstractRuntimeAnalysisSettings
 from pwspy.analysis.dynamics._analysisSettings import DynamicsAnalysisSettings, DynamicsRuntimeAnalysisSettings
-from pwspy.analysis.pws import PWSAnalysisSettings
-from pwspy.analysis.pws._analysisSettings import PWSRuntimeAnalysisSettings
+from pwspy.analysis.pws import PWSAnalysisSettings, PWSRuntimeAnalysisSettings
 from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames import DynamicsSettingsFrame, PWSSettingsFrame
 from pwspy.dataTypes import AcqDir
 import typing

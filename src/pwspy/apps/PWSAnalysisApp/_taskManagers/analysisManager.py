@@ -9,15 +9,13 @@ from pwspy.analysis import AbstractAnalysisSettings, AbstractAnalysis
 from pwspy.analysis._abstract import AbstractRuntimeAnalysisSettings
 from pwspy.analysis.dynamics import DynamicsAnalysisSettings, DynamicsAnalysis
 from pwspy.analysis.dynamics._analysisSettings import DynamicsRuntimeAnalysisSettings
-from pwspy.analysis.pws._analysisSettings import PWSRuntimeAnalysisSettings
 from pwspy.apps.PWSAnalysisApp._sharedWidgets import ScrollableMessageBox
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox, QInputDialog
 from pwspy.dataTypes import CameraCorrection, AcqDir, ICMetaData
 from pwspy.dataTypes.data import ExtraReflectanceCube, ICRawBase, ImCube
-from pwspy.analysis.pws import PWSAnalysisSettings
-from pwspy.analysis.pws import PWSAnalysis
+from pwspy.analysis.pws import PWSAnalysisSettings, PWSAnalysis, PWSRuntimeAnalysisSettings
 from pwspy.analysis.warnings import AnalysisWarning
 from pwspy.dataTypes.metadata import AnalysisManagerMetaDataBase
 from pwspy.utility.fileIO import loadAndProcess

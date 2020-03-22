@@ -4,7 +4,6 @@ from glob import glob
 from typing import Optional, Tuple
 import typing
 
-from pwspy.analysis.pws._analysisSettings import PWSRuntimeAnalysisSettings
 from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames._AbstractSettingsFrame import AbstractSettingsFrame
 from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames._sharedWidgets import ExtraReflectanceSelector, HardwareCorrections, \
     QHSpinBox, QHDoubleSpinBox, VerticallyCompressedWidget
@@ -18,7 +17,7 @@ from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupB
 
 from pwspy.dataTypes import CameraCorrection
 from pwspy.dataTypes.metadata import ERMetaData
-from pwspy.analysis.pws import PWSAnalysisSettings
+from pwspy.analysis.pws import PWSAnalysisSettings, PWSRuntimeAnalysisSettings
 from pwspy.apps.PWSAnalysisApp import applicationVars
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.collapsibleSection import CollapsibleSection
 
