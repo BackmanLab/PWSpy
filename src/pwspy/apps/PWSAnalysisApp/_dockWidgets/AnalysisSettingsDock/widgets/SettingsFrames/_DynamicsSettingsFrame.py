@@ -1,19 +1,17 @@
 from __future__ import annotations
 
-from typing import Optional, Tuple
-
+import typing
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupBox, QHBoxLayout, QCheckBox
 
-from pwspy.analysis.dynamics._analysisSettings import DynamicsAnalysisSettings, DynamicsRuntimeAnalysisSettings
-from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames._AbstractSettingsFrame import AbstractSettingsFrame
-import typing
+from pwspy.analysis import dynamics
+from ._AbstractSettingsFrame import AbstractSettingsFrame
 
 from ._sharedWidgets import ExtraReflectanceSelector, VerticallyCompressedWidget, HardwareCorrections
 
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
-    from pwspy.dataTypes import CameraCorrection, ERMetaData
+    import  pwspy.dataTypes as pwsdt
 
 
 class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
@@ -71,20 +69,20 @@ class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
     def analysisName(self) -> str:
         return self._analysisNameEdit.text()
 
-    def loadFromSettings(self, settings: DynamicsAnalysisSettings):
+    def loadFromSettings(self, settings: dynamics.DynamicsAnalysisSettings):
         self.extraReflection.loadFromSettings(settings.numericalAperture, settings.referenceMaterial, settings.extraReflectanceId)
         self.relativeUnits.setCheckState(2 if settings.relativeUnits else 0)
 
-    def loadCameraCorrection(self, camCorr: Optional[CameraCorrection] = None):
+    def loadCameraCorrection(self, camCorr: typing.Optional[pwsdt.CameraCorrection] = None):
         self.hardwareCorrections.loadCameraCorrection(camCorr)
 
-    def getSettings(self) -> DynamicsRuntimeAnalysisSettings:
+    def getSettings(self) -> dynamics.DynamicsRuntimeAnalysisSettings:
         erMetadata, refMaterial, numericalAperture = self.extraReflection.getSettings()
-        return DynamicsRuntimeAnalysisSettings(settings=DynamicsAnalysisSettings(extraReflectanceId=erMetadata.idTag if erMetadata is not None else None,
+        return dynamics.DynamicsRuntimeAnalysisSettings(settings=dynamics.DynamicsAnalysisSettings(extraReflectanceId=erMetadata.idTag if erMetadata is not None else None,
                                                                                 referenceMaterial=refMaterial,
                                                                                 numericalAperture=numericalAperture,
                                                                                 relativeUnits=self.relativeUnits.checkState() != 0),
-                                               extraReflectanceMetadata=erMetadata)
+                                                            extraReflectanceMetadata=erMetadata)
 
-    def getCameraCorrection(self) -> CameraCorrection:
+    def getCameraCorrection(self) -> pwsdt.CameraCorrection:
         return self.hardwareCorrections.getCameraCorrection()

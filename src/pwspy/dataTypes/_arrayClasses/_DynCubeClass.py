@@ -1,17 +1,11 @@
 from __future__ import annotations
-
-from typing import Union, Type
-
+import typing
 import h5py
-
-from ._ICBaseClass import ICRawBase
+import os
 import numpy as np
 import multiprocessing as mp
-import os
 import tifffile as tf
-import typing
-if typing.TYPE_CHECKING:
-    pass
+from ._ICBaseClass import ICRawBase
 from .._metadata import DynMetaData
 
 
@@ -24,7 +18,7 @@ class DynCube(ICRawBase):
         super().__init__(data, metadata.times, metadata, processingStatus=processingStatus, dtype=dtype)
 
     @staticmethod
-    def getMetadataClass() -> Type[DynMetaData]:
+    def getMetadataClass() -> typing.Type[DynMetaData]:
         return DynMetaData
 
     @property
