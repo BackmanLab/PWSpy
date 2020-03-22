@@ -23,7 +23,7 @@ import typing
 from ._analysisSettings import PWSRuntimeAnalysisSettings
 
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import ImCube, ExtraReflectanceCube, KCube
+    from ...dataTypes.data import ExtraReflectanceCube, ExtraReflectionCube, ImCube, KCube
 
 
 class PWSAnalysis(AbstractAnalysis): #TODO Handle the case where pixels are 0, mark them as nan
@@ -31,7 +31,7 @@ class PWSAnalysis(AbstractAnalysis): #TODO Handle the case where pixels are 0, m
     For a given set of settings and reference you only need to instantiate one instance of this class. You can then perform `run`
     on as many data cubes as you want."""
     def __init__(self, runtimeSettings: PWSRuntimeAnalysisSettings, ref: ImCube): #TODO it would make sense to include the reference in the runtime settings too.
-        from pwspy.dataTypes import ExtraReflectionCube, ExtraReflectanceCube
+        from pwspy.dataTypes import ExtraReflectanceCube
         assert ref.processingStatus.cameraCorrected, "Before attempting to analyze using this reference make sure that it has had camera darkcounts and non-linearity corrected for."
         super().__init__()
         self._initWarnings = []

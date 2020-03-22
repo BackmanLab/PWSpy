@@ -1,4 +1,4 @@
-from pwspy.dataTypes import DynCube
+from pwspy.dataTypes.data import DynCube
 
 outPath = r''
 refPath = r''

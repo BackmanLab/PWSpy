@@ -4,7 +4,7 @@ Created on Fri Dec  7 12:38:49 2018
 
 @author: Nick Anthony
 """
-from pwspy.dataTypes import ImCube, KCube
+from pwspy.dataTypes.data import ImCube, KCube
 import copy
 import scipy.signal as sps
 import numpy as np

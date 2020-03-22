@@ -9,7 +9,7 @@ from pwspy.utility.misc import cached_property
 import numpy as np
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import DynCube
+    from ...dataTypes.data import DynCube
 
 
 def getFromDict(func):

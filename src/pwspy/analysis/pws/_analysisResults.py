@@ -9,7 +9,7 @@ from pwspy.analysis._abstract import AbstractAnalysisResults, AbstractHDFAnalysi
 import os
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import KCube
+    from pwspy.dataTypes.data import KCube
 
 
 def clearError(func):

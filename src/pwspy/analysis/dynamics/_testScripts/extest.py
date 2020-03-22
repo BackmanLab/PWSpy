@@ -3,7 +3,8 @@ from pwspy.moduleConsts import Material
 
 if __name__ == "__main__":
     import os.path as osp
-    from pwspy.dataTypes import DynCube
+    from pwspy.dataTypes.data import DynCube
+
     wDir = r"C:\Users\backman05\Desktop\Dynamics data\A1"
     cubeDir = osp.join(wDir, "Cell1\Dynamics")
     refDir = osp.join(wDir, "Cell997\Dynamics")

@@ -8,8 +8,7 @@ This is a temporary script file.
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from pwspy.dataTypes import ImCube
-from pwspy.dataTypes import ExtraReflectanceCube, ExtraReflectionCube
+from pwspy.dataTypes.data import ExtraReflectanceCube, ExtraReflectionCube, ImCube
 from pwspy.utility.reflection import reflectanceHelper
 from glob import glob
 import os

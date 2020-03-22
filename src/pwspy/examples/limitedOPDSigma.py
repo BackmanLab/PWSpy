@@ -12,7 +12,8 @@ Nano uses this method to extract rms from phantom make from ChromEM cells embedd
 The phantom has a strong thin-film spectrum. This script is meant to filter out the thin film components
 of the fourier transfrom and extract RMS from what is left."""
 
-from pwspy.dataTypes import ImCube, KCube, CameraCorrection, AcqDir, Roi
+from pwspy.dataTypes import CameraCorrection, AcqDir, Roi
+from pwspy.dataTypes.data import ImCube, KCube
 import matplotlib.pyplot as plt
 import scipy.signal as sps
 import os

@@ -1,6 +1,6 @@
 from timeit import timeit
 import os.path as osp
-from pwspy.dataTypes import ImCube, KCube
+from pwspy.dataTypes.data import ImCube, KCube
 
 resources = osp.join(osp.split(__file__)[0], '_resources')
 testCellPath = osp.join(resources, 'Cell1')

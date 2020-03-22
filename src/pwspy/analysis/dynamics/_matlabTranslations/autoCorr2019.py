@@ -1,4 +1,4 @@
-from pwspy.dataTypes import DynCube
+from pwspy.dataTypes.data import DynCube
 import os
 import numpy as np
 from pwspy.dataTypes._otherClasses import Roi
