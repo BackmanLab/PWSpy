@@ -7,14 +7,14 @@ from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtWidgets import QMenu, QAction, QWidget, QLabel, QVBoxLayout, QSizePolicy
 
 from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
-from pwspy.dataTypes import AcqDir
+from pwspy.dataTypes import AcqDir, ICMetaData
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 
 from pwspy.analysis.pws import PWSAnalysisResults
 from .widgets import AnalysisPlotter
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.analysisViewer import AnalysisViewer
-from pwspy.dataTypes import ImCube, ICMetaData
+from pwspy.dataTypes import ImCube
 from pwspy.utility.plotting import PlotNd
 
 

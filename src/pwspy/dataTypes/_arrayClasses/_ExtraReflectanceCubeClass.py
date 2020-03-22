@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Tuple
 
 import h5py
-from .._metadata import ERMetaData
+from ..metadata import ERMetaData
 
 from ._ICBaseClass import ICBase
 import numpy as np

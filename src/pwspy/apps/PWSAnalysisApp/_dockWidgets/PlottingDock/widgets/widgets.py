@@ -3,9 +3,8 @@ import numpy as np
 
 from pwspy.analysis import AnalysisTypes
 from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
-from pwspy.dataTypes import AcqDir, FluorescenceImage
+from pwspy.dataTypes import AcqDir, FluorescenceImage, ICMetaData
 from pwspy.analysis.pws import PWSAnalysisResults
-from pwspy.dataTypes import ICMetaData
 from enum import Enum, auto
 
 

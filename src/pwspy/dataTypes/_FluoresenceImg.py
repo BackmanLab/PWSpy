@@ -4,7 +4,7 @@ import tifffile as tf
 import os, json
 from typing import Optional
 import typing
-from ._metadata import FluorMetaData
+from .metadata import FluorMetaData
 import multiprocessing as mp
 if typing.TYPE_CHECKING:
     from ._AcqDir import AcqDir

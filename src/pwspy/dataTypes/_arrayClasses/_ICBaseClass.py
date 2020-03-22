@@ -24,7 +24,8 @@ from pwspy.dataTypes._otherClasses import Roi
 import copy
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import CameraCorrection, MetaDataBase
+    from pwspy.dataTypes import CameraCorrection
+    from pwspy.dataTypes.metadata import MetaDataBase
 
 
 class ICBase:

@@ -8,7 +8,7 @@ from typing import List
 import pandas, tempfile
 
 from pwspy.apps.sharedWidgets.extraReflectionManager.ERIndex import ERIndex, ERIndexCube
-from pwspy.dataTypes import ERMetaData
+from pwspy.dataTypes.metadata import ERMetaData
 import typing
 
 from pwspy.utility import GoogleDriveDownloader

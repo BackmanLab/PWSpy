@@ -6,7 +6,7 @@ import numpy as np
 import multiprocessing as mp
 import tifffile as tf
 from ._ICBaseClass import ICRawBase
-from .._metadata import DynMetaData
+from ..metadata import DynMetaData
 
 
 class DynCube(ICRawBase):

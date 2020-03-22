@@ -10,7 +10,8 @@ from PyQt5.QtWidgets import QDialog, QTableWidget, QTableWidgetItem, QMessageBox
 
 from pwspy import moduleConsts
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.tables import DatetimeTableWidgetItem
-from pwspy.dataTypes import ExtraReflectanceCube, ERMetaData
+from pwspy.dataTypes import ExtraReflectanceCube
+from pwspy.dataTypes.metadata import ERMetaData
 import numpy as np
 from .exceptions import OfflineError
 

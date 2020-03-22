@@ -10,7 +10,8 @@ from PyQt5.QtWidgets import QPushButton, QTableWidgetItem, QTableWidget, QAbstra
     QInputDialog
 
 from pwspy.apps.PWSAnalysisApp._sharedWidgets import ScrollableMessageBox
-from pwspy.dataTypes import AcqDir, ICMetaData, DynMetaData
+from pwspy.dataTypes import AcqDir, ICMetaData
+from pwspy.dataTypes.metadata import DynMetaData
 
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.dictDisplayTree import DictDisplayTreeDialog
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.tables import NumberTableWidgetItem

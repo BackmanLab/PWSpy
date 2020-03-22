@@ -1,5 +1,6 @@
 from typing import Dict, List, Tuple, Iterable, Any, Iterator, Union, Optional, Set
-from pwspy.dataTypes import ImCube, ExtraReflectanceCube, Roi, ERMetaData
+from pwspy.dataTypes import ImCube, ExtraReflectanceCube, Roi
+from pwspy.dataTypes.metadata import ERMetaData
 from pwspy.utility.reflection import reflectanceHelper
 from pwspy.moduleConsts import Material
 import itertools

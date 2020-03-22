@@ -6,7 +6,7 @@ from pwspy.moduleConsts import Material
 from pwspy.analysis import AbstractAnalysisSettings
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import ERMetaData
+    from pwspy.dataTypes.metadata import ERMetaData
 
 
 @dataclasses.dataclass

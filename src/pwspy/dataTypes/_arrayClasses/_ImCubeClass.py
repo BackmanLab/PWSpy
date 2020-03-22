@@ -15,9 +15,8 @@ import tifffile as tf
 import os
 import typing
 if typing.TYPE_CHECKING:
-    from .. import ExtraReflectionCube
+    from .. import ExtraReflectionCube, ICMetaData
 from scipy.io import savemat
-from .. import ICMetaData
 from ._ICBaseClass import ICRawBase
 import multiprocessing as mp
 

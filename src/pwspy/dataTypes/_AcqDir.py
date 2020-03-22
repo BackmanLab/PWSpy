@@ -3,8 +3,8 @@ from typing import List, Tuple, Optional
 
 import sys
 from ._FluoresenceImg import FluorescenceImage
-from pwspy.dataTypes import ICMetaData, DynMetaData
-from ._metadata import FluorMetaData
+from pwspy.dataTypes import ICMetaData
+from .metadata import DynMetaData, FluorMetaData
 from ._otherClasses import Roi
 import os
 import numpy as np
