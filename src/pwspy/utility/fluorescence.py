@@ -8,8 +8,7 @@ import shapely
 import tifffile as tf
 from shapely.geometry import MultiPolygon
 
-from pwspy.dataTypes import FluorescenceImage
-
+import pwspy.dataTypes.data as pwsdtd
 
 def segmentOtsu(image: np.ndarray, minArea = 100):
     """Uses non-adaptive otsu method segmentation to find fluorescent regions (nuclei)
@@ -79,7 +78,7 @@ def updateFolderStructure(rootDirectory: str, rotate: int, flipX: bool, flipY: b
             data = np.flip(data, axis=1)
         if flipY:
             data = np.flip(data, axis=0)
-        fl = FluorescenceImage(data, {'exposure': None})
+        fl = pwsdtd.FluorescenceImage(data, {'exposure': None})
         newPath = os.path.join(parentPath, f'Cell{cellNum}', 'Fluorescence')
         os.mkdir(newPath)
         fl.toTiff(newPath)

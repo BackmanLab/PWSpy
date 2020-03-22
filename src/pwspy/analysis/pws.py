@@ -9,10 +9,11 @@ from scipy import signal as sps
 import multiprocessing as mp
 from typing import Type, Tuple, List, Optional
 
-from .._abstract import AbstractHDFAnalysisResults
-from .. import AbstractAnalysis, warnings, AbstractAnalysisResults, AbstractAnalysisSettings, \
-    AbstractRuntimeAnalysisSettings
-from pwspy.dataTypes import ImCube, ExtraReflectionCube, KCube, ERMetaData
+from ._abstract import AbstractHDFAnalysisResults, AbstractAnalysis, AbstractAnalysisResults, AbstractAnalysisSettings, \
+    AbstractRuntimeAnalysisSettings, AbstractAnalysisGroup
+from . import warnings
+from pwspy.dataTypes.data import ImCube, ExtraReflectionCube, KCube
+import pwspy.dataTypes.metadata as pwsdtmd
 from pwspy.moduleConsts import Material, dateTimeFormat
 from pwspy.utility.misc import cached_property
 from pwspy.utility.reflection import reflectanceHelper
@@ -358,11 +359,6 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
         return cls(**d)
 
 
-__all__ = ["PWSAnalysisGroup"]
-
-from .._abstract import AbstractAnalysisGroup, AbstractHDFAnalysisResults
-
-
 class PWSAnalysisGroup(AbstractAnalysisGroup):
     """This class is simply used to group together analysis classes that are compatible with eachother."""
     @staticmethod
@@ -382,7 +378,7 @@ class PWSAnalysisGroup(AbstractAnalysisGroup):
 @dataclasses.dataclass
 class PWSRuntimeAnalysisSettings(AbstractRuntimeAnalysisSettings):
     settings: PWSAnalysisSettings
-    extraReflectanceMetadata: Optional[ERMetaData]
+    extraReflectanceMetadata: Optional[pwsdtmd.ERMetaData]
 
     def getSaveableSettings(self) -> PWSAnalysisSettings:
         return self.settings
