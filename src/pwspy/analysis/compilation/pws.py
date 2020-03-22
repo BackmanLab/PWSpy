@@ -1,13 +1,41 @@
-from typing import Tuple, List, Optional
+from __future__ import annotations
+from dataclasses import dataclass
+from typing import Tuple, List
 
 import numpy as np
 
-from pwspy.analysis.compilation.abstract import AbstractRoiCompiler
-from pwspy.analysis.pws._analysisResults import PWSAnalysisResults
-from pwspy.analysis.compilation.pws._compilerSettings import PWSCompilerSettings
-from pwspy.analysis.compilation.pws._roiCompilationResults import PWSRoiCompilationResults
 from pwspy.dataTypes import Roi
-from pwspy.analysis import warnings
+from .abstract import AbstractCompilerSettings, AbstractRoiCompilationResults, AbstractRoiCompiler
+from .. import warnings
+from ..pws import PWSAnalysisResults
+
+
+@dataclass
+class PWSCompilerSettings(AbstractCompilerSettings):
+    """These settings determine which values should be processed during compilation"""
+    reflectance: bool
+    rms: bool
+    polynomialRms: bool
+    autoCorrelationSlope: bool
+    rSquared: bool
+    ld: bool
+    opd: bool
+    meanSigmaRatio: bool
+
+
+@dataclass
+class PWSRoiCompilationResults(AbstractRoiCompilationResults):
+        cellIdTag: str
+        analysisName: str
+        reflectance: float
+        rms: float
+        polynomialRms: float
+        autoCorrelationSlope: float
+        rSquared: float
+        ld: float
+        opd: np.ndarray
+        opdIndex: np.ndarray  # The x axis of a plot of opd
+        varRatio: float #The ratio of signal variance of the Roi's mean spectra to the mean signal variance (rms^2) of the roi. should be between 0 and 1.
 
 
 class PWSRoiCompiler(AbstractRoiCompiler):
@@ -97,3 +125,6 @@ class PWSRoiCompiler(AbstractRoiCompiler):
             return arr[np.logical_and(roi.mask, condition)].mean()
         else:
             return arr[roi.mask].mean()
+
+
+__all__ =[]

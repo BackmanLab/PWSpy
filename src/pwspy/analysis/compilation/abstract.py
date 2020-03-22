@@ -1,14 +1,10 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import Tuple, List, Optional
+from dataclasses import dataclass
+from typing import Tuple, List
 
-from pwspy.analysis import warnings
 from pwspy.dataTypes import Roi
-import typing
-if typing.TYPE_CHECKING:
-    from ._compilerSettings import AbstractCompilerSettings
-    from ._roiCompilationResults import AbstractRoiCompilationResults
-    from pwspy.analysis import AbstractAnalysisResults
+from .. import AbstractAnalysisResults, warnings
 
 
 class AbstractRoiCompiler(ABC):
@@ -18,3 +14,16 @@ class AbstractRoiCompiler(ABC):
     @abstractmethod
     def run(self, results: AbstractAnalysisResults, roi: Roi) -> Tuple[AbstractRoiCompilationResults, List[warnings.AnalysisWarning]]:
         pass
+
+
+class AbstractRoiCompilationResults(ABC):
+        pass
+
+
+@dataclass
+class AbstractCompilerSettings(ABC):
+    """These settings determine which values should be processed during compilation"""
+    pass
+
+
+__all__ = []

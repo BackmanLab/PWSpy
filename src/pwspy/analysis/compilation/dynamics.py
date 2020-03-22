@@ -1,16 +1,30 @@
 from __future__ import annotations
-from typing import Tuple, List, Optional
+from dataclasses import dataclass
+from typing import Tuple, List
 
 import numpy as np
 
-from pwspy.analysis.compilation.abstract import AbstractRoiCompiler
-from ._roiCompilationResults import DynamicsRoiCompilationResults
-import typing
-if typing.TYPE_CHECKING:
-    from pwspy.analysis.compilation.dynamics import DynamicsCompilerSettings
-    from pwspy.analysis.dynamics import DynamicsAnalysisResults
-    from pwspy.dataTypes import Roi
-    from pwspy.analysis import warnings
+from pwspy.dataTypes import Roi
+from .abstract import AbstractCompilerSettings, AbstractRoiCompilationResults, AbstractRoiCompiler
+from .. import warnings
+from ..dynamics import DynamicsAnalysisResults
+
+
+@dataclass
+class DynamicsCompilerSettings(AbstractCompilerSettings):
+    """These settings determine how a Dynamics acquisition should be compiled."""
+    meanReflectance: bool
+    rms_t_squared: bool
+    diffusion: bool
+
+
+@dataclass
+class DynamicsRoiCompilationResults(AbstractRoiCompilationResults):
+    cellIdTag: str
+    analysisName: str
+    reflectance: float
+    rms_t_squared: float
+    diffusion: float
 
 
 class DynamicsRoiCompiler(AbstractRoiCompiler):
@@ -40,3 +54,6 @@ class DynamicsRoiCompiler(AbstractRoiCompiler):
             return arr[np.logical_and(roi.mask, condition)].mean()
         else:
             return arr[roi.mask].mean()
+
+
+__all__ = []

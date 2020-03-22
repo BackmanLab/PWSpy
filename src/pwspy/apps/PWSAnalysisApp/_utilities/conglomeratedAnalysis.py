@@ -5,13 +5,13 @@ from pwspy.analysis import warnings
 from pwspy.analysis.dynamics import DynamicsAnalysisResults
 from pwspy.analysis.pws import PWSAnalysisResults
 from pwspy.dataTypes import Roi
-from pwspy.analysis.compilation.dynamics import DynamicsRoiCompiler
-from pwspy.analysis.compilation.pws import PWSRoiCompiler
-from pwspy.analysis.compilation.generic import GenericRoiCompiler
+from pwspy.analysis.compilation.dynamics import DynamicsRoiCompiler, DynamicsCompilerSettings, \
+    DynamicsRoiCompilationResults
+from pwspy.analysis.compilation.pws import PWSRoiCompiler, PWSCompilerSettings, PWSRoiCompilationResults
+from pwspy.analysis.compilation.generic import GenericRoiCompiler, GenericCompilerSettings, GenericRoiCompilationResults
+
 if typing.TYPE_CHECKING:
-    from pwspy.analysis.compilation.dynamics import DynamicsCompilerSettings, DynamicsRoiCompilationResults
-    from pwspy.analysis.compilation.generic import GenericCompilerSettings, GenericRoiCompilationResults
-    from pwspy.analysis.compilation.pws import PWSCompilerSettings, PWSRoiCompilationResults
+    pass
 
 """These utility classes are used to conveniently treat analysis objects of different types that belong together as a single object."""
 
