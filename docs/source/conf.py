@@ -40,6 +40,7 @@ release = version
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'sphinx.ext.napoleon',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
@@ -47,7 +48,6 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     "sphinx_rtd_theme",
-    'sphinx.ext.napoleon',
     'sphinx.ext.inheritance_diagram'  #Need to add graphviz/bin to the path for this to work.
 ]
 
