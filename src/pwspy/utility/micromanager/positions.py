@@ -306,7 +306,9 @@ class PositionList(JsonAble):
         spio.savemat(path, {'list': matPositions[:,None]})
     
     def getAffineTransform(self, otherList: PositionList) -> np.ndarray:
-        """Calculate the partial affine transformation between this position list and another position list. Both position lists must have the same length
+        """
+        Calculate the partial affine transformation between this position list and another position list. Both position lists must have the same length
+
         Args:
             otherList (PositionList): A position list of the same length as this position list. Each position is assumed to correspond to the position of the
                 same index in this list.

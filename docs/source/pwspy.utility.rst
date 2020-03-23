@@ -2,6 +2,7 @@ pwspy.utility package
 =====================
 
 .. toctree::
+   :maxdepth: 1
 
    pwspy.utility.fluorescence
    pwspy.utility.machineVision

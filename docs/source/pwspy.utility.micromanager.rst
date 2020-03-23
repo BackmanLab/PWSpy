@@ -1,6 +1,11 @@
 pwspy.utility.micromanager package
 ==================================
 
+.. automodule:: pwspy.utility.micromanager
+   :members:
+   :no-inherited-members:
+   :no-special-members:
+
 Submodules
 ----------
 
@@ -20,11 +25,3 @@ pwspy.utility.micromanager.positions module
    :undoc-members:
    :show-inheritance:
 
-
-Module contents
----------------
-
-.. automodule:: pwspy.utility.micromanager
-   :members:
-   :undoc-members:
-   :show-inheritance:

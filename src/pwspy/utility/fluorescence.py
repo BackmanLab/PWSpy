@@ -6,7 +6,7 @@ This module provides a number of functions useful for
 segmenting out fluorescent regions of an image.
 
 Functions
--------
+-----------
 .. autosummary::
    :toctree: generated/
 

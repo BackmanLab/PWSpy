@@ -7,7 +7,7 @@ This module provides a number of functions useful for
 quickly loading files using parallel processing.
 
 Functions
--------
+----------
 .. autosummary::
    :toctree: generated/
 

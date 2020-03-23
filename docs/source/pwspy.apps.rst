@@ -8,7 +8,6 @@ Subpackages
 
    pwspy.apps.ExtraReflectanceCreator
    pwspy.apps.PWSAnalysisApp
-   pwspy.apps.sharedWidgets
 
 Module contents
 ---------------
