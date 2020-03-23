@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-==================================================
+==========================================================================
 Reflectance Helper (:mod:`pwspy.utility.reflectance.reflectanceHelper`)
-==================================================
+==========================================================================
 This module provides a number of functions for calculating simple reflections based on known refractive indices
 
 Functions
