@@ -6,7 +6,7 @@ Created on Sat Feb  9 20:14:25 2019
 """
 from setuptools import setup, find_packages
 
-import src.pwspy.version as versionFile
+import version as versionFile
 
 
 setup(name='pwspy',
