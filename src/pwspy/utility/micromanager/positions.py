@@ -15,12 +15,12 @@ import numpy as np
 import copy
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from abc import ABC, abstractmethod
+import abc
 import scipy.io as spio
 
 
-class JsonAble(ABC):
-    @abstractmethod
+class JsonAble(abc.ABC):
+    @abc.abstractmethod
     def toDict(self) -> dict:
         pass
 
