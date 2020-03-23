@@ -1,9 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Oct 11 11:31:48 2018
+==================================================
+File IO (:mod:`pwspy.utility.fileIO`)
+==================================================
+This module provides a number of functions useful for
+quickly loading files using parallel processing.
 
-@author: Nick Anthony
+Functions
+-------
+.. autosummary::
+   :toctree: generated/
+   loadAndProcess
+   processParallel
+
 """
+__all__ = ['loadAndProcess', 'processParallel']
 import multiprocessing as mp
 import queue
 import threading as th

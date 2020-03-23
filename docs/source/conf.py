@@ -14,9 +14,9 @@
 #
 import os
 import sys
+sys.path.insert(0, os.path.abspath('../../src')) #Point to the pwspy source code folder
 import pwspy
 
-sys.path.insert(0, os.path.abspath('../../src')) #Point to the pwspy source code folder
 
 
 # -- Project information -----------------------------------------------------
