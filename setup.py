@@ -5,22 +5,17 @@ Created on Sat Feb  9 20:14:25 2019
 @author: Nick Anthony
 """
 from setuptools import setup, find_packages
-import os
 
-pwspydir = os.path.join(os.path.split(__file__)[0], 'src', 'pwspy')
+import src.pwspy.version as versionFile
 
-
-with open(os.path.join(pwspydir, '_version'), 'r') as f:
-    version = f.readline()
 
 setup(name='pwspy',
-      version=version,
+      version=versionFile.__version__,
       description='A framework for working with Partial Wave Spectroscopy files.',
       author='Nick Anthony',
       author_email='nicholas.anthony@northwestern.edu',
       url='https://bitbucket.org/backmanlab/pwspython/src/master/',
       python_requires='>3.7',
-      setup_requires=['gitpython'],
       install_requires=['numpy',
                         'scipy',
                         'matplotlib',
@@ -42,6 +37,5 @@ setup(name='pwspy',
 								'apps/_resources/*',
 								'analysis/_resources/defaultAnalysisSettings/*',
                                 'apps/PWSAnalysisApp/_resources/*',
-                              'dataTypes/jsonSchemas/*',
-                              '_version']},
+                              'dataTypes/jsonSchemas/*']},
       packages=find_packages('src'))
