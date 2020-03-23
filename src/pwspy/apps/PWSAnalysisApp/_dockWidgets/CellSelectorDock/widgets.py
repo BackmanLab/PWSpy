@@ -7,7 +7,7 @@ from typing import List, Optional, Type
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import QPalette
 from PyQt5.QtWidgets import QPushButton, QTableWidgetItem, QTableWidget, QAbstractItemView, QMenu, QWidget, QMessageBox, \
-    QInputDialog
+    QInputDialog, QHeaderView
 
 from pwspy.apps.PWSAnalysisApp._sharedWidgets import ScrollableMessageBox
 from pwspy.dataTypes import AcqDir, ICMetaData
@@ -380,6 +380,7 @@ class ReferencesTable(QTableWidget):
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         self.setColumnCount(1)
         self.setHorizontalHeaderLabels(('Reference',))
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.setRowCount(0)
         self.verticalHeader().hide()
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
