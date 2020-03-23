@@ -1,3 +1,21 @@
+"""
+=====================================================
+Machine Vision (:mod:`pwspy.utility.machineVision`)
+=====================================================
+This module provides a number of functions useful processing images. Currently its contents are focused
+on image stabilization.
+
+Functions
+------------
+.. autosummary::
+   :toctree: generated/
+
+   to8bit
+   SIFTRegisterTransform
+   edgeDetectRegisterTranslation
+
+"""
+
 import typing
 import numpy as np
 import matplotlib.pyplot as plt

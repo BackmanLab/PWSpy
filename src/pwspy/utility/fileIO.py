@@ -10,6 +10,7 @@ Functions
 -------
 .. autosummary::
    :toctree: generated/
+
    loadAndProcess
    processParallel
 

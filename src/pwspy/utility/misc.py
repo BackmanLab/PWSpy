@@ -1,9 +1,25 @@
+"""
+==================================================
+Miscellaneous (:mod:`pwspy.utility.misc`)
+==================================================
+This module provides a number of objects that are generally useful in python programming.
+
+Decorators
+-------------
+.. autosummary::
+   :toctree: generated/
+
+   cached_property
+   profileDec
+"""
+
 class cached_property(object):
-    """ A property that is only computed once per instance and then replaces
-        itself with an ordinary attribute. Deleting the attribute resets the
-        property.
-        Source: https://github.com/bottlepy/bottle/commit/fa7733e075da0d790d809aa3d2f53071897e6f76
-        """
+    """
+    A property that is only computed once per instance and then replaces
+    itself with an ordinary attribute. Deleting the attribute resets the
+    property.
+    Source: https://github.com/bottlepy/bottle/commit/fa7733e075da0d790d809aa3d2f53071897e6f76
+    """
     #TODO this is probably better implemented by cachetools.LRUCache
 
     def __init__(self, func):
@@ -18,7 +34,9 @@ class cached_property(object):
 
 
 def profileDec(filePath: str):
-    """decorator to profile a function call"""
+    """
+    A decorator to profile a function call
+    """
     def innerDec(func):
         import cProfile
         def newFunc(*args, **kwargs):

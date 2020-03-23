@@ -1,13 +1,6 @@
 pwspy.analysis.pws package
 ==========================
 
-Subpackages
------------
-
-.. toctree::
-
-   pwspy.analysis.pws.examples
-
 Module contents
 ---------------
 

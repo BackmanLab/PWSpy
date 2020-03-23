@@ -1,3 +1,21 @@
+"""
+==================================================
+Fluorescence (:mod:`pwspy.utility.fluorescence`)
+==================================================
+This module provides a number of functions useful for
+segmenting out fluorescent regions of an image.
+
+Functions
+-------
+.. autosummary::
+   :toctree: generated/
+
+   segmentOtsu
+   segmentAdaptive
+   updateFolderStructure
+
+"""
+
 import os
 from glob import glob
 from typing import List

@@ -51,6 +51,8 @@ extensions = [
     'sphinx.ext.inheritance_diagram'  #Need to add graphviz/bin to the path for this to work.
 ]
 
+autosummary_generate = True
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
