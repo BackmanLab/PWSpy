@@ -1,8 +1,22 @@
 pwspy.utility.reflection package
 ================================
 
+.. automodule:: pwspy.utility.micromanager
+   :no-members:
+   :no-inherited-members:
+   :no-special-members:
+
+
 Submodules
 ----------
+
+pwspy.utility.reflection.extraReflectance module
+================================
+
+.. automodule:: pwspy.utility.micromanager.extraReflectance
+   :no-members:
+   :no-inherited-members:
+   :no-special-members:
 
 pwspy.utility.reflection.multilayerReflectanceEngine module
 -----------------------------------------------------------
@@ -20,11 +34,3 @@ pwspy.utility.reflection.reflectanceHelper module
    :undoc-members:
    :show-inheritance:
 
-
-Module contents
----------------
-
-.. automodule:: pwspy.utility.reflection
-   :members:
-   :undoc-members:
-   :show-inheritance:

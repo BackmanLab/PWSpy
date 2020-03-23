@@ -1,9 +1,19 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Aug 22 11:05:40 2018
+==================================================
+Reflectance Helper (:mod:`pwspy.utility.reflectance.reflectanceHelper`)
+==================================================
+This module provides a number of functions for calculating simple reflections based on known refractive indices
 
-@author: Nick Anthony
+Functions
+----------
+.. autosummary::
+   :toctree: generated/
+
+   getReflectance
+   getRefractiveIndex
 """
+__all__ = ['getReflectance', 'getRefractiveIndex']
 from numbers import Number
 
 import pandas as pd

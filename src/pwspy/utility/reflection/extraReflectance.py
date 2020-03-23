@@ -1,3 +1,15 @@
+"""
+==================================================
+Extra Reflectance (:mod:`pwspy.utility.reflectance.extraReflectance`)
+==================================================
+
+A collection of functions dedicated to the purpose of generate Extra Reflectance calibrations from images of
+materials with known reflectances (e.g. air/glass interface, water/glass interface.)
+These functions are relied on heavily in the pwspy.apps.ERCreator app.
+
+:todo: document me!
+"""
+
 from typing import Dict, List, Tuple, Iterable, Any, Iterator, Union, Optional, Set
 from pwspy.dataTypes import Roi
 from pwspy.dataTypes.data import ExtraReflectanceCube, ImCube
@@ -15,8 +27,6 @@ from pwspy.utility.plotting import PlotNd
 
 #TODO document me!!
 
-"""A collection of functions dedicated to the purpose of generate Extra Reflectance calibrations from images of materials with known reflectances (e.g. air/glass interface, water/glass interface.)
-These functions are relied on heavily in the pwspy.apps.ERCreator app."""
 
 MCombo = Tuple[Material, Material]
 

@@ -1,4 +1,8 @@
 """
+==================================================
+Multi-layer Reflectance Engine (:mod:`pwspy.utility.reflectance.multilayerReflectanceEngine`)
+==================================================
+
 Using the wave transfer matrix formalism from chapter 7 of Saleh and Teich
 Fundamentals of Photonics, this script calculates the reflectance of a
 multilayer dielectric.
@@ -9,7 +13,20 @@ m is the final transfer matrix. It should be made by multiplying the matrices
 representing each element of the system. If the transmitted light is considered
 to be propagating from left to right then the matrices should be in multiplied
 in reverse, from right to left.
+
+
+Classes
+----------
+.. autosummary::
+   :toctree: generated/
+
+   Polarization
+   Layer
+   Stack
+   NonPolarizedStack
 """
+__all__ = ['Polarization', 'Layer', 'Stack', 'NonPolarizedStack']
+
 from enum import Enum, auto
 
 import matplotlib.pyplot as plt
