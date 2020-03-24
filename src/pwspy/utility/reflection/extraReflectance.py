@@ -14,8 +14,7 @@ from typing import Dict, List, Tuple, Iterable, Any, Iterator, Union, Optional, 
 from pwspy.dataTypes import Roi
 from pwspy.dataTypes.data import ExtraReflectanceCube, ImCube
 from pwspy.dataTypes.metadata import ERMetaData
-from pwspy.utility.reflection import reflectanceHelper
-from pwspy.moduleConsts import Material
+from pwspy.utility.reflection import reflectanceHelper, Material
 import itertools
 import matplotlib.pyplot as plt
 import numpy as np

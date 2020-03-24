@@ -14,9 +14,9 @@ from ._abstract import AbstractHDFAnalysisResults, AbstractAnalysis, AbstractAna
 from . import warnings
 from pwspy.dataTypes.data import ImCube, ExtraReflectionCube, KCube
 import pwspy.dataTypes.metadata as pwsdtmd
-from pwspy.moduleConsts import Material, dateTimeFormat
+from .. import dateTimeFormat
 from pwspy.utility.misc import cached_property
-from pwspy.utility.reflection import reflectanceHelper
+from pwspy.utility.reflection import reflectanceHelper, Material
 
 
 def clearError(func):

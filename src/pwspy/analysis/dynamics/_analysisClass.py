@@ -10,8 +10,7 @@ from pwspy.analysis._abstract import AbstractAnalysis
 import numpy as np
 import pandas as pd
 from typing import Tuple, List
-from pwspy.utility.reflection import reflectanceHelper
-from pwspy.moduleConsts import Material
+from pwspy.utility.reflection import reflectanceHelper, Material
 import typing
 if typing.TYPE_CHECKING:
     from ...dataTypes.data import DynCube, ExtraReflectanceCube

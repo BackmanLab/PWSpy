@@ -4,7 +4,8 @@ import traceback
 from pwspy.apps.PWSAnalysisApp.App import PWSApp
 from pwspy.apps.PWSAnalysisApp import applicationVars
 from datetime import datetime
-from pwspy.moduleConsts import dateTimeFormat
+from pwspy import dateTimeFormat
+
 
 def main(): #TODO add logging since terminal isn't always available
     import sys

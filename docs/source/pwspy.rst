@@ -12,18 +12,6 @@ Subpackages
    pwspy.examples
    pwspy.utility
 
-Submodules
-----------
-
-pwspy.moduleConsts module
--------------------------
-
-.. automodule:: pwspy.moduleConsts
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-
 Module contents
 ---------------
 

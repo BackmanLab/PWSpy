@@ -29,6 +29,8 @@ These classes are used to actuallly load and manipulate acquisition data. The al
     KCube
     ExtraReflectanceCube
     ExtraReflectionCube
+    ICBase
+    ICRawBase
 
 Other Classes
 ---------------
@@ -79,6 +81,16 @@ API
     :show-inheritance:
 
 .. autoclass:: ExtraReflectionCube
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. autoclass:: ICBase
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. autoclass:: ICRawBase
     :members:
     :undoc-members:
     :show-inheritance:

@@ -33,7 +33,7 @@ import matplotlib.pyplot as plt
 from cycler import cycler
 from numbers import Number
 from typing import Union, Optional, List
-from pwspy.moduleConsts import Material
+from pwspy.utility.reflection import Material
 import pandas as pd
 import numpy as np
 import matplotlib as mpl

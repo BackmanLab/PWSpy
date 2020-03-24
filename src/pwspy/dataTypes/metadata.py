@@ -22,7 +22,7 @@ from pwspy.analysis.pws import PWSAnalysisResults
 from pwspy.dataTypes import _jsonSchemasPath
 from pwspy.dataTypes.other import CameraCorrection, Roi
 import pwspy.dataTypes.data as pwsdtd
-from pwspy.moduleConsts import dateTimeFormat
+from pwspy import dateTimeFormat
 from pwspy.utility.misc import cached_property
 
 

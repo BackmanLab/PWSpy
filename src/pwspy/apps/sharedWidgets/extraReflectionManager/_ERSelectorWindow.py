@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import QDialog, QTableWidget, QTableWidgetItem, QMessageBox
     QPushButton, QLineEdit, QComboBox, QGridLayout, QLabel, QDialogButtonBox, QHBoxLayout, QAbstractItemView, QMenu, \
     QAction, QTreeWidget, QTreeWidgetItem, QFileDialog
 
+import pwspy
 from pwspy import moduleConsts
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.tables import DatetimeTableWidgetItem
 from pwspy.dataTypes.data import ExtraReflectanceCube
@@ -31,7 +32,7 @@ class ERTreeWidgetItem(QTreeWidgetItem):
         self.description = description
         self.idTag = idTag
         self.systemName = self.idTag.split('_')[1]  # We used to categorize the calibrations by system name but this is confusing because a single system can have multiple configurations
-        self.datetime = datetime.strptime(self.idTag.split('_')[2], moduleConsts.dateTimeFormat)
+        self.datetime = datetime.strptime(self.idTag.split('_')[2], pwspy.dateTimeFormat)
         self.name = name
         configurationName = name.split("-")[:-1]  # We now categorize by configurationName, however this isn't explicitly saved in the index so we extract it from the file name. Of course, this breaks if anyone puts a "-" in the configuration name. It would be better to explicitly save it from the ERCreator app
         self.configurationName = configurationName[0] if len(configurationName) == 1 else "-".join(configurationName)

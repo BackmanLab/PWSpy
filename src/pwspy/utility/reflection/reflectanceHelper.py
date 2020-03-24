@@ -19,7 +19,7 @@ from numbers import Number
 import pandas as pd
 import numpy as np
 import os
-from pwspy.moduleConsts import Material
+from . import Material
 
 from .multilayerReflectanceEngine import Stack, Layer, Polarization
 from typing import Union, List, Tuple

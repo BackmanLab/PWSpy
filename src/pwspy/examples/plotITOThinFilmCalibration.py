@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 from datetime import datetime
-from pwspy.moduleConsts import dateTimeFormat
+from pwspy import dateTimeFormat
 import matplotlib as mpl
 from pwspy.utility.fileIO import loadAndProcess
 

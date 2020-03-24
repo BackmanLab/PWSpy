@@ -9,11 +9,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from pwspy.dataTypes.data import ExtraReflectanceCube, ExtraReflectionCube, ImCube
-from pwspy.utility.reflection import reflectanceHelper
+from pwspy.utility.reflection import reflectanceHelper, Material
 from glob import glob
 import os
 from pwspy.utility.fileIO import loadAndProcess
-from pwspy.moduleConsts import Material
 from pwspy.utility import thinFilmPath
 from pwspy.dataTypes import Roi
 

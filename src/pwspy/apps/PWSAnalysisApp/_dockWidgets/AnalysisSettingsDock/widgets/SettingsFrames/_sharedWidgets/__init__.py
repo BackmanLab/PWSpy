@@ -11,8 +11,7 @@ from pwspy.apps import resources
 from pwspy.apps.PWSAnalysisApp._sharedWidgets import CollapsibleSection
 from pwspy.dataTypes import CameraCorrection
 from pwspy.dataTypes.metadata import ERMetaData
-from pwspy.moduleConsts import Material
-from pwspy.utility.reflection import reflectanceHelper
+from pwspy.utility.reflection import reflectanceHelper, Material
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager

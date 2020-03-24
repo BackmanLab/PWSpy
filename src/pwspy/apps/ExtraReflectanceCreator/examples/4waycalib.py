@@ -11,7 +11,7 @@ This script is now outdated and will not work. See the `generateExtraReflectance
 
 from pwspy.dataTypes import CameraCorrection
 from pwspy.utility.fileIO import loadAndProcess
-from pwspy.utility.reflection import reflectanceHelper
+from pwspy.utility.reflection import reflectanceHelper, Material
 import pwspy.utility.reflection.extraReflectance as er
 from glob import glob
 import matplotlib.pyplot as plt
@@ -19,8 +19,6 @@ import os
 from matplotlib.backends.backend_pdf import PdfPages
 import pandas as pd
 import random
-
-from pwspy.moduleConsts import Material
 
 
 def processIm(im):

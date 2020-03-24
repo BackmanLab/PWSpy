@@ -1,5 +1,5 @@
 from pwspy.analysis.dynamics import DynamicsAnalysisSettings, DynamicsAnalysis
-from pwspy.moduleConsts import Material
+from pwspy.utility.reflection import Material
 
 if __name__ == "__main__":
     import os.path as osp
