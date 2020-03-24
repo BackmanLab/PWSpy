@@ -132,8 +132,8 @@ class PWSAnalysis(AbstractAnalysis): #TODO Handle the case where pixels are 0, m
         return cube
 
     def _filterSignal(self, data: np.ndarray, sampleFreq: float):
-        b, a = sps.butter(self.settings.filterOrder, self.settings.filterCutoff, fs=sampleFreq)
-        return sps.filtfilt(b, a, data, axis=2).astype(data.dtype)
+        b, a = sps.butter(self.settings.filterOrder, self.settings.filterCutoff, fs=sampleFreq)  # Generatre the filter coefficients
+        return sps.filtfilt(b, a, data, axis=2).astype(data.dtype)  # Actually do the filtering on the data.
 
     # -- Polynomial Fit
     def _fitPolynomial(self, cube: KCube):
@@ -293,7 +293,7 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
         from pwspy.dataTypes import KCube
         dset = self.file['reflectance']
         cube = KCube.fromHdfDataset(dset)
-        opd, opdIndex = cube.getOpd(isHannWindow=True, indexOpdStop=100)
+        opd, opdIndex = cube.getOpd(isHannWindow=False, indexOpdStop=100)
         return opd, opdIndex
 
     @cached_property

@@ -18,6 +18,7 @@ requirements:
   build:
     - python
     - setuptools
+    - gitpython
 
   run:
     - python #We seem to only be compatible with python 3.7 right now. can't specify here.
