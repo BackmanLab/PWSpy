@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional
 
 from ._analysisSettings import DynamicsAnalysisSettings
-from ... import dateTimeFormat
+from pwspy import dateTimeFormat
 from pwspy.analysis._abstract import AbstractHDFAnalysisResults
 from pwspy.utility.misc import cached_property
 import numpy as np
