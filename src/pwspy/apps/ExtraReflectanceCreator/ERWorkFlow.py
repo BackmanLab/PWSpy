@@ -7,8 +7,7 @@ import json
 
 from PyQt5.QtWidgets import QWidget
 
-from pwspy.dataTypes import CameraCorrection, AcqDir, ICMetaData
-from pwspy.dataTypes._data import ImCube
+from pwspy.dataTypes import CameraCorrection, AcqDir, ICMetaData, ImCube
 from pwspy.apps.ExtraReflectanceCreator.widgets.dialog import IndexInfoForm
 from pwspy.dataTypes import Roi
 from pwspy import dateTimeFormat

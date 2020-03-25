@@ -1,17 +1,12 @@
 from __future__ import annotations
-import typing
 from typing import List, Tuple, Optional
 from pwspy.analysis import warnings
 from pwspy.analysis.dynamics import DynamicsAnalysisResults
 from pwspy.analysis.pws import PWSAnalysisResults
 from pwspy.dataTypes import Roi
-from pwspy.analysis.compilation.dynamics import DynamicsRoiCompiler, DynamicsCompilerSettings, \
-    DynamicsRoiCompilationResults
-from pwspy.analysis.compilation.pws import PWSRoiCompiler, PWSCompilerSettings, PWSRoiCompilationResults
-from pwspy.analysis.compilation.generic import GenericRoiCompiler, GenericCompilerSettings, GenericRoiCompilationResults
-
-if typing.TYPE_CHECKING:
-    pass
+from pwspy.analysis.compilation import (DynamicsRoiCompiler, DynamicsCompilerSettings, DynamicsRoiCompilationResults,
+                                        PWSRoiCompiler, PWSCompilerSettings, PWSRoiCompilationResults,
+                                        GenericRoiCompiler, GenericCompilerSettings, GenericRoiCompilationResults)
 
 """These utility classes are used to conveniently treat analysis objects of different types that belong together as a single object."""
 

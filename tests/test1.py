@@ -5,8 +5,7 @@ Created on Sat Feb  9 17:27:55 2019
 @author: Nick Anthony
 """
 
-from pwspy.dataTypes import CameraCorrection
-from pwspy.dataTypes._data import ImCube, KCube
+from pwspy.dataTypes import CameraCorrection, ImCube, KCube
 import unittest
 import os.path as osp
 import os

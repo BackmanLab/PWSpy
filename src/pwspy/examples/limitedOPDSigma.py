@@ -7,9 +7,7 @@ of the fourier transfrom and extract RMS from what is left."""
 #Last tested on pwspy ad745ef0c1ae526e25981b0036f460981397a456
 
 
-
-from pwspy.dataTypes import CameraCorrection, AcqDir, Roi
-from pwspy.dataTypes._data import ImCube, KCube
+from pwspy.dataTypes import CameraCorrection, AcqDir, Roi, ImCube, KCube
 import matplotlib.pyplot as plt
 import scipy.signal as sps
 import os

@@ -26,7 +26,8 @@ from ._abstract import AbstractAnalysisSettings, AbstractAnalysis, AbstractAnaly
 resources = os.path.join(os.path.split(__file__)[0], '_resources')
 defaultSettingsPath = os.path.join(resources, 'defaultAnalysisSettings')
 
-__all__ = ['AbstractAnalysisSettings', 'AbstractAnalysis', 'AbstractAnalysisResults', 'resources', 'defaultSettingsPath', 'AnalysisTypes', 'AbstractRuntimeAnalysisSettings']
+__all__ = ['AbstractAnalysisSettings', 'AbstractAnalysis', 'AbstractAnalysisResults', "AbstractRuntimeAnalysisSettings",
+           'AbstractHDFAnalysisResults', 'AbstractAnalysisGroup', 'resources', 'defaultSettingsPath', 'AnalysisTypes']
 
 
 class AnalysisTypes(Enum):

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from pwspy.dataTypes import Roi
-from .abstract import AbstractCompilerSettings, AbstractRoiCompilationResults
+from ._abstract import AbstractCompilerSettings, AbstractRoiCompilationResults
 
 
 @dataclass
@@ -36,5 +36,3 @@ class GenericRoiCompiler:
                     roiArea=roiArea)
         return results
 
-
-__all__ = []

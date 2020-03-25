@@ -9,8 +9,7 @@ from PyQt5.QtWidgets import QGroupBox, QWidget, QVBoxLayout, QLabel, QLineEdit, 
 
 from pwspy.apps import resources
 from pwspy.apps.PWSAnalysisApp._sharedWidgets import CollapsibleSection
-from pwspy.dataTypes import CameraCorrection
-from pwspy.dataTypes._metadata import ERMetaData
+from pwspy.dataTypes import CameraCorrection, ERMetaData
 from pwspy.utility.reflection import reflectanceHelper, Material
 import typing
 if typing.TYPE_CHECKING:

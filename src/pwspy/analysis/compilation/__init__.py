@@ -40,7 +40,6 @@ __all__ = ['DynamicsRoiCompiler', 'DynamicsRoiCompilationResults', 'DynamicsComp
            'PWSRoiCompiler', 'PWSRoiCompilationResults', 'PWSCompilerSettings', 'PWSAnalysisResults',
            'GenericRoiCompiler', 'GenericRoiCompilationResults', 'GenericCompilerSettings']
 
-from .dynamics import DynamicsCompilerSettings, DynamicsRoiCompilationResults, DynamicsRoiCompiler
-from ..dynamics import DynamicsAnalysisResults
-from .pws import PWSAnalysisResults, PWSCompilerSettings, PWSRoiCompilationResults, PWSRoiCompiler
-from .generic import GenericCompilerSettings, GenericRoiCompilationResults, GenericRoiCompiler
+from ._dynamics import DynamicsCompilerSettings, DynamicsRoiCompilationResults, DynamicsRoiCompiler
+from ._pws import PWSAnalysisResults, PWSCompilerSettings, PWSRoiCompilationResults, PWSRoiCompiler
+from ._generic import GenericCompilerSettings, GenericRoiCompilationResults, GenericRoiCompiler

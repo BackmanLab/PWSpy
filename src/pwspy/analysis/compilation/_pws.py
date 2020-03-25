@@ -5,7 +5,7 @@ from typing import Tuple, List
 import numpy as np
 
 from pwspy.dataTypes import Roi
-from .abstract import AbstractCompilerSettings, AbstractRoiCompilationResults, AbstractRoiCompiler
+from ._abstract import AbstractCompilerSettings, AbstractRoiCompilationResults, AbstractRoiCompiler
 from .. import warnings
 from ..pws import PWSAnalysisResults
 
@@ -125,6 +125,3 @@ class PWSRoiCompiler(AbstractRoiCompiler):
             return arr[np.logical_and(roi.mask, condition)].mean()
         else:
             return arr[roi.mask].mean()
-
-
-__all__ =[]

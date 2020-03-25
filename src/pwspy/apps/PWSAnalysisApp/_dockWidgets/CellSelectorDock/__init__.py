@@ -5,8 +5,7 @@ from typing import List, Dict
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineEdit, QGridLayout, QSplitter, \
     QSizePolicy, QMessageBox
-from pwspy.dataTypes._metadata import AcqDir
-
+import pwspy.dataTypes as pwsdt
 from pwspy.apps.PWSAnalysisApp._dockWidgets.CellSelectorDock.widgets import ReferencesTableItem
 from .widgets import CellTableWidgetItem, CellTableWidget, ReferencesTable
 
@@ -64,7 +63,7 @@ class CellSelectorDock(QDockWidget):
 
     def addCell(self, fileName: str, workingDir: str):
         try:
-            cell = AcqDir(fileName)
+            cell = pwsdt.AcqDir(fileName)
         except OSError:
             return
         cellItem = CellTableWidgetItem(cell, os.path.split(fileName)[0][len(workingDir) + 1:],
@@ -77,7 +76,7 @@ class CellSelectorDock(QDockWidget):
         cellItems = []
         for f in fileNames:
             try:
-                acq = AcqDir(f)
+                acq = pwsdt.AcqDir(f)
             except OSError as e:
                 print(f"Failed to load {f}")
                 print(e)
@@ -122,11 +121,11 @@ class CellSelectorDock(QDockWidget):
             if expr.strip() != '':
                 try:
                     analyses = []
-                    if item.acqDir.pws:
-                        analyses += item.acqDir.pws.getAnalyses()
-                    if item.acqDir.dynamics:
-                        analyses += item.acqDir.dynamics.getAnalyses()
-                    ret = bool(eval(expr.format(num=item.num, analyses=analyses, rois=[i[0] for i in item.acqDir.getRois()], idTag=item.acqDir.idTag)))
+                    if item.pwsdt.AcqDir.pws:
+                        analyses += item.pwsdt.AcqDir.pws.getAnalyses()
+                    if item.pwsdt.AcqDir.dynamics:
+                        analyses += item.pwsdt.AcqDir.dynamics.getAnalyses()
+                    ret = bool(eval(expr.format(num=item.num, analyses=analyses, rois=[i[0] for i in item.pwsdt.AcqDir.getRois()], idTag=item.pwsdt.AcqDir.idTag)))
                 except Exception as e:
                     QMessageBox.information(self, 'Hmm', f'{expr} is not a valid boolean expression.')
                     return
@@ -137,45 +136,45 @@ class CellSelectorDock(QDockWidget):
             else:
                 self.tableWidget.setRowHidden(item.row, True)
 
-    def getSelectedCellMetas(self) -> List[AcqDir]:
-        return [i.acqDir for i in self.tableWidget.selectedCellItems]
+    def getSelectedCellMetas(self) -> List[pwsdt.AcqDir]:
+        return [i.pwsdt.AcqDir for i in self.tableWidget.selectedCellItems]
 
-    def getAllCellMetas(self) -> List[AcqDir]:
-        return [i.acqDir for i in self.tableWidget.cellItems]
+    def getAllCellMetas(self) -> List[pwsdt.AcqDir]:
+        return [i.pwsdt.AcqDir for i in self.tableWidget.cellItems]
 
     def getSelectedReferenceMeta(self):
         return self.refTableWidget.selectedReferenceMeta
 
-    def setSelectedCells(self, cells: List[AcqDir]):
+    def setSelectedCells(self, cells: List[pwsdt.AcqDir]):
         idTags = [i.idTag for i in cells]
         for item in self.tableWidget.cellItems:
-            if item.acqDir.idTag in idTags:
+            if item.pwsdt.AcqDir.idTag in idTags:
                 item.setSelected(True)
             else:
                 item.setSelected(False)
 
-    def setSelectedReference(self, ref: AcqDir):
+    def setSelectedReference(self, ref: pwsdt.AcqDir):
         idTag = ref.idTag
         for i in range(self.refTableWidget.rowCount()):
             refitem: ReferencesTableItem = self.refTableWidget.item(i, 0)
-            if refitem.item.acqDir.idTag == idTag:
+            if refitem.item.pwsdt.AcqDir.idTag == idTag:
                 refitem.setSelected(True)
             else:
                 refitem.setSelected(False)
 
-    def setHighlightedCells(self, cells: List[AcqDir]):
+    def setHighlightedCells(self, cells: List[pwsdt.AcqDir]):
         idTags = [i.idTag for i in cells]
         for item in self.tableWidget.cellItems:
-            if item.acqDir.idTag in idTags:
+            if item.pwsdt.AcqDir.idTag in idTags:
                 item.setHighlighted(True)
             else:
                 item.setHighlighted(False)
 
-    def setHighlightedReference(self, ref: AcqDir):
+    def setHighlightedReference(self, ref: pwsdt.AcqDir):
         idTag = ref.idTag
         for i in range(self.refTableWidget.rowCount()):
             refitem: ReferencesTableItem = self.refTableWidget.item(i, 0)
-            if refitem.item.acqDir.idTag == idTag:
+            if refitem.item.pwsdt.AcqDir.idTag == idTag:
                 refitem.setHighlighted(True)
             else:
                 refitem.setHighlighted(False)

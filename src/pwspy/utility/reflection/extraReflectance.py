@@ -11,9 +11,7 @@ These functions are relied on heavily in the pwspy.apps.ERCreator app.
 """
 
 from typing import Dict, List, Tuple, Iterable, Any, Iterator, Union, Optional, Set
-from pwspy.dataTypes import Roi
-from pwspy.dataTypes._data import ExtraReflectanceCube, ImCube
-from pwspy.dataTypes._metadata import ERMetaData
+from pwspy.dataTypes import Roi, ExtraReflectanceCube, ImCube, ERMetaData
 from pwspy.utility.reflection import reflectanceHelper, Material
 import itertools
 import matplotlib.pyplot as plt

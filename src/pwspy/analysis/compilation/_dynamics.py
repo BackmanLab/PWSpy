@@ -5,7 +5,7 @@ from typing import Tuple, List
 import numpy as np
 
 from pwspy.dataTypes import Roi
-from .abstract import AbstractCompilerSettings, AbstractRoiCompilationResults, AbstractRoiCompiler
+from ._abstract import AbstractCompilerSettings, AbstractRoiCompilationResults, AbstractRoiCompiler
 from .. import warnings
 from ..dynamics import DynamicsAnalysisResults
 
@@ -55,5 +55,3 @@ class DynamicsRoiCompiler(AbstractRoiCompiler):
         else:
             return arr[roi.mask].mean()
 
-
-__all__ = []

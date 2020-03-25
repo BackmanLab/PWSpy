@@ -4,8 +4,7 @@ Created on Wed Sep 12 12:49:49 2018
 
 @author: Nick
 """
-from pwspy.dataTypes import ICMetaData, CameraCorrection, Roi, AcqDir
-from pwspy.dataTypes._data import ImCube
+from pwspy.dataTypes import ImCube, AcqDir
 from glob import glob
 import matplotlib.pyplot as plt
 import numpy as np

@@ -1,19 +1,16 @@
 from __future__ import annotations
-from PyQt5.QtWidgets import QDockWidget, QWidget, QFrame, QVBoxLayout, QCheckBox, \
-    QScrollArea, QPushButton, QGridLayout, QLineEdit, QLabel
+from PyQt5.QtWidgets import (QDockWidget, QWidget, QFrame, QVBoxLayout, QCheckBox, QScrollArea, QPushButton,
+                             QGridLayout, QLineEdit, QLabel)
 from PyQt5 import QtCore
-
-from pwspy.analysis.compilation.dynamics import DynamicsCompilerSettings
-from pwspy.analysis.compilation.generic import GenericCompilerSettings
-from pwspy.analysis.compilation.pws import PWSCompilerSettings
+from pwspy.analysis.compilation import DynamicsCompilerSettings, GenericCompilerSettings, PWSCompilerSettings
 from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateCompilerResults, ConglomerateCompilerSettings
 from .widgets import ResultsTable, ResultsTableItem
 import typing
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes._metadata import AcqDir
+    from pwspy.dataTypes import AcqDir
 
 
-class ResultsTableDock(QDockWidget): #TODO update this for the new conglomoerate classes.
+class ResultsTableDock(QDockWidget):
     def __init__(self):
         super().__init__("Results")
         self.setStyleSheet("QDockWidget > QWidget { border: 1px solid lightgray; }")

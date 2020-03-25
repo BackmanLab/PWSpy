@@ -5,7 +5,7 @@ from PyQt5 import QtGui
 from PyQt5.QtWidgets import QDialog, QFileDialog, QWidget, QLineEdit, QPushButton, QLabel, QGridLayout, QMessageBox
 
 from pwspy.apps import resources
-from pwspy.dataTypes._metadata import ICMetaData
+from pwspy.dataTypes import ICMetaData
 from typing import List
 import os
 import random

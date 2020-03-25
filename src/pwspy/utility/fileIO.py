@@ -23,8 +23,7 @@ from time import time
 from typing import Union, Optional, List, Tuple
 import pandas as pd
 import psutil
-from pwspy.dataTypes import ICMetaData, AcqDir
-from pwspy.dataTypes._metadata import MetaDataBase
+from pwspy.dataTypes import AcqDir, MetaDataBase
 
 '''Local Functions'''
 def _load(loadHandle: Union[str, MetaDataBase], lock: mp.Lock):

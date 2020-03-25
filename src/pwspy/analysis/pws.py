@@ -2,18 +2,15 @@ from __future__ import annotations
 import dataclasses
 import os
 from datetime import datetime
-
 import numpy as np
 import pandas as pd
 from scipy import signal as sps
 import multiprocessing as mp
 from typing import Type, Tuple, List, Optional
-
 from ._abstract import AbstractHDFAnalysisResults, AbstractAnalysis, AbstractAnalysisResults, AbstractAnalysisSettings, \
     AbstractRuntimeAnalysisSettings, AbstractAnalysisGroup
 from . import warnings
-from pwspy.dataTypes._data import ImCube, ExtraReflectionCube, KCube
-import pwspy.dataTypes._metadata as pwsdtmd
+import pwspy.dataTypes as pwsdt
 from pwspy import dateTimeFormat
 from pwspy.utility.misc import cached_property
 from pwspy.utility.reflection import reflectanceHelper, Material
@@ -48,7 +45,7 @@ class PWSAnalysis(AbstractAnalysis): #TODO Handle the case where pixels are 0, m
     """The standard PWS analysis routine. Initialize and then `run` for as many different ImCubes as you want.
     For a given set of settings and reference you only need to instantiate one instance of this class. You can then perform `run`
     on as many data cubes as you want."""
-    def __init__(self, runtimeSettings: PWSRuntimeAnalysisSettings, ref: ImCube): #TODO it would make sense to include the reference in the runtime settings too.
+    def __init__(self, runtimeSettings: PWSRuntimeAnalysisSettings, ref: pwsdt.ImCube): #TODO it would make sense to include the reference in the runtime settings too.
         from pwspy.dataTypes import ExtraReflectanceCube
         assert ref.processingStatus.cameraCorrected, "Before attempting to analyze using this reference make sure that it has had camera darkcounts and non-linearity corrected for."
         super().__init__()
@@ -71,16 +68,15 @@ class PWSAnalysis(AbstractAnalysis): #TODO Handle the case where pixels are 0, m
         else:
             if extraReflectance.metadata.numericalAperture != settings.numericalAperture:
                 self._initWarnings.append(warnings.AnalysisWarning("NA mismatch!", f"The numerical aperture of your analysis does not match the NA of the Extra Reflectance Calibration. Calibration File NA: {extraReflectance.metadata.numericalAperture}. PWSAnalysis NA: {settings.numericalAperture}."))
-            Iextra = ExtraReflectionCube.create(extraReflectance, theoryR, ref) #Convert from reflectance to predicted counts/ms.
+            Iextra = pwsdt.ExtraReflectionCube.create(extraReflectance, theoryR, ref) #Convert from reflectance to predicted counts/ms.
             ref.subtractExtraReflection(Iextra)  # remove the extra reflection from our data#
         if not settings.relativeUnits:
             ref = ref / theoryR[None, None, :]  # now when we normalize by our reference we will get a result in units of physical reflectance rather than arbitrary units.
         self.ref = ref
         self.extraReflection = Iextra
 
-    def run(self, cube: ImCube) -> Tuple[PWSAnalysisResults, List[warnings.AnalysisWarning]]:
+    def run(self, cube: pwsdt.ImCube) -> Tuple[PWSAnalysisResults, List[warnings.AnalysisWarning]]:
         """Runs analysis on `cube` returns a list of warnings indicating abnormal results and an analyisResults object which can be saved."""
-        from pwspy.dataTypes import KCube
         assert cube.processingStatus.cameraCorrected
         warns = self._initWarnings
         cube = self._normalizeImCube(cube)
@@ -90,7 +86,7 @@ class PWSAnalysis(AbstractAnalysis): #TODO Handle the case where pixels are 0, m
         cube = cube.selIndex(self.settings.wavelengthStart, self.settings.wavelengthStop)
         # Determine the mean-reflectance for each pixel in the cell.
         reflectance = cube.data.mean(axis=2)
-        cube = KCube.fromImCube(cube)  # -- Convert to K-Space
+        cube = pwsdt.KCube.fromImCube(cube)  # -- Convert to K-Space
         cubePoly = self._fitPolynomial(cube)
         # Remove the polynomial fit from filtered cubeCell.
         cube.data = cube.data - cubePoly
@@ -118,13 +114,13 @@ class PWSAnalysis(AbstractAnalysis): #TODO Handle the case where pixels are 0, m
             rSquared=rSquared,
             ld=ld,
             settings=self.settings,
-            imCubeIdTag=cube.metadata.idTag,
+            ImCubeIdTag=cube.metadata.idTag,
             referenceIdTag=self.ref.metadata.idTag,
             extraReflectionTag=self.extraReflection.metadata.idTag if self.extraReflection is not None else None)
         warns = [warn for warn in warns if warn is not None]  # Filter out null values.
         return results, warns
 
-    def _normalizeImCube(self, cube: ImCube) -> ImCube:
+    def _normalizeImCube(self, cube: pwsdt.ImCube) -> pwsdt.ImCube:
         cube.normalizeByExposure()
         if self.extraReflection is not None:
             cube.subtractExtraReflection(self.extraReflection)
@@ -136,7 +132,7 @@ class PWSAnalysis(AbstractAnalysis): #TODO Handle the case where pixels are 0, m
         return sps.filtfilt(b, a, data, axis=2).astype(data.dtype)  # Actually do the filtering on the data.
 
     # -- Polynomial Fit
-    def _fitPolynomial(self, cube: KCube):
+    def _fitPolynomial(self, cube: pwsdt.KCube):
         order = self.settings.polynomialOrder
         flattenedData = cube.data.reshape((cube.data.shape[0] * cube.data.shape[1], cube.data.shape[2]))
         # Flatten the array to 2d and put the wavenumber axis first.
@@ -183,7 +179,7 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
     @staticmethod
     def fields():
         return ['time', 'reflectance', 'meanReflectance', 'rms', 'polynomialRms', 'autoCorrelationSlope', 'rSquared',
-                'ld', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionTag', 'settings']
+                'ld', 'ImCubeIdTag', 'referenceIdTag', 'extraReflectionTag', 'settings']
 
     @staticmethod
     def name2FileName(name: str) -> str:
@@ -194,9 +190,9 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
         return fileName.split('analysisResults_')[1][:-3]
 
     @classmethod
-    def create(cls, settings: PWSAnalysisSettings, reflectance: KCube, meanReflectance: np.ndarray, rms: np.ndarray,
+    def create(cls, settings: PWSAnalysisSettings, reflectance: pwsdt.KCube, meanReflectance: np.ndarray, rms: np.ndarray,
                polynomialRms: np.ndarray, autoCorrelationSlope: np.ndarray, rSquared: np.ndarray, ld: np.ndarray,
-               imCubeIdTag: str, referenceIdTag: str, extraReflectionTag: Optional[str]):
+               ImCubeIdTag: str, referenceIdTag: str, extraReflectionTag: Optional[str]):
         #TODO check datatypes here
         d = {'time': datetime.now().strftime(dateTimeFormat),
             'reflectance': reflectance,
@@ -206,7 +202,7 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
             'autoCorrelationSlope': autoCorrelationSlope,
             'rSquared': rSquared,
             'ld': ld,
-            'imCubeIdTag': imCubeIdTag,
+            'ImCubeIdTag': ImCubeIdTag,
             'referenceIdTag': referenceIdTag,
             'extraReflectionTag': extraReflectionTag,
             'settings': settings}
@@ -221,8 +217,8 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
     @cached_property
     @clearError
     @getFromDict
-    def imCubeIdTag(self) -> str:
-        return bytes(np.array(self.file['imCubeIdTag'])).decode()
+    def ImCubeIdTag(self) -> str:
+        return bytes(np.array(self.file['ImCubeIdTag'])).decode()
 
     @cached_property
     @clearError
@@ -240,9 +236,8 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
     @clearError
     @getFromDict
     def reflectance(self):
-        from pwspy.dataTypes import KCube
         dset = self.file['reflectance']
-        return KCube.fromHdfDataset(dset)
+        return pwsdt.KCube.fromHdfDataset(dset)
 
     @cached_property
     @clearError
@@ -290,9 +285,8 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
     @clearError
     @getFromDict
     def opd(self) -> Tuple[np.ndarray, np.ndarray]:
-        from pwspy.dataTypes import KCube
         dset = self.file['reflectance']
-        cube = KCube.fromHdfDataset(dset)
+        cube = pwsdt.KCube.fromHdfDataset(dset)
         opd, opdIndex = cube.getOpd(isHannWindow=False, indexOpdStop=100)
         return opd, opdIndex
 
@@ -378,7 +372,7 @@ class PWSAnalysisGroup(AbstractAnalysisGroup):
 @dataclasses.dataclass
 class PWSRuntimeAnalysisSettings(AbstractRuntimeAnalysisSettings):
     settings: PWSAnalysisSettings
-    extraReflectanceMetadata: Optional[pwsdtmd.ERMetaData]
+    extraReflectanceMetadata: Optional[pwsdt.ERMetaData]
 
     def getSaveableSettings(self) -> PWSAnalysisSettings:
         return self.settings

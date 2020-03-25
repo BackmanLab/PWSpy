@@ -17,7 +17,7 @@ This application is used to generate `ExtraReflectanceCube` calibration files an
 
 """
 
-__all__ = ['resources']
+__all__ = ['resources', 'appPath']
 import os
 
 resources = os.path.join(os.path.split(__file__)[0], '_resources')

@@ -7,10 +7,8 @@ from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QScrollArea, QVBo
 
 from pwspy.apps.PWSAnalysisApp._dockWidgets import CellSelectorDock
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.roiDrawer import RoiDrawer
-from pwspy.dataTypes import ICMetaData
-from pwspy.dataTypes._metadata import AcqDir
+import pwspy.dataTypes as pwsdt
 from pwspy.apps.sharedWidgets.utilityWidgets import AspectRatioWidget
-from pwspy.utility.misc import profileDec
 from .widgets.littlePlot import LittlePlot
 import os
 
@@ -141,7 +139,7 @@ class PlottingDock(QDockWidget):
         else:
             raise ValueError("`enable` string not recognized.")
 
-    def generatePlots(self, cells: List[AcqDir]):
+    def generatePlots(self, cells: List[pwsdt.AcqDir]):
         try:
             self.cellMetas = cells
             analysisName = self.anNameEdit.text()

@@ -1,7 +1,6 @@
-from pwspy.dataTypes._data import DynCube
+from pwspy.dataTypes import DynCube, Roi
 import os
 import numpy as np
-from pwspy.dataTypes._other import Roi
 
 wDir = r''
 cellNum = list(range(1001, 1015)) # Cell numbers to analyze

@@ -1,4 +1,4 @@
-from pwspy.dataTypes._data import DynCube
+from pwspy.dataTypes import DynCube
 import os
 from glob import glob
 

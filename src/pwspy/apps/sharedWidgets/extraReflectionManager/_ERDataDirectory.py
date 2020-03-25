@@ -5,19 +5,14 @@ from enum import Enum
 from glob import glob
 from typing import List
 
-import pandas, tempfile
+import pandas
 
 from pwspy.apps.sharedWidgets.extraReflectionManager.ERIndex import ERIndex, ERIndexCube
-from pwspy.dataTypes._metadata import ERMetaData
+from pwspy.dataTypes import ERMetaData
 import typing
-
-from pwspy.utility import GoogleDriveDownloader
-
 if typing.TYPE_CHECKING:
-    from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager, ERDownloader
-from .exceptions import OfflineError
+    from pwspy.apps.sharedWidgets.extraReflectionManager import ERDownloader
 from abc import ABC, abstractmethod
-import time
 
 class ERAbstractDirectory(ABC):
     """This class keeps track of the status of a directory that contains our extra reflection subtraction cubes.
