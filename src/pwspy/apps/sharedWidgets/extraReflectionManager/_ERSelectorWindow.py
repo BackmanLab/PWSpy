@@ -9,7 +9,6 @@ from PyQt5.QtWidgets import QDialog, QTableWidget, QTableWidgetItem, QMessageBox
     QAction, QTreeWidget, QTreeWidgetItem, QFileDialog
 
 import pwspy
-from pwspy import moduleConsts
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.tables import DatetimeTableWidgetItem
 from pwspy.dataTypes.data import ExtraReflectanceCube
 from pwspy.dataTypes.metadata import ERMetaData

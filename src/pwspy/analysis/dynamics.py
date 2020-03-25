@@ -1,28 +1,42 @@
 from __future__ import annotations
+import dataclasses
+from datetime import datetime
 
-from multiprocessing.sharedctypes import RawArray
-from numpy import ma
-
-from ._analysisResults import DynamicsAnalysisResults
-from ._analysisSettings import DynamicsAnalysisSettings, DynamicsRuntimeAnalysisSettings
-from pwspy.analysis import warnings
-from pwspy.analysis._abstract import AbstractAnalysis
 import numpy as np
 import pandas as pd
-from typing import Tuple, List
-from pwspy.utility.reflection import reflectanceHelper, Material
+from numpy import ma
+import multiprocessing as mp
 import typing
-if typing.TYPE_CHECKING:
-    from ...dataTypes.data import DynCube, ExtraReflectanceCube
+from . import AbstractAnalysis, warnings, AbstractAnalysisSettings, AbstractRuntimeAnalysisSettings, \
+    AbstractHDFAnalysisResults, AbstractAnalysisGroup
+from pwspy import dateTimeFormat
+import pwspy.dataTypes as pwsdt
+from pwspy.utility.misc import cached_property
+from pwspy.utility.reflection import reflectanceHelper, Material
+
+
+def getFromDict(func):
+    """This decorator makes it so that the function will only be evaluated if self.file is not None.
+    If self.file is None then we will just search self.dict for a value with a key matching the name of the decorated function.
+    We use this because while we often want to load data from a file for use, we also want to support the case of an object
+    that has been created but has not yet been saved to a file."""
+    def newFunc(self, *args):
+        if self.file is None:
+            return self.dict[func.__name__]
+        else:
+            return func(self, *args)
+
+    newFunc.__name__ = func.__name__
+    return newFunc
 
 
 class DynamicsAnalysis(AbstractAnalysis):
     """This class performs the analysis of RMS_t_squared and D described in the paper: "Multimodal interferometric imaging of nanoscale structure and
     macromolecular motion uncovers UV induced cellular paroxysm". It is based on a set of matlab scripts written by the author of that paper, Scott Gladstein.
      The original scripts can be found in the `_oldMatlab` subpackage."""
-    def __init__(self, settings: DynamicsRuntimeAnalysisSettings, ref: DynCube):
+    def __init__(self, settings: DynamicsRuntimeAnalysisSettings, ref: pwsdt.DynCube):
         super().__init__()
-        extraReflectance = ExtraReflectanceCube.fromMetadata(settings.extraReflectanceMetadata) if settings.extraReflectanceMetadata is not None else None
+        extraReflectance = pwsdt.ExtraReflectanceCube.fromMetadata(settings.extraReflectanceMetadata) if settings.extraReflectanceMetadata is not None else None
         settings = settings.getSaveableSettings()
         assert ref.processingStatus.cameraCorrected
         ref.normalizeByExposure()
@@ -55,7 +69,7 @@ class DynamicsAnalysis(AbstractAnalysis):
         self.settings = settings
         self.extraReflection = Iextra
 
-    def run(self, cube: DynCube) -> Tuple[DynamicsAnalysisResults, List[warnings.AnalysisWarning]]:
+    def run(self, cube: pwsdt.DynCube) -> Tuple[DynamicsAnalysisResults, List[warnings.AnalysisWarning]]:
         assert cube.processingStatus.cameraCorrected
         warns = []
         cube.normalizeByExposure()
@@ -114,18 +128,167 @@ class DynamicsAnalysis(AbstractAnalysis):
         return Slope
 
     def copySharedDataToSharedMemory(self):
-        refdata = RawArray('f', self.refAc.size)
+        refdata = mp.RawArray('f', self.refAc.size)
         refdata = np.frombuffer(refdata, dtype=np.float32).reshape(self.refAc.shape)
         np.copyto(refdata, self.refAc)
         self.refAc = refdata
 
-        refmdata = RawArray('f', self.refMean.size)
+        refmdata = mp.RawArray('f', self.refMean.size)
         refmdata = np.frombuffer(refmdata, dtype=np.float32).reshape(self.refMean.shape)
         np.copyto(refmdata, self.refMean)
         self.refMean = refmdata
 
         if self.extraReflection is not None:
-            iedata = RawArray('f', self.extraReflection.size)
+            iedata = mp.RawArray('f', self.extraReflection.size)
             iedata = np.frombuffer(iedata, dtype=np.float32).reshape(self.extraReflection.shape)
             np.copyto(iedata, self.extraReflection)
             self.extraReflection = iedata
+
+
+class DynamicsAnalysisResults(AbstractHDFAnalysisResults):
+    @staticmethod
+    def fields():
+        return ['meanReflectance', 'reflectance', 'rms_t_squared', 'diffusion', 'time', 'settings', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionIdTag']
+
+    @staticmethod
+    def name2FileName(name: str) -> str:
+        return f'dynAnalysisResults_{name}.h5'
+
+    @staticmethod
+    def fileName2Name(fileName: str) -> str:
+        return fileName.split('dynAnalysisResults_')[1][:-3]
+
+    @classmethod
+    def create(cls, settings: DynamicsAnalysisSettings, meanReflectance: np.ndarray, rms_t_squared: np.ndarray, reflectance: pwsdt.DynCube, diffusion: np.ndarray,
+                imCubeIdTag: str, referenceIdTag: str, extraReflectionIdTag: typing.Optional[str]):
+        #TODO check datatypes here
+        d = {'time': datetime.now().strftime(dateTimeFormat),
+            'meanReflectance': meanReflectance,
+            'reflectance': reflectance,
+            'diffusion': diffusion,
+            'rms_t_squared': rms_t_squared,
+            'imCubeIdTag': imCubeIdTag,
+            'referenceIdTag': referenceIdTag,
+            'extraReflectionIdTag': extraReflectionIdTag,
+            'settings': settings}
+        return cls(None, d)
+
+    @cached_property
+    @getFromDict
+    def meanReflectance(self) -> np.ndarray:
+        dset = self.file['meanReflectance']
+        return np.array(dset)
+
+    @cached_property
+    @getFromDict
+    def rms_t_squared(self) -> np.ndarray:
+        dset = self.file['rms_t_squared']
+        return np.array(dset)
+
+    @cached_property
+    @getFromDict
+    def settings(self) -> DynamicsAnalysisSettings:
+        return DynamicsAnalysisSettings.fromJsonString(self.file['settings'])
+
+    @cached_property
+    @getFromDict
+    def reflectance(self) -> pwsdt.DynCube:
+        dset = self.file['reflectance']
+        return pwsdt.DynCube.fromHdfDataset(dset)
+
+    @cached_property
+    @getFromDict
+    def diffusion(self) -> np.ndarray:
+        dset = self.file['diffusion']
+        return np.array(dset)
+
+    @cached_property
+    @getFromDict
+    def imCubeIdTag(self) -> str:
+        return bytes(np.array(self.file['imCubeIdTag'])).decode()
+
+    @cached_property
+    @getFromDict
+    def referenceIdTag(self) -> str:
+        return bytes(np.array(self.file['referenceIdTag'])).decode()
+
+    @cached_property
+    @getFromDict
+    def time(self) -> str:
+        return self.file['time']
+
+    @cached_property
+    @getFromDict
+    def extraReflectionIdTag(self) -> str:
+        return bytes(np.array(self.file['extraReflectionIdTag'])).decode()
+
+
+@dataclasses.dataclass
+class DynamicsAnalysisSettings(AbstractAnalysisSettings):
+    """These settings determine the behavior of the `DynamicsAnalysis` class.
+        Args:
+            extraReflectanceId: The unique `IDTag` of the extraReflectance calibration that was used on this analysis.
+            referenceMaterial: The material that was imaged in the reference image of this analysis. Found as an in pwspy.moduleConst.Material. The
+                theoretically predicted
+                reflectance of the reference image is used in the extraReflectance correction.
+            numericalAperture: The illumination NA of the system. This is used for two purposes. First, we want to make sure that the NA of our data matches
+                the NA of our extra reflectance correction cube.
+                Second, the theoretically predicted reflectance of our reference is based not only on what our refereMaterial is but also the NA since
+                reflectance is angle dependent.
+            relativeUnits: If `True` then all calculation are performed such that the reflectance is 1 if it matches the reference. If `False` then we use the
+                theoretical reflectance of the reference  (based on NA and reference material) to normalize our results to the actual physical reflectance of
+                the sample (about 0.4% for water)
+            diffusionRegressionLength: The original matlab scripts for analysis of dynamics data determined the slope of the log(ACF) by looking only at the
+                first two indices, (log(ACF)[1]-log(ACF)[0])/dt. This results in very noisy results. However as you at higher index value of the log(ACF) the
+                noise becomes much worse. A middle ground is to perform linear regression on the first 4 indices to determine the slope. You can adjust that
+                number here.
+    """
+    extraReflectanceId: str
+    referenceMaterial: Material
+    numericalAperture: float
+    relativeUnits: bool
+    diffusionRegressionLength: int = 3
+
+    FileSuffix = "dynAnalysis"  # This is used for saving and loading to json
+
+    def __post_init__(self):
+        assert self.diffusionRegressionLength > 0
+        assert self.diffusionRegressionLength < 20  # Even 20 is probably way too long, unless a system is created with extremely low noise.
+
+    def _asDict(self) -> dict:
+        d = dataclasses.asdict(self)
+        if self.referenceMaterial is None:
+            d['referenceMaterial'] = None
+        else:
+            d['referenceMaterial'] = self.referenceMaterial.name  # Convert from enum to string
+        return d
+
+    @classmethod
+    def _fromDict(cls, d: dict) -> DynamicsAnalysisSettings:
+        if d['referenceMaterial'] is not None:
+            d['referenceMaterial'] = Material[d['referenceMaterial']]  # Convert from string to enum
+        return cls(**d)
+
+
+class DynamicsAnalysisGroup(AbstractAnalysisGroup):
+    """This class is simply used to group together analysis classes that are compatible with eachother."""
+    @staticmethod
+    def settingsClass() -> typing.Type[DynamicsAnalysisSettings]:
+        return DynamicsAnalysisSettings
+
+    @staticmethod
+    def resultsClass() -> typing.Type[DynamicsAnalysisResults]:
+        return DynamicsAnalysisResults
+
+    @staticmethod
+    def analysisClass() -> typing.Type[DynamicsAnalysis]:
+        return DynamicsAnalysis
+
+
+@dataclasses.dataclass
+class DynamicsRuntimeAnalysisSettings(AbstractRuntimeAnalysisSettings):
+    settings: DynamicsAnalysisSettings
+    extraReflectanceMetadata: typing.Optional[pwsdt.ERMetaData]
+
+    def getSaveableSettings(self) -> DynamicsAnalysisSettings:
+        return self.settings

@@ -20,7 +20,7 @@ from pwspy.utility.reflection import reflectanceHelper, Material
 
 
 def clearError(func):
-    """This decorator tried to run the original function. If the function raises a keyerror then we raise a new keyerror with a clearer message. This is intended to be used with `field` accessors of implementations
+    """This decorator tries to run the original function. If the function raises a keyerror then we raise a new keyerror with a clearer message. This is intended to be used with `field` accessors of implementations
     of `AbstractHDFAnalysisResults`."""
     def newFunc(*args):
         try:

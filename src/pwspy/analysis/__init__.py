@@ -1,13 +1,25 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Feb 12 21:44:31 2019
+Contains all code used for the analysis of data acquired with the PWS system.
 
-@author: Nick Anthony
+Submodules
+------------
+
+.. autosummary::
+    :toctree: generated/
+
+    compilation
+    pws
+    warnings
+    dynamics
+
+.. autoclass:: AnalysisTypes
+
 """
 import os
 from enum import Enum
-
-from ._abstract import AbstractAnalysisSettings, AbstractAnalysis, AbstractAnalysisResults, AbstractRuntimeAnalysisSettings
+from ._abstract import AbstractAnalysisSettings, AbstractAnalysis, AbstractAnalysisResults,\
+    AbstractRuntimeAnalysisSettings, AbstractHDFAnalysisResults, AbstractAnalysisGroup
 
 # TODO replace slope entirely with CDR
 

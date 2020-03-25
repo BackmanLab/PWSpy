@@ -4,6 +4,7 @@ import typing
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupBox, QHBoxLayout, QCheckBox
 
+import pwspy.analysis.dynamics
 from pwspy.analysis import dynamics
 from ._AbstractSettingsFrame import AbstractSettingsFrame
 
@@ -69,20 +70,20 @@ class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
     def analysisName(self) -> str:
         return self._analysisNameEdit.text()
 
-    def loadFromSettings(self, settings: dynamics.DynamicsAnalysisSettings):
+    def loadFromSettings(self, settings: pwspy.analysis.dynamics.DynamicsAnalysisSettings):
         self.extraReflection.loadFromSettings(settings.numericalAperture, settings.referenceMaterial, settings.extraReflectanceId)
         self.relativeUnits.setCheckState(2 if settings.relativeUnits else 0)
 
     def loadCameraCorrection(self, camCorr: typing.Optional[pwsdt.CameraCorrection] = None):
         self.hardwareCorrections.loadCameraCorrection(camCorr)
 
-    def getSettings(self) -> dynamics.DynamicsRuntimeAnalysisSettings:
+    def getSettings(self) -> pwspy.analysis.dynamics.DynamicsRuntimeAnalysisSettings:
         erMetadata, refMaterial, numericalAperture = self.extraReflection.getSettings()
-        return dynamics.DynamicsRuntimeAnalysisSettings(settings=dynamics.DynamicsAnalysisSettings(extraReflectanceId=erMetadata.idTag if erMetadata is not None else None,
-                                                                                referenceMaterial=refMaterial,
-                                                                                numericalAperture=numericalAperture,
-                                                                                relativeUnits=self.relativeUnits.checkState() != 0),
-                                                            extraReflectanceMetadata=erMetadata)
+        return pwspy.analysis.dynamics.DynamicsRuntimeAnalysisSettings(settings=pwspy.analysis.dynamics.DynamicsAnalysisSettings(extraReflectanceId=erMetadata.idTag if erMetadata is not None else None,
+                                                                                                                                 referenceMaterial=refMaterial,
+                                                                                                                                 numericalAperture=numericalAperture,
+                                                                                                                                 relativeUnits=self.relativeUnits.checkState() != 0),
+                                                                       extraReflectanceMetadata=erMetadata)
 
     def getCameraCorrection(self) -> pwsdt.CameraCorrection:
         return self.hardwareCorrections.getCameraCorrection()

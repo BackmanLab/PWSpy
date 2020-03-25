@@ -7,8 +7,7 @@ from PyQt5.QtCore import QThread
 
 from pwspy.analysis import AbstractAnalysisSettings, AbstractAnalysis
 from pwspy.analysis._abstract import AbstractRuntimeAnalysisSettings
-from pwspy.analysis.dynamics import DynamicsAnalysisSettings, DynamicsAnalysis
-from pwspy.analysis.dynamics._analysisSettings import DynamicsRuntimeAnalysisSettings
+from pwspy.analysis.dynamics import DynamicsAnalysisSettings, DynamicsAnalysis, DynamicsRuntimeAnalysisSettings
 from pwspy.apps.PWSAnalysisApp._sharedWidgets import ScrollableMessageBox
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from PyQt5 import QtCore

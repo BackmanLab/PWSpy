@@ -5,7 +5,6 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import QTableWidget, QAbstractItemView, QApplication, QTableWidgetItem
 
 import pwspy
-from pwspy import moduleConsts
 import numpy as np
 
 class CopyableTable(QTableWidget):
