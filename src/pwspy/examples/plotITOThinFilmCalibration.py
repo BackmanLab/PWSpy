@@ -56,8 +56,8 @@ if __name__ == '__main__':
             i.date = datetime.strptime(i.metadata.time, dateTimeFormat)
         i.dateString = datetime.strftime(i.date, '%m-%d-%Y')
     
-    files = [f for (im, ref), f in zip(ims,files) if im.date > dateStart and im.date < dateEnd]
-    ims = [(im, ref) for im, ref in ims if im.date > dateStart and im.date < dateEnd]
+    files = [f for (im, ref), f in zip(ims,files) if dateStart < im.date < dateEnd]
+    ims = [(im, ref) for im, ref in ims if dateStart < im.date < dateEnd]
     dates = [datetime.strptime(im.metadata.time, dateTimeFormat) for im, ref in ims]
     dates, ims, files = zip(*sorted(zip(dates, ims, files)))
     

@@ -300,8 +300,7 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
 class LegacyPWSAnalysisResults(AbstractAnalysisResults):
     """Allows loading of the .mat files that were used by matlab analysis code to save analysis results. Only partially implemented."""
     def __init__(self, rms: np.ndarray):
-        self._dict = {}
-        self._dict['rms'] = rms
+        self._dict = {'rms': rms}
 
     @property
     def rms(self):
