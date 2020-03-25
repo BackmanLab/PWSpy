@@ -8,7 +8,7 @@ Created on Fri Dec  7 15:44:57 2018
 import copy
 
 import matplotlib.pyplot as plt
-from pwspy.dataTypes.data import ImCube
+from pwspy.dataTypes._data import ImCube
 
 '''
 This script blurs an image cube in the xy direction. Allows you to turn an

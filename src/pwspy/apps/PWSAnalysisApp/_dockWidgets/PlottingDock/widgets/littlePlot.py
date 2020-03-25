@@ -14,7 +14,7 @@ from matplotlib.figure import Figure
 from pwspy.analysis.pws import PWSAnalysisResults
 from .widgets import AnalysisPlotter
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.analysisViewer import AnalysisViewer
-from pwspy.dataTypes.data import ImCube
+from pwspy.dataTypes._data import ImCube
 from pwspy.utility.plotting import PlotNd
 
 

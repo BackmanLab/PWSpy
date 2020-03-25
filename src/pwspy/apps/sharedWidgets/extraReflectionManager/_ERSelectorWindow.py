@@ -4,15 +4,10 @@ from typing import List, Optional
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
-from PyQt5.QtWidgets import QDialog, QTableWidget, QTableWidgetItem, QMessageBox, QWidget, QCheckBox, QVBoxLayout, \
-    QPushButton, QLineEdit, QComboBox, QGridLayout, QLabel, QDialogButtonBox, QHBoxLayout, QAbstractItemView, QMenu, \
-    QAction, QTreeWidget, QTreeWidgetItem, QFileDialog
-
+from PyQt5.QtWidgets import (QDialog, QMessageBox, QWidget, QVBoxLayout, QPushButton, QMenu, QAction, QTreeWidget,
+                             QTreeWidgetItem, QFileDialog)
 import pwspy
-from pwspy.apps.PWSAnalysisApp._sharedWidgets.tables import DatetimeTableWidgetItem
-from pwspy.dataTypes.data import ExtraReflectanceCube
-from pwspy.dataTypes.metadata import ERMetaData
-import numpy as np
+import pwspy.dataTypes as pwsdt
 from .exceptions import OfflineError
 
 import typing
@@ -64,7 +59,7 @@ class ERSelectorWindow(QDialog):
 
     def __init__(self, manager: ERManager, parent: Optional[QWidget] = None):
         self._manager = manager
-        self._selectedMetadata: Optional[ERMetaData] = None
+        self._selectedMetadata: Optional[pwsdt.ERMetaData] = None
         super().__init__(parent)
         self.setModal(False)
         self.setWindowTitle("Extra Reflectance Selector")
@@ -137,7 +132,7 @@ class ERSelectorWindow(QDialog):
                                                                       f'Description: {item.description}']))
 
     def _plot3dData(self, widgetItem):
-        er = ExtraReflectanceCube.fromHdfFile(self._manager._directory, widgetItem.name)
+        er = pwsdt.ExtraReflectanceCube.fromHdfFile(self._manager._directory, widgetItem.name)
         PlotNd(er.data, extraDimIndices=[er.wavelengths])
 
     def _downloadCheckedItems(self):
@@ -151,8 +146,8 @@ class ERSelectorWindow(QDialog):
         import os
         filePath, filterPattern = QFileDialog.getOpenFileName(self, "Select an ExtraReflectance file.", os.path.expanduser("~"), "*.h5")
         try:
-            wDir, name = ERMetaData.directory2dirName(filePath)
-            md = ERMetaData.fromHdfFile(wDir, name)
+            wDir, name = pwsdt.ERMetaData.directory2dirName(filePath)
+            md = pwsdt.ERMetaData.fromHdfFile(wDir, name)
             self.setSelection(md)
             self.accept()
         except Exception as e:
@@ -174,10 +169,10 @@ class ERSelectorWindow(QDialog):
             except IndexError:  # Nothing was selected
                 msg = QMessageBox.information(self, 'Uh oh!', 'No item was selected!')
 
-    def getSelectedMetadata(self) -> Optional[ERMetaData]:
+    def getSelectedMetadata(self) -> Optional[pwsdt.ERMetaData]:
         return self._selectedMetadata
 
-    def setSelection(self, md: ERMetaData):
+    def setSelection(self, md: pwsdt.ERMetaData):
         self._selectedMetadata = md
         self.selectionChanged.emit(md)
 

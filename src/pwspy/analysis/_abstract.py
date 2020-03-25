@@ -10,7 +10,7 @@ from pwspy import __version__ as pwspyversion
 from pwspy.utility.misc import cached_property
 
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes.data import ICBase
+    from pwspy.dataTypes._data import ICBase
 
 
 class AbstractAnalysisGroup(ABC):

@@ -12,8 +12,8 @@ from typing import Type, Tuple, List, Optional
 from ._abstract import AbstractHDFAnalysisResults, AbstractAnalysis, AbstractAnalysisResults, AbstractAnalysisSettings, \
     AbstractRuntimeAnalysisSettings, AbstractAnalysisGroup
 from . import warnings
-from pwspy.dataTypes.data import ImCube, ExtraReflectionCube, KCube
-import pwspy.dataTypes.metadata as pwsdtmd
+from pwspy.dataTypes._data import ImCube, ExtraReflectionCube, KCube
+import pwspy.dataTypes._metadata as pwsdtmd
 from pwspy import dateTimeFormat
 from pwspy.utility.misc import cached_property
 from pwspy.utility.reflection import reflectanceHelper, Material

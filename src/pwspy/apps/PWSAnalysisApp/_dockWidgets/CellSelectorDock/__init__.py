@@ -5,7 +5,7 @@ from typing import List, Dict
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineEdit, QGridLayout, QSplitter, \
     QSizePolicy, QMessageBox
-from pwspy.dataTypes.metadata import AcqDir
+from pwspy.dataTypes._metadata import AcqDir
 
 from pwspy.apps.PWSAnalysisApp._dockWidgets.CellSelectorDock.widgets import ReferencesTableItem
 from .widgets import CellTableWidgetItem, CellTableWidget, ReferencesTable

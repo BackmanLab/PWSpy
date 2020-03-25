@@ -26,7 +26,7 @@ import shapely
 import tifffile as tf
 from shapely.geometry import MultiPolygon
 
-import pwspy.dataTypes.data as pwsdtd
+import pwspy.dataTypes._data as pwsdtd
 
 def segmentOtsu(image: np.ndarray, minArea = 100):
     """Uses non-adaptive otsu method segmentation to find fluorescent regions (nuclei)

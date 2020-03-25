@@ -17,8 +17,8 @@ import tifffile as tf
 from matplotlib import pyplot as plt, widgets
 from scipy import interpolate as spi
 from scipy.io import savemat
-from . import metadata as pwsdtmd
-from . import other
+from . import _metadata as pwsdtmd
+from . import _other
 from pwspy.utility.matplotlibWidgets import AxManager, PointSelector
 
 
@@ -65,7 +65,7 @@ class ICBase:
         plt.colorbar(im, ax=ax)
         return fig, ax
 
-    def getMeanSpectra(self, mask: Optional[Union[other.Roi, np.ndarray]] = None) ->Tuple[np.ndarray, np.ndarray]:
+    def getMeanSpectra(self, mask: Optional[Union[_other.Roi, np.ndarray]] = None) ->Tuple[np.ndarray, np.ndarray]:
         """Calculate the average spectra within a region of the data.
 
         Args:
@@ -75,7 +75,7 @@ class ICBase:
         Returns:
             Tuple[np.ndarray, np.ndarray]: The average spectra within the region, the standard deviation of the spectra within the region
         """
-        if isinstance(mask, other.Roi):
+        if isinstance(mask, _other.Roi):
             mask = mask.mask
         if mask is None: #Make a mask that includes everything
             mask = np.ones(self.data.shape[:-1], dtype=np.bool)
@@ -352,7 +352,7 @@ class ICRawBase(ICBase, ABC):
             raise Exception("The ImCube has already been normalized by exposure.")
         self.processingStatus.normalizedByExposure = True
 
-    def correctCameraEffects(self, correction: other.CameraCorrection = None, binning: int = None):
+    def correctCameraEffects(self, correction: _other.CameraCorrection = None, binning: int = None):
         """Subtracts the darkcounts from the data. count is darkcounts per pixel. binning should be specified if
         it wasn't saved in the micromanager metadata."""
         if self.processingStatus.cameraCorrected:
