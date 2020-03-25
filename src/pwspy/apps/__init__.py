@@ -1,6 +1,6 @@
 """
 ==================================
-PWSpy Apps (:mod:pwspy.apps)
+PWSpy Apps (:mod:`pwspy.apps`)
 ==================================
 
 This package is home to GUI applications related to PWS.

@@ -3,6 +3,9 @@ import enum
 
 @enum.unique
 class Material(enum.Enum):
+    """
+    An enumeration class containing items for the various materials that we can calculate reflectance for.
+    """
     Glass = enum.auto()
     Water = enum.auto()
     Air = enum.auto()

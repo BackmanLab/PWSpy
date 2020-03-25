@@ -2,7 +2,6 @@
 """
 This module contains variables that are used across the entirety of the pwspy package. `dateTimeFormat` is the
 format string used by the datetime module to load and store time stamps in metadata.
-`Material` is an enum.Enum class containing items for the various materials that we can calculate reflectance for.
 """
 import os
 
@@ -23,7 +22,7 @@ with open(os.path.join(os.path.split(__file__)[0], '_version'), 'r') as f: # We 
     __version__ = str(f.readline())
 
 
-
 dateTimeFormat = "%d-%m-%Y %H:%M:%S"
+__all__ = ['dateTimeFormat']
 
 

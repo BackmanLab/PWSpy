@@ -1,14 +1,6 @@
 pwspy.apps package
 ==================
 
-Subpackages
------------
-
-.. toctree::
-
-   pwspy.apps.ExtraReflectanceCreator
-   pwspy.apps.PWSAnalysisApp
-
 Module contents
 ---------------
 

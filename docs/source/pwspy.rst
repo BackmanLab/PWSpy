@@ -5,6 +5,7 @@ Subpackages
 -----------
 
 .. toctree::
+   :maxdepth: 2
 
    pwspy.analysis
    pwspy.apps

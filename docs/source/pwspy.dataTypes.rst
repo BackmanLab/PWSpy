@@ -11,6 +11,7 @@ These classes provide handling of information about an acquisition without requi
 about the equipment used, the date the acquisition was taken, the location of the files, the presence of ROIs or analyses, etc.
 
 .. autosummary::
+    :toctree: generated/
     :nosignatures:
 
     ICMetaData
@@ -22,6 +23,7 @@ Data Classes
 These classes are used to actuallly load and manipulate acquisition data. The all have a corresponding metadata class.
 
 .. autosummary::
+    :toctree: generated/
     :nosignatures:
 
     ImCube
@@ -35,80 +37,13 @@ These classes are used to actuallly load and manipulate acquisition data. The al
 Other Classes
 ---------------
 .. autosummary::
+    :toctree: generated/
     :nosignatures:
 
     Roi
     CameraCorrection
     AcqDir
     FluorescenceImage
-
-API
---------
-
-.. autoclass:: ICMetaData
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. autoclass:: DynMetaData
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. autoclass:: ERMetaData
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. autoclass:: ImCube
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. autoclass:: DynCube
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. autoclass:: KCube
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. autoclass:: ExtraReflectanceCube
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. autoclass:: ExtraReflectionCube
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. autoclass:: ICBase
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. autoclass:: ICRawBase
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. autoclass:: Roi
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. autoclass:: FluorescenceImage
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. autoclass:: CameraCorrection
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 
 .. inheritance-diagram:: ImCube DynCube ICMetaData DynMetaData FluorescenceImage CameraCorrection Roi ERMetaData ExtraReflectionCube ExtraReflectanceCube KCube AcqDir FluorMetaData
