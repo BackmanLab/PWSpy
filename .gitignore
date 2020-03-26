@@ -6,4 +6,3 @@ installScripts/pyInstaller/dist/
 build/
 tests/resources/Cell1/pwsmetadata.json
 docs/source/generated/
-src/pwspy/_version
