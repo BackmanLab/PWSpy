@@ -46,5 +46,6 @@ setup(name='pwspy',
 								'apps/_resources/*',
 								'analysis/_resources/defaultAnalysisSettings/*',
                                 'apps/PWSAnalysisApp/_resources/*',
-                              'dataTypes/jsonSchemas/*']},
+                              'dataTypes/jsonSchemas/*',
+                              '_version']},
       packages=find_packages('src'))
