@@ -6,8 +6,13 @@ Created on Sat Feb  9 20:14:25 2019
 """
 from setuptools import setup, find_packages
 import os.path as osp
+import os
+
 with open(osp.join('src', 'pwspy', 'version.py')) as f:
+    currwd = os.getcwd()
+    os.chdir(osp.join(currwd, 'src','pwspy')) #The version.py file will run from the wrong location if we don't manually set it here.
     exec(f.read()) # Run version py to initialize pwspyVersion
+    os.chdir(currwd)
 
 setup(name='pwspy',
       version=pwspyVersion,
