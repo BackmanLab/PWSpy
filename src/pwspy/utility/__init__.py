@@ -1,8 +1,27 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Aug  7 13:20:25 2018
+==================================================
+Utility (:mod:`pwspy.utility`)
+==================================================
+This module provides a number of functions useful for
+quickly loading files using parallel processing.
 
-@author: Nick Anthony
+Functions
+----------
+.. autosummary::
+   :toctree: generated/
+
+   GoogleDriveDownloader
+   fileIO
+   misc
+   machineVision
+   fluorescence
+   plotting
+   reflection
+   micromanager
+   matplotlibWidgets
+   DConversion
+
 """
 
 from ._GoogleDriveDownloader import GoogleDriveDownloader
@@ -10,4 +29,5 @@ import os
 
 thinFilmPath = os.path.join(os.path.split(__file__)[0], 'thinFilmInterferenceFiles')
 
-__all__ = ['GoogleDriveDownloader', 'fileIO', 'misc', 'machineVision', 'fluorescence']
+__all__ = ['GoogleDriveDownloader', 'fileIO', 'misc', 'machineVision', 'fluorescence', 'plotting' ,'reflection',
+           'micromanager', 'matplotlibWidgets', 'DConversion']

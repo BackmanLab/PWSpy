@@ -1,8 +1,3 @@
-pwspy.apps package
-==================
-
-Module contents
----------------
 
 .. automodule:: pwspy.apps
    :members:
