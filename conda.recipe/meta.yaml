@@ -42,6 +42,7 @@ about:
   home: https://bitbucket.org/backmanlab/pwspython/src/master/
   summary: "A framework for working with Partial Wave Spectroscopy files."
   description: "A framework for working with Partial Wave Spectroscopy files."
+  doc_url: https://pwspy.readthedocs.io/en/dev/
   dev_url: https://bitbucket.org/backmanlab/pwspython/src/master/
   
 app:

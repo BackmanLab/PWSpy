@@ -31,6 +31,10 @@ setup(name='pwspy',
                         'opencv-python',
                         'PyQt5',
                         'scikit-image'],
+      entry_points={'gui_scripts': [ # Not sure what effect this has if any.
+          'PWSAnalysis = pwspy.apps.__main__:main',
+          "ERCreator = pwspy.apps.__main__:main"
+      ]},
       package_dir={'': 'src'},
       package_data={'pwspy': ['utility/reflection/refractiveIndexFiles/*',
 								'utility/thinFilmInterferenceFiles/*',
