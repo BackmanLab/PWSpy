@@ -27,9 +27,17 @@ import tifffile as tf
 from shapely.geometry import MultiPolygon
 import pwspy.dataTypes as pwsdt
 
-def segmentOtsu(image: np.ndarray, minArea = 100):
+def segmentOtsu(image: np.ndarray, minArea = 100) -> List[shapely.geometry.Polygon]:
     """Uses non-adaptive otsu method segmentation to find fluorescent regions (nuclei)
-    Returns a list of shapely polygons."""
+    Returns a list of shapely polygons.
+
+    Args:
+        image:  a 2d array representing the fluorescent image.
+        minArea: Detected regions with a pixel area lower than this value will be discarded.
+
+    Returns:
+        A list of `shapely.geometry.Polygon` objects corresponding to detected nuclei.
+    """
     image = ((image - image.min()) / (image.max() - image.min()) * 255).astype(np.uint8)
     threshold, binary = cv2.threshold(image, 0, 1, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
     contours, hierarchy = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
@@ -47,8 +55,23 @@ def segmentOtsu(image: np.ndarray, minArea = 100):
     return polys
 
 
-def segmentAdaptive(image: np.ndarray, minArea = 100, adaptiveRange: int = 500, thresholdOffset: float=-10, polySimplification: int = 5, dilate: int = 0, erode: int = 0) -> List[shapely.geometry.Polygon]:
-    """Uses opencv's adaptive"""
+def segmentAdaptive(image: np.ndarray, minArea: int = 100, adaptiveRange: int = 500, thresholdOffset: float = -10,
+                    polySimplification: int = 5, dilate: int = 0, erode: int = 0) -> List[shapely.geometry.Polygon]:
+    """Uses opencv's `cv2.adaptiveThreshold` function to segment nuclei in a fluorescence image.
+
+    Args:
+        image: A 2d array representing the fluorescent image.
+        minArea: Detected regions with a pixel area lower than this value will be discarded.
+        thresholdOffset: This offset is passed to `cv2.adaptiveThreshold` and affects the segmentation process
+        polySimplification: This parameter will simplify the edges of the detected polygons to remove overly complicated
+            geometry
+        dilate: The number of pixels that the polygons should be dilated by.
+        erode: The number of pixels that the polygons should be eroded by. Combining this with dilation can help to
+            close gaps.
+
+    Returns:
+        A list of `shapely.geometry.Polygon` objects corresponding to detected nuclei.
+    """
     if adaptiveRange%2 != 1 or adaptiveRange<3:
         raise ValueError("adaptiveRange must be a positive odd integer >=3.")
     image = ((image - image.min()) / (image.max() - image.min()) * 255).astype(np.uint8) # convert to 8bit

@@ -11,8 +11,9 @@ try:
         f.write(version)
     print(f"Saved version, {version}, to the `_version` file.")
 except Exception as e:
-    import traceback
-    traceback.print_exc()
+    # import traceback
+    # traceback.print_exc()
+    pass
 
 with open(versionFile, 'r') as f:  # We load the version string from a text file. This allows us to easily set the contents of the text file with a build script.
     pwspyVersion = str(f.readline())

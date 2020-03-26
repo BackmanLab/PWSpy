@@ -20,6 +20,7 @@ import multiprocessing as mp
 import queue
 import threading as th
 from time import time
+import typing
 from typing import Union, Optional, List, Tuple
 import pandas as pd
 import psutil
@@ -177,7 +178,7 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
         return origClass(ret['cube'])
 
 
-def processParallel(fileFrame: pd.DataFrame, processorFunc, initializer=None, initArgs=None, procArgs=None):
+def processParallel(fileFrame: pd.DataFrame, processorFunc: typing.Callable, initializer: typing.Callable=None, initArgs: Tuple=None, procArgs: Tuple=None) -> List:
     """A convenient function to load a series of Data Cubes from a list or dictionary of file paths.
 
     Parameters
@@ -196,7 +197,7 @@ def processParallel(fileFrame: pd.DataFrame, processorFunc, initializer=None, in
     Returns
     -------
     list
-        returns an list containing the results each execution of processorFun.
+        returns an list containing the results each execution of `processorFunc`.
     """
     numProcesses = psutil.cpu_count(logical=False) - 1  # Use one less than number of available cores.
     po = mp.Pool(processes=numProcesses, initializer=initializer, initargs=initArgs)
