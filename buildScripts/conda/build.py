@@ -1,4 +1,3 @@
-from git import Repo
 import os
 import shutil
 import subprocess
@@ -6,15 +5,15 @@ import subprocess
 It should be run from the base conda env."""
 
 buildScriptDir = os.path.dirname(os.path.abspath(__file__)) #Location of build scripts
-rootDir = os.path.split(buildScriptDir)[0] #Parent directory of project.
-buildDir = os.path.join(rootDir, 'build')
+rootDir = os.path.dirname(os.path.dirname(buildScriptDir)) #Parent directory of project.
+buildDir = os.path.join(buildScriptDir, 'build')
 
 # Set the version number of the package. this should be shared by the package itself, the setup.py file, and the conda package `yaml`
-repo = Repo(rootDir)
-version = repo.git.describe('--tags') #Get the output of the command `git describe --tags` serves as a good version number
-with open(os.path.join(rootDir, 'src', 'pwspy', '_version'), 'w') as f: #Overwrite the version file
-    f.write(version)
-print(f"Saved version, {version}, to the `_version` file.")
+with open(os.path.join(rootDir, 'src', 'pwspy', 'version.py')) as f:
+    currwd = os.getcwd()
+    os.chdir(os.path.join(rootDir, 'src', 'pwspy')) #The version.py file will run from the wrong location if we don't manually set it here.
+    exec(f.read()) # Run version py to initialize pwspyVersion
+    os.chdir(currwd)
 
 
 #Clean
