@@ -38,4 +38,4 @@ else:
 
 #Copy the other scripts
 for fname in ['install Windows.bat', 'Run Analysis Windows.bat', 'Run Analysis Mac.sh', 'install Mac.sh']:
-    shutil.copyfile(os.path.join(buildScriptDir, fname), os.path.join(buildDir, fname))
+    shutil.copyfile(os.path.join(buildScriptDir, 'scripts', fname), os.path.join(buildDir, fname))
