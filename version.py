@@ -12,6 +12,9 @@ try:
 except Exception as e:
     import traceback
     traceback.print_exc()
-with open(versionFile, 'r') as f: # We load the version string from a text file. This allows us to easily set the contents of the text file with a build script.
-    __version__ = str(f.readline())
+try:
+    with open(versionFile, 'r') as f: # We load the version string from a text file. This allows us to easily set the contents of the text file with a build script.
+        __version__ = str(f.readline())
+except FileNotFoundError:
+    __version__ = "dev"
     
