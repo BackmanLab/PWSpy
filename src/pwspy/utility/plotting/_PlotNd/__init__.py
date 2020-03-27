@@ -54,7 +54,7 @@ class MyView(QGraphicsView):
         super().drawBackground(painter, rect)
 
 
-class PlotNd(QWidget): #TODO add button to save animation, Docstring
+class PlotNd(QWidget): #TODO Docstring
     def __init__(self, data: np.ndarray, names: Tuple[str, ...] = ('y', 'x', 'lambda'),
                  initialCoords: Tuple[int, ...] = None, title: str = '', parent: QWidget = None,
                  extraDimIndices: List[np.ndarray] = None):
@@ -132,6 +132,7 @@ class PlotNd(QWidget): #TODO add button to save animation, Docstring
         return ani
 
     def handleButtons(self, button):
+        """Document me"""
 
         if button is self.pointButton and button is not self._lastButton:
             self.selector.setSelector(PointSelector)
@@ -145,6 +146,7 @@ class PlotNd(QWidget): #TODO add button to save animation, Docstring
         self._lastButton = button
 
     def selectorFinished(self, verts: np.ndarray):
+        """Document me"""
         from pwspy.dataTypes import Roi
 
         roi = Roi.fromVerts('nomatter', 0, np.array(verts), self.canvas.data.shape[:2])
