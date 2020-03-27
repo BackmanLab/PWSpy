@@ -261,11 +261,13 @@ class ICBase:
 
     def toHdfDataset(self, g: h5py.Group, name: str, fixedPointCompression: bool = True) -> h5py.Group:
         """Save the data of this class to a new HDF dataset.
+
             Args:
                 g (h5py.Group): the parent HDF Group of the new dataset.
                 name (str): the name of the new HDF dataset in group `g`.
                 fixedPointCompression (bool): if True then save the data in a special 16bit fixed-point format. Testing has shown that this has a
                     maximum conversion error of 1.4e-3 percent. Saving is ~10% faster but requires only 50% the hard drive space.
+
             Returns:
                 h5py.Group: This is the the same h5py.Group that was passed in a `g`. It should now have a new dataset by the name of 'name'
         """

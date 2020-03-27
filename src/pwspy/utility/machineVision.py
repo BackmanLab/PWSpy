@@ -23,7 +23,16 @@ from skimage import morphology
 from pwspy.utility.plotting import MultiPlot
 
 
-def to8bit(arr: np.ndarray):
+def to8bit(arr: np.ndarray) -> np.ndarray:
+    """Converts boolean or float type numpy arrays to 8bit and scales the data to span from 0 to 255. Used for many
+    OpenCV functions.
+
+    Args:
+        arr: The input array
+
+    Returns:
+        The output array of dtype numpy.uint8
+    """
     if arr.dtype == bool:
         arr = arr.astype(np.uint8) * 255
     else:

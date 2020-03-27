@@ -125,10 +125,18 @@ class GoogleDriveDownloader:
         folder = self.api.files().create(body=folderMetadata, fields='id').execute()
         return folder.get('id')
 
-    #TODO keep doccing here.
     def uploadFile(self, filePath: str, parentId: str) -> str:
-        """upload the file at `filePath` to the folder with `parentId`. keeping the original file name.
-        Return the new file's id. If a file with the same parent and name already exists, replace it."""
+        """Upload the file at `filePath` to the folder with `parentId`, keeping the original file name.
+        If a file with the same parent and name already exists, replace it.
+
+        Args:
+            filePath: the local path the file that should be uploaded
+            parentId: The ID of the folder that the file should be uploaded to.
+
+        Returns:
+            The ID of the newly uploaded file.
+
+        """
         fileName = os.path.split(filePath)[-1]
         existingFiles = self.getFolderIdContents(parentId)
         if fileName in [i['name'] for i in existingFiles]: #FileName already exists
@@ -141,6 +149,13 @@ class GoogleDriveDownloader:
         return file.get('id')
 
     def moveFile(self, fileId: str, newFolderId: str):
+        """Move a file that is already uploaded to Google Drive.
+
+        Args:
+            fileId: the ID of the file that should be moved.
+            newFolderId: The ID of the parent folder you want to move the file to.
+
+        """
         file = self.api.files().get(fileId=fileId, fields='parents').execute()
         oldParents = ','.join(file.get('parents'))
         file = self.api.files().update(fileId=fileId, addParents=newFolderId, removeParents=oldParents, fields='id, parents').execute()

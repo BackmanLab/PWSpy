@@ -1,5 +1,4 @@
-{% set mystring = name | escape + ' (:mod:`' + fullname | escape + '`)' %}
-{{mystring | underline}}
+{{fullname | escape | underline}}
 
 .. automodule:: {{ fullname }}
 

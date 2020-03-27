@@ -111,8 +111,7 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
 
     Returns
     -------
-    Dataframe or list
-        returns an object of the same form as fileFrame except the ImCube file paths have been replaced by ImCube Object.
+        An object of the same form as fileFrame except the ImCube file paths have been replaced by ImCube Object.
         If using processorFunc the return values from processorFunc will be returned rather than ImCube Objects.
     """
     if procArgs is None:
@@ -193,8 +192,7 @@ def processParallel(fileFrame: pd.DataFrame, processorFunc: typing.Callable, ini
 
     Returns
     -------
-    list
-        returns an list containing the results each execution of `processorFunc`.
+        List containing the results each execution of `processorFunc`.
     """
     numProcesses = psutil.cpu_count(logical=False) - 1  # Use one less than number of available cores.
     po = mp.Pool(processes=numProcesses, initializer=initializer, initargs=initArgs)

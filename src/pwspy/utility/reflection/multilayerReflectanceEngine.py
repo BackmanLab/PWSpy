@@ -24,9 +24,11 @@ Classes
    Layer
    Stack
    NonPolarizedStack
+
 """
 __all__ = ['Polarization', 'Layer', 'Stack', 'NonPolarizedStack']
 
+import typing
 from enum import Enum, auto
 
 import matplotlib.pyplot as plt
@@ -40,14 +42,22 @@ import matplotlib as mpl
 
 
 class Polarization(Enum):
+    """An enumeration of the possible polarization types."""
     TE = auto()  # Transverse Electric Field
     TM = auto()  # Transverse Magnetic Field
 
 
 class Layer:
     """This represents a layer with a thickness and an index of refraction. Note: This whole system only supports
-    lossless media, we only use the real part of the index of refraction."""
-    def __init__(self, mat: Union[Number, pd.Series, Material], d: float, name: str = None):
+    lossless media, we only use the real part of the index of refraction.
+
+    Args:
+        mat: This can either be a number or series of numbers representing the refractive index at different wavelengths
+            or it can be a `Material` in which case the refractive index will be automatically calculated.
+        d: The thickness of the layer. :todo: Units?
+        name: An optional name which will be dislayed if the layer is plotted
+    """
+    def __init__(self, mat: Union[Number, pd.Series, Material], d: float, name: typing.Optional[str] = None):
         if not isinstance(mat, (Number, pd.Series, Material)):
             raise TypeError(f"Type {type(mat)} is not supported")
         self.mat = mat
@@ -58,6 +68,14 @@ class Layer:
             self.name = name
 
     def getRefractiveIndex(self, wavelengths: np.ndarray) -> pd.Series:
+        """Get the refractive index of the layer.
+
+        Args:
+            wavelengths: The wavelengths to calculate the refractive index at.
+
+        Returns:
+            The refractive index.
+        """
         from .reflectanceHelper import getRefractiveIndex
         if isinstance(self.mat, Material):
             n = getRefractiveIndex(self.mat, wavelengths=wavelengths)
@@ -79,13 +97,24 @@ class StackBase:
             self.layers = elements
 
     def addLayer(self, element: Layer):
+        """Add a new `Layer` to the `Stack`
+
+        Args:
+            element: A new layer to add.
+        """
         self.layers.append(element)
 
 
 class NonPolarizedStack(StackBase):
     """Represents a stack of 1d homogenous films. Reflectance can only be calculated at 0 incidence angle in which case
-    polarization is irrelevant. This class does not do anything that can't be done with the `Stack`. Indices of refraction must
-    be real (no absorption)."""
+    polarization is irrelevant. This class does not do anything that can't be done with `Stack`. Indices of refraction must
+    be real (no absorption).
+
+    Args:
+        wavelengths: The wavelengths that calculation should operate over.
+        elements: The initial layers to add to the stack.
+
+    """
 
     def _generateMatrix(self) -> np.ndarray:
         """First and last items just have propagation matrices."""
@@ -107,6 +136,7 @@ class NonPolarizedStack(StackBase):
         return previousMat
 
     def plot(self):
+        """Open a Matplotlib plot of the stack."""
         cycle = cycler('color', ['r', 'g', 'b', 'y', 'c', 'm'])
         fig, ax = plt.subplots()
         ax.set_prop_cycle(cycle)
@@ -123,9 +153,17 @@ class NonPolarizedStack(StackBase):
 
     @staticmethod
     def interfaceMatrix(n1: pd.Series, n2: pd.Series) -> np.ndarray:
-        """Returns a matrix representing the interface between two dielectrics with indices n1 on the left and n2 on the right.
+        """Generate a matrix representing the interface between two dielectrics with indices n1 on the left and n2 on the right.
         Actually the order of terms does not appear to matter. This does not account for polarization or incidence angles
-        other than 0 degrees."""
+        other than 0 degrees.
+
+        Args:
+            n1: The refractive indices on one side of the reflective interface
+            n2: The refractive indices on the other side of the reflective interface
+
+        Returns:
+            A transfer matrix for the reflective interface
+        """
         assert len(n1) == len(n2)
         assert np.all(n1.index == n2.index)
         n1 = np.array(n1)
@@ -142,7 +180,16 @@ class NonPolarizedStack(StackBase):
     def propagationMatrix(n: pd.Series, d: float) -> np.ndarray:
         """Returns a matrix representing the propagation of light. n should be a pandas Series where the values are
         complex refractive index and the index fo the Series is the associated wavelengths. with wavelength.
-        for a distance of `d`. d and the wavelengths must use the same units."""
+        for a distance of `d`. d and the wavelengths must use the same units.
+
+        Args:
+            n: The refractive indices of the material
+            d: The distance of propagation.
+
+        Returns:
+              A transfer matrix for propagation through a material.
+
+        """
         wavelengths = n.index
         phi = np.array(2 * np.pi * d * n / wavelengths)
         zeroArray = 0 * phi  # Without this our matrix will not shape properly
@@ -152,7 +199,12 @@ class NonPolarizedStack(StackBase):
         assert matrix.shape == (len(n),) + (2, 2)
         return matrix
 
-    def calculateReflectance(self):
+    def calculateReflectance(self) -> np.ndarray:
+        """Calculate the reflectance for this `Stack`.
+
+        Returns:
+            The reflectance.
+        """
         m = self._generateMatrix()
         assert m.shape == (len(self.wavelengths),) + (2, 2)
         scatterMatrix = np.array([ # A 2x2 scattering matrix. https://en.wikipedia.org/wiki/S-matrix
@@ -167,12 +219,28 @@ class NonPolarizedStack(StackBase):
 
 class Stack(StackBase):
     """Represents a stack of 1d homogenous films. Reflectance for the two polarizations can be calculated for a range of
-    numerical apertures (angles). Indices of refraction must be real (no absorption)."""
+    numerical apertures (angles). Indices of refraction must be real (no absorption).
+
+    Args:
+        wavelengths: The wavelengths that calculation should operate over.
+        elements: The initial layers to add to the stack.
+
+    """
     @staticmethod
     def interfaceMatrix(n1: pd.Series, n2: pd.Series, polarization: Polarization, NAs: np.ndarray) -> np.ndarray:
-        """Returns a matrix representing a dieletric interface. n1 and n2 should be a pandas Series where the values are complex refractive index
-        and the index of the Series is the associated wavelengths.
-        for a distance of "d". d and the wavelengths must use the same units."""
+        """Returns a matrix representing a dieletric interface. n1 and n2 should be a pandas Series where the values are
+        complex refractive index and the index of the Series is the associated wavelengths.
+
+        Args:
+            n1: The refractive indices on one side of the reflective interface
+            n2: The refractive indices on the other side of the reflective interface
+            polarization: The polarization that should be used for the calculation
+            NAs: An array of the numerical aperture values. :todo: More details would be good
+
+        Returns:
+            A transfer matrix for the reflective interface
+
+        """
         assert len(n1) == len(n2)
         assert np.all(n1.index == n2.index)
         n1 = n1.values[:, None]
@@ -198,9 +266,17 @@ class Stack(StackBase):
 
     @staticmethod
     def propagationMatrix(n: pd.Series, d: float, NAs: np.ndarray) -> np.ndarray:
-        """Returns a matrix representing the propagation of light. n should be a pandas Series where the values are complex refractive index
-        and the index fo the Series is the associated wavelengths.
-        for a distance of "d". d and the wavelengths must use the same units."""
+        """Returns a matrix representing the propagation of light for a distance of `d`.
+        d and the wavelengths must use the same units.
+
+        Args:
+            n: The refractive indices of the material
+            d: The distance of propagation.
+
+        Returns:
+              A transfer matrix for propagation through a material.
+
+        """
         wavelengths = np.array(n.index)[:, None]
         n = n.values[:, None]
         NAs = NAs[None, :]
@@ -237,7 +313,14 @@ class Stack(StackBase):
         """Given an array of numerical apertures this function returns the reflectance as a dictionary of 2d arrays.
         There is one 2d array for each of the two polarizations. the dimensions of the array is (wavelengths x NAs).
         The total reflectance can be calculated as the average reflectance of the two polarizations. Other ellipsometric
-        parameters can also be calculated."""
+        parameters can also be calculated.
+
+        Args:
+            NA: The numerical apertures to calculate reflectance at.
+
+        Returns:
+            You'll just have to look at the code. :todo: If you do, then please update this line.
+        """
         out = {}
         for polarization in Polarization:
             m = self._generateMatrix(polarization, NAs)

@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-==========================================================================
-Reflectance Helper (:mod:`pwspy.utility.reflectance.reflectanceHelper`)
-==========================================================================
-This module provides a number of functions for calculating simple reflections based on known refractive indices
+"""Provides a number of functions for calculating simple reflections based on known refractive indices
 
 Functions
 ----------
@@ -12,8 +8,12 @@ Functions
 
    getReflectance
    getRefractiveIndex
+
 """
+
 __all__ = ['getReflectance', 'getRefractiveIndex']
+
+import typing
 from numbers import Number
 
 import pandas as pd
@@ -37,7 +37,8 @@ materialFiles = {
     Material.ITO: 'Konig.csv'}
 
 
-def __init():
+def _init():
+    """This function initializes data from files when the module is imported."""
     fileLocation = os.path.join(os.path.split(__file__)[0], 'refractiveIndexFiles')
     ser = {}  # a dictionary of the series by name
     for name, file in materialFiles.items():
@@ -60,13 +61,23 @@ def __init():
     df = df.interpolate('index')
     return df.loc[first:last]
 
-n = __init()
-del __init
+_n = _init()
+del _init
 
 
-def getRefractiveIndex(mat: Material, wavelengths=None) -> pd.Series:
-    refractiveIndex = np.array([np.complex(i[0], i[1]) for idx, i in n[mat].iterrows()])
-    refractiveIndex = pd.Series(refractiveIndex, n.index)
+def getRefractiveIndex(mat: Material, wavelengths: typing.Optional[typing.Iterable[float]] =None) -> pd.Series:
+    """Get the spectrally dependent refractive index of a material.
+
+    Args:
+        mat: The material the retrieve the refractive index of.
+        wavelengths: The wavelengths that the refractive index should be calculated at. If left as `None` then the wavelengths
+            used will be determined by the original file that the data was pulled from.
+
+    Returns:
+        The refractive index. The index of the pandas series is the wavelengths.
+    """
+    refractiveIndex = np.array([np.complex(i[0], i[1]) for idx, i in _n[mat].iterrows()])
+    refractiveIndex = pd.Series(refractiveIndex, _n.index)
     if wavelengths is not None: #Need to do interpolation
         wavelengths = pd.Index(wavelengths)
         combinedIdx = refractiveIndex.index.append(
@@ -79,10 +90,20 @@ def getRefractiveIndex(mat: Material, wavelengths=None) -> pd.Series:
 
 def getReflectance(mat1: Material, mat2: Material, wavelengths: Union[np.ndarray, List, Tuple] = None, NA: float = 0) -> pd.Series:
     """Given the names of two interfaces this provides the reflectance in units of percent.
-    If given a series as index the data will be interpolated and reindexed to match the index. If NA is None the result
-    is for light with 0 degree angle of incidence. If NA is specified then the result is the disc integral from
-    0 to NA, this should match what is seen in the microscope."""
-    index = n.index if wavelengths is None else wavelengths
+    If given a series as wavelengths the data will be interpolated and reindexed to match the wavelengths.
+
+    Args:
+        mat1: The first material comprising the reflective interface.
+        mat2: The second material comprising the reflective interface.
+        wavelengths: The wavelengths to calculate the reflectance at.
+        NA: The numerical aperture of the system. Reflectance will be calculated by radially integrating results over
+            the range of angles present within the numerical aperture. If left as `None` the result is calculated for
+            light with a 0 degree angle of incidence.
+
+    Returns:
+        The percentage reflectance. The index of the pandas Series is the wavelengths.
+    """
+    index = _n.index if wavelengths is None else wavelengths
     if isinstance(index, Number):
         index = np.array([index])
     elif not isinstance(index, np.ndarray):

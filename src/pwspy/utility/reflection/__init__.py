@@ -1,3 +1,24 @@
+"""A package containing functionality useful for calculation reflections.
+
+Subpackages
+-------------
+
+.. autosummary::
+    :toctree: generated/
+
+    extraReflectance
+    multilayerReflectanceEngine
+    reflectanceHelper
+
+Classes
+---------
+
+.. autosummary::
+   :toctree: generated/
+
+   Material
+"""
+
 import enum
 
 
