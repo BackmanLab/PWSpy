@@ -1,7 +1,4 @@
 """
-==================================================
-Miscellaneous (:mod:`pwspy.utility.misc`)
-==================================================
 This module provides a number of objects that are generally useful in python programming.
 
 Decorators

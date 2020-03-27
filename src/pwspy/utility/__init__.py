@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
-"""
-==================================================
-Utility (:mod:`pwspy.utility`)
-==================================================
-This module provides a number of functions useful for
+"""This module provides a number of functions useful for
 quickly loading files using parallel processing.
 
-Functions
+Members
 ----------
 .. autosummary::
    :toctree: generated/

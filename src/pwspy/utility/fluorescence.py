@@ -1,7 +1,4 @@
 """
-==================================================
-Fluorescence (:mod:`pwspy.utility.fluorescence`)
-==================================================
 This module provides a number of functions useful for
 segmenting out fluorescent regions of an image.
 

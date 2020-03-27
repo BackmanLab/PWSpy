@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-==================================================
-File IO (:mod:`pwspy.utility.fileIO`)
-==================================================
 This module provides a number of functions useful for
 quickly loading files using parallel processing.
 

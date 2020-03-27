@@ -1,7 +1,4 @@
 """
-=====================================================
-Machine Vision (:mod:`pwspy.utility.machineVision`)
-=====================================================
 This module provides a number of functions useful processing images. Currently its contents are focused
 on image stabilization.
 

@@ -1,8 +1,4 @@
-"""
-==================================================
-Plotting UI (:mod:`pwspy.utility.plotting`)
-==================================================
-Image Plotting
+"""Image Plotting
 
 Classes
 ----------
