@@ -19,6 +19,9 @@ from .._sharedWidgets import AnimationDlg
 class MyView(QGraphicsView):
     def __init__(self, plot: PlotNdCanvas):
         super().__init__()
+        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+
         scene = QGraphicsScene(self)
         scene.addWidget(plot)
         self.plot = plot
