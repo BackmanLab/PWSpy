@@ -30,7 +30,6 @@ if typing.TYPE_CHECKING:
     from pwspy.analysis.warnings import AnalysisWarning
 
 
-#TODO sometimes analysisResults will claim access to a file and then we aren't able to delete those files when trying to overwrite with a new analysis.
 class PWSApp(QApplication):
     def __init__(self, args):
         super().__init__(args)
