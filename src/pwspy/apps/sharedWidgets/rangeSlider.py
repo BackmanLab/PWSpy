@@ -1,4 +1,5 @@
 import sys, os
+import typing
 from numbers import Number
 from typing import Tuple
 import numpy as np
@@ -45,21 +46,21 @@ def scale(val: Number, src: Tuple[Number, Number], dst: Tuple[Number, Number]):
 
 class Element(QtWidgets.QGroupBox):
     def __init__(self, parent, main):
-        super(Element, self).__init__(parent)
+        super().__init__(parent)
         self.main = main
+        self._textColor = QtGui.QColor(125, 125, 125)
 
     def setStyleSheet(self, style):
         self.parent().setStyleSheet(style)
 
-    def textColor(self):
-        return getattr(self, '__textColor', QtGui.QColor(125, 125, 125))
+    def textColor(self) -> QtGui.QColor:
+        return self._textColor
 
-    def setTextColor(self, color):
+    def setTextColor(self, color: typing.Union[int, typing.Tuple[int, int, int]]):
         if type(color) == tuple and len(color) == 3:
-            color = QtGui.QColor(color[0], color[1], color[2])
+            self._textColor = QtGui.QColor(color[0], color[1], color[2])
         elif type(color) == int:
-            color = QtGui.QColor(color, color, color)
-        setattr(self, '__textColor', color)
+            self._textColor = QtGui.QColor(color, color, color)
 
     def paintEvent(self, event):
         qp = QtGui.QPainter()
@@ -156,7 +157,7 @@ class QRangeSlider(QtWidgets.QWidget):
         self.gridLayout.addWidget(self._splitter, 0, 0, 1, 1)
 
 
-        self.setMouseTracking(False)
+        self.setMouseTracking(False)  # Don't fire mouse events unless a button is clicked.
         self._splitter.splitterMoved.connect(self._handleMoveSplitter)
         self._head_layout = QtWidgets.QHBoxLayout()
         self._head_layout.setSpacing(0)
@@ -264,11 +265,8 @@ class QRangeSlider(QtWidgets.QWidget):
             self.setRange(s, e)
 
     def setBackgroundStyle(self, style):
-        self._tail.setStyleSheet(style)
-        self._head.setStyleSheet(style)
-
-    def setSpanStyle(self, style):
-        self._handle.setStyleSheet(style)
+        self.tail.setStyleSheet(style)
+        self.head.setStyleSheet(style)
 
     def _valueToPos(self, value):
         s = scale(value, (self.min(), self.max()), (0, self.width()))
