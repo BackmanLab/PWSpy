@@ -69,7 +69,7 @@ class PWSApp(QApplication):
         settingsFiles = glob(os.path.join(defaultSettingsPath, '*.json'))
         if len(settingsFiles) == 0:
             raise Exception("Warning: Could not find any analysis settings presets.")
-        for f in settingsFiles:
+        for f in settingsFiles:  # This will overwrite any existing preset files in the application directory with the defaults in the source code.
             shutil.copyfile(f, os.path.join(applicationVars.analysisSettingsDirectory, os.path.split(f)[-1]))
         if not os.path.exists(applicationVars.extraReflectionDirectory):
             os.mkdir(applicationVars.extraReflectionDirectory)
@@ -79,7 +79,6 @@ class PWSApp(QApplication):
         if not os.path.exists(applicationVars.googleDriveAuthPath):
             os.mkdir(applicationVars.googleDriveAuthPath)
             shutil.copyfile(os.path.join(resources, 'credentials.json'), os.path.join(applicationVars.googleDriveAuthPath, 'credentials.json'))
-            # shutil.copyfile(os.path.join(resources, 'driveToken.pickle'), os.path.join(applicationVars.googleDriveAuthPath, 'driveToken.pickle'))
 
     def handleCompilationResults(self, inVal: List[Tuple[AcqDir, List[Tuple[ConglomerateCompilerResults, Optional[List[AnalysisWarning]]]]]]):
         #  Display warnings if necessary.
