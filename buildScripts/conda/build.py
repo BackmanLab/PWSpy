@@ -3,17 +3,11 @@ import shutil
 import subprocess
 """This builds the pwpsy conda package and saves it to `build`
 It should be run from the base conda env."""
+import pwspy.version # this should save the version to file.
 
 buildScriptDir = os.path.dirname(os.path.abspath(__file__)) #Location of build scripts
 rootDir = os.path.dirname(os.path.dirname(buildScriptDir)) #Parent directory of project.
 buildDir = os.path.join(buildScriptDir, 'build')
-
-# Set the version number of the package. this should be shared by the package itself, the setup.py file, and the conda package `yaml`
-with open(os.path.join(rootDir, 'src', 'pwspy', 'version.py')) as f:
-    currwd = os.getcwd()
-    os.chdir(os.path.join(rootDir, 'src', 'pwspy')) #The version.py file will run from the wrong location if we don't manually set it here.
-    exec(f.read()) # Run version py to initialize pwspyVersion
-    os.chdir(currwd)
 
 
 #Clean

@@ -1,6 +1,8 @@
 import os
+import inspect
 
-currDir = os.path.dirname(os.path.abspath(__file__))
+
+currDir = os.path.dirname(os.path.abspath(inspect.getframeinfo(inspect.currentframe()).filename)) # Unlike __file__ this should give the correct filenme even when run from exec()
 rootDir = os.path.dirname(os.path.dirname(currDir))
 versionFile = os.path.join(currDir, '_version')
 try:
