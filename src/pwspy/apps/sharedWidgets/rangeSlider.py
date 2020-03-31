@@ -43,39 +43,6 @@ def scale(val: Number, src: Tuple[Number, Number], dst: Tuple[Number, Number]):
         return float(((val - src[0]) / float(src[1]-src[0])) * (dst[1]-dst[0]) + dst[0])
 
 
-class UiForm(object):
-    def setupUi(self, Form):
-        Form.setObjectName("QRangeSlider")
-        Form.resize(300, 30)
-        Form.setStyleSheet(DEFAULT_CSS)
-        self.gridLayout = QtWidgets.QGridLayout(Form)
-        self.gridLayout.setContentsMargins(0, 0, 0, 0)
-        self.gridLayout.setSpacing(0)
-        self.gridLayout.setObjectName("gridLayout")
-        self._splitter = QtWidgets.QSplitter(Form)
-        self._splitter.setMinimumSize(QtCore.QSize(0, 0))
-        self._splitter.setMaximumSize(QtCore.QSize(16777215, 16777215))
-        self._splitter.setOrientation(QtCore.Qt.Horizontal)
-        self._splitter.setObjectName("splitter")
-        self._head = QtWidgets.QGroupBox(self._splitter)
-        self._head.setTitle("")
-        self._head.setObjectName("Head")
-        self._handle = QtWidgets.QGroupBox(self._splitter)
-        self._handle.setTitle("")
-        self._handle.setObjectName("Span")
-        self._tail = QtWidgets.QGroupBox(self._splitter)
-        self._tail.setTitle("")
-        self._tail.setObjectName("Tail")
-        self.gridLayout.addWidget(self._splitter, 0, 0, 1, 1)
-        self.retranslateUi(Form)
-        QtCore.QMetaObject.connectSlotsByName(Form)
-
-    @staticmethod
-    def retranslateUi(Form):
-        _translate = QtCore.QCoreApplication.translate
-        Form.setWindowTitle(_translate("QRangeSlider", "QRangeSlider"))
-
-
 class Element(QtWidgets.QGroupBox):
     def __init__(self, parent, main):
         super(Element, self).__init__(parent)
@@ -162,7 +129,7 @@ class Handle(Element):
             self.main.setRange(s, e)
 
 
-class QRangeSlider(QtWidgets.QWidget, UiForm):
+class QRangeSlider(QtWidgets.QWidget):
     endValueChanged = QtCore.pyqtSignal(int)
     maxValueChanged = QtCore.pyqtSignal(int)
     minValueChanged = QtCore.pyqtSignal(int)
@@ -173,7 +140,22 @@ class QRangeSlider(QtWidgets.QWidget, UiForm):
 
     def __init__(self, parent=None):
         super(QRangeSlider, self).__init__(parent)
-        self.setupUi(self)
+        # setup Ui
+        self.resize(300, 30)
+        self.setStyleSheet(DEFAULT_CSS)
+        self.gridLayout = QtWidgets.QGridLayout(self)
+        self.gridLayout.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout.setSpacing(0)
+        self._splitter = QtWidgets.QSplitter(self)
+        self._splitter.setMinimumSize(QtCore.QSize(0, 0))
+        self._splitter.setMaximumSize(QtCore.QSize(16777215, 16777215))
+        self._splitter.setOrientation(QtCore.Qt.Horizontal)
+        self._head = QtWidgets.QGroupBox(self._splitter)
+        self._handle = QtWidgets.QGroupBox(self._splitter)
+        self._tail = QtWidgets.QGroupBox(self._splitter)
+        self.gridLayout.addWidget(self._splitter, 0, 0, 1, 1)
+
+
         self.setMouseTracking(False)
         self._splitter.splitterMoved.connect(self._handleMoveSplitter)
         self._head_layout = QtWidgets.QHBoxLayout()
