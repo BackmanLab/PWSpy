@@ -1,7 +1,7 @@
 import os
 import traceback
 
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5 import QtCore
 
 from pwspy.apps.PWSAnalysisApp.App import PWSApp
@@ -41,7 +41,9 @@ def main(): #TODO add logging since terminal isn't always available
         with open(os.path.join(applicationVars.dataDirectory, 'crashLog.txt'), 'a') as f:
             f.writelines([datetime.now().strftime(dateTimeFormat)])
             traceback.print_exc(limit=None, file=f)
-            print(f"Error Occurred: Please check {os.path.join(applicationVars.dataDirectory, 'crashLog.txt')}")
+        msg = f"Error Occurred. Please check: {os.path.join(applicationVars.dataDirectory, 'crashLog.txt')}"
+        print(msg)
+        msgBox = QMessageBox.information(None, 'Crash!', msg)
         raise e
 
 
