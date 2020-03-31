@@ -4,13 +4,13 @@ Created on Wed Sep 12 12:49:49 2018
 
 @author: Nick
 """
-from pwspy.dataTypes import ImCube, ICMetaData, CameraCorrection, Roi, AcqDir
+from pwspy.dataTypes import ImCube, AcqDir
 from glob import glob
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 from datetime import datetime
-from pwspy.moduleConsts import dateTimeFormat
+from pwspy import dateTimeFormat
 import matplotlib as mpl
 from pwspy.utility.fileIO import loadAndProcess
 
@@ -56,8 +56,8 @@ if __name__ == '__main__':
             i.date = datetime.strptime(i.metadata.time, dateTimeFormat)
         i.dateString = datetime.strftime(i.date, '%m-%d-%Y')
     
-    files = [f for (im, ref), f in zip(ims,files) if im.date > dateStart and im.date < dateEnd]
-    ims = [(im, ref) for im, ref in ims if im.date > dateStart and im.date < dateEnd]
+    files = [f for (im, ref), f in zip(ims,files) if dateStart < im.date < dateEnd]
+    ims = [(im, ref) for im, ref in ims if dateStart < im.date < dateEnd]
     dates = [datetime.strptime(im.metadata.time, dateTimeFormat) for im, ref in ims]
     dates, ims, files = zip(*sorted(zip(dates, ims, files)))
     

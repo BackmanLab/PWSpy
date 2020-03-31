@@ -7,11 +7,11 @@ import json
 
 from PyQt5.QtWidgets import QWidget
 
-from pwspy.dataTypes import ImCube, CameraCorrection, AcqDir
+from pwspy.dataTypes import CameraCorrection, AcqDir, ICMetaData, ImCube
 from pwspy.apps.ExtraReflectanceCreator.widgets.dialog import IndexInfoForm
-from pwspy.dataTypes import ICMetaData
 from pwspy.dataTypes import Roi
-from pwspy.moduleConsts import dateTimeFormat, Material
+from pwspy import dateTimeFormat
+from pwspy.utility.reflection import Material
 from pwspy.utility.fileIO import loadAndProcess
 import pwspy.utility.reflection.extraReflectance  as er
 from matplotlib.backends.backend_pdf import PdfPages

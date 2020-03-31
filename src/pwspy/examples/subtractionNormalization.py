@@ -5,7 +5,7 @@ Created on Fri Feb  8 14:10:12 2019
 @author: Nick Anthony
 """
 import numpy as np
-from pwspy.dataTypes import ImCube, CameraCorrection
+from pwspy.dataTypes import CameraCorrection, ImCube
 import os.path as osp
 from pwspy.utility.reflection import reflectanceHelper
 from pwspy.utility.fileIO import loadAndProcess

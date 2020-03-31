@@ -11,7 +11,7 @@ This script is now outdated and will not work. See the `generateExtraReflectance
 
 from pwspy.dataTypes import CameraCorrection
 from pwspy.utility.fileIO import loadAndProcess
-from pwspy.utility.reflection import reflectanceHelper
+from pwspy.utility.reflection import reflectanceHelper, Material
 import pwspy.utility.reflection.extraReflectance as er
 from glob import glob
 import matplotlib.pyplot as plt
@@ -19,8 +19,6 @@ import os
 from matplotlib.backends.backend_pdf import PdfPages
 import pandas as pd
 import random
-
-from pwspy.moduleConsts import Material
 
 
 def processIm(im):
@@ -50,7 +48,7 @@ if __name__ == '__main__':
     axes[1].set_ylabel('reflectance')
     axes[1].set_xlabel('nm')
     axes[1].set_title("Glass Interface Reflectance")
-    [axes[0].plot(reflectanceHelper.n.index, reflectanceHelper.n[mat]['n'], label=matName) for matName, mat in materials]
+    [axes[0].plot(reflectanceHelper._n.index, reflectanceHelper._n[mat]['n'], label=matName) for matName, mat in materials]
     axes[0].legend()
     [axes[1].plot(reflectanceHelper.getReflectance(mat, Material.Glass).index, reflectanceHelper.getReflectance(mat, Material.Glass), label=matName) for matName, mat in materials]
     axes[1].legend()

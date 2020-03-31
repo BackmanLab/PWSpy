@@ -3,9 +3,8 @@ import numpy as np
 
 from pwspy.analysis import AnalysisTypes
 from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
-from pwspy.dataTypes import AcqDir, FluorescenceImage
+from pwspy.dataTypes import AcqDir, FluorescenceImage, ICMetaData
 from pwspy.analysis.pws import PWSAnalysisResults
-from pwspy.dataTypes import ICMetaData
 from enum import Enum, auto
 
 
@@ -41,23 +40,20 @@ class AnalysisPlotter:
         elif field is self.PlotFields.Fluorescence: #Open the fluorescence image.
             self.data = FluorescenceImage.fromMetadata(self.acq.fluorescence).data
         else:
-            if self.analysis is None:
+            anType, paramName = field.value
+            if anType == AnalysisTypes.PWS:
+                analysis = self.analysis.pws
+            elif anType == AnalysisTypes.DYN:
+                analysis = self.analysis.dyn
+            else:
+                raise TypeError("Unidentified analysis type")
+            if analysis is None:
                 raise ValueError(f"Analysis Plotter for {self.acq.filePath} does not have an analysis file.")
             if field is self.PlotFields.OpdPeak:  # Return the index corresponding to the max of that pixel's opd funtion.
-                if self.analysis is None:
-                    raise ValueError(f"Analysis Plotter for {self.acq.filePath} does not have an analysis file.")
                 opd, opdIndex = self.analysis.pws.opd
                 self.data = opdIndex[np.argmax(opd, axis=2)]
             else:
-                anType, paramName = field.value
-                if anType == AnalysisTypes.PWS:
-                    analysis = self.analysis.pws
-                elif anType == AnalysisTypes.DYN:
-                    analysis = self.analysis.dyn
-                else:
-                    raise TypeError("Unidentified analysis type")
-                if analysis is not None: # If we try to set data from a nonexistent analysis we'll have a crash.
-                    self.data = getattr(analysis, paramName)
+                self.data = getattr(analysis, paramName)
         assert len(self.data.shape) == 2
 
     def setMetadata(self, md: AcqDir, analysis: Optional[ConglomerateAnalysisResults] = None):

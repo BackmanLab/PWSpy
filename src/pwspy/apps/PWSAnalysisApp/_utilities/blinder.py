@@ -10,6 +10,7 @@ from typing import List
 import os
 import random
 
+
 class Blinder:
     """A class that, given a list of ICMetadata and the root directory that their files are under, will create randomly
     numbered symlinks in `outDir` and an index that can be used to trace back to the original. Useful for creating
@@ -25,8 +26,7 @@ class Blinder:
             nums = list(range(1, len(paths)+1))
             assert len(nums) == len(paths)
             random.shuffle(nums)  # nums is now a random list of non-repeating numbers from one up to the number of cells.
-            d = {'outputDirectory': outDir}
-            d['index'] = []
+            d = {'outputDirectory': outDir, 'index': []}
             for path, num in zip(paths, nums):
                 newPath = os.path.join(outDir, f'Cell{num}')
                 os.symlink(path, newPath)

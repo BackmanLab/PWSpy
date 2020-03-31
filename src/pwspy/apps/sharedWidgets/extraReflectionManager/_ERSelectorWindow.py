@@ -4,19 +4,15 @@ from typing import List, Optional
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
-from PyQt5.QtWidgets import QDialog, QTableWidget, QTableWidgetItem, QMessageBox, QWidget, QCheckBox, QVBoxLayout, \
-    QPushButton, QLineEdit, QComboBox, QGridLayout, QLabel, QDialogButtonBox, QHBoxLayout, QAbstractItemView, QMenu, \
-    QAction, QTreeWidget, QTreeWidgetItem, QFileDialog
-
-from pwspy import moduleConsts
-from pwspy.apps.PWSAnalysisApp._sharedWidgets.tables import DatetimeTableWidgetItem
-from pwspy.dataTypes import ExtraReflectanceCube, ERMetadata
-import numpy as np
+from PyQt5.QtWidgets import (QDialog, QMessageBox, QWidget, QVBoxLayout, QPushButton, QMenu, QAction, QTreeWidget,
+                             QTreeWidgetItem, QFileDialog)
+import pwspy
+import pwspy.dataTypes as pwsdt
 from .exceptions import OfflineError
 
 import typing
 
-from pwspy.utility import PlotNd
+from pwspy.utility.plotting import PlotNd
 
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
@@ -30,7 +26,7 @@ class ERTreeWidgetItem(QTreeWidgetItem):
         self.description = description
         self.idTag = idTag
         self.systemName = self.idTag.split('_')[1]  # We used to categorize the calibrations by system name but this is confusing because a single system can have multiple configurations
-        self.datetime = datetime.strptime(self.idTag.split('_')[2], moduleConsts.dateTimeFormat)
+        self.datetime = datetime.strptime(self.idTag.split('_')[2], pwspy.dateTimeFormat)
         self.name = name
         configurationName = name.split("-")[:-1]  # We now categorize by configurationName, however this isn't explicitly saved in the index so we extract it from the file name. Of course, this breaks if anyone puts a "-" in the configuration name. It would be better to explicitly save it from the ERCreator app
         self.configurationName = configurationName[0] if len(configurationName) == 1 else "-".join(configurationName)
@@ -59,11 +55,11 @@ class ERTreeWidgetItem(QTreeWidgetItem):
 
 
 class ERSelectorWindow(QDialog):
-    selectionChanged = QtCore.pyqtSignal(object) #Usually an ERMetadata object, sometimes None
+    selectionChanged = QtCore.pyqtSignal(object) #Usually an ERMetaData object, sometimes None
 
     def __init__(self, manager: ERManager, parent: Optional[QWidget] = None):
         self._manager = manager
-        self._selectedMetadata: Optional[ERMetadata] = None
+        self._selectedMetadata: Optional[pwsdt.ERMetaData] = None
         super().__init__(parent)
         self.setModal(False)
         self.setWindowTitle("Extra Reflectance Selector")
@@ -136,7 +132,7 @@ class ERSelectorWindow(QDialog):
                                                                       f'Description: {item.description}']))
 
     def _plot3dData(self, widgetItem):
-        er = ExtraReflectanceCube.fromHdfFile(self._manager._directory, widgetItem.name)
+        er = pwsdt.ExtraReflectanceCube.fromHdfFile(self._manager._directory, widgetItem.name)
         PlotNd(er.data, extraDimIndices=[er.wavelengths])
 
     def _downloadCheckedItems(self):
@@ -150,8 +146,8 @@ class ERSelectorWindow(QDialog):
         import os
         filePath, filterPattern = QFileDialog.getOpenFileName(self, "Select an ExtraReflectance file.", os.path.expanduser("~"), "*.h5")
         try:
-            wDir, name = ERMetadata.directory2dirName(filePath)
-            md = ERMetadata.fromHdfFile(wDir, name)
+            wDir, name = pwsdt.ERMetaData.directory2dirName(filePath)
+            md = pwsdt.ERMetaData.fromHdfFile(wDir, name)
             self.setSelection(md)
             self.accept()
         except Exception as e:
@@ -173,10 +169,10 @@ class ERSelectorWindow(QDialog):
             except IndexError:  # Nothing was selected
                 msg = QMessageBox.information(self, 'Uh oh!', 'No item was selected!')
 
-    def getSelectedMetadata(self) -> Optional[ERMetadata]:
+    def getSelectedMetadata(self) -> Optional[pwsdt.ERMetaData]:
         return self._selectedMetadata
 
-    def setSelection(self, md: ERMetadata):
+    def setSelection(self, md: pwsdt.ERMetaData):
         self._selectedMetadata = md
         self.selectionChanged.emit(md)
 

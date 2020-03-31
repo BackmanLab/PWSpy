@@ -4,18 +4,12 @@ import numpy as np
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QPoint
 from PyQt5.QtGui import QPixmap, QImage
-from PyQt5.QtWidgets import QMenu, QAction, QWidget, QLabel, QVBoxLayout, QSizePolicy
-
+from PyQt5.QtWidgets import QMenu, QAction, QWidget, QLabel, QVBoxLayout
 from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
-from pwspy.dataTypes import AcqDir
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-from matplotlib.figure import Figure
-
-from pwspy.analysis.pws import PWSAnalysisResults
+from pwspy.dataTypes import AcqDir, ImCube
 from .widgets import AnalysisPlotter
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.analysisViewer import AnalysisViewer
-from pwspy.dataTypes import ImCube, ICMetaData
-from pwspy.utility import PlotNd
+from pwspy.utility.plotting import PlotNd
 
 
 class LittlePlot(AnalysisPlotter, QWidget):
@@ -85,7 +79,7 @@ class LittlePlot(AnalysisPlotter, QWidget):
 
     def plotAn3d(self):
         self.plotnd = PlotNd(self.analysis.pws.reflectance.data, title=os.path.split(self.acq.filePath)[-1],
-                             names=('y', 'x', 'k'), extraDimIndices=[self.analysis.pws.reflectance.wavenumbers])
+                             names=('y', 'x', 'k (rad/um)'), extraDimIndices=[self.analysis.pws.reflectance.wavenumbers])
 
     def plotRaw3d(self):
         im = ImCube.fromMetadata(self.acq.pws)

@@ -1,8 +1,10 @@
 *.pyc
 src/pwspy.egg-info/
-.idea/
 docs/build/
 installScripts/pyInstaller/build/
 installScripts/pyInstaller/dist/
 build/
 tests/resources/Cell1/pwsmetadata.json
+docs/source/generated/
+.idea/workspace.xml
+buildScripts/pyInstaller/dist/

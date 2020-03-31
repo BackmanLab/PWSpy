@@ -6,7 +6,7 @@ from typing import List, Optional, TextIO
 
 import jsonschema
 
-from pwspy.moduleConsts import dateTimeFormat
+from pwspy import dateTimeFormat
 
 
 class ERIndex:

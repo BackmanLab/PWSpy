@@ -20,7 +20,7 @@ from pwspy.apps.PWSAnalysisApp._dockWidgets.ResultsTableDock import Conglomerate
 if typing.TYPE_CHECKING:
     from typing import Optional, List, Tuple
     from pwspy.dataTypes import ICMetaData
-    from pwspy.analysis.compilation.pws import PWSRoiCompilationResults
+    from pwspy.analysis.compilation import PWSRoiCompilationResults
     from pwspy.analysis.pws import PWSAnalysisSettings
     from pwspy.analysis.warnings import AnalysisWarning
 

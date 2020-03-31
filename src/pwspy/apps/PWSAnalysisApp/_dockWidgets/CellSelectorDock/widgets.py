@@ -6,8 +6,11 @@ from typing import List, Optional, Type
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import QPalette
-from PyQt5.QtWidgets import QPushButton, QTableWidgetItem, QTableWidget, QAbstractItemView, QMenu, QWidget, QMessageBox
-from pwspy.dataTypes import AcqDir
+from PyQt5.QtWidgets import QPushButton, QTableWidgetItem, QTableWidget, QAbstractItemView, QMenu, QWidget, QMessageBox, \
+    QInputDialog, QHeaderView
+
+from pwspy.apps.PWSAnalysisApp._sharedWidgets import ScrollableMessageBox
+from pwspy.dataTypes import AcqDir, ICMetaData, DynMetaData
 
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.dictDisplayTree import DictDisplayTreeDialog
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.tables import NumberTableWidgetItem
@@ -204,6 +207,10 @@ class CellTableWidget(QTableWidget):
         _ = {i.row: i for i in self._cellItems} #Cell items keyed by their current row position.
         return [_[i] for i in rowIndices]
 
+    def refreshCellItems(self):
+        for i in self._cellItems:
+            i.refresh()
+
     def addCellItem(self, item: CellTableWidgetItem) -> None:
         row = len(self._cellItems)
         self.setSortingEnabled(False)  # The fact that we are adding items assuming its the last row is a problem if sorting is on.
@@ -254,11 +261,59 @@ class CellTableWidget(QTableWidget):
             invalidAction.triggered.connect(lambda: self._toggleSelectedCellsInvalid(state))
             refAction = menu.addAction(refStateString)
             refAction.triggered.connect(lambda: self._toggleSelectedCellsReference(refState))
+
+            menu.addSeparator()
             mdAction = menu.addAction("Display Metadata")
             mdAction.triggered.connect(self._displayCellMetadata)
             anAction = menu.addAction("View analysis settings")
             anAction.triggered.connect(self._displayAnalysisSettings)
+
+            menu.addSeparator()
+            delAnAction = menu.addAction("Delete analysis by name")
+            delAnAction.triggered.connect(self._deleteAnalysisByName)
+            delRoiAction = menu.addAction("Delete ROIs by name")
+            delRoiAction.triggered.connect(self._deleteRoisByName)
+
             menu.exec(self.mapToGlobal(point))
+
+    def _deleteAnalysisByName(self):
+        anName, clickedOk = QInputDialog.getText(self, "Analysis Name", "Analysis name to delete")
+        if not clickedOk:
+            return
+        deletableCells = []
+        for i in self.selectedCellItems:
+            if i.acqDir.pws is not None:
+                if anName in i.acqDir.pws.getAnalyses():
+                    deletableCells.append(i.acqDir.pws)
+            if i.acqDir.dynamics is not None:
+                if anName in i.acqDir.dynamics.getAnalyses():
+                    deletableCells.append(i.acqDir.dynamics)
+        if len(deletableCells)==0:
+            QMessageBox.information(self, "Hmm", "No matching analysis files were found.")
+        else:
+            ret = ScrollableMessageBox.question(self, "Delete Analysis?",
+                f"Are you sure you want to delete {anName} from:"
+                f"\nPWS: {', '.join([os.path.split(i.acquisitionDirectory.filePath)[-1] for i in deletableCells if isinstance(i, ICMetaData)])}"
+                f"\nDynamics: {', '.join([os.path.split(i.acquisitionDirectory.filePath)[-1] for i in deletableCells if isinstance(i, DynMetaData)])}")
+            if ret == QMessageBox.Yes:
+                [i.removeAnalysis(anName) for i in deletableCells]
+            self.refreshCellItems()
+
+    def _deleteRoisByName(self):
+        roiName, clickeOk = QInputDialog.getText(self, "ROI Name", "ROI name to delete")
+        if not clickeOk:
+            return
+        deletableCells = []
+        for i in self.selectedCellItems:
+            if roiName in [roiName for roiName, roiNum, fformat in i.acqDir.getRois()]:
+                deletableCells.append(i.acqDir)
+        if len(deletableCells)==0:
+            QMessageBox.information(self, "Hmm", "No matching ROI files were found.")
+        else:
+            if ScrollableMessageBox.question(self, "Delete ROI?",
+                                             f"Are you sure you want to delete ROI: {roiName} from: \n{', '.join([os.path.split(i.filePath)[-1] for i in deletableCells])}") == QMessageBox.Yes:
+                [i.deleteRoi(roiName, roiNum) for i in deletableCells for ROIName, roiNum, fformat in i.getRois() if ROIName == roiName]
+            self.refreshCellItems()
 
     def _displayAnalysisSettings(self):
         analyses = set()
@@ -324,6 +379,7 @@ class ReferencesTable(QTableWidget):
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         self.setColumnCount(1)
         self.setHorizontalHeaderLabels(('Reference',))
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.setRowCount(0)
         self.verticalHeader().hide()
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)

@@ -22,10 +22,12 @@ class RoiConverter:
                     print('\t', name, num, "LegacyHDF")
                     roi = Roi.fromHDF_legacy(cell.filePath, name, num)
                 else:
+                    print('\t', "Skipping", name, num, fformat.name)
                     continue #Conversion of other formats is not supported
                 assert roi.verts is None
                 roi.verts = roi.getBoundingPolygon().get_verts()  # Use concave hull method to generate the vertices.
-                oldFilePath = roi.filePath
-                roi.toHDF(cell.filePath)  # save to hdf. At this point the filePath and fileFormat will be changed. Don't use the delete method or we'll delete the new file.
-                Roi.deleteRoi(oldFilePath, roi.name, roi.number)
+                oldFormat = roi.fileFormat
+                oldDirectory = os.path.dirname(roi.filePath)
+                Roi.deleteRoi(oldDirectory, roi.name, roi.number, fformat=oldFormat)
+                roi.toHDF(cell.filePath)  # save to Roi.FileFormat.HDF2 format. At this point the filePath and fileFormat will be changed. Don't use the delete method or we'll delete the new file.
 

@@ -4,11 +4,10 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QListWidgetItem, QWidget, QScrollArea, QListWidget, QMessageBox, QMenu, QAction, QDialog, QGridLayout, QPushButton
 
-from pwspy.analysis import AbstractAnalysisSettings, AnalysisTypes
+from pwspy.analysis import AnalysisTypes
 from pwspy.analysis._abstract import AbstractRuntimeAnalysisSettings
-from pwspy.analysis.dynamics._analysisSettings import DynamicsAnalysisSettings, DynamicsRuntimeAnalysisSettings
-from pwspy.analysis.pws import PWSAnalysisSettings
-from pwspy.analysis.pws._analysisSettings import PWSRuntimeAnalysisSettings
+from pwspy.analysis.dynamics import DynamicsRuntimeAnalysisSettings
+from pwspy.analysis.pws import PWSRuntimeAnalysisSettings
 from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames import DynamicsSettingsFrame, PWSSettingsFrame
 from pwspy.dataTypes import AcqDir
 import typing

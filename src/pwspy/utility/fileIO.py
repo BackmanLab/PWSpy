@@ -1,21 +1,29 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Oct 11 11:31:48 2018
+This module provides a number of functions useful for
+quickly loading files using parallel processing.
 
-@author: Nick Anthony
+Functions
+----------
+.. autosummary::
+   :toctree: generated/
+
+   loadAndProcess
+   processParallel
+
 """
+__all__ = ['loadAndProcess', 'processParallel']
 import multiprocessing as mp
 import queue
 import threading as th
 from time import time
+import typing
 from typing import Union, Optional, List, Tuple
 import pandas as pd
 import psutil
-from pwspy.dataTypes import ICMetaData, MetaDataBase, AcqDir
+from pwspy.dataTypes import AcqDir, MetaDataBase
 
 '''Local Functions'''
-
-
 def _load(loadHandle: Union[str, MetaDataBase], lock: mp.Lock):
     md: MetaDataBase
     if isinstance(loadHandle, str):
@@ -79,7 +87,8 @@ def _loadThenProcess(procFunc, procFuncArgs, lock: mp.Lock, row):
 def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: Optional = None, parallel: Optional = None,
                    procArgs: Optional = None, initializer=None,
                    initArgs=None) -> Union[pd.DataFrame, List, Tuple]:
-    """A convenient function to load a series of Data Cubes from a list or dictionary of file paths.
+    """DEPRECATED! This over-complicated function should be replaced with usage of processParallel.
+    A convenient function to load a series of Data Cubes from a list or dictionary of file paths.
 
     Parameters
     ----------
@@ -102,8 +111,7 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
 
     Returns
     -------
-    Dataframe or list
-        returns an object of the same form as fileFrame except the ImCube file paths have been replaced by ImCube Object.
+        An object of the same form as fileFrame except the ImCube file paths have been replaced by ImCube Object.
         If using processorFunc the return values from processorFunc will be returned rather than ImCube Objects.
     """
     if procArgs is None:
@@ -166,7 +174,7 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
         return origClass(ret['cube'])
 
 
-def processParallel(fileFrame: pd.DataFrame, processorFunc, initializer=None, initArgs=None, procArgs=None):
+def processParallel(fileFrame: pd.DataFrame, processorFunc: typing.Callable, initializer: typing.Callable=None, initArgs: Tuple=None, procArgs: Tuple=None) -> List:
     """A convenient function to load a series of Data Cubes from a list or dictionary of file paths.
 
     Parameters
@@ -184,13 +192,13 @@ def processParallel(fileFrame: pd.DataFrame, processorFunc, initializer=None, in
 
     Returns
     -------
-    list
-        returns an list containing the results each execution of processorFun.
+        List containing the results each execution of `processorFunc`.
     """
     numProcesses = psutil.cpu_count(logical=False) - 1  # Use one less than number of available cores.
     po = mp.Pool(processes=numProcesses, initializer=initializer, initargs=initArgs)
     try:
-        cubes = po.starmap(processorFunc, zip(*zip(*[[procArgs]] * len(fileFrame)), fileFrame.iterrows()))
+        vars = fileFrame.iterrows() if procArgs is None else zip(fileFrame.iterrows(), *zip(*[[procArgs]] * len(fileFrame)))
+        cubes = po.starmap(processorFunc, vars)
     finally:
         po.close()
         po.join()

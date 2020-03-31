@@ -28,6 +28,8 @@ Copy `install.bat` from the `installScripts` folder to `{outputDestination}`. Th
 The lab has a `Cloud` account at anaconda.org. The username is `backmanlab` and the password is `UNKNOWN!!!!`.
 You can upload the package to the lab's Anaconda Cloud account using `anaconda login` to log into the account and then with `anaconda upload build/noarch/pwspy_xxxxxxxxxx.tar.gz`
 
+## Installing from the backmanlab Anaconda channel
+pwspy is stored online on the lab's Anaconda Cloud account. It can be installed from Conda with the command `conda install -c conda-forge -c backmanlab pwspy`
 
 ## Automatically installing with the script
 Python 3.7 or greater is required.

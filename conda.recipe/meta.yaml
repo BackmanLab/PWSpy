@@ -18,6 +18,7 @@ requirements:
   build:
     - python
     - setuptools
+    - gitpython
 
   run:
     - python #We seem to only be compatible with python 3.7 right now. can't specify here.
@@ -33,13 +34,15 @@ requirements:
     - google-api-python-client # -c conda-forge
     - google-auth-httplib2 # -c conda-forge
     - google-auth-oauthlib # -c conda-forge
-    - py-opencv =3 # Version 4 is now available but doesn't seems to import the same way
+    - py-opencv =4
     - pyqt =5
+    - scikit-image
 
 about:
   home: https://bitbucket.org/backmanlab/pwspython/src/master/
   summary: "A framework for working with Partial Wave Spectroscopy files."
   description: "A framework for working with Partial Wave Spectroscopy files."
+  doc_url: https://pwspy.readthedocs.io/en/dev/
   dev_url: https://bitbucket.org/backmanlab/pwspython/src/master/
   
 app:

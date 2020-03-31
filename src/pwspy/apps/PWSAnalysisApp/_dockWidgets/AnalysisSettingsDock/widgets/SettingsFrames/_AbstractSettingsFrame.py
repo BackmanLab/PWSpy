@@ -6,11 +6,11 @@ from typing import Optional
 
 from PyQt5.QtCore import QObject
 
-from pwspy.analysis._abstract import AbstractRuntimeAnalysisSettings
+from pwspy.analysis import AbstractRuntimeAnalysisSettings
 
 if typing.TYPE_CHECKING:
     from pwspy.analysis import AbstractAnalysisSettings
-    from pwspy.dataTypes import CameraCorrection, ERMetadata
+    from pwspy.dataTypes import CameraCorrection
 
 
 class QtAbstractMeta(ABCMeta, type(QObject)):

@@ -5,16 +5,17 @@ Created on Sat Feb  9 20:14:25 2019
 @author: Nick Anthony
 """
 from setuptools import setup, find_packages
+import os.path as osp
 import os
 
-pwspydir = os.path.join(os.path.split(__file__)[0], 'src', 'pwspy')
-
-
-with open(os.path.join(pwspydir, '_version'), 'r') as f:
-    version = f.readline()
+with open(osp.join('src', 'pwspy', 'version.py')) as f:
+    currwd = os.getcwd()
+    os.chdir(osp.join(currwd, 'src','pwspy')) #The version.py file will run from the wrong location if we don't manually set it here.
+    exec(f.read()) # Run version py to initialize pwspyVersion
+    os.chdir(currwd)
 
 setup(name='pwspy',
-      version=version,
+      version=pwspyVersion,
       description='A framework for working with Partial Wave Spectroscopy files.',
       author='Nick Anthony',
       author_email='nicholas.anthony@northwestern.edu',
@@ -32,7 +33,13 @@ setup(name='pwspy',
                         'google-api-python-client',
                         'google-auth-httplib2',
                         'google-auth-oauthlib',
-                        'opencv-contrib-python'],
+                        'opencv-python',
+                        'PyQt5',
+                        'scikit-image'],
+      entry_points={'gui_scripts': [ # Not sure what effect this has if any.
+          'PWSAnalysis = pwspy.apps.__main__:main',
+          "ERCreator = pwspy.apps.__main__:main"
+      ]},
       package_dir={'': 'src'},
       package_data={'pwspy': ['utility/reflection/refractiveIndexFiles/*',
 								'utility/thinFilmInterferenceFiles/*',

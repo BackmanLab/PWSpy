@@ -14,7 +14,7 @@ from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataComparator import ERD
 from pwspy.apps.sharedWidgets.extraReflectionManager._ERDataDirectory import ERDataDirectory, EROnlineDirectory
 from ._ERSelectorWindow import ERSelectorWindow
 from ._ERUploaderWindow import ERUploaderWindow
-from pwspy.dataTypes import ERMetadata
+from pwspy.dataTypes import ERMetaData
 from pwspy.utility import GoogleDriveDownloader
 from .exceptions import OfflineError
 from pwspy.apps.PWSAnalysisApp import applicationVars
@@ -71,14 +71,14 @@ class ERManager:
         filePath = os.path.join(self._directory, fileName)
         self._downloader.upload(filePath)
 
-    def getMetadataFromId(self, idTag: str) -> ERMetadata:
+    def getMetadataFromId(self, idTag: str) -> ERMetaData:
         """Given the unique idTag string for an ExtraReflectanceCube this will search the index.json and return the
-        ERMetadata file. If it cannot be found then an `IndexError will be raised."""
+        ERMetaData file. If it cannot be found then an `IndexError will be raised."""
         try:
             match = [item for item in self.dataComparator.local.index.cubes if item.idTag == idTag][0]
         except IndexError:
             raise IndexError(f"An ExtraReflectanceCube with idTag {idTag} was not found in the index.json file at {self._directory}.")
-        return ERMetadata.fromHdfFile(self._directory, match.name)
+        return ERMetaData.fromHdfFile(self._directory, match.name)
 
 
 class ERDownloader:

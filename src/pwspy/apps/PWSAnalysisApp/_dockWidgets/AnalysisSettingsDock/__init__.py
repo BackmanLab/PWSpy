@@ -3,10 +3,8 @@ from typing import Tuple, List
 from PyQt5.QtWidgets import QDockWidget, QWidget, \
     QVBoxLayout, QPushButton, QMessageBox, QTabWidget
 
-from pwspy.analysis import AbstractAnalysisSettings
-from pwspy.analysis._abstract import AbstractRuntimeAnalysisSettings
+from pwspy.analysis import AbstractRuntimeAnalysisSettings
 from pwspy.dataTypes import CameraCorrection, AcqDir
-from pwspy.analysis.pws import PWSAnalysisSettings
 from .widgets.QueueAnalysesFrame import AnalysisListItem, QueuedAnalysesFrame
 from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames._PWSSettingsFrame import PWSSettingsFrame
 

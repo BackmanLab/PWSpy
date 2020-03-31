@@ -7,7 +7,7 @@ Created on Tue Nov 20 13:13:34 2018
 Based off of pwspy.apps.ExtraReflectanceCreator.examples.4waycalib.py"""
 
 from pwspy.utility.fileIO import loadAndProcess
-from pwspy.utility.reflection import reflectanceHelper
+from pwspy.utility.reflection import reflectanceHelper, Material
 import pwspy.utility.reflection.extraReflectance as er
 from pwspy.dataTypes import Roi
 from glob import glob
@@ -16,8 +16,6 @@ import os
 from matplotlib.backends.backend_pdf import PdfPages
 import pandas as pd
 import random
-
-from pwspy.moduleConsts import Material
 
 
 def processIm(im):
@@ -50,7 +48,7 @@ if __name__ == '__main__':
         axes[1].set_ylabel('reflectance')
         axes[1].set_xlabel('nm')
         axes[1].set_title(f"Glass Interface Reflectance. NA={na}")
-        [axes[0].plot(reflectanceHelper.n.index, reflectanceHelper.n[mat]['n'], label=matName) for matName, mat in materials]
+        [axes[0].plot(reflectanceHelper._n.index, reflectanceHelper._n[mat]['n'], label=matName) for matName, mat in materials]
         axes[0].legend()
         for matName, mat in materials:
             r = reflectanceHelper.getReflectance(mat, Material.Glass, NA=na)
