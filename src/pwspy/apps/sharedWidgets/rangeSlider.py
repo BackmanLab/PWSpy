@@ -166,6 +166,7 @@ class QRangeSlider(QtWidgets.QWidget):
         self.handle.setObjectName("Span")
         self.tail = Tail(main=self)
         self.tail.setObjectName("Tail")
+        self.setMinimumHeight(15)
 
         self._splitter.addWidget(self.head)
         self._splitter.addWidget(self.handle)
@@ -182,12 +183,11 @@ class QRangeSlider(QtWidgets.QWidget):
         self.setEnd(99)
         self.setDrawValues(True)
 
-    def show(self):
-        super().show()
+    def showEvent(self, evt):
         self.head.setAutoFillBackground(True) #IDK why but the colors from the stylesheet won't fill in if we don't do this.
         self.tail.setAutoFillBackground(True)
         self.handle.setAutoFillBackground(True)
-
+        super().showEvent(evt)
 
     def min(self):
         return getattr(self, '__min', None)
