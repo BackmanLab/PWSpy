@@ -6,14 +6,12 @@ from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QPushButton, QSp
     QGraphicsScene, QGroupBox, QVBoxLayout, QCheckBox, QButtonGroup
 from matplotlib import pyplot
 from matplotlib.animation import FuncAnimation
-
 from pwspy.apps.sharedWidgets.rangeSlider import QRangeSlider
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT
-
 import numpy as np
-from ._canvas import PlotNdCanvas
 from pwspy.utility.matplotlibWidgets import LassoSelector, PointSelector, AdjustableSelector
-from .._sharedWidgets import AnimationDlg
+from pwspy.utility.plotting._PlotNd._canvas import PlotNdCanvas
+from pwspy.utility.plotting._sharedWidgets import AnimationDlg
 
 
 class MyView(QGraphicsView):
@@ -65,6 +63,9 @@ class PlotNd(QWidget): #TODO Docstring
 
 
         self.setWindowTitle(str(title))  # Convert to string just in case
+
+        if data.dtype == bool:
+            data = data.astype(np.uint8)
 
         self.canvas = PlotNdCanvas(data, names, initialCoords, extraDimIndices)
         self.view = MyView(self.canvas)
