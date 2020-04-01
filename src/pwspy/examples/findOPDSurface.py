@@ -12,14 +12,12 @@ if __name__ == '__main__':
     import skimage.morphology as morph
     import skimage.measure as meas
 
-    # rootDir = r'H:\Data\NA_i_vs_NA_c\matchedNAi_largeNAc\cells'
-    rootDir = r'H:\Data\NA_i_vs_NA_c\smallNAi_largeNAc\cells'
+    rootDir = r'H:\Data\NA_i_vs_NA_c\matchedNAi_largeNAc\cells'
+    # rootDir = r'H:\Data\NA_i_vs_NA_c\smallNAi_largeNAc\cells'
     anName = 'p0'
     sigma = .5 # Blur radius in microns
     opdCutoffLow = 3
     opdCutoffHigh = 20
-    minRMS = 0.05
-    minRegion = 5000
 
     files = glob(os.path.join(rootDir, 'Cell*'))
     acqs = [AcqDir(f) for f in files]
@@ -28,14 +26,6 @@ if __name__ == '__main__':
         refl = an.reflectance
 
         opd, opdIndex = refl.getOpd(isHannWindow=True)  # Using the Hann window should improve dynamic range and reduce false peaks from frequency leakage.
-
-        # A mask to remove low rms regions
-        rmsMask = np.ones_like(an.rms, dtype=bool)
-        # rmsMask = an.rms > minRMS
-        # disk = morph.disk(2)
-        # rmsMask = morph.binary_opening(rmsMask, disk)
-        # disk = morph.disk(4)
-        # rmsMask = morph.binary_closing(rmsMask, disk)
 
         # Remove the low OPD signal.
         idxLow = np.argmin(np.abs(opdIndex - opdCutoffLow))
@@ -48,13 +38,15 @@ if __name__ == '__main__':
         for i in range(opd.shape[2]):
             opd[:, :, i] = sp.ndimage.filters.gaussian_filter(opd[:, :, i], sigma, mode='reflect')
 
+        #Try to account for decreased sensitivity at higher opd
+        opd = opd * opdIndex[None, None, :]
+
         print("Detect Peaks")
         arr = np.zeros_like(opd, dtype=bool)
         for i in range(opd.shape[0]):
             for j in range(opd.shape[1]):
-                if rmsMask[i, j]:
-                    peaks, properties = sp.signal.find_peaks(opd[i, j, :])  # TODO vectorize? use kwargs?
-                    arr[i, j, :][peaks] = True
+                peaks, properties = sp.signal.find_peaks(opd[i, j, :])  # TODO vectorize? use kwargs?
+                arr[i, j, :][peaks] = True
 
 
         if True: # plotPeakDetection
@@ -70,22 +62,32 @@ if __name__ == '__main__':
             mp.show()
 
 
-        #3d morphology
-        print("Begin morphology")
-        disk = morph.disk(1) # Doing a ball just removed everything.
-        arr2 = morph.binary_opening(arr, disk[:,:,None]) #Get rid of specks
-        arr4 = np.zeros_like(arr2, dtype=bool)
-        arr5 = np.zeros_like(arr2, dtype=int)
-        arr3 = meas.label(arr2)
-        print("Measure properties")
-        properties = meas.regionprops(arr3)
-        for prop in properties:  # Remove small regions
-            coords = prop.coords
-            coords = (coords[:, 0], coords[:, 1], coords[:, 2])
-            arr5[coords] = prop.area
-            if prop.area > minRegion:
-                arr4[coords] = True
-        #TODO remove regions that are too small. then dilate, skelotonize. Actually need ot improve peak detection.
+        #2d regions
+        arr2 = np.zeros_like(arr)
+        for i in range(arr.shape[2]):
+            labeled = meas.label(arr[:,:,i])
+            properties = meas.regionprops(labeled)
+            print(i)
+            for prop in properties:
+                if prop.area > 30:
+                    coords = prop.coords
+                    coords = (coords[:, 0], coords[:, 1], i)
+                    arr2[coords] = True
+
+        #3d regions
+        arr3 = np.zeros_like(arr2)
+        labeled = meas.label(arr2)
+        properties = meas.regionprops(labeled)
+        for prop in properties:
+            if prop.area > 1e3:
+                coords = prop.coords
+                coords = (coords[:, 0], coords[:, 1], coords[:, 2])
+                arr3[coords] = True
+
+        arr4 = np.zeros_like(arr3) # 3d skeletonizing didn't work well.
+        for i in range(arr3.shape[2]):
+            temp = morph.binary_dilation(arr3[:,:,i])
+            arr4[:,:,i] = morph.skeletonize(temp)
 
         print("Done")
         a = 1  # debug here
