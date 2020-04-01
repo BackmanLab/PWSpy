@@ -19,7 +19,6 @@ from scipy import interpolate as spi
 from scipy.io import savemat
 from . import _metadata as pwsdtmd
 from . import _other
-from pwspy.utility.matplotlibWidgets import AxManager, PointSelector
 
 
 class ICBase:
@@ -143,6 +142,7 @@ class ICBase:
         Returns:
             np.ndarray: An array of the 4 XY vertices of the square.
         """
+        from pwspy.utility.matplotlibWidgets import AxManager, PointSelector
         verts = [None]
         if displayIndex is None:
            displayIndex = self.data.shape[2]//2
