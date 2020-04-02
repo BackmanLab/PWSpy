@@ -13,6 +13,7 @@ if __name__ == '__main__':
     # rootDir = r'H:\Data\NA_i_vs_NA_c\matchedNAi_largeNAc\cells'
     rootDir = r'H:\Data\NA_i_vs_NA_c\smallNAi_largeNAc\cells'
     anName = 'p0'
+    roiName = 'cell'
     sigma = .5 # Blur radius in microns
     opdCutoffLow = 3
     opdCutoffHigh = 30
@@ -43,7 +44,14 @@ if __name__ == '__main__':
             opd[:, :, i] = sp.ndimage.filters.gaussian_filter(opd[:, :, i], Sigma, mode='reflect')
 
         #Try to account for decreased sensitivity at higher opd
+        print("Adjusting OPD signal")
         opd = opd * (opdIndex[None, None, :] ** 0.5)
+        # filterCutoff = .01
+        # sampleFreq = (len(opdIndex) - 1) / (opdIndex[-1] - opdIndex[0])
+        # import scipy.signal as sps
+        # b, a = sps.butter(2, filterCutoff, btype='highpass', fs=sampleFreq)  # Generate the filter coefficients
+        # opd = sps.filtfilt(b, a, opd, axis=2).astype(opd.dtype)  # Actually do the filtering on the data.
+
 
         print("Detect Peaks")
         arr = np.zeros_like(opd, dtype=bool)
@@ -60,10 +68,19 @@ if __name__ == '__main__':
             for i in range(100):
                 x, y = np.random.randint(0, opd.shape[1]), np.random.randint(0, opd.shape[0])
                 lines = ax.plot(opdIndex, opd[y, x, :])
-                vlines = ax.vlines(opdIndex[arr[y, x, :]], ymin=0, ymax=opd[y, x, :].max())
+                vlines = ax.vlines(opdIndex[arr[y, x, :]], ymin=opd[y,x,:].min(), ymax=opd[y, x, :].max())
                 artists.append(lines + [vlines])
             mp = MultiPlot(artists, "Peak Detection")
             mp.show()
+
+
+        print("Applying full cell ROIs")
+        mask = np.zeros(opd.shape[:2], dtype=bool)
+        for name, num, fformat in acq.getRois():
+            if name == roiName:
+                roi = acq.loadRoi(name, num, fformat)
+                mask = np.logical_or(mask, roi.mask)
+        arr[~mask, :] = False
 
 
         #2d regions
@@ -95,7 +112,7 @@ if __name__ == '__main__':
             temp = morph.binary_dilation(arr3[:,:,i])
             arr4[:,:,i] = morph.skeletonize(temp)
 
-        #Estimate an OPD distance for each pixel
+        #Estimate an OPD distance for each pixel. This is too slow.
         print("Condense to 2d")
         height = np.zeros((arr4.shape[0], arr4.shape[1]))
         for i in range(arr4.shape[0]):
@@ -158,13 +175,15 @@ if __name__ == '__main__':
         # ax.set_zlim(0, arr.shape[2])
 
 
-        plt.figure()
+        fig = plt.figure()
         _ = height.copy()
         _[np.isnan(_)]=0  # The nans don't plot very well
         plt.imshow(_)
+        fig.show()
 
-        plt.figure()
+        fig = plt.figure()
         plt.imshow(Z)
+        fig.show()
 
         # from mpl_toolkits.mplot3d import Axes3D
         # from matplotlib import cm
