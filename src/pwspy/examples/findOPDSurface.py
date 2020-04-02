@@ -74,13 +74,16 @@ if __name__ == '__main__':
             mp.show()
 
 
-        print("Applying full cell ROIs")
-        mask = np.zeros(opd.shape[:2], dtype=bool)
-        for name, num, fformat in acq.getRois():
-            if name == roiName:
-                roi = acq.loadRoi(name, num, fformat)
-                mask = np.logical_or(mask, roi.mask)
-        arr[~mask, :] = False
+        # print("Applying full cell ROIs") This works but may not actually help
+        # mask = np.zeros(opd.shape[:2], dtype=bool)
+        # for name, num, fformat in acq.getRois():
+        #     if name == roiName:
+        #         roi = acq.loadRoi(name, num, fformat)
+        #         mask = np.logical_or(mask, roi.mask)
+        # if not np.any(mask): #If no rois were found then set the whole mask to true
+        #     print("No ROIs found")
+        #     mask[:, :] = True
+        # arr[~mask, :] = False
 
 
         #2d regions
@@ -157,24 +160,6 @@ if __name__ == '__main__':
         plt.imshow(an.meanReflectance)
         fig.show()
 
-        #Detect a mesh. This would work a lot better if we could fill in the countours that we find.
-        # verts, faces, normals, values = meas.marching_cubes_lewiner(arr4)
-        # verts = verts.astype(int)
-        # arr5 = np.zeros_like(arr4)
-        # coords = (verts[:, 0], verts[:, 1], verts[:,2])
-        # arr5[coords] = True
-        #
-        # fig = plt.figure(figsize=(10, 10))
-        # ax = fig.add_subplot(111, projection='3d')
-        # # Fancy indexing: `verts[faces]` to generate a collection of triangles
-        # mesh = Poly3DCollection(verts[faces])
-        # mesh.set_edgecolor('k')
-        # ax.add_collection3d(mesh)
-        # ax.set_xlim(0, arr.shape[1])
-        # ax.set_ylim(0, arr.shape[0])
-        # ax.set_zlim(0, arr.shape[2])
-
-
         fig = plt.figure()
         _ = height.copy()
         _[np.isnan(_)]=0  # The nans don't plot very well
@@ -184,27 +169,6 @@ if __name__ == '__main__':
         fig = plt.figure()
         plt.imshow(Z)
         fig.show()
-
-        # from mpl_toolkits.mplot3d import Axes3D
-        # from matplotlib import cm
-        # fig = plt.figure()
-        # ax = fig.add_subplot(111, projection='3d')
-        # surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,linewidth=0, antialiased=False)
-
-        # fig = plt.figure()
-        # ax = fig.add_subplot(111, projection='3d')
-        # cset = ax.contour(X, Y, Z, cmap=cm.coolwarm, stride=3)
-
-        # fig = plt.figure()
-        # ax = fig.add_subplot(111, projection='3d')
-        # ax.plot_wireframe(X, Y, Z)
-
-        # fig = plt.figure()
-        # ax = fig.add_subplot(111, projection='3d')
-        # ax.plot_surface(X, Y, Z, rstride=8, cstride=8, alpha=0.3)
-        # cset = ax.contour(X, Y, Z, zdir='z', offset=-100, cmap=cm.coolwarm)
-        # cset = ax.contour(X, Y, Z, zdir='x', offset=-40, cmap=cm.coolwarm)
-        # cset = ax.contour(X, Y, Z, zdir='y', offset=40, cmap=cm.coolwarm)
 
         print("Done")
         a = 1  # debug here
