@@ -1,6 +1,4 @@
 if __name__ == '__main__':
-
-
     from pwspy.dataTypes import AcqDir
     from glob import glob
     import os
@@ -17,7 +15,7 @@ if __name__ == '__main__':
     anName = 'p0'
     sigma = .5 # Blur radius in microns
     opdCutoffLow = 3
-    opdCutoffHigh = 20
+    opdCutoffHigh = 30
 
     files = glob(os.path.join(rootDir, 'Cell*'))
     acqs = [AcqDir(f) for f in files]
@@ -69,11 +67,11 @@ if __name__ == '__main__':
 
 
         #2d regions
+        print("Remove regions. 2D")
         arr2 = np.zeros_like(arr)
         for i in range(arr.shape[2]):
             labeled = meas.label(arr[:, :, i])
             properties = meas.regionprops(labeled)
-            print(i)
             for prop in properties:
                 if prop.area > 30:
                     coords = prop.coords
@@ -81,6 +79,7 @@ if __name__ == '__main__':
                     arr2[coords] = True
 
         #3d regions
+        print("Remove regions. 3D")
         arr3 = np.zeros_like(arr2)
         labeled = meas.label(arr2)
         properties = meas.regionprops(labeled)
@@ -90,13 +89,53 @@ if __name__ == '__main__':
                 coords = (coords[:, 0], coords[:, 1], coords[:,2])
                 arr3[coords] = True
 
-        arr4 = np.zeros_like(arr3) # 3d skeletonizing didn't work well.
+        print("Skeletonize. 2D")
+        arr4 = np.zeros_like(arr3)  # 3d skeletonizing didn't work well.
         for i in range(arr3.shape[2]):
             temp = morph.binary_dilation(arr3[:,:,i])
             arr4[:,:,i] = morph.skeletonize(temp)
 
-        p = PlotNd(arr4, extraDimIndices=[opdIndex])
-        p2 = PlotNd(opd, extraDimIndices=[opdIndex])
+        #Estimate an OPD distance for each pixel
+        print("Condense to 2d")
+        height = np.zeros((arr4.shape[0], arr4.shape[1]))
+        for i in range(arr4.shape[0]):
+            for j in range(arr4.shape[1]):
+                where = np.argwhere(arr4[i, j, :]).squeeze()
+                if where.shape == (0,):
+                    height[i, j] = np.nan
+                else:
+                    height[i, j] = opdIndex[where].mean()
+
+        print("Interpolate")
+        # Interpolate out the Nans
+        def interpolateNans(arr):
+            """Interpolate out nan values along the third axis of an array"""
+            from scipy.interpolate import interp2d, griddata
+            x, y = list(range(arr.shape[1])), list(range(arr.shape[0]))
+            X, Y = np.meshgrid(x, y)
+            nans = np.isnan(arr)
+            Xna = X[~nans]
+            Yna = Y[~nans]
+            Zna = arr[~nans]
+
+            coords = np.array(list(zip(Xna.flatten(), Yna.flatten())))
+            icoords = np.array(list(zip(X.flatten(), Y.flatten())))
+            Z = griddata(coords, Zna.flatten(), icoords, method='linear')  # 'cubic' may also be good.
+            Z[np.isnan(Z)] = 0
+            Z = Z.reshape(arr.shape)
+
+            return Z
+
+        Z = interpolateNans(height)
+
+        print("Plot")
+        p = PlotNd(opd, extraDimIndices=[opdIndex])
+        p2 = PlotNd(arr, extraDimIndices=[opdIndex])
+        p3 = PlotNd(arr2, extraDimIndices=[opdIndex])
+        p4 = PlotNd(arr3, extraDimIndices=[opdIndex])
+        p5 = PlotNd(arr4, extraDimIndices=[opdIndex])
+
+
         fig = plt.figure()
         plt.imshow(an.meanReflectance)
         fig.show()
@@ -117,6 +156,36 @@ if __name__ == '__main__':
         # ax.set_xlim(0, arr.shape[1])
         # ax.set_ylim(0, arr.shape[0])
         # ax.set_zlim(0, arr.shape[2])
+
+
+        plt.figure()
+        _ = height.copy()
+        _[np.isnan(_)]=0  # The nans don't plot very well
+        plt.imshow(_)
+
+        plt.figure()
+        plt.imshow(Z)
+
+        # from mpl_toolkits.mplot3d import Axes3D
+        # from matplotlib import cm
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111, projection='3d')
+        # surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,linewidth=0, antialiased=False)
+
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111, projection='3d')
+        # cset = ax.contour(X, Y, Z, cmap=cm.coolwarm, stride=3)
+
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111, projection='3d')
+        # ax.plot_wireframe(X, Y, Z)
+
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111, projection='3d')
+        # ax.plot_surface(X, Y, Z, rstride=8, cstride=8, alpha=0.3)
+        # cset = ax.contour(X, Y, Z, zdir='z', offset=-100, cmap=cm.coolwarm)
+        # cset = ax.contour(X, Y, Z, zdir='x', offset=-40, cmap=cm.coolwarm)
+        # cset = ax.contour(X, Y, Z, zdir='y', offset=40, cmap=cm.coolwarm)
 
         print("Done")
         a = 1  # debug here
