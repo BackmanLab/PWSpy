@@ -28,14 +28,12 @@ def main(): #TODO add logging since terminal isn't always available
     sys.excepthook = exception_hook
 
     try:
+        os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"  # TODO replace these options with proper high dpi handling. no pixel specific widths.
+        QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
         if isIpython():  # IPython runs its own QApplication so we handle things slightly different.
             app = PWSApp(sys.argv)
         else:
-            print("Starting setup")
-            os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1" #TODO replace these options with proper high dpi handling. no pixel specific widths.
             app = PWSApp(sys.argv)
-            QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
-            print("Application setup complete")
             sys.exit(app.exec_())
     except Exception as e:  # Save error to text file.
         with open(os.path.join(applicationVars.dataDirectory, 'crashLog.txt'), 'a') as f:
