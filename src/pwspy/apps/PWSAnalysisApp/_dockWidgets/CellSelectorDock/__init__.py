@@ -121,11 +121,11 @@ class CellSelectorDock(QDockWidget):
             if expr.strip() != '':
                 try:
                     analyses = []
-                    if item.pwsdt.AcqDir.pws:
-                        analyses += item.pwsdt.AcqDir.pws.getAnalyses()
-                    if item.pwsdt.AcqDir.dynamics:
-                        analyses += item.pwsdt.AcqDir.dynamics.getAnalyses()
-                    ret = bool(eval(expr.format(num=item.num, analyses=analyses, rois=[i[0] for i in item.pwsdt.AcqDir.getRois()], idTag=item.pwsdt.AcqDir.idTag)))
+                    if item.acqDir.pws:
+                        analyses += item.acqDir.pws.getAnalyses()
+                    if item.acqDir.dynamics:
+                        analyses += item.acqDir.dynamics.getAnalyses()
+                    ret = bool(eval(expr.format(num=item.num, analyses=analyses, rois=[i[0] for i in item.acqDir.getRois()], idTag=item.acqDir.idTag)))
                 except Exception as e:
                     QMessageBox.information(self, 'Hmm', f'{expr} is not a valid boolean expression.')
                     return
@@ -137,10 +137,10 @@ class CellSelectorDock(QDockWidget):
                 self.tableWidget.setRowHidden(item.row, True)
 
     def getSelectedCellMetas(self) -> List[pwsdt.AcqDir]:
-        return [i.pwsdt.AcqDir for i in self.tableWidget.selectedCellItems]
+        return [i.acqDir for i in self.tableWidget.selectedCellItems]
 
     def getAllCellMetas(self) -> List[pwsdt.AcqDir]:
-        return [i.pwsdt.AcqDir for i in self.tableWidget.cellItems]
+        return [i.acqDir for i in self.tableWidget.cellItems]
 
     def getSelectedReferenceMeta(self):
         return self.refTableWidget.selectedReferenceMeta
@@ -148,7 +148,7 @@ class CellSelectorDock(QDockWidget):
     def setSelectedCells(self, cells: List[pwsdt.AcqDir]):
         idTags = [i.idTag for i in cells]
         for item in self.tableWidget.cellItems:
-            if item.pwsdt.AcqDir.idTag in idTags:
+            if item.acqDir.idTag in idTags:
                 item.setSelected(True)
             else:
                 item.setSelected(False)
@@ -157,7 +157,7 @@ class CellSelectorDock(QDockWidget):
         idTag = ref.idTag
         for i in range(self.refTableWidget.rowCount()):
             refitem: ReferencesTableItem = self.refTableWidget.item(i, 0)
-            if refitem.item.pwsdt.AcqDir.idTag == idTag:
+            if refitem.item.acqDir.idTag == idTag:
                 refitem.setSelected(True)
             else:
                 refitem.setSelected(False)
@@ -165,7 +165,7 @@ class CellSelectorDock(QDockWidget):
     def setHighlightedCells(self, cells: List[pwsdt.AcqDir]):
         idTags = [i.idTag for i in cells]
         for item in self.tableWidget.cellItems:
-            if item.pwsdt.AcqDir.idTag in idTags:
+            if item.acqDir.idTag in idTags:
                 item.setHighlighted(True)
             else:
                 item.setHighlighted(False)
@@ -174,7 +174,7 @@ class CellSelectorDock(QDockWidget):
         idTag = ref.idTag
         for i in range(self.refTableWidget.rowCount()):
             refitem: ReferencesTableItem = self.refTableWidget.item(i, 0)
-            if refitem.item.pwsdt.AcqDir.idTag == idTag:
+            if refitem.item.acqDir.idTag == idTag:
                 refitem.setHighlighted(True)
             else:
                 refitem.setHighlighted(False)

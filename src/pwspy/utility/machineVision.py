@@ -148,9 +148,11 @@ def edgeDetectRegisterTranslation(reference: np.ndarray, other: typing.Iterable[
     affineTransforms = []
     if debugPlots:
         anEdFig, anEdAx = plt.subplots()
+        anEdFig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
         anEdAx.get_xaxis().set_visible(False)
         anEdAx.get_yaxis().set_visible(False)
         anFig, anAx = plt.subplots()
+        anFig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
         anAx.get_xaxis().set_visible(False)
         anAx.get_yaxis().set_visible(False)
         anims = [[anAx.imshow(to8bit(reference), 'gray'), anAx.text(100, 100, "Reference", color='r')]]

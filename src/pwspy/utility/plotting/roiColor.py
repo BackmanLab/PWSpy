@@ -44,7 +44,6 @@ def roiColor(data, rois: List[Roi], vmin, vmax, scale_bg, hue=0, exponent=1, num
     return out
 
 if __name__ == "__main__":
-    #TODO what is the purpose of scale_bg
     acq = AcqDir(r'G:\Aya_NAstudy\matchedNAi_largeNAc\cells\Cell3')
     an = acq.pws.loadAnalysis('p0')
     rois = [acq.loadRoi(name, num) for name, num, fformat in acq.getRois() if name=='nucleus']

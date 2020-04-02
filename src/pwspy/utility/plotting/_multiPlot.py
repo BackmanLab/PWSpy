@@ -16,21 +16,19 @@ class MultiPlot(QWidget):
     def __init__(self, artists: List[List[Artist]], title: str, parent=None):
         """A widget that displays a set of images.
         Args:
-            artists: A list of lists of matplotlib 'Artists`. each list will comptrise a single frame, just like the matplotlib `ArtistAnimation` works.
+            artists: A list of lists of matplotlib 'Artists`. each list will comprise a single frame, just like the matplotlib `ArtistAnimation` works.
             title (str): The name for the title of the window
         """
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         self.setWindowTitle(title)
         layout = QGridLayout()
         self.artists = artists
-        self.figure: Figure = artists[0][0].figure
-        # plt.close(self.figure.number) #Get rid of the old window for the figure
+        self.figure: Figure = artists[0][0].figure  # We are assuming that all artists use the same figure.
         self.ax: Axes = self.artists[0][0].axes
 
         self.canvas = FigureCanvasQTAgg(self.figure)
         self.canvas.setFocusPolicy(QtCore.Qt.ClickFocus) #Not sure what this is for
         self.canvas.setFocus()
-        self.figure.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
 
         self.previousButton = QPushButton('←')
         self.nextButton = QPushButton('→')
@@ -83,8 +81,15 @@ if __name__ == '__main__':
     sh = (1024, 1024)
     ims = [[plt.imshow(np.random.random(sh)), plt.text(100, 100, str(i))] for i in range(3)]
     mp = MultiPlot(ims, "Hey")
+    plt.gcf().subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
     mp.ax.get_xaxis().set_visible(False)
     mp.ax.get_yaxis().set_visible(False)
     [mp.imshow(np.random.random(sh)) for i in range(3)]
     mp.show()
+
+    fig, ax = plt.subplots()
+    lines = [ax.plot(np.random.random((50,))) for i in range(3)]
+    mp2 = MultiPlot(lines, 'Lines')
+    mp2.show()
+
     sys.exit(app.exec())

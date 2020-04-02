@@ -54,7 +54,7 @@ class Layer:
     Args:
         mat: This can either be a number or series of numbers representing the refractive index at different wavelengths
             or it can be a `Material` in which case the refractive index will be automatically calculated.
-        d: The thickness of the layer. :todo: Units?
+        d: The thickness of the layer. The units that thicknesses and wavelengths are specified in must match.
         name: An optional name which will be dislayed if the layer is plotted
     """
     def __init__(self, mat: Union[Number, pd.Series, Material], d: float, name: typing.Optional[str] = None):
