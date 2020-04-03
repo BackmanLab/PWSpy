@@ -1,3 +1,5 @@
+
+
 if __name__ == '__main__':
     from pwspy.dataTypes import AcqDir
     from glob import glob
@@ -9,6 +11,9 @@ if __name__ == '__main__':
     import skimage.morphology as morph
     import skimage.measure as meas
     from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+    import skan
+    from PyQt5.QtWidgets import QTableView
+    from pwspy.apps.sharedWidgets.extraReflectionManager._ERUploaderWindow import PandasModel
 
     # rootDir = r'H:\Data\NA_i_vs_NA_c\matchedNAi_largeNAc\cells'
     rootDir = r'H:\Data\NA_i_vs_NA_c\smallNAi_largeNAc\cells'
@@ -21,7 +26,6 @@ if __name__ == '__main__':
     files = glob(os.path.join(rootDir, 'Cell*'))
     acqs = [AcqDir(f) for f in files]
 
-    # acqs = acqs[1:]#Skip acq 1
 
     for acq in acqs:
         try:
@@ -86,7 +90,7 @@ if __name__ == '__main__':
         # arr[~mask, :] = False
 
 
-        #2d regions
+        #2d regions #TODO analyze skeleton lengths to remove stuff. skan
         print("Remove regions. 2D")
         arr2 = np.zeros_like(arr)
         for i in range(arr.shape[2]):
@@ -114,6 +118,32 @@ if __name__ == '__main__':
         for i in range(arr3.shape[2]):
             temp = morph.binary_dilation(arr3[:,:,i])
             arr4[:,:,i] = morph.skeletonize(temp)
+
+        print("analyze skeleton 2d")
+        skels = []
+        arr5 = np.zeros_like(arr4, dtype=int)
+        for i in range(arr4.shape[2]):
+            if arr4[:,:,i].sum() == 0: # nothign to be done if the frame is empty
+                skels.append(None)
+            else:
+                s = skan.Skeleton(arr4[:, :, i])
+                skels.append(s)
+                for n in range(s.n_paths):
+                    coords = s.path_coordinates(n).astype(int)
+                    coords = (coords[:, 0], coords[:, 1], np.ones_like(coords[:,0])*i)
+                    arr5[coords] = s.path_lengths()[n]
+        skel = skan.Skeleton(arr4)
+        stats = skan.branch_statistics(skel.graph)
+        df = skan.summarize(skel)
+        pm = PandasModel(df)
+        qt = QTableView()
+        qt.setModel(pm)
+        qt.setSortingEnabled(True)
+        qt.show()
+
+        arr6 = np.zeros_like(arr)
+        for i in range(skel.n_paths):
+            coords = skel.path_coordinates(i)
 
         #Estimate an OPD distance for each pixel. This is too slow.
         print("Condense to 2d")
@@ -169,6 +199,7 @@ if __name__ == '__main__':
         fig = plt.figure()
         plt.imshow(Z)
         fig.show()
+
 
         print("Done")
         a = 1  # debug here
