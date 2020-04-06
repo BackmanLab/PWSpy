@@ -11,6 +11,7 @@ if __name__ == '__main__':
     import skimage.morphology as morph
     import skimage.measure as meas
     from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+    import pandas as pd
     import skan
     from PyQt5.QtWidgets import QTableView
     from pwspy.apps.sharedWidgets.extraReflectionManager._ERUploaderWindow import PandasModel
@@ -77,19 +78,6 @@ if __name__ == '__main__':
             mp = MultiPlot(artists, "Peak Detection")
             mp.show()
 
-
-        # print("Applying full cell ROIs") This works but may not actually help
-        # mask = np.zeros(opd.shape[:2], dtype=bool)
-        # for name, num, fformat in acq.getRois():
-        #     if name == roiName:
-        #         roi = acq.loadRoi(name, num, fformat)
-        #         mask = np.logical_or(mask, roi.mask)
-        # if not np.any(mask): #If no rois were found then set the whole mask to true
-        #     print("No ROIs found")
-        #     mask[:, :] = True
-        # arr[~mask, :] = False
-
-
         #2d regions #TODO analyze skeleton lengths to remove stuff. skan
         print("Remove regions. 2D")
         arr2 = np.zeros_like(arr)
@@ -121,17 +109,36 @@ if __name__ == '__main__':
 
         print("analyze skeleton 2d")
         skels = []
-        arr5 = np.zeros_like(arr4, dtype=int)
         for i in range(arr4.shape[2]):
-            if arr4[:,:,i].sum() == 0: # nothign to be done if the frame is empty
+            if arr4[:, :, i].sum() == 0:  # nothing to be done if the frame is empty
                 skels.append(None)
             else:
                 s = skan.Skeleton(arr4[:, :, i])
-                skels.append(s)
+                plt.figure()
                 for n in range(s.n_paths):
-                    coords = s.path_coordinates(n).astype(int)
-                    coords = (coords[:, 0], coords[:, 1], np.ones_like(coords[:,0])*i)
-                    arr5[coords] = s.path_lengths()[n]
+                    coords = s.path_coordinates(n)
+                    coords = (coords[:, 0], coords[:, 1])
+                    plt.plot(*coords)
+                stats = skan.summarize(s)
+                #The types are: - tip-tip (0) - tip-junction (1) - junction-junction (2) - path-path (3)
+                for id in range(max((stats['epId1'].max(), stats['epId2'].max()))+1):
+                    b = stats.apply(lambda row: id in row['eps'], axis=1)
+                    a = stats[b]  # Select all rows using this endpoint
+                    if len(a) > 1: #multiple branches use this endpoint.
+                        if 2 in a.type.unique() or 3 in a.type.unique():
+                            idxes = a[a.type < 2].index
+                            stats = stats.drop(idxes, axis=0)
+                        else:
+                            #delete the shortest one
+                            idx = a.length.idxmin()
+                            stats = stats.drop(idx, axis=0)
+                skels.append(s)
+                plt.figure()
+                for n in stats.index:
+                    coords = s.path_coordinates(n)
+                    coords = (coords[:, 0], coords[:, 1])
+                    plt.plot(*coords)
+
         skel = skan.Skeleton(arr4)
         stats = skan.branch_statistics(skel.graph)
         df = skan.summarize(skel)
