@@ -32,7 +32,7 @@ class ERUploaderWindow(QDialog):
         self.setLayout(QVBoxLayout())
         self.table = QTableView(self)
         self.fileStatus = self._manager.dataComparator.compare()
-        self.table.setModel(PandasModel(self.fileStatus))
+        self.table.setModel(ERPandasModel(self.fileStatus))
         self.table.setSelectionMode(QTableView.SingleSelection)
         self.table.setSelectionBehavior(QTableView.SelectRows)
         self.table.customContextMenuRequested.connect(self.openContextMenu)
@@ -98,7 +98,7 @@ class ERUploaderWindow(QDialog):
         """Scans local and online files to refresh the display."""
         self._manager.dataComparator.updateIndexes()
         self.fileStatus = self._manager.dataComparator.compare()
-        self.table.setModel(PandasModel(self.fileStatus))
+        self.table.setModel(ERPandasModel(self.fileStatus))
 
 
 class PandasModel(QtCore.QAbstractTableModel):
@@ -124,14 +124,9 @@ class PandasModel(QtCore.QAbstractTableModel):
             except (IndexError, ):
                 return QtCore.QVariant()
 
-    def _calculateColor(self, index: QModelIndex):
-        if self._df.columns[index.column()] == 'idTag':
-            c = QtGui.QColor('white')
-        elif (self._df.iloc[index.row(), index.column()] == ERDataDirectory.DataStatus.found.value) or (self._df.iloc[index.row(), index.column()] == ERDataComparator.ComparisonStatus.Match.value):
-            c = QtGui.QColor('green')
-        else:
-            c = QtGui.QColor('red')
-        return c
+    def _calculateColor(self, index: QModelIndex) -> QtGui.QColor:
+        """This method can be  overriden to change how cells are colored."""
+        return QtGui.QColor("white")
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
         if role == QtCore.Qt.BackgroundRole:
@@ -171,3 +166,14 @@ class PandasModel(QtCore.QAbstractTableModel):
         self._df.sort_values(colname, ascending= order == QtCore.Qt.AscendingOrder, inplace=True)
         self._df.reset_index(inplace=True, drop=True)
         self.layoutChanged.emit()
+
+class ERPandasModel(PandasModel):
+    """This class extends the PandasModel to function for the specific purposed of extra reflectance UI."""
+    def _calculateColor(self, index: QModelIndex):
+        if self._df.columns[index.column()] == 'idTag':
+            c = QtGui.QColor('white')
+        elif (self._df.iloc[index.row(), index.column()] == ERDataDirectory.DataStatus.found.value) or (self._df.iloc[index.row(), index.column()] == ERDataComparator.ComparisonStatus.Match.value):
+            c = QtGui.QColor('green')
+        else:
+            c = QtGui.QColor('red')
+        return c
