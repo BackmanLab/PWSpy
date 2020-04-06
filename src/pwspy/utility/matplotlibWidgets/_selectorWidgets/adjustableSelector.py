@@ -243,25 +243,25 @@ class AdjustableSelector:
 
     def setActive(self, active: bool):
         if active: #This activates the selector. for a looping selection you should call this method from the onfinished function.
-            self.selector.active = True
+            self.selector.set_active(True)
             self.selector.set_visible(True)
         else:
-            self.adjuster.active = False
+            self.adjuster.set_active(False)
             self.adjuster.set_visible(False)
             self.selector.set_visible(False)
-            self.selector.active = False
+            self.selector.set_active(False)
 
     def setSelector(self, selectorClass: Type):
         self.selector.removeArtists()
-        self.selector.active = False
+        self.selector.set_active(False)
         self.selector = selectorClass(self.axMan, self.image)
         self.adjustable = self.adjustable
 
     def goPoly(self, verts, handles):
-        self.selector.active = False
+        self.selector.set_active(False)
         self.selector.set_visible(False)
         self.adjuster.initialize(handles)
-        self.adjuster.active = True
+        self.adjuster.set_active(True)
 
     def finish(self, verts, handles):
         self.setActive(False)
