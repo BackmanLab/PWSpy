@@ -12,11 +12,9 @@ if __name__ == '__main__':
     import skimage.measure as meas
     from mpl_toolkits.mplot3d.art3d import Poly3DCollection
     import skan
-    from PyQt5.QtWidgets import QTableView
-    from pwspy.apps.sharedWidgets.extraReflectionManager._ERUploaderWindow import PandasModel
 
-    # rootDir = r'H:\Data\NA_i_vs_NA_c\matchedNAi_largeNAc\cells'
-    rootDir = r'H:\Data\NA_i_vs_NA_c\smallNAi_largeNAc\cells'
+    # rootDir = r'G:\Data\NA_i_vs_NA_c\matchedNAi_largeNAc\cells'
+    rootDir = r'G:\Data\NA_i_vs_NA_c\smallNAi_largeNAc\cells'
     anName = 'p0'
     roiName = 'cell'
     sigma = .5 # Blur radius in microns
@@ -78,19 +76,7 @@ if __name__ == '__main__':
             mp.show()
 
 
-        # print("Applying full cell ROIs") This works but may not actually help
-        # mask = np.zeros(opd.shape[:2], dtype=bool)
-        # for name, num, fformat in acq.getRois():
-        #     if name == roiName:
-        #         roi = acq.loadRoi(name, num, fformat)
-        #         mask = np.logical_or(mask, roi.mask)
-        # if not np.any(mask): #If no rois were found then set the whole mask to true
-        #     print("No ROIs found")
-        #     mask[:, :] = True
-        # arr[~mask, :] = False
-
-
-        #2d regions #TODO analyze skeleton lengths to remove stuff. skan
+        #2d regions
         print("Remove regions. 2D")
         arr2 = np.zeros_like(arr)
         for i in range(arr.shape[2]):
@@ -116,34 +102,12 @@ if __name__ == '__main__':
         print("Skeletonize. 2D")
         arr4 = np.zeros_like(arr3)  # 3d skeletonizing didn't work well.
         for i in range(arr3.shape[2]):
-            temp = morph.binary_dilation(arr3[:,:,i])
+            disk = morph.disk(3)
+            temp = morph.binary_dilation(arr3[:,:,i], disk)
             arr4[:,:,i] = morph.skeletonize(temp)
 
         print("analyze skeleton 2d")
-        skels = []
-        arr5 = np.zeros_like(arr4, dtype=int)
-        for i in range(arr4.shape[2]):
-            if arr4[:,:,i].sum() == 0: # nothign to be done if the frame is empty
-                skels.append(None)
-            else:
-                s = skan.Skeleton(arr4[:, :, i])
-                skels.append(s)
-                for n in range(s.n_paths):
-                    coords = s.path_coordinates(n).astype(int)
-                    coords = (coords[:, 0], coords[:, 1], np.ones_like(coords[:,0])*i)
-                    arr5[coords] = s.path_lengths()[n]
-        skel = skan.Skeleton(arr4)
-        stats = skan.branch_statistics(skel.graph)
-        df = skan.summarize(skel)
-        pm = PandasModel(df)
-        qt = QTableView()
-        qt.setModel(pm)
-        qt.setSortingEnabled(True)
-        qt.show()
 
-        arr6 = np.zeros_like(arr)
-        for i in range(skel.n_paths):
-            coords = skel.path_coordinates(i)
 
         #Estimate an OPD distance for each pixel. This is too slow.
         print("Condense to 2d")
@@ -187,13 +151,14 @@ if __name__ == '__main__':
 
 
         fig = plt.figure()
-        plt.imshow(an.meanReflectance)
+        plt.imshow(an.meanReflectance, cmap='gray', clim=[np.percentile(an.meanReflectance, 1), np.percentile(an.meanReflectance, 99)])
         fig.show()
 
         fig = plt.figure()
         _ = height.copy()
         _[np.isnan(_)]=0  # The nans don't plot very well
-        plt.imshow(_)
+        plt.imshow(_, cmap='jet', clim=[0, np.percentile(_,99)])
+        plt.colorbar()
         fig.show()
 
         fig = plt.figure()
