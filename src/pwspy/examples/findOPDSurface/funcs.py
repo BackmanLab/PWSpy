@@ -77,13 +77,11 @@ class Skel(skan.Skeleton):
             groups = self.summary.groupby('skeleton-id')
             colors = mpl.cm.get_cmap('gist_rainbow')(np.linspace(0, 1, num=len(groups)))
             for i, (n, group) in enumerate(groups):
-                # Coords = ([], [], [])
                 for idx in group.index:
                     coords = self.path_coordinates(idx)
                     coords = (coords[:,0], coords[:,1], coords[:,2])
-                    # Coords = (Coords[0] + list(coords[:, 0]), Coords[1] + list(coords[:, 1]), Coords[2] + list(coords[:, 2]))
                     ax.plot(*coords, c=colors[i])
-                # ax.scatter(*Coords)
+            fig.show()
         else:
             raise ValueError(f"Not sure what to do with a {ndim} dimensional skeleton")
 
