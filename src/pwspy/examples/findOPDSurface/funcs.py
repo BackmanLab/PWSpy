@@ -117,13 +117,9 @@ class AnnotFig:
 def prune2dIm(s):
     """Take Skel, s, and recursively prune unwanted paths."""
     j = 0
-    did = True
     while True:
-        if not did:
-            break
         print(f"Iteration {j + 1}")
 
-        did = False
         j += 1
         idxes = []
 
@@ -156,7 +152,6 @@ def prune2dIm(s):
             if s is None:  # All paths were removed
                 break
             else:
-                did = True
                 continue
 
         g = s.summary.groupby('ids')
@@ -174,8 +169,9 @@ def prune2dIm(s):
             if s is None:  # All paths were removed
                 break
             else:
-                did = True
                 continue
+
+        break #We only get to this point if we didn't take any action above
     return s
 
 
