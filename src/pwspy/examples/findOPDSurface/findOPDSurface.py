@@ -18,15 +18,12 @@ if __name__ == '__main__':
     rootDir = r'G:\Data\NA_i_vs_NA_c\smallNAi_largeNAc\cells'
     anName = 'p0'
     roiName = 'cell'
-    sigma = .5  # Blur radius in microns
+    sigma = .5  # Blur radius in microns. greater sigma generally leads to greater sensitivity, with more contiguous regions of detected peaks. Also greater noise though.
     opdCutoffLow = 3
-    # opdCutoffLow = 11
-    # opdCutoffHigh = 16
-    opdCutoffHigh = 30
+    opdCutoffHigh = 20
 
     files = glob(os.path.join(rootDir, 'Cell*'))
     acqs = [AcqDir(f) for f in files]
-
 
     for acq in acqs:
         try:
@@ -43,7 +40,7 @@ if __name__ == '__main__':
         opd = opd[:, :, idxLow:idxHigh]
         opdIndex = opdIndex[idxLow:idxHigh]
 
-        # Blur laterally to denoise
+        # Blur laterally to denoise. This step is vital
         Sigma = sigma / acq.pws.pixelSizeUm  # convert from microns to pixels
         for i in range(opd.shape[2]):
             opd[:, :, i] = sp.ndimage.filters.gaussian_filter(opd[:, :, i], Sigma, mode='reflect')
@@ -68,12 +65,10 @@ if __name__ == '__main__':
             for i in range(100):
                 x, y = np.random.randint(0, opd.shape[1]), np.random.randint(0, opd.shape[0])
                 lines = ax.plot(opdIndex, opd[y, x, :])
-                vlines = ax.vlines(opdIndex[arr[y, x, :]], ymin=opd[y,x,:].min(), ymax=opd[y, x, :].max())
+                vlines = ax.vlines(opdIndex[arr[y, x, :]], ymin=opd[y, x, :].min(), ymax=opd[y, x, :].max())
                 artists.append(lines + [vlines])
             mp = MultiPlot(artists, "Peak Detection")
             mp.show()
-
-        # arr = arr[:, :, 48:]
 
         #2d regions
         print("Remove regions. 2D")
@@ -106,9 +101,10 @@ if __name__ == '__main__':
             arr4[:, :, i] = morph.skeletonize(temp)
 
         print("analyze skeleton 2d")
-        # arr4 = arr4[:,:,48:]
         arr5 = prune3dIm(arr4)
 
+        #TODO another removal of small 3d regions?
+        
         #Estimate an OPD distance for each pixel. This is too slow.
         print("Condense to 2d")
         height = np.zeros((arr5.shape[0], arr5.shape[1]))
@@ -145,7 +141,7 @@ if __name__ == '__main__':
         print("Plot")
         p = PlotNd(opd, extraDimIndices=[opdIndex])
         p2 = PlotNd(arr, extraDimIndices=[opdIndex])
-        p3 = PlotNd(arr2, extraDimIndices=[opdIndex])
+        # p3 = PlotNd(arr2, extraDimIndices=[opdIndex])
         p4 = PlotNd(arr3, extraDimIndices=[opdIndex])
         p5 = PlotNd(arr4, extraDimIndices=[opdIndex])
         p6 = PlotNd(arr5, extraDimIndices=[opdIndex])
