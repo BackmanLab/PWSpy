@@ -65,6 +65,27 @@ class Skel(skan.Skeleton):
         s = Skel(img)  # Re create the skeleton object.
         return s
 
+    def plot(self):
+        ndim = self.path_coordinates(1).shape[1]
+        if ndim == 2:
+            a = AnnotFig(self)
+        elif ndim == 3:
+            from mpl_toolkits.mplot3d import Axes3D
+            import matplotlib as mpl
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+            groups = self.summary.groupby('skeleton-id')
+            colors = mpl.cm.get_cmap('gist_rainbow')(np.linspace(0, 1, num=len(groups)))
+            for i, (n, group) in enumerate(groups):
+                # Coords = ([], [], [])
+                for idx in group.index:
+                    coords = self.path_coordinates(idx)
+                    coords = (coords[:,0], coords[:,1], coords[:,2])
+                    # Coords = (Coords[0] + list(coords[:, 0]), Coords[1] + list(coords[:, 1]), Coords[2] + list(coords[:, 2]))
+                    ax.plot(*coords, c=colors[i])
+                # ax.scatter(*Coords)
+        else:
+            raise ValueError(f"Not sure what to do with a {ndim} dimensional skeleton")
 
 class SingleSkeleton:
     """Represents a single connect skeleton from the Skel class.
@@ -96,7 +117,7 @@ class SingleSkeleton:
 
 class AnnotFig:
     """Pass a Skel to this class and it will plot all the paths with annotation giving the type and length."""
-    def __init__(self, skel, title=''):
+    def __init__(self, skel: Skel, title=''):
         self.fig, self.ax = plt.subplots()
         self.fig.annotfigref = self
         self.fig.suptitle(title)
@@ -141,6 +162,9 @@ class AnnotFig:
             line = self.ax.plot(*coords)[0]
             lines.append((line, n))
         return lines
+
+    def show(self):
+        self.fig.show()
 
 
 def _scanIds(s: Skel, ids: typing.List[int]):
@@ -228,7 +252,8 @@ def prune3dIm(skelIm, plotEveryN=3):
             s = Skel(skel[:, :, z].copy())
 
             if z % plotEveryN == 0:
-                beforeIm = AnnotFig(s, title=f'before {z}')
+                beforeIm = AnnotFig(s, title=f'Before pruning {z}')
+                beforeIm.show()
 
             s = prune2dIm(s)
 
@@ -236,7 +261,8 @@ def prune3dIm(skelIm, plotEveryN=3):
                 continue  #:Leave this plane of the image as zeros since the whole skeleton was removed
             else:
                 if z % plotEveryN == 0:
-                    afterIm = AnnotFig(s, title=f'after {z}')
+                    afterIm = AnnotFig(s, title=f'After pruning {z}')
+                    afterIm.show()
                 out[:, :, z] = s.skeleton_image
     except KeyboardInterrupt: # Allow early stopping though keybord interrupt
         pass

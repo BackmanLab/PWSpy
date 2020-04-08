@@ -12,7 +12,7 @@ if __name__ == '__main__':
     import skimage.measure as meas
     from mpl_toolkits.mplot3d.art3d import Poly3DCollection
     import skan
-    from pwspy.examples.findOPDSurface.funcs import prune3dIm
+    from pwspy.examples.findOPDSurface.funcs import prune3dIm, Skel
 
     # rootDir = r'G:\Data\NA_i_vs_NA_c\matchedNAi_largeNAc\cells'
     rootDir = r'G:\Data\NA_i_vs_NA_c\smallNAi_largeNAc\cells'
@@ -61,6 +61,7 @@ if __name__ == '__main__':
         if True: # plotPeakDetection
             print("Plotting random peaks")
             fig, ax = plt.subplots()
+            plt.xlabel("OPD (um)")
             artists = []
             for i in range(100):
                 x, y = np.random.randint(0, opd.shape[1]), np.random.randint(0, opd.shape[0])
@@ -103,22 +104,36 @@ if __name__ == '__main__':
         print("analyze skeleton 2d")
         arr5 = prune3dIm(arr4)
 
-        #TODO another removal of small 3d regions?
-        
+
+        #3d regions
+        print("Remove regions. 3D")
+        arr6 = np.zeros_like(arr5)
+        _ = morph.binary_dilation(arr5)
+        labeled = meas.label(_)
+        properties = meas.regionprops(labeled)
+        for prop in properties:
+            if prop.area > 1e4:
+                coords = prop.coords
+                coords = (coords[:, 0], coords[:, 1], coords[:,2])
+                arr6[coords] = True
+        arr6 = morph.skeletonize(arr6)
+
+        s = Skel(arr6)
+
         #Estimate an OPD distance for each pixel. This is too slow.
         print("Condense to 2d")
-        height = np.zeros((arr5.shape[0], arr5.shape[1]))
-        for i in range(arr5.shape[0]):
-            for j in range(arr5.shape[1]):
-                where = np.argwhere(arr5[i, j, :]).squeeze()
+        height = np.zeros((arr6.shape[0], arr6.shape[1]))
+        for i in range(arr6.shape[0]):
+            for j in range(arr6.shape[1]):
+                where = np.argwhere(arr6[i, j, :]).squeeze()
                 if where.shape == (0,):
                     height[i, j] = np.nan
                 else:
-                    height[i, j] = opdIndex[where].mean()
+                    height[i, j] = opdIndex[where].max()
 
         print("Interpolate")
         # Interpolate out the Nans
-        def interpolateNans(arr):
+        def interpolateNans(arr, method='linear'):  # 'cubic' may also be good.
             """Interpolate out nan values along the third axis of an array"""
             from scipy.interpolate import interp2d, griddata
             x, y = list(range(arr.shape[1])), list(range(arr.shape[0]))
@@ -130,21 +145,22 @@ if __name__ == '__main__':
 
             coords = np.array(list(zip(Xna.flatten(), Yna.flatten())))
             icoords = np.array(list(zip(X.flatten(), Y.flatten())))
-            Z = griddata(coords, Zna.flatten(), icoords, method='linear')  # 'cubic' may also be good.
+            Z = griddata(coords, Zna.flatten(), icoords, method=method)
             Z[np.isnan(Z)] = 0
             Z = Z.reshape(arr.shape)
 
             return Z
 
-        Z = interpolateNans(height)
+        Z = interpolateNans(height, method='linear')
 
         print("Plot")
-        p = PlotNd(opd, extraDimIndices=[opdIndex])
-        p2 = PlotNd(arr, extraDimIndices=[opdIndex])
+        p = PlotNd(opd, extraDimIndices=[opdIndex], names=('y','x','opd'))
+        p2 = PlotNd(arr, extraDimIndices=[opdIndex], names=('y','x','opd'))
         # p3 = PlotNd(arr2, extraDimIndices=[opdIndex])
-        p4 = PlotNd(arr3, extraDimIndices=[opdIndex])
-        p5 = PlotNd(arr4, extraDimIndices=[opdIndex])
-        p6 = PlotNd(arr5, extraDimIndices=[opdIndex])
+        p4 = PlotNd(arr3, extraDimIndices=[opdIndex], names=('y','x','opd'))
+        p5 = PlotNd(arr4, extraDimIndices=[opdIndex], names=('y','x','opd'))
+        p6 = PlotNd(arr5, extraDimIndices=[opdIndex], names=('y','x','opd'))
+        p7 = PlotNd(arr6, extraDimIndices=[opdIndex], names=('y','x','opd'))
 
 
         fig = plt.figure()
@@ -154,12 +170,18 @@ if __name__ == '__main__':
         fig = plt.figure()
         _ = height.copy()
         _[np.isnan(_)]=0  # The nans don't plot very well
-        plt.imshow(_, cmap='jet', clim=[0, np.percentile(_,99)])
+        plt.imshow(_, cmap='jet', clim=[_.min(), np.percentile(_,99)])
         plt.colorbar()
         fig.show()
 
+        s.plot()
+
         fig = plt.figure()
-        plt.imshow(Z)
+        _ = Z.copy()
+        _[_==0] = np.percentile(_[_!=0], .1)
+        plt.imshow(_)
+        plt.colorbar()
+        plt.title("Simple Interpolation.")
         fig.show()
 
 
