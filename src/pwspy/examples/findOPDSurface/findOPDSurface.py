@@ -12,13 +12,16 @@ if __name__ == '__main__':
     import skimage.measure as meas
     from mpl_toolkits.mplot3d.art3d import Poly3DCollection
     import skan
+    from pwspy.examples.findOPDSurface.funcs import prune3dIm
 
     # rootDir = r'G:\Data\NA_i_vs_NA_c\matchedNAi_largeNAc\cells'
     rootDir = r'G:\Data\NA_i_vs_NA_c\smallNAi_largeNAc\cells'
     anName = 'p0'
     roiName = 'cell'
-    sigma = .5 # Blur radius in microns
+    sigma = .5  # Blur radius in microns
     opdCutoffLow = 3
+    # opdCutoffLow = 11
+    # opdCutoffHigh = 16
     opdCutoffHigh = 30
 
     files = glob(os.path.join(rootDir, 'Cell*'))
@@ -48,12 +51,6 @@ if __name__ == '__main__':
         #Try to account for decreased sensitivity at higher opd
         print("Adjusting OPD signal")
         opd = opd * (opdIndex[None, None, :] ** 0.5)
-        # filterCutoff = .01
-        # sampleFreq = (len(opdIndex) - 1) / (opdIndex[-1] - opdIndex[0])
-        # import scipy.signal as sps
-        # b, a = sps.butter(2, filterCutoff, btype='highpass', fs=sampleFreq)  # Generate the filter coefficients
-        # opd = sps.filtfilt(b, a, opd, axis=2).astype(opd.dtype)  # Actually do the filtering on the data.
-
 
         print("Detect Peaks")
         arr = np.zeros_like(opd, dtype=bool)
@@ -61,6 +58,7 @@ if __name__ == '__main__':
             for j in range(opd.shape[1]):
                 peaks, properties = sp.signal.find_peaks(opd[i, j, :])  # TODO vectorize? use kwargs?
                 arr[i, j, :][peaks] = True
+
 
 
         if True: # plotPeakDetection
@@ -75,6 +73,7 @@ if __name__ == '__main__':
             mp = MultiPlot(artists, "Peak Detection")
             mp.show()
 
+        # arr = arr[:, :, 48:]
 
         #2d regions
         print("Remove regions. 2D")
@@ -103,18 +102,19 @@ if __name__ == '__main__':
         arr4 = np.zeros_like(arr3)  # 3d skeletonizing didn't work well.
         for i in range(arr3.shape[2]):
             disk = morph.disk(3)
-            temp = morph.binary_dilation(arr3[:,:,i], disk)
-            arr4[:,:,i] = morph.skeletonize(temp)
+            temp = morph.binary_dilation(arr3[:, :, i], disk)
+            arr4[:, :, i] = morph.skeletonize(temp)
 
         print("analyze skeleton 2d")
-
+        # arr4 = arr4[:,:,48:]
+        arr5 = prune3dIm(arr4)
 
         #Estimate an OPD distance for each pixel. This is too slow.
         print("Condense to 2d")
-        height = np.zeros((arr4.shape[0], arr4.shape[1]))
-        for i in range(arr4.shape[0]):
-            for j in range(arr4.shape[1]):
-                where = np.argwhere(arr4[i, j, :]).squeeze()
+        height = np.zeros((arr5.shape[0], arr5.shape[1]))
+        for i in range(arr5.shape[0]):
+            for j in range(arr5.shape[1]):
+                where = np.argwhere(arr5[i, j, :]).squeeze()
                 if where.shape == (0,):
                     height[i, j] = np.nan
                 else:
@@ -148,6 +148,7 @@ if __name__ == '__main__':
         p3 = PlotNd(arr2, extraDimIndices=[opdIndex])
         p4 = PlotNd(arr3, extraDimIndices=[opdIndex])
         p5 = PlotNd(arr4, extraDimIndices=[opdIndex])
+        p6 = PlotNd(arr5, extraDimIndices=[opdIndex])
 
 
         fig = plt.figure()
