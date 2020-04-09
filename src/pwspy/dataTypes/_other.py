@@ -63,11 +63,13 @@ def _concaveHull(coords: List[Tuple[int, int]], alpha):
     Found here: https://gist.github.com/dwyerk/10561690
     Compute the alpha shape (concave hull) of a set
     of points.
-    @param coords: nx2 array of points.
-    @param alpha: alpha value to influence the
-        gooeyness of the border. Smaller numbers
-        don't fall inward as much as larger numbers.
-        Too large, and you lose everything!
+
+    Args:
+        coords: nx2 array of points.
+        alpha: alpha value to influence the
+            gooeyness of the border. Smaller numbers
+            don't fall inward as much as larger numbers.
+            Too large, and you lose everything!
     """
     if len(coords) < 4:
         # When you have a triangle, there is no sense
