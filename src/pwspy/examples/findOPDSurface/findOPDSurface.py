@@ -108,7 +108,8 @@ if __name__ == '__main__':
         #3d regions
         print("Remove regions. 3D")
         arr6 = np.zeros_like(arr5)
-        _ = morph.binary_dilation(arr5)
+        disk = morph.disk(2)
+        _ = morph.binary_dilation(arr5, disk[:,:,None])
         labeled = meas.label(_)
         properties = meas.regionprops(labeled)
         for prop in properties:
@@ -116,9 +117,13 @@ if __name__ == '__main__':
                 coords = prop.coords
                 coords = (coords[:, 0], coords[:, 1], coords[:,2])
                 arr6[coords] = True
-        arr6 = morph.skeletonize(arr6)
+        ThreeDskel = morph.skeletonize(arr6) #3d Skeletonized. This is just used for a cool plot. 2d skeletonized is more useful.
+        s = Skel(ThreeDskel)
 
-        s = Skel(arr6)
+        temp = np.zeros_like(arr6)  # 2d skeletonized
+        for i in range(temp.shape[2]):
+            temp[:, :, i] = morph.skeletonize(arr6[:, :, i])
+        arr6 = temp
 
         #Estimate an OPD distance for each pixel. This is too slow.
         print("Condense to 2d")
