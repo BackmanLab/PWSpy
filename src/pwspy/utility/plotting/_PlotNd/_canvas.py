@@ -38,7 +38,6 @@ class PlotNdCanvas(FigureCanvasQTAgg):
 
         extraDims = len(data.shape[2:])  # the first two axes are the image dimensions. Any axes after that are extra dimensions that can be scanned through
 
-        h, w = data.shape[:2]
         gs = gridspec.GridSpec(3, 2 + extraDims, hspace=0,
                                width_ratios=[.2 / (extraDims)] * extraDims + [1, .2],
                                height_ratios=[.1, 1, .2], wspace=0)
@@ -49,13 +48,11 @@ class PlotNdCanvas(FigureCanvasQTAgg):
         self.image = ImPlot(ax, self._indexes[0], self._indexes[1], (0, 1))
 
         ax: plt.Axes = fig.add_subplot(gs[1, extraDims + 1], sharey=self.image.ax)
-        # ax.set_title(names[0])
         ax.yaxis.set_ticks_position('right')
         ax.get_xaxis().set_visible(False)
         self.spY = SidePlot(ax, self._indexes[0], True, 0)
 
         ax: plt.Axes = fig.add_subplot(gs[2, extraDims], sharex=self.image.ax)
-        # ax.set_xlabel(names[1])
         ax.xaxis.set_label_coords(.5, .95)
         ax.get_yaxis().set_visible(False)
         self.spX = SidePlot(ax, self._indexes[1], False, 1)
@@ -65,7 +62,6 @@ class PlotNdCanvas(FigureCanvasQTAgg):
 
         extra = [fig.add_subplot(gs[1, i]) for i in range(extraDims)]
         [extra[i].set_ylim(0, data.shape[2 + i] - 1) for i in range(extraDims)]
-        # [extra[i].set_title(names[2 + i]) for i in range(extraDims)]
         [extra[i].get_xaxis().set_visible(False) for i in range(extraDims)]
         self.extra = []
         for i, ax in enumerate(extra):
@@ -149,7 +145,7 @@ class PlotNdCanvas(FigureCanvasQTAgg):
         for i in range(len(self.extra)):
             self.extra[i].ax.set_title(self.names[2+i])
 
-    def rollAxes(self):
+    def rollAxes(self): #TODO data of index and self.data are not aligned (reversed) after this operation
         self.setAxesNames([self.names[-1]] + list(self.names[:-1]))
         self._indexes = (self._indexes[-1],) + tuple(self._indexes[:-1])
         self.coords = (self.coords[-1],) + tuple(self.coords[:-1])
