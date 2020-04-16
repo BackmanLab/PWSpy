@@ -71,13 +71,16 @@ class AnimationDlg(QDialog):
 
         self.setLayout(layout)
 
-    def save(self):
+    def save(self): #TODO frame interval doesn't seem to work.
         if callable(self.input[0]):
             ani = animation.FuncAnimation(self.figure, self.input[0], frames=self.input[1], interval=self.intervalSpinBox.value())
         else:
             ani = animation.ArtistAnimation(self.figure, self.input, interval=self.intervalSpinBox.value())
         Writer = animation.writers[self.methodCombo.currentData().value]
-        writer = Writer()
+        if Writer is animation.FFMpegWriter:
+            writer = Writer(bitrate=-1)  # This should improve quality
+        else:
+            writer = Writer()
         try:
             ani.save(self.fPath.text(), writer=writer)
         except Exception as e:

@@ -1,3 +1,4 @@
+import typing
 from abc import ABC, abstractmethod
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
@@ -35,23 +36,17 @@ class PlotBase(ABC):
         """Set the position of marker line. for an image this is 2d. for a plot it is 1d."""
         pass
 
-    def setData(self, data):
-        """Change the data displayed by the plot."""
-        pass
-
 
 class ImPlot(PlotBase):
-    def __init__(self, ax, shape: Tuple[int, int], dims: Tuple[int, int]):
-        assert len(shape) == 2
-        self.shape = shape
+    def __init__(self, ax, verticalIndex, horizontalIndex, dims: Tuple[int, int]):
         super().__init__(ax, dims)
+        self.im = None
+        self.setIndices(verticalIndex, horizontalIndex)
         self.ax.get_yaxis().set_visible(False)
         self.ax.get_xaxis().set_visible(False)
-        self.vLine = self.ax.plot([100, 100], [0, shape[0]], 'r', linewidth=lw, animated=True)[0]
-        self.hLine = self.ax.plot([0, shape[1]], [100, 100], 'r', linewidth=lw, animated=True)[0]
-        self.im = self.ax.imshow(np.zeros(shape), aspect='auto', animated=True, interpolation=None)
-        self.ax.set_xlim((0, shape[1]-1))
-        self.ax.set_ylim((0, shape[0]-1))
+        self.vLine = self.ax.plot([100, 100], [self._indices[0][0], self._indices[0][-1]], 'r', linewidth=lw, animated=True)[0]
+        self.hLine = self.ax.plot([self._indices[1][0], self._indices[1][-1]], [100, 100], 'r', linewidth=lw, animated=True)[0]
+        self.im = self.ax.imshow(np.zeros(self.shape), aspect='auto', animated=True, interpolation=None)
         self.range = (0, 1)
         self.artists = [self.im, self.hLine, self.vLine]
 
@@ -62,24 +57,47 @@ class ImPlot(PlotBase):
     def setMarker(self, pos: Tuple[float, float]):
         assert len(pos) == 2
         y, x = pos
-        self.hLine.set_data([0, self.shape[1]], [y, y])
-        self.vLine.set_data([x, x], [0, self.shape[0]])
+        y = self._verticalCoordToValue(y)
+        x = self._horizontalCoordToValue(x)
+        self.hLine.set_data([self._indices[1][0], self._indices[1][-1]], [y, y])
+        self.vLine.set_data([x, x], [self._indices[0][0], self._indices[0][-1]])
 
     def setData(self, data):
         self.im.set_data(data)
 
+    def setIndices(self, verticalIndex, horizontalIndex):
+        self._indices = (tuple(verticalIndex), tuple(horizontalIndex))
+        self.shape = (len(verticalIndex), len(horizontalIndex))
+        self.ax.set_xlim(self._indices[1][0], self._indices[1][-1])
+        self.ax.set_ylim(self._indices[0][0], self._indices[0][-1])
+        if self.im:
+            self.im.set_extent((horizontalIndex[0], horizontalIndex[-1], verticalIndex[0], verticalIndex[-1]))
+
+    def _horizontalCoordToValue(self, coord):
+        """Given a coordinate of the ND-array being visualized ( 0, 1, 2, ...) return the value of this plot's index."""
+        return self._indices[1][coord]
+
+    def _verticalCoordToValue(self, coord):
+        """Given a coordinate of the ND-array being visualized ( 0, 1, 2, ...) return the value of this plot's index."""
+        return self._indices[0][coord]
+
+    def verticalValueToCoord(self, value):
+        """Given a value of this plot's index return the nearest corresponding coordinate [0, 1, 2, ...]"""
+        coord = np.where(np.abs(self._indices[0] - value) == np.min(np.abs(self._indices[0] - value)))[0]
+        return int(coord)
+
+    def horizontalValueToCoord(self, value):
+        """Given a value of this plot's index return the nearest corresponding coordinate [0, 1, 2, ...]"""
+        coord = np.where(np.abs(self._indices[1] - value) == np.min(np.abs(self._indices[1] - value)))[0]
+        return int(coord)
 
 class SidePlot(PlotBase):
-    def __init__(self, ax, dimLength: int, vertical: bool, dimension: int, invertAxis: bool = False, title: str = None,
-                 index: np.ndarray = None):
+    def __init__(self, ax, index: typing.Iterable, vertical: bool, dimension: int, invertAxis: bool = False, title: str = None):
         super().__init__(ax, (dimension,))
-        if index is None:
-            index = np.arange(dimLength)
-        self.index = index
+        self.vertical = vertical
+        self.setIndex(index)
         if title:
             self.ax.set_title(title)
-        self.vertical = vertical
-        self.dimLength = dimLength
         limFunc = self.ax.set_ylim if vertical else self.ax.set_xlim
 
         if invertAxis:  # Change the data direction. this can be used to make the image orientation match the orientation of other images.
@@ -87,7 +105,7 @@ class SidePlot(PlotBase):
         else:
             limFunc(index[0], index[-1])
         self.range = (0, 1)
-        markerData = (self.range, (0, dimLength))
+        markerData = (self.range, (0, self.dimLength))
         if self.vertical:
             markerData = markerData[1] + markerData[0]
         self.plot = self.ax.plot([0], [0], animated=True)[0]
@@ -107,9 +125,9 @@ class SidePlot(PlotBase):
         return self.index[coord]
 
     def valueToCoord(self, value):
-        """Given a value of this plot's index return the corresponding coordinate [0, 1, 2, ...]"""
+        """Given a value of this plot's index return the nearest corresponding coordinate [0, 1, 2, ...]"""
         coord = np.where(np.abs(self.index - value) == np.min(np.abs(self.index - value)))[0]
-        return coord
+        return int(coord)
 
     def setRange(self, Min, Max):
         self.range = (Min, Max)
@@ -119,8 +137,17 @@ class SidePlot(PlotBase):
             _ = self.ax.set_ylim
         _(*self.range)
 
+    def setIndex(self, index: typing.Iterable):
+        self.index = tuple(index)
+        self.dimLength = len(index)
+        if self.vertical:
+            _ = self.ax.set_ylim
+        else:
+            _ = self.ax.set_xlim
+        _(self.index[0], self.index[-1])
+
     def setData(self, data):
-        self._data = (self.index, data)
+        self.data = data
         if self.vertical:
             data = (data, self.index)
         else:
@@ -128,7 +155,10 @@ class SidePlot(PlotBase):
         self.plot.set_data(*data)
 
     def getData(self):
-        return self._data
+        return self.data
+
+    def getIndex(self):
+        return self.index
 
 class CBar:
     """The colorbar at the top of the ND plotter."""

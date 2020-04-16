@@ -48,10 +48,12 @@ class SelectorWidgetBase(AxesWidget, ABC):
     @staticmethod
     @abstractmethod
     def getHelpText():
+        """Return a description of the selector which can be used as a tooltip."""
         return "This Selector has no help text."
 
     @abstractmethod
     def reset(self):
+        """Reset the state of the selector so it's ready for a new selection."""
         pass
 
     def set_active(self, active):

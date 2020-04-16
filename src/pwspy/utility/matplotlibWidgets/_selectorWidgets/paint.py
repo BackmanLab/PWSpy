@@ -1,13 +1,11 @@
 from typing import List
 
-from PyQt5.QtCore import QPoint
 from cycler import cycler
 from matplotlib.image import AxesImage
 from matplotlib.patches import Rectangle, Polygon
 from shapely.geometry import Polygon as shapelyPolygon, LinearRing, MultiPolygon
 import shapely
 from pwspy.utility.fluorescence import segmentOtsu
-from pwspy.utility.matplotlibWidgets._selectorWidgets.FullImPaintSelector import AdaptivePaintDialog
 from pwspy.utility.matplotlibWidgets.coreClasses import AxManager
 from pwspy.utility.matplotlibWidgets._selectorWidgets import SelectorWidgetBase
 
@@ -20,7 +18,7 @@ class RegionalPaintSelector(SelectorWidgetBase):
         self.started = False
         self.selectionTime = False
         self.contours = []
-        self.box = Rectangle((0, 0), 0, 0, facecolor = (1, 0, 1, 0.01), edgecolor=(0, 0, 1, 0.4), animated=True)
+        self.box = Rectangle((0, 0), 0, 0, facecolor=(1, 0, 1, 0.01), edgecolor=(0, 0, 1, 0.4), animated=True)
         self.addArtist(self.box)
 
     @staticmethod
@@ -43,8 +41,9 @@ class RegionalPaintSelector(SelectorWidgetBase):
         yslice = slice(y, y2+1) if y2 > y else slice(y2, y+1)
         image = self.image.get_array()[(yslice, xslice)]
         polys = segmentOtsu(image)
-        for i in range(len(polys)):  # Apply offset so that coordinates are globally correct.
-            polys[i] = shapely.affinity.translate(polys[i], xslice.start, yslice.start)
+        for i in range(len(polys)):
+            polys[i] = shapely.affinity.translate(polys[i], xslice.start, yslice.start)  # Apply offset so that coordinates are globally correct.
+            polys[i] = polys[i].simplify(3)  # Simplify the polygon a little bit for much faster saving.
         self.drawRois(polys)
 
     def drawRois(self, polys: List[shapelyPolygon]):
@@ -69,7 +68,7 @@ class RegionalPaintSelector(SelectorWidgetBase):
                     assert isinstance(artist, Polygon)
                     if artist.get_path().contains_point(coord):
                         l = shapelyPolygon(LinearRing(artist.xy))
-                        l = l.simplify(l.length / 2e2, preserve_topology=False)
+                        l = l.simplify(l.length / 100, preserve_topology=False)
                         if isinstance(l, MultiPolygon):# There is a chance for this to convert a Polygon to a Multipolygon.
                             l = max(l, key=lambda a: a.area) #To fix this we extract the largest polygon from the multipolygon
                         handles = l.exterior.coords

@@ -88,8 +88,7 @@ class PolygonInteractor(SelectorWidgetBase):
         'i' insert a vertex at point.  You must be within epsilon of the
             line connecting two existing vertices
     """
-    showverts = True
-    epsilon = 15  # max pixel distance to count as a vertex hit
+    epsilon = 10  # max pixel distance to count as a vertex hit
 
     def __init__(self, axMan, onselect=None):
         super().__init__(axMan, None)
@@ -141,13 +140,13 @@ class PolygonInteractor(SelectorWidgetBase):
 
     def _press(self, event):
         """whenever a mouse button is pressed"""
-        if (not self.showverts) or (event.inaxes is None) or (event.button != 1):
+        if (event.inaxes is None) or (event.button != 1):
             return
         self._ind = self._get_ind_under_point(event)
 
     def _release(self, event):
         """whenever a mouse button is released"""
-        if (not self.showverts) or (event.button != 1):
+        if (event.button != 1):
             return
         self._ind = None
 
@@ -155,12 +154,7 @@ class PolygonInteractor(SelectorWidgetBase):
         """whenever a key is pressed"""
         #        if not event.inaxes:
         #            return
-        if event.key == 't':  # Show points
-            self.showverts = not self.showverts
-            self.markers.set_visible(self.showverts)
-            if not self.showverts:
-                self._ind = None
-        elif event.key == 'd':
+        if event.key == 'd':
             ind = self._get_ind_under_point(event)
             if ind is not None:
                 x, y = self.markers.get_data()
@@ -243,25 +237,25 @@ class AdjustableSelector:
 
     def setActive(self, active: bool):
         if active: #This activates the selector. for a looping selection you should call this method from the onfinished function.
-            self.selector.active = True
+            self.selector.set_active(True)
             self.selector.set_visible(True)
         else:
-            self.adjuster.active = False
+            self.adjuster.set_active(False)
             self.adjuster.set_visible(False)
             self.selector.set_visible(False)
-            self.selector.active = False
+            self.selector.set_active(False)
 
     def setSelector(self, selectorClass: Type):
         self.selector.removeArtists()
-        self.selector.active = False
+        self.selector.set_active(False)
         self.selector = selectorClass(self.axMan, self.image)
         self.adjustable = self.adjustable
 
     def goPoly(self, verts, handles):
-        self.selector.active = False
+        self.selector.set_active(False)
         self.selector.set_visible(False)
-        self.adjuster.initialize(handles)
-        self.adjuster.active = True
+        self.adjuster.set_active(True)
+        self.adjuster.initialize(handles) # It's important that this happens after `set_active` otherwise we get weird drawing issues
 
     def finish(self, verts, handles):
         self.setActive(False)

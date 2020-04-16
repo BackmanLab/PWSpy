@@ -106,14 +106,18 @@ class PlotNd(QWidget): #TODO Docstring
         self.noneButton.setChecked(True)
         self.buttonGroup.buttonReleased.connect(self.handleButtons)
 
+        self.rotateButton = QPushButton("Rotate Axes")
+        self.rotateButton.released.connect(self.canvas.rollAxes)
+
         self.saveButton = QPushButton("Save Animation")
-        self.saveButton.released.connect(lambda: AnimationDlg(self.canvas.fig, (self._animationUpdaterFunc, range(self.canvas.data.shape[2])), self).exec())
+        self.saveButton.released.connect(lambda: AnimationDlg(self.canvas.fig, (self._animationUpdaterFunc, range(self.canvas._data.shape[2])), self).exec())
 
         self.arWidget = QWidget(self)#AspectRatioWidget(1, self)#AspectRatioWidget(1, self)
         layout = QGridLayout()
         layout.addWidget(self.view, 0, 0, 8, 8)
         layout.addWidget(self.buttonWidget, 0, 8, 4, 1)
-        layout.addWidget(self.saveButton, 4, 8)
+        layout.addWidget(self.rotateButton, 4, 8)
+        layout.addWidget(self.saveButton, 5, 8)
         layout.addWidget(NavigationToolbar2QT(self.canvas, self), 10, 0, 1, 8)
         layout.setRowStretch(0, 1)
         layout.addWidget(self.slider, 8, 0, 1, 7)
@@ -132,7 +136,7 @@ class PlotNd(QWidget): #TODO Docstring
         self.canvas.updatePlots()
 
     def getAnimation(self, interval: int = 50):
-        ani = FuncAnimation(self.canvas.fig, self._animationUpdaterFunc, frames=list(range(self.canvas.data.shape[2])), blit=False, interval=interval)
+        ani = FuncAnimation(self.canvas.fig, self._animationUpdaterFunc, frames=list(range(self.canvas._data.shape[2])), blit=False, interval=interval)
         return ani
 
     def handleButtons(self, button):
@@ -153,8 +157,8 @@ class PlotNd(QWidget): #TODO Docstring
         """Document me"""
         from pwspy.dataTypes import Roi
 
-        roi = Roi.fromVerts('nomatter', 0, np.array(verts), self.canvas.data.shape[:2])
-        selected = self.canvas.data[roi.mask]
+        roi = Roi.fromVerts('nomatter', 0, np.array(verts), self.canvas._data.shape[:2])
+        selected = self.canvas._data[roi.mask]
         spec = selected.mean(axis=0)
         fig, ax = pyplot.subplots()
         ax.plot(spec)
@@ -166,7 +170,7 @@ if __name__ == '__main__':
     print("Starting")
     x = np.linspace(0, 1, num=100)
     y = np.linspace(0, 1, num=150)
-    z = np.linspace(0, 1, num=101)
+    z = np.linspace(0, 3, num=101)
     t = np.linspace(0, 1, num=3)
     X, Y, Z, T = np.meshgrid(x, y, z, t)
     arr = np.sin(2 * np.pi * 4 * Z) + .5 * X + np.cos(2*np.pi*4*Y)
