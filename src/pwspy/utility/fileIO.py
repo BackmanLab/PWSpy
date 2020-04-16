@@ -175,14 +175,16 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
 
 
 def processParallel(fileFrame: pd.DataFrame, processorFunc: typing.Callable, initializer: typing.Callable=None, initArgs: Tuple=None, procArgs: Tuple=None) -> List:
-    """A convenient function to load a series of Data Cubes from a list or dictionary of file paths.
+    """A convenience function to process the rows of a pandas DataFrame in parallel
 
     Parameters
     ----------
     fileFrame
         A dataframe. Each row of the frame will be passed as the first argument to the processorFunc.
     processorFunc
-        A function that each row of the `fileFrame` should be passed to as the first argument. Additional arguments can be passed to processorFunc using the procArgs variable.
+        A function that each row of the `fileFrame` should be passed to as the first argument. Additional arguments can
+        be passed to processorFunc using the procArgs variable. The function should return the value which you want included
+        in the return of `processParrallel`.
     procArgs
         Optional arguments to pass to processorFunc
     initializer:
@@ -192,7 +194,7 @@ def processParallel(fileFrame: pd.DataFrame, processorFunc: typing.Callable, ini
 
     Returns
     -------
-        List containing the results each execution of `processorFunc`.
+        List containing the results of each execution of `processorFunc`.
     """
     numProcesses = psutil.cpu_count(logical=False) - 1  # Use one less than number of available cores.
     po = mp.Pool(processes=numProcesses, initializer=initializer, initargs=initArgs)

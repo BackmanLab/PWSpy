@@ -6,6 +6,7 @@ from typing import List, Any, Dict
 import json
 
 from PyQt5.QtWidgets import QWidget
+from matplotlib import animation
 
 from pwspy.dataTypes import CameraCorrection, AcqDir, ICMetaData, ImCube
 from pwspy.apps.ExtraReflectanceCreator.widgets.dialog import IndexInfoForm
@@ -17,6 +18,8 @@ import pwspy.utility.reflection.extraReflectance  as er
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
+
 
 def _splitPath(path: str) -> List[str]:
     """Utility function. Given a string representing a file path this function will return a list of strings, each list
@@ -168,7 +171,32 @@ class ERWorkFlow:
             json.dump(index, f, indent=4)
 
     def compareDates(self):
-        self.anims, figs = er.compareDates(self.cubes) #The animation objects must not be deleted for the animations to keep working
+        anis = []
+        figs = []
+        verts = self.cubes['cube'].sample(n=1).iloc[0].selectLassoROI()
+        mask = Roi.fromVerts('doesntmatter', 1, verts=verts,
+                             dataShape=self.cubes['cube'].sample(n=1).iloc[0].data.shape[:-1])
+        for mat in set(self.cubes['material']):
+            c = self.cubes[self.cubes['material'] == mat]
+            fig, ax = plt.subplots()
+            fig.suptitle(mat.name)
+            ax.set_xlabel("Wavelength (nm)")
+            ax.set_ylabel("Counts/ms")
+            fig2, ax2 = plt.subplots()
+            fig2.suptitle(mat.name)
+            figs.extend([fig, fig2])
+            anims = []
+            for i, row in c.iterrows():
+                im = row['cube']
+                spectra = im.getMeanSpectra(mask)[0]
+                ax.plot(im.wavelengths, spectra, label=row['setting'])
+                anims.append((ax2.imshow(im.data.mean(axis=2), animated=True,
+                                         clim=[np.percentile(im.data, .5), np.percentile(im.data, 99.5)]),
+                              ax2.text(40, 40, row['setting'])))
+            ax.legend()
+            anis.append(animation.ArtistAnimation(fig2, anims, interval=1000, blit=False))
+        self.anims = anis
+
         self.figs.extend(figs) #Keep track of opened figures.
 
     def directoryChanged(self, directory: str):
