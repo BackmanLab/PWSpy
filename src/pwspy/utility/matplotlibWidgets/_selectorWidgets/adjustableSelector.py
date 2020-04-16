@@ -88,7 +88,7 @@ class PolygonInteractor(SelectorWidgetBase):
         'i' insert a vertex at point.  You must be within epsilon of the
             line connecting two existing vertices
     """
-    epsilon = 15  # max pixel distance to count as a vertex hit
+    epsilon = 10  # max pixel distance to count as a vertex hit
 
     def __init__(self, axMan, onselect=None):
         super().__init__(axMan, None)
@@ -254,8 +254,8 @@ class AdjustableSelector:
     def goPoly(self, verts, handles):
         self.selector.set_active(False)
         self.selector.set_visible(False)
-        self.adjuster.initialize(handles)
         self.adjuster.set_active(True)
+        self.adjuster.initialize(handles) # It's important that this happens after `set_active` otherwise we get weird drawing issues
 
     def finish(self, verts, handles):
         self.setActive(False)
