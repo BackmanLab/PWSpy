@@ -88,7 +88,6 @@ class PolygonInteractor(SelectorWidgetBase):
         'i' insert a vertex at point.  You must be within epsilon of the
             line connecting two existing vertices
     """
-    showverts = True
     epsilon = 15  # max pixel distance to count as a vertex hit
 
     def __init__(self, axMan, onselect=None):
@@ -141,13 +140,13 @@ class PolygonInteractor(SelectorWidgetBase):
 
     def _press(self, event):
         """whenever a mouse button is pressed"""
-        if (not self.showverts) or (event.inaxes is None) or (event.button != 1):
+        if (event.inaxes is None) or (event.button != 1):
             return
         self._ind = self._get_ind_under_point(event)
 
     def _release(self, event):
         """whenever a mouse button is released"""
-        if (not self.showverts) or (event.button != 1):
+        if (event.button != 1):
             return
         self._ind = None
 
@@ -155,12 +154,7 @@ class PolygonInteractor(SelectorWidgetBase):
         """whenever a key is pressed"""
         #        if not event.inaxes:
         #            return
-        if event.key == 't':  # Show points
-            self.showverts = not self.showverts
-            self.markers.set_visible(self.showverts)
-            if not self.showverts:
-                self._ind = None
-        elif event.key == 'd':
+        if event.key == 'd':
             ind = self._get_ind_under_point(event)
             if ind is not None:
                 x, y = self.markers.get_data()
