@@ -24,8 +24,6 @@ class MyView(QGraphicsView):
         scene.addWidget(plot)
         self.plot = plot
         self.setScene(scene)
-        # self.resize(1024, 1024)
-        # self.resizeEvent(QResizeEvent(self.size(),self.size()))
         self.debounce = QTimer()
         self.debounce.setSingleShot(True)
         self.debounce.setInterval(50)

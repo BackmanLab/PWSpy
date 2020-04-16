@@ -14,7 +14,7 @@ from pwspy.utility.plotting._sharedWidgets import AnimationDlg
 
 class MultiPlot(QWidget):
     def __init__(self, artists: List[List[Artist]], title: str, parent=None):
-        """A widget that displays a set of images.
+        """A widget that allows the user to flip through a set of matplotlib artists (images, plots, etc.)
         Args:
             artists: A list of lists of matplotlib 'Artists`. each list will comprise a single frame, just like the matplotlib `ArtistAnimation` works.
             title (str): The name for the title of the window
@@ -63,6 +63,7 @@ class MultiPlot(QWidget):
         self._updateDisplayedImage()
 
     def imshow(self, *args, **kwargs):
+        """Mirrors the pyplot.imshow function. Adds a new image to the set of images shown by this widget."""
         self.artists.append([self.ax.imshow(*args, **kwargs)])
         self.index = len(self.artists)-1
         self._updateDisplayedImage()

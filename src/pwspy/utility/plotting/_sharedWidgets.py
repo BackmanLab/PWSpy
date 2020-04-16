@@ -71,7 +71,8 @@ class AnimationDlg(QDialog):
 
         self.setLayout(layout)
 
-    def save(self): #TODO frame interval doesn't seem to work.
+    def save(self): #TODO frame interval doesn't seem to work. Automatically fix the file name to match the accepted extension.
+        """Save the animation to file depending on the settings of the dialog."""
         if callable(self.input[0]):
             ani = animation.FuncAnimation(self.figure, self.input[0], frames=self.input[1], interval=self.intervalSpinBox.value())
         else:
