@@ -2,7 +2,12 @@ from matplotlib.axes import Axes
 
 
 class AxManager:
-    """An object to manage multiple selector tools on a single axes. only one of these should exist per Axes object."""
+    """An object to manage multiple selector tools on a single axes. Only one of these should exist per Axes object.
+
+    Args:
+        ax: The matplotlib Axes object to draw on.
+
+    """
     def __init__(self, ax: Axes):
         self.artists = []
         self.ax = ax
