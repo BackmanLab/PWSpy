@@ -67,12 +67,11 @@ class PlotNd(QWidget):
             coordinate for each axis of the data array.
         title: A title for the window.
         parent: The Qt Widget that serves as the parent for this widget.
-        extraDimIndices: An optional tuple of 1d arrays of values to set as the indexes for each dimension of the data.
-            :todo: We only allow specifying indices of the 3rd dimension and up. dimensions 1 and 2 are automatically set. Don't do this.
+        indices: An optional tuple of 1d arrays of values to set as the indexes for each dimension of the data.
     """
     def __init__(self, data: np.ndarray, names: Tuple[str, ...] = ('y', 'x', 'z'),
-                 initialCoords: Optional[Tuple[int, ...]] = None, title: Optional[str] = '', parent: Optional[QWidget] = None,
-                 extraDimIndices: List[np.ndarray] = None):
+                 initialCoords: Optional[Tuple[int, ...]] = None, title: Optional[str] = '',
+                 parent: Optional[QWidget] = None, indices: List[np.ndarray] = None):
         super().__init__(parent=parent)
 
 
@@ -83,7 +82,7 @@ class PlotNd(QWidget):
 
         self.console = None
 
-        self.canvas = PlotNdCanvas(data, names, initialCoords, extraDimIndices)
+        self.canvas = PlotNdCanvas(data, names, initialCoords, indices)
         self.view = _MyView(self.canvas)
         self.slider = QRangeSlider(self)
         self.slider.setMaximumHeight(20)
@@ -236,8 +235,8 @@ if __name__ == '__main__':
     X, Y, Z, T, C = np.meshgrid(x, y, z, t, c)
     arr = np.sin(2 * np.pi * 4 * Z) + .5 * X + np.cos(2*np.pi*4*Y) * T**1.5 * C*.1
     app = QApplication(sys.argv)
-    p = PlotNd(arr[:,:,:,0, 0], names=('y', 'x', 'z'), extraDimIndices=[z]) # 3d
-    # p = PlotNd(arr[:,:,:,:,0], names=('y', 'x', 'z', 't'), extraDimIndices=[z, t]) #4d
-    # p = PlotNd(arr, names=('y', 'x', 'z', 't', 'c'), extraDimIndices=[z, t, c]) #5d
+    p = PlotNd(arr[:,:,:,0, 0], names=('y', 'x', 'z'), indices=[y, x, z]) # 3d
+    # p = PlotNd(arr[:,:,:,:,0], names=('y', 'x', 'z', 't'), indices=[y, x, z, t]) #4d
+    # p = PlotNd(arr, names=('y', 'x', 'z', 't', 'c'), indices=[y, x, z, t, c]) #5d
     sys.exit(app.exec_())
 

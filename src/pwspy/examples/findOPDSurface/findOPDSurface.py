@@ -159,13 +159,13 @@ if __name__ == '__main__':
         Z = interpolateNans(height, method='linear')
 
         print("Plot")
-        p = PlotNd(opd, extraDimIndices=[opdIndex], names=('y','x','opd'))
-        p2 = PlotNd(arr, extraDimIndices=[opdIndex], names=('y','x','opd'))
-        # p3 = PlotNd(arr2, extraDimIndices=[opdIndex])
-        p4 = PlotNd(arr3, extraDimIndices=[opdIndex], names=('y','x','opd'))
-        p5 = PlotNd(arr4, extraDimIndices=[opdIndex], names=('y','x','opd'))
-        p6 = PlotNd(arr5, extraDimIndices=[opdIndex], names=('y','x','opd'))
-        p7 = PlotNd(arr6, extraDimIndices=[opdIndex], names=('y','x','opd'))
+        indices = [range(opd.shape[0]), range(opd.shape[1]), opdIndex]
+        p = PlotNd(opd, indices=indices, names=('y','x','opd'))
+        p2 = PlotNd(arr, indices=indices, names=('y','x','opd'))
+        p4 = PlotNd(arr3, indices=indices, names=('y','x','opd'))
+        p5 = PlotNd(arr4, indices=indices, names=('y','x','opd'))
+        p6 = PlotNd(arr5, indices=indices, names=('y','x','opd'))
+        p7 = PlotNd(arr6, indices=indices, names=('y','x','opd'))
 
 
         fig = plt.figure()

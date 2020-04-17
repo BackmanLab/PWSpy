@@ -24,12 +24,11 @@ class PlotNdCanvas(FigureCanvasQTAgg):
         data: 3D or greater numeric data
         names: The names to label each dimension of the data with.
         initialCoords: An optional tuple of coordinates to set the Nd crosshair to.
-        extraDimIndices: An optional tuple of 1d arrays of values to set as the indexes for each dimension of the data.
-            :todo: We only allow specifying indices of the 3rd dimension and up. dimensions 1 and 2 are automatically set. Don't do this.
+        indices: An optional tuple of 1d arrays of values to set as the indexes for each dimension of the data.
     """
     def __init__(self, data: np.ndarray, names: typing.Tuple[str, ...],
                  initialCoords: typing.Optional[typing.Tuple[int, ...]] = None,
-                 extraDimIndices: typing.Optional[typing.List] = None):
+                 indices: typing.Optional[typing.List] = None):
         assert len(data.shape) >= 3
         assert len(names) == len(data.shape)
         fig = plt.Figure(figsize=(6, 6), tight_layout=True)
@@ -39,11 +38,11 @@ class PlotNdCanvas(FigureCanvasQTAgg):
         self.childPlots = []
         self.max = self.min = None  # The minimum and maximum for the color scaling
 
-        if extraDimIndices is None:
+        if indices is None:
             self._indexes = tuple(range(s) for s in data.shape)
         else:
-            assert len(extraDimIndices) == len(data.shape)-2
-            self._indexes = tuple([range(data.shape[0]), range(data.shape[1])] + extraDimIndices)
+            assert len(indices) == len(data.shape)
+            self._indexes = indices
 
         extraDims = len(data.shape[2:])  # the first two axes are the image dimensions. Any axes after that are extra dimensions that can be scanned through
 
@@ -74,10 +73,7 @@ class PlotNdCanvas(FigureCanvasQTAgg):
         [extra[i].get_xaxis().set_visible(False) for i in range(extraDims)]
         self.extra = []
         for i, ax in enumerate(extra):
-            if extraDimIndices is None:
-                self.extra.append(SidePlot(ax, range(data.shape[i + 2]), True, 2 + i))
-            else:
-                self.extra.append(SidePlot(ax, self._indexes[2+i], True, 2 + i))
+            self.extra.append(SidePlot(ax, self._indexes[2+i], True, 2 + i))
 
         self.artistManagers = [self.spX, self.spY, self.image] + self.extra
         self.names = None
