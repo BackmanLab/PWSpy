@@ -1,19 +1,16 @@
+from __future__ import annotations
 import typing
-from typing import Tuple
-
 import numpy as np
 from PyQt5 import QtCore
-from PyQt5.QtCore import QSize
-from PyQt5.QtGui import QResizeEvent
-from PyQt5.QtWidgets import QWidget
 from matplotlib import pyplot as plt, gridspec
-from matplotlib.backend_bases import ResizeEvent
+from matplotlib.axes import Axes
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from ._plots import ImPlot, SidePlot, CBar
 
-#class SpecSel
 
 def ifactive(func):
+    """Decorator so that `func` is only executed if `self.spectraViewActive` is true. For event handlers that shouldn't
+    happen when the Nd crosshair is deactivated."""
     def newfunc(self, event):
         if self.spectraViewActive:
             return func(self, event)
@@ -21,8 +18,19 @@ def ifactive(func):
 
 
 class PlotNdCanvas(FigureCanvasQTAgg):
-    def __init__(self, data: np.ndarray, names: Tuple[str, ...] = ('y', 'x', 'lambda'),
-                 initialCoords: Tuple[int, ...] = None, extraDimIndices: typing.List = None):
+    """The matplotlib canvas for the PlotND widget.
+
+    Args:
+        data: 3D or greater numeric data
+        names: The names to label each dimension of the data with.
+        initialCoords: An optional tuple of coordinates to set the Nd crosshair to.
+        extraDimIndices: An optional tuple of 1d arrays of values to set as the indexes for each dimension of the data.
+            :todo: We only allow specifying indices of the 3rd dimension and up. dimensions 1 and 2 are automatically set. Don't do this.
+    """
+    def __init__(self, data: np.ndarray, names: typing.Tuple[str, ...],
+                 initialCoords: typing.Optional[typing.Tuple[int, ...]] = None,
+                 extraDimIndices: typing.Optional[typing.List] = None):
+        assert len(data.shape) >= 3
         assert len(names) == len(data.shape)
         fig = plt.Figure(figsize=(6, 6), tight_layout=True)
         self.fig = fig
@@ -79,31 +87,45 @@ class PlotNdCanvas(FigureCanvasQTAgg):
         self.setFocus()
 
         self._data = data
-        self.resetColor()
+
+        Max = np.percentile(self._data[np.logical_not(np.isnan(self._data))], 99.99)
+        Min = np.percentile(self._data[np.logical_not(np.isnan(self._data))], 0.01)
+        self.updateLimits(Max, Min)
+
         self.coords = tuple(i // 2 for i in data.shape) if initialCoords is None else initialCoords
 
         self.spectraViewActive = True
-        self.mpl_connect('button_press_event', self.onclick)
-        self.mpl_connect('motion_notify_event', self.ondrag)
-        self.mpl_connect('scroll_event', self.onscroll)
+        self.mpl_connect('button_press_event', self._onclick)
+        self.mpl_connect('motion_notify_event', self._ondrag)
+        self.mpl_connect('scroll_event', self._onscroll)
         self.mpl_connect('draw_event', self._updateBackground)
         self.updatePlots(blit=False)
 
     def setSpectraViewActive(self, active: bool):
+        """Determines whether or not the Nd crosshair respons to mouse input. Allows us to disable the crosshair if we
+        want the mouse to trigger other sorts of actions (e.g. ROI drawing)"""
         self.spectraViewActive = active
         if not active:
             self.draw() #This will clear the spectraviewer related crosshairs and plots.
 
     def _updateBackground(self, event):
+        """This handler is tied to the matplotlib `draw_event` event. loops through all `artistManagers` and draws
+        their artists efficiently"""
         for artistManager in self.artistManagers:
-            artistManager.updateBackground(event)
+            artistManager.updateBackground()
         self.cbar.draw()
 
     def updatePlots(self, blit=True):
+        """This should be called after `self.coords` have been changed to update the data of each plot.
+
+        Args:
+            blit: If `True` then drawing will be done more efficiently through `blitting`. Sometimes this needs to be false
+                to trigger a full redraw though.
+        """
         for plot in self.artistManagers:
             slic = tuple(c if i not in plot.dimensions else slice(None) for i, c in enumerate(self.coords))
             newData = self._data[slic]
-            plot.setData(newData)
+            plot.data = newData
             newCoords = tuple(c for i, c in enumerate(self.coords) if i in plot.dimensions)
             plot.setMarker(newCoords)
         if blit:
@@ -112,14 +134,21 @@ class PlotNdCanvas(FigureCanvasQTAgg):
             self.draw()
 
     def performBlit(self):
-        """Re-render the axes."""
+        """Re-render the axes efficiently using matplotlib `blitting`."""
         for artistManager in self.artistManagers: # The fact that spX is first here makes it not render on click. sometimes not sure why.
-            if artistManager.background is not None:
-               self.restore_region(artistManager.background)
+            if artistManager._background is not None:
+               self.restore_region(artistManager._background)
             artistManager.drawArtists() #Draw the artists
             self.blit(artistManager.ax.bbox)
 
-    def updateLimits(self, Max, Min):
+    def updateLimits(self, Max: float, Min: float):
+        """Update the range of values displayed. Similar to the set_clim method of a matplotlib image.
+
+        Args:
+            Max: The maximum value displayed
+            Min: The minimum value displayed
+
+        """
         self.min = Min
         self.max = Max
         self.image.setRange(self.min, self.max)
@@ -134,30 +163,37 @@ class PlotNdCanvas(FigureCanvasQTAgg):
         except:
             pass
 
-    def resetColor(self):
-        Max = np.percentile(self._data[np.logical_not(np.isnan(self._data))], 99.99)
-        Min = np.percentile(self._data[np.logical_not(np.isnan(self._data))], 0.01)
-        self.updateLimits(Max, Min)
-
     def setAxesNames(self, names: typing.Iterable[str]):
+        """Set the names of to label each plot.
+        Args:
+            names: the order of the names should match the order of each corresponding axis in the data array.
+        """
         self.names = tuple(names)
         self.spY.ax.set_title(self.names[0])
         self.spX.ax.set_xlabel(self.names[1])
         for i in range(len(self.extra)):
             self.extra[i].ax.set_title(self.names[2+i])
 
-    def rollAxes(self):
-        self.setAxesNames([self.names[-1]] + list(self.names[:-1]))
-        self._indexes = (self._indexes[-1],) + tuple(self._indexes[:-1])
-        self.coords = (self.coords[-1],) + tuple(self.coords[:-1])
+    def setIndices(self, indices: typing.Sequence[typing.Sequence[float]]):
+        """Set the index values for each dimension of the array.
+
+        Args:
+            indices: A list or tuple of index values for each dimension of the data array.
+        """
+        self._indexes = indices
         for plot in self.artistManagers:
             if isinstance(plot, SidePlot):
                 [plot.setIndex(ind) for i, ind in enumerate(self._indexes) if i in plot.dimensions]
             elif isinstance(plot, ImPlot):
                 plot.setIndices(self._indexes[plot.dimensions[0]], self._indexes[plot.dimensions[1]])
+
+    def rollAxes(self):
+        """Change the order of the axes of the data. Allows viewing the sideview of the data."""
+        self.setAxesNames([self.names[-1]] + list(self.names[:-1]))
+        self.setIndices((self._indexes[-1],) + tuple(self._indexes[:-1]))
+        self.coords = (self.coords[-1],) + tuple(self.coords[:-1])
         axes = list(range(len(self._data.shape)))
-        _ = np.transpose(self._data, [axes[-1]] + axes[:-1])
-        self.data = _
+        self.data = np.transpose(self._data, [axes[-1]] + axes[:-1])
         self.draw()
 
     @property
@@ -170,33 +206,43 @@ class PlotNdCanvas(FigureCanvasQTAgg):
         self.updatePlots()
 
     @ifactive
-    def onscroll(self, event):
-        if (event.button == 'up') or (event.button == 'down'):
+    def _onscroll(self, event):
+        """Connected to the matplotlib 'scroll_event'. Increment the coords of the plot that the mouse is over."""
+        if event.inaxes is None: # Don't do anyhing if the mouse wasn't over a plot.
+            return
+        elif event.inaxes == self.image.ax: # Don't respond to scrolling over the image plot.
+            return
+        if (event.button == 'up') or (event.button == 'down'):  # Only respond to up and down scrolling.
             step = int(4 * event.step)
             try:
                 plot = [plot for plot in self.artistManagers if plot.ax == event.inaxes][0]
-            except IndexError: # No plot is being moused over
+            except IndexError:  # No plot is being moused over
                 return
             self.coords = tuple((c + step) % self._data.shape[plot.dimensions[0]] if i in plot.dimensions else c for i, c in enumerate(self.coords))
             self.updatePlots()
 
     @ifactive
-    def onclick(self, event):
-        if event.inaxes is None:
+    def _onclick(self, event):
+        """Connected to the matplotlib 'button_press_event'."""
+        if event.inaxes is None:  # Don't do anything if the mouse wasn't over a plot.
             return
-        if event.dblclick:
+        if event.dblclick:  # If it was a double click then open a new window plotting the current data of the plot that was clicked on.
             am = [artistManager for artistManager in self.artistManagers if artistManager.ax == event.inaxes][0]
             if isinstance(am, SidePlot):
                 fig, ax = plt.subplots()
-                ax.plot(am.getIndex(), am.getData())
+                ax.plot(am.getIndex(), am.data)
                 self.childPlots.append(fig)
                 fig.show()
-        ax = event.inaxes
-        x, y = event.xdata, event.ydata
-        button = event.button
-        self.processMouse(ax, x, y, button, colorbar=True)
+        self._processMouse(event.inaxes, event.xdata, event.ydata)
 
-    def processMouse(self, ax, x, y, button, colorbar):
+    def _processMouse(self, ax: Axes, x: float, y: float):
+        """This is called by both the mouse click and mouse drag event handlers.
+
+        Args:
+            ax: The matplotlib `Axes` that the mouse event occurred in.
+            x: The matplotlib x coordinate of the event
+            y: The matplotlib y coordinate of the event
+        """
         if ax == self.image.ax:
             self.coords = (self.image.verticalValueToCoord(y), self.image.horizontalValueToCoord(x)) + self.coords[2:]
         elif ax == self.spY.ax:
@@ -211,12 +257,10 @@ class PlotNdCanvas(FigureCanvasQTAgg):
         self.updatePlots()
 
     @ifactive
-    def ondrag(self, event):
-        if event.inaxes is None:
+    def _ondrag(self, event):
+        """This is called by the matplotlib `motion_notify_event` event."""
+        if event.inaxes is None:  # Don't do anything if the event wasn't within a plot
             return
-        if event.button != 1:
+        if event.button != 1:  # Only respond to a left click.
             return
-        ax = event.inaxes
-        x, y = event.xdata, event.ydata
-        button = event.button
-        self.processMouse(ax, x, y, button, colorbar=False)
+        self._processMouse(event.inaxes, event.xdata, event.ydata)

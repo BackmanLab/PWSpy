@@ -1,4 +1,4 @@
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QSizeF, QTimer
@@ -58,9 +58,21 @@ class _MyView(QGraphicsView):
         super().resizeEvent(event)
 
 
-class PlotNd(QWidget): #TODO Docstring
+class PlotNd(QWidget):
+    """A convenient widget for visualizing data that is 3D or greater.
+
+    Args:
+        data: A 3D or greater numpy array of numeric values.
+        names: A sequence of labels for each axis of the data array.
+        initialCoords: An optional sequence of the coordinates to initially se the ND crosshair to. There should be one
+            coordinate for each axis of the data array.
+        title: A title for the window.
+        parent: The Qt Widget that serves as the parent for this widget.
+        extraDimIndices: An optional tuple of 1d arrays of values to set as the indexes for each dimension of the data.
+            :todo: We only allow specifying indices of the 3rd dimension and up. dimensions 1 and 2 are automatically set. Don't do this.
+    """
     def __init__(self, data: np.ndarray, names: Tuple[str, ...] = ('y', 'x', 'z'),
-                 initialCoords: Tuple[int, ...] = None, title: str = '', parent: QWidget = None,
+                 initialCoords: Optional[Tuple[int, ...]] = None, title: Optional[str] = '', parent: Optional[QWidget] = None,
                  extraDimIndices: List[np.ndarray] = None):
         super().__init__(parent=parent)
 
@@ -109,7 +121,7 @@ class PlotNd(QWidget): #TODO Docstring
         for b in self.buttonGroup.buttons():
             b.setCheckable(True)
         self.noneButton.setChecked(True)
-        self.buttonGroup.buttonReleased.connect(self.handleButtons)
+        self.buttonGroup.buttonReleased.connect(self._handleButtons)
 
         self.consoleButton = QPushButton("Open Console")
         self.consoleButton.released.connect(self.openConsole)
@@ -135,9 +147,11 @@ class PlotNd(QWidget): #TODO Docstring
         self.layout().addWidget(self.arWidget)
 
         self.show()
-        self.ar = self.height() / self.width()
+        self.ar = self.height() / self.width() #TODO can we remove this?
 
     def openConsole(self):
+        """Open a python console allowing the user to execute commands. A reference to this object is stored in the
+        console's namespace as `plot`."""
         if self.console is None:
             kernel_manager = QtInProcessKernelManager()
             kernel_manager.start_kernel()
@@ -148,11 +162,6 @@ class PlotNd(QWidget): #TODO Docstring
             kernel_client = kernel_manager.client()
             kernel_client.start_channels()
 
-            def stop():
-                kernel_client.stop_channels()
-                kernel_manager.shutdown_kernel()
-                app.exit()
-
             self.console = JupyterWidget()
             self.console.kernel_manager = kernel_manager
             self.console.kernel_client = kernel_client
@@ -162,24 +171,22 @@ class PlotNd(QWidget): #TODO Docstring
         self.console.activateWindow()  # This should bring the window to the front
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+        """Overrides the Qt closeEvent to make sure things are cleaned up propertly."""
         if self.console is not None:
             self.console.close()
         super().closeEvent(a0)
 
     def _updateLimits(self):
+        """"""
         self.canvas.updateLimits(self.slider.end(), self.slider.start())
 
     def _animationUpdaterFunc(self, z: int):
+        """Used by the animation saver to iterate through the 3rd dimension of the data."""
         self.canvas.coords = self.canvas.coords[:2] + (z,) + self.canvas.coords[3:]
         self.canvas.updatePlots()
 
-    def getAnimation(self, interval: int = 50):
-        ani = FuncAnimation(self.canvas.fig, self._animationUpdaterFunc, frames=list(range(self.canvas._data.shape[2])), blit=False, interval=interval)
-        return ani
-
-    def handleButtons(self, button):
+    def _handleButtons(self, button):
         """Document me"""
-
         if button is self.pointButton and button is not self._lastButton:
             self.selector.setSelector(PointSelector)
             self.selector.setActive(True)
@@ -195,24 +202,39 @@ class PlotNd(QWidget): #TODO Docstring
         """Document me"""
         from pwspy.dataTypes import Roi
 
-        roi = Roi.fromVerts('nomatter', 0, np.array(verts), self.canvas._data.shape[:2])
-        selected = self.canvas._data[roi.mask]
-        spec = selected.mean(axis=0)
-        fig, ax = pyplot.subplots()
-        ax.plot(spec)
-        fig.show()
-        self.selector.setActive(True)
+        roi = Roi.fromVerts('nomatter', 0, np.array(verts), self.canvas.data.shape[:2]) # A 2d ROI to select from the data
+        selected = self.canvas.data[roi.mask]  # For a 3d data array this will now be 2d . For a 4d array it will be 3d etc. The 0th axis is one element for each selected pixel.
+        selected = selected.mean(axis=0)  # Get the average over all selected pixels. We are now down to 1d for a 3d data array, 2d for a 4d data array, et.
+        if len(selected.shape) == 1:
+            fig, ax = pyplot.subplots()
+            ax.plot(selected)
+            ax.set_xlabel(self.canvas.names[2])
+            fig.show()
+        elif len(selected.shape) == 2:
+            fig, ax = pyplot.subplots()
+            im = ax.imshow(selected)
+            im.set_extent([self.canvas._indexes[2][0], self.canvas._indexes[2][-1], self.canvas._indexes[3][0], self.canvas._indexes[3][-1]])
+            ax.set_xlabel(self.canvas.names[3])
+            ax.set_ylabel(self.canvas.names[2])
+            fig.show()
+        else:  # selected must be 3d or greater. This means our original data was 5d or greater.
+            p = PlotNd(selected, names=self.canvas.names[2:]) # TODO we can add the indexes here once we fix the issue of aonly allowing indexes for dimension 3 and greater.
+
+        self.selector.setActive(True)  # Reset the selector.
 
 if __name__ == '__main__':
     import sys
     print("Starting")
     x = np.linspace(0, 1, num=100)
-    y = np.linspace(0, 1, num=150)
+    y = np.linspace(0, 1, num=50)
     z = np.linspace(0, 3, num=101)
     t = np.linspace(0, 1, num=3)
-    X, Y, Z, T = np.meshgrid(x, y, z, t)
-    arr = np.sin(2 * np.pi * 4 * Z) + .5 * X + np.cos(2*np.pi*4*Y)
+    c = np.linspace(12, 13, num=3)
+    X, Y, Z, T, C = np.meshgrid(x, y, z, t, c)
+    arr = np.sin(2 * np.pi * 4 * Z) + .5 * X + np.cos(2*np.pi*4*Y) * T**1.5 * C*.1
     app = QApplication(sys.argv)
-    p = PlotNd(arr[:,:,:,0], names=('y', 'x', 'z'), extraDimIndices=[z])
+    p = PlotNd(arr[:,:,:,0, 0], names=('y', 'x', 'z'), extraDimIndices=[z]) # 3d
+    # p = PlotNd(arr[:,:,:,:,0], names=('y', 'x', 'z', 't'), extraDimIndices=[z, t]) #4d
+    # p = PlotNd(arr, names=('y', 'x', 'z', 't', 'c'), extraDimIndices=[z, t, c]) #5d
     sys.exit(app.exec_())
 
