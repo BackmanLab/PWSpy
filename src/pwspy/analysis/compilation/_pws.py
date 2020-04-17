@@ -102,7 +102,7 @@ class PWSRoiCompiler(AbstractRoiCompiler):
             varRatio = None
 
         results = PWSRoiCompilationResults(
-                    cellIdTag=results.imCubeIdTag,
+                    cellIdTag=results.ImCubeIdTag,
                     analysisName=results.analysisName,
                     reflectance=reflectance,
                     rms=rms,
