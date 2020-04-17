@@ -68,6 +68,9 @@ class PlotNd(QWidget):
         title: A title for the window.
         parent: The Qt Widget that serves as the parent for this widget.
         indices: An optional tuple of 1d arrays of values to set as the indexes for each dimension of the data.
+
+    Attributes:
+        data: A reference the the 3D or greater numpy array. This can be safely modified.
     """
     def __init__(self, data: np.ndarray, names: Tuple[str, ...] = ('y', 'x', 'z'),
                  initialCoords: Optional[Tuple[int, ...]] = None, title: Optional[str] = '',
@@ -229,6 +232,14 @@ class PlotNd(QWidget):
             p = PlotNd(selected, names=self.canvas.names[2:], indices=self.canvas._indexes[2:])
 
         self.selector.setActive(True)  # Reset the selector.
+
+    @property
+    def data(self):
+        return self.canvas.data
+
+    @data.setter
+    def data(self, data: np.ndarray):
+        self.canvas.data = data
 
 if __name__ == '__main__':
     import sys
