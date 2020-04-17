@@ -71,7 +71,7 @@ class ImPlot(PlotBase):
         self.ax.set_xlim(self._indices[1][0], self._indices[1][-1])
         self.ax.set_ylim(self._indices[0][0], self._indices[0][-1])
         if self.im:
-            self.im.set_extent((horizontalIndex[0], horizontalIndex[-1], verticalIndex[-1], verticalIndex[0]))
+            self.im.set_extent((horizontalIndex[0], horizontalIndex[-1], verticalIndex[-1], verticalIndex[0]))  # It seems like the verticalIndex items are backwards here. But this is how it had to be to get axis rotation to work properly.
 
     def _horizontalCoordToValue(self, coord):
         """Given a coordinate of the ND-array being visualized ( 0, 1, 2, ...) return the value of this plot's index."""

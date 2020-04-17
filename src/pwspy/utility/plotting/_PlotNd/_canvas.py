@@ -19,6 +19,7 @@ def ifactive(func):
             return func(self, event)
     return newfunc
 
+
 class PlotNdCanvas(FigureCanvasQTAgg):
     def __init__(self, data: np.ndarray, names: Tuple[str, ...] = ('y', 'x', 'lambda'),
                  initialCoords: Tuple[int, ...] = None, extraDimIndices: typing.List = None):
@@ -145,7 +146,7 @@ class PlotNdCanvas(FigureCanvasQTAgg):
         for i in range(len(self.extra)):
             self.extra[i].ax.set_title(self.names[2+i])
 
-    def rollAxes(self): #TODO data of index and self.data are not aligned (reversed) after this operation
+    def rollAxes(self):
         self.setAxesNames([self.names[-1]] + list(self.names[:-1]))
         self._indexes = (self._indexes[-1],) + tuple(self._indexes[:-1])
         self.coords = (self.coords[-1],) + tuple(self.coords[:-1])
