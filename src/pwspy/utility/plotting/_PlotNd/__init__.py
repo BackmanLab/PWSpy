@@ -58,7 +58,8 @@ class _MyView(QGraphicsView):
 
 
 class PlotNd(QWidget):
-    """A convenient widget for visualizing data that is 3D or greater.
+    """A convenient widget for visualizing data that is 3D or greater. This is a standalone widget which extends the
+    functionality of `PlotNdCanvas`.
 
     Args:
         data: A 3D or greater numpy array of numeric values.
