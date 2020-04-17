@@ -134,7 +134,6 @@ class PlotNd(QWidget):
         self.saveButton = QPushButton("Save Animation")
         self.saveButton.released.connect(lambda: AnimationDlg(self.canvas.fig, (self._animationUpdaterFunc, range(self.canvas._data.shape[2])), self).exec())
 
-        self.arWidget = QWidget(self)#AspectRatioWidget(1, self)#AspectRatioWidget(1, self)
         layout = QGridLayout()
         layout.addWidget(self.view, 0, 0, 8, 8)
         layout.addWidget(self.buttonWidget, 0, 8, 4, 1)
@@ -144,12 +143,9 @@ class PlotNd(QWidget):
         layout.addWidget(NavigationToolbar2QT(self.canvas, self), 10, 0, 1, 8)
         layout.setRowStretch(0, 1)
         layout.addWidget(self.slider, 8, 0, 1, 7)
-        self.arWidget.setLayout(layout)
-        self.setLayout(QGridLayout())
-        self.layout().addWidget(self.arWidget)
+        self.setLayout(layout)
 
         self.show()
-        self.ar = self.height() / self.width() #TODO can we remove this?
 
     def openConsole(self):
         """Open a python console allowing the user to execute commands. A reference to this object is stored in the
