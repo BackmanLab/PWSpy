@@ -204,6 +204,12 @@ class PlotNd(QWidget):
         function. The function then uses the vertices to plot the average of the data in the ROI"""
         from pwspy.dataTypes import Roi
 
+        newVerts = []
+        for vert in verts: # Convert `verts` from being in terms of the values in self.canvas._indexes to being in terms of the element locations of the data array.
+            v1 = self.canvas.image.verticalValueToCoord(vert[1])
+            v0 = self.canvas.image.horizontalValueToCoord(vert[0])
+            newVerts.append((v0, v1))
+        verts = newVerts
         roi = Roi.fromVerts('nomatter', 0, np.array(verts), self.canvas.data.shape[:2]) # A 2d ROI to select from the data
         selected = self.canvas.data[roi.mask]  # For a 3d data array this will now be 2d . For a 4d array it will be 3d etc. The 0th axis is one element for each selected pixel.
         selected = selected.mean(axis=0)  # Get the average over all selected pixels. We are now down to 1d for a 3d data array, 2d for a 4d data array, et.
@@ -215,12 +221,12 @@ class PlotNd(QWidget):
         elif len(selected.shape) == 2:
             fig, ax = pyplot.subplots()
             im = ax.imshow(selected)
-            im.set_extent([self.canvas._indexes[2][0], self.canvas._indexes[2][-1], self.canvas._indexes[3][0], self.canvas._indexes[3][-1]])
+            im.set_extent([self.canvas._indexes[3][0], self.canvas._indexes[3][-1], self.canvas._indexes[2][0], self.canvas._indexes[2][-1]])
             ax.set_xlabel(self.canvas.names[3])
             ax.set_ylabel(self.canvas.names[2])
             fig.show()
         else:  # selected must be 3d or greater. This means our original data was 5d or greater.
-            p = PlotNd(selected, names=self.canvas.names[2:]) # TODO we can add the indexes here once we fix the issue of aonly allowing indexes for dimension 3 and greater.
+            p = PlotNd(selected, names=self.canvas.names[2:], indices=self.canvas._indexes[2:])
 
         self.selector.setActive(True)  # Reset the selector.
 
@@ -233,10 +239,10 @@ if __name__ == '__main__':
     t = np.linspace(0, 1, num=3)
     c = np.linspace(12, 13, num=3)
     X, Y, Z, T, C = np.meshgrid(x, y, z, t, c)
-    arr = np.sin(2 * np.pi * 4 * Z) + .5 * X + np.cos(2*np.pi*4*Y) * T**1.5 * C*.1
+    arr = np.sin(2 * np.pi * 1 * Z) + .5 * X + np.cos(2*np.pi*4*Y) * T**1.5 * C*.1
     app = QApplication(sys.argv)
-    p = PlotNd(arr[:,:,:,0, 0], names=('y', 'x', 'z'), indices=[y, x, z]) # 3d
+    # p = PlotNd(arr[:,:,:,0, 0], names=('y', 'x', 'z'), indices=[y, x, z]) # 3d
     # p = PlotNd(arr[:,:,:,:,0], names=('y', 'x', 'z', 't'), indices=[y, x, z, t]) #4d
-    # p = PlotNd(arr, names=('y', 'x', 'z', 't', 'c'), indices=[y, x, z, t, c]) #5d
+    p = PlotNd(arr, names=('y', 'x', 'z', 't', 'c'), indices=[y, x, z, t, c]) #5d
     sys.exit(app.exec_())
 

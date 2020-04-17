@@ -63,13 +63,13 @@ class ImPlot(PlotBase):
     """
     def __init__(self, ax: plt.Axes, verticalIndex, horizontalIndex, dims: typing.Tuple[int, int]):
         super().__init__(ax, dims)
-        self.im = None
+        self.shape = (len(verticalIndex), len(horizontalIndex))
+        self.im = self.ax.imshow(np.zeros(self.shape), aspect='auto', animated=True, interpolation=None)
         self.setIndices(verticalIndex, horizontalIndex)
         self.ax.get_yaxis().set_visible(False)
         self.ax.get_xaxis().set_visible(False)
         self.vLine = self.ax.plot([100, 100], [self._indices[0][0], self._indices[0][-1]], 'r', linewidth=lw, animated=True)[0]
         self.hLine = self.ax.plot([self._indices[1][0], self._indices[1][-1]], [100, 100], 'r', linewidth=lw, animated=True)[0]
-        self.im = self.ax.imshow(np.zeros(self.shape), aspect='auto', animated=True, interpolation=None)
         self.range = (0, 1)
 
     @property
@@ -112,10 +112,7 @@ class ImPlot(PlotBase):
         call `self.setIndices(np.linspace(-1, 1, num=self.data.shape[0]), np.linspace(0, 100, num=self.data.shape[1])`"""
         self._indices = (tuple(verticalIndex), tuple(horizontalIndex))
         self.shape = (len(verticalIndex), len(horizontalIndex))
-        self.ax.set_xlim(self._indices[1][0], self._indices[1][-1])
-        self.ax.set_ylim(self._indices[0][0], self._indices[0][-1])
-        if self.im:
-            self.im.set_extent((horizontalIndex[0], horizontalIndex[-1], verticalIndex[-1], verticalIndex[0]))  # It seems like the verticalIndex items are backwards here. But this is how it had to be to get axis rotation to work properly. I suspect this has to do with using the invertAxis option of sideplot that is next to the ImPlot in the PlotNd widget.
+        self.im.set_extent((horizontalIndex[0], horizontalIndex[-1], verticalIndex[-1], verticalIndex[0]))  # It seems like the verticalIndex items are backwards here. But this is how it had to be to get axis rotation to work properly. I suspect this has to do with using the invertAxis option of sideplot that is next to the ImPlot in the PlotNd widget.
 
     def _horizontalCoordToValue(self, coord):
         """Given a coordinate of the ND-array being visualized ( 0, 1, 2, ...) return the value of this plot's index.
@@ -142,12 +139,12 @@ class ImPlot(PlotBase):
         """
         return self._indices[0][coord]
 
-    def verticalValueToCoord(self, value):
+    def verticalValueToCoord(self, value: float):
         """Given a value of this plot's index return the nearest corresponding coordinate [0, 1, 2, ...]"""
         coord = np.where(np.abs(self._indices[0] - value) == np.min(np.abs(self._indices[0] - value)))[0]
         return int(coord)
 
-    def horizontalValueToCoord(self, value):
+    def horizontalValueToCoord(self, value: float):
         """Given a value of this plot's index return the nearest corresponding coordinate [0, 1, 2, ...]"""
         coord = np.where(np.abs(self._indices[1] - value) == np.min(np.abs(self._indices[1] - value)))[0]
         return int(coord)
