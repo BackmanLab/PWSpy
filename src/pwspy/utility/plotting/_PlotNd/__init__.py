@@ -2,10 +2,9 @@ from typing import Tuple, List, Optional
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QSizeF, QTimer
-from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QPushButton, QSpinBox, QLabel, QGraphicsView, \
+from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QPushButton, QGraphicsView, \
     QGraphicsScene, QGroupBox, QVBoxLayout, QCheckBox, QButtonGroup
 from matplotlib import pyplot
-from matplotlib.animation import FuncAnimation
 from qtconsole.inprocess import QtInProcessKernelManager
 from qtconsole.jupyter_widget import JupyterWidget
 
@@ -92,18 +91,21 @@ class PlotNd(QWidget):
         self.slider.setMin(np.nanmin(data))
         self.slider.setEnd(np.nanmax(data))
         self.slider.setStart(np.nanmin(data))
-        self.slider.startValueChanged.connect(self._updateLimits)
-        self.slider.endValueChanged.connect(self._updateLimits)
+
+        _ = lambda: self.canvas.updateLimits(self.slider.end(), self.slider.start())
+        self.slider.startValueChanged.connect(_)
+        self.slider.endValueChanged.connect(_)
 
         self._lastButton = None
-        self.selector = AdjustableSelector(self.canvas.image.ax, self.canvas.image.im, LassoSelector, onfinished=self.selectorFinished)
+        self.selector = AdjustableSelector(self.canvas.image.ax, self.canvas.image.im, LassoSelector,
+                                           onfinished=self._selectorFinished)
 
         self.buttonWidget = QGroupBox("Control", self)
         self.buttonWidget.setLayout(QVBoxLayout())
         check = QCheckBox("Cursor Active")
         self.buttonWidget.layout().addWidget(check)
-        check.setChecked(self.canvas.spectraViewActive) #Get the right initial value
-        check.stateChanged.connect(lambda state: self.canvas.setSpectraViewActive(state!=0))
+        check.setChecked(self.canvas.spectraViewActive)  # Get the right initial value
+        check.stateChanged.connect(lambda state: self.canvas.setSpectraViewActive(state != 0))
 
         self.buttonGroup = QButtonGroup()
         self.pointButton = QPushButton("Point")
@@ -185,8 +187,12 @@ class PlotNd(QWidget):
         self.canvas.coords = self.canvas.coords[:2] + (z,) + self.canvas.coords[3:]
         self.canvas.updatePlots()
 
-    def _handleButtons(self, button):
-        """Document me"""
+    def _handleButtons(self, button: QPushButton):
+        """Acts as a callback when one of the ROI drawing buttons is pressed. Activates the corresponding ROI selector
+
+        Args:
+            button: The button that was just pressed.
+        """
         if button is self.pointButton and button is not self._lastButton:
             self.selector.setSelector(PointSelector)
             self.selector.setActive(True)
@@ -198,8 +204,9 @@ class PlotNd(QWidget):
 
         self._lastButton = button
 
-    def selectorFinished(self, verts: np.ndarray):
-        """Document me"""
+    def _selectorFinished(self, verts: np.ndarray):
+        """When an ROI selector finishes selecting a region the vertex coordinates of the selection are passed to this
+        function. The function then uses the vertices to plot the average of the data in the ROI"""
         from pwspy.dataTypes import Roi
 
         roi = Roi.fromVerts('nomatter', 0, np.array(verts), self.canvas.data.shape[:2]) # A 2d ROI to select from the data

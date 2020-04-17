@@ -8,8 +8,10 @@ if typing.TYPE_CHECKING:
 
 lw = 0.75
 
+
 class PlotBase(ABC):
-    """An abstract class for the plots in the ND plotter widget. Dimension is the numpy array dimensions associated with this plot. For an image plot it should be a tuple of the two dimensions."""
+    """An abstract class for the plots in the ND plotter widget. Dimension is the numpy array dimensions associated
+    with this plot. For an image plot it should be a tuple of the two dimensions."""
     def __init__(self, ax: plt.Axes, dimensions: typing.Tuple[int, ...]):
         self.ax = ax  # The axes object that this plot exists on.
         self.dimensions = dimensions # The dimensions of ND-array that this plot visualized. 2d for an image, 1d for a plot
@@ -27,8 +29,8 @@ class PlotBase(ABC):
     @property
     @abstractmethod
     def artists(self) -> typing.Iterable[Artist]:
-        """Derived classes should have an `artist` attribute list of all matplotlib `Artists` that are managed by the compoenent.
-        This is used to redraw the artists each time a change is made."""
+        """Derived classes should have an `artist` attribute list of all matplotlib `Artists` that are managed by the
+        compoenent. This is used to redraw the artists each time a change is made."""
         pass
 
     @property
@@ -150,15 +152,17 @@ class ImPlot(PlotBase):
         coord = np.where(np.abs(self._indices[1] - value) == np.min(np.abs(self._indices[1] - value)))[0]
         return int(coord)
 
+
 class SidePlot(PlotBase):
     """This class manages a 1D plot of data with a marker formed by a single line.
 
     Args:
         ax: The matplotlib `Axes` object to draw on.
         index: See documentation for the `setIndex` method.
-        dimension: In the context of composite plot (PlotNd) representing higher dimensional data this is used to keep track
-            of which dimensions of the data this plot is representing.
-        invertAxis: Change the data direction. this can be used to make the image orientation match the orientation of other images.
+        dimension: In the context of composite plot (PlotNd) representing higher dimensional data this is used to keep
+            track of which dimensions of the data this plot is representing.
+        invertAxis: Change the data direction. this can be used to make the image orientation match the orientation of
+            other images.
         title: The name to display for this plot.
 
     """
@@ -241,6 +245,7 @@ class SidePlot(PlotBase):
 
     def getIndex(self):
         return self.index
+
 
 class CBar:
     """The colorbar at the top of the ND plotter."""
