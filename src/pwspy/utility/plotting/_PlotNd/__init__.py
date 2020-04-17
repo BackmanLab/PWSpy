@@ -41,17 +41,6 @@ class MyView(QGraphicsView):
         self.debounce.start()
         super().resizeEvent(event)
 
-        # self.fitInView(self.scene().sceneRect(), QtCore.Qt.KeepAspectRatio) $This was orignally all that was needed but the resolution of the plot wasn't right which caused render issues.
-
-
-    def drawBackground(self, painter: QtGui.QPainter, rect: QtCore.QRectF) -> None:
-        #Draw border around the scene for debug purposes
-        # painter.save()
-        # painter.setPen(QPen(QtCore.Qt.darkGray, 5))
-        # painter.drawRect(self.scene().sceneRect())
-        # painter.restore()
-        super().drawBackground(painter, rect)
-
 
 class PlotNd(QWidget): #TODO Docstring
     def __init__(self, data: np.ndarray, names: Tuple[str, ...] = ('y', 'x', 'lambda'),
