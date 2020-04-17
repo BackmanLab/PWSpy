@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Feb  9 20:14:25 2019
-
-@author: Nick Anthony
+This file is used to install the pwspy package. for example navigate in your terminal to the directory containing this
+file and type `pip install .`. This file is also used by the Conda recipe (buildscripts/conda)
 """
 from setuptools import setup, find_packages
 import os.path as osp
@@ -11,7 +10,7 @@ import os
 with open(osp.join('src', 'pwspy', 'version.py')) as f:
     currwd = os.getcwd()
     os.chdir(osp.join(currwd, 'src','pwspy')) #The version.py file will run from the wrong location if we don't manually set it here.
-    exec(f.read()) # Run version py to initialize pwspyVersion
+    exec(f.read()) # Run version py to initialize the pwspyVersion variable
     os.chdir(currwd)
 
 setup(name='pwspy',
@@ -35,7 +34,8 @@ setup(name='pwspy',
                         'google-auth-oauthlib',
                         'opencv-python',
                         'PyQt5',
-                        'scikit-image'],
+                        'scikit-image',
+                        'qtconsole'],
       package_dir={'': 'src'},
       package_data={'pwspy': ['utility/reflection/refractiveIndexFiles/*',
 								'utility/thinFilmInterferenceFiles/*',

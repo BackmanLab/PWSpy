@@ -1,12 +1,16 @@
+from __future__ import annotations
 import os
 import pickle
 from io import IOBase
 from typing import Optional, List, Dict
-
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
+import typing
+if typing.TYPE_CHECKING:
+    from google.oauth2.credentials import Credentials
+
 
 
 class GoogleDriveDownloader:
@@ -18,36 +22,36 @@ class GoogleDriveDownloader:
     Args:
         authPath: The folder to store authentication files. Before this class will work you will need to place
             `credentials.json` in the authPath. You can get this file from the online Google Drive api console. Create
-            an Oauth 2.0 credential with access to the drive.file api.
+            an Oauth 2.0 credential with access to the `drive.file` api.
 
 ."""
     def __init__(self, authPath: str):
-        self._allFiles = None
-        self.authPath = authPath
-        tokenPath = os.path.join(self.authPath, 'driveToken.pickle')
-        credPath = os.path.join(self.authPath, 'credentials.json')
-        creds = self.getCredentials(self.authPath)
-        # If there are no (valid) credentials available, let the user log in.
-        if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
+        self._allFiles = None  #A list of all the files that we have access to. updated by self._updateFilesList()
+        self._authPath = authPath
+        tokenPath = os.path.join(self._authPath, 'driveToken.pickle')
+        credPath = os.path.join(self._authPath, 'credentials.json')
+        creds = self.getCredentials(self._authPath)
+        if not creds or not creds.valid:  # If there are no (valid) credentials available, let the user log in.
+            if creds and creds.expired and creds.refresh_token:  # Attempt to refresh the credentials.
                 creds.refresh(Request())
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
                     credPath, ['https://www.googleapis.com/auth/drive.file'])
-                creds = flow.run_local_server(port=8090)
+                creds = flow.run_local_server(port=8090)  # Opens the google login window in a browser.
             with open(tokenPath, 'wb') as token:  # Save the credentials for the next run
                 pickle.dump(creds, token)
-        self.api = build('drive', 'v3', credentials=creds) #this returns access to the drive api. see google documentation
+        self.api = build('drive', 'v3', credentials=creds)  # this returns access to the drive api. see google documentation. All drive related functionality happens through this api.
         self._updateFilesList()
 
     @staticmethod
-    def getCredentials(authPath: str):
+    def getCredentials(authPath: str) -> Credentials:
         """
         Args:
             authPath: The folder path to the authentication folder.
 
         Returns:
-             The Google Drive credentials stored in `driveToken.pickle`"""
+             The Google Drive credentials stored in `driveToken.pickle`
+        """
         tokenPath = os.path.join(authPath, 'driveToken.pickle')
         creds = None
         if os.path.exists(tokenPath):
@@ -57,8 +61,7 @@ class GoogleDriveDownloader:
 
     def _updateFilesList(self):
         """Update the list of all files in the Google Drive account. This is automatically called during initialization
-         and after uploading a new file.
-        I don't think it should be needed anywhere else."""
+         and after uploading a new file. I don't think it should be needed anywhere else."""
         results = self.api.files().list(fields="nextPageToken, files(id, name, parents, md5Checksum)").execute()
         self._allFiles = results.get('files', [])
 

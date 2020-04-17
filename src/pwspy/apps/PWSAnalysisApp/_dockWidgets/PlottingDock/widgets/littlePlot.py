@@ -78,24 +78,27 @@ class LittlePlot(AnalysisPlotter, QWidget):
         menu.exec(self.mapToGlobal(point))
 
     def plotAn3d(self):
-        self.plotnd = PlotNd(self.analysis.pws.reflectance.data, title=os.path.split(self.acq.filePath)[-1],
-                             names=('y', 'x', 'k (rad/um)'), extraDimIndices=[self.analysis.pws.reflectance.wavenumbers])
+        refl = self.analysis.pws.reflectance
+        self.plotnd = PlotNd(refl.data, title=os.path.split(self.acq.filePath)[-1], names=('y', 'x', 'k (rad/um)'),
+                             indices=[range(refl.data.shape[0]), range(refl.data.shape[1]), refl.wavenumbers])
 
     def plotRaw3d(self):
         im = ImCube.fromMetadata(self.acq.pws)
         self.plotnd = PlotNd(im.data, title=os.path.split(self.acq.filePath)[-1], names=('y', 'x', 'lambda'),
-                             extraDimIndices=[im.wavelengths])
+                             indices=[range(im.data.shape[0]), range(im.data.shape[1]), im.wavelengths])
 
     def plotOpd3d(self):
         opd, opdIndex = self.analysis.pws.opd
         self.plotnd = PlotNd(opd, names=('y', 'x', 'um'), title=os.path.split(self.acq.filePath)[-1],
-                             extraDimIndices=[opdIndex])
+                             indices=[range(opd.shape[0]), range(opd.shape[1]), opdIndex])
 
     def plotDynAn3d(self):
-        self.plotnd = PlotNd(self.analysis.dyn.reflectance.data, title=os.path.split(self.acq.filePath)[-1],
-                             names=('y', 'x', 't'), extraDimIndices=[self.analysis.dyn.reflectance.times])
+        refl = self.analysis.dyn.reflectance
+        self.plotnd = PlotNd(refl.data, title=os.path.split(self.acq.filePath)[-1],
+                             names=('y', 'x', 't'),
+                             indices=[range(refl.data.shape[0]), range(refl.data.shape[1]), refl.times])
 
     def plotDynRaw3d(self):
         im = self.acq.dynamics.toDataClass()
         self.plotnd = PlotNd(im.data, title=os.path.split(self.acq.filePath)[-1], names=('y', 'x', 't'),
-                             extraDimIndices=[im.times])
+                             indices=[range(im.data.shape[0]), range(im.data.shape[1]), im.times])

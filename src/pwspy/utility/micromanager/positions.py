@@ -22,12 +22,19 @@ import scipy.io as spio
 class JsonAble(abc.ABC):
     @abc.abstractmethod
     def toDict(self) -> dict:
+        """Convert the object to a `dict` matching the form that MicroManager saves the corresponding object to JSON."""
         pass
 
 
 @dataclass
 class Property(JsonAble):
-    """Represents a single property from a micromanager PropertyMap"""
+    """Represents a single property from a micromanager PropertyMap
+
+    Attributes:
+        name: The name of the property
+        pType: The type of the property. may be 'STRING', 'DOUBLE', or 'INTEGER'
+        value: The value of the propoerty. Should match the type given in `pType`
+    """
     name: str
     pType: str
     value: typing.Union[str, int, float, typing.List[typing.Union[str, int, float]]]
@@ -43,7 +50,12 @@ class Property(JsonAble):
 
 @dataclass
 class PropertyMap(JsonAble):
-    """Represents a propertyMap from micromanager. basically a list of properties."""
+    """Represents a propertyMap from micromanager. basically a list of properties.
+
+    Attributes:
+        name: The name of the PropertyMap
+        properties: A list of properties
+    """
     name: str
     properties: typing.List[Union[Property, MultiStagePosition, Position1d, Position2d]]
             
@@ -59,7 +71,13 @@ class PropertyMap(JsonAble):
         return d
 
 @dataclass   
-class Position1d(JsonAble):  
+class Position1d(JsonAble):
+    """A 1D position usually describing the position of a Z-axis translation stage.
+
+    Attributes:
+        z: The position
+        zStage: Then name of the translation stage
+    """
     z: float    
     zStage: str = ''
 
@@ -77,7 +95,13 @@ class Position1d(JsonAble):
 
 @dataclass
 class Position2d(JsonAble):
-    """Represents a position for a single xy stage in micromanager."""
+    """Represents a 2D position for a single xy stage in micromanager.
+
+    Attributes:
+        x: The x position
+        y: The y position
+        xyStage: The name of the 2 dimensional translation stage
+    """
     x: float
     y: float
     xyStage: str = ''
@@ -137,8 +161,16 @@ class Position2d(JsonAble):
 
 @dataclass
 class MultiStagePosition(JsonAble):
-    """Mirrors the class of the same name from Micro-Manager. Can contain multiple Positon1d or Position2d objects. Ideal for a system with multiple translation
-    stages."""
+    """Mirrors the class of the same name from Micro-Manager. Can contain multiple Positon1d or Position2d objects.
+    Ideal for a system with multiple translation stages. It is assumed that there is only a single 2D stage and a single
+    1D stage.
+
+    Attributes:
+        label: A name for the position
+        xyStage: The name of the 2D stage
+        zStage: The name of the 1D stage
+        positions: A list of `Position1d` and `Position2D` objects, usually just one of each.
+    """
     label: str
     xyStage: str
     zStage: str
@@ -155,10 +187,12 @@ class MultiStagePosition(JsonAble):
         return {i.name: i for i in contents}
    
     def getXYPosition(self):
+        """Return the first `Position2d` saved in the `positions` list"""
         d1pos = [i for i in self.positions if isinstance(i, Position2d)]
         return [i for i in d1pos if i.xyStage == self.xyStage][0]
     
     def getZPosition(self):
+        """Return the first `Position1d` saved in the positions` list. Returns `None` if no position is found."""
         try:
             d1pos = [i for i in self.positions if isinstance(i, Position1d)]
             return [i for i in d1pos if i.zStage == self.zStage][0]
@@ -166,13 +200,29 @@ class MultiStagePosition(JsonAble):
             return None
     
     def renameXYStage(self, label: str):
+        """Change the name of the xy stage.
+
+        Args:
+            label: The new name for the xy Stage
+        """
         self.xyStage = label
         self.getXYPosition().renameStage(label)
 
     def copy(self) -> MultiStagePosition:
+        """Creates a copy fo the object
+
+        Returns:
+            A new `MultiStagePosition` object.
+        """
         return copy.deepcopy(self)
 
     def __add__(self, other: Union[Position2d, MultiStagePosition, PositionList]) -> Union[MultiStagePosition, PositionList]:
+        """Allow adding a position to another position or `PositionList`. Doesn't work on the Z-Axis but will sum together
+        the X and Y axis values. Used to translate a position by an offset.
+
+        Args:
+            other: The object whose XY coordinates should be added to this objects XY coordinates.
+        """
         if isinstance(other, Position2d):
             newPos = self.getXYPosition().__add__(other)
             positions = copy.copy(self.positions)
@@ -187,6 +237,7 @@ class MultiStagePosition(JsonAble):
             raise NotImplementedError
             
     def __sub__(self, other: Union[Position2d, MultiStagePosition, PositionList]) -> Union[MultiStagePosition, PositionList]:
+        """See the documentation for __add__"""
         if isinstance(other, Position2d):
             newPos = self.getXYPosition().__sub__(other)
             positions = copy.copy(self.positions)
@@ -201,6 +252,7 @@ class MultiStagePosition(JsonAble):
             raise NotImplementedError
     
     def __eq__(self, other: MultiStagePosition):
+        """Returns True if the stage names and stage coordinates are equivalent."""
         return all([self.xyStage == other.xyStage,
                     self.zStage == other.zStage,
                     self.getXYPosition() == other.getXYPosition(),
@@ -214,7 +266,14 @@ class MultiStagePosition(JsonAble):
 
 
 class PositionList(JsonAble):
-    """Represents a micromanager positionList. can be loaded from and saved to a micromanager .pos file."""
+    """Represents a micromanager positionList. can be loaded from and saved to a micromanager .pos file.
+
+    Args:
+        positions: A list of `MultiStagePosition` objects
+
+    Attributes:
+        positions: A list of `MultiStagePosition` objects
+    """
 
     def __init__(self, positions: typing.List[MultiStagePosition]):
         assert isinstance(positions, list)
@@ -230,18 +289,36 @@ class PositionList(JsonAble):
                    "map": {"StagePositions": PropertyMap("StagePositions", self.positions)}}
 
     def mirrorX(self) -> PositionList:
+        """Invert all x coordinates
+
+        Returns:
+            A reference to this object.
+        """
         for i in self.positions:
             i.getXYPosition().mirrorX()
         return self
 
     def mirrorY(self) -> PositionList:
+        """Invert all y coordinates
+
+         Returns:
+             A reference to this object.
+         """
         for i in self.positions:
             i.getXYPosition().mirrorY()
         return self
 
-    def renameStage(self, newName) -> PositionList:
+    def renameStage(self, label) -> PositionList:
+        """Change the name of the xy stage.
+
+        Args:
+            label: The new name for the xy Stage
+
+        Returns:
+            A reference to this object
+        """
         for i in self.positions:
-            i.renameXYStage(newName)
+            i.renameXYStage(label)
         return self
 
     def copy(self) -> PositionList:
@@ -255,6 +332,14 @@ class PositionList(JsonAble):
 
     @classmethod
     def load(cls, filePath: str) -> PositionList:
+        """Load a `PositionList` froma file saved by Micro-Manager
+
+        Args:
+            filePath: The file path to the .pos position list file.
+
+        Returns:
+            A new instance of `PositionList`
+        """
         def _decode(dct):
             if 'format' in dct:
                 if dct['format'] != 'Micro-Manager Property Map' or int(dct['major_version']) != 2:
@@ -285,6 +370,16 @@ class PositionList(JsonAble):
 
     @classmethod
     def fromNanoMatFile(cls, path: str, xyStageName: str):
+        """Load an instance of the `PositionList` from a file saved by NanoCytomics MATLAB acquisition software.
+
+        Args:
+            path: The file path to the .mat file.
+            xyStageName: To adapt the MATLAB file format to the Micro-Manager we need to manually supply a name for the
+            XY stage
+
+        Returns:
+            A new instance of `PositionList`
+        """
         mat = spio.loadmat(path)
         l = mat['list']
         positions = []
@@ -297,6 +392,11 @@ class PositionList(JsonAble):
         return PositionList(positions)
 
     def toNanoMatFile(self, path: str):
+        """Save this object to a .mat file in the format saved by NanoCytomics MATLAB acquistion software.
+
+        Args:
+            path: The file path for the new .mat file.
+        """
         matPositions = []
         for pos in self.positions:
             pos = pos.getXYPosition()
@@ -397,6 +497,7 @@ class PositionList(JsonAble):
                    [self[i] == other[i] for i in range(len(self))])
 
     def plot(self):
+        """Open a matplotlib plot showing the positions contained in this list."""
         fig, ax = plt.subplots()
         annot = ax.annotate("", xy=(0, 0), xytext=(20, 20), textcoords="offset points",
                             bbox=dict(boxstyle="round", fc="w"),

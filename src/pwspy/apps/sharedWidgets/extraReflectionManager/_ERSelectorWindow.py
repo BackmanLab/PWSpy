@@ -133,7 +133,7 @@ class ERSelectorWindow(QDialog):
 
     def _plot3dData(self, widgetItem):
         er = pwsdt.ExtraReflectanceCube.fromHdfFile(self._manager._directory, widgetItem.name)
-        PlotNd(er.data, extraDimIndices=[er.wavelengths])
+        PlotNd(er.data, indices=[range(er.data.shape[0]), range(er.data.shape[1]), er.wavelengths])
 
     def _downloadCheckedItems(self):
         for item in self._items:

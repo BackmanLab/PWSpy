@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-"""This module provides a number of functions useful for
-quickly loading files using parallel processing.
+"""This module provides a number of useful subpackages ranging many different topics
 
 Members
 ----------
@@ -25,5 +24,5 @@ import os
 
 thinFilmPath = os.path.join(os.path.split(__file__)[0], 'thinFilmInterferenceFiles')
 
-__all__ = ['GoogleDriveDownloader', 'fileIO', 'misc', 'machineVision', 'fluorescence', 'plotting' ,'reflection',
+__all__ = ['GoogleDriveDownloader', 'fileIO', 'misc', 'machineVision', 'fluorescence', 'plotting', 'reflection',
            'micromanager', 'matplotlibWidgets', 'DConversion']

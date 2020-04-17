@@ -24,19 +24,20 @@ requirements:
     - python #We seem to only be compatible with python 3.7 right now. can't specify here.
     - numpy >=1.16
     - scipy >=0.18
-    - tifffile # -c conda-forge
+    - tifffile
     - psutil
     - shapely
     - h5py
     - pandas
     - matplotlib >=1.4
     - jsonschema
-    - google-api-python-client # -c conda-forge
-    - google-auth-httplib2 # -c conda-forge
-    - google-auth-oauthlib # -c conda-forge
+    - google-api-python-client 
+    - google-auth-httplib2
+    - google-auth-oauthlib
     - py-opencv =4
     - pyqt =5
     - scikit-image
+    - qtconsole
 
 about:
   home: https://bitbucket.org/backmanlab/pwspython/src/master/

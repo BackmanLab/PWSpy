@@ -7,6 +7,7 @@ Classes
 
    MultiPlot
    PlotNd
+   PlotNdCanvas
 
 Functions
 -----------
@@ -18,5 +19,5 @@ Functions
 """
 
 from ._multiPlot import MultiPlot
-from ._PlotNd import PlotNd
+from ._PlotNd import PlotNd, PlotNdCanvas
 from .roiColor import roiColor

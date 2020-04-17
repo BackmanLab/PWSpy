@@ -1,8 +1,24 @@
-"""A collection of functions dedicated to the purpose of generate Extra Reflectance calibrations from images of
+"""A collection of functions dedicated to the purpose of generating Extra Reflectance calibrations from images of
 materials with known reflectances (e.g. air/glass interface, water/glass interface.)
 These functions are relied on heavily in the pwspy.apps.ERCreator app.
 
-:todo: document me!
+Functions
+----------
+.. autosummary::
+   :toctree: generated/
+
+   getTheoreticalReflectances
+   generateMaterialCombos
+   getAllCubeCombos
+   plotExtraReflection
+   generateRExtraCubes
+
+Classes
+--------
+.. autosummary
+   :toctree: generated/
+
+   CubeCombo
 """
 
 from typing import Dict, List, Tuple, Iterable, Any, Iterator, Union, Optional, Set
@@ -17,14 +33,20 @@ from dataclasses import dataclass
 from matplotlib import animation
 from pwspy.utility.plotting import PlotNd
 
-#TODO document me!!
-
 
 MCombo = Tuple[Material, Material]  # This is just an alias to shorten some of the type hinting.
 
 
 class CubeCombo:
-    """A convenient way of packaging together two ImCubes along with the material that each ImCube is an image of."""
+    """A convenient way of packaging together two ImCubes along with the material that each ImCube is an image of.
+
+    Args:
+        material1: The material that was imaged in `cube1`
+        material2: The material that was imaged in `cube2`
+        cube1: An ImCube with an image of a glass-{material} interface where the material is `material1`.
+        cube2: An ImCube with an image of a glass-{material} interface where the material is `material2`.
+
+    """
     def __init__(self, material1: Material, material2: Material, cube1: ImCube, cube2: ImCube):
         self.mat1 = material1
         self.mat2 = material2
@@ -135,8 +157,8 @@ def getAllCubeCombos(matCombos: Iterable[MCombo], df: pd.DataFrame) -> Dict[MCom
     return allCombos
 
 
-def calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theoryR: Dict[Material, pd.Series],
-                               numericalAperture: float, mask: Optional[Roi] = None) ->\
+def _calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theoryR: Dict[Material, pd.Series],
+                                numericalAperture: float, mask: Optional[Roi] = None) ->\
         Tuple[Dict[Union[MCombo, str], Dict[str, Any]], Dict[MCombo, List[_ComboSummary]]]:
     """This is used to examine the output of extra reflection calculation before using saveRExtra to save a cube for each setting.
     Expects a dictionary as created by `getAllCubeCombos` and a dictionary of theoretical reflections.
@@ -147,7 +169,10 @@ def calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theory
         numericalAperture: The illumination numerial aperture that the images were taken at.
         mask: An ROI that limits the region of the ImCubes that is analyzed. The spectra will be averaged over this region. If `None` the spectra will be average over the full XY FOV.
 
-    Returns: A dictionary containing a bunch of information. :todo: I can't remember.
+    Returns:
+        The first item is a dictionary containing information about the average calculation for each material combination
+        as well as the average calculation accross all material combinations. The seconds item is a dictionary containing
+        information about every single cube combo.
     """
 
     # Save the results of relevant calculations to a dictionary, this dictionary will be returned to the user along with
@@ -194,17 +219,22 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], ma
                         numericalAperture: float, mask: Optional[Roi] = None,
                         plotReflectionImages: bool = False) -> List[plt.Figure]:
     """Generate a variety of plots displaying information about the extra reflectance calculation.
-    :todo: finish this.
     
     Args:
-        df:
-        theoryR:
-        matCombos:
-        numericalAperture:
-        mask:
-        plotReflectionImages:
+        df: A pandas dataframe containging a row for each ImCube that is to be included in the calculation. The dataframe
+            should have the following columns: 'cube': The `ImCube` object in question, should be an image of a
+            glass-{material} interface. `material`: The `Material` that the ImCube is an image of. `setting`: A string
+            describing the imaging configuration. If the dataframe has multiple settings then each settings will be
+            processed separately and compared.
+        theoryR: A dictionary where the key is a `Material` and the value is a pandas series giving the reflectance for
+            a glass-{material} reflection over a range of wavelengths. The index of the series should be the wavelengths.
+        matCombos: A list of the various material combinations that should be evaluated.
+        numericalAperture: The numerical aperture that the ImCubes being used were imaged at.
+        mask: An ROI indicating the region of the images that should be included in the evaluation.
+        plotReflectionImages: An optional parameter. If True additional plots will be opened.
 
     Returns:
+        A list of matplotlib figures resulting from this calculation.
 
     """
     settings = set(df['setting'])
@@ -212,7 +242,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], ma
     allCombos: Dict[str, Dict[MCombo, List[_ComboSummary]]] = {}
     for sett in settings:
         cubeCombos = getAllCubeCombos(matCombos, df[df['setting'] == sett])
-        meanValues[sett], allCombos[sett] = calculateSpectraFromCombos(cubeCombos, theoryR, numericalAperture, mask)
+        meanValues[sett], allCombos[sett] = _calculateSpectraFromCombos(cubeCombos, theoryR, numericalAperture, mask)
     figs = []
     fig, ax = plt.subplots()  # For extra reflections
     fig.suptitle("Extra Reflection")
@@ -322,7 +352,21 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], ma
     return figs
 
 
-def generateOneRExtraCube(combo: CubeCombo, theoryR: dict) -> Tuple[np.ndarray, np.ndarray]:
+def _generateOneRExtraCube(combo: CubeCombo, theoryR: Dict[Material, pd.Series]) -> Tuple[np.ndarray, np.ndarray]:
+    """Given a combination of two ImCubes imaging different materials and the theoretical reflectance for the materials
+    imaged in the two ImCubes this function will generate an estimation of the extra reflectance in the system.
+
+    Args:
+        combo: A combo of two ImCubes imaging two different glass-material interfaces.
+        theoryR: A dictionary providing pandas series giving the theoretically expected reflectance for each glass-material
+            interface represented by the two ImCubes.
+
+    Returns:
+        The first item is the array of the estimated extra reflectance of the system, expressed as values between 0 and
+        1 (this is the same shape as the ImCubes supplied to the function.) The second item is an estimate of how reliable
+        each element in the array is.
+
+    """
     data1 = combo.data1.data
     data2 = combo.data2.data
     T1 = np.array(theoryR[combo.mat1][np.newaxis, np.newaxis, :])
@@ -341,21 +385,31 @@ def generateOneRExtraCube(combo: CubeCombo, theoryR: dict) -> Tuple[np.ndarray, 
     # and the data (camera counts) has a constant error of C then the error is C * sqrt((T1-T2)*data1^2 + (T2-T1)*data2^2) / (data1 - data2)^2
     # Since we are just looking for a relative measure of confidence we can ignore C. We use the `Variance weighted average'
     # (1/stddev^2)
-    #Doing this calculation with noise in Theory instead of data gives us a variance of C^2 * (data1^2 + data2^2) / (data1 - data2)^2. this seems like a better equation to use.
-    weight = (data1-data2)**2 / (data1**2 + data2**2)
+    #Doing this calculation with noise in Theory instead of data gives us a variance of C^2 * (data1^2 + data2^2) / (data1 - data2)^2. this seems like a better equation to use. TODO Really? Why?
+    weight = (data1-data2)**2 / (data1**2 + data2**2) # The weight is the inverse of the variance. Higher weight = more reliable data.
     print("Done generating.")
     return arr, weight
 
 
+def generateRExtraCubes(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict, numericalAperture: float) -> \
+        Tuple[ExtraReflectanceCube, Dict[Union[str, MCombo], Tuple[np.ndarray, np.ndarray]], List[PlotNd]]:
+    """Generate a series of extra reflectance cubes based on the input data.
 
-def generateRExtraCubes(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict, numericalAperture: float) -> Tuple[ExtraReflectanceCube, Dict[Union[str, MCombo], Tuple[np.ndarray, np.ndarray]], List[PlotNd]]:
-    """Expects a dict of lists CubeCombos, each keyed by a 2-tuple of Materials. TheoryR is the theoretical reflectance for each material.
-    Returns extra reflectance for each material combo as well as the mean of all extra reflectances. This is what gets used. Ideally all the cubes will be very similar.
-    Additionally returns a list of plot objects. references to these must be kept alive for the plots to be responsive."""
+    Args:
+        allCombos: a dict of lists CubeCombos, each keyed by a 2-tuple of Materials.
+        theoryR: the theoretical reflectance for each material.
+        numericalAperture: The numerical aperture that the ImCubes were imaged at. The theoryR reflectances should have
+            also been calculated at this NA
+
+    Returns:
+        Returns extra reflectance for each material combo as well as the mean of all extra reflectances.
+        This is what gets used. Ideally all the cubes will be very similar.
+        Additionally returns a list of plot objects. references to these must be kept alive for the plots to be responsive.
+    """
     rExtra = {}
     for matCombo, combosList in allCombos.items():
         print("Calculating rExtra for: ", matCombo)
-        erCubes, weights = zip(*[generateOneRExtraCube(combo, theoryR) for combo in combosList])
+        erCubes, weights = zip(*[_generateOneRExtraCube(combo, theoryR) for combo in combosList])
         weightSum = reduce(lambda x,y: x+y, weights)
         weightedMean = reduce(lambda x,y: x+y, [cube*weight for cube, weight in zip(erCubes, weights)]) / weightSum
         meanWeight = weightSum / len(weights)
@@ -366,34 +420,10 @@ def generateRExtraCubes(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict,
     meanWeight = weightSum / len(weights)
     rExtra['mean'] = (weightedMean, meanWeight)
     sampleCube: ImCube = list(allCombos.values())[0][0].data1
-    plots = [PlotNd(rExtra[k][0], title=k, extraDimIndices=[sampleCube.wavelengths]) for k in rExtra.keys()]
+    plots = [PlotNd(rExtra[k][0], title=k, indices=[range(sampleCube.data.shape[0]), range(sampleCube.data.shape[1]), sampleCube.wavelengths]) for k in rExtra.keys()]
     md = ERMetaData(sampleCube.metadata._dict, numericalAperture)
     erCube = ExtraReflectanceCube(rExtra['mean'][0], sampleCube.wavelengths, md)
     return erCube, rExtra, plots
 
 
-def compareDates(cubes: pd.DataFrame) -> Tuple[List[animation.ArtistAnimation], List[plt.Figure]]:
-    anis = []
-    figs = []
-    verts = cubes['cube'].sample(n=1).iloc[0].selectLassoROI()
-    mask = Roi.fromVerts('doesntmatter', 1, verts=verts, dataShape=cubes['cube'].sample(n=1).iloc[0].data.shape[:-1])
-    for mat in set(cubes['material']):
-        c = cubes[cubes['material'] == mat]
-        fig, ax = plt.subplots()
-        fig.suptitle(mat.name)
-        ax.set_xlabel("Wavelength (nm)")
-        ax.set_ylabel("Counts/ms")
-        fig2, ax2 = plt.subplots()
-        fig2.suptitle(mat.name)
-        figs.extend([fig, fig2])
-        anims = []
-        for i, row in c.iterrows():
-            im = row['cube']
-            spectra = im.getMeanSpectra(mask)[0]
-            ax.plot(im.wavelengths, spectra, label=row['setting'])
-            anims.append((ax2.imshow(im.data.mean(axis=2), animated=True,
-                                     clim=[np.percentile(im.data, .5), np.percentile(im.data, 99.5)]),
-                          ax2.text(40, 40, row['setting'])))
-        ax.legend()
-        anis.append(animation.ArtistAnimation(fig2, anims, interval=1000, blit=False))
-    return anis, figs
+

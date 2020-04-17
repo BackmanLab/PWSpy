@@ -4,7 +4,11 @@ import os
 
 
 class Image:
-    """Represents a multi-file Tiff image saved by Micro-Manager"""
+    """Represents a multi-file Tiff image saved by Micro-Manager
+
+    Args:
+        directory: The file path to the folder containing the Micro-Manager TIFF files.
+    """
     def __init__(self, directory: str):
         files = glob(os.path.join(directory, '*MMStack*'))
         self.f = tf.TiffFile(files[0])
