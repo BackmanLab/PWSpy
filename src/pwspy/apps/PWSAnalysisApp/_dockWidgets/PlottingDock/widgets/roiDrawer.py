@@ -68,9 +68,9 @@ class RoiDrawer(QWidget):
 
     def finalizeRoi(self, verts: np.ndarray):
         class RoiSaverController(QObject):
-            """Instantiation this class begins the process of saving a ROI. This class handles the GUI related stuff in the main thread."""
+            """Instantiating this class begins the process of saving a ROI. This class handles the GUI related stuff in the main thread."""
             class RoiSaverWorker(QObject):
-                """This class handles the actual saving fo the roi and everything that can be performed in a separate thread."""
+                """This class handles the actual saving of the roi and everything that can be performed in a separate thread."""
                 roiFinished = pyqtSignal(Roi) #Either this signal or `roiNeedOverwrite` will be fired depending on the situation.
                 roiNeedsOverwrite = pyqtSignal(Roi)
                 def __init__(self, name: str, num: int, verts, datashape, acq: AcqDir):
@@ -84,8 +84,11 @@ class RoiDrawer(QWidget):
                         self.roiFinished.emit(roi)
                     except OSError:
                         self.roiNeedsOverwrite.emit(roi)
+
             def __init__(self, name: str, num: int, verts, datashape, acq: AcqDir, anViewer, parent: QWidget):
-                """Thiis initializer starts a separate thread and runs RoiSaverWorker.doWork on that thread. GUI related work is linked to the appropriate signals from the other thread."""
+                """This initializer starts a separate thread and runs RoiSaverWorker.doWork on that thread. GUI related work is linked to the appropriate
+                signals from the other thread. This multithreaded approach turns out to be mostly pointless. Because of pythons GIL the roid drawing still becomes
+                temporarily frozen while the ROI is saved. It seems the only way to make this faster is to optimize the saving operation."""
                 super().__init__(parent)
                 self.anViewer = anViewer; self.acq = acq
                 self.placeHolderPoly = patches.Polygon(verts, facecolor=(0, .5, 0.5, 0.4)) #this is a temporary polygon display until the ROI file is actually ready to be read.
