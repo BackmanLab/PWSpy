@@ -114,7 +114,7 @@ class PWSAnalysis(AbstractAnalysis): #TODO Handle the case where pixels are 0, m
             rSquared=rSquared,
             ld=ld,
             settings=self.settings,
-            ImCubeIdTag=cube.metadata.idTag,
+            imCubeIdTag=cube.metadata.idTag,
             referenceIdTag=self.ref.metadata.idTag,
             extraReflectionTag=self.extraReflection.metadata.idTag if self.extraReflection is not None else None)
         warns = [warn for warn in warns if warn is not None]  # Filter out null values.
@@ -179,7 +179,7 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
     @staticmethod
     def fields():
         return ['time', 'reflectance', 'meanReflectance', 'rms', 'polynomialRms', 'autoCorrelationSlope', 'rSquared',
-                'ld', 'ImCubeIdTag', 'referenceIdTag', 'extraReflectionTag', 'settings']
+                'ld', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionTag', 'settings']
 
     @staticmethod
     def name2FileName(name: str) -> str:
@@ -192,7 +192,7 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
     @classmethod
     def create(cls, settings: PWSAnalysisSettings, reflectance: pwsdt.KCube, meanReflectance: np.ndarray, rms: np.ndarray,
                polynomialRms: np.ndarray, autoCorrelationSlope: np.ndarray, rSquared: np.ndarray, ld: np.ndarray,
-               ImCubeIdTag: str, referenceIdTag: str, extraReflectionTag: Optional[str]):
+               imCubeIdTag: str, referenceIdTag: str, extraReflectionTag: Optional[str]):
         #TODO check datatypes here
         d = {'time': datetime.now().strftime(dateTimeFormat),
             'reflectance': reflectance,
@@ -202,7 +202,7 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
             'autoCorrelationSlope': autoCorrelationSlope,
             'rSquared': rSquared,
             'ld': ld,
-            'ImCubeIdTag': ImCubeIdTag,
+            'imCubeIdTag': imCubeIdTag,
             'referenceIdTag': referenceIdTag,
             'extraReflectionTag': extraReflectionTag,
             'settings': settings}
@@ -217,8 +217,8 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
     @cached_property
     @clearError
     @getFromDict
-    def ImCubeIdTag(self) -> str:
-        return bytes(np.array(self.file['ImCubeIdTag'])).decode()
+    def imCubeIdTag(self) -> str:
+        return bytes(np.array(self.file['imCubeIdTag'])).decode()
 
     @cached_property
     @clearError
