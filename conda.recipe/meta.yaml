@@ -38,6 +38,13 @@ requirements:
     - pyqt =5
     - scikit-image
     - qtconsole
+    
+app:
+  entry: PWSAnalysis
+  icon: cellLogo64.png
+  summary: PWS Analysis GUI
+  type: desk
+  own_environment: False
 
 about:
   home: https://bitbucket.org/backmanlab/pwspython/src/master/
@@ -46,9 +53,3 @@ about:
   doc_url: https://pwspy.readthedocs.io/en/dev/
   dev_url: https://bitbucket.org/backmanlab/pwspython/src/master/
   
-app:
-  entry: PWSAnalysis
-  icon: cellLogo64.png
-  summary: "PWS Analysis GUI"
-  type: desk
-  own_environment: False
