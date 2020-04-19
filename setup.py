@@ -38,10 +38,15 @@ setup(name='pwspy',
                         'qtconsole'],
       package_dir={'': 'src'},
       package_data={'pwspy': ['utility/reflection/refractiveIndexFiles/*',
-								'utility/thinFilmInterferenceFiles/*',
-								'apps/_resources/*',
-								'analysis/_resources/defaultAnalysisSettings/*',
-                                'apps/PWSAnalysisApp/_resources/*',
+                              'utility/thinFilmInterferenceFiles/*',
+                              'apps/_resources/*',
+                              'analysis/_resources/defaultAnalysisSettings/*',
+                              'apps/PWSAnalysisApp/_resources/*',
                               'dataTypes/jsonSchemas/*',
                               '_version']},
-      packages=find_packages('src'))
+      packages=find_packages('src'),
+	  entry_points={'gui_scripts': [
+          'PWSAnalysis = pwspy.apps.PWSAnalysisApp.__main__:main',
+          "ERCreator = pwspy.apps.ExtraReflectanceCreator.__main__:main"
+      ]}
+	)
