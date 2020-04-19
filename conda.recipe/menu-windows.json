@@ -4,13 +4,13 @@
     [
         {
             "name": "PWS Analysis",
-            "pywscript": "${PYTHON_SCRIPTS}/pwspy-script.py",
+            "pywscript": "${PYTHON_SCRIPTS}/PWSAnalysis-script.pyw",
             "workdir": "${USERPROFILE}",
             "icon": "${PYTHON_SCRIPTS}/cellLogo.ico"
         },
         {
             "name": "PWS ERCreator",
-            "pyscript": "${PYTHON_SCRIPTS}/pwspy-script.py",
+            "pyscript": "${PYTHON_SCRIPTS}/ERCreator-script.pyw",
             "workdir": "${USERPROFILE}",
             "icon": "${PYTHON_SCRIPTS}/cellLogo.ico"
         }

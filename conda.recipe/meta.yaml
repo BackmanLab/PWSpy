@@ -12,7 +12,8 @@ build:
   string: {{environ['GIT_DESCRIBE_HASH']}}
   script: python setup.py install --single-version-externally-managed --record=record.txt
   entry_points:
-    - PWSAnalysis = pwspy.apps.PWSAnalysisApp.__main__:main
+    - PWSAnalysis = pwspy.apps.PWSAnalysisApp.__main__:main   # We must have an entry point specified for each entry point in setup.py or the noarch conda build will fail.
+    - ERCreator = pwspy.apps.ExtraReflectanceCreator.__main__:main
 
 requirements:
   build:

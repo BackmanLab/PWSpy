@@ -89,7 +89,8 @@ def isIpython():
     except:
         return False
 
-if __name__ == '__main__':
+
+def main():
     import sys
 
     # This prevents errors from happening silently.
@@ -106,3 +107,7 @@ if __name__ == '__main__':
         print("Not Ipython")
         app = ERApp(sys.argv)
         sys.exit(app.exec_())
+
+
+if __name__ == '__main__':
+    main()
