@@ -15,8 +15,16 @@ class SelectorWidgetBase(AxesWidget, ABC):
     """Base class for other selection widgets in this file. Requires to be managed by an AxManager. Inherited classes
     can implement a number of action handlers like mouse actions and keyboard presses.
     button allows the user to specify which mouse buttons are valid to trigger an event. This can be an int or list of ints.
-    state_modifier_keys should be a dict {state: keyName}, the default is {move=' ', clear='escape', square='shift', center='control'}"""
-    def __init__(self, axMan: AxManager, image: AxesImage, onselect=None, button=None, state_modifier_keys=None):
+    state_modifier_keys should be a dict {state: keyName}, the default is {move=' ', clear='escape', square='shift', center='control'}
+
+    Args:
+        axMan: A reference to the `AxManager` object used to manage drawing the matplotlib `Axes` that this selector widget is active on.
+        image: A reference to a matplotlib `AxesImage`. Selectors may use this reference to get information such as data values from the image
+            for computer vision related tasks.
+        onselect: A callback function that will be called when the selector finishes a selection.
+        button
+    """
+    def __init__(self, axMan: AxManager, image: AxesImage, onselect=None):
         AxesWidget.__init__(self, axMan.ax)
         self.onselect = onselect
         self.visible = True
@@ -31,12 +39,6 @@ class SelectorWidgetBase(AxesWidget, ABC):
         self.connect_event('scroll_event', self.on_scroll)
 
         self.state_modifier_keys = dict(move=' ', clear='escape', square='shift', center='control')
-        # self.state_modifier_keys.update(state_modifier_keys or {})
-
-        if isinstance(button, int):
-            self.validButtons = [button]
-        else:
-            self.validButtons = button
 
         # will save the data (position at mouseclick)
         self.eventpress = None
@@ -69,9 +71,6 @@ class SelectorWidgetBase(AxesWidget, ABC):
             return True
         if not hasattr(event, 'button'):
             event.button = None
-        if self.validButtons is not None:  # Only do rectangle selection if event was triggered with a desired button
-            if event.button not in self.validButtons:
-                return True
         if self.eventpress is None:  # If no button was pressed yet ignore the event if it was out of the axes
             return event.inaxes != self.ax
         if event.button == self.eventpress.button:  # If a button was pressed, check if the release-button is the same.

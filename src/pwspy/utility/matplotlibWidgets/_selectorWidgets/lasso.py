@@ -7,8 +7,8 @@ from pwspy.utility.matplotlibWidgets._selectorWidgets import SelectorWidgetBase
 
 
 class LassoSelector(SelectorWidgetBase):
-    def __init__(self, axMan: AxManager, image: AxesImage, onselect=None, button=None):
-        super().__init__(axMan, image, button=button)
+    def __init__(self, axMan: AxManager, image: AxesImage, onselect=None):
+        super().__init__(axMan, image)
         self.onselect = onselect
         self.verts = None
         self.polygon = Polygon([[0,0]], facecolor=(0, 0, 1, .1), animated=True, edgecolor=(0, 0, 1, .8))
