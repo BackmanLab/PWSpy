@@ -1,3 +1,5 @@
+from __future__ import annotations
+import typing
 import numpy as np
 from matplotlib.image import AxesImage
 from matplotlib.patches import Ellipse, Circle
@@ -7,27 +9,37 @@ from pwspy.utility.matplotlibWidgets._selectorWidgets import SelectorWidgetBase
 
 
 class EllipseSelector(SelectorWidgetBase):
-    def __init__(self, axMan: AxManager, image: AxesImage, onselect=None):
-        super().__init__(axMan, image)
+    """Allows the user to select an elliptical region.
+
+    Args:
+        axMan: The manager for a matplotlib `Axes` that you want to interact with.
+        image: A reference to a matplotlib `AxesImage`. Selectors may use this reference to get information such as data values from the image
+            for computer vision related tasks.
+        onselect: A callback that will be called when the user hits 'enter'. Should have signature (polygonCoords, sparseHandleCoords).
+    """
+    def __init__(self, axMan: AxManager, image: AxesImage, onselect: typing.Callable = None):
+        super().__init__(axMan, image, onselect=onselect)
         self.started = False
-        self.onselect = onselect
         self.settingWidth = False
         self.startPoint = None
-        self.patch = Ellipse((0, 0), 0, 0, 0, facecolor=(0, 0, 1, .1), animated=True, edgecolor=(0,0,1,.8))
+        self.patch = Ellipse((0, 0), 0, 0, 0, facecolor=(0, 0, 1, .1), animated=True, edgecolor=(0, 0, 1, .8))
         self.addArtist(self.patch)
-        self.circleGuide = Circle((0, 0), animated=True, edgecolor=(1,0,0,.6), facecolor=(0,0,0,0), linestyle='dotted')
+        self.circleGuide = Circle((0, 0), animated=True, edgecolor=(1, 0, 0, .6), facecolor=(0, 0, 0, 0), linestyle='dotted')
         self.addArtist(self.circleGuide)
 
     @staticmethod
     def getHelpText():
+        """Return a description of the selector which can be used as a tooltip."""
         return "Click and drag to draw the length of the ellipse. Then click again to set the width."
 
     def reset(self):
+        """Reset the state of the selector so it's ready for a new selection."""
         self.started = False
         self.settingWidth = False
         self.startPoint = None
 
     def _press(self, event):
+        """Set the initial point of the selection. Then drag to draw the length of the ellipse."""
         if event.button!=1:
             return
         if not self.started:
@@ -36,7 +48,8 @@ class EllipseSelector(SelectorWidgetBase):
             self.circleGuide.set_center(self.startPoint)
             self.started = True
 
-    def _ondrag(self,event):
+    def _ondrag(self, event):
+        """If an initial point has been selected then draw to draw the length of the ellipse."""
         if self.started:
             dx = event.xdata-self.startPoint[0]
             dy = event.ydata-self.startPoint[1]
@@ -58,6 +71,8 @@ class EllipseSelector(SelectorWidgetBase):
             self.axMan.update()
 
     def _release(self, event):
+        """If we are drawing the major axis then switch to drawing the second axis. If we are drawing the second axis
+        then finalize the selection."""
         if event.button != 1:
             return
         if self.started:
