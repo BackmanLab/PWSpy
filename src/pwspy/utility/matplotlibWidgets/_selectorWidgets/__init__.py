@@ -181,27 +181,16 @@ class SelectorWidgetBase(AxesWidget, ABC):
 
     def addArtist(self, artist):
         """Add a matplotlib artist to be managed."""
-        self.axMan.artists.append(artist)
+        self.axMan.addArtist(artist)
         self.artists.append(artist)
-        if isinstance(artist, Patch):
-            self.axMan.ax.add_patch(artist)
-        elif isinstance(artist, Line2D):
-            self.axMan.ax.add_line(artist)
-        else:
-            self.axMan.ax.add_artist(artist)
 
     def removeArtists(self):
-        for artist in self.artists:
-            self.axMan.artists.remove(artist)
-            artist.remove()
         self.artists = []
-        self.axMan.update()
+        self.axMan.removeArtists()
 
     def removeArtist(self, artist):
         self.artists.remove(artist)
-        self.axMan.artists.remove(artist)
-        artist.remove()
-        self.axMan.update()
+        self.axMan.removeArtist(artist)
 
     # Overridable events
     def _on_key_release(self, event):
