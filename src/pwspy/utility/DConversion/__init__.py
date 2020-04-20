@@ -1,18 +1,26 @@
 import numpy as np
 from scipy.integrate import quad
-# TODO wait till adam posts somewhat final matlab code and update from that. Then see email from self (nicholas.anthony@northwestern.edu) on 3/26/2019 showing how the equations can be simplified to be more efficient)
+# TODO see email from self (nicholas.anthony@northwestern.edu) on 3/26/2019 showing how the equations can be simplified to be more efficient)
 
 
-def myexpn(n, x):
-    #this is needed since scipy.special.expn only accepts integers for n
-    def integrand(t, n, x):
-        return np.exp(-x*t) / t**n
+@np.vectorize
+def expn(n: float, x: float):
+    """This is a custom implementation of the generalized exponential exponential integral `En`. The implementation in `scipy.special.expn` is faster but only supports
+    integers for `n`.
+
+    Args:
+        n: :todo:
+        x: :todo:
+    """
+    def integrand(t: float, n: float, x: float):
+        return np.exp(-x*t) / t**n #TODO this doesn't looks like the def in scipy, is it right?
     return quad(integrand, 1, np.inf, args=(n, x))[0]
-expn = np.vectorize(myexpn)
+
 
 def acf(d, lmin, lmax, x):
     out = ((3 - d) * ((((lmin**4) * ((lmin / lmax)**(-d)) * expn(-2 + d, x / lmax)) / (lmax**3)) - lmin * expn(-2 + d, x / lmin))) / (lmin * (1 - (lmin / lmax)**(3-d)))
     return out
+
 
 def acfd(d, lmin, lmax):
     delta = 0.1
@@ -20,16 +28,73 @@ def acfd(d, lmin, lmax):
     out = 3 + (np.log(acf(d, lmin, lmax, x + delta)) - np.log(acf(d, lmin, lmax, x))) / (np.log(x + delta) - np.log(x))
     return out
 
-def calcDSize(system: str, system_correction: float, raw_rms: np.ndarray):
-    if system == 'storm':
-        sigma = np.real(np.sqrt(raw_rms**2 - .012**2)) * system_correction
-        d_size = sigma * 5.55 + 1.473
 
-    elif system == 'live' or system == 'lcpws1':
-        sigma = np.real(np.sqrt(raw_rms**2 - .009**2)) * system_correction
-        d_size = sigma * 7.67 + 1.473
-    else: raise NameError("No valid system found")
+def calcDSize(raw_rms: np.ndarray, noise: float, NAi: float):
+    """
+    Default values:
+        storm: noise=0.012m
+        lcpws1: noise=0.009
+
+    Args:
+        raw_rms:
+        noise:
+        NAi:
+
+    Returns:
+
+    MATLAB COMMENT:
+        %
+        % DESCRIPTION
+        %   This function will convert RMS values to D using one or two different
+        %   methods. This function requires acfd.m, acf_1.m and SigmaToD_coefs.mat
+        %   to function properly.
+        %
+        % INPUT ARGUMENTS
+        %   raw_rms:
+        %       The rms values you with to convert (e.g., cubeRms).
+        %   system_correction:
+        %       Optional input for the correction factor required to convert RMS to
+        %       Sigma due to extra reflections in the microscope. The default is [2.43].
+        %   NAi:
+        %       Optional input for the illumination numerical aperture (NA) of the
+        %       objective. The default is [0.55].
+        %   noise:
+        %       Optional input for the background noise in the system (i.e., RMS of
+        %       the glass). The default [0.009].
+        %   option:
+        %       Optional input to tell the function to only run the approximation
+        %       method. Alternatively, the user can define this by limiting the
+        %       output arguments. The default is [] and the alternative option is
+        %       ['approximation only'] or ['approx'].
+        %
+        % OUTPUT ARGUMENTS
+        %   d_estimate:
+        %       This is an estimation of D calculated from Sigma. It's based on a
+        %       15th order polynomial fit of d_exact. No value of D yields error >0.1%.
+        %   d_exact:
+        %       Optional output for calculating more exact solution of D from Sigma.
+        %       This calculation is based on derivations by Vadim Backman.
+        %
+        % EXAMPLES
+        %   [d_estimate, d_exact] = SigmaToD(0.1, [], [], 0.005 , 'approximation only')
+        %   [d_estimate, d_exact] = SigmaToD(cubeRms, 2, 0.45);
+        %   d_estimate = SigmaToD(cubeRms);
+        %
+        % REFERENCES
+        %   L. Cherkezyan, D. Zhang, H. Subramanian, I. Capoglu, A. Taflove,
+        %   V. Backman, "Review of interferometric spectroscopy of scattered light
+        %   for the quantification of subdiffractional structure of biomaterials."
+        %   J. of Biomedical Optics, 22(3), 030901 (2017).
+        %
+        %
+        % Author: Adam Eshein (aeshein@u.northwestern.edu) 3.14.2019
+        %   Based on Mathematica code written by Vadim Backman (v-backman@northwestern.edu)
+
+    """
+    sigma = np.real(np.sqrt(raw_rms**2 - noise**2))
+    d_size = sigma * 13.8738 * NAi + 1.473
     return d_size
+
 
 def sigma2D(d_size: np.ndarray):
     #This runs 6 times faster than the matlab version for some reason
@@ -40,14 +105,14 @@ def sigma2D(d_size: np.ndarray):
     correction = ((3 - d_size) * (1 - (lmaxlminapprox**(-1. * d_size)))) / (
                 d_size * (1 - (lmaxlminapprox**(d_size - 3))))
     mass = mf / correction
-
     d_exact = acfd(d_size, 1, mass**(1. / d_size))
-
     return d_exact
+
 
 def sigma2DApprox(d_size):
     d_estimate = 3 * (1 - np.exp(-(d_size / 3)**7))**(1 / 7)
     return d_estimate
+
 
 def testexpn():
     lmin=1
