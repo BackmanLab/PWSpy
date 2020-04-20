@@ -2,7 +2,7 @@ from typing import List
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
-from PyQt5.QtWidgets import QDialog, QWidget, QSlider, QLabel, QPushButton, QGridLayout
+from PyQt5.QtWidgets import QDialog, QWidget, QSlider, QLabel, QPushButton, QGridLayout, QHBoxLayout, QFormLayout
 from cycler import cycler
 from matplotlib.image import AxesImage
 from shapely.geometry import Polygon as shapelyPolygon, LinearRing, MultiPolygon
@@ -73,7 +73,7 @@ class FullImPaintSelector(SelectorWidgetBase):
 
     def _press(self, event):
         """If a displayed polygon is clicked on then execute the `onselect` callback."""
-        if event.button == 1:  # Left Click
+        if event.button == 1 and self.onselect is not None:  # Left Click
             coord = (event.xdata, event.ydata)
             for artist in self.artists:
                 assert isinstance(artist, Polygon)
@@ -110,11 +110,42 @@ def valChanged(self):
     """A decorator for callbacks associated with a change in the adaptivePainDialog settings."""
     def decorator(func):
         def newFunc(val):
-            self._stale = True
-            func(val)
-            self._paintDebounce.start()
+            self._stale = True  # If a value changed then we are now stale
+            if func is not None:
+                func(val)
+            self._paintDebounce.start()  # Start the debounce timer. this will trigger a repaint unless it is restarted.
         return newFunc
     return decorator
+
+
+class LabeledSlider(QWidget):
+    """A slider with a label that indicates the current value."""
+    def __init__(self, Min, Max, Step, Value, parent=None):
+        super().__init__(parent)
+        self.display = QLabel(self)
+        self.slider = QSlider(QtCore.Qt.Horizontal, self)
+
+        self.slider.valueChanged.connect(lambda val: self.display.setText(str(val)))
+
+        self.setMaximum = lambda val: self.slider.setMaximum(val)
+        self.setMinimum = lambda val: self.slider.setMinimum(val)
+        self.setSingleStep = lambda val: self.slider.setSingleStep(val)
+        self.setValue = lambda val: self.slider.setValue(val)
+        self.value = lambda: self.slider.value()
+        self.valueChanged = self.slider.valueChanged
+
+        l = QHBoxLayout()
+        l.setContentsMargins(0, 0, 0, 0)
+        l.addWidget(self.slider)
+        l.addWidget(self.display)
+        l.setStretch(0, 0)
+        l.setStretch(1, 1)
+        self.setLayout(l)
+
+        self.setMinimum(Min)
+        self.setMaximum(Max)
+        self.setSingleStep(Step)
+        self.setValue(Value)
 
 class AdaptivePaintDialog(QDialog):
     """The dialog used by the FullImPaintSelector. Can adjust detection parameters.
@@ -136,85 +167,32 @@ class AdaptivePaintDialog(QDialog):
         self._paintDebounce.setSingleShot(True)
         self._paintDebounce.timeout.connect(self.parentSelector.paint)
 
-        self.adptRangeSlider = QSlider(QtCore.Qt.Horizontal, self)
-        self.adptRangeSlider.setToolTip("The image is adaptively thresholded by comparing each pixel value to the average pixel value of gaussian window around the pixel. This value determines how large the area that is averaged will be. Lower values cause the threshold to adapt more quickly.")
         maxImSize = max(parentSelector.image.get_array().shape)
-        self.adptRangeSlider.setMaximum(maxImSize//2*2+1) #This must be an odd value or else its possible to set the slider to an even value. Opencv doesn't like that.
-        self.adptRangeSlider.setMinimum(3)
-        self.adptRangeSlider.setSingleStep(2)
+        self.adptRangeSlider = LabeledSlider(3, maxImSize//2*2+1, 2, 551) # This must always have an odd value or opencv will have an error.
+        self.adptRangeSlider.setToolTip("The image is adaptively thresholded by comparing each pixel value to the average pixel value of gaussian window around the pixel. This value determines how large the area that is averaged will be. Lower values cause the threshold to adapt more quickly.")
         #TODO recommend value based on expected pixel size of a nucleus. need to access metadata.
-        #TODO add tooltips explaining each step.
-        self.adptRangeSlider.setValue(551)
-        self.adpRangeDisp = QLabel(str(self.adptRangeSlider.value()), self)
 
         @valChanged(self)
         def adptRangeChanged(val):
-            self.adpRangeDisp.setText(str(val))
             if self.adptRangeSlider.value() % 2 == 0:
                 self.adptRangeSlider.setValue(self.adptRangeSlider.value()//2*2+1)#This shouldn't ever happen. but it sometimes does anyway. make sure that adptRangeSlider is an odd number
 
         self.adptRangeSlider.valueChanged.connect(adptRangeChanged)
 
-        self.subSlider = QSlider(QtCore.Qt.Horizontal, self)
-        self.subSlider.setMinimum(-50)
-        self.subSlider.setMaximum(50)
-        self.subSlider.setValue(-10)
-        self.subDisp = QLabel(str(self.subSlider.value()), self)
+        self.subSlider = LabeledSlider(-50, 50, 1, -10, self)
+        self.subSlider.valueChanged.connect(valChanged(self)(None))
 
-        @valChanged(self)
-        def subRangeChanged(val):
-            self.subDisp.setText(str(val))
+        self.erodeSlider = LabeledSlider(0, 50, 1, 10, self)
+        self.erodeSlider.valueChanged.connect(valChanged(self)(lambda val: self.dilateSlider.setMaximum(val)))
 
-        self.subSlider.valueChanged.connect(subRangeChanged)
+        self.dilateSlider = LabeledSlider(0, self.erodeSlider.value(), 1, 10, self)
+        self.dilateSlider.valueChanged.connect(valChanged(self)(None))
 
-        self.erodeSlider = QSlider(QtCore.Qt.Horizontal, self)
-        self.erodeSlider.setMinimum(0)
-        self.erodeSlider.setMaximum(50)
-        self.erodeSlider.setValue(10)
-        self.erodeDisp = QLabel(str(self.erodeSlider.value()), self)
+        self.simplificationSlider = LabeledSlider(0, 20, 1, 5, self)
+        self.simplificationSlider.valueChanged.connect(valChanged(self)(None))
 
-        @valChanged(self)
-        def erodeChanged(val):
-            self.erodeDisp.setText(str(val))
-            self.dilateSlider.setMaximum(val)
-
-        self.erodeSlider.valueChanged.connect(erodeChanged)
-
-        self.dilateSlider = QSlider(QtCore.Qt.Horizontal, self)
-        self.dilateSlider.setMinimum(0)
-        self.dilateSlider.setMaximum(self.erodeSlider.value())
-        self.dilateSlider.setValue(10)
-        self.dilateDisp = QLabel(str(self.dilateSlider.value()), self)
-
-        @valChanged(self)
-        def dilateChanged(val):
-            self.dilateDisp.setText(str(val))
-
-        self.dilateSlider.valueChanged.connect(dilateChanged)
-
-        self.simplificationSlider = QSlider(QtCore.Qt.Horizontal, self)
-        self.simplificationSlider.setMinimum(0)
-        self.simplificationSlider.setMaximum(20)
-        self.simplificationSlider.setValue(5)
-        self.simDisp = QLabel(str(self.simplificationSlider.value()), self)
-
-        @valChanged(self)
-        def simpChanged(val):
-            self.simDisp.setText(str(val))
-
-        self.simplificationSlider.valueChanged.connect(simpChanged)
-
-        self.minAreaSlider = QSlider(QtCore.Qt.Horizontal, self)
-        self.minAreaSlider.setMinimum(5)
-        self.minAreaSlider.setMaximum(300)
-        self.minAreaSlider.setValue(100)
-        self.minAreaDisp = QLabel(str(self.minAreaSlider.value()), self)
-
-        @valChanged(self)
-        def minAreaChanged(val):
-            self.minAreaDisp.setText(str(val))
-
-        self.minAreaSlider.valueChanged.connect(minAreaChanged)
+        self.minAreaSlider = LabeledSlider(5, 300, 1, 100, self)
+        self.minAreaSlider.valueChanged.connect(valChanged(self)(None))
 
         self.refreshButton = QPushButton("Refresh", self)
         def refreshAction():
@@ -222,26 +200,14 @@ class AdaptivePaintDialog(QDialog):
             self.parentSelector.paint()
         self.refreshButton.released.connect(refreshAction)
 
-        l = QGridLayout()
-        l.addWidget(QLabel("Adaptive Range (px)", self), 0, 0)
-        l.addWidget(self.adptRangeSlider, 0, 1)
-        l.addWidget(self.adpRangeDisp, 0, 2)
-        l.addWidget(QLabel("Threshold Offset", self), 1, 0)
-        l.addWidget(self.subSlider, 1, 1)
-        l.addWidget(self.subDisp, 1, 2)
-        l.addWidget(QLabel("Erode (px)", self), 2, 0)
-        l.addWidget(self.erodeSlider, 2, 1)
-        l.addWidget(self.erodeDisp, 2, 2)
-        l.addWidget(QLabel("Dilate (px)", self), 3, 0)
-        l.addWidget(self.dilateSlider, 3, 1)
-        l.addWidget(self.dilateDisp, 3, 2)
-        l.addWidget(QLabel("Simplification", self), 4, 0)
-        l.addWidget(self.simplificationSlider, 4, 1)
-        l.addWidget(self.simDisp, 4, 2)
-        l.addWidget(QLabel("Minimum Area (px)", self), 5, 0)
-        l.addWidget(self.minAreaSlider, 5, 1)
-        l.addWidget(self.minAreaDisp, 5, 2)
-        l.addWidget(self.refreshButton, 6, 0)
+        l = QFormLayout()
+        l.addRow("Adaptive Range (px):", self.adptRangeSlider)
+        l.addRow("Threshold Offset:", self.subSlider)
+        l.addRow("Erode (px):", self.erodeSlider)
+        l.addRow("Dilate (px):", self.dilateSlider)
+        l.addRow("Simplification:", self.simplificationSlider)
+        l.addRow("Minimum Area (px):", self.minAreaSlider)
+        l.addRow(self.refreshButton)
         self.setLayout(l)
 
     def isStale(self):
@@ -256,3 +222,14 @@ class AdaptivePaintDialog(QDialog):
             erode=self.erodeSlider.value(), dilate=self.dilateSlider.value()
         )
 
+if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    fig, ax = plt.subplots()
+    im = ax.imshow(np.random.random((100, 100)))
+    sel = FullImPaintSelector(AxManager(ax), im)
+    fig.show()
+    plt.pause(.1)
+    sel.set_active(True)
+    plt.show()
