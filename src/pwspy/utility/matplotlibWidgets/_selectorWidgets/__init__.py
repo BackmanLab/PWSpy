@@ -1,14 +1,12 @@
+from __future__ import annotations
 import copy
 from abc import ABC, abstractmethod
-
 from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 from matplotlib.widgets import AxesWidget
-
 from pwspy.utility.matplotlibWidgets.coreClasses import AxManager
-
-
+import typing
 
 
 class SelectorWidgetBase(AxesWidget, ABC):
@@ -22,12 +20,19 @@ class SelectorWidgetBase(AxesWidget, ABC):
         image: A reference to a matplotlib `AxesImage`. Selectors may use this reference to get information such as data values from the image
             for computer vision related tasks.
         onselect: A callback function that will be called when the selector finishes a selection.
-        button
+
+    Attributes:
+        state (set): A `set` that stores strings indicating the current state (Are we dragging the mouse, is the shift
+            key pressed, etc.
+        artists (list): A `list` of matplotlib widgets managed by the selector.
+        axMan (AxManager): The manager for the Axes. Call its `update` method when something needs to be drawn.
+        image (AxesImage): A reference to the image being interacted with. Can be used to get the image data.
+        onselect (Callable): The callback which may be called to finalize a selection.
     """
-    def __init__(self, axMan: AxManager, image: AxesImage, onselect=None):
+    def __init__(self, axMan: AxManager, image: typing.Optional[AxesImage] = None,
+                 onselect: typing.Optional[typing.Callable] = None):
         AxesWidget.__init__(self, axMan.ax)
         self.onselect = onselect
-        self.visible = True
         self.axMan = axMan
         self.image = image
         self.artists = []
@@ -64,7 +69,7 @@ class SelectorWidgetBase(AxesWidget, ABC):
             self.axMan._update_background(None)
 
     def ignore(self, event):
-        """return *True* if *event* should be ignored"""
+        """return *True* if *event* should be ignored. No event callbacks will be called if this returns true."""
         if not self.active or not self.axMan.ax.get_visible():
             return True
         if not self.canvas.widgetlock.available(self): # If canvas was locked
@@ -170,7 +175,6 @@ class SelectorWidgetBase(AxesWidget, ABC):
 
     def set_visible(self, visible):
         """ Set the visibility of our artists """
-        self.visible = visible
         for artist in self.artists:
             artist.set_visible(visible)
         self.axMan.update()
