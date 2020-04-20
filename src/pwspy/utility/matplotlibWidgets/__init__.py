@@ -2,7 +2,7 @@
 ==================================================
 Matplotlib Widgets (:mod:`pwspy.utility.matplotlibWidgets`)
 ==================================================
-This module provides a number of useful classes for interacting with Matplotlib plots.
+This module provides a number of useful classes for interacting with Matplotlib plots. Mostly for the purpose of drawing ROIs.
 
 Selectors
 ----------

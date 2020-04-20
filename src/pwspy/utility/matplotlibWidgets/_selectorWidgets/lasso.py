@@ -7,11 +7,19 @@ from pwspy.utility.matplotlibWidgets._selectorWidgets import SelectorWidgetBase
 
 
 class LassoSelector(SelectorWidgetBase):
-    def __init__(self, axMan: AxManager, image: AxesImage, onselect=None, button=None):
-        super().__init__(axMan, image, button=button)
+    """Allows the user to select a region with freehand drawing.
+
+    Args:
+        axMan: A reference to the `AxManager` object used to manage drawing the matplotlib `Axes` that this selector widget is active on.
+        image: A reference to a matplotlib `AxesImage`. Selectors may use this reference to get information such as data values from the image
+            for computer vision related tasks.
+        onselect: A callback function that will be called when the selector finishes a selection.
+    """
+    def __init__(self, axMan: AxManager, image: AxesImage, onselect=None):
+        super().__init__(axMan, image)
         self.onselect = onselect
         self.verts = None
-        self.polygon = Polygon([[0,0]], facecolor=(0, 0, 1, .1), animated=True, edgecolor=(0, 0, 1, .8))
+        self.polygon = Polygon([[0, 0]], facecolor=(0, 0, 1, .1), animated=True, edgecolor=(0, 0, 1, .8))
         self.polygon.set_visible(False)
         self.addArtist(self.polygon)
 #        self.set_active(True) #needed for blitting to work

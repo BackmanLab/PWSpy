@@ -102,7 +102,7 @@ if __name__ == '__main__':
             arr4[:, :, i] = morph.skeletonize(temp)
 
         print("analyze skeleton 2d")
-        arr5 = prune3dIm(arr4)
+        arr5 = prune3dIm(arr4, plotEveryN=15)
 
 
         #3d regions
@@ -118,7 +118,8 @@ if __name__ == '__main__':
                 coords = (coords[:, 0], coords[:, 1], coords[:,2])
                 arr6[coords] = True
         ThreeDskel = morph.skeletonize(arr6) #3d Skeletonized. This is just used for a cool plot. 2d skeletonized is more useful.
-        s = Skel(ThreeDskel)
+
+        Skel3d = Skel(ThreeDskel)
 
         temp = np.zeros_like(arr6)  # 2d skeletonized
         for i in range(temp.shape[2]):
@@ -179,7 +180,7 @@ if __name__ == '__main__':
         plt.colorbar()
         fig.show()
 
-        s.plot()
+        Skel3d.plot()
 
         fig = plt.figure()
         _ = Z.copy()
@@ -192,3 +193,4 @@ if __name__ == '__main__':
 
         print("Done")
         a = 1  # debug here
+    b = 1 # debug breakpoint here
