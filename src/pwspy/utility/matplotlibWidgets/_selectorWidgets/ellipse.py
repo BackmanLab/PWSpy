@@ -64,7 +64,7 @@ class EllipseSelector(SelectorWidgetBase):
         elif self._status is _SelectionStatus.SecondAxis:  # If we were on the second axis then finalize.
             self._status = _SelectionStatus.NotStarted
             if self.onselect:
-                angle = np.linspace(0,2*np.pi, num=100)
+                angle = np.linspace(0, 2*np.pi, num=100)
                 x_ = self.patch.width/2 * np.cos(angle) #unrotated ellipse centered at origin
                 y_ = self.patch.height/2 * np.sin(angle)
                 s = np.sin(np.radians(self.patch.angle))
