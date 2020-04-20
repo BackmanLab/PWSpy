@@ -17,7 +17,7 @@ class AxManager:
         self.background = None
 
     def update(self):
-        """Re-render the axes."""
+        """Re-render the axes. Call this after you know that something has changed with the plot."""
         if not self.ax.get_visible():
             return False
         if self.useblit:
