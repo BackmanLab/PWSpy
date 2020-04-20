@@ -13,6 +13,9 @@ class AxManager:
     def __init__(self, ax: Axes):
         self.artists = []
         self.ax = ax
+        if hasattr(ax, 'pwspyAxisManager'):
+            raise Exception("Axes already has an AxManager assiged.")
+        ax.pwspyAxisManager = self
         self.canvas = self.ax.figure.canvas
         self.canvas.mpl_connect('draw_event', self._update_background)
         self.background = None
