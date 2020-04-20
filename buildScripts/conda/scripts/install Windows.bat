@@ -1,5 +1,5 @@
 :: This should be the name of the Conda environment you want to install to. This environment needs to have already been created.
-set env=pwspy
+set /p env=Which Conda environment do you want to install to? 
 
 :: We assume anaconda is installed in the default location
 set root=%userprofile%\Anaconda3

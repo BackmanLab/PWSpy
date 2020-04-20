@@ -32,7 +32,7 @@ setup(name='pwspy',
                         'google-api-python-client',
                         'google-auth-httplib2',
                         'google-auth-oauthlib',
-                        'opencv-python',
+                        'opencv-python', #opencv is required but naming differences between conda and pip seem to cause issues. Maybe should be commented out?
                         'PyQt5',
                         'scikit-image',
                         'qtconsole'],
