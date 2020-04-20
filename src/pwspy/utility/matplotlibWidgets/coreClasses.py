@@ -1,3 +1,4 @@
+from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
@@ -20,7 +21,12 @@ class AxManager:
         self.canvas.mpl_connect('draw_event', self._update_background)
         self.background = None
 
-    def addArtist(self, artist):
+    def addArtist(self, artist: Artist):
+        """Adds an artist to the manager.
+
+        Args:
+            artist: A new matplotlib `Artist` to be managed.
+        """
         #TODO implement more cases here.
         self.artists.append(artist)
         if isinstance(artist, Patch):
@@ -31,12 +37,18 @@ class AxManager:
             self.ax.add_artist(artist)
 
     def removeArtists(self):
+        """Remove all artists from this manager"""
         for artist in self.artists:
             artist.remove()
         self.artists = []
         self.update()
 
-    def removeArtist(self, artist):
+    def removeArtist(self, artist: Artist):
+        """Remove a single `Artist` from the manaager
+
+        Args:
+            artist: A previously added matplotlib `Artist`.
+        """
         self.artists.remove(artist)
         artist.remove()
         self.update()

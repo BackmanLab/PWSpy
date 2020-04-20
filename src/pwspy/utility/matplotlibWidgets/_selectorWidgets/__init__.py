@@ -1,6 +1,8 @@
 from __future__ import annotations
 import copy
 from abc import ABC, abstractmethod
+
+from matplotlib.artist import Artist
 from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
@@ -173,13 +175,13 @@ class SelectorWidgetBase(AxesWidget, ABC):
                     self.state.discard(state)
             self._on_key_release(event)
 
-    def set_visible(self, visible):
+    def set_visible(self, visible: bool):
         """ Set the visibility of our artists """
         for artist in self.artists:
             artist.set_visible(visible)
         self.axMan.update()
 
-    def addArtist(self, artist):
+    def addArtist(self, artist: Artist):
         """Add a matplotlib artist to be managed."""
         self.axMan.addArtist(artist)
         self.artists.append(artist)
