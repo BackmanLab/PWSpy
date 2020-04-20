@@ -18,7 +18,7 @@ class FullImPaintSelector(SelectorWidgetBase):
 
     Args:
         axMan: The manager for a matplotlib `Axes` that you want to interact with.
-        image: A reference to a matplotlib `AxesImage`. The data from this object is used to detect bright regions.
+        im: A reference to a matplotlib `AxesImage`. The data from this object is used to detect bright regions.
         onselect: A callback that will be called when the user hits 'enter'. Should have signature (polygonCoords, sparseHandleCoords).
     """
     def __init__(self, axMan: AxManager, im: AxesImage, onselect=None):
@@ -32,8 +32,11 @@ class FullImPaintSelector(SelectorWidgetBase):
         self._checkImageChangeTimer = QtCore.QTimer()  # This timer checks if the image data has been changed. If it has then redetect regions.
         self._checkImageChangeTimer.setInterval(1000)
         self._checkImageChangeTimer.setSingleShot(False)
-        self._checkImageChangeTimer.timeout.connect(self.paint)
+        self._checkImageChangeTimer.timeout.connect(lambda: self.paint(forceRedraw=False))
+        self._checkImageChangeTimer.start()
 
+    def __del__(self):
+        self._checkImageChangeTimer.stop()
 
     @staticmethod
     def getHelpText():
@@ -50,7 +53,6 @@ class FullImPaintSelector(SelectorWidgetBase):
             # Move dialog to the side
             rect = self.dlg.geometry()
             parentRect = self.ax.figure.canvas.geometry()
-            # rect.moveTo(self.ax.figure.canvas.mapToGlobal(QPoint(parentRect.x() + parentRect.width() - rect.width(), parentRect.y())))
             rect.moveTo(self.ax.figure.canvas.mapToGlobal(QPoint(parentRect.x() - rect.width(), parentRect.y())))
             self.dlg.setGeometry(rect)
             self.paint()
@@ -65,7 +67,7 @@ class FullImPaintSelector(SelectorWidgetBase):
             colorCycler = cycler(color=[(1, 0, 0, alpha), (0, 1, 0, alpha), (0, 0, 1, alpha), (1, 1, 0, alpha), (1, 0, 1, alpha)])
             for poly, color in zip(polys, colorCycler()):
                 if isinstance(poly, MultiPolygon):
-                    print("Error: FullImPaintSelecte.drawROis tried to draw a polygon of a shapely.MultiPolygon object.")
+                    print("Error: FullImPaintSelector.drawRois tried to draw a polygon of a shapely.MultiPolygon object.")
                     continue
                 p = Polygon(poly.exterior.coords, color=color['color'], animated=True)
                 self.addArtist(p)
@@ -86,8 +88,12 @@ class FullImPaintSelector(SelectorWidgetBase):
                     self.onselect(artist.xy, handles)
                     break
 
-    def paint(self):
-        """Refresh the detected regions. If stale is false then just repaint the cached regions without recalculating."""
+    def paint(self, forceRedraw: bool = True):
+        """Refresh the detected regions.
+
+        Args:
+            forceRedraw: If `True` then polygons will be cleared and redrawn even if we don't detect that our status is `stale`
+        """
         if self.image.get_array() is not self._cachedImage:  # The image has been changed.
             self._cachedImage = self.image.get_array()
             self._stale = True
@@ -100,22 +106,13 @@ class FullImPaintSelector(SelectorWidgetBase):
                 print("Warning: adaptive segmentation failed with error: ", e)
                 return
         else:
-            polys = self._cachedRegions
+            if forceRedraw:
+                polys = self._cachedRegions
+            else:
+                return
         self.reset()
         self._drawRois(polys)
         self._stale = False
-
-
-def valChanged(self):
-    """A decorator for callbacks associated with a change in the adaptivePainDialog settings."""
-    def decorator(func):
-        def newFunc(val):
-            self._stale = True  # If a value changed then we are now stale
-            if func is not None:
-                func(val)
-            self._paintDebounce.start()  # Start the debounce timer. this will trigger a repaint unless it is restarted.
-        return newFunc
-    return decorator
 
 
 class LabeledSlider(QWidget):
@@ -147,6 +144,7 @@ class LabeledSlider(QWidget):
         self.setSingleStep(Step)
         self.setValue(Value)
 
+
 class AdaptivePaintDialog(QDialog):
     """The dialog used by the FullImPaintSelector. Can adjust detection parameters.
 
@@ -167,38 +165,52 @@ class AdaptivePaintDialog(QDialog):
         self._paintDebounce.setSingleShot(True)
         self._paintDebounce.timeout.connect(self.parentSelector.paint)
 
+        def _valChanged():
+            """When a setting is changed it should call this to schedule a repaint."""
+            self._stale = True
+            self._paintDebounce.start()
+
         maxImSize = max(parentSelector.image.get_array().shape)
         self.adptRangeSlider = LabeledSlider(3, maxImSize//2*2+1, 2, 551) # This must always have an odd value or opencv will have an error.
-        self.adptRangeSlider.setToolTip("The image is adaptively thresholded by comparing each pixel value to the average pixel value of gaussian window around the pixel. This value determines how large the area that is averaged will be. Lower values cause the threshold to adapt more quickly.")
         #TODO recommend value based on expected pixel size of a nucleus. need to access metadata.
 
-        @valChanged(self)
         def adptRangeChanged(val):
+            _valChanged()
             if self.adptRangeSlider.value() % 2 == 0:
                 self.adptRangeSlider.setValue(self.adptRangeSlider.value()//2*2+1)#This shouldn't ever happen. but it sometimes does anyway. make sure that adptRangeSlider is an odd number
 
         self.adptRangeSlider.valueChanged.connect(adptRangeChanged)
 
         self.subSlider = LabeledSlider(-50, 50, 1, -10, self)
-        self.subSlider.valueChanged.connect(valChanged(self)(None))
+        self.subSlider.valueChanged.connect(_valChanged)
 
         self.erodeSlider = LabeledSlider(0, 50, 1, 10, self)
-        self.erodeSlider.valueChanged.connect(valChanged(self)(lambda val: self.dilateSlider.setMaximum(val)))
+        def erodeChanged(val):
+            _valChanged()
+            self.dilateSlider.setMaximum(val)
+        self.erodeSlider.valueChanged.connect(erodeChanged)
 
         self.dilateSlider = LabeledSlider(0, self.erodeSlider.value(), 1, 10, self)
-        self.dilateSlider.valueChanged.connect(valChanged(self)(None))
+        self.dilateSlider.valueChanged.connect(_valChanged)
 
         self.simplificationSlider = LabeledSlider(0, 20, 1, 5, self)
-        self.simplificationSlider.valueChanged.connect(valChanged(self)(None))
+        self.simplificationSlider.valueChanged.connect(_valChanged)
 
         self.minAreaSlider = LabeledSlider(5, 300, 1, 100, self)
-        self.minAreaSlider.valueChanged.connect(valChanged(self)(None))
+        self.minAreaSlider.valueChanged.connect(_valChanged)
 
         self.refreshButton = QPushButton("Refresh", self)
         def refreshAction():
             self._stale = True  # Force a full refresh
             self.parentSelector.paint()
         self.refreshButton.released.connect(refreshAction)
+
+        self.adptRangeSlider.setToolTip("The image is adaptively thresholded by comparing each pixel value to the average pixel value of gaussian window around the pixel. This value determines how large the area that is averaged will be. Lower values cause the threshold to adapt more quickly.")
+        self.subSlider.setToolTip("This offset is passed to `cv2.adaptiveThreshold` and sets the threshold the segmentation process")
+        self.erodeSlider.setToolTip("The number of pixels that the polygons should be eroded by. Combining this with dilation can help to close gaps.")
+        self.dilateSlider.setToolTip("The number of pixels that the polygons should be dilated by.")
+        self.simplificationSlider.setToolTip("This parameter will simplify the edges of the detected polygons to remove overly complicated geometry.")
+        self.minAreaSlider.setToolTip("Detected regions with a pixel area lower than this value will be discarded.")
 
         l = QFormLayout()
         l.addRow("Adaptive Range (px):", self.adptRangeSlider)
