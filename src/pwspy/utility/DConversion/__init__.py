@@ -93,7 +93,8 @@ def _calcDSize(raw_rms: np.ndarray, noise: float, NAi: float):
     Returns:
         d_size: :todo:
     """
-    sigma = np.real(np.sqrt(raw_rms**2 - noise**2))
+
+    sigma = np.sqrt(raw_rms**2 - noise**2)  # The MATLAB version will return complex numbers if this is negative. This implementation returns `nan`
     d_size = sigma * 13.8738 * NAi + 1.473
     return d_size
 
@@ -146,7 +147,8 @@ def sigma2DApproximation(raw_rms: np.ndarray, noise: float, NAi: float) -> np.nd
     sigmaToD_coefs = [-9.14414809736752e-09, 8.02336561707375e-07, -3.22276589702395e-05, 0.000784980326922923, -0.0129458554989855, 0.152852475387947,
                       -1.33210715342735, 8.70614624955508, -42.9149123685218, 159.111116839950, -438.829185621276, 881.674160348790, -1246.22822358504,
                       1168.11294529161, -647.810667596662, 161.021813781994]
-    d_estimate = np.polynomial.polyval(sigmaToD_coefs, d_size)  # Note do not confuse this with np.polynomial.polynomial.polyval(), the ordering is different.
+    sigmaToD_coefs = np.array(list(reversed(sigmaToD_coefs))) # The order of the coefficients is different than in matlab
+    d_estimate = np.polynomial.polynomial.polyval(d_size, sigmaToD_coefs)
     d_estimate[d_size > 10] = 2.99  # The fitting doesn't work well at very high values of D_size.
     return d_estimate
 
@@ -154,9 +156,17 @@ def sigma2DApproximation(raw_rms: np.ndarray, noise: float, NAi: float) -> np.nd
 if __name__ == '__main__':
 
 
-    def testexpn():
-        lmin = 1
-        d = np.array([2.1796160, 2.9585142, 2.6632771, 1.8785352, 1.8430616])
-        x = np.array([8.8774614, 2.6083560, 3.6681373, 20.619408, 23.234888])
-        res = expn(-2+d, x/lmin)
-        return res
+    # def testexpn():
+    #     lmin = 1
+    #     d = np.array([2.1796160, 2.9585142, 2.6632771, 1.8785352, 1.8430616])
+    #     x = np.array([8.8774614, 2.6083560, 3.6681373, 20.619408, 23.234888])
+    #     res = expn(-2+d, x/lmin)
+    #     return res
+
+    import time
+    testData = np.linspace(0.001, 0.1, num=100)
+    stime = time.time()
+    exact = sigma2D(testData, 0.009, 0.55)
+    estimate = sigma2DApproximation(testData, 0.009, 0.55)
+    ftime = time.time() - stime  # Execution time of the function
+    a = 1
