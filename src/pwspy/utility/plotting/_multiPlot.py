@@ -13,12 +13,14 @@ from pwspy.utility.plotting._sharedWidgets import AnimationDlg
 
 
 class MultiPlot(QWidget):
+    """
+    A widget that allows the user to flip through a set of matplotlib artists (images, plots, etc.)
+
+    Args:
+        artists: A list of lists of matplotlib 'Artists`. each list will comprise a single frame, just like the matplotlib `ArtistAnimation` works.
+        title (str): The name for the title of the window
+    """
     def __init__(self, artists: List[List[Artist]], title: str, parent=None):
-        """A widget that allows the user to flip through a set of matplotlib artists (images, plots, etc.)
-        Args:
-            artists: A list of lists of matplotlib 'Artists`. each list will comprise a single frame, just like the matplotlib `ArtistAnimation` works.
-            title (str): The name for the title of the window
-        """
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         self.setWindowTitle(title)
         layout = QGridLayout()
@@ -51,12 +53,14 @@ class MultiPlot(QWidget):
         self._updateDisplayedImage()
 
     def showPreviousIm(self):
+        """Display the previous set of display elements."""
         self.index -= 1
         if self.index < 0:
             self.index = len(self.artists) - 1
         self._updateDisplayedImage()
 
     def showNextIm(self):
+        """Display the next set of display elements."""
         self.index += 1
         if self.index >= len(self.artists):
             self.index = 0
