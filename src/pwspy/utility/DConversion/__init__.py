@@ -110,9 +110,18 @@ def sigma2D(d_size: np.ndarray):
 
 
 def sigma2DApprox(d_size):
+    """Not sure where this came from."""
     d_estimate = 3 * (1 - np.exp(-(d_size / 3)**7))**(1 / 7)
     return d_estimate
 
+def sigma2DApprox2(d_size: np.ndarray) -> np.ndarray:
+    # These are the polynomical coefficients stored in the SimgaToD_coefs.mat file. They go from high order to low, E.G. x^2 + x + 1
+    sigmaToD_coefs = [-9.14414809736752e-09, 8.02336561707375e-07, -3.22276589702395e-05, 0.000784980326922923, -0.0129458554989855, 0.152852475387947,
+                      -1.33210715342735, 8.70614624955508, -42.9149123685218, 159.111116839950, -438.829185621276, 881.674160348790, -1246.22822358504,
+                      1168.11294529161, -647.810667596662, 161.021813781994]
+    d_estimate = np.polynomial.polyval(sigmaToD_coefs, d_size) # Note do not confuse this with np.polynomial.polynomial.polyval(), the ordering is different.
+    d_estimate[d_size > 10] = 2.99  # The fitting doesn't work well at very high values of D_size.
+    return d_estimate
 
 def testexpn():
     lmin=1
