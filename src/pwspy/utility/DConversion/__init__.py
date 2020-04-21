@@ -19,6 +19,7 @@ Primary Functions
 Secondary Functions
 --------------------
 These functions are called by the primary functions and probably don't need to be used directly.
+
 .. autosummary::
    :toctree: generated/
 
@@ -37,7 +38,7 @@ NumberOrArray = typing.Union[np.ndarray, float]
 @np.vectorize
 def expn(n: float, x: float) -> float:
     """
-    This is a custom implementation of the generalized exponential exponential integral `En`. The implementation in `scipy.special.expn` is faster but only supports
+    This is a custom implementation of the generalized exponential exponential integral. The implementation in `scipy.special.expn` is faster but only supports
     integers for `n`.
 
     :math:`\\int_0^{\\infty} \\! \\frac{e^{-x*t}}{t^n} \\, \\mathrm{d}t`
