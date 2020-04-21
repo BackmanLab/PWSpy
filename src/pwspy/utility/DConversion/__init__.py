@@ -8,6 +8,15 @@ REFERENCES
    for the quantification of subdiffractional structure of biomaterials."
    J. of Biomedical Optics, 22(3), 030901 (2017).
 
+Functions
+----------
+.. autosummary::
+   :toctree: generated/
+
+   sigma2D
+   sigma2DApproximation
+   expn
+
 """
 
 import numpy as np
@@ -17,7 +26,8 @@ from scipy.integrate import quad
 
 @np.vectorize
 def expn(n: float, x: float) -> float:
-    """This is a custom implementation of the generalized exponential exponential integral `En`. The implementation in `scipy.special.expn` is faster but only supports
+    """
+    This is a custom implementation of the generalized exponential exponential integral `En`. The implementation in `scipy.special.expn` is faster but only supports
     integers for `n`.
 
     :math:`$$\int_{0}^{\infty}  \frac{e^{-x*t}}{t^n} \,dt$$`
