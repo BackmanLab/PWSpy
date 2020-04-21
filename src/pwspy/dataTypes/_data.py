@@ -47,7 +47,7 @@ class ICBase:
         """
 
         Returns:
-            Tuple[float, ...]: The values of the datacube's index
+            The values of the datacube's index
         """
         return self._index
 
@@ -55,7 +55,7 @@ class ICBase:
         """
 
         Returns:
-            Tuple[plt.Figure, plt.Axes]: A figure and attached axes plotting the mean of the data along the index axis.
+            A figure and attached axes plotting the mean of the data along the index axis.
                 corresponds to the mean reflectance in most cases.
         """
         fig, ax = plt.subplots()
@@ -72,7 +72,7 @@ class ICBase:
                 If left as None then the full data array will be used as the region.
 
         Returns:
-            Tuple[np.ndarray, np.ndarray]: The average spectra within the region, the standard deviation of the spectra within the region
+            The average spectra within the region, the standard deviation of the spectra within the region
         """
         if isinstance(mask, _other.Roi):
             mask = mask.mask
@@ -82,13 +82,15 @@ class ICBase:
         std = self.data[mask].std(axis=0)
         return mean, std
 
-    def selectLassoROI(self, displayIndex: int = None) -> np.ndarray:
-        """ Allow the user to draw a `freehand` ROI on an image of the acquisition.
+    def selectLassoROI(self, displayIndex: typing.Optional[int] = None) -> np.ndarray:
+        """
+        Allow the user to draw a `freehand` ROI on an image of the acquisition.
+
         Args:
-            displayIndex (Optional[int]): Display a particular z-slice of the array for mask drawing. If `None` then the mean along Z is displayed.
+            displayIndex: Display a particular z-slice of the array for mask drawing. If `None` then the mean along Z is displayed.
 
         Returns:
-            np.ndarray: An array of vertices of the polygon drawn.
+            An array of vertices of the polygon drawn.
         """
         Verts = [None]
         if displayIndex is None:
@@ -106,8 +108,9 @@ class ICBase:
             fig.canvas.flush_events()
         return np.array(Verts[0])
 
-    def selectRectangleROI(self, displayIndex: int = None) -> np.ndarray:
-        """ Allow the user to draw a rectangular ROI on an image of the acquisition.
+    def selectRectangleROI(self, displayIndex: typing.Optional[int] = None) -> np.ndarray:
+        """
+        Allow the user to draw a rectangular ROI on an image of the acquisition.
 
         Args:
             displayIndex (int): is used to display a particular z-slice for mask drawing. If None then the mean along Z is displayed. Returns an array of vertices of the rectangle.
@@ -133,7 +136,8 @@ class ICBase:
         return np.array(verts[0])
 
     def selectPointROI(self, side: int = 3, displayIndex: Optional[int] = None):
-        """ Allow the user to select a single point on an image of the acquisition.
+        """
+        Allow the user to select a single point on an image of the acquisition.
 
         Args:
             side (int): The length (in pixels) of the sides of the square that is used for selection.
@@ -162,7 +166,7 @@ class ICBase:
     def __getitem__(self, slic):
         return self.data[slic]
 
-    def filterDust(self, sigma: float, pixelSize: float) -> None:
+    def filterDust(self, sigma: float, pixelSize: float):
         """Blurs the data cube in the X and Y dimensions. Often used to remove the effects of dust on a normalization.
 
         Args:
@@ -176,8 +180,13 @@ class ICBase:
         """This check is performed before allowing many arithmetic operations between two data cubes. Makes sure that the Z-axis of the two cubes match."""
         return self._index == other._index
 
-    def selIndex(self, start, stop) -> ICBase:
-
+    def selIndex(self, start: float, stop: float) -> ICBase:
+        """
+        Args:
+            start: The beginning value of the index in the new object.
+            stop: The ending value of the index in the new object.
+        Returns:
+            A new instance of ICBase with only data from `start` to `stop` in the `index`."""
         wv = np.array(self.index)
         iStart = np.argmin(np.abs(wv - start))
         iStop = np.argmin(np.abs(wv - stop))
@@ -260,7 +269,8 @@ class ICBase:
         return new
 
     def toHdfDataset(self, g: h5py.Group, name: str, fixedPointCompression: bool = True) -> h5py.Group:
-        """Save the data of this class to a new HDF dataset.
+        """
+        Save the data of this class to a new HDF dataset.
 
             Args:
                 g (h5py.Group): the parent HDF Group of the new dataset.
@@ -296,6 +306,17 @@ class ICBase:
 
     @classmethod
     def decodeHdf(cls, d: h5py.Dataset) -> Tuple[np.array, Tuple[float, ...]]:
+        """
+        Load a new instance of ICBase from an `h5py.Dataset`
+
+        Args:
+            d: The dataset that the ICBase has been saved to
+
+        Returns:
+            A tuple containing:
+                data: The 3D array of `data`
+                index: A tuple containing the `index`
+        """
         assert 'type' in d.attrs
         assert 'index' in d.attrs
         if d.attrs['type'].decode() == cls.__name__: #standard decoding #TODO if the classes get renamed then this will break. need to use a different identifier that won't be accidentally changed
@@ -316,12 +337,21 @@ class ICBase:
 class ICRawBase(ICBase, ABC):
     """This class represents data cubes which are not derived from other data cubes. They represent raw acquired data that exists as data files on the computer.
     For this reason they may need to have hardware specific corrections applied to them such as normalizing out exposure time, linearizing camera counts,
-    subtracting dark counts, etc. The most important change is the addition of `metadata`
+    subtracting dark counts, etc. The most important change is the addition of `metadata`.
+
+    Args:
+        data: A 3-dimensional array containing the data. The dimensions should be [Y, X, Z] where X and Y are the spatial coordinates of the image
+            and Z corresponds to the `index` dimension, e.g. wavelength, wavenumber, time, etc.
+        index: A tuple containing the values of the index for the data. This could be a tuple of wavelength values, times (in the case of Dynamics), etc.
+        metadata: The metadata object associated with this data object.
+        processingStatus: An object that keeps track of which processing steps and corrections have been applied to this object.
+        dtype (type): the data type that the data should be stored as. The default is numpy.float32.
     """
 
     @dataclass
     class ProcessingStatus:
-        """By default none of these things have been done for raw data"""
+        """Keeps track of which processing steps have been applied to an `ICRawBase` object.
+        By default none of these things have been done for raw data"""
         cameraCorrected: bool = False
         normalizedByExposure: bool = False
         extraReflectionSubtracted: bool = False
@@ -356,7 +386,13 @@ class ICRawBase(ICBase, ABC):
 
     def correctCameraEffects(self, correction: _other.CameraCorrection = None, binning: int = None):
         """Subtracts the darkcounts from the data. count is darkcounts per pixel. binning should be specified if
-        it wasn't saved in the micromanager metadata."""
+        it wasn't saved in the micromanager metadata. Both method arguments should be able to be loaded automatically
+        from the metadata but for older data files they will need to be supplied manually.
+
+        Args:
+            correction: The cameracorrection object providing information on how to correct the data.
+            binning: The binning that the raw data was imaged at. 2 = 2x2 binning, 3 = 3x3 binning, etc.
+        """
         if self.processingStatus.cameraCorrected:
             raise Exception("This ImCube has already had it's camera correction applied!")
         if binning is None:
@@ -377,20 +413,47 @@ class ICRawBase(ICBase, ABC):
     @abstractmethod
     def normalizeByReference(self, reference: 'self.__class__'):
         """Normalize the raw data of this data cube by a reference cube to result in data representing
-        arbitrarily scaled reflectance."""
+        arbitrarily scaled reflectance.
+
+        Args:
+            reference: A reference acquisition. Usually an image taken from a blank piece of glass.
+        """
         pass
 
     @abstractmethod
-    def subtractExtraReflection(self, extraReflection):
+    def subtractExtraReflection(self, extraReflection: ExtraReflectionCube):
+        """
+        Subtract the portion of the signal that is due to internal reflections of the optical system from the data.
+
+        Args:
+            extraReflection: A calculated data cube indicating in units of camera counts how much of the data is from
+                unwanted internal reflections of the system.
+        """
         pass
 
     @staticmethod
     @abstractmethod
-    def getMetadataClass() -> pwsdtmd.MetaDataBase:
-        """Return the metadata class associated with this subclass of ICRawBase"""
+    def getMetadataClass() -> typing.Type[pwsdtmd.MetaDataBase]:
+        """
+        Returns:
+            The metadata class associated with this subclass of ICRawBase
+        """
         pass
 
     def toHdfDataset(self, g: h5py.Group, name: str, fixedPointCompression: bool = True) -> h5py.Group:
+        """
+        Save this object into an HDF dataset.
+
+        Args:
+            g: The `h5py.Group` object to create a new dataset in.
+            name: The name of the new dataset.
+            fixedPointCompression: If True then the data will be converted from floating point to 16-bit fixed point.
+                This results in approximately half the storage requirements at a very slight loss in precision.
+
+        Returns:
+            A reference to the `h5py.Group` passed in as `g`.
+
+        """
         g = ICBase.toHdfDataset(self, g, name, fixedPointCompression)
         self.metadata.encodeHdfMetadata(g[name])
         g[name].attrs['processingStatus'] = np.string_(json.dumps(self.processingStatus.toDict()))
@@ -398,6 +461,19 @@ class ICRawBase(ICBase, ABC):
 
     @classmethod
     def decodeHdf(cls, d: h5py.Dataset) -> Tuple[np.array, Tuple[float, ...], dict, ProcessingStatus]:
+        """
+        Load a new instance of ICRawBase from an `h5py.Dataset`
+
+        Args:
+            d: The dataset that the ICBase has been saved to
+
+        Returns:
+            A tuple containing:
+                data: The 3D array of `data`
+                index: A tuple containing the `index`
+                metadata: A dictionary containing metadata.
+                procStatus: The processing status of the object.
+        """
         arr, index = super().decodeHdf(d)
         mdDict = cls.getMetadataClass().decodeHdfMetadata(d)
         if 'processingStatus' in d.attrs:
@@ -410,7 +486,15 @@ class ICRawBase(ICBase, ABC):
 class DynCube(ICRawBase):
     """A class representing a single acquisition of PWS Dynamics. In which the wavelength is held constant and the 3rd
     dimension of the data is time rather than wavelength. This can be analyzed to reveal information about diffusion rate.
-    Contains methods for loading and saving to multiple formats as well as common operations used in analysis."""
+    Contains methods for loading and saving to multiple formats as well as common operations used in analysis.
+
+    Args:
+        data: A 3-dimensional array containing the data. The dimensions should be [Y, X, Z] where X and Y are the spatial coordinates of the image
+            and Z corresponds to the `index` dimension, e.g. wavelength, wavenumber, time, etc.
+        metadata: The metadata object associated with this data object.
+        processingStatus: An object that keeps track of which processing steps and corrections have been applied to this object.
+        dtype: the data type that the data should be stored as. The default is numpy.float32.
+    """
     def __init__(self, data, metadata: pwsdtmd.DynMetaData, processingStatus: ICRawBase.ProcessingStatus=None, dtype=np.float32):
         assert isinstance(metadata, pwsdtmd.DynMetaData)
         super().__init__(data, metadata.times, metadata, processingStatus=processingStatus, dtype=dtype)
@@ -420,12 +504,26 @@ class DynCube(ICRawBase):
         return pwsdtmd.DynMetaData
 
     @property
-    def times(self):
-        """Unlike PWS where we operate along the dimension of wavelength, in dynamics we operate along the dimension of time."""
+    def times(self) -> typing.Tuple[float, ...]:
+        """Unlike PWS where we operate along the dimension of wavelength, in dynamics we operate along the dimension of time.
+
+        Returns:
+            A tuple of the time values for each 2d slice along the 3rd axis of the `data` array.
+        """
         return self.index
 
     @classmethod
     def fromMetadata(cls, meta: pwsdtmd.DynMetaData, lock: mp.Lock = None) -> DynCube:
+        """
+        Load a new instance of `DynCube` based on the information contained in a `DynMetaData` object.
+
+        Args:
+            meta: The metadata object to be used for loading.
+            lock: An optional `Lock` used to synchronize IO operations in multithreaded and multiprocessing applications.
+
+        Returns:
+            A new instance of `DynCube`.
+        """
         if meta.fileFormat == pwsdtmd.DynMetaData.FileFormats.Tiff:
             return cls.fromTiff(meta.filePath, metadata=meta, lock=lock)
         elif meta.fileFormat == pwsdtmd.DynMetaData.FileFormats.RawBinary:
@@ -437,6 +535,7 @@ class DynCube(ICRawBase):
 
     @classmethod
     def loadAny(cls, directory: str, metadata: pwsdtmd.DynMetaData = None, lock: mp.Lock = None):
+        #TODO continue documentation from here.
         try:
             return DynCube.fromTiff(directory, metadata=metadata, lock=lock)
         except:
