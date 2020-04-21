@@ -50,7 +50,8 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     "sphinx_rtd_theme",
-    'sphinx.ext.inheritance_diagram'  #Need to add graphviz/bin to the path for this to work.
+    'sphinx.ext.inheritance_diagram',  #Need to add graphviz/bin to the path for this to work.
+    'sphinx.ext.mathjax'
 ]
 
 autosummary_generate = True
