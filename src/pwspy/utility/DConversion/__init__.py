@@ -129,7 +129,7 @@ def sigma2D(raw_rms: NumberOrArray, noise: float, NAi: float) -> np.ndarray:
     d_size = calcDSize(raw_rms, noise, NAi)
     #This runs 6 times faster than the matlab version for some reason
     mf = 1000000
-    d_size[d_size == 3] = 3.00001
+    d_size[d_size == 3] = 3.00001  # d_size == 3 will result in a singularity so we nudge the data a bit.
 
     lmaxlminapprox = 100
     correction = ((3 - d_size) * (1 - (lmaxlminapprox**(-1. * d_size)))) / (
