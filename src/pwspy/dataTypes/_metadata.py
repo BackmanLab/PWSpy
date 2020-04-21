@@ -79,10 +79,7 @@ class MetaDataBase(abc.ABC):
 
     @abc.abstractmethod
     def idTag(self) -> str:
-        """
-
-        Returns:
-             A string that uniquely identifies this data."""
+        """A string that uniquely identifies this data."""
         pass
 
     @property
@@ -395,6 +392,14 @@ class ERMetaData:
 
     @classmethod
     def validPath(cls, path: str) -> Tuple[bool, Union[str, bytes], Union[str, bytes]]:
+        """
+
+        Args:
+            path: The file path to the file to search for valid ExtraReflectance files.
+
+        Returns:
+            A tuple containing: validPath: True if the path is valid, directory: The directory the file is in, name: The name that the object was saved as.
+        """
         if cls._FILESUFFIX in path:
             directory, name = cls.directory2dirName(path)
             with h5py.File(os.path.join(directory, f'{name}{cls._FILESUFFIX}'), 'r') as hf:
@@ -404,33 +409,74 @@ class ERMetaData:
             return False, '', ''
 
     @classmethod
-    def fromHdfFile(cls, directory: str, name: str):
+    def fromHdfFile(cls, directory: str, name: str) -> ERMetaData:
+        """
+
+        Args:
+            directory: The directory the file is saved in.
+            name: The name the object was saved as.
+
+        Returns:
+            A new instance of `ERMetaData` object
+        """
         filePath = cls.dirName2Directory(directory, name)
         with h5py.File(filePath, 'r') as hf:
             dset = hf[cls._DATASETTAG]
             return cls.fromHdfDataset(dset, filePath=filePath)
 
     @classmethod
-    def fromHdfDataset(cls, d: h5py.Dataset, filePath: str = None):
+    def fromHdfDataset(cls, d: h5py.Dataset, filePath: str = None) -> ERMetaData:
+        """
+
+        Args:
+            d: The `h5py.Dataset` to load the object from.
+
+        Returns:
+            A new instance of `ERMetaData` object
+        """
         mdDict = json.loads(d.attrs[cls._MDTAG])
         return cls(mdDict, mdDict['numericalAperture'], filePath=filePath)
 
     def toHdfDataset(self, g: h5py.Group) -> h5py.Group:
+        """
+
+        Args:
+            g: The `h5py.Group` to save the new dataset into.
+
+        """
         g[self._DATASETTAG].attrs[self._MDTAG] = np.string_(json.dumps(self.inheritedMetadata))
         return g
 
     @classmethod
     def directory2dirName(cls, path: str) -> Tuple[Union[bytes, str], Union[bytes, str]]:
+        """
+
+        Args:
+            path: The path to the file that stores an `ExtraReflectanceCube` object.
+
+        Returns:
+            A tuple containing: directory: The directory path, name: The name that the file was saved as.
+        """
         directory, fileName = os.path.split(path)
         name = fileName.split(cls._FILESUFFIX)[0]
         return directory, name
 
     @classmethod
-    def dirName2Directory(cls, directory: str, name: str):
+    def dirName2Directory(cls, directory: str, name: str) -> str:
+        """
+        This is the inverse of `directory2dirName`
+        """
         return os.path.join(directory, f'{name}{cls._FILESUFFIX}')
 
 
 class FluorMetaData(MetaDataBase):
+    """
+    Metadata for a fluorescence image.
+
+    Args:
+        md: A dictionary containing the metadata
+
+    """
     FILENAME = 'fluor.tif'
     MDPATH = 'fluorMetadata.json'
 
@@ -442,7 +488,6 @@ class FluorMetaData(MetaDataBase):
         super().__init__(md, filePath, acquisitionDirectory)
 
     def toDataClass(self, lock: mp.Lock = None) -> pwsdtd.FluorescenceImage:
-        # from pwspy.dataTypes import pwsdtd.FluorescenceImage
         return pwsdtd.FluorescenceImage.fromMetadata(self, lock)
 
     @property
@@ -450,7 +495,15 @@ class FluorMetaData(MetaDataBase):
         return f"Fluor_{self._dict['system']}_{self._dict['time']}"
 
     @classmethod
-    def fromTiff(cls, directory: str, acquisitionDirectory: Optional[AcqDir]):
+    def fromTiff(cls, directory: str, acquisitionDirectory: Optional[AcqDir]) -> FluorMetaData:
+        """Load from a TIFF file.
+
+        Args:
+            directory: The path to the folder to load from.
+
+        Returns:
+            A new instance of `FluorMetaData` loaded from file.
+        """
         if not FluorMetaData.isValidPath(directory):
             raise ValueError(f"Fluorescence image not found in {directory}.")
         with open(os.path.join(directory, FluorMetaData.MDPATH), 'r') as f:
@@ -468,18 +521,36 @@ class FluorMetaData(MetaDataBase):
 
         return FluorMetaData(dic, directory, acquisitionDirectory)
 
-    @staticmethod
-    def isValidPath(directory: str):
-        path = os.path.join(directory, FluorMetaData.FILENAME)
-        path2 = os.path.join(directory, FluorMetaData.MDPATH)
+    @classmethod
+    def isValidPath(cls, directory: str):
+        """
+
+        Args:
+            directory: The path to search for valid files.
+
+        Returns:
+            True if a valid file was found.
+        """
+        path = os.path.join(directory, cls.FILENAME)
+        path2 = os.path.join(directory, cls.MDPATH)
         return os.path.exists(path) and os.path.exists(path2)
 
     def getThumbnail(self) -> np.ndarray:
+        """
+
+        Returns:
+            An image for quick viewing of the acquisition. No numerical significance.
+        """
         with tf.TiffFile(os.path.join(self.filePath, 'image_bd.tif')) as f:
             return f.asarray()
 
 
 class ICMetaData(AnalysisManagerMetaDataBase):
+    """A class that represents the metadata of a PWS acquisition.
+
+    Args:
+        metadata: The dictionary containing the metadata.
+    """
     class FileFormats(enum.Enum):
         RawBinary = enum.auto()
         Tiff = enum.auto()
@@ -499,7 +570,6 @@ class ICMetaData(AnalysisManagerMetaDataBase):
         self._dict['wavelengths'] = tuple(np.array(self._dict['wavelengths']).astype(float))
 
     def toDataClass(self, lock: mp.Lock = None) -> pwsdtd.ImCube:
-        # from pwspy.dataTypes import pwsdtd.ImCube
         return pwsdtd.ImCube.fromMetadata(self, lock)
 
     @cached_property
@@ -512,6 +582,14 @@ class ICMetaData(AnalysisManagerMetaDataBase):
 
     @classmethod
     def loadAny(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> ICMetaData:
+        """
+        Attempt to load from any file format.
+
+        Args:
+            directory: The file path to load the metadata from.
+        Returns:
+            A new instance of `ICMetaData` loaded from file
+        """
         try:
             return ICMetaData.fromTiff(directory, lock=lock, acquisitionDirectory=acquisitionDirectory)
         except:
@@ -525,6 +603,14 @@ class ICMetaData(AnalysisManagerMetaDataBase):
 
     @classmethod
     def fromOldPWS(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> ICMetaData:
+        """
+        Attempt to load from the old .mat file format.
+
+        Args:
+            directory: The file path to load the metadata from.
+        Returns:
+            A new instance of `ICMetaData` loaded from file
+        """
         if lock is not None:
             lock.acquire()
         try:
@@ -549,6 +635,14 @@ class ICMetaData(AnalysisManagerMetaDataBase):
 
     @classmethod
     def fromNano(cls, directory: str, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> ICMetaData:
+        """
+        Attempt to load from NanoCytomic .mat file format
+
+        Args:
+            directory: The file path to load the metadata from.
+        Returns:
+            A new instance of `ICMetaData` loaded from file
+        """
         if lock is not None:
             lock.acquire()
         try:
@@ -567,6 +661,14 @@ class ICMetaData(AnalysisManagerMetaDataBase):
 
     @classmethod
     def fromTiff(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> ICMetaData:
+        """
+        Attempt to load from the standard TIFF file format.
+
+        Args:
+            directory: The file path to load the metadata from.
+        Returns:
+            A new instance of `ICMetaData` loaded from file
+        """
         if lock is not None:
             lock.acquire()
         try:
@@ -608,10 +710,22 @@ class ICMetaData(AnalysisManagerMetaDataBase):
         return cls(metadata, filePath=directory, fileFormat=ICMetaData.FileFormats.Tiff, acquisitionDirectory=acquisitionDirectory)
 
     def metadataToJson(self, directory):
+        """
+        Save the metadata to a JSON file.
+
+        Args:
+            directory: The folder path to save the new file to.
+
+        """
         with open(os.path.join(directory, 'pwsmetadata.json'), 'w') as f:
             json.dump(self._dict, f)
 
     def getThumbnail(self) -> np.ndarray:
+        """
+
+        Returns:
+            An image for quick viewing of the acquisition. No numerical significance.
+        """
         if self.fileFormat == ICMetaData.FileFormats.NanoMat:
             with h5py.File(os.path.join(self.filePath, 'image_bd.mat'), 'r') as hf:
                 return np.array(hf['image_bd']).T.copy()  # For some reason these are saved transposed?
