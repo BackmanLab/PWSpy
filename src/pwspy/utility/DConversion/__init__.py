@@ -8,20 +8,29 @@ REFERENCES
    for the quantification of subdiffractional structure of biomaterials."
    J. of Biomedical Optics, 22(3), 030901 (2017).
 
-Functions
-----------
+Primary Functions
+-----------------
 .. autosummary::
    :toctree: generated/
 
    sigma2D
    sigma2DApproximation
+
+Secondary Functions
+--------------------
+These functions are called by the primary functions and probably don't need to be used directly.
+.. autosummary::
+   :toctree: generated/
+
    expn
+   acf
+   acfd
+   calcDSize
 
 """
 
 import numpy as np
 from scipy.integrate import quad
-# TODO see email from self (nicholas.anthony@northwestern.edu) on 3/26/2019 showing how the equations can be simplified to be more efficient)
 
 
 @np.vectorize
@@ -45,7 +54,7 @@ def expn(n: float, x: float) -> float:
     return quad(integrand, 1, np.inf, args=(n, x))[0]
 
 
-def _acf(d, lmin, lmax, x):
+def acf(d, lmin, lmax, x):
     """This function is based on the `acf_1` MATLAB function.
 
     Args:
@@ -61,8 +70,9 @@ def _acf(d, lmin, lmax, x):
     return out
 
 
-def _acfd(d, lmin, lmax):
-    """This function is based on the `acfd` MATLAB function.
+def acfd(d, lmin, lmax):
+    """This function is based on the `acfd` MATLAB function. The equation has been algebraically refactored from the
+    MATLAB code to require fewer computations of logarithms.
 
     Args:
         d:
@@ -74,11 +84,11 @@ def _acfd(d, lmin, lmax):
     """
     delta = 0.1
     x = (lmax+lmin) / 100
-    out = 3 + (np.log(_acf(d, lmin, lmax, x + delta)) - np.log(_acf(d, lmin, lmax, x))) / (np.log(x + delta) - np.log(x))
+    out = 3 + np.log(acf(d, lmin, lmax, x + delta) / acf(d, lmin, lmax, x)) / np.log((x + delta) / x)
     return out
 
 
-def _calcDSize(raw_rms: np.ndarray, noise: float, NAi: float):
+def calcDSize(raw_rms: np.ndarray, noise: float, NAi: float):
     """
     The `system_correction` argument from the original MATLAB function has been excluded. We assume that any RMS
     values being provided to this function have already been properly corrected for hardware defects.
@@ -111,10 +121,10 @@ def sigma2D(raw_rms: np.ndarray, noise: float, NAi: float) -> np.ndarray:
         NAi: The illumination numerical aperture (NA) of the objective.
 
     Returns:
-        d_exact: Results from the exact solution of converting from sigma to D. This calculation is based on
-            derivations by Vadim Backman.
+        Results from the exact solution of converting from Sigma to D. This calculation is based on
+        derivations by Vadim Backman.
     """
-    d_size = _calcDSize(raw_rms, noise, NAi)
+    d_size = calcDSize(raw_rms, noise, NAi)
     #This runs 6 times faster than the matlab version for some reason
     mf = 1000000
     d_size[d_size == 3] = 3.00001
@@ -123,7 +133,7 @@ def sigma2D(raw_rms: np.ndarray, noise: float, NAi: float) -> np.ndarray:
     correction = ((3 - d_size) * (1 - (lmaxlminapprox**(-1. * d_size)))) / (
                 d_size * (1 - (lmaxlminapprox**(d_size - 3))))
     mass = mf / correction
-    d_exact = _acfd(d_size, 1, mass ** (1. / d_size))
+    d_exact = acfd(d_size, 1, mass ** (1. / d_size))
     return d_exact
 
 
@@ -139,10 +149,10 @@ def sigma2DApproximation(raw_rms: np.ndarray, noise: float, NAi: float) -> np.nd
         NAi: The illumination numerical aperture (NA) of the objective.
 
     Returns:
-        d_estimate: This is an estimation of D calculated from Sigma. It's based on a 15th order polynomial fit of
-         the output from the `sigma2D` function. No value of D yields error >0.1%.
+        An estimation of D calculated from Sigma. It's based on a 15th order polynomial fit of
+        the output from the `sigma2D` function. No value of D yields error >0.1%.
     """
-    d_size = _calcDSize(raw_rms, noise, NAi)
+    d_size = calcDSize(raw_rms, noise, NAi)
     # These are the polynomical coefficients stored in the SimgaToD_coefs.mat file. They go from high order to low, E.G. x^2 + x + 1
     sigmaToD_coefs = [-9.14414809736752e-09, 8.02336561707375e-07, -3.22276589702395e-05, 0.000784980326922923, -0.0129458554989855, 0.152852475387947,
                       -1.33210715342735, 8.70614624955508, -42.9149123685218, 159.111116839950, -438.829185621276, 881.674160348790, -1246.22822358504,

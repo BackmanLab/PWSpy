@@ -50,7 +50,7 @@ class _MyView(QGraphicsView):
         r.setSize(QSizeF(s, s))
         self.scene().setSceneRect(r)  # Set the scene size to the square that fits in view.
 
-    def resizeEvent(self, event: QtGui.QResizeEvent) -> None:
+    def resizeEvent(self, event: QtGui.QResizeEvent):
         """Every time that the view is resized this event will fire and start the debounce timer. The timer will only
         actually time out if this event doesn't restart it within the timeout period."""
         self._debounce.start()
@@ -171,7 +171,7 @@ class PlotNd(QWidget):
         self.console.do_execute(f"print('');print('');print({msg})", True, 0)
         self.console.activateWindow()  # This should bring the window to the front
 
-    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+    def closeEvent(self, a0: QtGui.QCloseEvent):
         """Overrides the Qt closeEvent to make sure things are cleaned up propertly."""
         if self.console is not None:
             self.console.close()
