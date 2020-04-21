@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Sep 12 12:49:49 2018
-
-@author: Nick
+Plots the spectra of the ITO thin film used for calibration.
 """
 from pwspy.dataTypes import ImCube, AcqDir
 from glob import glob

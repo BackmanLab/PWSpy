@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Dec  7 12:38:49 2018
-
-@author: Nick Anthony
+An adaptation of the PWS analysis script used in MATLAB. This is now outdated. The up to date version is in
+`pwspy.analysis.pws`.
 """
 from pwspy.dataTypes import ImCube, KCube
 import copy

@@ -1,5 +1,5 @@
 """
-This module provides a number of objects useful for dealing with files saved by Micro-Manager. https://micro-manager.org/
+Objects useful for dealing with files saved by Micro-Manager. https://micro-manager.org/
 
 Classes
 ----------

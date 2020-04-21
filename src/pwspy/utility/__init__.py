@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""This module provides a number of useful subpackages ranging many different topics
+"""Useful subpackages ranging many different topics
 
 Members
 ----------

@@ -1,5 +1,5 @@
 """
-This module provides a number of useful classes for interacting with Matplotlib plots. Mostly for the purpose of drawing ROIs.
+Useful classes for interacting with Matplotlib plots. Mostly for the purpose of drawing ROIs.
 
 Selectors
 ----------

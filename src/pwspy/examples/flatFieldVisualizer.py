@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Spyder Editor
-
-This is a temporary script file.
+A script that attempts to reveal information about the spectral uniformity accross the field of view of the microscope.
 """
 
 import numpy as np

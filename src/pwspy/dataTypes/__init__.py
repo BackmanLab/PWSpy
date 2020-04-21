@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-======================================
-Data Types (:mod:`pwspy.dataTypes`)
-======================================
-A module containing all custom datatypes that are commonly used in the analysis of PWS related data.
+Custom datatypes that are commonly used in the analysis of PWS related data.
 
 
 Metadata Classes
@@ -63,9 +60,8 @@ from ._data import (FluorescenceImage, ExtraReflectanceCube, ExtraReflectionCube
                     ICRawBase)
 
 __all__ = ['ICMetaData', 'AcqDir', 'DynMetaData', 'ERMetaData', 'FluorMetaData', 'AnalysisManagerMetaDataBase',
-           'MetaDataBase', 'Roi', 'CameraCorrection',
-           'FluorescenceImage', 'ExtraReflectionCube', 'ExtraReflectanceCube', 'ImCube', 'KCube', 'DynCube', 'ICBase',
-           'ICRawBase']
+           'MetaDataBase', 'Roi', 'CameraCorrection', 'FluorescenceImage', 'ExtraReflectionCube',
+           'ExtraReflectanceCube', 'ImCube', 'KCube', 'DynCube', 'ICBase', 'ICRawBase']
 
 
 

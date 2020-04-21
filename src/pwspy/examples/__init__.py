@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""This is a collection of example usages of the :mod:`pwspy` module.
+"""
+This is a collection of example usages of the :mod:`pwspy` module.
 
 .. autosummary::
     :toctree: generated/
@@ -11,4 +12,5 @@
     ROItoMirror
     subtractionNormalization
     syntheticMirror
-    """
+    findOPDSurface
+"""
