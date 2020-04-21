@@ -20,14 +20,15 @@ def expn(n: float, x: float) -> float:
     """This is a custom implementation of the generalized exponential exponential integral `En`. The implementation in `scipy.special.expn` is faster but only supports
     integers for `n`.
 
-    :math:`$$\int_{0}^{\infty}  \frac{e^{-x*t}}{t^n} \,dt$$`
+    :math:`\\int_0^{\\infty} \\! \\frac{e^{-x*t}}{t^n} \\, \\mathrm{d}t`
+
 
     Args:
         n: The exponent of the divisor
         x: The exponent of the inverse exponential
 
     Returns:
-        The result of the integral :math:`$$\int_{0}^{\infty}  \frac{e^{-x*t}}{t^n} \,dt$$`
+        The result of the integral :math:`\\int_0^{\\infty} \\! \\frac{e^{-x*t}}{t^n} \\, \\mathrm{d}t`
     """
     def integrand(t: float, N: float, X: float):
         return np.exp(-X*t) / t**N
