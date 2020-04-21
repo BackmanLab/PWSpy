@@ -849,8 +849,18 @@ class ImCube(ICRawBase):
         return self.index
 
     @classmethod
-    def loadAny(cls, directory, metadata: pwsdtmd.ICMetaData = None,  lock: mp.Lock = None):
-        """Attempt loading any of the known file formats."""
+    def loadAny(cls, directory: str, metadata: pwsdtmd.ICMetaData = None,  lock: mp.Lock = None):
+        """
+        Attempt to load a `ImCube` for any format of file in `directory`
+
+        Args:
+            directory: The directory containing the data files.
+            metadata: The metadata object associated with this acquisition
+            lock: A `Lock` object used to synchronized IO in multithreading and multiprocessing applications.
+
+        Returns:
+            A new instance of `ImCube`.
+        """
         try:
             return ImCube.fromTiff(directory, metadata=metadata, lock=lock)
         except:
@@ -863,10 +873,20 @@ class ImCube(ICRawBase):
                     raise OSError(f"Could not find a valid PWS image cube file at {directory}.")
 
     @classmethod
-    def fromOldPWS(cls, directory, metadata: pwsdtmd.ICMetaData = None,  lock: mp.Lock = None):
-        """Loads from the file format that was saved by the all-matlab version of the Basis acquisition code.
+    def fromOldPWS(cls, directory: str, metadata: pwsdtmd.ICMetaData = None,  lock: mp.Lock = None):
+        """
+        Loads from the file format that was saved by the all-matlab version of the Basis acquisition code.
         Data was saved in raw binary to a file called `image_cube`. Some metadata was saved to .mat files called
-        `info2` and `info3`."""
+        `info2` and `info3`.
+
+        Args:
+            directory: The directory containing the data files.
+            metadata: The metadata object associated with this acquisition
+            lock: A `Lock` object used to synchronized IO in multithreading and multiprocessing applications.
+
+        Returns:
+            A new instance of `ImCube`.
+        """
         if lock is not None:
             lock.acquire()
         try:
@@ -883,10 +903,20 @@ class ImCube(ICRawBase):
 
     @classmethod
     def fromTiff(cls, directory, metadata: pwsdtmd.ICMetaData = None,  lock: mp.Lock = None):
-        """Loads from a 3D tiff file named `pws.tif`, or in some older data `MMStack.ome.tif`. Metadata can be stored in
+        """
+        Loads from a 3D tiff file named `pws.tif`, or in some older data `MMStack.ome.tif`. Metadata can be stored in
         the tags of the tiff file but if there is a pwsmetadata.json file found then this is preferred.
         A multiprocessing.Lock object can be passed to this function so that it will acquire a lock during the
-        hard-drive intensive parts of the function. this is useful in multi-core contexts."""
+        hard-drive intensive parts of the function. this is useful in multi-core contexts.
+
+        Args:
+            directory: The directory containing the data files.
+            metadata: The metadata object associated with this acquisition
+            lock: A `Lock` object used to synchronized IO in multithreading and multiprocessing applications.
+
+        Returns:
+            A new instance of `ImCube`.
+        """
         if lock is not None:
             lock.acquire()
         try:
@@ -907,8 +937,18 @@ class ImCube(ICRawBase):
         return cls(data, metadata)
 
     @classmethod
-    def fromNano(cls, directory: str, metadata: pwsdtmd.ICMetaData = None, lock: mp.Lock = None):
-        """Loads from the file format used at NanoCytomics. all data and metdata is contained in a .mat file."""
+    def fromNano(cls, directory: str, metadata: pwsdtmd.ICMetaData = None, lock: mp.Lock = None) -> ImCube:
+        """
+        Loads from the file format used at NanoCytomics. all data and metadata is contained in a .mat file.
+
+        Args:
+            directory: The directory containing the data files.
+            metadata: The metadata object associated with this acquisition
+            lock: A `Lock` object used to synchronized IO in multithreading and multiprocessing applications.
+
+        Returns:
+            A new instance of `ImCube`.
+        """
         path = os.path.join(directory, 'imageCube.mat')
         if lock is not None:
             lock.acquire()
@@ -926,8 +966,17 @@ class ImCube(ICRawBase):
 
     @classmethod
     def fromMetadata(cls, meta: pwsdtmd.ICMetaData,  lock: mp.Lock = None) -> ImCube:
-        """If provided with an ICMetadata object this function will automatically select the correct file loading method
-        and will return the associated ImCube."""
+        """
+        If provided with an ICMetadata object this function will automatically select the correct file loading method
+        and will return the associated ImCube.
+
+        Args:
+            meta: The metadata to use to load the object from.
+            lock: A `Lock` object used to synchronized IO in multithreading and multiprocessing applications.
+
+        Returns:
+            A new instance of `ImCube`.
+        """
         assert isinstance(meta, pwsdtmd.ICMetaData)
         if meta.fileFormat == pwsdtmd.ICMetaData.FileFormats.Tiff:
             return cls.fromTiff(meta.filePath, metadata=meta, lock=lock)
@@ -941,6 +990,12 @@ class ImCube(ICRawBase):
             raise TypeError("Invalid FileFormat")
 
     def toOldPWS(self, directory):
+        """
+        Save this object to the old .mat based storage format.
+
+        Args:
+            directory: The path to the folder to save the data files to.
+        """
         if os.path.exists(directory):
             raise OSError("The specified directory already exists.")
         os.mkdir(directory)
@@ -976,7 +1031,11 @@ class ImCube(ICRawBase):
         im.close()
 
     def toTiff(self, outpath: str, dtype=np.uint16):
-        """Save the ImCube to the standard tiff file format."""
+        """Save the ImCube to the standard TIFF file format.
+
+        Args:
+            outpath: The path to save the new TIFF file to.
+        """
         im = self.data
         im = im.astype(dtype)
         os.mkdir(outpath)
@@ -985,8 +1044,7 @@ class ImCube(ICRawBase):
             w.save(np.rollaxis(im, -1, 0), metadata=self.metadata._dict)
         self.metadata.metadataToJson(outpath)
 
-    def selIndex(self, start, stop) -> ImCube:
-        """Return a copy of this ImCube only within a range of wavelengths."""
+    def selIndex(self, start: float, stop: float) -> ImCube:  # Inherit docstring
         ret = super().selIndex(start, stop)
         md = copy.deepcopy(self.metadata)  # We are creating a copy of the metadata object because modifying the original metadata object can cause weird issues.
         assert md._dict is not self.metadata._dict
@@ -994,7 +1052,7 @@ class ImCube(ICRawBase):
         return ImCube(ret.data, md)
 
     @staticmethod
-    def getMetadataClass() -> Type[pwsdtmd.ICMetaData]:
+    def getMetadataClass() -> Type[pwsdtmd.ICMetaData]:  # Inherit docstring
         return pwsdtmd.ICMetaData
 
     @classmethod
@@ -1006,7 +1064,15 @@ class ImCube(ICRawBase):
 
     def filterDust(self, kernelRadius: float, pixelSize: float = None) -> None:
         """This method blurs the data of the ImCube along the X and Y dimensions. This is useful if the ImCube is being
-        used as a reference to normalize other ImCube. It helps blur out dust adn other unwanted small features."""
+        used as a reference to normalize other ImCube. It helps blur out dust adn other unwanted small features.
+
+        Args:
+            kernelRadius: The `sigma` of the gaussian kernel used for blurring. A greater value results in greater
+                blurring. If `pixelSize` is provided then this is in units of `pixelSize`, otherwise it is in units of
+                pixels.
+            pixelSize: The size (usualy in units of microns) of each pixel in the datacube. This can generally be loaded
+                automatically from the metadata.
+        """
         if pixelSize is None:
             pixelSize = self.metadata.pixelSizeUm
             if pixelSize is None:
@@ -1033,7 +1099,7 @@ class ImCube(ICRawBase):
         self.data = self.data / reference.data
         self.processingStatus.normalizedByReference = True
 
-    def subtractExtraReflection(self, extraReflection: ExtraReflectionCube):
+    def subtractExtraReflection(self, extraReflection: ExtraReflectionCube):  # Inherit docstring
         assert self.data.shape == extraReflection.data.shape
         if not self.processingStatus.normalizedByExposure:
             raise Exception("This ImCube has not yet been normalized by exposure. are you sure you want to normalize by exposure?")
@@ -1049,16 +1115,31 @@ class ImCube(ICRawBase):
 
 class KCube(ICBase):
     """A class representing an ImCube after being transformed from being described in terms of wavelength to
-    wavenumber (k-space). Much of the analysis operated in terms of k-space."""
+    wavenumber (k-space). Much of the analysis operated in terms of k-space.
+
+    Args:
+        data: A 3-dimensional array containing the data. The dimensions should be [Y, X, Z] where X and Y are the spatial coordinates of the image
+            and Z corresponds to the `index` dimension, e.g. wavelength, wavenumber, time, etc.
+        wavenumbers: A sequence indicating the wavenumber associated with each 2D slice along the 3rd axis of the `data` array.
+        metadata: The metadata object associated with this data object.
+    """
 
     def __init__(self, data: np.ndarray, wavenumbers: Tuple[float], metadata: pwsdtmd.ICMetaData = None):
         self.metadata = metadata #Just saving a reference to the original imcube in case we want to reference it.
         ICBase.__init__(self, data, wavenumbers, dtype=np.float32)
 
     @classmethod
-    def fromImCube(cls, cube: ImCube):
-        """Convert an ImCube into a KCube. Data is converted from wavelength to wavenumber (1/lambda), interpolation is
-        then used to linearize the data in terms of wavenumber."""
+    def fromImCube(cls, cube: ImCube) -> KCube:
+        """
+        Convert an ImCube into a KCube. Data is converted from wavelength to wavenumber (1/lambda), interpolation is
+        then used to linearize the data in terms of wavenumber.
+
+        Args:
+            cube: The `ImCube` object to generate a `KCube` object from.
+
+        Returns:
+            A new instance of `KCube`
+        """
         # Convert to wavenumber and reverse the order so we are ascending in order. Units of radian/micron
         wavenumbers = (2 * np.pi) / (np.array(cube.wavelengths, dtype=np.float64) * 1e-3)[::-1]
         data = cube.data[:, :, ::-1]
@@ -1074,7 +1155,23 @@ class KCube(ICBase):
     def wavenumbers(self) -> Tuple[float, ...]:
         return self.index
 
-    def getOpd(self, isHannWindow: bool, indexOpdStop: int = None, mask=None) -> Tuple[np.ndarray, np.ndarray]:
+    def getOpd(self, isHannWindow: bool, indexOpdStop: int = None, mask: np.ndarray = None) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Calculate the Fourier transform of each spectra. This can be used to get the distance (in terms of OPD) to
+        objects that are reflecting light.
+
+        Args:
+            isHannWindow: If True, apply a Hann window to the data before the FFT. This reduces spectral resolution but
+                improves dynamic range and reduces "frequency leakage".
+            indexOpdStop: This parameter is a holdover from the original MATLAB implementation. Truncates the 3rd axis
+                of the OPD array.
+            mask: A 2D boolean numpy array indicating which pixels should be processed.
+
+        Returns:
+            A tuple containing: `opd`: The 3D array of values, `opdIndex`: The sequence of OPD values associated with each
+                2D slice along the 3rd axis of the `opd` data.
+
+        """
         fftSize = int(2 ** (np.ceil(np.log2((2 * len(self.wavenumbers)) - 1))))  # This is the next size of fft that is  at least 2x greater than is needed but is a power of two. Results in interpolation, helps amplitude accuracy and fft efficiency.
         fftSize *= 2  # We double the fftsize for even more iterpolation. Not sure why, but that's how it was done in the original matlab code.
         if isHannWindow:  # if hann window checkbox is selected, create hann window
@@ -1108,7 +1205,6 @@ class KCube(ICBase):
         xVals = xVals.astype(self.data.dtype)
         return opd, xVals
 
-    # @classmethod
     @staticmethod
     def fromOpd(opd: np.ndarray, xVals: np.ndarray, useHannWindow: bool):
         """WARNING: This function is untested. it almost certainly doesn't work. Create a KCube from and opd in the form returned by KCube.getOpd. This is useful if you want to do spectral manipulation and then transform back."""
@@ -1247,17 +1343,43 @@ class KCube(ICBase):
 
 
 class FluorescenceImage:
+    """
+    Represents a fluorescence image taken by the PWS acquisition software.
+
+    Args:
+        data: A 2D array of image data.
+        md: The metadata object associated with this image.
+    """
     def __init__(self, data: np.ndarray, md: pwsdtmd.FluorMetaData):
         self.data = data
         self.metadata = md
 
     @classmethod
-    def fromTiff(cls, directory: str, acquisitionDirectory: Optional[pwsdtmd.AcqDir] = None):
+    def fromTiff(cls, directory: str, acquisitionDirectory: Optional[pwsdtmd.AcqDir] = None) -> FluorescenceImage:
+        """
+        Load an image from a TIFF file.
+
+        Args:
+            directory: The path to the folder containing the TIFF file.
+            acquisitionDirectory: The `AcqDir` object associated with this acquisition.
+
+        Returns:
+            A new instanse of `FluorescenceImage`.
+        """
         md = pwsdtmd.FluorMetaData.fromTiff(directory, acquisitionDirectory) #This will raise an error if the folder isn't valid
         return cls.fromMetadata(md)
 
     @classmethod
-    def fromMetadata(cls, md: pwsdtmd.FluorMetaData, lock: mp.Lock = None):
+    def fromMetadata(cls, md: pwsdtmd.FluorMetaData, lock: mp.Lock = None) -> FluorescenceImage:
+        """
+        Load an image from the metadata object.
+
+        Args:
+            md: The metadata object to load the image from.
+
+        Returns:
+            A new instanse of `FluorescenceImage`.
+        """
         path = os.path.join(md.filePath, pwsdtmd.FluorMetaData.FILENAME)
         if lock is not None:
             lock.acquire()
@@ -1269,6 +1391,12 @@ class FluorescenceImage:
         return cls(img.asarray(), md)
 
     def toTiff(self, directory: str):
+        """
+        Save this object to a TIFF file.
+
+        Args:
+            directory: The path to the folder to save the new file to.
+        """
         with open(os.path.join(directory, pwsdtmd.FluorMetaData.FILENAME), 'wb') as f:
             tf.imsave(f, self.data)
         with open(os.path.join(directory, pwsdtmd.FluorMetaData.MDPATH), 'w') as f:
