@@ -21,7 +21,6 @@ Functions
 
 import numpy as np
 from scipy.integrate import quad
-# TODO see email from self (nicholas.anthony@northwestern.edu) on 3/26/2019 showing how the equations can be simplified to be more efficient)
 
 
 @np.vectorize
@@ -62,7 +61,8 @@ def _acf(d, lmin, lmax, x):
 
 
 def _acfd(d, lmin, lmax):
-    """This function is based on the `acfd` MATLAB function.
+    """This function is based on the `acfd` MATLAB function. The equation has been algebraically refactored from the
+    MATLAB code to require fewer computations of logarithms.
 
     Args:
         d:
@@ -74,7 +74,7 @@ def _acfd(d, lmin, lmax):
     """
     delta = 0.1
     x = (lmax+lmin) / 100
-    out = 3 + (np.log(_acf(d, lmin, lmax, x + delta)) - np.log(_acf(d, lmin, lmax, x))) / (np.log(x + delta) - np.log(x))
+    out = 3 + np.log(_acf(d, lmin, lmax, x + delta) / _acf(d, lmin, lmax, x)) / np.log((x + delta) / x)
     return out
 
 
