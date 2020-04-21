@@ -533,8 +533,18 @@ class DynCube(ICRawBase):
             raise TypeError("Invalid FileFormat")
 
     @classmethod
-    def loadAny(cls, directory: str, metadata: pwsdtmd.DynMetaData = None, lock: mp.Lock = None):
-        #TODO continue documentation from here.
+    def loadAny(cls, directory: str, metadata: typing.Optional[pwsdtmd.DynMetaData] = None, lock: typing.Optional[mp.Lock] = None) -> DynCube:
+        """
+        Attempt to load a `DynCube` for any format of file in `directory`
+
+        Args:
+            directory: The directory containing the data files.
+            metadata: The metadata object associated with this acquisition
+            lock: A `Lock` object used to synchronized IO in multithreading and multiprocessing applications.
+
+        Returns:
+            A new instance of `DynCube`.
+        """
         try:
             return DynCube.fromTiff(directory, metadata=metadata, lock=lock)
         except:
@@ -544,10 +554,19 @@ class DynCube(ICRawBase):
                 raise OSError(f"Could not find a valid PWS image cube file at {directory}.")
 
     @classmethod
-    def fromOldPWS(cls, directory, metadata: pwsdtmd.DynMetaData = None,  lock: mp.Lock = None):
+    def fromOldPWS(cls, directory, metadata: pwsdtmd.DynMetaData = None,  lock: mp.Lock = None) -> DynCube:
         """Loads from the file format that was saved by the all-matlab version of the Basis acquisition code.
         Data was saved in raw binary to a file called `image_cube`. Some metadata was saved to .mat files called
-        `info2` and `info3`."""
+        `info2` and `info3`.
+
+        Args:
+            directory: The directory containing the data files.
+            metadata: The metadata object associated with this acquisition
+            lock: A `Lock` object used to synchronized IO in multithreading and multiprocessing applications.
+
+        Returns:
+            A new instance of `DynCube`.
+        """
         if lock is not None:
             lock.acquire()
         try:
@@ -563,10 +582,19 @@ class DynCube(ICRawBase):
         return cls(data, metadata)
 
     @classmethod
-    def fromTiff(cls, directory, metadata: pwsdtmd.DynMetaData = None, lock: mp.Lock = None):
+    def fromTiff(cls, directory, metadata: pwsdtmd.DynMetaData = None, lock: mp.Lock = None) -> DynCube:
         """Load a dyanmics acquisition from a tiff file. if the metadata for the acquisition has already been loaded then you can provide
         is as the `metadata` argument to avoid loading it again. the `lock` argument is an optional place to provide a multiprocessing.Lock
-        which can be used when multiple files in parallel to avoid giving the hard drive too many simultaneous requests, this is probably not necessary."""
+        which can be used when multiple files in parallel to avoid giving the hard drive too many simultaneous requests, this is probably not necessary.
+
+        Args:
+            directory: The directory containing the data files.
+            metadata: The metadata object associated with this acquisition
+            lock: A `Lock` object used to synchronized IO in multithreading and multiprocessing applications.
+
+        Returns:
+            A new instance of `DynCube`.
+        """
         if lock is not None:
             lock.acquire()
         try:
@@ -587,7 +615,11 @@ class DynCube(ICRawBase):
     def normalizeByReference(self, reference: Union[DynCube, np.ndarray]):
         """This method can accept either a DynCube (in which case it's average over time will be calculated and used for
         normalization) or a 2d numpy Array which should represent the average over time of a reference DynCube. The array
-        should be 2D and its shape should match the first two dimensions of this DynCube."""
+        should be 2D and its shape should match the first two dimensions of this DynCube.
+
+        Args:
+            reference: Reference data for normalization. Usually an image of a blank piece of glass.
+        """
         if self.processingStatus.normalizedByReference:
             raise Exception("This cube has already been normalized by a reference.")
         if not self.processingStatus.cameraCorrected:
@@ -610,7 +642,7 @@ class DynCube(ICRawBase):
         self.data = self.data / mean[:, :, None]
         self.processingStatus.normalizedByReference = True
 
-    def subtractExtraReflection(self, extraReflection: np.ndarray):
+    def subtractExtraReflection(self, extraReflection: np.ndarray): # Inherit docstring
         assert self.data.shape[:2] == extraReflection.shape
         if not self.processingStatus.normalizedByExposure:
             raise Exception("This DynCube has not yet been normalized by exposure. are you sure you want to normalize by exposure?")
@@ -620,22 +652,37 @@ class DynCube(ICRawBase):
         else:
             raise Exception("The DynCube has already has extra reflection subtracted.")
 
-    def selIndex(self, start, stop) -> DynCube:
+    def selIndex(self, start, stop) -> DynCube: # Inherit docstring
         ret = super().selIndex(start, stop)
         md = self.metadata
         md._dict['times'] = ret.index
         return DynCube(ret.data, md)
 
     def getAutocorrelation(self) -> np.ndarray:
-        """Returns the autocorrelation function of dynamics data along the time axis. The ACF is calculated using fourier transforms using IFFT(FFT(data)*conj(FFT(data)))/length(data)"""
+        """
+        Returns the autocorrelation function of dynamics data along the time axis. The ACF is calculated using
+        fourier transforms using IFFT(FFT(data)*conj(FFT(data)))/length(data).
+
+        Returns:
+            A 3D array of the autocorrelation function of the original data.
+        """
         data = self.data - self.data.mean(axis=2)[:, :, None]  # By subtracting the mean we get an ACF where the 0-lag value is the variance of the signal.
         F = np.fft.rfft(data, axis=2)
         ac = np.fft.irfft(F * np.conjugate(F), axis=2) / data.shape[2]
         return ac
 
-    def filterDust(self, kernelRadius: float, pixelSize: float = None) -> None:
-        """This method blurs the data of the cube along the X and Y dimensions. This is useful if the cube is being
-        used as a reference to normalize other cube. It helps blur out dust adn other unwanted small features."""
+    def filterDust(self, kernelRadius: float, pixelSize: float = None):
+        """
+        This method blurs the data of the cube along the X and Y dimensions. This is useful if the cube is being
+        used as a reference to normalize other cube. It helps blur out dust and other unwanted small features.
+
+        Args:
+            kernelRadius: The `sigma` of the gaussian kernel used for blurring. A greater value results in greater
+                blurring. If `pixelSize` is provided then this is in units of `pixelSize`, otherwise it is in units of
+                pixels.
+            pixelSize: The size (usualy in units of microns) of each pixel in the datacube. This can generally be loaded
+                automatically from the metadata.
+        """
         if pixelSize is None:
             pixelSize = self.metadata.pixelSizeUm
             if pixelSize is None:
@@ -643,17 +690,23 @@ class DynCube(ICRawBase):
         super().filterDust(kernelRadius, pixelSize)
 
     @classmethod
-    def fromHdfDataset(cls, d: h5py.Dataset):
-        """Load an Imcube from an HDF5 dataset."""
+    def fromHdfDataset(cls, d: h5py.Dataset):  # Inherit docstring
         data, index, mdDict, processingStatus = cls.decodeHdf(d)
         md = pwsdtmd.DynMetaData(mdDict, fileFormat=pwsdtmd.DynMetaData.FileFormats.Hdf)
         return cls(data, md, processingStatus=processingStatus)
 
 
 class ExtraReflectanceCube(ICBase):
-    """This class represents a 3D data cube of the extra reflectance in a PWS system. It's values are in units of
-    reflectance (between 0 and 1). It has a `metadata` attribute which is of type ERMetaData. It also has a `data` attribute
-    of numpy.ndarray type."""
+    """This class represents a 3D data cube of the extra reflectance in a PWS system.
+
+    Args:
+        data: A 3D array of the extra reflectance in the system. It's values are in units of reflectance (between 0 and 1).
+        wavelengths: The wavelengths associated with each 2D slice along the 3rd axis of the data array.
+        metadata: Metadata
+    Attributes:
+        metadata (ERMetaData): metadata
+        data (ndarray): data
+    """
 
     def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], metadata: pwsdtmd.ERMetaData):
         assert isinstance(metadata, pwsdtmd.ERMetaData)
@@ -664,19 +717,37 @@ class ExtraReflectanceCube(ICBase):
 
     @property
     def wavelengths(self) -> Tuple[float, ...]:
-        """The wavelengths corresponding to each element along the 3rd axis of `self.data`."""
+        """
+
+        Returns:
+            The wavelengths corresponding to each element along the 3rd axis of `self.data`.
+        """
         return self.index
 
     @classmethod
     def fromHdfFile(cls, directory: str, name: str) -> ExtraReflectanceCube:
-        """Load an ExtraReflectanceCube from an HDF5 file. `name` should be the file name, excluding the '_ExtraReflectance.h5' suffix."""
+        """
+        Load an ExtraReflectanceCube from an HDF5 file. `name` should be the file name, excluding the '_ExtraReflectance.h5' suffix.
+
+        Args:
+            directory: The path to the folder containing the HDF file.
+            name: The `name` that the cube was saved as.
+        Returns:
+            A new instance of `ExtraReflectanceCube` loaded from HDF.
+        """
         filePath = pwsdtmd.ERMetaData.dirName2Directory(directory, name)
         with h5py.File(filePath, 'r') as hf:
             dset = hf[pwsdtmd.ERMetaData._DATASETTAG]
             return cls.fromHdfDataset(dset, filePath=filePath)
 
-    def toHdfFile(self, directory: str, name: str) -> None:
-        """Save an ExtraReflectanceCube to an HDF5 file. The filename will be `name` with the '_ExtraReflectance.h5' suffix."""
+    def toHdfFile(self, directory: str, name: str):
+        """
+        Save an ExtraReflectanceCube to an HDF5 file. The filename will be `name` with the '_ExtraReflectance.h5' suffix.
+
+        Args:
+            directory: The path to the folder to save the HDF file to.
+            name: The `name` that the cube should be saved as.
+        """
         savePath = pwsdtmd.ERMetaData.dirName2Directory(directory, name)
         if os.path.exists(savePath):
             raise OSError(f"The path {savePath} already exists.")
@@ -684,21 +755,37 @@ class ExtraReflectanceCube(ICBase):
             self.toHdfDataset(hf)
 
     def toHdfDataset(self, g: h5py.Group) -> h5py.Group:
-        """Save the ExtraReflectanceCube to an HDF5 dataset. `g` should be an h5py Group or File."""
+        """
+        Save the ExtraReflectanceCube to an HDF5 dataset. `g` should be an h5py Group or File.
+
+        Args:
+            g: The `h5py.Group` to save to.
+        """
         g = super().toHdfDataset(g, pwsdtmd.ERMetaData._DATASETTAG)
         g = self.metadata.toHdfDataset(g)
         return g
 
     @classmethod
-    def fromHdfDataset(cls, d: h5py.Dataset, filePath: str = None):
-        """Load the ExtraReflectanceCube from `d`, an HDF5 dataset."""
+    def fromHdfDataset(cls, d: h5py.Dataset, filePath: str = None) -> ExtraReflectanceCube:
+        """Load the ExtraReflectanceCube from `d`, an HDF5 dataset.
+
+        Args:
+            d: The `h5py.Dataset` to load the cube from.
+            filePath: The path to the HDF file that the dataset came from.
+        Returns:
+            A new instance of `ExtraReflectanceCube` loaded from HDF.
+        """
         data, index = cls.decodeHdf(d)
         md = pwsdtmd.ERMetaData.fromHdfDataset(d, filePath=filePath)
         return cls(data, index, md)
 
     @classmethod
     def fromMetadata(cls, md: pwsdtmd.ERMetaData):
-        """Load an ExtraReflectanceCube from an ERMetaData object corresponding to an HDF5 file."""
+        """Load an ExtraReflectanceCube from an ERMetaData object corresponding to an HDF5 file.
+
+        Args:
+            md: The metadata to be used for loading the data file.
+        """
         directory, name = pwsdtmd.ERMetaData.directory2dirName(md.filePath)
         return cls.fromHdfFile(directory, name)
 
@@ -706,25 +793,49 @@ class ExtraReflectanceCube(ICBase):
 class ExtraReflectionCube(ICBase):
     """This class is meant to be constructed from an ExtraReflectanceCube along with additional reference measurement
     information. Rather than being in units of reflectance (between 0 and 1) it is in the same units as the reference measurement
-    that is provided with, usually counts/ms or just counts."""
+    that is provided with, usually counts/ms or just counts.
+
+    Args:
+        data: The 3D array of the extra reflection in the system. In units of counts/ms or just counts
+        wavelengths: The wavelengths associated with each 2D slice along the 3rd axis of the data array.
+        metadata: Metadata
+    """
     def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], metadata: pwsdtmd.ERMetaData):
         super().__init__(data, wavelengths)
         self.metadata = metadata
 
     @classmethod
-    def create(cls, reflectance: ExtraReflectanceCube, theoryR: pd.Series, reference: ImCube):
-        """Construct and ExtraReflectionCube from an ExtraReflectanceCube and a reference measurement. The resulting
+    def create(cls, reflectance: ExtraReflectanceCube, theoryR: pd.Series, reference: ImCube) -> ExtraReflectionCube:
+        """
+        Construct and ExtraReflectionCube from an ExtraReflectanceCube and a reference measurement. The resulting
         ExtraReflectionCube will be in the same units as `reference`. `theoryR` should be a spectrum describing the theoretically
         expected reflectance of the reference data cube. Both `theoryR` and `reflectance` should be in units of reflectance
-        (between 0 and 1)."""
+        (between 0 and 1).
+
+        Args:
+            reflectance: The `ExtraReflectanceCube` to construct an `ExtraReflectionCube` from.
+            theoryR: The theoretically predicted reflectance of material imaged in `reference`.
+            reference: A PWS image of a blank glass-{material} interface, usually water.
+        Returns:
+            A new instance of `ExtraReflectionCube`.
+        """
         I0 = reference.data / (theoryR[None, None, :] + reflectance.data)  # I0 is the intensity of the illumination source, reconstructed in units of `counts`. this is an inversion of our assumption that reference = I0*(referenceReflectance + extraReflectance)
         data = reflectance.data * I0  # converting extraReflectance to the extra reflection in units of counts
         return cls(data, reflectance.wavelengths, reflectance.metadata)
 
 
 class ImCube(ICRawBase):
-    """ A class representing a single PWS acquisition. Contains methods for loading and saving to multiple formats as
-    well as common operations used in analysis."""
+    """
+    A class representing a single PWS acquisition. Contains methods for loading and saving to multiple formats as
+    well as common operations used in analysis.
+
+    Args:
+        data: A 3-dimensional array containing the data. The dimensions should be [Y, X, Z] where X and Y are the spatial coordinates of the image
+            and Z corresponds to the `index` dimension, e.g. wavelength, wavenumber, time, etc.
+        metadata: The metadata object associated with this data object.
+        processingStatus: An object that keeps track of which processing steps and corrections have been applied to this object.
+        dtype (type): the data type that the data should be stored as. The default is numpy.float32.
+    """
 
     def __init__(self, data, metadata: pwsdtmd.ICMetaData, processingStatus: ICRawBase.ProcessingStatus=None, dtype=np.float32):
         assert isinstance(metadata, pwsdtmd.ICMetaData)
@@ -732,6 +843,9 @@ class ImCube(ICRawBase):
 
     @property
     def wavelengths(self):
+        """
+        A tuple containing the values of the wavelengths for the data.
+        """
         return self.index
 
     @classmethod
