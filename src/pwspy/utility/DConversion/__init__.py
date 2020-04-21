@@ -103,7 +103,7 @@ def calcDSize(raw_rms: np.ndarray, noise: float, NAi: float):
     Returns:
         d_size: :todo:
     """
-
+    assert isinstance(raw_rms, np.ndarray)
     sigma = np.sqrt(raw_rms**2 - noise**2)  # The MATLAB version will return complex numbers if this is negative. This implementation returns `nan`
     d_size = sigma * 13.8738 * NAi + 1.473
     return d_size
@@ -164,15 +164,6 @@ def sigma2DApproximation(raw_rms: np.ndarray, noise: float, NAi: float) -> np.nd
 
 
 if __name__ == '__main__':
-
-
-    # def testexpn():
-    #     lmin = 1
-    #     d = np.array([2.1796160, 2.9585142, 2.6632771, 1.8785352, 1.8430616])
-    #     x = np.array([8.8774614, 2.6083560, 3.6681373, 20.619408, 23.234888])
-    #     res = expn(-2+d, x/lmin)
-    #     return res
-
     import time
     testData = np.linspace(0.001, 0.1, num=100)
     stime = time.time()
