@@ -60,10 +60,10 @@ def acf(d: NumberOrArray, lmin: NumberOrArray, lmax: NumberOrArray, x: NumberOrA
     """This function is based on the `acf_1` MATLAB function.
 
     Args:
-        d:
-        lmin:
-        lmax:
-        x:
+        d: :todo:
+        lmin: :todo:
+        lmax: :todo:
+        x: :todo:
 
     Returns:
 
@@ -77,12 +77,12 @@ def acfd(d: NumberOrArray, lmin: NumberOrArray, lmax: NumberOrArray) -> NumberOr
     MATLAB code to require fewer computations of logarithms.
 
     Args:
-        d:
-        lmin:
-        lmax:
+        d: :todo:
+        lmin: :todo:
+        lmax: :todo:
 
     Returns:
-
+        :todo:
     """
     delta = 0.1
     x = (lmax+lmin) / 100
