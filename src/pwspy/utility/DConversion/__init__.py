@@ -110,8 +110,8 @@ def sigma2D(raw_rms: np.ndarray, noise: float, NAi: float) -> np.ndarray:
         NAi: The illumination numerical aperture (NA) of the objective.
 
     Returns:
-        d_exact: Results from the exact solution of converting from sigma to D. This calculation is based on
-            derivations by Vadim Backman.
+        Results from the exact solution of converting from Sigma to D. This calculation is based on
+        derivations by Vadim Backman.
     """
     d_size = _calcDSize(raw_rms, noise, NAi)
     #This runs 6 times faster than the matlab version for some reason
@@ -138,8 +138,8 @@ def sigma2DApproximation(raw_rms: np.ndarray, noise: float, NAi: float) -> np.nd
         NAi: The illumination numerical aperture (NA) of the objective.
 
     Returns:
-        d_estimate: This is an estimation of D calculated from Sigma. It's based on a 15th order polynomial fit of
-         the output from the `sigma2D` function. No value of D yields error >0.1%.
+        An estimation of D calculated from Sigma. It's based on a 15th order polynomial fit of
+        the output from the `sigma2D` function. No value of D yields error >0.1%.
     """
     d_size = _calcDSize(raw_rms, noise, NAi)
     # These are the polynomical coefficients stored in the SimgaToD_coefs.mat file. They go from high order to low, E.G. x^2 + x + 1
