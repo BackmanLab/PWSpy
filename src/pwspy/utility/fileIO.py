@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-This module provides a number of functions useful for
-quickly loading files using parallel processing.
+Functions for quickly loading files using parallel processing.
 
 Functions
 ----------

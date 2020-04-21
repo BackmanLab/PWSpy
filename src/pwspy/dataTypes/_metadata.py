@@ -15,7 +15,6 @@ import jsonschema
 import numpy as np
 import tifffile as tf
 from scipy import io as spio
-
 from pwspy.analysis import AbstractHDFAnalysisResults
 from pwspy.analysis.dynamics import DynamicsAnalysisResults
 from pwspy.analysis.pws import PWSAnalysisResults

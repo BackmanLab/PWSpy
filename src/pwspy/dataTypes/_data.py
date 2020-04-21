@@ -313,9 +313,7 @@ class ICBase:
             d: The dataset that the ICBase has been saved to
 
         Returns:
-            A tuple containing:
-                data: The 3D array of `data`
-                index: A tuple containing the `index`
+            A tuple containing: (data: The 3D array of `data`,  index: A tuple containing the `index`)
         """
         assert 'type' in d.attrs
         assert 'index' in d.attrs
@@ -435,6 +433,7 @@ class ICRawBase(ICBase, ABC):
     @abstractmethod
     def getMetadataClass() -> typing.Type[pwsdtmd.MetaDataBase]:
         """
+
         Returns:
             The metadata class associated with this subclass of ICRawBase
         """
@@ -1104,24 +1103,13 @@ class KCube(ICBase):
         rSquared = rSquared.astype(self.data.dtype)
         return cubeSlope, rSquared
 
-    # def toImCube(self) -> ImCube:
-    #     # Convert to wavenumber and reverse the order so we are ascending in order.
-    #     wavelengths = (2 * np.pi) / (np.array(self.wavenumbers, dtype=np.float64) * 1e-3)[::-1]
-    #     data = self.data[:, :, ::-1]
-    #     # Generate evenly spaced wavelengths
-    #     evenWavelengths = np.linspace(wavelengths[0], wavelengths[-1], num=len(wavelengths), dtype=np.float64)
-    #     # Interpolate to the evenly spaced wavenumbers
-    #     interpFunc = spi.interp1d(wavelengths, data, kind='linear', axis=2)
-    #     data = interpFunc(evenWavelengths)
-    #     md = copy.deepcopy(self.metadata)
-    #     md['wavelengths'] = evenWavelengths.astype(np.float32)
-    #     return ImCube(data, md, dtype=np.float32)
-
     @classmethod
     def fromHdfDataset(cls, dataset: h5py.Dataset):
-        """Load the KCube object from an `h5py.Dataset` in an HDF5 file
+        """
+        Load the KCube object from an `h5py.Dataset` in an HDF5 file
+
         Args:
-            dataset (h5py.Dataset): The `h5py.Dataset` that the KCube data is stored in.
+            dataset: The `h5py.Dataset` that the KCube data is stored in.
         Returns:
             KCube: A new instance of this class."""
         arr, index = cls.decodeHdf(dataset)

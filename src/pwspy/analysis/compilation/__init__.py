@@ -1,8 +1,5 @@
 """
-==================================================
-Compilation (:mod:`pwspy.analysis.compilation`)
-==================================================
-This module provides objects used during the "Compilation" step of analysis. This is when the data saved during analysis
+Objects used during the "Compilation" step of analysis. This is when the data saved during analysis
 is combined with ROIs to generate a table of values such as the average RMS, reflectance, diffusion coefficient, etc.
 
 PWS

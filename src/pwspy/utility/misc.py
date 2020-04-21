@@ -1,5 +1,5 @@
 """
-This module provides a number of objects that are generally useful in python programming.
+Objects that are generally useful in python programming.
 
 Decorators
 -------------

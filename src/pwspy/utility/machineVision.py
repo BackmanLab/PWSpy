@@ -1,5 +1,5 @@
 """
-This module provides a number of functions useful processing images. Currently its contents are focused
+Useful functions for processing images. Currently its contents are focused
 on image stabilization.
 
 Functions

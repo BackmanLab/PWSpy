@@ -10,7 +10,6 @@ This is a collection of example usages of the :mod:`pwspy` module.
     plotITOThinFilmCalibration
     pwsAnalysis
     ROItoMirror
-    subtractionNormalization
     syntheticMirror
     findOPDSurface
 """
