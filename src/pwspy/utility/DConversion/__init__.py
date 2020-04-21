@@ -2,7 +2,7 @@
 RMS measurements to D. The MATLAB code was based on Vadim-Backman's (v-backman@northwestern.edu) original code in
 Mathematica.
 
-REFERENCES
+References:
    L. Cherkezyan, D. Zhang, H. Subramanian, I. Capoglu, A. Taflove,
    V. Backman, "Review of interferometric spectroscopy of scattered light
    for the quantification of subdiffractional structure of biomaterials."
@@ -28,10 +28,11 @@ These functions are called by the primary functions and probably don't need to b
    calcDSize
 
 """
-
+import typing
 import numpy as np
 from scipy.integrate import quad
 
+NumberOrArray = typing.Union[np.ndarray, float]
 
 @np.vectorize
 def expn(n: float, x: float) -> float:
@@ -54,7 +55,7 @@ def expn(n: float, x: float) -> float:
     return quad(integrand, 1, np.inf, args=(n, x))[0]
 
 
-def acf(d, lmin, lmax, x):
+def acf(d: NumberOrArray, lmin: NumberOrArray, lmax: NumberOrArray, x: NumberOrArray) -> NumberOrArray:
     """This function is based on the `acf_1` MATLAB function.
 
     Args:
@@ -70,7 +71,7 @@ def acf(d, lmin, lmax, x):
     return out
 
 
-def acfd(d, lmin, lmax):
+def acfd(d: NumberOrArray, lmin: NumberOrArray, lmax: NumberOrArray) -> NumberOrArray:
     """This function is based on the `acfd` MATLAB function. The equation has been algebraically refactored from the
     MATLAB code to require fewer computations of logarithms.
 
@@ -88,7 +89,7 @@ def acfd(d, lmin, lmax):
     return out
 
 
-def calcDSize(raw_rms: np.ndarray, noise: float, NAi: float):
+def calcDSize(raw_rms: NumberOrArray, noise: float, NAi: float):
     """
     The `system_correction` argument from the original MATLAB function has been excluded. We assume that any RMS
     values being provided to this function have already been properly corrected for hardware defects.
@@ -109,7 +110,7 @@ def calcDSize(raw_rms: np.ndarray, noise: float, NAi: float):
     return d_size
 
 
-def sigma2D(raw_rms: np.ndarray, noise: float, NAi: float) -> np.ndarray:
+def sigma2D(raw_rms: NumberOrArray, noise: float, NAi: float) -> np.ndarray:
     """Converts d_size to D precisely. This function can be significantly slower than
     `sigma2DApproximation` but more closely follows the analytical solution.
 
@@ -137,7 +138,7 @@ def sigma2D(raw_rms: np.ndarray, noise: float, NAi: float) -> np.ndarray:
     return d_exact
 
 
-def sigma2DApproximation(raw_rms: np.ndarray, noise: float, NAi: float) -> np.ndarray:
+def sigma2DApproximation(raw_rms: NumberOrArray, noise: float, NAi: float) -> np.ndarray:
     """Converts d_size to D using a 15th degree polynomial approximation of the `sigma2D` function. This function can be
     significantly faster than `sigma2D` but is not guaranteed to be accurate especially at extreme input values.
 
