@@ -1,3 +1,19 @@
+"""
+Objects used in the analysis of Dynamics data.
+
+Classes
+---------
+
+.. autosummary::
+    :toctree: generated/
+
+    DynamicsAnalysisSettings
+    DynamicsRuntimeAnalysisSettings
+    DynamicsAnalysisResults
+    DynamicsAnalysis
+
+"""
+
 from __future__ import annotations
 import dataclasses
 from datetime import datetime

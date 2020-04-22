@@ -20,7 +20,6 @@ Dynamics
     DynamicsCompilerSettings
     DynamicsRoiCompilationResults
     DynamicsRoiCompiler
-    DynamicsAnalysisResults
 
 Generic
 --------

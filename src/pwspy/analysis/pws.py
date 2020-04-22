@@ -1,3 +1,19 @@
+"""
+Objects used in the analysis of PWS data.
+
+Classes
+---------
+
+.. autosummary::
+    :toctree: generated/
+
+    PWSAnalysisSettings
+    PWSRuntimeAnalysisSettings
+    PWSAnalysisResults
+    PWSAnalysis
+
+"""
+
 from __future__ import annotations
 import dataclasses
 import os

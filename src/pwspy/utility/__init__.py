@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Useful subpackages ranging many different topics
 
-Members
+Modules
 ----------
 .. autosummary::
    :toctree: generated/
