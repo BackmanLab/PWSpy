@@ -8,7 +8,7 @@ from numpy import ma
 import multiprocessing as mp
 import typing
 from . import AbstractAnalysis, warnings, AbstractAnalysisSettings, AbstractRuntimeAnalysisSettings, \
-    AbstractHDFAnalysisResults, AbstractAnalysisGroup
+    AbstractHDFAnalysisResults
 from pwspy import dateTimeFormat
 import pwspy.dataTypes as pwsdt
 from pwspy.utility.misc import cached_property
@@ -16,7 +16,8 @@ from pwspy.utility.reflection import reflectanceHelper, Material
 
 
 def getFromDict(func):
-    """This decorator makes it so that the function will only be evaluated if self.file is not None.
+    """
+    This decorator makes it so that the function will only be evaluated if self.file is not None.
     If self.file is None then we will just search self.dict for a value with a key matching the name of the decorated function.
     We use this because while we often want to load data from a file for use, we also want to support the case of an object
     that has been created but has not yet been saved to a file."""
@@ -31,9 +32,16 @@ def getFromDict(func):
 
 
 class DynamicsAnalysis(AbstractAnalysis):
-    """This class performs the analysis of RMS_t_squared and D described in the paper: "Multimodal interferometric imaging of nanoscale structure and
-    macromolecular motion uncovers UV induced cellular paroxysm". It is based on a set of matlab scripts written by the author of that paper, Scott Gladstein.
-     The original scripts can be found in the `_oldMatlab` subpackage."""
+    """This class performs the analysis of RMS_t_squared and D (diffusion). It is based on a set of MATLAB scripts written
+    by Scott Gladstein. The original scripts can be found in the `_oldMatlab` subpackage.
+
+    References:
+         "Multimodal interferometric imaging of nanoscale structure and macromolecular motion uncovers UV induced cellular paroxysm"
+
+    Args:
+        settings: The settings use for the analysis
+        ref: A reference acquisition to use for normalization.
+    """
     def __init__(self, settings: DynamicsRuntimeAnalysisSettings, ref: pwsdt.DynCube):
         super().__init__()
         extraReflectance = pwsdt.ExtraReflectanceCube.fromMetadata(settings.extraReflectanceMetadata) if settings.extraReflectanceMetadata is not None else None
@@ -69,7 +77,7 @@ class DynamicsAnalysis(AbstractAnalysis):
         self.settings = settings
         self.extraReflection = Iextra
 
-    def run(self, cube: pwsdt.DynCube) -> Tuple[DynamicsAnalysisResults, List[warnings.AnalysisWarning]]:
+    def run(self, cube: pwsdt.DynCube) -> typing.Tuple[DynamicsAnalysisResults, typing.List[warnings.AnalysisWarning]]:  # Inherit docstring
         assert cube.processingStatus.cameraCorrected
         warns = []
         cube.normalizeByExposure()
@@ -87,16 +95,16 @@ class DynamicsAnalysis(AbstractAnalysis):
         reflectance = cube.data.mean(axis=2)
 
         #Diffusion
-        cubeAc = ma.array(cubeAc) # Convert to the numpy.MaskedArray type to help us mark some data as invalid.
-        cubeAc[cubeAc.data[:, :, 0] < np.sqrt(2)*self.refAc[0]] = ma.masked # Remove pixels with low SNR. Default threshold removes values where 1st point of acf is less than sqrt(2) of background acf
+        cubeAc = ma.array(cubeAc)  # Convert to the numpy.MaskedArray type to help us mark some data as invalid.
+        cubeAc[cubeAc.data[:, :, 0] < np.sqrt(2)*self.refAc[0]] = ma.masked  # Remove pixels with low SNR. Default threshold removes values where 1st point of acf is less than sqrt(2) of background acf
         ac = ma.array(cubeAc - self.refAc)  # Background subtracted autocorrelation function.
         ac = ac / ac[:, :, 0][:, :, None]  # Normalize by the zero-lag value
         ac[np.any(ac <= 0, axis=2)] = ma.masked  # Before taking the log of the autocorrelation any negative or zero values will cause problems. Remove the pixel entirely
 
         dt = (cube.times[-1] - cube.times[0]) / (len(cube.times) - 1) / 1e3  # Convert to seconds
         k = (self.n_medium * 2 * np.pi) / (cube.metadata.wavelength / 1e3)  # expressing wavelength in microns to match up with old matlab code.
-        val = np.log(ac) / (4 * k ** 2) # See the `theory` section of the paper for an explanation of the 4k^2. The slope of log(ac) should be equivalent to 1/t_c in the paper.
-        d_slope = -self._maskedLinearRegression(val, dt) # Get the slope of the autocorrelation. This is related to the diffusion in the cell. The minus is here to make the number positive, the slope is really negative.
+        val = np.log(ac) / (4 * k ** 2)  # See the `theory` section of the paper for an explanation of the 4k^2. The slope of log(ac) should be equivalent to 1/t_c in the paper.
+        d_slope = -self._maskedLinearRegression(val, dt)  # Get the slope of the autocorrelation. This is related to the diffusion in the cell. The minus is here to make the number positive, the slope is really negative.
 
         results = DynamicsAnalysisResults.create(meanReflectance=reflectance,
                                                  rms_t_squared=rms_t_squared,
@@ -110,10 +118,18 @@ class DynamicsAnalysis(AbstractAnalysis):
         return results, warns
 
     @staticmethod
-    def _maskedLinearRegression(arr: ma.MaskedArray, dt: float):
-        """Takes a 3d ACF array as input and returns a 2d array indicating the slope along the 3rd dimension of the input array.
-         The dimensions of the output array match the first two dimensions of the input array. The input array can have invalid pixels masked out, this function
-         will exclude them from the calculation."""
+    def _maskedLinearRegression(arr: ma.MaskedArray, dt: float) -> np.ndarray:
+        """
+        Takes a 3d ACF array as input and returns a 2d array indicating the slope along the 3rd dimension of the input array.
+        The dimensions of the output array match the first two dimensions of the input array. The input array can have invalid pixels masked out, this function
+        will exclude them from the calculation.
+
+        Args:
+            arr: The masked 3D array of the autocorrelation function of each spectra.
+            dt: The time interval between each element of the autocorrelation function.
+        Returns:
+            The 2D array containing the slope of each ACF at each pixel.
+        """
         origShape = arr.shape
         y = np.reshape(arr, (origShape[0]*origShape[1], origShape[2]))  #Convert to a 2d array [pixels, time]. This is required by the polyfit function.
         t = np.array([i*dt for i in range(origShape[2])]) # Generate a 1d array representing the time axis.
@@ -127,7 +143,7 @@ class DynamicsAnalysis(AbstractAnalysis):
         Slope = np.reshape(Slope, (origShape[0], origShape[1])) # Reshape back to a 2d image
         return Slope
 
-    def copySharedDataToSharedMemory(self):
+    def copySharedDataToSharedMemory(self): # Inherit docstring
         refdata = mp.RawArray('f', self.refAc.size)
         refdata = np.frombuffer(refdata, dtype=np.float32).reshape(self.refAc.shape)
         np.copyto(refdata, self.refAc)
@@ -145,22 +161,22 @@ class DynamicsAnalysis(AbstractAnalysis):
             self.extraReflection = iedata
 
 
-class DynamicsAnalysisResults(AbstractHDFAnalysisResults):
+class DynamicsAnalysisResults(AbstractHDFAnalysisResults): # Inherit docstring.
     @staticmethod
-    def fields():
+    def fields(): # Inherit docstring.
         return ['meanReflectance', 'reflectance', 'rms_t_squared', 'diffusion', 'time', 'settings', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionIdTag']
 
     @staticmethod
-    def name2FileName(name: str) -> str:
+    def name2FileName(name: str) -> str: # Inherit docstring.
         return f'dynAnalysisResults_{name}.h5'
 
     @staticmethod
-    def fileName2Name(fileName: str) -> str:
+    def fileName2Name(fileName: str) -> str: # Inherit docstring.
         return fileName.split('dynAnalysisResults_')[1][:-3]
 
     @classmethod
     def create(cls, settings: DynamicsAnalysisSettings, meanReflectance: np.ndarray, rms_t_squared: np.ndarray, reflectance: pwsdt.DynCube, diffusion: np.ndarray,
-                imCubeIdTag: str, referenceIdTag: str, extraReflectionIdTag: typing.Optional[str]):
+                imCubeIdTag: str, referenceIdTag: str, extraReflectionIdTag: typing.Optional[str]): # Inherit docstring.
         #TODO check datatypes here
         d = {'time': datetime.now().strftime(dateTimeFormat),
             'meanReflectance': meanReflectance,
@@ -176,50 +192,59 @@ class DynamicsAnalysisResults(AbstractHDFAnalysisResults):
     @cached_property
     @getFromDict
     def meanReflectance(self) -> np.ndarray:
+        """A 2D array giving the reflectance of the image averaged over the full spectra."""
         dset = self.file['meanReflectance']
         return np.array(dset)
 
     @cached_property
     @getFromDict
     def rms_t_squared(self) -> np.ndarray:
+        """A 2D array giving the spectral variance at each position in the image."""
         dset = self.file['rms_t_squared']
         return np.array(dset)
 
     @cached_property
     @getFromDict
     def settings(self) -> DynamicsAnalysisSettings:
+        """The settings used to generate these results."""
         return DynamicsAnalysisSettings.fromJsonString(self.file['settings'])
 
     @cached_property
     @getFromDict
     def reflectance(self) -> pwsdt.DynCube:
+        """A dynamics cube containing the 3D reflectance array after all corrections and analysis."""
         dset = self.file['reflectance']
         return pwsdt.DynCube.fromHdfDataset(dset)
 
     @cached_property
     @getFromDict
     def diffusion(self) -> np.ndarray:
+        """A 2D array indicating the diffusion at each position in the image."""
         dset = self.file['diffusion']
         return np.array(dset)
 
     @cached_property
     @getFromDict
     def imCubeIdTag(self) -> str:
+        """The idtag of the dynamics cube that was analyzed."""
         return bytes(np.array(self.file['imCubeIdTag'])).decode()
 
     @cached_property
     @getFromDict
     def referenceIdTag(self) -> str:
+        """The idtag of the dynamics cube that was used as a reference for normalization."""
         return bytes(np.array(self.file['referenceIdTag'])).decode()
 
     @cached_property
     @getFromDict
     def time(self) -> str:
+        """The time that the analysis was performed."""
         return self.file['time']
 
     @cached_property
     @getFromDict
     def extraReflectionIdTag(self) -> str:
+        """The idtag of the extra reflection correction that was used."""
         return bytes(np.array(self.file['extraReflectionIdTag'])).decode()
 
 
@@ -249,7 +274,7 @@ class DynamicsAnalysisSettings(AbstractAnalysisSettings):
     relativeUnits: bool
     diffusionRegressionLength: int = 3
 
-    FileSuffix = "dynAnalysis"  # This is used for saving and loading to json
+    FileSuffix = "dynAnalysis"  # This is used for setting the filename when saving and loading to json
 
     def __post_init__(self):
         assert self.diffusionRegressionLength > 0
@@ -270,25 +295,10 @@ class DynamicsAnalysisSettings(AbstractAnalysisSettings):
         return cls(**d)
 
 
-class DynamicsAnalysisGroup(AbstractAnalysisGroup):
-    """This class is simply used to group together analysis classes that are compatible with eachother."""
-    @staticmethod
-    def settingsClass() -> typing.Type[DynamicsAnalysisSettings]:
-        return DynamicsAnalysisSettings
-
-    @staticmethod
-    def resultsClass() -> typing.Type[DynamicsAnalysisResults]:
-        return DynamicsAnalysisResults
-
-    @staticmethod
-    def analysisClass() -> typing.Type[DynamicsAnalysis]:
-        return DynamicsAnalysis
-
-
 @dataclasses.dataclass
-class DynamicsRuntimeAnalysisSettings(AbstractRuntimeAnalysisSettings):
+class DynamicsRuntimeAnalysisSettings(AbstractRuntimeAnalysisSettings):  # Inherit docstring
     settings: DynamicsAnalysisSettings
     extraReflectanceMetadata: typing.Optional[pwsdt.ERMetaData]
 
-    def getSaveableSettings(self) -> DynamicsAnalysisSettings:
+    def getSaveableSettings(self) -> DynamicsAnalysisSettings:  # Inherit docstring
         return self.settings

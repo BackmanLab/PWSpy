@@ -8,7 +8,7 @@ from scipy import signal as sps
 import multiprocessing as mp
 from typing import Type, Tuple, List, Optional
 from ._abstract import AbstractHDFAnalysisResults, AbstractAnalysis, AbstractAnalysisResults, AbstractAnalysisSettings, \
-    AbstractRuntimeAnalysisSettings, AbstractAnalysisGroup
+    AbstractRuntimeAnalysisSettings
 from . import warnings
 import pwspy.dataTypes as pwsdt
 from pwspy import dateTimeFormat
@@ -41,10 +41,15 @@ def getFromDict(func):
     return newFunc
 
 
-class PWSAnalysis(AbstractAnalysis): #TODO Handle the case where pixels are 0, mark them as nan
+class PWSAnalysis(AbstractAnalysis):  # TODO Handle the case where pixels are 0, mark them as nan
     """The standard PWS analysis routine. Initialize and then `run` for as many different ImCubes as you want.
     For a given set of settings and reference you only need to instantiate one instance of this class. You can then perform `run`
-    on as many data cubes as you want."""
+    on as many data cubes as you want.
+
+    Args:
+        runtimeSettings: The settings used for the analysis
+        ref: The reference acquisition used for analysis
+    """
     def __init__(self, runtimeSettings: PWSRuntimeAnalysisSettings, ref: pwsdt.ImCube): #TODO it would make sense to include the reference in the runtime settings too.
         from pwspy.dataTypes import ExtraReflectanceCube
         assert ref.processingStatus.cameraCorrected, "Before attempting to analyze using this reference make sure that it has had camera darkcounts and non-linearity corrected for."
@@ -75,8 +80,7 @@ class PWSAnalysis(AbstractAnalysis): #TODO Handle the case where pixels are 0, m
         self.ref = ref
         self.extraReflection = Iextra
 
-    def run(self, cube: pwsdt.ImCube) -> Tuple[PWSAnalysisResults, List[warnings.AnalysisWarning]]:
-        """Runs analysis on `cube` returns a list of warnings indicating abnormal results and an analyisResults object which can be saved."""
+    def run(self, cube: pwsdt.ImCube) -> Tuple[PWSAnalysisResults, List[warnings.AnalysisWarning]]:  # Inherit docstring
         assert cube.processingStatus.cameraCorrected
         warns = self._initWarnings
         cube = self._normalizeImCube(cube)
@@ -159,7 +163,7 @@ class PWSAnalysis(AbstractAnalysis): #TODO Handle the case where pixels are 0, m
         ld = ((A2 / A1) * fact) * (rms / (-1 * slope.reshape(rms.shape)))
         return ld
 
-    def copySharedDataToSharedMemory(self):
+    def copySharedDataToSharedMemory(self):  # Inherit docstring
         refdata = mp.RawArray('f', self.ref.data.size)
         refdata = np.frombuffer(refdata, dtype=np.float32).reshape(self.ref.data.shape)
         np.copyto(refdata, self.ref.data)
@@ -177,22 +181,22 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
     # All these cached properties stay in memory once they are loaded. It may be necessary to add a mechanism to decache them when memory is needed.
 
     @staticmethod
-    def fields():
+    def fields():  # Inherit docstring
         return ['time', 'reflectance', 'meanReflectance', 'rms', 'polynomialRms', 'autoCorrelationSlope', 'rSquared',
                 'ld', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionTag', 'settings']
 
     @staticmethod
-    def name2FileName(name: str) -> str:
+    def name2FileName(name: str) -> str:  # Inherit docstring
         return f'analysisResults_{name}.h5'
 
     @staticmethod
-    def fileName2Name(fileName: str) -> str:
+    def fileName2Name(fileName: str) -> str:  # Inherit docstring
         return fileName.split('analysisResults_')[1][:-3]
 
     @classmethod
     def create(cls, settings: PWSAnalysisSettings, reflectance: pwsdt.KCube, meanReflectance: np.ndarray, rms: np.ndarray,
                polynomialRms: np.ndarray, autoCorrelationSlope: np.ndarray, rSquared: np.ndarray, ld: np.ndarray,
-               imCubeIdTag: str, referenceIdTag: str, extraReflectionTag: Optional[str]):
+               imCubeIdTag: str, referenceIdTag: str, extraReflectionTag: Optional[str]):  # Inherit docstring
         #TODO check datatypes here
         d = {'time': datetime.now().strftime(dateTimeFormat),
             'reflectance': reflectance,
@@ -212,30 +216,35 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
     @clearError
     @getFromDict
     def settings(self) -> PWSAnalysisSettings:
+        """The settings used for the analysis"""
         return PWSAnalysisSettings.fromJsonString(bytes(np.array(self.file['settings'])).decode())
 
     @cached_property
     @clearError
     @getFromDict
     def imCubeIdTag(self) -> str:
+        """The idtag of the acquisition that was analyzed."""
         return bytes(np.array(self.file['imCubeIdTag'])).decode()
 
     @cached_property
     @clearError
     @getFromDict
     def referenceIdTag(self) -> str:
+        """The idtag of the acquisition that was used as a reference for normalization."""
         return bytes(np.array(self.file['referenceIdTag'])).decode()
 
     @cached_property
     @clearError
     @getFromDict
     def time(self) -> str:
+        """The time that the analysis was performed."""
         return self.file['time']
 
     @cached_property
     @clearError
     @getFromDict
-    def reflectance(self):
+    def reflectance(self) -> pwsdt.KCube:
+        """The KCube containing the 3D reflectance data after all corrections and analysis."""
         dset = self.file['reflectance']
         return pwsdt.KCube.fromHdfDataset(dset)
 
@@ -243,6 +252,7 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
     @clearError
     @getFromDict
     def meanReflectance(self) -> np.ndarray:
+        """A 2D array giving the reflectance of the image averaged over the full spectra."""
         dset = self.file['meanReflectance']
         return np.array(dset)
 
@@ -250,6 +260,7 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
     @clearError
     @getFromDict
     def rms(self) -> np.ndarray:
+        """A 2D array giving the spectral variance at each posiiton in the image."""
         dset = self.file['rms']
         return np.array(dset)
 
@@ -257,6 +268,8 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
     @clearError
     @getFromDict
     def polynomialRms(self) -> np.ndarray:
+        """A 2D array giving the variance of the polynomial fit that was subtracted from the reflectance before
+        calculating RMS."""
         dset = self.file['polynomialRms']
         return np.array(dset)
 
@@ -264,6 +277,7 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
     @clearError
     @getFromDict
     def autoCorrelationSlope(self) -> np.ndarray:
+        """A 2D array giving the slope of the ACF of the spectra at each position in the image."""
         dset = self.file['autoCorrelationSlope']
         return np.array(dset)
 
@@ -271,6 +285,8 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
     @clearError
     @getFromDict
     def rSquared(self) -> np.ndarray:
+        """A 2D array giving the r^2 coefficient of determination for the linear fit to the logarithm of the ACF. This
+        basically tells us how confident to be in the `autoCorrelationSlope`."""
         dset = self.file['rSquared']
         return np.array(dset)
 
@@ -278,6 +294,7 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
     @clearError
     @getFromDict
     def ld(self) -> np.ndarray:
+        """A 2D array giving Ld. A parameter derived from RMS and the ACF slope."""
         dset = self.file['ld']
         return np.array(dset)
 
@@ -285,6 +302,10 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
     @clearError
     @getFromDict
     def opd(self) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        A tuple containing: `opd`: The 3D array of values, `opdIndex`: The sequence of OPD values associated with each
+        2D slice along the 3rd axis of the `opd` data.
+        """
         dset = self.file['reflectance']
         cube = pwsdt.KCube.fromHdfDataset(dset)
         opd, opdIndex = cube.getOpd(isHannWindow=False, indexOpdStop=100)
@@ -294,6 +315,7 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
     @clearError
     @getFromDict
     def extraReflectionTag(self) -> str:
+        """The `idtag` of the extra reflectance correction used."""
         return bytes(np.array(self.file['extraReflectionTag'])).decode()
 
 
@@ -319,7 +341,24 @@ class LegacyPWSAnalysisResults(AbstractAnalysisResults):
 
 @dataclasses.dataclass
 class PWSAnalysisSettings(AbstractAnalysisSettings):
-    """Document me!""" #TODO document
+    """These settings determine the behavior of the PWSAnalysis class.
+
+    Attributes:
+        filterOrder (int): The `order` of the buttersworth filter used for lowpass filtering.
+        filterCutoff (float): The cutoff frequency of the buttersworth filter used for lowpass filtering.
+        polynomialOrder (int): The order of the polynomial which will be fit to the reflectance and then subtracted before calculating the analysis results.
+        extraReflectanceId (str): The `idtag` of the extra reflection used for correction.
+        referenceMaterial (Material): The material that was being imaged in the reference acquisition
+        wavelengthStart (int): The acquisition spectra will be truncated at this wavelength before analysis.
+        wavelengthStop (int): The acquisition spectra will be truncated after this wavelength before analysis.
+        skipAdvanced (bool): If `True` then skip analysis of the OPD and autocorrelation.
+        autoCorrStopIndex (int): The autocorrelation slope will be calculated up to this number of elements. More elements is theoretically better but it severely limited by SNR.
+        autoCorrMinSub (bool): If `True` then subtract the minimum of the ACF from ACF. This prevents numerical issues but doesn't actually make any sense.
+        numericalAperture (float): The numerical aperture that the acquisition was imaged at.
+        relativeUnits (bool): relativeUnits: If `True` then all calculation are performed such that the reflectance is 1 if it matches the reference. If `False` then we use the
+            theoretical reflectance of the reference  (based on NA and reference material) to normalize our results to the actual physical reflectance of
+            the sample (about 0.4% for water)
+    """
     filterOrder: int
     filterCutoff: float
     polynomialOrder: int
@@ -335,7 +374,7 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
 
     FileSuffix = 'analysis'  # This is used for saving and loading to json
 
-    def _asDict(self) -> dict:
+    def _asDict(self) -> dict:  # Inherit docstring
         d = dataclasses.asdict(self)
         if self.referenceMaterial is None:
             d['referenceMaterial'] = None
@@ -344,7 +383,7 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
         return d
 
     @classmethod
-    def _fromDict(cls, d: dict) -> PWSAnalysisSettings:
+    def _fromDict(cls, d: dict) -> PWSAnalysisSettings:  # Inherit docstring
         if d['referenceMaterial'] is not None:
             d['referenceMaterial'] = Material[d['referenceMaterial']]  # Convert from string to enum
         if 'relativeUnits' not in d.keys():
@@ -352,24 +391,8 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
         return cls(**d)
 
 
-class PWSAnalysisGroup(AbstractAnalysisGroup):
-    """This class is simply used to group together analysis classes that are compatible with eachother."""
-    @staticmethod
-    def settingsClass() -> Type[PWSAnalysisSettings]:
-        return PWSAnalysisSettings
-
-    @staticmethod
-    def resultsClass() -> Type[PWSAnalysisResults]:
-        return PWSAnalysisResults
-
-    @staticmethod
-    def analysisClass() -> Type[PWSAnalysis]:
-        return PWSAnalysis
-
-
-
 @dataclasses.dataclass
-class PWSRuntimeAnalysisSettings(AbstractRuntimeAnalysisSettings):
+class PWSRuntimeAnalysisSettings(AbstractRuntimeAnalysisSettings):  # Inherit docstring
     settings: PWSAnalysisSettings
     extraReflectanceMetadata: Optional[pwsdt.ERMetaData]
 
