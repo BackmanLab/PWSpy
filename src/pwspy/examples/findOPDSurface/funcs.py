@@ -166,6 +166,7 @@ class AnnotFig:
 
 
 def _scanIds(s: Skel, ids: typing.List[int]):
+    """Returns a list of indexes of skeleton paths to be removed"""
     idxes = []
     for i in ids:
         matchArr = np.any(s.summary[['node-id-src', 'node-id-dst']] == i, axis=1) #Find all row with an endpoint matching `i`. this is kinda slow. this is the main place that would benefit from optimization
@@ -186,6 +187,7 @@ def _scanIds(s: Skel, ids: typing.List[int]):
     return idxes
 
 def _scanSharedEndpoints(s):
+    """Returns a list of indexes of skeleton paths to be removed"""
     g = s.summary.groupby('ids')
     idxes = []
     for i, group in g:  # Groups of paths that share both end points. These could be loops or groups of branches that start and stop in the same place
