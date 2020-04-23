@@ -21,7 +21,7 @@ from . import _metadata as pwsdtmd
 from . import _other
 
 
-class ICBase:
+class ICBase(ABC):
     """A class to handle the data operations common to PWS related `image cubes`. Does not contain any file specific
     functionality. uses the generic `index` attribute which can be overridden by derived classes to be wavelength, wavenumber,
     time, etc.
@@ -41,6 +41,12 @@ class ICBase:
         self._index = index
         if self.data.shape[2] != len(self.index):
             raise ValueError(f"The length of the index list doesn't match the index axis of the data array. Got {len(self.index)}, expected {self.data.shape[2]}.")
+
+    @property
+    @abstractmethod
+    def _hdfTypeName(self) -> str:
+        """Each class of this type should have a unique constant name which will be used to identify it when saved as HDF."""
+        pass
 
     @property
     def index(self) -> Tuple[float, ...]:
@@ -295,13 +301,13 @@ class ICBase:
             fpData = fpData.astype(np.uint16)
             dset = g.create_dataset(name, data=fpData)  # , chunks=(64,64,self.data.shape[2]), compression=2)
             dset.attrs['index'] = np.array(self.index)
-            dset.attrs['type'] = np.string_(f"{self.__class__.__name__}_fp") #TODO if the classes get renamed then this will break. need to use a different identifier that won't be accidentally changed
+            dset.attrs['type'] = np.string_(f"{self._hdfTypeName}_fp")
             dset.attrs['min'] = m
             dset.attrs['max'] = M
         else:
             dset = g.create_dataset(name, data=self.data)
             dset.attrs['index'] = np.array(self.index)
-            dset.attrs['type'] = np.string_(self.__class__.__name__)
+            dset.attrs['type'] = np.string_(self._hdfTypeName)
         return g
 
     @classmethod
@@ -317,9 +323,9 @@ class ICBase:
         """
         assert 'type' in d.attrs
         assert 'index' in d.attrs
-        if d.attrs['type'].decode() == cls.__name__: #standard decoding #TODO if the classes get renamed then this will break. need to use a different identifier that won't be accidentally changed
+        if d.attrs['type'].decode() == cls._hdfTypeName: #standard decoding
             return np.array(d), tuple(d.attrs['index'])
-        elif d.attrs['type'].decode() == f"{cls.__name__}_fp": #Fixed point decoding
+        elif d.attrs['type'].decode() == f"{cls._hdfTypeName}_fp": #Fixed point decoding
             print("Decoding fixed point")
             M = d.attrs['max']
             m = d.attrs['min']
@@ -329,7 +335,7 @@ class ICBase:
             arr += m
             return arr, tuple(d.attrs['index'])
         else:
-            raise TypeError(f"Got {d.attrs['type'].decode()} instead of {cls.__name__}")
+            raise TypeError(f"Got {d.attrs['type'].decode()} instead of {cls._hdfTypeName}")
 
 
 class ICRawBase(ICBase, ABC):
@@ -494,6 +500,9 @@ class DynCube(ICRawBase):
         processingStatus: An object that keeps track of which processing steps and corrections have been applied to this object.
         dtype: the data type that the data should be stored as. The default is numpy.float32.
     """
+
+    _hdfTypeName = "DynCube"  # This is used for saving/loading from HDF. Important not to change it or old files will stop working.
+
     def __init__(self, data, metadata: pwsdtmd.DynMetaData, processingStatus: ICRawBase.ProcessingStatus=None, dtype=np.float32):
         assert isinstance(metadata, pwsdtmd.DynMetaData)
         super().__init__(data, metadata.times, metadata, processingStatus=processingStatus, dtype=dtype)
@@ -708,6 +717,8 @@ class ExtraReflectanceCube(ICBase):
         data (ndarray): data
     """
 
+    _hdfTypeName = "ExtraReflectanceCube"  # This is used for saving/loading from HDF. Important not to change it or old files will stop working.
+
     def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], metadata: pwsdtmd.ERMetaData):
         assert isinstance(metadata, pwsdtmd.ERMetaData)
         if data.max() > 1 or data.min() < 0:
@@ -800,6 +811,9 @@ class ExtraReflectionCube(ICBase):
         wavelengths: The wavelengths associated with each 2D slice along the 3rd axis of the data array.
         metadata: Metadata
     """
+
+    _hdfTypeName = "ExtraReflectionCube"  # This is used for saving/loading from HDF. Important not to change it or old files will stop working.
+
     def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], metadata: pwsdtmd.ERMetaData):
         super().__init__(data, wavelengths)
         self.metadata = metadata
@@ -836,6 +850,8 @@ class ImCube(ICRawBase):
         processingStatus: An object that keeps track of which processing steps and corrections have been applied to this object.
         dtype (type): the data type that the data should be stored as. The default is numpy.float32.
     """
+
+    _hdfTypeName = "ImCube"  # This is used for saving/loading from HDF. Important not to change it or old files will stop working.
 
     def __init__(self, data, metadata: pwsdtmd.ICMetaData, processingStatus: ICRawBase.ProcessingStatus=None, dtype=np.float32):
         assert isinstance(metadata, pwsdtmd.ICMetaData)
@@ -1123,6 +1139,8 @@ class KCube(ICBase):
         wavenumbers: A sequence indicating the wavenumber associated with each 2D slice along the 3rd axis of the `data` array.
         metadata: The metadata object associated with this data object.
     """
+
+    _hdfTypeName = "KCube"  # This is used for saving/loading from HDF. Important not to change it or old files will stop working.
 
     def __init__(self, data: np.ndarray, wavenumbers: Tuple[float], metadata: pwsdtmd.ICMetaData = None):
         self.metadata = metadata #Just saving a reference to the original imcube in case we want to reference it.
