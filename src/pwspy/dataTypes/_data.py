@@ -1,6 +1,7 @@
 from __future__ import annotations
 import copy
 import json
+import logging
 import multiprocessing as mp
 import numbers
 import os
@@ -326,7 +327,6 @@ class ICBase(ABC):
         if d.attrs['type'].decode() == cls._hdfTypeName: #standard decoding
             return np.array(d), tuple(d.attrs['index'])
         elif d.attrs['type'].decode() == f"{cls._hdfTypeName}_fp": #Fixed point decoding
-            print("Decoding fixed point")
             M = d.attrs['max']
             m = d.attrs['min']
             arr = np.array(d)
@@ -629,17 +629,18 @@ class DynCube(ICRawBase):
         Args:
             reference: Reference data for normalization. Usually an image of a blank piece of glass.
         """
+        logger = logging.getLogger(__name__)
         if self.processingStatus.normalizedByReference:
             raise Exception("This cube has already been normalized by a reference.")
         if not self.processingStatus.cameraCorrected:
-            print("Warning: This cube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
+            logger.warning("This cube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
         if not self.processingStatus.normalizedByExposure:
-            print("Warning: This cube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
+            logger.warning("This cube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
         if isinstance(reference, DynCube):
             if not reference.processingStatus.cameraCorrected:
-                print("Warning: The reference cube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
+                logger.warning("The reference cube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
             if not reference.processingStatus.normalizedByExposure:
-                print("Warning: The reference cube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
+                logger.warning("The reference cube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
             mean = reference.data.mean(axis=2)
         elif isinstance(reference, np.ndarray):
             assert len(reference.shape) == 2
@@ -722,7 +723,7 @@ class ExtraReflectanceCube(ICBase):
     def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], metadata: pwsdtmd.ERMetaData):
         assert isinstance(metadata, pwsdtmd.ERMetaData)
         if data.max() > 1 or data.min() < 0:
-            print("Warning!: Reflectance values must be between 0 and 1")
+            logging.getLogger(__name__).warning("Reflectance values must be between 0 and 1")
         self.metadata = metadata
         ICBase.__init__(self, data, wavelengths)
 
@@ -1102,16 +1103,17 @@ class ImCube(ICRawBase):
         Args:
             reference (ImCube): A reference acquisition (Usually a blank spot on a dish). The data of this acquisition will be divided by the data of the reference
         """
+        logger = logging.getLogger(__name__)
         if self.processingStatus.normalizedByReference:
             raise Exception("This ImCube has already been normalized by a reference.")
         if not self.processingStatus.cameraCorrected:
-            print("Warning: This ImCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
+            logger.warning("This ImCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
         if not self.processingStatus.normalizedByExposure:
-            print("Warning: This ImCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
+            logger.warning("This ImCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
         if not reference.processingStatus.cameraCorrected:
-            print("Warning: The reference ImCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
+            logger.warning("The reference ImCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
         if not reference.processingStatus.normalizedByExposure:
-            print("Warning: The reference ImCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
+            logger.warning("The reference ImCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
         self.data = self.data / reference.data
         self.processingStatus.normalizedByReference = True
 

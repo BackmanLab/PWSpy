@@ -5,6 +5,8 @@ Created on Sun Feb 10 13:26:58 2019
 @author: Nick Anthony
 """
 from __future__ import annotations
+
+import logging
 import os
 import shutil
 
@@ -49,7 +51,8 @@ class PWSApp(QApplication):
             self.parallelProcessing = False  # Determines if analysis and compilation should be run in parallel or not.
         self.window.parallelAction.setChecked(self.parallelProcessing)
         self.window.parallelAction.toggled.connect(lambda checked: setattr(self, 'parallelProcessing', checked))
-        print(f"Initializing with useParallel set to {self.parallelProcessing}.")
+        logger = logging.getLogger(__name__)
+        logger.info(f"Initializing with useParallel set to {self.parallelProcessing}.")
         self.anMan.analysisDone.connect(lambda name, settings, warningList: AnalysisSummaryDisplay(self.window, warningList, name, settings))
         self.compMan = CompilationManager(self.window)
         self.window.resultsTable.compileButton.released.connect(self.compMan.run)

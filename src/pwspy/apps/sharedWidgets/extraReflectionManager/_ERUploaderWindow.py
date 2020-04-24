@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import traceback
 from typing import Optional
 
@@ -85,13 +86,13 @@ class ERUploaderWindow(QDialog):
             uploadableRows = np.logical_or(status['Index Comparison'] == ERDataComparator.ComparisonStatus.LocalOnly.value, status['Online Status'] == ERDataDirectory.DataStatus.missing.value)
             if np.any(uploadableRows):  # There is something to upload
                 for i, row, in status.loc[uploadableRows].iterrows():
-                    print(row)
                     fileName = [i.fileName for i in self._manager.dataComparator.local.index.cubes if i.idTag == row['idTag']][0]
                     self._manager.upload(fileName)
                 self._manager.upload('index.json')
             self.refresh()
         except Exception as e:
-            traceback.print_exc()
+            logger = logging.getLogger(__name__)
+            logger.exception(e)
             mess = QMessageBox.information(self, 'Sorry', str(e))
 
     def refresh(self):

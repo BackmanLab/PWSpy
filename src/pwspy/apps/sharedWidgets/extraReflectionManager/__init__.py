@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import logging
 import os
 from io import IOBase
 from typing import Optional, Dict, List
@@ -26,7 +28,7 @@ def _offlineDecorator(func):
     is in offline mode. Only works on instance methods."""
     def wrappedFunc(self, *args, **kwargs):
         if self.offlineMode:
-            print("Warning: Attempting to download when ERManager is in offline mode.")
+            logging.getLogger(__name__).warning("Attempting to download when ERManager is in offline mode.")
             raise OfflineError("Is Offline")
         func(self, *args, **kwargs)
     return wrappedFunc

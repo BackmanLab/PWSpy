@@ -3,6 +3,8 @@
 An adaptation of the PWS analysis script used in MATLAB. This is now outdated. The up to date version is in
 `pwspy.analysis.pws`.
 """
+import logging
+
 from pwspy.dataTypes import ImCube, KCube
 import copy
 import scipy.signal as sps
@@ -18,16 +20,18 @@ def analyzeCube(cubeCell: ImCube, darkCount: int, mirror: ImCube, orderFilter: i
     # Indicate the OPD Stop Index.
     indexOpdStop = 100
 
+    logger = logging.getLogger(__name__)
+
     cube = copy.deepcopy(cubeCell)  # We don't want to mess up the original cube.
 
-    print("Normalizing ImCubes")
+    logger.info("Normalizing ImCubes")
     cube.subtractDarkCounts(darkCount)
     cube.normalizeByExposure()
     mirror.subtractDarkCounts(darkCount)
     mirror.normalizeByExposure()
     cube = cube / mirror
 
-    print("Filtering Signal")
+    logger.info("Filtering Signal")
     b, a = sps.butter(orderFilter,
                       cutoffFilter)  # The cutoff totally ignores what the `sample rate` is. so a 2nm interval image cube will be filtered differently than a 1nm interval cube. This is how it is in matlab.
     cube.data = sps.filtfilt(b, a, cube.data, axis=2)
@@ -39,11 +43,11 @@ def analyzeCube(cubeCell: ImCube, darkCount: int, mirror: ImCube, orderFilter: i
     reflectance = cube.data.mean(axis=2)
 
     ## -- Convert to K-Space
-    print("Converting to K-Space")
+    logger.info("Converting to K-Space")
     cube = KCube.fromImCube(cube)
 
     ## -- Polynomial Fit
-    print("Subtracting Polynomial")
+    logger.info("Subtracting Polynomial")
     flattenedData = cube.data.reshape((cube.data.shape[0] * cube.data.shape[1], cube.data.shape[2]))
     flattenedData = np.rollaxis(flattenedData, 1)  # Flatten the array to 2d and put the wavenumber axis first.
     cubePoly = np.zeros(flattenedData.shape)  # make an empty array to hold the fit values.
@@ -68,11 +72,11 @@ def analyzeCube(cubeCell: ImCube, darkCount: int, mirror: ImCube, orderFilter: i
     rms = cube.data.std(axis=2)
 
     ## -- Autocorrelation
-    print("Calculating Autocorrelation")
+    logger.info("Calculating Autocorrelation")
     slope, rSquared = cube.getAutoCorrelation(isAutocorrMinSub, indexAutocorrLinear)
 
     ## OPD Analysis
-    print("Calculating OPD")
+    logger.info("Calculating OPD")
     if isOpdPolysub:  # If cubeOpdPolysub is to be generated
         opd, xvalOpd = cube.getOpd(isHannWindow, indexOpdStop)
     else:

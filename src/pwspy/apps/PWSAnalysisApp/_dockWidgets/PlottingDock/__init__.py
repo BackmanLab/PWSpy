@@ -1,3 +1,4 @@
+import logging
 import traceback
 from typing import List
 
@@ -175,7 +176,8 @@ class PlottingDock(QDockWidget):
             self.addPlots(plotsToAdd)
             self.enableAnalysisPlottingButtons(buttonState)
         except Exception as e:
-            traceback.print_exc()
+            logger = logging.getLogger(__name__)
+            logger.exception(e)
             QMessageBox.information(self, "Error!", str(e))
 
     def handleButtons(self, button: QPushButton):

@@ -29,7 +29,6 @@ class myTest(unittest.TestCase):
     def test_meta(self):
         try:
             im = ImCube.loadAny(testCellPath)
-            print(im.metadata.acquisitionDirectory.getRois())
             im.metadata.acquisitionDirectory.loadRoi('nuc', 1)
             im.metadata.metadataToJson(testCellPath)
         except Exception as e:

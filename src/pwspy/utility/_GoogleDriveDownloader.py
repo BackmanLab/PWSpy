@@ -1,8 +1,12 @@
 from __future__ import annotations
+
+import logging
 import os
 import pickle
 from io import IOBase
 from typing import Optional, List, Dict
+
+from IPython.core.magics import logging
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -108,9 +112,10 @@ class GoogleDriveDownloader:
         fileRequest = self.api.files().get_media(fileId=Id)
         downloader = MediaIoBaseDownload(file, fileRequest)
         done = False
+        logger = logging.getLogger(__name__)
         while done is False:
             status, done = downloader.next_chunk()
-            print("Download %d%%." % int(status.progress() * 100))
+            logger.info("Download %d%%." % int(status.progress() * 100))
 
     def createFolder(self, name: str, parentId: Optional[str] = None) -> str:
         """Creates a folder with name `name` and returns the id number of the folder

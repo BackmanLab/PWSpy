@@ -1,4 +1,5 @@
 import copy
+import logging
 import os
 from typing import List
 
@@ -12,17 +13,18 @@ class RoiConverter:
     calculated using the concave hull method which is slow."""
     def __init__(self, cells: List[AcqDir]):
         for cell in cells:
-            print(cell.filePath)
+            logger = logging.getLogger(__name__)
+            logger.info(cell.filePath)
             rois = cell.getRois()
             for name, num, fformat in rois:
                 if fformat == Roi.FileFormats.MAT:
-                    print('\t', name, num, "MAT")
+                    logger.info('\t', name, num, "MAT")
                     roi = Roi.fromMat(cell.filePath, name, num)
                 elif fformat == Roi.FileFormats.HDF:
-                    print('\t', name, num, "LegacyHDF")
+                    logger.info('\t', name, num, "LegacyHDF")
                     roi = Roi.fromHDF_legacy(cell.filePath, name, num)
                 else:
-                    print('\t', "Skipping", name, num, fformat.name)
+                    logger.info('\t', "Skipping", name, num, fformat.name)
                     continue #Conversion of other formats is not supported
                 assert roi.verts is None
                 roi.verts = roi.getBoundingPolygon().get_verts()  # Use concave hull method to generate the vertices.

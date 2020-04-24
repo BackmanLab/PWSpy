@@ -6,6 +6,7 @@ Created on Sat Feb  9 15:57:52 2019
 """
 from __future__ import annotations
 import json
+import logging
 import os
 from matplotlib import patches, path
 import dataclasses
@@ -371,7 +372,7 @@ class Roi:
                                     try:
                                         ret.append((name, int(g), Roi.FileFormats.HDF2))
                                     except ValueError:
-                                        print(f"Warning: File {i} contains uninterpretable dataset named {g}")
+                                        logging.getLogger(__name__).warning(f"File {i} contains uninterpretable dataset named {g}")
                                 else:
                                     raise ValueError("File is missing datasets")
                             elif isinstance(hf[g], h5py.Dataset): #Legacy format
@@ -379,7 +380,7 @@ class Roi:
                                 try:
                                     ret.append((name, int(g), Roi.FileFormats.HDF))
                                 except ValueError:
-                                    print(f"Warning: File {i} contains uninterpretable dataset named {g}")
+                                    logging.getLogger(__name__).warning(f"File {i} contains uninterpretable dataset named {g}")
 
             elif fformat == Roi.FileFormats.MAT:
                 for i in fileNames: #list in files

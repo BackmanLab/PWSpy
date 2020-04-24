@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import logging
 from datetime import datetime
 
 from PyQt5 import QtGui, QtCore
@@ -32,7 +34,8 @@ class CopyableTable(QTableWidget):
                 t += '\n'
             QApplication.clipboard().setText(t)
         except Exception as e:
-            print("Copy Failed: ", e)
+            logger = logging.getLogger(__name__)
+            logger.warning("Copy Failed: ", e)
 
 
 class NumberTableWidgetItem(QTableWidgetItem):

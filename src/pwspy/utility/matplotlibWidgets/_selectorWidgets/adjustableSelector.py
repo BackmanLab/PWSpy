@@ -245,7 +245,6 @@ class PolygonInteractor(SelectorWidgetBase):
                 x, y = self.markers.get_data()
                 self.markers.set_data(np.insert(x, i + 1, event.xdata), np.insert(y, i + 1, event.ydata))
                 self._interpolate()
-                print(f"Insert at {i + 1}")
         elif event.key == 'enter':
             self.onselect(self.poly.xy, self.markers.get_data())
             return

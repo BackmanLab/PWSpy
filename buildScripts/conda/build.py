@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 import subprocess
@@ -17,13 +18,14 @@ os.mkdir(buildDir)
 
 # Build and save to the outputDirectory
 proc = subprocess.Popen(f"conda-build {rootDir} --output-folder {buildDir} -c conda-forge", stdout=None, stderr=subprocess.PIPE)
-print("Waiting for conda-build")
+logger = logging.getLogger(__name__)
+logger.info("Waiting for conda-build")
 proc.wait()
 result, error = proc.communicate() #Unfortunately conda-build returns errors in STDERR even if the build succeeds.
 if proc.returncode != 0:
     raise OSError(error.decode())
 else:
-    print("Success")
+    logger.info("Success")
     
 #Upload to Anaconda
 #The user can enable conda upload in order to automatically do this after build.

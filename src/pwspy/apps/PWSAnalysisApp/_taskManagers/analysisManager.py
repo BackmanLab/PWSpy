@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import logging
 import os
 import traceback
 from typing import Tuple, List, Optional
@@ -25,8 +27,9 @@ def safeCallback(func):
     def newFunc(*args):
         try:
             func(*args)
-        except:
-            traceback.print_exc()
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.exception(e)
     return newFunc
 
 
@@ -49,6 +52,7 @@ class AnalysisManager(QtCore.QObject):
     def runSingle(self, anName: str, anSettings: AbstractRuntimeAnalysisSettings, cellMetas: List[AcqDir], refMeta: AcqDir,
                   cameraCorrection: CameraCorrection) -> Tuple[str, AbstractAnalysisSettings, List[Tuple[List[AnalysisWarning], AcqDir]]]:
         """Run a single analysis batch"""
+        logger = logging.getLogger(__name__)
         userSpecifiedBinning: Optional[int] = None
         if isinstance(anSettings, PWSRuntimeAnalysisSettings):
             cellMetas = [i.pws for i in cellMetas]
@@ -86,14 +90,14 @@ class AnalysisManager(QtCore.QObject):
                         return
                     ref.correctCameraEffects(cameraCorrection, binning=userSpecifiedBinning)
             else:
-                print("Using automatically detected camera corrections")
+                logger.info("Using automatically detected camera corrections")
                 ref.correctCameraEffects()
             if anSettings.extraReflectanceMetadata is not None: #if the ER is None, this means we are skipping the Extra reflection correction.
                 if refMeta.systemName != anSettings.extraReflectanceMetadata.systemName:
                     ans = QMessageBox.question(self.app.window, "Uh Oh", f"The reference was acquired on system: {refMeta.systemName} while the extra reflectance correction was acquired on system: {anSettings.extraReflectanceMetadata.systemName}. Are you sure you want to continue?")
                     if ans == QMessageBox.No:
                         return
-            print("Initializing analysis")
+            logger.info("Initializing analysis")
             if isinstance(anSettings, PWSRuntimeAnalysisSettings):
                 analysis = PWSAnalysis(anSettings, ref)
             elif isinstance(anSettings, DynamicsRuntimeAnalysisSettings):
@@ -106,21 +110,20 @@ class AnalysisManager(QtCore.QObject):
                 useParallelProcessing = False
             if useParallelProcessing:
                 #Rather than copy arrays for each process, have read-only arrays that are shared between processes with shared memory. saves a few gigs of ram and speeds things up.
-                print("AnalysisManager: Using parallel processing. Creating shared memory.")
+                logger.info("AnalysisManager: Using parallel processing. Creating shared memory.")
                 try:
                     analysis.copySharedDataToSharedMemory()
                 except NotImplementedError:
                     pass
             else:
-                print("Not using parallel processing.")
+                logger.info("Not using parallel processing.")
             #Run parallel/multithreaded processing
             t = self.AnalysisThread(cellMetas, analysis, anName, cameraCorrection, userSpecifiedBinning, useParallelProcessing)
             b = BusyDialog(self.app.window, "Processing. Please Wait...")
             t.finished.connect(b.accept)
 
             def handleError(e: Exception, trace: str):
-                import traceback
-                print(trace)
+                logger.warning(trace)
                 QMessageBox.information(self.app.window, "Oh No", str(e))
             t.errorOccurred.connect(handleError)
             t.start()
@@ -178,7 +181,8 @@ class AnalysisManager(QtCore.QObject):
         def _initializer(analysis: AbstractAnalysis, analysisName: str, cameraCorrection: CameraCorrection, userSpecifiedBinning: Optional[int] = None):
             """This method is run once for each process that is spawned. it initialized _resources that are shared between each iteration of _process."""
             global pwspyAnalysisAppParallelGlobals
-            print('initializing!')
+            logger = logging.getLogger(__name__)
+            logger.info('initializing!')
             pwspyAnalysisAppParallelGlobals = {'analysis': analysis, 'analysisName': analysisName,
                                                'cameraCorrection': cameraCorrection, 'binning': userSpecifiedBinning}
 

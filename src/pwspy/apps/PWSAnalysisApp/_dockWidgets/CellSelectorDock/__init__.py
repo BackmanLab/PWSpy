@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 from typing import List, Dict
@@ -78,8 +79,9 @@ class CellSelectorDock(QDockWidget):
             try:
                 acq = pwsdt.AcqDir(f)
             except OSError as e:
-                print(f"Failed to load {f}")
-                print(e)
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Failed to load {f}")
+                logger.exception(e)
                 continue
             cellItems.append(CellTableWidgetItem(acq, os.path.split(f)[0][len(workingDir) + 1:],
                                         int(f.split('Cell')[-1])))

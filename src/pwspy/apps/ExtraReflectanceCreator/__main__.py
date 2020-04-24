@@ -1,8 +1,11 @@
+import logging
 import os
 from datetime import datetime
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QApplication, QFileDialog, QListWidgetItem, QMessageBox
+
+from pwspy import dateTimeFormat
 from pwspy.apps.ExtraReflectanceCreator.ERWorkFlow import ERWorkFlow
 import matplotlib.pyplot as plt
 
@@ -101,10 +104,16 @@ def main():
         sys.exit(1)
     sys.excepthook = exception_hook
 
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(logging.StreamHandler(sys.stdout))
+    fHandler = logging.FileHandler(os.path.join(appPath, 'ExtraReflectanceCreatorData', f'log{datetime.now().strftime(dateTimeFormat)}.txt'))
+    fHandler.setFormatter(logging.Formatter('%(asctime)s - %(message)s', style='{'))
+    logger.addHandler(fHandler)
+
     if isIpython():
         app = ERApp(sys.argv)
     else:
-        print("Not Ipython")
         app = ERApp(sys.argv)
         sys.exit(app.exec_())
 

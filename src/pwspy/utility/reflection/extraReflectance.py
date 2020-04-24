@@ -20,7 +20,7 @@ Classes
 
    CubeCombo
 """
-
+import logging
 from typing import Dict, List, Tuple, Iterable, Any, Iterator, Union, Optional, Set
 from pwspy.dataTypes import Roi, ExtraReflectanceCube, ImCube, ERMetaData
 from pwspy.utility.reflection import reflectanceHelper, Material
@@ -111,7 +111,7 @@ def getTheoreticalReflectances(materials: Set[Material], wavelengths: Tuple[floa
 
     theoryR = {}
     for material in materials:  # For each unique material in the `cubes` list
-        print(f"Calculating reflectance for {material}")
+        logging.getLogger(__name__).info(f"Calculating reflectance for {material}")
         theoryR[material] = reflectanceHelper.getReflectance(material, Material.Glass, wavelengths=wavelengths, NA=numericalAperture)
     return theoryR
 
@@ -347,8 +347,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], ma
                     plt.imshow(refIm, vmin=np.percentile(refIm, .5), vmax=np.percentile(refIm, 99.5))
                     plt.colorbar()
 
-        print(f"{sett} correction factor")
-        print(means['cFactor'])
+        logging.getLogger(__name__).info(f"{sett} correction factor")
     return figs
 
 
@@ -387,7 +386,6 @@ def _generateOneRExtraCube(combo: CubeCombo, theoryR: Dict[Material, pd.Series])
     # (1/stddev^2)
     #Doing this calculation with noise in Theory instead of data gives us a variance of C^2 * (data1^2 + data2^2) / (data1 - data2)^2. this seems like a better equation to use. TODO Really? Why?
     weight = (data1-data2)**2 / (data1**2 + data2**2) # The weight is the inverse of the variance. Higher weight = more reliable data.
-    print("Done generating.")
     return arr, weight
 
 
@@ -408,7 +406,7 @@ def generateRExtraCubes(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict,
     """
     rExtra = {}
     for matCombo, combosList in allCombos.items():
-        print("Calculating rExtra for: ", matCombo)
+        logging.getLogger(__name__).info(f"Calculating rExtra for: {matCombo}")
         erCubes, weights = zip(*[_generateOneRExtraCube(combo, theoryR) for combo in combosList])
         weightSum = reduce(lambda x,y: x+y, weights)
         weightedMean = reduce(lambda x,y: x+y, [cube*weight for cube, weight in zip(erCubes, weights)]) / weightSum

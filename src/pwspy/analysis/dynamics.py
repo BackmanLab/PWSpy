@@ -16,6 +16,7 @@ Classes
 
 from __future__ import annotations
 import dataclasses
+import logging
 from datetime import datetime
 
 import numpy as np
@@ -62,21 +63,22 @@ class DynamicsAnalysis(AbstractAnalysis):
         super().__init__()
         extraReflectance = pwsdt.ExtraReflectanceCube.fromMetadata(settings.extraReflectanceMetadata) if settings.extraReflectanceMetadata is not None else None
         settings = settings.getSaveableSettings()
+        logger = logging.getLogger(__name__)
         assert ref.processingStatus.cameraCorrected
         ref.normalizeByExposure()
         if ref.metadata.pixelSizeUm is not None:  # Only works if pixel size was saved in the metadata.
             ref.filterDust(.75)  # Apply a blur to filter out dust particles. This is in microns. I'm not sure if this is the optimal value.
         if settings.referenceMaterial is None:
             theoryR = pd.Series(np.ones((len(ref.times),)), index=ref.times)  # Having this as all ones effectively ignores it.
-            print("Warning: DynamicsAnalysis ignoring reference material correction")
+            logger.warning("DynamicsAnalysis ignoring reference material correction")
         else:
             theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, wavelengths=ref.metadata.wavelength, NA=settings.numericalAperture)
         if extraReflectance is None:
             Iextra = None  # a bogus reflection that is all zeros
-            print("Warning: DynamicsAnalysis ignoring extra reflection")
+            logger.warning("DynamicsAnalysis ignoring extra reflection")
         else:
             if extraReflectance.metadata.numericalAperture != settings.numericalAperture:
-                print(f"Warning: The numerical aperture of your analysis does not match the NA of the Extra Reflectance Calibration. Calibration File NA: {extraReflectance.metadata.numericalAperture}. PWSAnalysis NA: {settings.numericalAperture}.")
+                logger.warning("The numerical aperture of your analysis does not match the NA of the Extra Reflectance Calibration. Calibration File NA: {extraReflectance.metadata.numericalAperture}. PWSAnalysis NA: {settings.numericalAperture}.")
             idx = np.asarray(np.array(extraReflectance.wavelengths) == ref.metadata.wavelength).nonzero()[0][0] #The index of extra reflectance that matches the wavelength of our dynamics cube
             I0 = ref.data.mean(axis=2) / (float(theoryR) + extraReflectance.data[:, :, idx]) #  I0 is the intensity of the illumination source, reconstructed in units of `counts`. this is an inversion of our assumption that reference = I0*(referenceReflectance + extraReflectance)
             Iextra = I0 * extraReflectance.data[:, :, idx] #  Convert from reflectance to predicted counts/ms.

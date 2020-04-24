@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import logging
 import traceback
 
+from IPython.core.magics import logging
 from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QMessageBox, QMainWindow
 from PyQt5 import QtCore
@@ -64,8 +66,9 @@ class CompilationManager(QtCore.QObject):
                 for acq in self.cellMetas:
                     self.result.append(self._process(acq, self.compiler, self.roiNamePattern, self.analysisNamePattern)) # A list of Tuples. each tuple containing a list of warnings and the Acquisition to go with it.
             except Exception as e:
-                print("Compilation error:")
-                traceback.print_exc()
+                logger = logging.getLogger(__name__)
+                logger.warning("Compilation error:")
+                logger.exception(e)
                 self.errorOccurred.emit(e)
 
         @staticmethod

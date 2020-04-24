@@ -1,3 +1,4 @@
+import logging
 import os
 import traceback
 import re
@@ -121,8 +122,9 @@ class RoiPlot(BigPlot):
                 try:
                     self.addRoi(self.metadata.loadRoi(name, num, fformat))
                 except Exception as e:
-                    print(f"Failed to load Roi with name: {name}, number: {num}, format: {fformat.name}")
-                    traceback.print_exc()
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"Failed to load Roi with name: {name}, number: {num}, format: {fformat.name}")
+                    logger.exception(e)
         self.canvas.draw_idle()
 
     def clearRois(self):

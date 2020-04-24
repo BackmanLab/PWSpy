@@ -1,5 +1,6 @@
 from __future__ import annotations
 import json
+import logging
 import multiprocessing as mp
 import os
 import pathlib
@@ -40,6 +41,7 @@ class MetaDataBase(abc.ABC):
         _jsonSchema = json.load(f)  # This serves as a schematic that can be checked against when loading metadata to make sure it contains the required information.
 
     def __init__(self, metadata: dict, filePath: Optional[str] = None, acquisitionDirectory: Optional[AcqDir] = None):
+        logger = logging.getLogger(__name__)
         self.filePath = filePath
         if acquisitionDirectory is None:
             if filePath is not None:
@@ -53,16 +55,16 @@ class MetaDataBase(abc.ABC):
             datetime.strptime(self._dict['time'], dateTimeFormat)
         except ValueError:
             try:
-                print("Detected a non-compliant timestamp. attempting to correct.")
+                logger.info("Detected a non-compliant timestamp. attempting to correct.")
                 self._dict['time'] = datetime.strftime(datetime.strptime(self._dict['time'], "%d-%m-%y %H:%M:%S"), dateTimeFormat)
             except ValueError:
-                print("Warning!: The time stamp could not be parsed. Replacing with 1_1_1970")
+                logger.warning("The time stamp could not be parsed. Replacing with 1_1_1970")
                 self._dict['time'] = "1-1-1990 01:01:01"
         if self._dict['system'] == "":
-            print("Warning: The `system` name in the metadata is blank. Check that the PWS System is saving the proper calibration values.")
+            logger.warning("The `system` name in the metadata is blank. Check that the PWS System is saving the proper calibration values.")
         if all([i in self._dict for i in ['darkCounts', 'linearityPoly']]):
             if self._dict['darkCounts'] == 0:
-                print("Warning: Detected a darkCounts value of 0 in the pwsdtd.ImCube Metadata. Check that the PWS System is saving the proper calibration values.")
+                logger.warning("Detected a darkCounts value of 0 in the pwsdtd.ImCube Metadata. Check that the PWS System is saving the proper calibration values.")
             self.cameraCorrection = CameraCorrection(darkCounts=self._dict['darkCounts'],
                                                      linearityPolynomial=self._dict['linearityPoly'])
         else:
@@ -181,7 +183,6 @@ class AnalysisManagerMetaDataBase(MetaDataBase):
             files = os.listdir(os.path.join(path, 'analyses'))
             return [cls.getAnalysisResultsClass().fileName2Name(f) for f in files]
         else:
-            # print(f"pwsdtd.ImCube at {path} has no `analyses` folder.")
             return []
 
     def saveAnalysis(self, analysis: AbstractHDFAnalysisResults, name: str):
@@ -619,7 +620,7 @@ class ICMetaData(AnalysisManagerMetaDataBase):
             except:  # have to use the old metadata
                 info2 = list(spio.loadmat(os.path.join(directory, 'info2.mat'))['info2'].squeeze())
                 info3 = list(spio.loadmat(os.path.join(directory, 'info3.mat'))['info3'].squeeze())
-                print("Json metadata not found. Using backup metadata.")
+                logging.getLogger(__name__).info("Json metadata not found. Using backup metadata.")
                 wv = list(spio.loadmat(os.path.join(directory, 'WV.mat'))['WV'].squeeze())
                 wv = [int(i) for i in wv]  # We will have issues saving later if these are numpy int types.
                 md = {'startWv': info2[0], 'stepWv': info2[1], 'stopWv': info2[2],

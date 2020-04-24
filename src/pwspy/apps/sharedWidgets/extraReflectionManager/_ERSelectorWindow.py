@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import logging
 from datetime import datetime
 from typing import List, Optional
 
@@ -83,7 +85,8 @@ class ERSelectorWindow(QDialog):
         try:
             self._manager.download('index.json', parentWidget=self)
         except OfflineError:
-            print('Offline Mode: Could not update `Extra Reflectance` index file. Connection to Google Drive failed.')
+            logger = logging.getLogger(__name__)
+            logger.warning('Offline Mode: Could not update `Extra Reflectance` index file. Connection to Google Drive failed.')
         self._initialize()
 
     def _initialize(self):

@@ -1,3 +1,4 @@
+import logging
 from typing import List
 
 from PyQt5 import QtCore
@@ -67,7 +68,7 @@ class FullImPaintSelector(SelectorWidgetBase):
             colorCycler = cycler(color=[(1, 0, 0, alpha), (0, 1, 0, alpha), (0, 0, 1, alpha), (1, 1, 0, alpha), (1, 0, 1, alpha)])
             for poly, color in zip(polys, colorCycler()):
                 if isinstance(poly, MultiPolygon):
-                    print("Error: FullImPaintSelector.drawRois tried to draw a polygon of a shapely.MultiPolygon object.")
+                    logging.getLogger(__name__).error("FullImPaintSelector.drawRois tried to draw a polygon of a shapely.MultiPolygon object.")
                     continue
                 p = Polygon(poly.exterior.coords, color=color['color'], animated=True)
                 self.addArtist(p)
@@ -103,7 +104,8 @@ class FullImPaintSelector(SelectorWidgetBase):
             try:
                 polys = segmentAdaptive(self.image.get_array(), **self.dlg.getSettings())
             except Exception as e:
-                print("Warning: adaptive segmentation failed with error: ", e)
+                logging.getLogger(__name__).warning(f"adaptive segmentation failed with error:")
+                logging.getLogger(__name__).exception(e)
                 return
         else:
             if forceRedraw:
