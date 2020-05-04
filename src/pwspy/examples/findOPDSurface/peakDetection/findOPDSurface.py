@@ -1,4 +1,5 @@
-
+"""This script detects all local maxima in the spectra of a PWS image and then performs various morphological operations on the peak locations in an
+ attempt to localize the cell surface. It is very finnick and needs to be adjusted for each individual image. I reccomend the "activeContour" script instead."""
 
 if __name__ == '__main__':
     from pwspy.dataTypes import AcqDir
@@ -10,9 +11,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import skimage.morphology as morph
     import skimage.measure as meas
-    from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-    import skan
-    from pwspy.examples.findOPDSurface.funcs import prune3dIm, Skel
+    from pwspy.examples.findOPDSurface.peakDetection.funcs import prune3dIm, Skel
 
     # rootDir = r'G:\Data\NA_i_vs_NA_c\matchedNAi_largeNAc\cells'
     rootDir = r'G:\Data\NA_i_vs_NA_c\smallNAi_largeNAc\cells'
@@ -141,7 +140,7 @@ if __name__ == '__main__':
         # Interpolate out the Nans
         def interpolateNans(arr, method='linear'):  # 'cubic' may also be good.
             """Interpolate out nan values along the third axis of an array"""
-            from scipy.interpolate import interp2d, griddata
+            from scipy.interpolate import griddata
             x, y = list(range(arr.shape[1])), list(range(arr.shape[0]))
             X, Y = np.meshgrid(x, y)
             nans = np.isnan(arr)
