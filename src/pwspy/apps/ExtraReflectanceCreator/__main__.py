@@ -107,7 +107,7 @@ def main():
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
     logger.addHandler(logging.StreamHandler(sys.stdout))
-    fHandler = logging.FileHandler(os.path.join(appPath, 'ExtraReflectanceCreatorData', f'log{datetime.now().strftime(dateTimeFormat)}.txt'))
+    fHandler = logging.FileHandler(os.path.join(appPath, 'ExtraReflectanceCreatorData', f'log{datetime.now().strftime("%d%m%Y%H%M%S")}.txt'))
     fHandler.setFormatter(logging.Formatter('%(asctime)s - %(message)s', style='{'))
     logger.addHandler(fHandler)
 
