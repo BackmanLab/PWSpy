@@ -427,7 +427,7 @@ class PWSRuntimeAnalysisSettings(AbstractRuntimeAnalysisSettings):  # Inherit do
     def getReferenceMetadata(self) -> pwsdt.ICMetaData:
         return self.referenceMetadata
 
-    def getCellMetadatas(self) -> typing.List[pwsdt.ICMetaData]:
+    def getCellMetadatas(self) -> typing.Sequence[pwsdt.ICMetaData]:
         return self.cellMetadata
 
     def getExtraReflectanceMetadata(self) -> pwsdt.ERMetaData:

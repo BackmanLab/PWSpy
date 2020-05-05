@@ -108,14 +108,29 @@ class AbstractRuntimeAnalysisSettings(ABC):
 
     @abstractmethod
     def getReferenceMetadata(self) -> AnalysisManagerMetaDataBase:
+        """
+
+        Returns:
+            The metadata object referring to the reference image used for normalization.
+        """
         pass
 
     @abstractmethod
-    def getCellMetadatas(self) -> typing.List[AnalysisManagerMetaDataBase]:
+    def getCellMetadatas(self) -> typing.Sequence[AnalysisManagerMetaDataBase]:
+        """
+
+        Returns:
+            A sequence of metadata objects for the acquisitions to be analyzed.
+        """
         pass
 
     @abstractmethod
-    def getExtraReflectanceMetadata(self) -> ERMetaData:
+    def getExtraReflectanceMetadata(self) -> typing.Optional[ERMetaData]:
+        """
+
+        Returns:
+            The metadata object for the extra reflection correction. This can be none if you want to skip this correction.
+        """
         pass
 
 

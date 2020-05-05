@@ -334,7 +334,7 @@ class DynamicsRuntimeAnalysisSettings(AbstractRuntimeAnalysisSettings):  # Inher
     def getReferenceMetadata(self) -> pwsdt.DynMetaData:
         return self.referenceMetadata
 
-    def getCellMetadatas(self) -> typing.List[pwsdt.DynMetaData]:
+    def getCellMetadatas(self) -> typing.Sequence[pwsdt.DynMetaData]:
         return self.cellMetadata
 
     def getExtraReflectanceMetadata(self) -> pwsdt.ERMetaData:

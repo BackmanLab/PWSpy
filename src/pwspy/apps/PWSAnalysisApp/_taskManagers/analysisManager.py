@@ -14,6 +14,7 @@ from pwspy.analysis import AbstractAnalysisSettings, AbstractAnalysis, AbstractR
 from pwspy.analysis.dynamics import DynamicsAnalysis, DynamicsRuntimeAnalysisSettings
 from pwspy.analysis.pws import PWSAnalysis, PWSRuntimeAnalysisSettings
 from pwspy.analysis.warnings import AnalysisWarning
+from pwspy.dataTypes import ICRawBase, ICMetaData, DynMetaData
 from pwspy.utility.fileIO import loadAndProcess
 if typing.TYPE_CHECKING:
     from pwspy.apps.PWSAnalysisApp.App import PWSApp
@@ -68,35 +69,33 @@ class AnalysisManager(QtCore.QObject):
         else:
             correctionsOk = True #We're using a user provided camera correction so we assume it's good to go.
         if correctionsOk:
-            if isinstance(refMeta, pwsdt.DynMetaData):
-                ref = refMeta.toDataClass()
-            elif isinstance(refMeta, pwsdt.ICMetaData):
-                ref = refMeta.toDataClass()
+            if isinstance(anSettings, PWSRuntimeAnalysisSettings):
+                AnalysisClass = PWSAnalysis
+                refMeta: ICMetaData
+            elif isinstance(anSettings, DynamicsRuntimeAnalysisSettings):
+                AnalysisClass = DynamicsAnalysis
+                refMeta: DynMetaData
             else:
                 raise TypeError(f"Analysis settings of type: {type(anSettings)} are not supported.")
+            ref = refMeta.toDataClass()
             if cameraCorrection is not None:
                 try:
-                    ref.correctCameraEffects(cameraCorrection) #Apply the user-specified correction. This will fail if the image doesn't have binning metadata.
+                    ref.correctCameraEffects(cameraCorrection)  # Apply the user-specified correction. This will fail if the image doesn't have binning metadata.
                 except ValueError:
                     userSpecifiedBinning, pressedOk = QInputDialog.getInt(self.app.window, "Specify binning", "Please specify the camera binning that was used for these acquisitions.", 1, 1, 4)
-                    if not pressedOk: #User pressed cancel
+                    if not pressedOk:  # User pressed cancel
                         return
                     ref.correctCameraEffects(cameraCorrection, binning=userSpecifiedBinning)
             else:
                 logger.info("Using automatically detected camera corrections")
                 ref.correctCameraEffects()
-            if anSettings.getExtraReflectanceMetadata() is not None: #if the ER is None, this means we are skipping the Extra reflection correction.
+            if anSettings.getExtraReflectanceMetadata() is not None:  # if the ER is None, this means we are skipping the Extra reflection correction.
                 if refMeta.systemName != anSettings.getExtraReflectanceMetadata().systemName:
                     ans = QMessageBox.question(self.app.window, "Uh Oh", f"The reference was acquired on system: {refMeta.systemName} while the extra reflectance correction was acquired on system: {anSettings.extraReflectanceMetadata.systemName}. Are you sure you want to continue?")
                     if ans == QMessageBox.No:
                         return
             logger.info("Initializing analysis")
-            if isinstance(anSettings, PWSRuntimeAnalysisSettings):
-                analysis = PWSAnalysis(anSettings, ref)
-            elif isinstance(anSettings, DynamicsRuntimeAnalysisSettings):
-                analysis = DynamicsAnalysis(anSettings, ref)
-            else:
-                raise TypeError(f"Analysis settings of type: {type(anSettings)} are not supported.")
+            analysis = AnalysisClass(anSettings, ref)
             useParallelProcessing = self.app.parallelProcessing
             #TODO would be good to estimate ram usage here and make a decision on whether or not to go parallel
             if (len(cellMetas) <= 3): #No reason to start 3 parallel processes for less than 3 cells.
