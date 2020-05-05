@@ -55,6 +55,7 @@ extensions = [
 ]
 
 autosummary_generate = True
+autodoc_inherit_docstrings = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
