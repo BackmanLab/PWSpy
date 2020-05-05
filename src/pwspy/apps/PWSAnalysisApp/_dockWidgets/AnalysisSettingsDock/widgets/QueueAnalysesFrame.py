@@ -4,11 +4,9 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QListWidgetItem, QWidget, QScrollArea, QListWidget, QMessageBox, QMenu, QAction, QDialog, QGridLayout, QPushButton
 
-from pwspy.analysis import AnalysisTypes
 from pwspy.analysis._abstract import AbstractRuntimeAnalysisSettings
 from pwspy.analysis.dynamics import DynamicsRuntimeAnalysisSettings
 from pwspy.analysis.pws import PWSRuntimeAnalysisSettings
-import json
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.apps.PWSAnalysisApp._dockWidgets import AnalysisSettingsDock

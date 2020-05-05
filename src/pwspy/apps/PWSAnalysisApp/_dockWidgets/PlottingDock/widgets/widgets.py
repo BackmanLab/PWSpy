@@ -31,8 +31,7 @@ class _PlotFields(Enum):
     DynamicsReflectance = (_AnalysisTypes.DYN, 'meanReflectance')
 
 class AnalysisPlotter:
-
-
+    PlotFields = _PlotFields
 
     def __init__(self, acq: AcqDir, analysis: ConglomerateAnalysisResults = None):
         self.analysisField: AnalysisPlotter.PlotFields = None
