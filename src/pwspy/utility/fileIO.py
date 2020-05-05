@@ -49,7 +49,7 @@ def _loadIms(qout: queue.Queue, qin: queue.Queue, lock: th.Lock):
             row['cube'] = im
             qout.put((index, row))
             perc = psutil.virtual_memory().percent
-            logger.info("Memory Usage: ", perc, '%')
+            logger.info(f"Memory Usage: {perc}%")
             if perc >= 95:
                 return
         except Exception as e:

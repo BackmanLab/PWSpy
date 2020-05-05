@@ -17,6 +17,7 @@ Classes
 from __future__ import annotations
 import dataclasses
 import os
+import typing
 from datetime import datetime
 import numpy as np
 import pandas as pd
@@ -386,7 +387,8 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
     autoCorrStopIndex: int
     autoCorrMinSub: bool  # Determines if the autocorrelation should have it's minimum subtracted from it before processing. This is mathematically nonsense but is needed if the autocorrelation has negative values in it.
     numericalAperture: float
-    relativeUnits: bool #determines if reflectance (and therefore the other parameters) should be calculated in absolute units of reflectance or just relative to the reflectance of the reference image.
+    relativeUnits: bool  # determines if reflectance (and therefore the other parameters) should be calculated in absolute units of reflectance or just relative to the reflectance of the reference image.
+    cameraCorrection: pwsdt.CameraCorrection
 
     FileSuffix = 'analysis'  # This is used for saving and loading to json
 
@@ -402,8 +404,9 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
     def _fromDict(cls, d: dict) -> PWSAnalysisSettings:  # Inherit docstring
         if d['referenceMaterial'] is not None:
             d['referenceMaterial'] = Material[d['referenceMaterial']]  # Convert from string to enum
-        if 'relativeUnits' not in d.keys():
-            d['relativeUnits'] = None #For a while this setting was missing from the code. Allow us to still load old files.
+        for newKey in ['relativeUnits', 'extraReflectanceId', 'cameraCorrection']:
+            if newKey not in d.keys():
+                d[newKey] = None #For a while these settings were missing from the code. Allow us to still load old files.
         return cls(**d)
 
 
@@ -411,6 +414,21 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
 class PWSRuntimeAnalysisSettings(AbstractRuntimeAnalysisSettings):  # Inherit docstring
     settings: PWSAnalysisSettings
     extraReflectanceMetadata: Optional[pwsdt.ERMetaData]
+    referenceMetadata: pwsdt.ICMetaData
+    cellMetadata: typing.List[pwsdt.ICMetaData]
+    analysisName: str
 
     def getSaveableSettings(self) -> PWSAnalysisSettings:
         return self.settings
+
+    def getAnalysisName(self) -> str:
+        return self.analysisName
+
+    def getReferenceMetadata(self) -> pwsdt.ICMetaData:
+        return self.referenceMetadata
+
+    def getCellMetadatas(self) -> typing.List[pwsdt.ICMetaData]:
+        return self.cellMetadata
+
+    def getExtraReflectanceMetadata(self) -> pwsdt.ERMetaData:
+        return self.extraReflectanceMetadata

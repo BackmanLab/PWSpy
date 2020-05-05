@@ -4,6 +4,7 @@ from glob import glob
 from typing import Optional, Tuple
 import typing
 
+from pwspy.apps.PWSAnalysisApp._dockWidgets import CellSelectorDock
 from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames._AbstractSettingsFrame import AbstractSettingsFrame
 from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames._sharedWidgets import ExtraReflectanceSelector, HardwareCorrections, \
     QHSpinBox, QHDoubleSpinBox, VerticallyCompressedWidget
@@ -13,17 +14,17 @@ if typing.TYPE_CHECKING:
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupBox, QHBoxLayout, QWidget, QRadioButton, \
-    QFrame, QCheckBox
+    QFrame, QCheckBox, QMessageBox
 
-from pwspy.dataTypes import CameraCorrection
 from pwspy.analysis.pws import PWSAnalysisSettings, PWSRuntimeAnalysisSettings
 from pwspy.apps.PWSAnalysisApp import applicationVars
 from pwspy.apps.PWSAnalysisApp._sharedWidgets.collapsibleSection import CollapsibleSection
 
 
 class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
-    def __init__(self, erManager: ERManager):
+    def __init__(self, erManager: ERManager, cellSelector: CellSelectorDock):
         super().__init__()
+        self.cellSelector = cellSelector
 
         self._frame = VerticallyCompressedWidget(self)
         self._layout = QGridLayout()
@@ -171,10 +172,6 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
         super().showEvent(a0)
         self._updateSize() #For some reason this must be done here and in the __init__ for it to start up properly.
 
-    @property
-    def analysisName(self) -> str:
-        return self._analysisNameEdit.text()
-
     def _updateSize(self):
         height = 100  # give this much excess room.
         height += self.presets.height()
@@ -197,16 +194,28 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
         self.autoCorrStopIndex.setValue(settings.autoCorrStopIndex)
         self.minSubCheckBox.setCheckState(2 if settings.autoCorrMinSub else 0)
         self.relativeUnits.setCheckState(2 if settings.relativeUnits else 0)
-
-    def loadCameraCorrection(self, camCorr: Optional[CameraCorrection] = None):
-        self.hardwareCorrections.loadCameraCorrection(camCorr)
+        self.hardwareCorrections.loadCameraCorrection(settings.cameraCorrection)
 
     def getSettings(self) -> PWSRuntimeAnalysisSettings:
         erMetadata, refMaterial, numericalAperture = self.extraReflection.getSettings()
-        return PWSRuntimeAnalysisSettings(settings=PWSAnalysisSettings(filterOrder=self.filterOrder.value(),  # TODO include reference and camera correction with this object.
+        refMeta = self.cellSelector.getSelectedReferenceMeta()
+        cellMeta = self.cellSelector.getSelectedCellMetas()
+        name = self._analysisNameEdit.text()
+        if refMeta is None:
+            raise ValueError('Please select a reference Cell.')
+        if name == '':
+            raise ValueError("Please give your analysis a name.")
+        if len(cellMeta) == 0:
+            raise ValueError('Please select cells to analyse.')
+        refMeta = refMeta.pws
+        cellMeta = [i.pws for i in cellMeta if i.pws is not None]  # If we select some acquisitions that don't have dynamics then they'll get stripped out here
+        if refMeta is None:
+            raise ValueError("The selected reference acquisition has no valid PWS data.")
+        if len(cellMeta) == 0:
+            raise ValueError("No valid PWS acquisitions were selected.")
+        return PWSRuntimeAnalysisSettings(settings=PWSAnalysisSettings(filterOrder=self.filterOrder.value(),
                                                                        filterCutoff=self.filterCutoff.value(),
                                                                        polynomialOrder=self.polynomialOrder.value(),
-                                                                       extraReflectanceId=erMetadata.idTag if erMetadata is not None else None,
                                                                        referenceMaterial=refMaterial,
                                                                        wavelengthStart=self.wavelengthStart.value(),
                                                                        wavelengthStop=self.wavelengthStop.value(),
@@ -214,11 +223,13 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
                                                                        autoCorrMinSub=self.minSubCheckBox.checkState() != 0,
                                                                        autoCorrStopIndex=self.autoCorrStopIndex.value(),
                                                                        numericalAperture=numericalAperture,
-                                                                       relativeUnits=self.relativeUnits.checkState() != 0),
-                                          extraReflectanceMetadata=erMetadata)
-
-    def getCameraCorrection(self) -> CameraCorrection:
-        return self.hardwareCorrections.getCameraCorrection()
+                                                                       relativeUnits=self.relativeUnits.checkState() != 0,
+                                                                       cameraCorrection=self.hardwareCorrections.getCameraCorrection(),
+                                                                       extraReflectanceId=erMetadata.idTag if erMetadata is not None else None),
+                                          extraReflectanceMetadata=erMetadata,
+                                          referenceMetadata=refMeta,
+                                          cellMetadata=cellMeta,
+                                          analysisName=name)
 
 
 

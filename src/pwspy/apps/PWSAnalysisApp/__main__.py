@@ -29,12 +29,14 @@ def main():
         sys.exit(1)
     sys.excepthook = exception_hook
 
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger('pwspy') # We use the root logger of the pwspy module so that all loggers in pwspy will be captured.
     logger.setLevel(logging.DEBUG)
     logger.addHandler(logging.StreamHandler(sys.stdout))
     fHandler = logging.FileHandler(os.path.join(applicationVars.dataDirectory, f'log{datetime.now().strftime("%d%m%Y%H%M%S")}.txt'))
-    fHandler.setFormatter(logging.Formatter('%(asctime)s - %(message)s', style='{'))
+    fHandler.setFormatter(logging.Formatter('%(levelname)s: %(asctime)s %(funcName)s(%(lineno)d) -- %(message)s', datefmt = '%Y-%m-%d %H:%M:%S'))
     logger.addHandler(fHandler)
+    logger.info("Logger Working")
+    logger.debug("Loggg")
     try:
         os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"  # TODO replace these options with proper high dpi handling. no pixel specific widths.
         QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)

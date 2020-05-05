@@ -104,11 +104,11 @@ def main():
         sys.exit(1)
     sys.excepthook = exception_hook
 
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger('pwspy')  # We use the root logger of the pwspy module so that all loggers in pwspy will be captured.
     logger.setLevel(logging.DEBUG)
     logger.addHandler(logging.StreamHandler(sys.stdout))
     fHandler = logging.FileHandler(os.path.join(appPath, 'ExtraReflectanceCreatorData', f'log{datetime.now().strftime("%d%m%Y%H%M%S")}.txt'))
-    fHandler.setFormatter(logging.Formatter('%(asctime)s - %(message)s', style='{'))
+    fHandler.setFormatter(logging.Formatter('%(levelname)s: %(asctime)s %(funcName)s(%(lineno)d) -- %(message)s', datefmt = '%Y-%m-%d %H:%M:%S'))
     logger.addHandler(fHandler)
 
     if isIpython():

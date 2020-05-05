@@ -290,6 +290,7 @@ class DynamicsAnalysisSettings(AbstractAnalysisSettings):
     referenceMaterial: Material
     numericalAperture: float
     relativeUnits: bool
+    cameraCorrection: pwsdt.CameraCorrection
     diffusionRegressionLength: int = 3
 
     FileSuffix = "dynAnalysis"  # This is used for setting the filename when saving and loading to json
@@ -310,6 +311,9 @@ class DynamicsAnalysisSettings(AbstractAnalysisSettings):
     def _fromDict(cls, d: dict) -> DynamicsAnalysisSettings:
         if d['referenceMaterial'] is not None:
             d['referenceMaterial'] = Material[d['referenceMaterial']]  # Convert from string to enum
+        for newKey in ['cameraCorrection']:
+            if newKey not in d.keys():
+                d[newKey] = None  # For a while these settings were missing from the code. Allow us to still load old files.
         return cls(**d)
 
 
@@ -317,6 +321,21 @@ class DynamicsAnalysisSettings(AbstractAnalysisSettings):
 class DynamicsRuntimeAnalysisSettings(AbstractRuntimeAnalysisSettings):  # Inherit docstring
     settings: DynamicsAnalysisSettings
     extraReflectanceMetadata: typing.Optional[pwsdt.ERMetaData]
+    referenceMetadata: pwsdt.DynMetaData
+    cellMetadata: typing.List[pwsdt.DynMetaData]
+    analysisName: str
 
     def getSaveableSettings(self) -> DynamicsAnalysisSettings:  # Inherit docstring
         return self.settings
+
+    def getAnalysisName(self) -> str:
+        return self.analysisName
+
+    def getReferenceMetadata(self) -> pwsdt.DynMetaData:
+        return self.referenceMetadata
+
+    def getCellMetadatas(self) -> typing.List[pwsdt.DynMetaData]:
+        return self.cellMetadata
+
+    def getExtraReflectanceMetadata(self) -> pwsdt.ERMetaData:
+        return self.extraReflectanceMetadata

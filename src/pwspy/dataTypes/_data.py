@@ -187,7 +187,7 @@ class ICBase(ABC):
         """This check is performed before allowing many arithmetic operations between two data cubes. Makes sure that the Z-axis of the two cubes match."""
         return self._index == other._index
 
-    def selIndex(self, start: float, stop: float) -> ICBase:
+    def selIndex(self, start: float, stop: float) -> typing.Tuple[np.ndarray, typing.Sequence]:
         """
         Args:
             start: The beginning value of the index in the new object.
@@ -202,9 +202,9 @@ class ICBase(ABC):
             iStop = None
         data = self.data[:, :, iStart:iStop]
         index = self.index[iStart:iStop]
-        return ICBase(data, index)
+        return data, index
 
-    def _add(self, other: typing.Union['self.__class__', numbers.Real, np.ndarray]) -> 'self.__class__':
+    def _add(self, other: typing.Union['self.__class__', numbers.Real, np.ndarray]) -> 'self.__class__':  #TODO these don't return the right datatype. They should probably just be gotten rid of
         if isinstance(other, self.__class__):
             if not self._indicesMatch(other):
                 raise ValueError(f"{self.__class__} indices are not compatible")
@@ -663,10 +663,10 @@ class DynCube(ICRawBase):
             raise Exception("The DynCube has already has extra reflection subtracted.")
 
     def selIndex(self, start, stop) -> DynCube: # Inherit docstring
-        ret = super().selIndex(start, stop)
+        data, index = super().selIndex(start, stop)
         md = self.metadata
-        md._dict['times'] = ret.index
-        return DynCube(ret.data, md)
+        md._dict['times'] = index
+        return DynCube(data, md)
 
     def getAutocorrelation(self) -> np.ndarray:
         """
@@ -1062,11 +1062,11 @@ class ImCube(ICRawBase):
         self.metadata.metadataToJson(outpath)
 
     def selIndex(self, start: float, stop: float) -> ImCube:  # Inherit docstring
-        ret = super().selIndex(start, stop)
+        data, index = super().selIndex(start, stop)
         md = copy.deepcopy(self.metadata)  # We are creating a copy of the metadata object because modifying the original metadata object can cause weird issues.
         assert md._dict is not self.metadata._dict
-        md._dict['wavelengths'] = ret.index
-        return ImCube(ret.data, md)
+        md._dict['wavelengths'] = index
+        return ImCube(data, md)
 
     @staticmethod
     def getMetadataClass() -> Type[pwsdtmd.ICMetaData]:  # Inherit docstring

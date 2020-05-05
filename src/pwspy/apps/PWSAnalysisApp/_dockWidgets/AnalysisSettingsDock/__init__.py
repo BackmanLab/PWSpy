@@ -27,9 +27,9 @@ class AnalysisSettingsDock(QDockWidget):
         widg = QWidget()
         widg.setLayout(QVBoxLayout())
         self.settingsTabWidget = QTabWidget(self)
-        self.PWSSettingsFrame = PWSSettingsFrame(self.erManager)
+        self.PWSSettingsFrame = PWSSettingsFrame(self.erManager, cellSelector)
         self.settingsTabWidget.addTab(self.PWSSettingsFrame, "PWS")
-        self.DynSettingsFrame = DynamicsSettingsFrame(self.erManager)
+        self.DynSettingsFrame = DynamicsSettingsFrame(self.erManager, cellSelector)
         self.settingsTabWidget.addTab(self.DynSettingsFrame, "Dynamics")
         widg.layout().addWidget(self.settingsTabWidget)
         self.addAnalysisButton = QPushButton("Add Analysis")
@@ -48,15 +48,12 @@ class AnalysisSettingsDock(QDockWidget):
     def addAnalysis(self):
         settingsWidget: AbstractSettingsFrame = self.settingsTabWidget.currentWidget()
         try:
-            camCorr = settingsWidget.getCameraCorrection()
             settings = settingsWidget.getSettings()
         except Exception as e:
             QMessageBox.information(self, 'Hold on', str(e))
             return
-        self.analysesQueue.addAnalysis(settingsWidget.analysisName, camCorr, settings,
-                                       self.selector.getSelectedReferenceMeta(),
-                                       self.selector.getSelectedCellMetas())
+        self.analysesQueue.addAnalysis(settings)
 
-    def getListedAnalyses(self) -> List[Tuple[str, AbstractRuntimeAnalysisSettings, List[AcqDir], AcqDir, CameraCorrection, AnalysisListItem]]:
+    def getListedAnalyses(self) -> List[AbstractRuntimeAnalysisSettings]:
         return self.analysesQueue.analyses
 

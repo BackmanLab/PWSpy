@@ -1,7 +1,7 @@
 import logging
 import os
 import re
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineEdit, QGridLayout, QSplitter, \
@@ -144,7 +144,7 @@ class CellSelectorDock(QDockWidget):
     def getAllCellMetas(self) -> List[pwsdt.AcqDir]:
         return [i.acqDir for i in self.tableWidget.cellItems]
 
-    def getSelectedReferenceMeta(self):
+    def getSelectedReferenceMeta(self) -> Optional[pwsdt.AcqDir]:
         return self.refTableWidget.selectedReferenceMeta
 
     def setSelectedCells(self, cells: List[pwsdt.AcqDir]):

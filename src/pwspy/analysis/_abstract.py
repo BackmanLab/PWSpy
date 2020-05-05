@@ -8,7 +8,7 @@ import typing
 from pwspy import __version__ as pwspyversion
 from pwspy.utility.misc import cached_property
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import ICBase
+    from pwspy.dataTypes import ICBase, MetaDataBase, AnalysisManagerMetaDataBase, ERMetaData
 
 
 class AbstractAnalysisSettings(ABC):
@@ -95,6 +95,27 @@ class AbstractRuntimeAnalysisSettings(ABC):
         Returns:
             Only the settings which can be saved.
         """
+        pass
+
+    @abstractmethod
+    def getAnalysisName(self) -> str:
+        """
+
+        Returns:
+            The name the analysis is referred to by
+        """
+        pass
+
+    @abstractmethod
+    def getReferenceMetadata(self) -> AnalysisManagerMetaDataBase:
+        pass
+
+    @abstractmethod
+    def getCellMetadatas(self) -> typing.List[AnalysisManagerMetaDataBase]:
+        pass
+
+    @abstractmethod
+    def getExtraReflectanceMetadata(self) -> ERMetaData:
         pass
 
 

@@ -2,17 +2,14 @@ from __future__ import annotations
 
 import logging
 import os
-import traceback
 from typing import Tuple, List, Optional
 import typing
 from PyQt5.QtCore import QThread
-
-
 from pwspy.apps.PWSAnalysisApp._sharedWidgets import ScrollableMessageBox
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox, QInputDialog
-from pwspy.dataTypes import CameraCorrection, AcqDir, ICRawBase, AnalysisManagerMetaDataBase
+import pwspy.dataTypes as pwsdt
 from pwspy.analysis import AbstractAnalysisSettings, AbstractAnalysis, AbstractRuntimeAnalysisSettings
 from pwspy.analysis.dynamics import DynamicsAnalysis, DynamicsRuntimeAnalysisSettings
 from pwspy.analysis.pws import PWSAnalysis, PWSRuntimeAnalysisSettings
@@ -42,37 +39,28 @@ class AnalysisManager(QtCore.QObject):
 
     def runList(self):
         """Run multiple queued analyses as specified by the user."""
-        for anName, anSettings, cellMetas, refMeta, camCorrection, widgetHandle in self.app.window.analysisSettings.getListedAnalyses():
-            self.runSingle(anName, anSettings, cellMetas, refMeta, camCorrection)
-            [cellItem.refresh() for cellMeta in cellMetas for cellItem in self.app.window.cellSelector.tableWidget.cellItems if cellMeta == cellItem.acqDir] #Refresh our displayed cell info
-            # _ = widgetHandle.listWidget().takeItem(widgetHandle.listWidget().row(widgetHandle)) #remove the analysis item once it has been run. This was commented out because it's annoying.
-            # del _
+        for anSettings in self.app.window.analysisSettings.getListedAnalyses():
+            self.runSingle(anSettings)
+            acqs = [i.acquisitionDirectory for i in anSettings.getCellMetadatas()]
+            [cellItem.refresh() for cellMeta in acqs for cellItem in self.app.window.cellSelector.tableWidget.cellItems if cellMeta == cellItem.acqDir] #Refresh our displayed cell info
 
     @safeCallback
-    def runSingle(self, anName: str, anSettings: AbstractRuntimeAnalysisSettings, cellMetas: List[AcqDir], refMeta: AcqDir,
-                  cameraCorrection: CameraCorrection) -> Tuple[str, AbstractAnalysisSettings, List[Tuple[List[AnalysisWarning], AcqDir]]]:
+    def runSingle(self, anSettings: AbstractRuntimeAnalysisSettings) -> Tuple[str, AbstractAnalysisSettings, List[Tuple[List[AnalysisWarning], pwsdt.AcqDir]]]:
         """Run a single analysis batch"""
         logger = logging.getLogger(__name__)
         userSpecifiedBinning: Optional[int] = None
-        if isinstance(anSettings, PWSRuntimeAnalysisSettings):
-            cellMetas = [i.pws for i in cellMetas]
-            refMeta = refMeta.pws  # We are only interested in pws data here
-        elif isinstance(anSettings, DynamicsRuntimeAnalysisSettings):
-            cellMetas = [i.dynamics for i in cellMetas]
-            refMeta = refMeta.dynamics
-        if refMeta is None:
-            raise ValueError(f"No measurement for analysis type {type(anSettings)} found in the reference cell.")
-        cellMetas = [i for i in cellMetas if i is not None]  # Remove None items from the list of cells. This happens e.g. when you are analyzing dynamics but not all acqs have dynamics
-        if len(cellMetas) == 0: return  # If all item were `None` then there is no point moving forward.
+        cellMetas = anSettings.getCellMetadatas()
+        refMeta = anSettings.getReferenceMetadata()
+        cameraCorrection = anSettings.getSaveableSettings().cameraCorrection
         #Determine which cells already have an analysis by this name and raise a deletion dialog.
         conflictCells = []
         for cell in cellMetas:
-            if anName in cell.getAnalyses():
+            if anSettings.getAnalysisName() in cell.getAnalyses():
                 conflictCells.append(cell)
         if len(conflictCells) > 0:
-            ret = ScrollableMessageBox.question(self.app.window, "File Conflict", f"The following cells already have an analysis named {anName}. Do you want to delete existing analyses and continue?: \n {', '.join([os.path.split(i.acquisitionDirectory.filePath)[-1] for i in conflictCells])}")
+            ret = ScrollableMessageBox.question(self.app.window, "File Conflict", f"The following cells already have an analysis named {anSettings.getAnalysisName()}. Do you want to delete existing analyses and continue?: \n {', '.join([os.path.split(i.acquisitionDirectory.filePath)[-1] for i in conflictCells])}")
             if ret == QMessageBox.Yes:
-                [cell.removeAnalysis(anName) for cell in conflictCells]
+                [cell.removeAnalysis(anSettings.getAnalysisName()) for cell in conflictCells]
             else:
                 return
         if cameraCorrection is None:  # This means that the user has selected automatic cameraCorrection
@@ -80,7 +68,12 @@ class AnalysisManager(QtCore.QObject):
         else:
             correctionsOk = True #We're using a user provided camera correction so we assume it's good to go.
         if correctionsOk:
-            ref = refMeta.toDataClass()
+            if isinstance(refMeta, pwsdt.DynMetaData):
+                ref = refMeta.toDataClass()
+            elif isinstance(refMeta, pwsdt.ICMetaData):
+                ref = refMeta.toDataClass()
+            else:
+                raise TypeError(f"Analysis settings of type: {type(anSettings)} are not supported.")
             if cameraCorrection is not None:
                 try:
                     ref.correctCameraEffects(cameraCorrection) #Apply the user-specified correction. This will fail if the image doesn't have binning metadata.
@@ -92,8 +85,8 @@ class AnalysisManager(QtCore.QObject):
             else:
                 logger.info("Using automatically detected camera corrections")
                 ref.correctCameraEffects()
-            if anSettings.extraReflectanceMetadata is not None: #if the ER is None, this means we are skipping the Extra reflection correction.
-                if refMeta.systemName != anSettings.extraReflectanceMetadata.systemName:
+            if anSettings.getExtraReflectanceMetadata() is not None: #if the ER is None, this means we are skipping the Extra reflection correction.
+                if refMeta.systemName != anSettings.getExtraReflectanceMetadata().systemName:
                     ans = QMessageBox.question(self.app.window, "Uh Oh", f"The reference was acquired on system: {refMeta.systemName} while the extra reflectance correction was acquired on system: {anSettings.extraReflectanceMetadata.systemName}. Are you sure you want to continue?")
                     if ans == QMessageBox.No:
                         return
@@ -118,7 +111,7 @@ class AnalysisManager(QtCore.QObject):
             else:
                 logger.info("Not using parallel processing.")
             #Run parallel/multithreaded processing
-            t = self.AnalysisThread(cellMetas, analysis, anName, cameraCorrection, userSpecifiedBinning, useParallelProcessing)
+            t = self.AnalysisThread(cellMetas, analysis, anSettings.getAnalysisName(), cameraCorrection, userSpecifiedBinning, useParallelProcessing)
             b = BusyDialog(self.app.window, "Processing. Please Wait...")
             t.finished.connect(b.accept)
 
@@ -130,13 +123,13 @@ class AnalysisManager(QtCore.QObject):
             b.exec()
             warnings = t.warnings
             warnings = [(warn, md) for warn, md in warnings if md is not None]
-            ret = (anName, anSettings.getSaveableSettings(), warnings)
+            ret = (anSettings.getAnalysisName(), anSettings.getSaveableSettings(), warnings)
             self.analysisDone.emit(*ret)
             return ret
         else:
             raise ValueError("Hmm. There appears to be a problem with different images using different `camera corrections`. Were all images taken on the same camera?")
 
-    def _checkAutoCorrectionConsistency(self, cellMetas: List[AnalysisManagerMetaDataBase]) -> bool:
+    def _checkAutoCorrectionConsistency(self, cellMetas: List[pwsdt.AnalysisManagerMetaDataBase]) -> bool:
         """Confirm that all metadatas in cellMetas have identical camera corrections. otherwise we can't proceed"""
         camCorrections = [i.cameraCorrection for i in cellMetas]
         names = [os.path.split(i.filePath)[-1] for i in cellMetas]
@@ -178,7 +171,7 @@ class AnalysisManager(QtCore.QObject):
 
 
         @staticmethod
-        def _initializer(analysis: AbstractAnalysis, analysisName: str, cameraCorrection: CameraCorrection, userSpecifiedBinning: Optional[int] = None):
+        def _initializer(analysis: AbstractAnalysis, analysisName: str, cameraCorrection: pwsdt.CameraCorrection, userSpecifiedBinning: Optional[int] = None):
             """This method is run once for each process that is spawned. it initialized _resources that are shared between each iteration of _process."""
             global pwspyAnalysisAppParallelGlobals
             logger = logging.getLogger(__name__)
@@ -187,7 +180,7 @@ class AnalysisManager(QtCore.QObject):
                                                'cameraCorrection': cameraCorrection, 'binning': userSpecifiedBinning}
 
         @staticmethod
-        def _process(im: ICRawBase):
+        def _process(im: pwsdt.ICRawBase):
             """This method is run in parallel. once for each acquisition data that we want to analyze.
             Returns a list of AnalysisWarnings objects with the associated metadat object"""
             global pwspyAnalysisAppParallelGlobals
