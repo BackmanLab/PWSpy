@@ -44,7 +44,7 @@ def _loadIms(qout: queue.Queue, qin: queue.Queue, lock: th.Lock):
         try:
             index, row = qin.get()
             displayStr = row['cube'].filePath if isinstance(row['cube'], MetaDataBase) else row['cube']
-            logger.info('Starting', displayStr)
+            logger.info(f'Starting {displayStr}')
             im = _load(row['cube'], lock=lock)
             row['cube'] = im
             qout.put((index, row))
