@@ -36,9 +36,19 @@ class MetaDataBase(abc.ABC):
         acquisitionDirectory: A reference to the `AcqDir` associated with this object.
 
     """
-    _jsonSchemaPath = os.path.join(_jsonSchemasPath, 'MetaDataBase.json')
-    with open(_jsonSchemaPath) as f:
-        _jsonSchema = json.load(f)  # This serves as a schematic that can be checked against when loading metadata to make sure it contains the required information.
+
+    @property
+    @abc.abstractmethod
+    def _jsonSchemaPath(self) -> str:
+        """Each sublass should provide a path to the jsonschema file. this is needed in order to resolve jsonschema references"""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def _jsonSchema(self) -> dict:
+        """Each subclass should provide a json schema loaded from a file.
+        This serves as a schematic that can be checked against when loading metadata to make sure it contains the required information."""
+        pass
 
     def __init__(self, metadata: dict, filePath: Optional[str] = None, acquisitionDirectory: Optional[AcqDir] = None):
         logger = logging.getLogger(__name__)
@@ -229,8 +239,8 @@ class DynMetaData(AnalysisManagerMetaDataBase):
     def getAnalysisResultsClass(): return DynamicsAnalysisResults
 
     _jsonSchemaPath = os.path.join(_jsonSchemasPath, 'DynMetaData.json')
-    with open(_jsonSchemaPath) as _f:
-        _jsonSchema = json.load(_f)
+    with open(_jsonSchemaPath) as f:
+        _jsonSchema = json.load(f)
 
     def __init__(self, metadata: dict, filePath: Optional[str] = None, fileFormat: Optional[FileFormats] = None, acquisitionDirectory: Optional[AcqDir] = None):
         self.fileFormat = fileFormat
@@ -562,8 +572,8 @@ class ICMetaData(AnalysisManagerMetaDataBase):
     def getAnalysisResultsClass(): return PWSAnalysisResults
 
     _jsonSchemaPath = os.path.join(_jsonSchemasPath, 'ICMetaData.json')
-    with open(_jsonSchemaPath) as _f:
-        _jsonSchema = json.load(_f)
+    with open(_jsonSchemaPath) as f:
+        _jsonSchema = json.load(f)
 
     def __init__(self, metadata: dict, filePath: Optional[str] = None, fileFormat: ICMetaData.FileFormats = None, acquisitionDirectory: Optional[AcqDir] = None):
         super().__init__(metadata, filePath, acquisitionDirectory=acquisitionDirectory)
