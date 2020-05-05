@@ -18,10 +18,8 @@ class AnalysisListItem(QListWidgetItem):
     def __init__(self, settings: AbstractRuntimeAnalysisSettings, parent: Optional[QWidget] = None):
         if isinstance(settings, PWSRuntimeAnalysisSettings):
             prefix = "PWS: "
-            self.type = AnalysisTypes.PWS
         elif isinstance(settings, DynamicsRuntimeAnalysisSettings):
             prefix = "DYN: "
-            self.type = AnalysisTypes.DYN
         else:
             raise TypeError(f"AnalysisListItem recieve unrecognized analyis settings object of type: {type(settings)}")
         super().__init__(prefix + settings.analysisName, parent)
