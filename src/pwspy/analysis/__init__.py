@@ -13,8 +13,6 @@ Submodules
     warnings
     dynamics
 
-.. autoclass:: AnalysisTypes
-
 """
 import os
 import enum
