@@ -87,7 +87,11 @@ class AbstractAnalysisSettings(ABC):
 
 
 class AbstractRuntimeAnalysisSettings(ABC):
-    """This represents the settings that get passed to an analysis. Unlike AnalysisSettings they can contain objects which cannot be saved/loaded."""
+    """This represents all the information that gets passed to an analysis.
+    Unlike AnalysisSettings they can contain objects which are not meant to be saved/loaded.
+    This includes the references to the acquisitions to be analyzed as well as the files used
+    for calibration and normalization"""
+    
     @abstractmethod
     def getSaveableSettings(self) -> AbstractAnalysisSettings:
         """
