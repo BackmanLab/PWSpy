@@ -12,6 +12,12 @@ Classes
     PWSAnalysisResults
     PWSAnalysis
 
+
+Inheritance
+-------------
+.. inheritance-diagram:: PWSAnalysisSettings PWSRuntimeAnalysisSettings PWSAnalysisResults PWSAnalysis
+    :parts: 1
+
 """
 
 from __future__ import annotations

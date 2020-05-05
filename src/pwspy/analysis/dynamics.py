@@ -12,6 +12,11 @@ Classes
     DynamicsAnalysisResults
     DynamicsAnalysis
 
+Inheritance
+-------------
+.. inheritance-diagram:: DynamicsAnalysisSettings DynamicsRuntimeAnalysisSettings DynamicsAnalysisResults DynamicsAnalysis
+    :parts: 1
+
 """
 
 from __future__ import annotations
