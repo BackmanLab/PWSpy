@@ -1,12 +1,10 @@
 """Backing functions used by the activeContour script."""
 import typing
-
 import numpy as np
 from skimage import morphology, segmentation
 import matplotlib.pyplot as plt
 import scipy.ndimage as ndi
 import matplotlib
-
 
 # Convert snake to height map
 def volume3Dto2D(arr3d, valueIndex=None, fillValue=0):
@@ -18,7 +16,7 @@ def volume3Dto2D(arr3d, valueIndex=None, fillValue=0):
     return height
 
 
-def equalAxis3dPlot(X: typing.Sequence[float], Y: typing.Sequence[float], Z:typing.Sequence[float], ax: matplotlib.Axes):
+def equalAxis3dPlot(X: typing.Sequence[float], Y: typing.Sequence[float], Z: typing.Sequence[float], ax: plt.Axes):
     """With no built-in way to set the aspect of a 3d plot we force it with this. This function finds the bounding box
     of X, Y, and Z and then sets the limits of `ax` accordingly.
 

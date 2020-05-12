@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from skimage import filters
 import multiprocessing as mp
 import pwspy.dataTypes as pwsdt
-from .funcs import volume3Dto2D, termSeg, morphSmoothing3D, equalAxis3dPlot
+from pwspy.examples.findOPDSurface.activeContour.funcs import volume3Dto2D, termSeg, morphSmoothing3D, equalAxis3dPlot
 import scipy as sp
 from glob import glob
 import os
@@ -81,36 +81,45 @@ def seg(cellDir: str):
 
 if __name__ == '__main__':
     read = True  # If this is true then we will load result from a previous run and plot them. If False then just run the code and save the results.
-    pickleName = 'ac.pickle'  # This is the filename for the results to be saved/loaded from
+    pickleName = r'C:\Users\backman05\Desktop\findsurface\ac9.pickle'  # This is the filename for the results to be saved/loaded from
 
     if read:
         with open(pickleName, 'rb') as f:
             out = pickle.load(f)
+
         for i in out:
             if isinstance(i, Exception):
                 print(i)
                 continue
             snake, smoothed, opdIndex = i
 
-            height = volume3Dto2D(snake, opdIndex) # Condense the 3d bool array to a 2d height map
-            plt.figure()
-            plt.imshow(height, cmap='nipy_spectral', clim=[0, 20])
-            plt.colorbar()
+            # Convert from OPD to microns
+            height = volume3Dto2D(snake, opdIndex)  # Condense the 3d bool array to a 2d height map
+            height = height / 2 / 1.37
+
+            fig, ax = plt.subplots()
+            im = plt.imshow(height, cmap='nipy_spectral', clim=[0, 7])
+            ax.set_axis_off()
+            cbar = plt.colorbar()
+            cbar.ax.set_ylabel('microns', rotation=270)
+            fig.show()
+
+
 
             # height = volume3Dto2D(smoothed, opdIndex)
             # plt.figure()
             # plt.imshow(height)
 
-            dx = 0.13 # This is the pixel size. We use this to plot XYZ with equal scaling
-
-            x, y = np.arange(snake.shape[1]) * dx, np.arange(snake.shape[0]) * dx
-
-            fig = plt.figure()  # 3D plot
-            ax = fig.add_subplot(projection='3d')
-            equalAxis3dPlot(x, y, height, ax)
-            contour = ax.contourf(x, y, height, levels=50, cmap=cm.nipy_spectral)
-            fig.show()
-            plt.colorbar(contour)
+            # dx = 0.13 # This is the pixel size. We use this to plot XYZ with equal scaling
+            #
+            # x, y = np.arange(snake.shape[1]) * dx, np.arange(snake.shape[0]) * dx
+            #
+            # fig = plt.figure()  # 3D plot
+            # ax = fig.add_subplot(projection='3d')
+            # equalAxis3dPlot(x, y, height, ax)
+            # contour = ax.contourf(x, y, height, levels=50, cmap=cm.nipy_spectral)
+            # fig.show()
+            # plt.colorbar(contour)
 
             # #Better looking, poor performance
             # fig = plt.figure()
@@ -119,8 +128,7 @@ if __name__ == '__main__':
             # X, Y = np.meshgrid(x, y)
             # ax.plot_surface(X, Y, height, cstride=5, rstride=5, cmap=cm.coolwarm)
             # fig.show()
-
-
+        plt.show()
     else:
         files = glob(os.path.join(r'G:\Data\NA_i_vs_NA_c\matchedNAi_largeNAc\cells', "Cell*"))  # Find all acquisitions in the folder
         with mp.Pool(4) as p:
