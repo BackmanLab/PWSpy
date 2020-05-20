@@ -156,10 +156,13 @@ class ERSelectorWindow(QDialog):
         PlotNd(er.data, indices=[range(er.data.shape[0]), range(er.data.shape[1]), er.wavelengths])
 
     def _downloadCheckedItems(self):
-        for item in self._items:
-            if item.isChecked() and not item.downloaded:
-                # If it is checked then it should be downloaded
-                self._manager.download(item.fileName, parentWidget=self)
+        try :
+            for item in self._items:
+                if item.isChecked() and not item.downloaded:
+                    # If it is checked then it should be downloaded
+                    self._manager.download(item.fileName, parentWidget=self)
+        except OfflineError as e:
+            QMessageBox.information(self, "OfflineMode", "Sorry, for obvious reasons you can't download extra reflection calibration files when running in offline mode.")
         self._initialize()
 
     def _selectLocalFile(self):
