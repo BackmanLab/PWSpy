@@ -23,7 +23,7 @@ import pickle
 from io import IOBase
 from typing import Optional, List, Dict
 
-from IPython.core.magics import logging
+import logging
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request

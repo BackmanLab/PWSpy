@@ -22,7 +22,7 @@ import typing
 from json import JSONDecodeError
 from typing import List, Optional, Type
 
-from IPython.core.magics import logging
+import logging
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import QPalette
 from PyQt5.QtWidgets import QPushButton, QTableWidgetItem, QTableWidget, QAbstractItemView, QMenu, QWidget, QMessageBox, \

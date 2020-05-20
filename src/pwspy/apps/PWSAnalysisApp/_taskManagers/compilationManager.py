@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import traceback
 
-from IPython.core.magics import logging
+import logging
 from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QMessageBox, QMainWindow
 from PyQt5 import QtCore
