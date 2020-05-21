@@ -42,7 +42,7 @@ class PlotNdCanvas(FigureCanvasQTAgg):
             self._indexes = tuple(range(s) for s in data.shape)
         else:
             assert len(indices) == len(data.shape)
-            self._indexes = indices
+            self._indexes = tuple(ind if (ind is not None) else range(s) for ind, s in zip(indices, data.shape))  # If an element is `None` then just use the range of the dimension.
 
         extraDims = len(data.shape[2:])  # the first two axes are the image dimensions. Any axes after that are extra dimensions that can be scanned through
 

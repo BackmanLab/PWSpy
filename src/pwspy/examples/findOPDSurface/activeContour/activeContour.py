@@ -134,7 +134,7 @@ if __name__ == '__main__':
         with mp.Pool(4) as p:
             out = p.starmap(seg, [(f,) for f in files])  # Run seg for each file, run in parallel for much faster completion.
 
-        with open(pickleName, 'wb') as f: #Save the results.
+        with open(pickleName, 'wb') as f:  # Save the results.
             pickle.dump(out, f)
 
 

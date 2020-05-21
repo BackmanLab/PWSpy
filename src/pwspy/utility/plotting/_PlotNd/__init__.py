@@ -57,7 +57,7 @@ class _MyView(QGraphicsView):
         super().resizeEvent(event)
 
 
-class PlotNd(QWidget):
+class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of cursor. Open Console doesn't work in ipython.
     """A convenient widget for visualizing data that is 3D or greater. This is a standalone widget which extends the
     functionality of `PlotNdCanvas`.
 
@@ -68,7 +68,8 @@ class PlotNd(QWidget):
             coordinate for each axis of the data array.
         title: A title for the window.
         parent: The Qt Widget that serves as the parent for this widget.
-        indices: An optional tuple of 1d arrays of values to set as the indexes for each dimension of the data.
+        indices: An optional tuple of 1d arrays of values to set as the indexes for each dimension of the data. Elements of the list can be set to `None` to skip
+            setting a custom index for that dimension.
 
     Attributes:
         data: A reference the the 3D or greater numpy array. This can be safely modified.
