@@ -32,7 +32,7 @@ Functions
 import os
 from glob import glob
 from typing import List
-from skimage import morphology, measure
+from skimage import morphology, measure, segmentation
 import cv2
 import numpy as np
 import shapely
@@ -40,6 +40,9 @@ import tifffile as tf
 from shapely.geometry import MultiPolygon
 import pwspy.dataTypes as pwsdt
 import scipy.ndimage as ndim
+
+from pwspy.utility import machineVision
+
 
 def segmentOtsu(image: np.ndarray, minArea = 100) -> List[shapely.geometry.Polygon]:
     """Uses non-adaptive otsu method segmentation to find fluorescent regions (nuclei)
@@ -137,7 +140,9 @@ def updateFolderStructure(rootDirectory: str, rotate: int, flipX: bool, flipY: b
         os.mkdir(newPath)
         fl.toTiff(newPath)
 
+
 def segmentWatershed(image: np.ndarray, closingRadius: int = 1, openingRadius: int = 1, minimumArea: int = 2000, debug: bool = False):
+    image = machineVision.to8bit(image)
     threshold, binary = cv2.threshold(image, 0, 1, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
     binary = morphology.binary_closing(binary,  morphology.disk(closingRadius)) #Could these just be replaced by a single erosion and dilation?
     binary = morphology.binary_opening(binary, morphology.disk(openingRadius))
@@ -147,22 +152,31 @@ def segmentWatershed(image: np.ndarray, closingRadius: int = 1, openingRadius: i
     props = measure.regionprops(labeled)
     for regionProp in props:
         if regionProp.area < minimumArea:
-            binary[regionProp.label] = 0
+            binary[labeled == regionProp.label] = 0
     # Invert the mask and compute the Euclidean distance
     # transform
-    disttrans = -ndim.distance_transform_edt(~binary)
+    disttrans = -ndim.distance_transform_edt(binary)
     # Extended-minima transform with 20-minima. Matlab states that `imextendedmin` is "the regional minima of the H-minima transform." So hopefully these are equivalent.
-    mintrans = morphology.extrema.local_minima(morphology.extrema.h_minima(disttrans, 1))
+    hmin = morphology.extrema.h_minima(disttrans, 20)
+    #mintrans = morphology.extrema.local_minima(hmin)
 
-    ws = morphology.watershed(disttrans, markers=mintrans)
+    d = disttrans.astype(int)
+    d = d - d.min()
+    ws = segmentation.watershed(d, markers=measure.label(hmin), mask=binary)
 
     if debug:
         import matplotlib.pyplot as plt
         fig, axes = plt.subplots(2, 2)
-        axes[0].imshow(disttrans)
-        axes[1].imshow(mintrans)
-        axes[2].imshow(ws)
-        axes[3].imshow(binary)
+        axes[0, 0].imshow(disttrans)
+        # axes[0, 1].imshow(mintrans)
+        axes[1, 0].imshow(ws)
+        axes[1, 1].imshow(binary)
+        plt.figure()
+        plt.imshow(hmin)
+        plt.figure()
+        plt.imshow(ws)
+        plt.show()
+        a=1
     # Morphological reconstruction of Euclidean distance
     # # transform so that the regional minima correspond to the
     # # extended-minima transform
@@ -178,6 +192,5 @@ def segmentWatershed(image: np.ndarray, closingRadius: int = 1, openingRadius: i
     # cellfile = num2str(FOVnum) - '0'
 
 if __name__ == '__main__':
-    fl = pwsdt.FluorescenceImage.fromTiff(r'')
+    fl = pwsdt.FluorescenceImage.fromTiff(r'G:\Data\canvassing\testcells\Cell1904\Fluorescence')
     segmentWatershed(fl.data, debug=True)
-    
