@@ -43,7 +43,6 @@ class FullImPaintSelector(SelectorWidgetBase):
         super().__init__(axMan, im, onselect=onselect)
         self.dlg = AdaptivePaintDialog(self, self.ax.figure.canvas)
 
-        self._stale = True #This tells us whether we can load regions from the cache or need to recalculate
         self._cachedRegions = None # We cache the detected polygons. No need to redetect if nothing has changed between selections.
         self._cachedImage = None # We cache a reference to the image data as a way of detecting when the image data has changed.
 
@@ -112,12 +111,13 @@ class FullImPaintSelector(SelectorWidgetBase):
         Args:
             forceRedraw: If `True` then polygons will be cleared and redrawn even if we don't detect that our status is `stale`
         """
+        stale = False
         if self.image.get_array() is not self._cachedImage:  # The image has been changed.
             self._cachedImage = self.image.get_array()
-            self._stale = True
+            stale = True
         if self.dlg.isStale():
-            self._stale = True
-        if self._stale:
+            stale = True
+        if stale:
             try:
                 polys = segmentAdaptive(self.image.get_array(), **self.dlg.getSettings())
             except Exception as e:
@@ -131,7 +131,6 @@ class FullImPaintSelector(SelectorWidgetBase):
                 return
         self.reset()
         self._drawRois(polys)
-        self._stale = False
 
 
 class LabeledSlider(QWidget):
