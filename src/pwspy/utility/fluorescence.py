@@ -30,6 +30,7 @@ Functions
 """
 
 import os
+import typing
 from glob import glob
 from typing import List
 from skimage import morphology, measure, segmentation
@@ -44,7 +45,7 @@ import scipy.ndimage as ndim
 from pwspy.utility import machineVision
 
 
-def segmentOtsu(image: np.ndarray, minArea = 100) -> List[shapely.geometry.Polygon]:
+def segmentOtsu(image: np.ndarray, minArea=100) -> List[shapely.geometry.Polygon]:
     """Uses non-adaptive otsu method segmentation to find fluorescent regions (nuclei)
     Returns a list of shapely polygons.
 
@@ -55,8 +56,16 @@ def segmentOtsu(image: np.ndarray, minArea = 100) -> List[shapely.geometry.Polyg
     Returns:
         A list of `shapely.geometry.Polygon` objects corresponding to detected nuclei.
     """
-    image = ((image - image.min()) / (image.max() - image.min()) * 255).astype(np.uint8)
+    image = machineVision.to8bit(image)  # convert to 8bit
     threshold, binary = cv2.threshold(image, 0, 1, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+    polys = _binaryToPoly(binary)
+    newPolys = []
+    for p in polys:
+        newPolys += _processPoly(p, erode=0, dilate=0, polySimplification=2, minArea=minArea)
+    return newPolys
+
+
+def _binaryToPoly(binary: np.ndarray) -> typing.List[shapely.geometry.Polygon]:
     contours, hierarchy = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     polys = []
     for contour in contours:
@@ -66,9 +75,23 @@ def segmentOtsu(image: np.ndarray, minArea = 100) -> List[shapely.geometry.Polyg
         if contour.shape[0] < 3:  # We need a polygon, not a line
             continue
         p = shapely.geometry.Polygon(contour)
-        if p.area < minArea:  # Reject small regions
+        polys.append.append(p)
+    return polys
+
+
+def _processPoly(p: shapely.geometry.Polygon, erode: int = 0, dilate: int = 0, polySimplification: int = 5, minArea: int = 100):
+    if erode != 0:
+        p = p.buffer(-erode)
+    if not isinstance(p, MultiPolygon):  # there is a chance for this to split a polygon into a multipolygon. we iterate over each new polygon. If it's still just a polygon put it in a list so it can be iterated over wit the same syntax
+        p = [p]
+    polys = []
+    for poly in p:
+        if dilate != 0:
+            poly = poly.buffer(dilate)  # This is an erode followed by a dilate.
+        poly = poly.simplify(polySimplification, preserve_topology=False)  # This removed unneed points to lessen the saving/loading burden
+        if poly.area < minArea:
             continue
-        polys.append(p)
+        polys.append(poly)
     return polys
 
 
@@ -79,6 +102,7 @@ def segmentAdaptive(image: np.ndarray, minArea: int = 100, adaptiveRange: int = 
     Args:
         image: A 2d array representing the fluorescent image.
         minArea: Detected regions with a pixel area lower than this value will be discarded.
+        adaptiveRange: Adjusts the range of the segmentation threshold adapts
         thresholdOffset: This offset is passed to `cv2.adaptiveThreshold` and affects the segmentation process
         polySimplification: This parameter will simplify the edges of the detected polygons to remove overly complicated
             geometry
@@ -91,26 +115,37 @@ def segmentAdaptive(image: np.ndarray, minArea: int = 100, adaptiveRange: int = 
     """
     if adaptiveRange%2 != 1 or adaptiveRange<3:
         raise ValueError("adaptiveRange must be a positive odd integer >=3.")
-    image = ((image - image.min()) / (image.max() - image.min()) * 255).astype(np.uint8) # convert to 8bit
+    image = machineVision.to8bit(image)  # convert to 8bit
     binary = cv2.adaptiveThreshold(image, 1, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, adaptiveRange, thresholdOffset)
-    contours, hierarchy = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-    polys = []
-    for contour in contours:
-        contour = contour.squeeze()  # We want a Nx2 array. We get Nx1x2 though.
-        if len(contour.shape) != 2:  # Sometimes contour is 1x1x2 which squezes down to just 2
-            continue
-        if contour.shape[0] < 3:  # We need a polygon, not a line
-            continue
-        p = shapely.geometry.Polygon(contour)
-        p = p.buffer(-erode)
-        if not isinstance(p, MultiPolygon): #there is a chance for this to split a polygon into a multipolygon. we iterate over each new polygon. If it's still just a polygon put it in a list so it can be iterated over wit the same syntax
-            p = [p]
-        for poly in p:
-            poly = poly.buffer(dilate) #This is an erode followed by a dilate.
-            poly = poly.simplify(polySimplification, preserve_topology=False) #This removed unneed points to lessen the saving/loading burden
-            if poly.area < minArea:
-                continue
-            polys.append(poly)
+    polys = _binaryToPoly(binary)
+    newPolys = []
+    for i, p in enumerate(polys):
+        newPolys += _processPoly(p, erode, dilate, polySimplification, minArea)
+    return newPolys
+
+
+def segmentWatershed(image: np.ndarray, closingRadius: int = 2, openingRadius: int = 2, minimumArea: int = 2000):
+    image = machineVision.to8bit(image)
+    threshold, binary = cv2.threshold(image, 0, 1, cv2.THRESH_BINARY | cv2.THRESH_OTSU) # TODO switch to adaptive?
+    binary = morphology.binary_opening(binary, morphology.disk(openingRadius))
+    binary = morphology.binary_closing(binary,  morphology.disk(closingRadius))
+
+    # Remove objects smaller than 2000 pixels
+    labeled = measure.label(binary)
+    props = measure.regionprops(labeled)
+    for regionProp in props:
+        if regionProp.area < minimumArea:
+            binary[labeled == regionProp.label] = 0
+    # Invert the mask and compute the Euclidean distance
+    # transform
+    disttrans = -ndim.distance_transform_edt(binary)  # The distance from the edge of the segmented nuclei.
+    hmin = morphology.extrema.h_minima(disttrans, 20)  # Should be a tiny true region at the center of each nuclei
+
+    d = disttrans.astype(int)
+    d = d - d.min()
+    ws = segmentation.watershed(d, markers=measure.label(hmin), mask=binary)
+    ws = segmentation.clear_border(ws) #Clear incomplete nuclei on the border.
+    polys = _binaryToPoly(ws)
     return polys
 
 
@@ -139,57 +174,6 @@ def updateFolderStructure(rootDirectory: str, rotate: int, flipX: bool, flipY: b
         newPath = os.path.join(parentPath, f'Cell{cellNum}', 'Fluorescence')
         os.mkdir(newPath)
         fl.toTiff(newPath)
-
-
-def segmentWatershed(image: np.ndarray, closingRadius: int = 1, openingRadius: int = 1, minimumArea: int = 2000, debug: bool = False):
-    image = machineVision.to8bit(image)
-    threshold, binary = cv2.threshold(image, 0, 1, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-    binary = morphology.binary_closing(binary,  morphology.disk(closingRadius)) #Could these just be replaced by a single erosion and dilation?
-    binary = morphology.binary_opening(binary, morphology.disk(openingRadius))
-
-    # Remove objects smaller than 2000 pixels
-    labeled = measure.label(binary)
-    props = measure.regionprops(labeled)
-    for regionProp in props:
-        if regionProp.area < minimumArea:
-            binary[labeled == regionProp.label] = 0
-    # Invert the mask and compute the Euclidean distance
-    # transform
-    disttrans = -ndim.distance_transform_edt(binary)
-    # Extended-minima transform with 20-minima. Matlab states that `imextendedmin` is "the regional minima of the H-minima transform." So hopefully these are equivalent.
-    hmin = morphology.extrema.h_minima(disttrans, 20)
-    #mintrans = morphology.extrema.local_minima(hmin)
-
-    d = disttrans.astype(int)
-    d = d - d.min()
-    ws = segmentation.watershed(d, markers=measure.label(hmin), mask=binary)
-
-    if debug:
-        import matplotlib.pyplot as plt
-        fig, axes = plt.subplots(2, 2)
-        axes[0, 0].imshow(disttrans)
-        # axes[0, 1].imshow(mintrans)
-        axes[1, 0].imshow(ws)
-        axes[1, 1].imshow(binary)
-        plt.figure()
-        plt.imshow(hmin)
-        plt.figure()
-        plt.imshow(ws)
-        plt.show()
-        a=1
-    # Morphological reconstruction of Euclidean distance
-    # # transform so that the regional minima correspond to the
-    # # extended-minima transform
-    # minrecon = imimposemin(disttrans,mintrans)
-    # # Watershed transform the reconstructed mask
-    # wsim = watershed(minrecon)
-    # # Apply watershed transform to mask
-    # bwim(wsim == 0) = 0
-    # # Remove any nuclei touching the boundary (since incomplete
-    # # nuclei will skew data)
-    # bwim = imclearborder(bwim)
-    # # Find the actual FOV number
-    # cellfile = num2str(FOVnum) - '0'
 
 if __name__ == '__main__':
     fl = pwsdt.FluorescenceImage.fromTiff(r'G:\Data\canvassing\testcells\Cell1904\Fluorescence')
