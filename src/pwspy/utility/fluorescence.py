@@ -145,7 +145,7 @@ def segmentWatershed(image: np.ndarray, closingRadius: int = 2, openingRadius: i
     d = disttrans.astype(int)
     d = d - d.min()
     ws = segmentation.watershed(d, markers=measure.label(hmin), mask=binary)
-    ws = segmentation.clear_border(ws) #Clear incomplete nuclei on the border.
+    # ws = segmentation.clear_border(ws)  # Clear incomplete nuclei on the border.
     polys = _binaryToPoly(ws)
     return polys
 
