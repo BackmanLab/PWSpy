@@ -66,6 +66,7 @@ def segmentOtsu(image: np.ndarray, minArea=100) -> List[shapely.geometry.Polygon
 
 
 def _binaryToPoly(binary: np.ndarray) -> typing.List[shapely.geometry.Polygon]:
+    binary = machineVision.to8bit(binary)
     contours, hierarchy = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     polys = []
     for contour in contours:
@@ -75,7 +76,7 @@ def _binaryToPoly(binary: np.ndarray) -> typing.List[shapely.geometry.Polygon]:
         if contour.shape[0] < 3:  # We need a polygon, not a line
             continue
         p = shapely.geometry.Polygon(contour)
-        polys.append.append(p)
+        polys.append(p)
     return polys
 
 
@@ -177,4 +178,4 @@ def updateFolderStructure(rootDirectory: str, rotate: int, flipX: bool, flipY: b
 
 if __name__ == '__main__':
     fl = pwsdt.FluorescenceImage.fromTiff(r'G:\Data\canvassing\testcells\Cell1904\Fluorescence')
-    segmentWatershed(fl.data, debug=True)
+    segmentWatershed(fl.data)
