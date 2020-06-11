@@ -29,11 +29,14 @@ from logging import RootLogger
 
 
 class Step:
-    def __init__(self, id: int, settings: str, stepType: str, children: typing.List[Step] = None):
+    def __init__(self, id: int, settings: dict, stepType: str, children: typing.List[Step] = None):
         self.id = id
         self.settings = settings
         self.stepType = stepType
         self.children = children
+
+    def __repr__(self):
+        return f"Step: {self.stepType}"
 
     def setChildren(self, children: typing.List[Step]):
         self.children = children
@@ -57,26 +60,30 @@ class Step:
 class RootStep(Step):
     pass
 
+
 class CoordStep(Step, abc.ABC):
     @abc.abstractmethod
-    def __len__(self): pass  # return the total number of iterations of this step.
+    def stepIterations(self): pass  # return the total number of iterations of this step.
+
 
 class PositionsStep(CoordStep):
-    def __len__(self):
+    def stepIterations(self):
         if not hasattr(self, '_len'):
-            self._len = len(json.loads(self.settings)['posList']['positions_'])
+            self._len = len(self.settings['posList']['positions_'])
         return self._len
+
 
 class TimeStep(CoordStep):
-    def __len__(self):
+    def stepIterations(self):
         if not hasattr(self, '_len'):
-            self._len = json.loads(self.settings)['numFrames']
+            self._len = self.settings['numFrames']
         return self._len
 
+
 class ZStackStep(CoordStep):
-    def __len__(self):
+    def stepIterations(self):
         if not hasattr(self, '_len'):
-            self._len = json.loads(self.settings)['numStacks']
+            self._len = self.settings['numStacks']
         return self._len
 
 class Types(enum.Enum):
