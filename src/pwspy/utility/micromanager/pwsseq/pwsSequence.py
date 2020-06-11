@@ -21,6 +21,7 @@
 """
 from __future__ import annotations
 
+import abc
 import enum
 import typing
 import json
@@ -56,21 +57,44 @@ class Step:
 class RootStep(Step):
     pass
 
+class CoordStep(Step, abc.ABC):
+    @abc.abstractmethod
+    def __len__(self): pass  # return the total number of iterations of this step.
+
+class PositionsStep(CoordStep):
+    def __len__(self):
+        if not hasattr(self, '_len'):
+            self._len = len(json.loads(self.settings)['posList']['positions_'])
+        return self._len
+
+class TimeStep(CoordStep):
+    def __len__(self):
+        if not hasattr(self, '_len'):
+            self._len = json.loads(self.settings)['numFrames']
+        return self._len
+
+class ZStackStep(CoordStep):
+    def __len__(self):
+        if not hasattr(self, '_len'):
+            self._len = json.loads(self.settings)['numStacks']
+        return self._len
 
 class Types(enum.Enum):
     ACQ = Step
     PFS = Step
-    POS = Step
-    TIME = Step
+    POS = PositionsStep
+    TIME = TimeStep
     AF = Step
     CONFIG = Step
     PAUSE = Step
     EVERYN = Step
     ROOT = RootStep
     SUBFOLDER = Step
-    ZSTACK = Step
+    ZSTACK = ZStackStep
 
-#factory = {Types.ROOT: RootStep}
+#
+# class SequenceCoordinate:
+#     def __init__(self, path: typing.Sequence[int], coord: Coord):
 
 if __name__ == '__main__':
     with open(r'C:\Users\nicke\Desktop\demo\sequence.pwsseq') as f:
