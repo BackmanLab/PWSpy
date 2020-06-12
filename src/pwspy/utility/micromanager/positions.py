@@ -35,7 +35,7 @@ import matplotlib as mpl
 import scipy.io as spio
 
 from pwspy.utility.micromanager import PropertyMap
-from pwspy.utility.micromanager.PropertyMap import JsonAble, hr, PropertyMapFile
+from pwspy.utility.micromanager.PropertyMap import JsonAble, hr, PropertyMapFile, HookReg
 
 
 @dataclass
@@ -59,12 +59,12 @@ class Position1d:
     #     return contents
     #
     #
-    # @staticmethod
-    # def hook(d: dict):
-    #     if "Device" in d and "Position_um" in d and len(d['Position_um'].toPrimitive())==1:
-    #         return Position1d(z=d['Position_um'].toPrimitive()[0], zStage=d['Device'].toPrimitive())
-    #     else:
-    #         return d
+    @staticmethod
+    def hook(d: dict):
+        if "Device" in d and "Position_um" in d and len(d['Position_um'])==1:
+            return Position1d(z=d['Position_um'][0], zStage=d['Device'])
+        else:
+            return d
 
     def __repr__(self):
         return f"Position1d({self.zStage}, {self.z})"
@@ -92,13 +92,13 @@ class Position2d:
     #          "Position_um": Property("DOUBLE", [self.x, self.y])}
     #     return contents
 
-    # @staticmethod
-    # def hook(d: dict):
-    #     if "Device" in d and "Position_um" in d and len(d['Position_um'].toPrimitive())==2:
-    #         x, y = d['Position_um'].toPrimitive()
-    #         return Position2d(x=x, y=y, xyStage=d['Device'].toPrimitive())
-    #     else:
-    #         return d
+    @staticmethod
+    def hook(d: dict):
+        if "Device" in d and "Position_um" in d and len(d['Position_um'])==2:
+            x, y = d['Position_um']
+            return Position2d(x=x, y=y, xyStage=d['Device'])
+        else:
+            return d
 
     def mirrorX(self):
         self.x *= -1
@@ -161,14 +161,6 @@ class MultiStagePosition:
     zStage: str
     positions: typing.List[typing.Union[Position1d, Position2d]]
 
-    @staticmethod
-    def fromPropertyMap(map: PropertyMap):
-        return MultiStagePosition.fromDict(map.toDict())
-
-    @staticmethod
-    def fromDict(d: dict):
-        return MultiStagePosition(label=d["Label"], xyStage=d['XYStage'], zStage=d['ZStage'], positions=)
-
     # def toDict(self):
     #     contents = {
     #         "DefaultXYStage": Property("STRING", self.xyStage),
@@ -180,12 +172,12 @@ class MultiStagePosition:
     #     return contents
    
 
-    # @staticmethod
-    # def hook(d: dict):
-    #     if all([i in d for i in ["DefaultXYStage", "DefaultZStage","DevicePositions","GridCol","GridRow","Label"]]):
-    #         return MultiStagePosition(label=d['Label'], xyStage=d['DefaultXYStage'], zStage=d['DefaultZStage'], positions=d['DevicePositions'])
-    #     else:
-    #         return d
+    @staticmethod
+    def hook(d: dict):
+        if all([i in d for i in ["DefaultXYStage", "DefaultZStage","DevicePositions","GridCol","GridRow","Label"]]):
+            return MultiStagePosition(label=d['Label'], xyStage=d['DefaultXYStage'], zStage=d['DefaultZStage'], positions=d['DevicePositions'])
+        else:
+            return d
 
     def getXYPosition(self):
         """Return the first `Position2d` saved in the `positions` list"""
@@ -292,10 +284,7 @@ class PositionList:
 
     @staticmethod
     def fromPropertyMap(map: PropertyMap):
-        pos = []
-        for i in map.properties:
-            pos.append(MultiStagePosition.fromPropertyMap(PropertyMap(i)))
-        return PositionList(pos)
+        return hr.getHook()(map.toDict())
 
     def mirrorX(self) -> PositionList:
         """Invert all x coordinates
@@ -354,29 +343,12 @@ class PositionList:
         with open(filePath, 'r') as f:
             return json.load(f, object_hook=hr.getHook())
 
-    # @staticmethod
-    # def hook(dct: dict):
-    #     if 'format' in dct:
-    #         if dct['format'] != 'Micro-Manager Property Map' or int(dct['major_version']) != 2:
-    #             raise Exception("The file format does not appear to be supported.")
-    #         positions = []
-    #         # for i in dct['map']['StagePositions'].properties:
-    #         #     label = i['Label']['scalar']
-    #         #     xyStage = i["DefaultXYStage"]['scalar']
-    #         #     zStage = i["DefaultZStage"]['scalar']
-    #         #     xyDict = [j for j in i["DevicePositions"]['array'] if j['Device']['scalar'] == xyStage][0]
-    #         #     xyCoords = xyDict["Position_um"]['array']
-    #         #     mspPositions = [Position2d(*xyCoords, xyStage)]
-    #         #     try:
-    #         #         zDict = [j for j in i["DevicePositions"]['array'] if j['Device']['scalar'] == zStage][0]
-    #         #         zCoord = zDict['Position_um']['array'][0]
-    #         #         mspPositions.append(Position1d(zCoord, zStage))
-    #         #     except IndexError:
-    #         #         pass
-    #         #     positions.append(MultiStagePosition(label, xyStage, zStage, positions=mspPositions))
-    #         return PositionList(dct['map']['StagePositions'].properties)
-    #     else:
-    #         return dct
+    @staticmethod
+    def hook(dct):
+        if isinstance(dct, list):
+            if all([isinstance(i, MultiStagePosition) for i in dct]):
+                return PositionList(dct)
+        return dct
 
 
 
@@ -539,10 +511,28 @@ class PositionList:
 
         fig.canvas.mpl_connect("motion_notify_event", hover)
 
+hr = HookReg().addHook(PositionList.hook).addHook(Position2d.hook).addHook(Position1d.hook).addHook(MultiStagePosition.hook)
+hook = hr.getHook()
+def applyhook(d):
+    if isinstance(d, (int, float, bool, str)):
+        return d
+    elif isinstance(d, list):
+        for i, e in enumerate(d):
+            d[i] = applyhook(e)
+    elif isinstance(d, dict):
+        for k, v in d.items():
+            d[k] = applyhook(v)
+    else:
+        return d
+    d = hook(d)
+    return d
+
+
 
 if __name__ == '__main__':
     p = PropertyMapFile.loadFromFile(r'C:\Users\nicke\Desktop\PositionList3.pos')
-    a=PositionList.fromPropertyMap(p.pMap)
+    a = applyhook(p.pMap.toDict())
+
     def generateList(data: np.ndarray):
         assert isinstance(data, np.ndarray)
         assert len(data.shape) == 2

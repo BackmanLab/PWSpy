@@ -42,13 +42,12 @@ class HookReg:
                 if isinstance(d, dict):
                     continue
                 else:
-                    break
+                    return d
             return d
         return hook
 
 
 class JsonAble(abc.ABC):
-
     @abc.abstractmethod
     def encode(self) -> dict:
         pass
@@ -155,7 +154,7 @@ class PropertyMap(JsonAble):
         return d
 
     def toDict(self):
-        return self.properties
+        return JsonAble.dictEncode(self.properties)
 
 @dataclass
 class PropertyMapFile(JsonAble):
@@ -180,7 +179,7 @@ class PropertyMapFile(JsonAble):
                 "map": {self.mapName: self.pMap}}
 
     def toDict(self):
-        return self.pMap
+        return JsonAble.dictEncode(self.pMap)
 
     @staticmethod
     def loadFromFile(path: str):
@@ -190,6 +189,7 @@ class PropertyMapFile(JsonAble):
     def saveToFile(self, path: str):
         with open(path, 'w') as f:
             json.dump(self, f, cls=JsonAble._Encoder, indent=2)
+            json.JSONDecoder
 
 
 hr = HookReg().addHook(Property.hook).addHook(PropertyMap.hook).addHook(PropertyMapFile.hook)#.addHook(Position1d.hook).addHook(Position2d.hook).addHook(MultiStagePosition.hook).addHook(PositionList.hook)
