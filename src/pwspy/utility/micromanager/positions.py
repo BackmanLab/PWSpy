@@ -35,11 +35,36 @@ import matplotlib as mpl
 import abc
 import scipy.io as spio
 
+class HookReg:
+    def __init__(self):
+        self._hooks = []
+
+    def addHook(self, f):
+        self._hooks.append(f)
+        return self
+
+    def getHook(self):
+        def hook(d: dict):
+            for h in self._hooks:
+                d = h(d)
+                if isinstance(d, dict):
+                    continue
+                else:
+                    break
+            return d
+        return hook
+
 
 class JsonAble(abc.ABC):
+
     @abc.abstractmethod
     def toDict(self) -> dict:
         """Convert the object to a `dict` matching the form that MicroManager saves the corresponding object to JSON."""
+        pass
+
+    @staticmethod
+    @abc.abstractmethod
+    def hook(d: dict):
         pass
 
 
@@ -52,40 +77,66 @@ class Property(JsonAble):
         pType: The type of the property. may be 'STRING', 'DOUBLE', or 'INTEGER'
         value: The value of the propoerty. Should match the type given in `pType`
     """
-    name: str
     pType: str
     value: typing.Union[str, int, float, typing.List[typing.Union[str, int, float]]]
+    pTypes = ['STRING', 'DOUBLE', 'INTEGER']
 
     def toDict(self):
-        assert self.pType in ['STRING', 'DOUBLE', 'INTEGER']
+        assert self.pType in Property.pTypes
         d = {'type': self.pType}
         if isinstance(self.value, list):
             d['array'] = self.value
         else:
             d['scalar'] = self.value
-        return d
+
+    @staticmethod
+    def hook(d: dict):
+        if 'type' in d and d['type'] in Property.pTypes:
+
+            if 'array' in d:
+                val = d['array']
+            elif 'scalar' in d:
+                val = d['scalar']
+            else:
+                return d
+            return Property(pType=d['type'], value=val)
+        else:
+            return d
+
+    def toPrimitive(self):
+        return self.value
 
 @dataclass
 class PropertyMap(JsonAble):
     """Represents a propertyMap from micromanager. basically a list of properties.
 
     Attributes:
-        name: The name of the PropertyMap
         properties: A list of properties
     """
-    name: str
-    properties: typing.List[Union[Property, MultiStagePosition, Position1d, Position2d]]
+    properties: typing.Dict[str, Union[Property, MultiStagePosition, Position1d, Position2d]]
             
     def toDict(self):
-        if isinstance(self.properties[0], Property):
-            d = {'type': 'PROPERTY_MAP',
-                       'array': [{i.name: i for i in self.properties}]}
-        elif isinstance(self.properties[0], (MultiStagePosition, Position1d, Position2d)):
-            d = {'type': 'PROPERTY_MAP',
-                       'array': [i.toDict() for i in self.properties]}
-        else:
-            raise TypeError(f"Got type of: {type(self.properties[0])}")
+        # if isinstance(self.properties[0], Property):
+        #     d = {'type': 'PROPERTY_MAP',
+        #                'array': [i.toDict() for i in self.properties]}
+        # elif isinstance(self.properties[0], (MultiStagePosition, Position1d, Position2d)):
+        #     d = {'type': 'PROPERTY_MAP',
+        #                'array': [i.toDict() for i in self.properties]}
+        # else:
+        #     raise TypeError(f"Got type of: {type(self.properties[0])}")
+        d = {'type': 'PROPERTY_MAP',
+             'array': [self.properties]}
         return d
+
+    @staticmethod
+    def hook(d: dict):
+        if 'type' in d and d['type'] == "PROPERTY_MAP":
+            if 'array' in d:
+                return PropertyMap(d['array'])
+            elif 'scalar' in d:
+                return PropertyMap(d['scalar'])
+        return d
+
 
 @dataclass   
 class Position1d(JsonAble):
@@ -103,10 +154,18 @@ class Position1d(JsonAble):
         assert isinstance(self.zStage, str)
     
     def toDict(self):
-        contents = [Property("Device", "STRING", self.zStage),
-             Property("Position_um", "DOUBLE", [self.z])]
-        return {i.name: i for i in contents}
+        contents = {"Device": Property("STRING", self.zStage),
+                "Position_um": Property("DOUBLE", [self.z])}
+        return contents
         
+
+    @staticmethod
+    def hook(d: dict):
+        if "Device" in d and "Position_um" in d and len(d['Position_um'].toPrimitive())==1:
+            return Position1d(z=d['Position_um'].toPrimitive()[0], zStage=d['Device'].toPrimitive())
+        else:
+            return d
+
     def __repr__(self):
         return f"Position1d({self.zStage}, {self.z})"
 
@@ -129,9 +188,17 @@ class Position2d(JsonAble):
         assert isinstance(self.xyStage, str)
 
     def toDict(self):
-        contents = [Property("Device", "STRING", self.xyStage),
-             Property("Position_um", "DOUBLE", [self.x, self.y])]
-        return {i.name: i for i in contents}
+        contents = {"Device": Property("STRING", self.xyStage),
+             "Position_um": Property("DOUBLE", [self.x, self.y])}
+        return contents
+
+    @staticmethod
+    def hook(d: dict):
+        if "Device" in d and "Position_um" in d and len(d['Position_um'].toPrimitive())==2:
+            x, y = d['Position_um'].toPrimitive()
+            return Position2d(x=x, y=y, xyStage=d['Device'].toPrimitive())
+        else:
+            return d
 
     def mirrorX(self):
         self.x *= -1
@@ -176,6 +243,7 @@ class Position2d(JsonAble):
                     self.y == other.y,
                     self.xyStage == other.xyStage])
 
+
 @dataclass
 class MultiStagePosition(JsonAble):
     """Mirrors the class of the same name from Micro-Manager. Can contain multiple Positon1d or Position2d objects.
@@ -194,15 +262,23 @@ class MultiStagePosition(JsonAble):
     positions: typing.List[typing.Union[Position1d, Position2d]]
         
     def toDict(self):
-        contents = [
-            Property("DefaultXYStage", "STRING", self.xyStage),
-            Property("DefaultZStage", "STRING", self.zStage), 
-            PropertyMap("DevicePositions", self.positions),
-            Property("GridCol", "INTEGER", 0),
-            Property("GridRow", "INTEGER", 0),
-            Property("Label", "STRING", self.label)]
-        return {i.name: i for i in contents}
+        contents = {
+            "DefaultXYStage": Property("STRING", self.xyStage),
+            "DefaultZStage": Property("STRING", self.zStage),
+            "DevicePositions": PropertyMap(self.positions),
+            "GridCol": Property("INTEGER", 0),
+            "GridRow": Property("INTEGER", 0),
+            "Label": Property("STRING", self.label)}
+        return contents
    
+
+    @staticmethod
+    def hook(d: dict):
+        if all([i in d for i in ["DefaultXYStage", "DefaultZStage","DevicePositions","GridCol","GridRow","Label"]]):
+            return MultiStagePosition(label=d['Label'], xyStage=d['DefaultXYStage'], zStage=d['DefaultZStage'], positions=d['DevicePositions'])
+        else:
+            return d
+
     def getXYPosition(self):
         """Return the first `Position2d` saved in the `positions` list"""
         d1pos = [i for i in self.positions if isinstance(i, Position2d)]
@@ -278,7 +354,7 @@ class MultiStagePosition(JsonAble):
     def __repr__(self):
         s = f"MultiStagePosition({self.label}, "
         for i in self.positions:
-            s+= '\n\t' + i.__repr__()
+            s += '\n\t' + i.__repr__()
         return s
 
 
@@ -293,6 +369,7 @@ class PositionList(JsonAble):
     """
 
     def __init__(self, positions: typing.List[MultiStagePosition]):
+        super().__init__()
         assert isinstance(positions, list)
         assert isinstance(positions[0], MultiStagePosition)
         self.positions = positions
@@ -303,7 +380,7 @@ class PositionList(JsonAble):
                    'format': 'Micro-Manager Property Map',
                    'major_version': 2,
                    'minor_version': 0,
-                   "map": {"StagePositions": PropertyMap("StagePositions", self.positions)}}
+                   "map": {"StagePositions": PropertyMap(self.positions)}}
 
     def mirrorX(self) -> PositionList:
         """Invert all x coordinates
@@ -357,33 +434,45 @@ class PositionList(JsonAble):
         Returns:
             A new instance of `PositionList`
         """
-        def _decode(dct):
-            if 'format' in dct:
-                if dct['format'] != 'Micro-Manager Property Map' or int(dct['major_version']) != 2:
-                    raise Exception("The file format does not appear to be supported.")
-                positions = []
-                for i in dct['map']['StagePositions']['array']:
-                    label = i['Label']['scalar']
-                    xyStage = i["DefaultXYStage"]['scalar']
-                    zStage = i["DefaultZStage"]['scalar']
-                    xyDict = [j for j in i["DevicePositions"]['array'] if j['Device']['scalar'] == xyStage][0]
-                    xyCoords = xyDict["Position_um"]['array']
-                    mspPositions = [Position2d(*xyCoords, xyStage)]
-                    try:
-                        zDict = [j for j in i["DevicePositions"]['array'] if j['Device']['scalar'] == zStage][0]
-                        zCoord = zDict['Position_um']['array'][0]
-                        mspPositions.append(Position1d(zCoord, zStage))
-                    except IndexError:
-                        pass
-                    positions.append(MultiStagePosition(label, xyStage, zStage, positions=mspPositions))
-            else:
-                return dct
-            return PositionList(positions)
-
         if filePath[-4:] != '.pos':
             filePath += '.pos'
         with open(filePath, 'r') as f:
-            return json.load(f, object_hook=_decode)
+            return json.load(f, object_hook=hr.getHook())
+
+    @staticmethod
+    def hook(dct: dict):
+        if 'format' in dct:
+            if dct['format'] != 'Micro-Manager Property Map' or int(dct['major_version']) != 2:
+                raise Exception("The file format does not appear to be supported.")
+            positions = []
+            # for i in dct['map']['StagePositions'].properties:
+            #     label = i['Label']['scalar']
+            #     xyStage = i["DefaultXYStage"]['scalar']
+            #     zStage = i["DefaultZStage"]['scalar']
+            #     xyDict = [j for j in i["DevicePositions"]['array'] if j['Device']['scalar'] == xyStage][0]
+            #     xyCoords = xyDict["Position_um"]['array']
+            #     mspPositions = [Position2d(*xyCoords, xyStage)]
+            #     try:
+            #         zDict = [j for j in i["DevicePositions"]['array'] if j['Device']['scalar'] == zStage][0]
+            #         zCoord = zDict['Position_um']['array'][0]
+            #         mspPositions.append(Position1d(zCoord, zStage))
+            #     except IndexError:
+            #         pass
+            #     positions.append(MultiStagePosition(label, xyStage, zStage, positions=mspPositions))
+            return PositionList(dct['map']['StagePositions'].properties)
+        else:
+            return dct
+
+
+    class Encoder(json.JSONEncoder):
+        """Allows for the position list and related objects to be jsonified."""
+        def default(self, obj):
+            if isinstance(obj, JsonAble):
+                return obj.toDict()
+            elif type(obj) == np.float32:
+                return float(obj)
+            else:
+                return json.JSONEncoder(ensure_ascii=False).default(obj)
 
     @classmethod
     def fromNanoMatFile(cls, path: str, xyStageName: str):
@@ -493,16 +582,6 @@ class PositionList(JsonAble):
         else:
             raise NotImplementedError
 
-    class Encoder(json.JSONEncoder):
-        """Allows for the position list and related objects to be jsonified."""
-        def default(self, obj):
-            if isinstance(obj, JsonAble):
-                return obj.toDict()
-            elif type(obj) == np.float32:
-                return float(obj)
-            else:
-                return json.JSONEncoder(ensure_ascii=False).default(obj)
-
     def __len__(self):
         return len(self.positions)
 
@@ -554,8 +633,11 @@ class PositionList(JsonAble):
         fig.canvas.mpl_connect("motion_notify_event", hover)
 
 
-if __name__ == '__main__':
+hr = HookReg().addHook(Property.hook).addHook(PropertyMap.hook).addHook(Position1d.hook).addHook(Position2d.hook).addHook(MultiStagePosition.hook).addHook(PositionList.hook)
 
+
+if __name__ == '__main__':
+    p = PositionList.load(r'C:\Users\nicke\Desktop\PositionList3.pos')
     def generateList(data: np.ndarray):
         assert isinstance(data, np.ndarray)
         assert len(data.shape) == 2
@@ -628,3 +710,4 @@ if __name__ == '__main__':
         offset = pws2Origin - pws2.positions[0]
         pws2 = pws2 + offset
         return pws2
+    a = 1
