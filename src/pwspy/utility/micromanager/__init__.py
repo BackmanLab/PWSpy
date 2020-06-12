@@ -32,6 +32,7 @@ Classes
    MultiStagePosition
 
 """
-__all__ = ['Image', 'PropertyMap', 'Property', 'PositionList', 'Position2d', 'Position1d', 'MultiStagePosition']
+__all__ = ['Image', 'PositionList', 'Position2d', 'Position1d', 'MultiStagePosition']
 from .images import Image
-from .positions import Position1d, Position2d, PositionList, Property, PropertyMap, MultiStagePosition
+from .positions import Position1d, Position2d, PositionList, MultiStagePosition
+from .PropertyMap import Property, PropertyMap

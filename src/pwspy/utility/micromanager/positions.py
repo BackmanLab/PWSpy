@@ -32,114 +32,13 @@ import numpy as np
 import copy
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-import abc
 import scipy.io as spio
 
-class HookReg:
-    def __init__(self):
-        self._hooks = []
-
-    def addHook(self, f):
-        self._hooks.append(f)
-        return self
-
-    def getHook(self):
-        def hook(d: dict):
-            for h in self._hooks:
-                d = h(d)
-                if isinstance(d, dict):
-                    continue
-                else:
-                    break
-            return d
-        return hook
-
-
-class JsonAble(abc.ABC):
-
-    @abc.abstractmethod
-    def toDict(self) -> dict:
-        """Convert the object to a `dict` matching the form that MicroManager saves the corresponding object to JSON."""
-        pass
-
-    @staticmethod
-    @abc.abstractmethod
-    def hook(d: dict):
-        pass
+from pwspy.utility.micromanager.PropertyMap import JsonAble, hr
 
 
 @dataclass
-class Property(JsonAble):
-    """Represents a single property from a micromanager PropertyMap
-
-    Attributes:
-        name: The name of the property
-        pType: The type of the property. may be 'STRING', 'DOUBLE', or 'INTEGER'
-        value: The value of the propoerty. Should match the type given in `pType`
-    """
-    pType: str
-    value: typing.Union[str, int, float, typing.List[typing.Union[str, int, float]]]
-    pTypes = ['STRING', 'DOUBLE', 'INTEGER']
-
-    def toDict(self):
-        assert self.pType in Property.pTypes
-        d = {'type': self.pType}
-        if isinstance(self.value, list):
-            d['array'] = self.value
-        else:
-            d['scalar'] = self.value
-
-    @staticmethod
-    def hook(d: dict):
-        if 'type' in d and d['type'] in Property.pTypes:
-
-            if 'array' in d:
-                val = d['array']
-            elif 'scalar' in d:
-                val = d['scalar']
-            else:
-                return d
-            return Property(pType=d['type'], value=val)
-        else:
-            return d
-
-    def toPrimitive(self):
-        return self.value
-
-@dataclass
-class PropertyMap(JsonAble):
-    """Represents a propertyMap from micromanager. basically a list of properties.
-
-    Attributes:
-        properties: A list of properties
-    """
-    properties: typing.Dict[str, Union[Property, MultiStagePosition, Position1d, Position2d]]
-            
-    def toDict(self):
-        # if isinstance(self.properties[0], Property):
-        #     d = {'type': 'PROPERTY_MAP',
-        #                'array': [i.toDict() for i in self.properties]}
-        # elif isinstance(self.properties[0], (MultiStagePosition, Position1d, Position2d)):
-        #     d = {'type': 'PROPERTY_MAP',
-        #                'array': [i.toDict() for i in self.properties]}
-        # else:
-        #     raise TypeError(f"Got type of: {type(self.properties[0])}")
-        d = {'type': 'PROPERTY_MAP',
-             'array': [self.properties]}
-        return d
-
-    @staticmethod
-    def hook(d: dict):
-        if 'type' in d and d['type'] == "PROPERTY_MAP":
-            if 'array' in d:
-                return PropertyMap(d['array'])
-            elif 'scalar' in d:
-                return PropertyMap(d['scalar'])
-        return d
-
-
-@dataclass   
-class Position1d(JsonAble):
+class Position1d:
     """A 1D position usually describing the position of a Z-axis translation stage.
 
     Attributes:
@@ -153,24 +52,24 @@ class Position1d(JsonAble):
         assert isinstance(self.z, float)
         assert isinstance(self.zStage, str)
     
-    def toDict(self):
-        contents = {"Device": Property("STRING", self.zStage),
-                "Position_um": Property("DOUBLE", [self.z])}
-        return contents
-        
-
-    @staticmethod
-    def hook(d: dict):
-        if "Device" in d and "Position_um" in d and len(d['Position_um'].toPrimitive())==1:
-            return Position1d(z=d['Position_um'].toPrimitive()[0], zStage=d['Device'].toPrimitive())
-        else:
-            return d
+    # def toDict(self):
+    #     contents = {"Device": Property("STRING", self.zStage),
+    #             "Position_um": Property("DOUBLE", [self.z])}
+    #     return contents
+    #
+    #
+    # @staticmethod
+    # def hook(d: dict):
+    #     if "Device" in d and "Position_um" in d and len(d['Position_um'].toPrimitive())==1:
+    #         return Position1d(z=d['Position_um'].toPrimitive()[0], zStage=d['Device'].toPrimitive())
+    #     else:
+    #         return d
 
     def __repr__(self):
         return f"Position1d({self.zStage}, {self.z})"
 
 @dataclass
-class Position2d(JsonAble):
+class Position2d:
     """Represents a 2D position for a single xy stage in micromanager.
 
     Attributes:
@@ -187,18 +86,18 @@ class Position2d(JsonAble):
         assert isinstance(self.y, Number)
         assert isinstance(self.xyStage, str)
 
-    def toDict(self):
-        contents = {"Device": Property("STRING", self.xyStage),
-             "Position_um": Property("DOUBLE", [self.x, self.y])}
-        return contents
+    # def toDict(self):
+    #     contents = {"Device": Property("STRING", self.xyStage),
+    #          "Position_um": Property("DOUBLE", [self.x, self.y])}
+    #     return contents
 
-    @staticmethod
-    def hook(d: dict):
-        if "Device" in d and "Position_um" in d and len(d['Position_um'].toPrimitive())==2:
-            x, y = d['Position_um'].toPrimitive()
-            return Position2d(x=x, y=y, xyStage=d['Device'].toPrimitive())
-        else:
-            return d
+    # @staticmethod
+    # def hook(d: dict):
+    #     if "Device" in d and "Position_um" in d and len(d['Position_um'].toPrimitive())==2:
+    #         x, y = d['Position_um'].toPrimitive()
+    #         return Position2d(x=x, y=y, xyStage=d['Device'].toPrimitive())
+    #     else:
+    #         return d
 
     def mirrorX(self):
         self.x *= -1
@@ -245,7 +144,7 @@ class Position2d(JsonAble):
 
 
 @dataclass
-class MultiStagePosition(JsonAble):
+class MultiStagePosition:
     """Mirrors the class of the same name from Micro-Manager. Can contain multiple Positon1d or Position2d objects.
     Ideal for a system with multiple translation stages. It is assumed that there is only a single 2D stage and a single
     1D stage.
@@ -261,23 +160,23 @@ class MultiStagePosition(JsonAble):
     zStage: str
     positions: typing.List[typing.Union[Position1d, Position2d]]
         
-    def toDict(self):
-        contents = {
-            "DefaultXYStage": Property("STRING", self.xyStage),
-            "DefaultZStage": Property("STRING", self.zStage),
-            "DevicePositions": PropertyMap(self.positions),
-            "GridCol": Property("INTEGER", 0),
-            "GridRow": Property("INTEGER", 0),
-            "Label": Property("STRING", self.label)}
-        return contents
+    # def toDict(self):
+    #     contents = {
+    #         "DefaultXYStage": Property("STRING", self.xyStage),
+    #         "DefaultZStage": Property("STRING", self.zStage),
+    #         "DevicePositions": PropertyMap(self.positions),
+    #         "GridCol": Property("INTEGER", 0),
+    #         "GridRow": Property("INTEGER", 0),
+    #         "Label": Property("STRING", self.label)}
+    #     return contents
    
 
-    @staticmethod
-    def hook(d: dict):
-        if all([i in d for i in ["DefaultXYStage", "DefaultZStage","DevicePositions","GridCol","GridRow","Label"]]):
-            return MultiStagePosition(label=d['Label'], xyStage=d['DefaultXYStage'], zStage=d['DefaultZStage'], positions=d['DevicePositions'])
-        else:
-            return d
+    # @staticmethod
+    # def hook(d: dict):
+    #     if all([i in d for i in ["DefaultXYStage", "DefaultZStage","DevicePositions","GridCol","GridRow","Label"]]):
+    #         return MultiStagePosition(label=d['Label'], xyStage=d['DefaultXYStage'], zStage=d['DefaultZStage'], positions=d['DevicePositions'])
+    #     else:
+    #         return d
 
     def getXYPosition(self):
         """Return the first `Position2d` saved in the `positions` list"""
@@ -358,7 +257,7 @@ class MultiStagePosition(JsonAble):
         return s
 
 
-class PositionList(JsonAble):
+class PositionList:
     """Represents a micromanager positionList. can be loaded from and saved to a micromanager .pos file.
 
     Args:
@@ -374,13 +273,13 @@ class PositionList(JsonAble):
         assert isinstance(positions[0], MultiStagePosition)
         self.positions = positions
 
-    def toDict(self):
-        """Returns the position list as a dict that is formatted just like a `PropertyMap` from Micro-Manager."""
-        return {"encoding": "UTF-8",
-                   'format': 'Micro-Manager Property Map',
-                   'major_version': 2,
-                   'minor_version': 0,
-                   "map": {"StagePositions": PropertyMap(self.positions)}}
+    # def toDict(self):
+    #     """Returns the position list as a dict that is formatted just like a `PropertyMap` from Micro-Manager."""
+    #     return {"encoding": "UTF-8",
+    #                'format': 'Micro-Manager Property Map',
+    #                'major_version': 2,
+    #                'minor_version': 0,
+    #                "map": {"StagePositions": PropertyMap(self.positions)}}
 
     def mirrorX(self) -> PositionList:
         """Invert all x coordinates
@@ -439,40 +338,32 @@ class PositionList(JsonAble):
         with open(filePath, 'r') as f:
             return json.load(f, object_hook=hr.getHook())
 
-    @staticmethod
-    def hook(dct: dict):
-        if 'format' in dct:
-            if dct['format'] != 'Micro-Manager Property Map' or int(dct['major_version']) != 2:
-                raise Exception("The file format does not appear to be supported.")
-            positions = []
-            # for i in dct['map']['StagePositions'].properties:
-            #     label = i['Label']['scalar']
-            #     xyStage = i["DefaultXYStage"]['scalar']
-            #     zStage = i["DefaultZStage"]['scalar']
-            #     xyDict = [j for j in i["DevicePositions"]['array'] if j['Device']['scalar'] == xyStage][0]
-            #     xyCoords = xyDict["Position_um"]['array']
-            #     mspPositions = [Position2d(*xyCoords, xyStage)]
-            #     try:
-            #         zDict = [j for j in i["DevicePositions"]['array'] if j['Device']['scalar'] == zStage][0]
-            #         zCoord = zDict['Position_um']['array'][0]
-            #         mspPositions.append(Position1d(zCoord, zStage))
-            #     except IndexError:
-            #         pass
-            #     positions.append(MultiStagePosition(label, xyStage, zStage, positions=mspPositions))
-            return PositionList(dct['map']['StagePositions'].properties)
-        else:
-            return dct
+    # @staticmethod
+    # def hook(dct: dict):
+    #     if 'format' in dct:
+    #         if dct['format'] != 'Micro-Manager Property Map' or int(dct['major_version']) != 2:
+    #             raise Exception("The file format does not appear to be supported.")
+    #         positions = []
+    #         # for i in dct['map']['StagePositions'].properties:
+    #         #     label = i['Label']['scalar']
+    #         #     xyStage = i["DefaultXYStage"]['scalar']
+    #         #     zStage = i["DefaultZStage"]['scalar']
+    #         #     xyDict = [j for j in i["DevicePositions"]['array'] if j['Device']['scalar'] == xyStage][0]
+    #         #     xyCoords = xyDict["Position_um"]['array']
+    #         #     mspPositions = [Position2d(*xyCoords, xyStage)]
+    #         #     try:
+    #         #         zDict = [j for j in i["DevicePositions"]['array'] if j['Device']['scalar'] == zStage][0]
+    #         #         zCoord = zDict['Position_um']['array'][0]
+    #         #         mspPositions.append(Position1d(zCoord, zStage))
+    #         #     except IndexError:
+    #         #         pass
+    #         #     positions.append(MultiStagePosition(label, xyStage, zStage, positions=mspPositions))
+    #         return PositionList(dct['map']['StagePositions'].properties)
+    #     else:
+    #         return dct
 
 
-    class Encoder(json.JSONEncoder):
-        """Allows for the position list and related objects to be jsonified."""
-        def default(self, obj):
-            if isinstance(obj, JsonAble):
-                return obj.toDict()
-            elif type(obj) == np.float32:
-                return float(obj)
-            else:
-                return json.JSONEncoder(ensure_ascii=False).default(obj)
+
 
     @classmethod
     def fromNanoMatFile(cls, path: str, xyStageName: str):
@@ -633,11 +524,9 @@ class PositionList(JsonAble):
         fig.canvas.mpl_connect("motion_notify_event", hover)
 
 
-hr = HookReg().addHook(Property.hook).addHook(PropertyMap.hook).addHook(Position1d.hook).addHook(Position2d.hook).addHook(MultiStagePosition.hook).addHook(PositionList.hook)
-
-
 if __name__ == '__main__':
-    p = PositionList.load(r'C:\Users\nicke\Desktop\PositionList3.pos')
+    with open(r'C:\Users\nicke\Desktop\PositionList3.pos') as f:
+        p = json.load(f, object_hook=hr.getHook())
     def generateList(data: np.ndarray):
         assert isinstance(data, np.ndarray)
         assert len(data.shape) == 2
