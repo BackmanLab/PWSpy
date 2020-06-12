@@ -46,14 +46,13 @@ class Step:
         if all([i in dct for i in ("id", 'stepType', 'settings')]):
             clazz = Types[dct['stepType']].value
             s = clazz(**dct)
-            # if 'children' in dct:
-            #     s.setChildren(dct['children'])
+
             return s
         else:
             return dct
 
     @staticmethod
-    def fromJson(j: str):
+    def fromJson(j: str) -> Step:
         return json.loads(j, object_hook=Step.hook)
 
 
