@@ -50,7 +50,7 @@ class HookReg:
 class JsonAble(abc.ABC):
 
     @abc.abstractmethod
-    def encoder(self) -> JsonAble.Encoder:
+    def encode(self) -> dict:
         pass
 
     @staticmethod
@@ -58,11 +58,32 @@ class JsonAble(abc.ABC):
     def hook(d: dict):
         pass
 
-    class Encoder(json.JSONEncoder):
+    @abc.abstractmethod
+    def toDict(self):
+        pass
+
+    @staticmethod
+    def dictEncode(d):
+        if isinstance(d, list):
+            D = []
+            for i in d:
+                D.append(JsonAble.dictEncode(i))
+            return D
+        elif isinstance(d, dict):
+            D = {}
+            for k, v in d.items():
+                D[k] = JsonAble.dictEncode(v)
+            return D
+        elif isinstance(d, JsonAble):
+            return JsonAble.dictEncode(d.toDict())
+        else:
+            return d
+
+    class _Encoder(json.JSONEncoder):
         """Allows for the position list and related objects to be jsonified."""
         def default(self, obj):
             if isinstance(obj, JsonAble):
-                return obj.encoder().default(obj)
+                return obj.encode()
             elif type(obj) == np.float32:
                 return float(obj)
             else:
@@ -80,21 +101,13 @@ class Property(JsonAble):
     value: typing.Union[str, int, float, typing.List[typing.Union[str, int, float]]]
     pTypes = ['STRING', 'DOUBLE', 'INTEGER']
 
-    def encoder(self) -> JsonAble.Encoder:
-        return Property.Encoder()
-
-    class Encoder(JsonAble.Encoder):
-        """Allows for the position list and related objects to be jsonified."""
-        def default(self, obj):
-            if isinstance(obj, Property):
-                d = {'type': obj.pType}
-                if isinstance(obj.value, list):
-                    d['array'] = obj.value
-                else:
-                    d['scalar'] = obj.value
-                return d
-            else:
-                return super().default(obj)
+    def encode(self) -> dict:
+        d = {'type': self.pType}
+        if isinstance(self.value, list):
+            d['array'] = self.value
+        else:
+            d['scalar'] = self.value
+        return d
 
     @staticmethod
     def hook(d: dict):
@@ -110,8 +123,9 @@ class Property(JsonAble):
         else:
             return d
 
-    def toPrimitive(self):
+    def toDict(self):
         return self.value
+
 
 
 @dataclass
@@ -121,23 +135,15 @@ class PropertyMap(JsonAble):
     Attributes:
         properties: A list of properties
     """
-    properties: typing.Dict[str, Property]
+    properties: typing.Union[typing.Dict[str, Property], typing.List]
 
-    def encoder(self) -> JsonAble.Encoder:
-        return PropertyMap.Encoder()
-
-    class Encoder(JsonAble.Encoder):
-        """Allows for the position list and related objects to be jsonified."""
-        def default(self, obj):
-            if isinstance(obj, PropertyMap):
-                if len(obj.properties)==0:
-                    return {'type': 'PROPERTY_MAP',
-                            'scalar': {}}
-                else:
-                    return {'type': 'PROPERTY_MAP',
-                            'array': obj.properties}
-            else:
-                return super().default(obj)
+    def encode(self) -> dict:
+        if len(self.properties) == 0:
+            return {'type': 'PROPERTY_MAP',
+                    'scalar': {}}
+        else:
+            return {'type': 'PROPERTY_MAP',
+                    'array': self.properties}
 
     @staticmethod
     def hook(d: dict):
@@ -148,6 +154,8 @@ class PropertyMap(JsonAble):
                 return PropertyMap(d['scalar'])
         return d
 
+    def toDict(self):
+        return self.properties
 
 @dataclass
 class PropertyMapFile(JsonAble):
@@ -164,29 +172,24 @@ class PropertyMapFile(JsonAble):
         else:
             return dct
 
-    def encoder(self) -> json.JSONEncoder:
-        return PropertyMapFile.Encoder()
+    def encode(self) -> dict:
+        return {"encoding": "UTF-8",
+                'format': 'Micro-Manager Property Map',
+                'major_version': 2,
+                'minor_version': 0,
+                "map": {self.mapName: self.pMap}}
 
-    class Encoder(JsonAble.Encoder):
-        """Allows for the position list and related objects to be jsonified."""
-        def default(self, obj):
-            if isinstance(obj, PropertyMapFile):
-                return {"encoding": "UTF-8",
-                        'format': 'Micro-Manager Property Map',
-                        'major_version': 2,
-                        'minor_version': 0,
-                        "map": {obj.mapName: obj.pMap}}
-            else:
-                return super().default(obj)
+    def toDict(self):
+        return self.pMap
 
     @staticmethod
     def loadFromFile(path: str):
         with open(path) as f:
-            json.load(f, )
+            return json.load(f, object_hook=hr.getHook())
 
     def saveToFile(self, path: str):
         with open(path, 'w') as f:
-            json.dump(self, f, cls=JsonAble.Encoder, indent=2)
+            json.dump(self, f, cls=JsonAble._Encoder, indent=2)
 
 
 hr = HookReg().addHook(Property.hook).addHook(PropertyMap.hook).addHook(PropertyMapFile.hook)#.addHook(Position1d.hook).addHook(Position2d.hook).addHook(MultiStagePosition.hook).addHook(PositionList.hook)
@@ -195,4 +198,5 @@ if __name__ == '__main__':
     with open(r'C:\Users\nicke\Desktop\PositionList3.pos') as f:
         p = json.load(f, object_hook=hr.getHook())
     p.saveToFile(r'C:\Users\nicke\Desktop\PositionList4.pos')
+    a = JsonAble.dictEncode(p)
     a = 1

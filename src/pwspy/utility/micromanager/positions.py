@@ -34,7 +34,8 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import scipy.io as spio
 
-from pwspy.utility.micromanager.PropertyMap import JsonAble, hr
+from pwspy.utility.micromanager import PropertyMap
+from pwspy.utility.micromanager.PropertyMap import JsonAble, hr, PropertyMapFile
 
 
 @dataclass
@@ -159,7 +160,15 @@ class MultiStagePosition:
     xyStage: str
     zStage: str
     positions: typing.List[typing.Union[Position1d, Position2d]]
-        
+
+    @staticmethod
+    def fromPropertyMap(map: PropertyMap):
+        return MultiStagePosition.fromDict(map.toDict())
+
+    @staticmethod
+    def fromDict(d: dict):
+        return MultiStagePosition(label=d["Label"], xyStage=d['XYStage'], zStage=d['ZStage'], positions=)
+
     # def toDict(self):
     #     contents = {
     #         "DefaultXYStage": Property("STRING", self.xyStage),
@@ -280,6 +289,13 @@ class PositionList:
     #                'major_version': 2,
     #                'minor_version': 0,
     #                "map": {"StagePositions": PropertyMap(self.positions)}}
+
+    @staticmethod
+    def fromPropertyMap(map: PropertyMap):
+        pos = []
+        for i in map.properties:
+            pos.append(MultiStagePosition.fromPropertyMap(PropertyMap(i)))
+        return PositionList(pos)
 
     def mirrorX(self) -> PositionList:
         """Invert all x coordinates
@@ -525,8 +541,8 @@ class PositionList:
 
 
 if __name__ == '__main__':
-    with open(r'C:\Users\nicke\Desktop\PositionList3.pos') as f:
-        p = json.load(f, object_hook=hr.getHook())
+    p = PropertyMapFile.loadFromFile(r'C:\Users\nicke\Desktop\PositionList3.pos')
+    a=PositionList.fromPropertyMap(p.pMap)
     def generateList(data: np.ndarray):
         assert isinstance(data, np.ndarray)
         assert len(data.shape) == 2
