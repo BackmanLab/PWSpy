@@ -532,6 +532,7 @@ def applyhook(d):
 if __name__ == '__main__':
     p = PropertyMapFile.loadFromFile(r'C:\Users\nicke\Desktop\PositionList3.pos')
     a = applyhook(p.pMap.toDict())
+    b = JsonAble.dictDecode(p.pMap.toDict())
 
     def generateList(data: np.ndarray):
         assert isinstance(data, np.ndarray)

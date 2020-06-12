@@ -62,6 +62,11 @@ class JsonAble(abc.ABC):
         pass
 
     @staticmethod
+    @abc.abstractmethod
+    def fromDict(d):
+        pass
+
+    @staticmethod
     def dictEncode(d):
         if isinstance(d, list):
             D = []
@@ -77,6 +82,21 @@ class JsonAble(abc.ABC):
             return JsonAble.dictEncode(d.toDict())
         else:
             return d
+
+    @staticmethod
+    def dictDecode(d):
+        if isinstance(d, (int, float, bool, str)):
+            pass
+        elif isinstance(d, list):
+            for i, e in enumerate(d):
+                d[i] = JsonAble.dictDecode(e)
+        elif isinstance(d, dict):
+            for k, v in d.items():
+                d[k] = JsonAble.dictDecode(v)
+        else:
+            return d
+        d = hook(d)
+        return d
 
     class _Encoder(json.JSONEncoder):
         """Allows for the position list and related objects to be jsonified."""
@@ -125,6 +145,16 @@ class Property(JsonAble):
     def toDict(self):
         return self.value
 
+    @staticmethod
+    def fromDict(d):
+        if isinstance(d, int):
+            return Property("INTEGER", d)
+        elif isinstance(d, float):
+            return Property("DOUBLE", d)
+        elif isinstance(d, str):
+            return Property("STRING", d)
+        return d
+
 
 
 @dataclass
@@ -156,6 +186,13 @@ class PropertyMap(JsonAble):
     def toDict(self):
         return JsonAble.dictEncode(self.properties)
 
+    @staticmethod
+    def fromDict(d):
+        return d
+
+class PropertyMapArray(JsonAble):
+
+
 @dataclass
 class PropertyMapFile(JsonAble):
     mapName: str
@@ -179,7 +216,17 @@ class PropertyMapFile(JsonAble):
                 "map": {self.mapName: self.pMap}}
 
     def toDict(self):
-        return JsonAble.dictEncode(self.pMap)
+        return JsonAble.dictEncode({"map": {self.mapName: self.pMap}})
+
+    @staticmethod
+    def fromDict(d):
+        if isinstance(d, dict):
+            if 'map' in d:
+                if isinstance(d['map'], dict):
+                    k, v = next(iter(d['map']))
+                    return PropertyMapFile(mapName=k, pMap=v)
+        return d
+
 
     @staticmethod
     def loadFromFile(path: str):
@@ -192,7 +239,11 @@ class PropertyMapFile(JsonAble):
             json.JSONDecoder
 
 
-hr = HookReg().addHook(Property.hook).addHook(PropertyMap.hook).addHook(PropertyMapFile.hook)#.addHook(Position1d.hook).addHook(Position2d.hook).addHook(MultiStagePosition.hook).addHook(PositionList.hook)
+hr = HookReg().addHook(Property.hook).addHook(PropertyMap.hook).addHook(PropertyMapFile.hook)
+
+hr2 = HookReg().addHook(Property.fromDict).addHook(PropertyMap.fromDict).addHook(PropertyMapFile.fromDict)
+hook = hr2.getHook()
+
 
 if __name__ == '__main__':
     with open(r'C:\Users\nicke\Desktop\PositionList3.pos') as f:
