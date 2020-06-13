@@ -61,10 +61,10 @@ class Position1d:
     #
     @staticmethod
     def hook(d: dict):
-        if "Device" in d and "Position_um" in d and len(d['Position_um'])==1:
-            return Position1d(z=d['Position_um'][0], zStage=d['Device'])
-        else:
-            return d
+        if isinstance(d, dict):
+            if "Device" in d and "Position_um" in d and len(d['Position_um'])==1:
+                return Position1d(z=d['Position_um'][0], zStage=d['Device'])
+        return d
 
     def __repr__(self):
         return f"Position1d({self.zStage}, {self.z})"
@@ -93,12 +93,13 @@ class Position2d:
     #     return contents
 
     @staticmethod
-    def hook(d: dict):
-        if "Device" in d and "Position_um" in d and len(d['Position_um'])==2:
-            x, y = d['Position_um']
-            return Position2d(x=x, y=y, xyStage=d['Device'])
-        else:
-            return d
+    def hook(d):
+        if isinstance(d, dict):
+            if "Device" in d and "Position_um" in d and len(d['Position_um'])==2:
+                x, y = d['Position_um']
+                return Position2d(x=x, y=y, xyStage=d['Device'])
+
+        return d
 
     def mirrorX(self):
         self.x *= -1
@@ -173,11 +174,11 @@ class MultiStagePosition:
    
 
     @staticmethod
-    def hook(d: dict):
-        if all([i in d for i in ["DefaultXYStage", "DefaultZStage","DevicePositions","GridCol","GridRow","Label"]]):
-            return MultiStagePosition(label=d['Label'], xyStage=d['DefaultXYStage'], zStage=d['DefaultZStage'], positions=d['DevicePositions'])
-        else:
-            return d
+    def hook(d):
+        if isinstance(d, dict):
+            if all([i in d for i in ["DefaultXYStage", "DefaultZStage","DevicePositions","GridCol","GridRow","Label"]]):
+                return MultiStagePosition(label=d['Label'], xyStage=d['DefaultXYStage'], zStage=d['DefaultZStage'], positions=d['DevicePositions'])
+        return d
 
     def getXYPosition(self):
         """Return the first `Position2d` saved in the `positions` list"""

@@ -38,8 +38,9 @@ class HookReg:
     def getHook(self):
         def hook(d: dict):
             for h in self._hooks:
+                origType = type(d)
                 d = h(d)
-                if isinstance(d, dict):
+                if isinstance(d, origType):
                     continue
                 else:
                     return d
@@ -147,13 +148,21 @@ class Property(JsonAble):
 
     @staticmethod
     def fromDict(d):
-        if isinstance(d, int):
-            return Property("INTEGER", d)
-        elif isinstance(d, float):
-            return Property("DOUBLE", d)
-        elif isinstance(d, str):
-            return Property("STRING", d)
+        if isinstance(d, (int, float, str)):
+            return Property(Property.getTypeName(d), d)
+        elif isinstance(d, list):
+            if all([isinstance(i, Property) for i in d]):
+                return Property(d[0].pType, [i.value for i in d])
         return d
+
+    @staticmethod
+    def getTypeName(d):
+        if isinstance(d, int):
+            return "INTEGER"
+        elif isinstance(d, float):
+            return "DOUBLE"
+        elif isinstance(d, str):
+            return "STRING"
 
 
 
@@ -188,9 +197,15 @@ class PropertyMap(JsonAble):
 
     @staticmethod
     def fromDict(d):
+        if isinstance(d, list):
+            if all([isinstance(i, PropertyMap) for i in d]):
+                return PropertyMap([i.properties for i in d])
+        if isinstance(d, dict):
+            if all([isinstance(i, (PropertyMap, Property)) for i in d.values()]):
+                return PropertyMap(d)
         return d
 
-class PropertyMapArray(JsonAble):
+
 
 
 @dataclass
