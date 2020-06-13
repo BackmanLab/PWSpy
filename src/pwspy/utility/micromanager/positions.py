@@ -35,11 +35,11 @@ import matplotlib as mpl
 import scipy.io as spio
 
 from pwspy.utility.micromanager import PropertyMap
-from pwspy.utility.micromanager.PropertyMap import JsonAble, PropertyMapFile
+from pwspy.utility.micromanager.PropertyMap import _JsonAble, PropertyMapFile, Dictable, DictCoder
 
 
 @dataclass
-class Position1d:
+class Position1d(Dictable):
     """A 1D position usually describing the position of a Z-axis translation stage.
 
     Attributes:
@@ -53,14 +53,13 @@ class Position1d:
         assert isinstance(self.z, float)
         assert isinstance(self.zStage, str)
     
-    # def toDict(self):
-    #     contents = {"Device": Property("STRING", self.zStage),
-    #             "Position_um": Property("DOUBLE", [self.z])}
-    #     return contents
-    #
-    #
+    def _toDict(self):
+        contents = {"Device": self.zStage,
+                "Position_um": [self.z]}
+        return contents
+
     @staticmethod
-    def hook(d: dict):
+    def fromDict(d: dict):
         if isinstance(d, dict):
             if "Device" in d and "Position_um" in d and len(d['Position_um'])==1:
                 return Position1d(z=d['Position_um'][0], zStage=d['Device'])
@@ -70,7 +69,7 @@ class Position1d:
         return f"Position1d({self.zStage}, {self.z})"
 
 @dataclass
-class Position2d:
+class Position2d(Dictable):
     """Represents a 2D position for a single xy stage in micromanager.
 
     Attributes:
@@ -87,13 +86,13 @@ class Position2d:
         assert isinstance(self.y, Number)
         assert isinstance(self.xyStage, str)
 
-    # def toDict(self):
-    #     contents = {"Device": Property("STRING", self.xyStage),
-    #          "Position_um": Property("DOUBLE", [self.x, self.y])}
-    #     return contents
+    def _toDict(self):
+        contents = {"Device": self.xyStage,
+             "Position_um": [self.x, self.y]}
+        return contents
 
     @staticmethod
-    def hook(d):
+    def fromDict(d):
         if isinstance(d, dict):
             if "Device" in d and "Position_um" in d and len(d['Position_um'])==2:
                 x, y = d['Position_um']
@@ -146,7 +145,7 @@ class Position2d:
 
 
 @dataclass
-class MultiStagePosition:
+class MultiStagePosition(Dictable):
     """Mirrors the class of the same name from Micro-Manager. Can contain multiple Positon1d or Position2d objects.
     Ideal for a system with multiple translation stages. It is assumed that there is only a single 2D stage and a single
     1D stage.
@@ -162,19 +161,19 @@ class MultiStagePosition:
     zStage: str
     positions: typing.List[typing.Union[Position1d, Position2d]]
 
-    # def toDict(self):
-    #     contents = {
-    #         "DefaultXYStage": Property("STRING", self.xyStage),
-    #         "DefaultZStage": Property("STRING", self.zStage),
-    #         "DevicePositions": PropertyMap(self.positions),
-    #         "GridCol": Property("INTEGER", 0),
-    #         "GridRow": Property("INTEGER", 0),
-    #         "Label": Property("STRING", self.label)}
-    #     return contents
+    def _toDict(self):
+        contents = {
+            "DefaultXYStage": self.xyStage,
+            "DefaultZStage":self.zStage,
+            "DevicePositions": self.positions,
+            "GridCol": 0,
+            "GridRow": 0,
+            "Label": self.label}
+        return contents
    
 
     @staticmethod
-    def hook(d):
+    def fromDict(d):
         if isinstance(d, dict):
             if all([i in d for i in ["DefaultXYStage", "DefaultZStage","DevicePositions","GridCol","GridRow","Label"]]):
                 return MultiStagePosition(label=d['Label'], xyStage=d['DefaultXYStage'], zStage=d['DefaultZStage'], positions=d['DevicePositions'])
@@ -259,7 +258,7 @@ class MultiStagePosition:
         return s
 
 
-class PositionList:
+class PositionList(Dictable):
     """Represents a micromanager positionList. can be loaded from and saved to a micromanager .pos file.
 
     Args:
@@ -275,17 +274,13 @@ class PositionList:
         assert isinstance(positions[0], MultiStagePosition)
         self.positions = positions
 
-    # def toDict(self):
-    #     """Returns the position list as a dict that is formatted just like a `PropertyMap` from Micro-Manager."""
-    #     return {"encoding": "UTF-8",
-    #                'format': 'Micro-Manager Property Map',
-    #                'major_version': 2,
-    #                'minor_version': 0,
-    #                "map": {"StagePositions": PropertyMap(self.positions)}}
-
-    @staticmethod
-    def fromPropertyMap(map: PropertyMap):
-        return hr.getHook()(map._toDict())
+    def _toDict(self):
+        """Returns the position list as a dict that is formatted just like a `PropertyMap` from Micro-Manager."""
+        return {"encoding": "UTF-8",
+                   'format': 'Micro-Manager Property Map',
+                   'major_version': 2,
+                   'minor_version': 0,
+                   "map": {"StagePositions": self.positions}}
 
     def mirrorX(self) -> PositionList:
         """Invert all x coordinates
@@ -345,14 +340,11 @@ class PositionList:
             return json.load(f, object_hook=hr.getHook())
 
     @staticmethod
-    def hook(dct):
+    def fromDict(dct):
         if isinstance(dct, list):
             if all([isinstance(i, MultiStagePosition) for i in dct]):
                 return PositionList(dct)
         return dct
-
-
-
 
     @classmethod
     def fromNanoMatFile(cls, path: str, xyStageName: str):
@@ -512,27 +504,18 @@ class PositionList:
 
         fig.canvas.mpl_connect("motion_notify_event", hover)
 
-hr = HookReg().addHook(PositionList.hook).addHook(Position2d.hook).addHook(Position1d.hook).addHook(MultiStagePosition.hook)
-hook = hr.getHook()
-def applyhook(d):
-    if isinstance(d, (int, float, bool, str)):
-        return d
-    elif isinstance(d, list):
-        for i, e in enumerate(d):
-            d[i] = applyhook(e)
-    elif isinstance(d, dict):
-        for k, v in d.items():
-            d[k] = applyhook(v)
-    else:
-        return d
-    d = hook(d)
-    return d
+coder = DictCoder()
+coder.registerClass(PositionList)
+coder.registerClass(Position2d)
+coder.registerClass(Position1d)
+coder.registerClass(MultiStagePosition)
+
 
 
 
 if __name__ == '__main__':
     p = PropertyMapFile.loadFromFile(r'C:\Users\nicke\Desktop\PositionList3.pos')
-
+    a = coder.dictDecode(p.toDict())
 
     def generateList(data: np.ndarray):
         assert isinstance(data, np.ndarray)

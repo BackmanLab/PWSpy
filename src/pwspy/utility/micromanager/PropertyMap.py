@@ -49,15 +49,15 @@ class HookReg:
         return hook
 
 
-class JsonAble(abc.ABC):
+class _JsonAble(abc.ABC):
     """
     Base class used for converting Micromanager Property map objects to/from JSON.
     """
     _hr = HookReg()  #This keeps track of the various deserialization hooks and combines them. pass _hr.getHook() to the json.load function.
 
     @staticmethod
-    def registerClass(cls: typing.Type[JsonAble]):
-        JsonAble._hr.addHook(cls.hook)
+    def registerClass(cls: typing.Type[_JsonAble]):
+        _JsonAble._hr.addHook(cls.hook)
 
     @abc.abstractmethod
     def encode(self) -> dict:
@@ -73,22 +73,38 @@ class JsonAble(abc.ABC):
     class _Encoder(json.JSONEncoder):
         """Use this encoder to make use of the custom `encode` functionality of each class."""
         def default(self, obj):
-            if isinstance(obj, JsonAble):
+            if isinstance(obj, _JsonAble):
                 return obj.encode()
             elif type(obj) == np.float32:
                 return float(obj)
             else:
                 return json.JSONEncoder(ensure_ascii=False).default(obj)
 
+
+class DictCoder:
+    def __init__(self):
+        self._hr = HookReg()  #This keeps track of the various deserialization hooks and combines them. pass _hr.getHook() to the json.load function.
+
+    def registerClass(self, cls: typing.Type[Dictable]):
+        self._hr.addHook(cls.fromDict)
+
+    def dictDecode(self, d):
+        if isinstance(d, (int, float, bool, str)):
+            pass
+        elif isinstance(d, list):
+            for i, e in enumerate(d):
+                d[i] = self.dictDecode(e)
+        elif isinstance(d, dict):
+            for k, v in d.items():
+                d[k] = self.dictDecode(v)
+        else:
+            return d
+        d = self._hr.getHook()(d)
+        return d
+
+
 class Dictable(abc.ABC):
     """Base class for converting PropertyMap objects to simpler dictionary trees, more simiular to traditional JSON."""
-
-    _hr = HookReg()  #This keeps track of the various deserialization hooks and combines them. pass _hr.getHook() to the json.load function.
-
-    @staticmethod
-    def registerClass(cls: typing.Type[Dictable]):
-        Dictable._hr.addHook(cls.fromDict)
-
     @abc.abstractmethod
     def _toDict(self):
         pass
@@ -118,24 +134,9 @@ class Dictable(abc.ABC):
         else:
             return d
 
-    @staticmethod
-    def dictDecode(d):
-        if isinstance(d, (int, float, bool, str)):
-            pass
-        elif isinstance(d, list):
-            for i, e in enumerate(d):
-                d[i] = Dictable.dictDecode(e)
-        elif isinstance(d, dict):
-            for k, v in d.items():
-                d[k] = Dictable.dictDecode(v)
-        else:
-            return d
-        d = Dictable._hr.getHook()(d)
-        return d
-
 
 @dataclass
-class Property(JsonAble, Dictable):
+class Property(_JsonAble, Dictable):
     """Represents a single property from a micromanager PropertyMap
 
     Attributes:
@@ -182,7 +183,7 @@ class Property(JsonAble, Dictable):
 
 
 @dataclass
-class PropertyMap(JsonAble, Dictable):
+class PropertyMap(_JsonAble, Dictable):
     """Represents a propertyMap from micromanager. basically a list of properties.
 
     Attributes:
@@ -222,7 +223,7 @@ class PropertyMap(JsonAble, Dictable):
 
 
 @dataclass
-class PropertyMapFile(JsonAble, Dictable):
+class PropertyMapFile(_JsonAble, Dictable):
     mapName: str
     pMap: PropertyMap
 
@@ -258,20 +259,21 @@ class PropertyMapFile(JsonAble, Dictable):
     @staticmethod
     def loadFromFile(path: str):
         with open(path) as f:
-            return json.load(f, object_hook=JsonAble._hr.getHook())
+            return json.load(f, object_hook=_JsonAble._hr.getHook())
 
     def saveToFile(self, path: str):
         with open(path, 'w') as f:
-            json.dump(self, f, cls=JsonAble._Encoder, indent=2)
+            json.dump(self, f, cls=_JsonAble._Encoder, indent=2)
 
 
-JsonAble.registerClass(Property)
-JsonAble.registerClass(PropertyMapFile)
-JsonAble.registerClass(PropertyMap)
+_JsonAble.registerClass(Property)
+_JsonAble.registerClass(PropertyMapFile)
+_JsonAble.registerClass(PropertyMap)
 
-Dictable.registerClass(Property)
-Dictable.registerClass(PropertyMap)
-Dictable.registerClass(PropertyMapFile)
+coder = DictCoder()
+coder.registerClass(Property)
+coder.registerClass(PropertyMap)
+coder.registerClass(PropertyMapFile)
 
 if __name__ == '__main__':
     path1 = r'C:\Users\nicke\Desktop\PositionList3.pos'
@@ -281,5 +283,5 @@ if __name__ == '__main__':
     with open(path1) as f1, open(path2) as f2:
         assert f1.read() == f2.read()
     a = p.toDict()
-    b = Dictable.dictDecode(a)
+    b = coder.dictDecode(a)
     a = 1
