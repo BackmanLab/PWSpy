@@ -35,7 +35,7 @@ import matplotlib as mpl
 import scipy.io as spio
 
 from pwspy.utility.micromanager import PropertyMap
-from pwspy.utility.micromanager.PropertyMap import JsonAble, hr, PropertyMapFile, HookReg
+from pwspy.utility.micromanager.PropertyMap import JsonAble, PropertyMapFile
 
 
 @dataclass
@@ -285,7 +285,7 @@ class PositionList:
 
     @staticmethod
     def fromPropertyMap(map: PropertyMap):
-        return hr.getHook()(map.toDict())
+        return hr.getHook()(map._toDict())
 
     def mirrorX(self) -> PositionList:
         """Invert all x coordinates
@@ -532,8 +532,7 @@ def applyhook(d):
 
 if __name__ == '__main__':
     p = PropertyMapFile.loadFromFile(r'C:\Users\nicke\Desktop\PositionList3.pos')
-    a = applyhook(p.pMap.toDict())
-    b = JsonAble.dictDecode(p.pMap.toDict())
+
 
     def generateList(data: np.ndarray):
         assert isinstance(data, np.ndarray)
