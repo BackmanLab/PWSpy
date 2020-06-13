@@ -25,28 +25,28 @@ import abc
 import enum
 import typing
 import json
-from logging import RootLogger
+
+from PyQt5.QtWidgets import QTreeWidgetItem, QApplication, QTreeWidget
 
 
-class Step:
+class Step(QTreeWidgetItem):
     def __init__(self, id: int, settings: dict, stepType: str, children: typing.List[Step] = None):
+        super().__init__(QTreeWidgetItem.UserType)
         self.id = id
         self.settings = settings
         self.stepType = stepType
-        self.children = children
+        self.setText(0, f"{stepType}")
+        if children is not None:
+            self.addChildren(children)
 
     def __repr__(self):
         return f"Step: {self.stepType}"
-
-    def setChildren(self, children: typing.List[Step]):
-        self.children = children
 
     @staticmethod
     def hook(dct: dict):
         if all([i in dct for i in ("id", 'stepType', 'settings')]):
             clazz = Types[dct['stepType']].value
             s = clazz(**dct)
-
             return s
         else:
             return dct
@@ -60,9 +60,14 @@ class RootStep(Step):
     pass
 
 
-class CoordStep(Step, abc.ABC):
+class CoordStep(Step):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setText(0, f"{self.stepType}: i={self.stepIterations()}")
+
     @abc.abstractmethod
-    def stepIterations(self): pass  # return the total number of iterations of this step.
+    def stepIterations(self):  # return the total number of iterations of this step.
+        raise NotImplementedError()
 
 
 class PositionsStep(CoordStep):
@@ -98,6 +103,7 @@ class Types(enum.Enum):
     SUBFOLDER = Step
     ZSTACK = ZStackStep
 
+
 #
 # class SequenceCoordinate:
 #     def __init__(self, path: typing.Sequence[int], coord: Coord):
@@ -105,4 +111,10 @@ class Types(enum.Enum):
 if __name__ == '__main__':
     with open(r'C:\Users\nicke\Desktop\demo\sequence.pwsseq') as f:
         s = Step.fromJson(f.read())
+    import sys
+    app = QApplication(sys.argv)
+    w = QTreeWidget()
+    w.addTopLevelItem(s)
+    w.show()
+    app.exec()
     a = 1

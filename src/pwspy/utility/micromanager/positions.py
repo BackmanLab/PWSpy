@@ -34,8 +34,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import scipy.io as spio
 
-from pwspy.utility.micromanager import PropertyMap
-from pwspy.utility.micromanager.PropertyMap import _JsonAble, PropertyMapFile, Dictable, DictCoder
+from pwspy.utility.micromanager.PropertyMap import PropertyMapFile, Dictable, DictCoder
 
 
 @dataclass
@@ -67,6 +66,7 @@ class Position1d(Dictable):
 
     def __repr__(self):
         return f"Position1d({self.zStage}, {self.z})"
+
 
 @dataclass
 class Position2d(Dictable):
