@@ -21,8 +21,7 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QTableWidgetItem, QPushButton, QApplication
 import matplotlib.pyplot as plt
 
-from pwspy.analysis.compilation._abstract import AbstractCompilerSettings
-from pwspy.analysis.compilation import (DynamicsCompilerSettings, GenericCompilerSettings, PWSCompilerSettings)
+from pwspy.analysis.compilation import (DynamicsCompilerSettings, GenericCompilerSettings, PWSCompilerSettings, AbstractCompilerSettings)
 from pwspy.apps.PWSAnalysisApp.utilities.conglomeratedAnalysis import ConglomerateCompilerResults
 from pwspy.apps.PWSAnalysisApp.sharedWidgets.tables import CopyableTable, NumberTableWidgetItem
 from pwspy.dataTypes import AcqDir

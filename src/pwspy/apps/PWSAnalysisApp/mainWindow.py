@@ -23,8 +23,9 @@ from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 from . import resources
 from pwspy.apps import resources as sharedresources
 import pwspy
+from .componentInterfaces import CellSelector, AnalysisSettingsCreator, ResultsTableController
 from .dialogs import WorkingDirDialog
-from ._dockWidgets import CellSelectorDock, AnalysisSettingsDock, ResultsTableDock, PlottingDock
+from ._dockWidgets import CellSelectorDock, AnalysisSettingsDock, ResultsTableControllerDock, PlottingDock
 
 
 class PWSWindow(QMainWindow):
@@ -32,9 +33,9 @@ class PWSWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle(QApplication.instance().applicationName())
         self.setWindowIcon(QtGui.QIcon(os.path.join(resources, 'cellLogo.png')))
-        self.cellSelector = CellSelectorDock()
-        self.analysisSettings = AnalysisSettingsDock(self.cellSelector, erManager)
-        self.resultsTable = ResultsTableDock()
+        self.cellSelector: CellSelector = CellSelectorDock()
+        self.analysisSettings: AnalysisSettingsCreator = AnalysisSettingsDock(self.cellSelector, erManager)
+        self.resultsTable: ResultsTableController = ResultsTableControllerDock()
         self.plots = PlottingDock(self.cellSelector)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.cellSelector)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.plots)

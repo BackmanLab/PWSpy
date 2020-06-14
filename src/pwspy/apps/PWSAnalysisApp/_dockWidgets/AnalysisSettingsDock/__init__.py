@@ -25,13 +25,10 @@ from .widgets.QueueAnalysesFrame import AnalysisListItem, QueuedAnalysesFrame
 from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames import PWSSettingsFrame
 from .widgets.SettingsFrames import DynamicsSettingsFrame
 from .widgets.SettingsFrames import AbstractSettingsFrame
-from pwspy.apps.PWSAnalysisApp.componentInterfaces import CellSelector
-
-if typing.TYPE_CHECKING:
-    from pwspy.apps.PWSAnalysisApp._dockWidgets import CellSelectorDock
+from pwspy.apps.PWSAnalysisApp.componentInterfaces import CellSelector, AnalysisSettingsCreator
 
 
-class AnalysisSettingsDock(QDockWidget):
+class AnalysisSettingsDock(AnalysisSettingsCreator, QDockWidget):
     def __init__(self, cellSelector: CellSelector, erManager):
         super().__init__("Settings")
         self._erManager = erManager
@@ -56,10 +53,10 @@ class AnalysisSettingsDock(QDockWidget):
         widg.setMinimumHeight(200)
         widg.setMinimumWidth(self._PWSSettingsFrame.minimumWidth() + 10)
 
-        self.addAnalysisButton.released.connect(self.addAnalysis)
+        self.addAnalysisButton.released.connect(self._addAnalysis)
         self.setWidget(widg)
 
-    def addAnalysis(self):
+    def _addAnalysis(self):
         settingsWidget: AbstractSettingsFrame = self._settingsTabWidget.currentWidget()
         try:
             settings = settingsWidget.getSettings()

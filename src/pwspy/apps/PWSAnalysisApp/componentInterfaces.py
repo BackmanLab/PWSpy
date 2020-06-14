@@ -20,11 +20,16 @@
 @author: Nick Anthony
 """
 import abc
+import typing
 from typing import List, Optional
 
 from PyQt5 import sip
 
 from pwspy import dataTypes as pwsdt
+from pwspy.analysis import AbstractRuntimeAnalysisSettings
+from pwspy.apps.PWSAnalysisApp.utilities.conglomeratedAnalysis import ConglomerateCompilerResults, \
+    ConglomerateCompilerSettings
+from pwspy.dataTypes import AcqDir
 
 
 class QABCMeta(sip.wrappertype, abc.ABCMeta):
@@ -68,3 +73,25 @@ class CellSelector(metaclass=QABCMeta):
 
     @abc.abstractmethod
     def refreshCellItems(self): pass
+
+
+class ResultsTableController(metaclass=QABCMeta):
+    @abc.abstractmethod
+    def addCompilationResult(self, result: ConglomerateCompilerResults, acquisition: AcqDir): pass
+
+    @abc.abstractmethod
+    def clearCompilationResults(self): pass
+
+    @abc.abstractmethod
+    def getSettings(self) -> ConglomerateCompilerSettings: pass
+
+    @abc.abstractmethod
+    def getRoiName(self) -> str: pass
+
+    @abc.abstractmethod
+    def getAnalysisName(self) -> str: pass
+
+
+class AnalysisSettingsCreator(metaclass=QABCMeta):
+    @abc.abstractmethod
+    def getListedAnalyses(self) -> typing.List[AbstractRuntimeAnalysisSettings]: pass

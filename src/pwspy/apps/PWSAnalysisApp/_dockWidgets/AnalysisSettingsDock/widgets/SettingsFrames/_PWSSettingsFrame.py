@@ -30,7 +30,7 @@ if typing.TYPE_CHECKING:
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupBox, QHBoxLayout, QWidget, QRadioButton, \
-    QFrame, QCheckBox, QMessageBox
+    QFrame, QCheckBox
 
 from pwspy.analysis.pws import PWSAnalysisSettings, PWSRuntimeAnalysisSettings
 from pwspy.apps.PWSAnalysisApp import applicationVars
