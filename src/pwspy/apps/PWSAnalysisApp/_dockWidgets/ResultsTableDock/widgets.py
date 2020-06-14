@@ -23,8 +23,8 @@ import matplotlib.pyplot as plt
 
 from pwspy.analysis.compilation._abstract import AbstractCompilerSettings
 from pwspy.analysis.compilation import (DynamicsCompilerSettings, GenericCompilerSettings, PWSCompilerSettings)
-from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateCompilerResults
-from pwspy.apps.PWSAnalysisApp._sharedWidgets.tables import CopyableTable, NumberTableWidgetItem
+from pwspy.apps.PWSAnalysisApp.utilities.conglomeratedAnalysis import ConglomerateCompilerResults
+from pwspy.apps.PWSAnalysisApp.sharedWidgets.tables import CopyableTable, NumberTableWidgetItem
 from pwspy.dataTypes import AcqDir
 import os
 

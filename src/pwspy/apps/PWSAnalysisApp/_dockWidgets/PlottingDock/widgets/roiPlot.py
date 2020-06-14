@@ -170,7 +170,7 @@ class RoiPlot(BigPlot):
             dlg = SinCityDlg(self, self)
             dlg.show()
         menu = QMenu("Export Menu")
-        act = QAction("Sin City Style")
+        act = QAction("Colored Nuclei")
         act.triggered.connect(showSinCityDlg)
         menu.addAction(act)
         menu.exec(self.mapToGlobal(self.exportButton.pos()))

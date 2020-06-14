@@ -49,26 +49,20 @@ class HookReg:
         return hook
 
 
-class _JsonAble(abc.ABC):
-    """
-    Base class used for converting Micromanager Property map objects to/from JSON.
-    """
-    _hr = HookReg()  #This keeps track of the various deserialization hooks and combines them. pass _hr.getHook() to the json.load function.
+class PMapCoder:
+    def __init__(self):
+        self._hr = HookReg()  #This keeps track of the various deserialization hooks and combines them. pass _hr.getHook() to the json.load function.
 
-    @staticmethod
-    def registerClass(cls: typing.Type[_JsonAble]):
-        _JsonAble._hr.addHook(cls.hook)
+    def registerClass(self, cls: typing.Type[_JsonAble]):
+        self._hr.addHook(cls.hook)
 
-    @abc.abstractmethod
-    def encode(self) -> dict:
-        """This method should convert the property map class to a dictionary for jsonization"""
-        pass
+    def loadFromFile(self, path: str) -> _JsonAble:
+        with open(path) as f:
+            return json.load(f, object_hook=self._hr.getHook())
 
-    @staticmethod
-    @abc.abstractmethod
-    def hook(d: object):
-        """This function should try to identify if the provided JSON object (int, float, string, list, dict) represents an instance of this Property map class. If so then generate the class, otherwire return the input value unchanged."""
-        pass
+    def saveToFile(self, obj: _JsonAble, path: str):
+        with open(path, 'w') as f:
+            json.dump(obj, f, cls=self._Encoder, indent=2)
 
     class _Encoder(json.JSONEncoder):
         """Use this encoder to make use of the custom `encode` functionality of each class."""
@@ -79,6 +73,22 @@ class _JsonAble(abc.ABC):
                 return float(obj)
             else:
                 return json.JSONEncoder(ensure_ascii=False).default(obj)
+
+
+class _JsonAble(abc.ABC):
+    """
+    Base class used for converting Micromanager Property map objects to/from JSON.
+    """
+    @abc.abstractmethod
+    def encode(self) -> dict:
+        """This method should convert the property map class to a dictionary for jsonization"""
+        pass
+
+    @staticmethod
+    @abc.abstractmethod
+    def hook(d: object):
+        """This function should try to identify if the provided JSON object (int, float, string, list, dict) represents an instance of this Property map class. If so then generate the class, otherwire return the input value unchanged."""
+        pass
 
 
 class DictCoder:
@@ -102,6 +112,27 @@ class DictCoder:
         d = self._hr.getHook()(d)
         return d
 
+    @staticmethod
+    def _dictEncode(d):
+        if isinstance(d, list):
+            D = []
+            for i in d:
+                D.append(DictCoder._dictEncode(i))
+            return D
+        elif isinstance(d, dict):
+            D = {}
+            for k, v in d.items():
+                D[k] = DictCoder._dictEncode(v)
+            return D
+        elif isinstance(d, Dictable):
+            return DictCoder._dictEncode(d._toDict())
+        else:
+            return d
+
+    @staticmethod
+    def toDict(obj):
+        return DictCoder._dictEncode(obj._toDict())
+
 
 class Dictable(abc.ABC):
     """Base class for converting PropertyMap objects to simpler dictionary trees, more simiular to traditional JSON."""
@@ -115,24 +146,9 @@ class Dictable(abc.ABC):
         pass
 
     def toDict(self):
-        return Dictable._dictEncode(self._toDict())
+        return DictCoder.toDict(self)
 
-    @staticmethod
-    def _dictEncode(d):
-        if isinstance(d, list):
-            D = []
-            for i in d:
-                D.append(Dictable._dictEncode(i))
-            return D
-        elif isinstance(d, dict):
-            D = {}
-            for k, v in d.items():
-                D[k] = Dictable._dictEncode(v)
-            return D
-        elif isinstance(d, Dictable):
-            return Dictable._dictEncode(d._toDict())
-        else:
-            return d
+
 
 
 @dataclass
@@ -256,19 +272,13 @@ class PropertyMapFile(_JsonAble, Dictable):
                     return PropertyMapFile(mapName=k, pMap=v)
         return d
 
-    @staticmethod
-    def loadFromFile(path: str):
-        with open(path) as f:
-            return json.load(f, object_hook=_JsonAble._hr.getHook())
-
-    def saveToFile(self, path: str):
-        with open(path, 'w') as f:
-            json.dump(self, f, cls=_JsonAble._Encoder, indent=2)
 
 
-_JsonAble.registerClass(Property)
-_JsonAble.registerClass(PropertyMapFile)
-_JsonAble.registerClass(PropertyMap)
+
+PMapCoder = PMapCoder()
+PMapCoder.registerClass(Property)
+PMapCoder.registerClass(PropertyMapFile)
+PMapCoder.registerClass(PropertyMap)
 
 coder = DictCoder()
 coder.registerClass(Property)
@@ -278,8 +288,8 @@ coder.registerClass(PropertyMapFile)
 if __name__ == '__main__':
     path1 = r'C:\Users\nicke\Desktop\PositionList3.pos'
     path2 = r'C:\Users\nicke\Desktop\PositionList4.pos'
-    p = PropertyMapFile.loadFromFile(path1)
-    p.saveToFile(path2)
+    p = PMapCoder.loadFromFile(path1)
+    PMapCoder.saveToFile(p, path2)
     with open(path1) as f1, open(path2) as f2:
         assert f1.read() == f2.read()
     a = p.toDict()

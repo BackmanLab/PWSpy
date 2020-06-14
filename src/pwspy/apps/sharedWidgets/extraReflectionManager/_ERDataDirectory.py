@@ -170,7 +170,7 @@ class EROnlineDirectory(ERAbstractDirectory):
     def _buildIndexFromOnlineFiles(self) -> ERIndex:
         """Return an ERIndex object from the HDF5 data files saved on Google Drive. No downloading required, just scanning metadata."""
         files = self._downloader.getFileMetadata()
-        files = [f for f in files if ERMetaData._FILESUFFIX in f['name']]  # Select the dictionaries that correspond to a extra reflectance data file
+        files = [f for f in files if ERMetaData.FILESUFFIX in f['name']]  # Select the dictionaries that correspond to a extra reflectance data file
         files = [ERIndexCube(fileName=f['name'], md5=f['md5Checksum'], name=ERMetaData.directory2dirName(f['name'])[-1], description=None, idTag=None) for f in files]
         return ERIndex(files)
 

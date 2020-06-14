@@ -20,7 +20,7 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QWidget, QGridLayout, QComboBox
 from typing import Optional
 
-from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
+from pwspy.apps.PWSAnalysisApp.utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
 
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.widgets import AnalysisPlotter
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.roiPlot import RoiPlot

@@ -20,7 +20,7 @@ from PyQt5.QtWidgets import (QDockWidget, QWidget, QFrame, QVBoxLayout, QCheckBo
                              QGridLayout, QLineEdit, QLabel)
 from PyQt5 import QtCore
 from pwspy.analysis.compilation import DynamicsCompilerSettings, GenericCompilerSettings, PWSCompilerSettings
-from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateCompilerResults, ConglomerateCompilerSettings
+from pwspy.apps.PWSAnalysisApp.utilities.conglomeratedAnalysis import ConglomerateCompilerResults, ConglomerateCompilerSettings
 from .widgets import ResultsTable, ResultsTableItem
 import typing
 if typing.TYPE_CHECKING:

@@ -22,7 +22,7 @@ import os
 from typing import Tuple, List, Optional
 import typing
 from PyQt5.QtCore import QThread
-from pwspy.apps.PWSAnalysisApp._sharedWidgets import ScrollableMessageBox
+from pwspy.apps.PWSAnalysisApp.sharedWidgets import ScrollableMessageBox
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox, QInputDialog

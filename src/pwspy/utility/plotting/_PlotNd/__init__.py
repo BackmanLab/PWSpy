@@ -153,7 +153,7 @@ class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of c
         self.rotateButton.released.connect(self.canvas.rollAxes)
 
         self.saveButton = QPushButton("Save Animation")
-        self.saveButton.released.connect(lambda: AnimationDlg(self.canvas.fig, (self._animationUpdaterFunc, range(self.canvas._data.shape[2])), self).exec())
+        self.saveButton.released.connect(lambda: AnimationDlg(self.canvas.fig, (self._animationUpdaterFunc, range(self.canvas.data.shape[2])), self).exec())
 
         layout = QGridLayout()
         layout.addWidget(self.view, 0, 0, 8, 8)
@@ -243,12 +243,12 @@ class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of c
         elif len(selected.shape) == 2:
             fig, ax = pyplot.subplots()
             im = ax.imshow(selected)
-            im.set_extent([self.canvas._indexes[3][0], self.canvas._indexes[3][-1], self.canvas._indexes[2][0], self.canvas._indexes[2][-1]])
+            im.set_extent([self.canvas.indexes[3][0], self.canvas.indexes[3][-1], self.canvas.indexes[2][0], self.canvas.indexes[2][-1]])
             ax.set_xlabel(self.canvas.names[3])
             ax.set_ylabel(self.canvas.names[2])
             fig.show()
         else:  # selected must be 3d or greater. This means our original data was 5d or greater.
-            p = PlotNd(selected, names=self.canvas.names[2:], indices=self.canvas._indexes[2:])
+            p = PlotNd(selected, names=self.canvas.names[2:], indices=self.canvas.indexes[2:])
 
         self.selector.setActive(True)  # Reset the selector.
 

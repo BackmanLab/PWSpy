@@ -14,11 +14,10 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
-
 import logging
 import os
 import re
-from typing import List, Dict, Optional
+from typing import List, Optional
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineEdit, QGridLayout, QSplitter, \
@@ -26,9 +25,10 @@ from PyQt5.QtWidgets import QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineE
 import pwspy.dataTypes as pwsdt
 from pwspy.apps.PWSAnalysisApp._dockWidgets.CellSelectorDock.widgets import ReferencesTableItem
 from .widgets import CellTableWidgetItem, CellTableWidget, ReferencesTable
+from ...componentInterfaces import CellSelector
 
 
-class CellSelectorDock(QDockWidget):
+class CellSelectorDock(CellSelector, QDockWidget):
     """This dockwidget is used by the user to select which cells they want to act upon (run an analysis, plot, etc.)"""
     selectionChanged = QtCore.pyqtSignal(list)
 
@@ -106,8 +106,6 @@ class CellSelectorDock(QDockWidget):
         if len(refItems)>0:
             self.refTableWidget.updateReferences(True, refItems)
         self.tableWidget.addCellItems(cellItems)
-
-
 
     def clearCells(self):
         self._cells = []

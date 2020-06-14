@@ -24,7 +24,7 @@ from PyQt5.QtCore import QThread, QObject, pyqtSignal
 from PyQt5.QtWidgets import QWidget, QGridLayout, QButtonGroup, QPushButton, QDialog, QSpinBox, QLabel, \
     QMessageBox, QMenu, QAction, QApplication
 
-from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
+from pwspy.apps.PWSAnalysisApp.utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
 from pwspy.dataTypes import AcqDir
 from matplotlib import patches
 import os

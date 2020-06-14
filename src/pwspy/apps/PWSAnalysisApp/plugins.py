@@ -1,4 +1,4 @@
-# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+# Copyright © 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
 #
 # This file is part of PWSpy.
 #
@@ -15,6 +15,24 @@
 # You should have received a copy of the GNU General Public License
 # along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
 
-from ._DynamicsSettingsFrame import DynamicsSettingsFrame
-from ._PWSSettingsFrame import PWSSettingsFrame
-from ._AbstractSettingsFrame import AbstractSettingsFrame
+"""
+
+@author: Nick Anthony
+"""
+import abc
+
+
+class Plugin(abc.ABC):
+    pass
+
+class CellSelectorPlugin(Plugin):
+    @abc.abstractmethod
+    def onNewCellsLoaded(self, cells):
+        pass
+
+    @abc.abstractmethod
+    def onCellsSelected(self, cells):
+        pass
+
+    @abc.abstractmethod
+    def

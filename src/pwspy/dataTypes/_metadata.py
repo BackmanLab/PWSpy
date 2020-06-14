@@ -77,23 +77,23 @@ class MetaDataBase(abc.ABC):
             self.acquisitionDirectory = acquisitionDirectory
         refResolver = jsonschema.RefResolver(pathlib.Path(self._jsonSchemaPath).as_uri(), None)  # This resolver is used to allow derived json schemas to refer to the base schema.
         jsonschema.validate(instance=metadata, schema=self._jsonSchema, types={'array': (list, tuple)}, resolver=refResolver)
-        self._dict: dict = metadata
+        self.dict: dict = metadata
         try:
-            datetime.strptime(self._dict['time'], dateTimeFormat)
+            datetime.strptime(self.dict['time'], dateTimeFormat)
         except ValueError:
             try:
                 logger.info("Detected a non-compliant timestamp. attempting to correct.")
-                self._dict['time'] = datetime.strftime(datetime.strptime(self._dict['time'], "%d-%m-%y %H:%M:%S"), dateTimeFormat)
+                self.dict['time'] = datetime.strftime(datetime.strptime(self.dict['time'], "%d-%m-%y %H:%M:%S"), dateTimeFormat)
             except ValueError:
                 logger.warning("The time stamp could not be parsed. Replacing with 1_1_1970")
-                self._dict['time'] = "1-1-1990 01:01:01"
-        if self._dict['system'] == "":
+                self.dict['time'] = "1-1-1990 01:01:01"
+        if self.dict['system'] == "":
             logger.warning("The `system` name in the metadata is blank. Check that the PWS System is saving the proper calibration values.")
-        if all([i in self._dict for i in ['darkCounts', 'linearityPoly']]):
-            if self._dict['darkCounts'] == 0:
+        if all([i in self.dict for i in ['darkCounts', 'linearityPoly']]):
+            if self.dict['darkCounts'] == 0:
                 logger.warning("Detected a darkCounts value of 0 in the pwsdtd.ImCube Metadata. Check that the PWS System is saving the proper calibration values.")
-            self.cameraCorrection = CameraCorrection(darkCounts=self._dict['darkCounts'],
-                                                     linearityPolynomial=self._dict['linearityPoly'])
+            self.cameraCorrection = CameraCorrection(darkCounts=self.dict['darkCounts'],
+                                                     linearityPolynomial=self.dict['linearityPoly'])
         else:
             self.cameraCorrection = None
 
@@ -117,7 +117,7 @@ class MetaDataBase(abc.ABC):
         The binning setting used by the camera. This is needed in order to properly correct dark counts.
         This is generally extracted from metadata saved by Micromanager
         """
-        return self._dict['binning']
+        return self.dict['binning']
 
     @property
     def pixelSizeUm(self) -> float:
@@ -125,22 +125,22 @@ class MetaDataBase(abc.ABC):
         The pixelSize expressed in microns. This represents the length of each square pixel in object space. Binning
         has already been accounted for here. This is generally extracted from metadata saved my MicroManager
         """
-        return self._dict['pixelSizeUm']
+        return self.dict['pixelSizeUm']
 
     @property
     def exposure(self) -> float:
         """The exposure time of the camera expressed in milliseconds."""
-        return self._dict['exposure']
+        return self.dict['exposure']
 
     @property
     def time(self) -> str:
         """The date and time that the acquisition was taken."""
-        return self._dict['time']
+        return self.dict['time']
 
     @property
     def systemName(self) -> str:
         """The name of the system this was acquired on. The name is set in the `PWS Acquisition Plugin` for Micromanager."""
-        return self._dict['system']
+        return self.dict['system']
 
     @staticmethod
     def decodeHdfMetadata(d: h5py.Dataset) -> dict:
@@ -160,7 +160,7 @@ class MetaDataBase(abc.ABC):
         Args:
             d: The `h5py.Dataset` to save the metadata to.
         """
-        d.attrs['metadata'] = np.string_(json.dumps(self._dict))
+        d.attrs['metadata'] = np.string_(json.dumps(self.dict))
         return d
 
 
@@ -280,17 +280,17 @@ class DynMetaData(AnalysisManagerMetaDataBase):
         Returns:
             str: A unique string identifying this acquisition.
         """
-        return f"pwsdtmd.DynCube_{self._dict['system']}_{self._dict['time']}"
+        return f"pwsdtmd.DynCube_{self.dict['system']}_{self.dict['time']}"
 
     @property
     def wavelength(self) -> int:
         """The wavelength that this acquisition was acquired at."""
-        return self._dict['wavelength']
+        return self.dict['wavelength']
 
     @property
     def times(self) -> Tuple[float, ...]:
         """A sequence indicatin the time associated with each 2D slice of the 3rd axis of the `data` array"""
-        return self._dict['times']
+        return self.dict['times']
 
     @classmethod
     def fromOldPWS(cls, directory: str, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> DynMetaData:
@@ -393,8 +393,8 @@ class ERMetaData:
                        'numericalAperture': {'type': ['number']}
                         }
                    }
-    _FILESUFFIX = '_eReflectance.h5'
-    _DATASETTAG = 'extraReflection'
+    FILESUFFIX = '_eReflectance.h5'
+    DATASETTAG = 'extraReflection'
     _MDTAG = 'metadata'
 
     def __init__(self, inheritedMetadata: dict, numericalAperture: float, filePath: str=None):
@@ -428,10 +428,10 @@ class ERMetaData:
         Returns:
             A tuple containing: validPath: True if the path is valid, directory: The directory the file is in, name: The name that the object was saved as.
         """
-        if cls._FILESUFFIX in path:
+        if cls.FILESUFFIX in path:
             directory, name = cls.directory2dirName(path)
-            with h5py.File(os.path.join(directory, f'{name}{cls._FILESUFFIX}'), 'r') as hf:
-                valid = cls._MDTAG in hf[cls._DATASETTAG].attrs
+            with h5py.File(os.path.join(directory, f'{name}{cls.FILESUFFIX}'), 'r') as hf:
+                valid = cls._MDTAG in hf[cls.DATASETTAG].attrs
             return valid, directory, name
         else:
             return False, '', ''
@@ -449,7 +449,7 @@ class ERMetaData:
         """
         filePath = cls.dirName2Directory(directory, name)
         with h5py.File(filePath, 'r') as hf:
-            dset = hf[cls._DATASETTAG]
+            dset = hf[cls.DATASETTAG]
             return cls.fromHdfDataset(dset, filePath=filePath)
 
     @classmethod
@@ -472,7 +472,7 @@ class ERMetaData:
             g: The `h5py.Group` to save the new dataset into.
 
         """
-        g[self._DATASETTAG].attrs[self._MDTAG] = np.string_(json.dumps(self.inheritedMetadata))
+        g[self.DATASETTAG].attrs[self._MDTAG] = np.string_(json.dumps(self.inheritedMetadata))
         return g
 
     @classmethod
@@ -486,7 +486,7 @@ class ERMetaData:
             A tuple containing: directory: The directory path, name: The name that the file was saved as.
         """
         directory, fileName = os.path.split(path)
-        name = fileName.split(cls._FILESUFFIX)[0]
+        name = fileName.split(cls.FILESUFFIX)[0]
         return directory, name
 
     @classmethod
@@ -494,7 +494,7 @@ class ERMetaData:
         """
         This is the inverse of `directory2dirName`
         """
-        return os.path.join(directory, f'{name}{cls._FILESUFFIX}')
+        return os.path.join(directory, f'{name}{cls.FILESUFFIX}')
 
 
 class FluorMetaData(MetaDataBase):
@@ -520,7 +520,7 @@ class FluorMetaData(MetaDataBase):
 
     @property
     def idTag(self):
-        return f"Fluor_{self._dict['system']}_{self._dict['time']}"
+        return f"Fluor_{self.dict['system']}_{self.dict['time']}"
 
     @classmethod
     def fromTiff(cls, directory: str, acquisitionDirectory: Optional[AcqDir]) -> FluorMetaData:
@@ -595,18 +595,18 @@ class ICMetaData(AnalysisManagerMetaDataBase):
     def __init__(self, metadata: dict, filePath: Optional[str] = None, fileFormat: ICMetaData.FileFormats = None, acquisitionDirectory: Optional[AcqDir] = None):
         super().__init__(metadata, filePath, acquisitionDirectory=acquisitionDirectory)
         self.fileFormat: ICMetaData.FileFormats = fileFormat
-        self._dict['wavelengths'] = tuple(np.array(self._dict['wavelengths']).astype(float))
+        self.dict['wavelengths'] = tuple(np.array(self.dict['wavelengths']).astype(float))
 
     def toDataClass(self, lock: mp.Lock = None) -> pwsdtd.ImCube:
         return pwsdtd.ImCube.fromMetadata(self, lock)
 
     @cached_property
     def idTag(self) -> str:
-        return f"pwsdtd.ImCube_{self._dict['system']}_{self._dict['time']}"
+        return f"pwsdtd.ImCube_{self.dict['system']}_{self.dict['time']}"
 
     @property
     def wavelengths(self) -> Tuple[float, ...]:
-        return self._dict['wavelengths']
+        return self.dict['wavelengths']
 
     @classmethod
     def loadAny(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> ICMetaData:
@@ -746,7 +746,7 @@ class ICMetaData(AnalysisManagerMetaDataBase):
 
         """
         with open(os.path.join(directory, 'pwsmetadata.json'), 'w') as f:
-            json.dump(self._dict, f)
+            json.dump(self.dict, f)
 
     def getThumbnail(self) -> np.ndarray:
         """

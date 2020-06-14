@@ -18,7 +18,7 @@
 from typing import Optional
 import numpy as np
 
-from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
+from pwspy.apps.PWSAnalysisApp.utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
 from pwspy.dataTypes import AcqDir, FluorescenceImage
 from enum import Enum
 

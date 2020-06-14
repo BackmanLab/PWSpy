@@ -28,11 +28,11 @@ from PyQt5.QtGui import QPalette
 from PyQt5.QtWidgets import QPushButton, QTableWidgetItem, QTableWidget, QAbstractItemView, QMenu, QWidget, QMessageBox, \
     QInputDialog, QHeaderView
 
-from pwspy.apps.PWSAnalysisApp._sharedWidgets import ScrollableMessageBox
+from pwspy.apps.PWSAnalysisApp.sharedWidgets import ScrollableMessageBox
 from pwspy.dataTypes import AcqDir, ICMetaData, DynMetaData
 
-from pwspy.apps.PWSAnalysisApp._sharedWidgets.dictDisplayTree import DictDisplayTreeDialog
-from pwspy.apps.PWSAnalysisApp._sharedWidgets.tables import NumberTableWidgetItem
+from pwspy.apps.PWSAnalysisApp.sharedWidgets.dictDisplayTree import DictDisplayTreeDialog
+from pwspy.apps.PWSAnalysisApp.sharedWidgets.tables import NumberTableWidgetItem
 
 def evalToolTip(cls: Type[QWidget], method):
     """Given a QWidget and a function that returns a string, this decorator returns a modified class that will evaluate
@@ -349,7 +349,7 @@ class CellTableWidget(QTableWidget):
 
     def _displayCellMetadata(self):
         for i in self.selectedCellItems:
-            d = DictDisplayTreeDialog(self, i.acqDir.pws._dict, title=os.path.join(i.path, f"Cell{i.num}"))
+            d = DictDisplayTreeDialog(self, i.acqDir.pws.dict, title=os.path.join(i.path, f"Cell{i.num}"))
             d.show()
 
     def _toggleSelectedCellsInvalid(self, state: bool):
