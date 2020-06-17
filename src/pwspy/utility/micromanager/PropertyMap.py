@@ -87,8 +87,6 @@ class _JsonAble(abc.ABC):
 #         d = self._hr.getHook()(d)
 #         return d
 
-
-@dataclass
 class Property(_JsonAble):
     """Represents a single property from a micromanager PropertyMap
 
@@ -100,13 +98,17 @@ class Property(_JsonAble):
     value: typing.Union[str, int, float, typing.List[typing.Union[str, int, float]]]
     pTypes = {str: 'STRING', float: 'DOUBLE', int: 'INTEGER'}  # Static collection of the possible datatypes.
 
+    def __init__(self, value: typing.Union[str, int, float], pType: str = None):
+        self.value = value
+        if pType is None:
+            self.pType = Property.pTypes[type(value)]
+        else:
+            self.pType = pType
+
     def encode(self) -> dict:
         """Convert this object to a PropertyMap dictionary."""
         d = {'type': self.pType}
-        if isinstance(self.value, list):
-            d['array'] = self.value
-        else:
-            d['scalar'] = self.value
+        d['scalar'] = self.value
         return d
 
     @staticmethod
@@ -114,17 +116,37 @@ class Property(_JsonAble):
         """Check if a dictionary represents an instance of this class and return a new instance. If this dict does not match
         the correct pattern then just return the original dict."""
         if 'type' in d and d['type'] in Property.pTypes.values():
+            if 'scalar' in d:
+                val = d['scalar']
+                return Property(pType=d['type'], value=val)
+        return d
 
+
+class PropertyArray(_JsonAble):
+    def __init__(self, properties: typing.List[Property]):
+        self._properties = properties
+
+    def encode(self) -> dict:
+        """Convert this object to a PropertyMap dictionary."""
+        return {'type': self._properties[0].pType,
+                'array': [i.value for i in self._properties]}
+
+    @staticmethod
+    def hook(d: dict):
+        """Check if a dictionary represents an instance of this class and return a new instance. If this dict does not match
+        the correct pattern then just return the original dict."""
+        if 'type' in d and d['type'] in Property.pTypes.values():
             if 'array' in d:
                 val = d['array']
-            elif 'scalar' in d:
-                val = d['scalar']
-            else:
-                return d
-            return Property(pType=d['type'], value=val)
-        else:
-            return d
+                t = d['type']
+                return PropertyArray([Property(i, t) for i in val])
+        return d
 
+    def __len__(self):
+        return len(self._properties)
+
+    def __getitem__(self, idx: typing.Union[slice, int]) -> typing.Union[Property, typing.List[Property]]:
+        return self._properties[idx]
 
 @dataclass
 class _PropertyMapFile(_JsonAble):
@@ -159,11 +181,11 @@ class PropertyMap(_JsonAble):
     _hr = _HookReg()
 
     def __init__(self, properties: typing.Dict[str, Property]):
-        self.properties = properties
+        self._propDict = properties
 
     def encode(self) -> dict:
         return {'type': 'PROPERTY_MAP',
-                'scalar': self.properties}
+                'scalar': self._propDict}
 
     @staticmethod
     def hook(d: dict):
@@ -193,14 +215,24 @@ class PropertyMap(_JsonAble):
             else:
                 return json.JSONEncoder(ensure_ascii=False).default(obj)
 
+    def __getitem__(self, key):
+        return self._propDict[key]
 
-class PropertyMapArray(PropertyMap):
+    def __iter__(self):
+        return iter(self._propDict)
+
+    def __len__(self):
+        return len(self._propDict)
+
+
+class PropertyMapArray(_JsonAble):
+    """This class is needed due to the dumb way the arrays are jsonified in Micromanager PropertyMaps."""
     def __init__(self, properties: typing.List[PropertyMap]):
-        self.properties = properties
+        self._pmaps = properties
 
     def encode(self) -> dict:
         return {'type': 'PROPERTY_MAP',
-                'array': [i.encode()['scalar'] for i in self.properties]}
+                'array': [i.encode()['scalar'] for i in self._pmaps]}
 
     @staticmethod
     def hook(d: dict):
@@ -208,6 +240,12 @@ class PropertyMapArray(PropertyMap):
             if 'array' in d:
                 return PropertyMapArray([PropertyMap(i) for i in d['array']])
         return d
+
+    def __len__(self):
+        return len(self._pmaps)
+
+    def __getitem__(self, idx: typing.Union[slice, int]) -> PropertyMap:
+        return self._pmaps[idx]
 
 
 PropertyMap._hr.addHook(PropertyMap.hook)

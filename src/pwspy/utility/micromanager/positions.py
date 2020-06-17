@@ -22,6 +22,8 @@ Created on Mon Dec  3 17:53:24 2018
 @author: Nick Anthony
 """
 from __future__ import annotations
+
+import abc
 import json
 import typing
 from dataclasses import dataclass
@@ -34,11 +36,21 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import scipy.io as spio
 
-from pwspy.utility.micromanager.PropertyMap import PropertyMap
+from pwspy.utility.micromanager.PropertyMap import PropertyMap, PropertyMapArray, Property, PropertyArray
 
+
+class _PropertyMappable(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def toPropertyMap(self) -> PropertyMap:
+        pass
+
+    @staticmethod
+    @abc.abstractmethod
+    def fromPropertyMap(pmap: PropertyMap) -> _PropertyMappable:
+        pass
 
 @dataclass
-class Position1d:
+class Position1d(_PropertyMappable):
     """A 1D position usually describing the position of a Z-axis translation stage.
 
     Attributes:
@@ -52,24 +64,22 @@ class Position1d:
         assert isinstance(self.z, float)
         assert isinstance(self.zStage, str)
     
-    def _toDict(self):
-        contents = {"Device": self.zStage,
-                "Position_um": [self.z]}
-        return contents
+    def toPropertyMap(self) -> PropertyMap:
+        return PropertyMap({"Device": Property(self.zStage),
+                "Position_um": PropertyArray([self.z])})
 
     @staticmethod
-    def fromDict(d: dict):
-        if isinstance(d, dict):
-            if "Device" in d and "Position_um" in d and len(d['Position_um'])==1:
-                return Position1d(z=d['Position_um'][0], zStage=d['Device'])
-        return d
+    def fromPropertyMap(pmap: PropertyMap) -> Position1d:
+        if len(pmap['Position_um']) != 1:
+            raise Exception("RERAR")
+        return Position1d(z=pmap['Position_um'][0].value, zStage=pmap['Device'].value)
 
     def __repr__(self):
         return f"Position1d({self.zStage}, {self.z})"
 
 
 @dataclass
-class Position2d:
+class Position2d(_PropertyMappable):
     """Represents a 2D position for a single xy stage in micromanager.
 
     Attributes:
@@ -86,19 +96,17 @@ class Position2d:
         assert isinstance(self.y, Number)
         assert isinstance(self.xyStage, str)
 
-    def _toDict(self):
-        contents = {"Device": self.xyStage,
-             "Position_um": [self.x, self.y]}
-        return contents
+    def toPropertyMap(self) -> PropertyMap:
+        return PropertyMap({"Device": Property(self.xyStage),
+                        "Position_um": PropertyArray([self.x, self.y])})
 
     @staticmethod
-    def fromDict(d):
-        if isinstance(d, dict):
-            if "Device" in d and "Position_um" in d and len(d['Position_um'])==2:
-                x, y = d['Position_um']
-                return Position2d(x=x, y=y, xyStage=d['Device'])
+    def fromPropertyMap(pmap: PropertyMap) -> Position2d:
+        if len(pmap['Position_um'])!=2:
+            raise Exception("Errr")
+        x, y = pmap['Position_um'][0].value, pmap['Position_um'][1].value
+        return Position2d(x=x, y=y, xyStage=pmap['Device'].value)
 
-        return d
 
     def mirrorX(self):
         self.x *= -1
@@ -145,7 +153,7 @@ class Position2d:
 
 
 @dataclass
-class MultiStagePosition:
+class MultiStagePosition(_PropertyMappable):
     """Mirrors the class of the same name from Micro-Manager. Can contain multiple Positon1d or Position2d objects.
     Ideal for a system with multiple translation stages. It is assumed that there is only a single 2D stage and a single
     1D stage.
@@ -161,23 +169,34 @@ class MultiStagePosition:
     zStage: str
     positions: typing.List[typing.Union[Position1d, Position2d]]
 
-    def _toDict(self):
-        contents = {
-            "DefaultXYStage": self.xyStage,
-            "DefaultZStage":self.zStage,
-            "DevicePositions": self.positions,
-            "GridCol": 0,
-            "GridRow": 0,
-            "Label": self.label}
-        return contents
+    def toPropertyMap(self) -> PropertyMap:
+        # contents = {
+        #     "DefaultXYStage": self.xyStage,
+        #     "DefaultZStage":self.zStage,
+        #     "DevicePositions": self.positions,
+        #     "GridCol": 0,
+        #     "GridRow": 0,
+        #     "Label": self.label}
+        return PropertyMap({
+            "DefaultXYStage": Property(self.xyStage),
+            "DefaultZStage": Property(self.zStage),
+            "DevicePositions": PropertyMapArray([i.toPropertyMap() for i in self.positions]),
+            "GridCol": Property(0),
+            "GridRow": Property(0),
+            "Label": Property(self.label)})
    
 
     @staticmethod
-    def fromDict(d):
-        if isinstance(d, dict):
-            if all([i in d for i in ["DefaultXYStage", "DefaultZStage","DevicePositions","GridCol","GridRow","Label"]]):
-                return MultiStagePosition(label=d['Label'], xyStage=d['DefaultXYStage'], zStage=d['DefaultZStage'], positions=d['DevicePositions'])
-        return d
+    def fromPropertyMap(d: PropertyMap) -> MultiStagePosition:
+        positions = []
+        for i in d['DevicePositions']:
+            if len(i["Position_um"]['array']) == 1:
+                positions.append(Position1d.fromPropertyMap(i))
+            elif len(i["Position_um"]['array']) == 2:
+                positions.append(Position2d.fromPropertyMap(i))
+            else:
+                raise Exception("EEEEE")
+        return MultiStagePosition(label=d['Label'].value, xyStage=d['DefaultXYStage'].value, zStage=d['DefaultZStage'].value, positions=positions)
 
     def getXYPosition(self):
         """Return the first `Position2d` saved in the `positions` list"""
@@ -258,7 +277,7 @@ class MultiStagePosition:
         return s
 
 
-class PositionList:
+class PositionList(_PropertyMappable):
     """Represents a micromanager positionList. can be loaded from and saved to a micromanager .pos file.
 
     Args:
@@ -333,20 +352,14 @@ class PositionList:
 
     @staticmethod
     def fromPropertyMap(pmap):
-        if isinstance(dct, list):
-            if all([isinstance(i, MultiStagePosition) for i in dct]):
-                return PositionList(dct)
-        return dct
+        if isinstance(pmap, PropertyMap):
+            if "Stage Positions" in pmap:
+                return PositionList([MultiStagePosition.fromPropertyMap(i) for i in pmap["Stage Positions"]])
+        raise Exception("JsonParseException")
 
     def toPropertyMap(self) -> PropertyMap:
         """Returns the position list as a dict that is formatted just like a `PropertyMap` from Micro-Manager."""
-        # return {"encoding": "UTF-8",
-        #            'format': 'Micro-Manager Property Map',
-        #            'major_version': 2,
-        #            'minor_version': 0,
-        #            "map": {"StagePositions": self.positions}}
-
-        pmap = PropertyMap({"StagePositions": [i.toPropertyMap() for i in self.positions]})
+        pmap = PropertyMap({"StagePositions": PropertyMapArray([i.toPropertyMap() for i in self.positions])})
         return pmap
 
     @classmethod
