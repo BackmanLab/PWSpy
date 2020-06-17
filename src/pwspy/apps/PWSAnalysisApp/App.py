@@ -25,8 +25,6 @@ from __future__ import annotations
 
 import logging
 import os
-import shutil
-
 import psutil
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QMessageBox, QSplashScreen
@@ -37,12 +35,10 @@ from ._dockWidgets.ResultsTableDock import ConglomerateCompilerResults
 from .dialogs import AnalysisSummaryDisplay, CompilationSummaryDisplay
 from ._taskManagers.analysisManager import AnalysisManager
 from ._taskManagers.compilationManager import CompilationManager
-from pwspy.analysis import defaultSettingsPath
 from .mainWindow import PWSWindow
 from . import applicationVars
 from . import resources
 from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
-from glob import glob
 from typing import List, Tuple, Optional
 import typing
 if typing.TYPE_CHECKING:
@@ -55,7 +51,6 @@ class PWSApp(QApplication):
         self.setApplicationName(f"PWS Analysis v{version.split('-')[0]}")
         splash = QSplashScreen(QPixmap(os.path.join(resources, 'pwsLogo.png')))
         splash.show()
-        self._setupDataDirectories()
         self.ERManager = ERManager(applicationVars.extraReflectionDirectory)
         self.window = PWSWindow(self.ERManager)
         splash.finish(self.window)
@@ -78,26 +73,6 @@ class PWSApp(QApplication):
         self.window.blindAction.triggered.connect(self.openBlindingDialog)
         self.window.roiConvertAction.triggered.connect(self.convertRois)
         self.workingDirectory = None
-
-    @staticmethod
-    def _setupDataDirectories():
-        if not os.path.exists(applicationVars.dataDirectory):
-            os.mkdir(applicationVars.dataDirectory)
-        if not os.path.exists(applicationVars.analysisSettingsDirectory):
-            os.mkdir(applicationVars.analysisSettingsDirectory)
-        settingsFiles = glob(os.path.join(defaultSettingsPath, '*.json'))
-        if len(settingsFiles) == 0:
-            raise Exception("Warning: Could not find any analysis settings presets.")
-        for f in settingsFiles:  # This will overwrite any existing preset files in the application directory with the defaults in the source code.
-            shutil.copyfile(f, os.path.join(applicationVars.analysisSettingsDirectory, os.path.split(f)[-1]))
-        if not os.path.exists(applicationVars.extraReflectionDirectory):
-            os.mkdir(applicationVars.extraReflectionDirectory)
-            with open('readme.txt', 'w') as f:
-                f.write("""Extra reflection `data cubes` and an index file are stored on the Backman Lab google drive account.
-                Download the index file and any data cube you plan to use to this folder.""")
-        if not os.path.exists(applicationVars.googleDriveAuthPath):
-            os.mkdir(applicationVars.googleDriveAuthPath)
-            shutil.copyfile(os.path.join(resources, 'credentials.json'), os.path.join(applicationVars.googleDriveAuthPath, 'credentials.json'))
 
     def handleCompilationResults(self, inVal: List[Tuple[AcqDir, List[Tuple[ConglomerateCompilerResults, Optional[List[AnalysisWarning]]]]]]):
         #  Display warnings if necessary.
