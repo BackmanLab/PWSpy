@@ -27,12 +27,12 @@ from dataclasses import dataclass
 import numpy as np
 
 
-class HookReg:
-    """Stores json deserialization hooks and combines them into `getHook`"""
+class _HookReg:
+    """Stores deserialization hooks and combines them into `getHook`"""
     def __init__(self):
         self._hooks = []
 
-    def addHook(self, f):
+    def addHook(self, f: typing.Callable[[typing.Any], typing.Any]):
         self._hooks.append(f)
         return self
 
@@ -49,35 +49,9 @@ class HookReg:
         return hook
 
 
-class PMapCoder:
-    def __init__(self):
-        self._hr = HookReg()  #This keeps track of the various deserialization hooks and combines them. pass _hr.getHook() to the json.load function.
-
-    def registerClass(self, cls: typing.Type[_JsonAble]):
-        self._hr.addHook(cls.hook)
-
-    def loadFromFile(self, path: str) -> _JsonAble:
-        with open(path) as f:
-            return json.load(f, object_hook=self._hr.getHook())
-
-    def saveToFile(self, obj: _JsonAble, path: str):
-        with open(path, 'w') as f:
-            json.dump(obj, f, cls=self._Encoder, indent=2)
-
-    class _Encoder(json.JSONEncoder):
-        """Use this encoder to make use of the custom `encode` functionality of each class."""
-        def default(self, obj):
-            if isinstance(obj, _JsonAble):
-                return obj.encode()
-            elif type(obj) == np.float32:
-                return float(obj)
-            else:
-                return json.JSONEncoder(ensure_ascii=False).default(obj)
-
-
 class _JsonAble(abc.ABC):
     """
-    Base class used for converting Micromanager Property map objects to/from JSON.
+    Interface that must be implemented  for converting Micromanager PropertyMap objects to/from JSON.
     """
     @abc.abstractmethod
     def encode(self) -> dict:
@@ -91,68 +65,31 @@ class _JsonAble(abc.ABC):
         pass
 
 
-class DictCoder:
-    def __init__(self):
-        self._hr = HookReg()  #This keeps track of the various deserialization hooks and combines them. pass _hr.getHook() to the json.load function.
-
-    def registerClass(self, cls: typing.Type[Dictable]):
-        self._hr.addHook(cls.fromDict)
-
-    def dictDecode(self, d):
-        if isinstance(d, (int, float, bool, str)):
-            pass
-        elif isinstance(d, list):
-            for i, e in enumerate(d):
-                d[i] = self.dictDecode(e)
-        elif isinstance(d, dict):
-            for k, v in d.items():
-                d[k] = self.dictDecode(v)
-        else:
-            return d
-        d = self._hr.getHook()(d)
-        return d
-
-    @staticmethod
-    def _dictEncode(d):
-        if isinstance(d, list):
-            D = []
-            for i in d:
-                D.append(DictCoder._dictEncode(i))
-            return D
-        elif isinstance(d, dict):
-            D = {}
-            for k, v in d.items():
-                D[k] = DictCoder._dictEncode(v)
-            return D
-        elif isinstance(d, Dictable):
-            return DictCoder._dictEncode(d._toDict())
-        else:
-            return d
-
-    @staticmethod
-    def toDict(obj):
-        return DictCoder._dictEncode(obj._toDict())
-
-
-class Dictable(abc.ABC):
-    """Base class for converting PropertyMap objects to simpler dictionary trees, more simiular to traditional JSON."""
-    @abc.abstractmethod
-    def _toDict(self):
-        pass
-
-    @staticmethod
-    @abc.abstractmethod
-    def fromDict(d):
-        pass
-
-    def toDict(self):
-        return DictCoder.toDict(self)
-
-
+# class DictCoder:
+#     """Handles encoding/decoding of objects that implement the `Dictable` interface which defines a custom conversion to/from a dict."""
+#     def __init__(self):
+#         self._hr = HookReg()  #This keeps track of the various deserialization hooks and combines them. pass _hr.getHook() to the json.load function.
+#
+#     def registerClass(self, cls: typing.Type[Dictable]):
+#         self._hr.addHook(cls.fromDict)
+#
+#     def dictDecode(self, d):
+#         if isinstance(d, (int, float, bool, str)):
+#             pass
+#         elif isinstance(d, list):
+#             for i, e in enumerate(d):
+#                 d[i] = self.dictDecode(e)
+#         elif isinstance(d, dict):
+#             for k, v in d.items():
+#                 d[k] = self.dictDecode(v)
+#         else:
+#             return d
+#         d = self._hr.getHook()(d)
+#         return d
 
 
 @dataclass
-class Property(_JsonAble, Dictable):
+class Property(_JsonAble):
     """Represents a single property from a micromanager PropertyMap
 
     Attributes:
@@ -161,9 +98,10 @@ class Property(_JsonAble, Dictable):
     """
     pType: str
     value: typing.Union[str, int, float, typing.List[typing.Union[str, int, float]]]
-    pTypes = {str: 'STRING', float: 'DOUBLE', int: 'INTEGER'}
+    pTypes = {str: 'STRING', float: 'DOUBLE', int: 'INTEGER'}  # Static collection of the possible datatypes.
 
     def encode(self) -> dict:
+        """Convert this object to a PropertyMap dictionary."""
         d = {'type': self.pType}
         if isinstance(self.value, list):
             d['array'] = self.value
@@ -173,6 +111,8 @@ class Property(_JsonAble, Dictable):
 
     @staticmethod
     def hook(d: dict):
+        """Check if a dictionary represents an instance of this class and return a new instance. If this dict does not match
+        the correct pattern then just return the original dict."""
         if 'type' in d and d['type'] in Property.pTypes.values():
 
             if 'array' in d:
@@ -185,27 +125,44 @@ class Property(_JsonAble, Dictable):
         else:
             return d
 
-    def _toDict(self):
-        return self.value
-
-    @staticmethod
-    def fromDict(d):
-        if isinstance(d, (int, float, str)):
-            return Property(Property.pTypes[type(d)], d)
-        elif isinstance(d, list):
-            if all([isinstance(i, Property) for i in d]):
-                return Property(d[0].pType, [i.value for i in d])
-        return d
-
 
 @dataclass
-class PropertyMap(_JsonAble, Dictable):
+class _PropertyMapFile(_JsonAble):
+    """Wraps a top-level property map in a header, this is how MicroManager saves property maps to file."""
+    pMap: PropertyMap
+
+    @staticmethod
+    def hook(dct: dict):
+        if 'format' in dct:
+            if dct['format'] != 'Micro-Manager Property Map' or int(dct['major_version']) != 2:
+                raise Exception("The file format does not appear to be supported.")
+            return _PropertyMapFile(PropertyMap(dct['map']))
+        else:
+            return dct
+
+    def encode(self) -> dict:
+        d = self.pMap.encode()
+        val = d['array'] if 'array' in d else d['scalar'] # Putting a property map in a file breaks the usual rule so we have to do this nonsense
+        return {"encoding": "UTF-8",
+                'format': 'Micro-Manager Property Map',
+                'major_version': 2,
+                'minor_version': 0,
+                "map": val}
+
+class PropertyMapArray(_JsonAble):
+    def encode(self) -> dict:
+
+
+class PropertyMap(_JsonAble):
     """Represents a propertyMap from micromanager. basically a list of properties.
 
     Attributes:
         properties: A list of properties
     """
-    properties: typing.Union[typing.Dict[str, Property], typing.List]
+    _hr = _HookReg()
+
+    def __init__(self, properties: typing.Union[typing.Dict[str, Property], typing.List]):
+        self.properties = properties
 
     def encode(self) -> dict:
         if len(self.properties) == 0:
@@ -219,79 +176,42 @@ class PropertyMap(_JsonAble, Dictable):
     def hook(d: dict):
         if 'type' in d and d['type'] == "PROPERTY_MAP":
             if 'array' in d:
-                return PropertyMap(d['array'])
+                return [PropertyMap(i) for i in d['array']]
             elif 'scalar' in d:
                 return PropertyMap(d['scalar'])
         return d
 
-    def _toDict(self):
-        return self.properties
-
     @staticmethod
-    def fromDict(d):
-        if isinstance(d, list):
-            if all([isinstance(i, PropertyMap) for i in d]):
-                return PropertyMap([i.properties for i in d])
-        if isinstance(d, dict):
-            if all([isinstance(i, (PropertyMap, Property)) for i in d.values()]):
-                return PropertyMap(d)
-        return d
+    def loadFromFile(path: str) -> PropertyMap:
+        with open(path) as f:
+            mapFile: _PropertyMapFile = json.load(f, object_hook=PropertyMap._hr.getHook())
+        return mapFile.pMap
 
+    def saveToFile(self, path: str):
+        mapFile = _PropertyMapFile(self)
+        with open(path, 'w') as f:
+            json.dump(mapFile, f, cls=self._Encoder, indent=2)
 
-@dataclass
-class PropertyMapFile(_JsonAble, Dictable):
-    mapName: str
-    pMap: PropertyMap
+    class _Encoder(json.JSONEncoder):
+        """Use this encoder to make use of the custom `encode` functionality of each class."""
+        def default(self, obj):
+            if isinstance(obj, _JsonAble):
+                return obj.encode()
+            elif type(obj) == np.float32:
+                return float(obj)
+            else:
+                return json.JSONEncoder(ensure_ascii=False).default(obj)
 
-    @staticmethod
-    def hook(dct: dict):
-        if 'format' in dct:
-            if dct['format'] != 'Micro-Manager Property Map' or int(dct['major_version']) != 2:
-                raise Exception("The file format does not appear to be supported.")
-            k, v = next(iter(dct['map'].items()))
-            return PropertyMapFile(k, v)
-        else:
-            return dct
+PropertyMap._hr.addHook(PropertyMap.hook)
+PropertyMap._hr.addHook(Property.hook)
+PropertyMap._hr.addHook(_PropertyMapFile.hook)
 
-    def encode(self) -> dict:
-        return {"encoding": "UTF-8",
-                'format': 'Micro-Manager Property Map',
-                'major_version': 2,
-                'minor_version': 0,
-                "map": {self.mapName: self.pMap}}
-
-    def _toDict(self):
-        return {"map": {self.mapName: self.pMap}}
-
-    @staticmethod
-    def fromDict(d):
-        if isinstance(d, PropertyMap):
-            if 'map' in d.properties:
-                if isinstance(d.properties['map'], PropertyMap):
-                    k, v = next(iter(d.properties['map']))
-                    return PropertyMapFile(mapName=k, pMap=v)
-        return d
-
-
-
-
-PMapCoder = PMapCoder()
-PMapCoder.registerClass(Property)
-PMapCoder.registerClass(PropertyMapFile)
-PMapCoder.registerClass(PropertyMap)
-
-coder = DictCoder()
-coder.registerClass(Property)
-coder.registerClass(PropertyMap)
-coder.registerClass(PropertyMapFile)
 
 if __name__ == '__main__':
-    path1 = r'C:\Users\nicke\Desktop\PositionList3.pos'
+    path1 = r'C:\Users\nicke\Desktop\PositionList.pos'
     path2 = r'C:\Users\nicke\Desktop\PositionList4.pos'
-    p = PMapCoder.loadFromFile(path1)
-    PMapCoder.saveToFile(p, path2)
+    p = PropertyMap.loadFromFile(path1)
+    PropertyMap.saveToFile(p, path2)
     with open(path1) as f1, open(path2) as f2:
         assert f1.read() == f2.read()
-    a = p.toDict()
-    b = coder.dictDecode(a)
     a = 1

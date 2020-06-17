@@ -34,11 +34,11 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import scipy.io as spio
 
-from pwspy.utility.micromanager.PropertyMap import PropertyMapFile, Dictable, DictCoder
+from pwspy.utility.micromanager.PropertyMap import PropertyMap
 
 
 @dataclass
-class Position1d(Dictable):
+class Position1d:
     """A 1D position usually describing the position of a Z-axis translation stage.
 
     Attributes:
@@ -69,7 +69,7 @@ class Position1d(Dictable):
 
 
 @dataclass
-class Position2d(Dictable):
+class Position2d:
     """Represents a 2D position for a single xy stage in micromanager.
 
     Attributes:
@@ -145,7 +145,7 @@ class Position2d(Dictable):
 
 
 @dataclass
-class MultiStagePosition(Dictable):
+class MultiStagePosition:
     """Mirrors the class of the same name from Micro-Manager. Can contain multiple Positon1d or Position2d objects.
     Ideal for a system with multiple translation stages. It is assumed that there is only a single 2D stage and a single
     1D stage.
@@ -258,7 +258,7 @@ class MultiStagePosition(Dictable):
         return s
 
 
-class PositionList(Dictable):
+class PositionList:
     """Represents a micromanager positionList. can be loaded from and saved to a micromanager .pos file.
 
     Args:
@@ -273,14 +273,6 @@ class PositionList(Dictable):
         assert isinstance(positions, list)
         assert isinstance(positions[0], MultiStagePosition)
         self.positions = positions
-
-    def _toDict(self):
-        """Returns the position list as a dict that is formatted just like a `PropertyMap` from Micro-Manager."""
-        return {"encoding": "UTF-8",
-                   'format': 'Micro-Manager Property Map',
-                   'major_version': 2,
-                   'minor_version': 0,
-                   "map": {"StagePositions": self.positions}}
 
     def mirrorX(self) -> PositionList:
         """Invert all x coordinates
@@ -340,11 +332,22 @@ class PositionList(Dictable):
             return json.load(f, object_hook=hr.getHook())
 
     @staticmethod
-    def fromDict(dct):
+    def fromPropertyMap(pmap):
         if isinstance(dct, list):
             if all([isinstance(i, MultiStagePosition) for i in dct]):
                 return PositionList(dct)
         return dct
+
+    def toPropertyMap(self) -> PropertyMap:
+        """Returns the position list as a dict that is formatted just like a `PropertyMap` from Micro-Manager."""
+        # return {"encoding": "UTF-8",
+        #            'format': 'Micro-Manager Property Map',
+        #            'major_version': 2,
+        #            'minor_version': 0,
+        #            "map": {"StagePositions": self.positions}}
+
+        pmap = PropertyMap({"StagePositions": [i.toPropertyMap() for i in self.positions]})
+        return pmap
 
     @classmethod
     def fromNanoMatFile(cls, path: str, xyStageName: str):
@@ -504,18 +507,14 @@ class PositionList(Dictable):
 
         fig.canvas.mpl_connect("motion_notify_event", hover)
 
-coder = DictCoder()
-coder.registerClass(PositionList)
-coder.registerClass(Position2d)
-coder.registerClass(Position1d)
-coder.registerClass(MultiStagePosition)
-
 
 
 
 if __name__ == '__main__':
-    p = PropertyMapFile.loadFromFile(r'C:\Users\nicke\Desktop\PositionList3.pos')
-    a = coder.dictDecode(p.toDict())
+    p, name = PropertyMap.loadFromFile(r'C:\Users\nicke\Desktop\PositionList3.pos')
+    pp = PositionList.fromPropertyMap(p)
+    ppp = pp.toPropertyMap()
+    ppp.saveToFile(name, r'C:\Users\nicke\Desktop\PositionList4.pos')
 
     def generateList(data: np.ndarray):
         assert isinstance(data, np.ndarray)

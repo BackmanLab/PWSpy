@@ -19,6 +19,18 @@
 
 @author: Nick Anthony
 """
+from dataclasses import dataclass
 
-class Coord:
-    axes
+from pwspy.utility.micromanager.PropertyMap import Dictable
+
+@dataclass
+class Coord(Dictable):
+    axes:
+    indexes:
+
+    def _toDict(self):
+        pass
+
+    @staticmethod
+    def fromDict(d):
+        pass
