@@ -149,9 +149,6 @@ class _PropertyMapFile(_JsonAble):
                 'minor_version': 0,
                 "map": val}
 
-class PropertyMapArray(_JsonAble):
-    def encode(self) -> dict:
-
 
 class PropertyMap(_JsonAble):
     """Represents a propertyMap from micromanager. basically a list of properties.
@@ -161,23 +158,17 @@ class PropertyMap(_JsonAble):
     """
     _hr = _HookReg()
 
-    def __init__(self, properties: typing.Union[typing.Dict[str, Property], typing.List]):
+    def __init__(self, properties: typing.Dict[str, Property]):
         self.properties = properties
 
     def encode(self) -> dict:
-        if len(self.properties) == 0:
-            return {'type': 'PROPERTY_MAP',
-                    'scalar': {}}
-        else:
-            return {'type': 'PROPERTY_MAP',
-                    'array': self.properties}
+        return {'type': 'PROPERTY_MAP',
+                'scalar': self.properties}
 
     @staticmethod
     def hook(d: dict):
         if 'type' in d and d['type'] == "PROPERTY_MAP":
-            if 'array' in d:
-                return [PropertyMap(i) for i in d['array']]
-            elif 'scalar' in d:
+            if 'scalar' in d:
                 return PropertyMap(d['scalar'])
         return d
 
@@ -202,7 +193,25 @@ class PropertyMap(_JsonAble):
             else:
                 return json.JSONEncoder(ensure_ascii=False).default(obj)
 
+
+class PropertyMapArray(PropertyMap):
+    def __init__(self, properties: typing.List[PropertyMap]):
+        self.properties = properties
+
+    def encode(self) -> dict:
+        return {'type': 'PROPERTY_MAP',
+                'array': [i.encode()['scalar'] for i in self.properties]}
+
+    @staticmethod
+    def hook(d: dict):
+        if 'type' in d and d['type'] == "PROPERTY_MAP":
+            if 'array' in d:
+                return PropertyMapArray([PropertyMap(i) for i in d['array']])
+        return d
+
+
 PropertyMap._hr.addHook(PropertyMap.hook)
+PropertyMap._hr.addHook(PropertyMapArray.hook)
 PropertyMap._hr.addHook(Property.hook)
 PropertyMap._hr.addHook(_PropertyMapFile.hook)
 
