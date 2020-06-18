@@ -46,14 +46,19 @@ class Position1d:
         zStage: Then name of the translation stage
     """
     z: float    
-    zStage: str = ''
+    stageName: str = ''
+    numAxes: int = 1
 
     def __post_init__(self):
         assert isinstance(self.z, float)
-        assert isinstance(self.zStage, str)
-    
+        assert isinstance(self.stageName, str)
+
+    @staticmethod
+    def fromDict(d: dict) -> Position1d:
+        return Position1d(**d)
+
     def toPropertyMap(self) -> PropertyMap:
-        return PropertyMap({"Device": Property(self.zStage),
+        return PropertyMap({"Device": Property(self.stageName),
                 "Position_um": PropertyArray([Property(self.z)])})
 
     @staticmethod
@@ -63,7 +68,7 @@ class Position1d:
         return Position1d(z=pmap['Position_um'][0].value, zStage=pmap['Device'].value)
 
     def __repr__(self):
-        return f"Position1d({self.zStage}, {self.z})"
+        return f"Position1d({self.stageName}, {self.z})"
 
 
 @dataclass
@@ -77,15 +82,20 @@ class Position2d:
     """
     x: float
     y: float
-    xyStage: str = ''
+    stageName: str = ''
+    numAxes: int = 2
 
     def __post_init__(self):
         assert isinstance(self.x, Number)
         assert isinstance(self.y, Number)
-        assert isinstance(self.xyStage, str)
+        assert isinstance(self.stageName, str)
+
+    @staticmethod
+    def fromDict(d: dict) -> Position2d:
+        return Position2d(**d)
 
     def toPropertyMap(self) -> PropertyMap:
-        return PropertyMap({"Device": Property(self.xyStage),
+        return PropertyMap({"Device": Property(self.stageName),
                         "Position_um": PropertyArray([Property(self.x), Property(self.y)])})
 
     @staticmethod
@@ -93,7 +103,7 @@ class Position2d:
         if len(pmap['Position_um'])!=2:
             raise Exception("Errr")
         x, y = pmap['Position_um'][0].value, pmap['Position_um'][1].value
-        return Position2d(x=x, y=y, xyStage=pmap['Device'].value)
+        return Position2d(x=x, y=y, stageName=pmap['Device'].value)
 
 
     def mirrorX(self) -> Position2d:
@@ -105,10 +115,10 @@ class Position2d:
         return self
 
     def renameStage(self, newName):
-        self.xyStage = newName
+        self.stageName = newName
 
     def __repr__(self):
-        return f"Position2d({self.xyStage}, {self.x}, {self.y})"
+        return f"Position2d({self.stageName}, {self.x}, {self.y})"
 
     def __add__(self, other: Union[PositionList, Position2d, MultiStagePosition]) -> Union[PositionList, Position2d, MultiStagePosition]:
         if isinstance(other, PositionList):
@@ -117,8 +127,8 @@ class Position2d:
             return other.__add__(self)
         elif isinstance(other, Position2d):
             return Position2d(self.x + other.x,
-                          self.y + other.y,
-                          self.xyStage)
+                              self.y + other.y,
+                              self.stageName)
         else:
             raise TypeError(f"Type {type(other)} is not supported.")
 
@@ -132,14 +142,14 @@ class Position2d:
         elif isinstance(other, Position2d):
             return Position2d(self.x - other.x,
                               self.y - other.y,
-                              self.xyStage)
+                              self.stageName)
         else:
             raise TypeError(f"Type {type(other)} is not supported.")
 
     def __eq__(self, other: 'Position2d'):
         return all([self.x == other.x,
                     self.y == other.y,
-                    self.xyStage == other.xyStage])
+                    self.stageName == other.stageName])
 
 
 @dataclass
@@ -155,9 +165,28 @@ class MultiStagePosition:
         positions: A list of `Position1d` and `Position2D` objects, usually just one of each.
     """
     label: str
-    xyStage: str
-    zStage: str
-    positions: typing.List[typing.Union[Position1d, Position2d]]
+    defaultXYStage: str
+    defaultZStage: str
+    stagePositions: typing.List[typing.Union[Position1d, Position2d]]
+    gridRow: int = 0
+    gridCol: int = 0
+
+    @staticmethod
+    def fromDict(d: dict) -> MultiStagePosition:
+        sps = []
+        for i in d['stagePositions']:
+            if i['numAxes'] == 1:
+                sps.append(Position1d.fromDict(i))
+            elif i['numAxes'] == 2:
+                sps.append(Position2d.fromDict(i))
+            else:
+                raise Exception()
+        return MultiStagePosition(label=d['label'],
+                                  defaultXYStage=d['defaultXYStage'],
+                                  defaultZStage=d['defaultZStage'],
+                                  stagePositions=sps,
+                                  gridRow=d['gridRow'],
+                                  gridCol=d['gridCol'])
 
     def toPropertyMap(self) -> PropertyMap:
         # contents = {
@@ -168,9 +197,9 @@ class MultiStagePosition:
         #     "GridRow": 0,
         #     "Label": self.label}
         return PropertyMap({
-            "DefaultXYStage": Property(self.xyStage),
-            "DefaultZStage": Property(self.zStage),
-            "DevicePositions": PropertyMapArray([i.toPropertyMap() for i in self.positions]),
+            "DefaultXYStage": Property(self.defaultXYStage),
+            "DefaultZStage": Property(self.defaultZStage),
+            "DevicePositions": PropertyMapArray([i.toPropertyMap() for i in self.stagePositions]),
             "GridCol": Property(0),
             "GridRow": Property(0),
             "Label": Property(self.label),
@@ -188,18 +217,18 @@ class MultiStagePosition:
                 positions.append(Position2d.fromPropertyMap(i))
             else:
                 raise Exception("EEEEE")
-        return MultiStagePosition(label=d['Label'].value, xyStage=d['DefaultXYStage'].value, zStage=d['DefaultZStage'].value, positions=positions)
+        return MultiStagePosition(label=d['Label'].value, defaultXYStage=d['DefaultXYStage'].value, defaultZStage=d['DefaultZStage'].value, stagePositions=positions)
 
     def getXYPosition(self):
         """Return the first `Position2d` saved in the `positions` list"""
-        d1pos = [i for i in self.positions if isinstance(i, Position2d)]
-        return [i for i in d1pos if i.xyStage == self.xyStage][0]
+        d1pos = [i for i in self.stagePositions if isinstance(i, Position2d)]
+        return [i for i in d1pos if i.stageName == self.defaultXYStage][0]
     
     def getZPosition(self):
         """Return the first `Position1d` saved in the positions` list. Returns `None` if no position is found."""
         try:
-            d1pos = [i for i in self.positions if isinstance(i, Position1d)]
-            return [i for i in d1pos if i.zStage == self.zStage][0]
+            d1pos = [i for i in self.stagePositions if isinstance(i, Position1d)]
+            return [i for i in d1pos if i.stageName == self.defaultZStage][0]
         except IndexError:
             return None
     
@@ -209,7 +238,7 @@ class MultiStagePosition:
         Args:
             label: The new name for the xy Stage
         """
-        self.xyStage = label
+        self.defaultXYStage = label
         self.getXYPosition().renameStage(label)
 
     def copy(self) -> MultiStagePosition:
@@ -229,10 +258,10 @@ class MultiStagePosition:
         """
         if isinstance(other, Position2d):
             newPos = self.getXYPosition().__add__(other)
-            positions = copy.copy(self.positions)
+            positions = copy.copy(self.stagePositions)
             positions.remove(self.getXYPosition())
             positions.append(newPos)
-            return MultiStagePosition(self.label, self.xyStage, self.zStage, positions=positions)
+            return MultiStagePosition(self.label, self.defaultXYStage, self.defaultZStage, positions=positions)
         elif isinstance(other, MultiStagePosition):
             return self.__add__(other.getXYPosition())
         elif isinstance(other, PositionList):
@@ -244,10 +273,10 @@ class MultiStagePosition:
         """See the documentation for __add__"""
         if isinstance(other, Position2d):
             newPos = self.getXYPosition().__sub__(other)
-            positions = copy.copy(self.positions)
+            positions = copy.copy(self.stagePositions)
             positions.remove(self.getXYPosition())
             positions.append(newPos)
-            return MultiStagePosition(self.label, self.xyStage, self.zStage, positions=positions)
+            return MultiStagePosition(self.label, self.defaultXYStage, self.defaultZStage, positions=positions)
         elif isinstance(other, MultiStagePosition):
             self.__sub__(other.getXYPosition())
         elif isinstance(other, PositionList):
@@ -257,14 +286,14 @@ class MultiStagePosition:
     
     def __eq__(self, other: MultiStagePosition):
         """Returns True if the stage names and stage coordinates are equivalent."""
-        return all([self.xyStage == other.xyStage,
-                    self.zStage == other.zStage,
+        return all([self.defaultXYStage == other.defaultXYStage,
+                    self.defaultZStage == other.defaultZStage,
                     self.getXYPosition() == other.getXYPosition(),
                     self.getZPosition() == other.getZPosition()])
     
     def __repr__(self):
         s = f"MultiStagePosition({self.label}, "
-        for i in self.positions:
+        for i in self.stagePositions:
             s += '\n\t' + i.__repr__()
         return s
 
@@ -284,6 +313,13 @@ class PositionList:
         assert isinstance(positions, list)
         assert isinstance(positions[0], MultiStagePosition)
         self.positions = positions
+
+    @staticmethod
+    def fromDict(d: dict):
+        p = []
+        for i in d['positions']:
+            p.append(MultiStagePosition.fromDict(i))
+        return PositionList(p)
 
     def mirrorX(self) -> PositionList:
         """Invert all x coordinates
@@ -416,7 +452,7 @@ class PositionList:
             pos = copy.deepcopy(self[i].getXYPosition())
             pos.x = ret[0, i, 0]
             pos.y = ret[0, i, 1]
-            positions.append(MultiStagePosition(self[i].label, self[i].xyStage, '', [pos]))
+            positions.append(MultiStagePosition(self[i].label, self[i].defaultXYStage, '', [pos]))
         return PositionList(positions)
 
     def __repr__(self):
