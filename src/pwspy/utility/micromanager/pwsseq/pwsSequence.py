@@ -32,6 +32,8 @@ from PyQt5.QtGui import QPalette, QColor
 from PyQt5.QtWidgets import QTreeWidgetItem, QApplication, QTreeWidget, QWidget, QHBoxLayout, QTextEdit, QScrollArea, \
     QStyle, QStyleFactory, QTableWidgetItem
 
+from pwspy.utility.micromanager import PositionList
+
 Names = dict(
     ACQ="Acquisition",
     POS="Multiple Positions",
@@ -99,7 +101,7 @@ class CoordStep(Step):
 class PositionsStep(CoordStep):
     def stepIterations(self):
         if not hasattr(self, '_len'):
-            self._len = len(self.settings['posList']['positions_'])
+            self._len = len(PositionList.fromDict(self.settings['posList']))
         return self._len
 
 
@@ -130,61 +132,62 @@ class Types(enum.Enum):
     SUBFOLDER = Step
     ZSTACK = ZStackStep
 
+class DictTreeView(QTreeWidget):
+    def setDict(self, d: dict):
+        self.clear()
+        self._fillItem(self.invisibleRootItem(), d)
 
-def fill_item(item, value):
-  item.setExpanded(True)
-  if isinstance(value, dict):
-    for key, val in sorted(value.items()):
-      child = QTreeWidgetItem()
-      child.setText(0, f"{key}")
-      item.addChild(child)
-      if isinstance(val, (list, dict)):
-          fill_item(child, val)
-      else:
-          child.setText(1, f"{val}")
+    @staticmethod
+    def _fillItem(item: QTreeWidgetItem, value: typing.Union[dict, list]):
+        """Recursively populate a tree item with children to match the contents of a `dict`"""
+        item.setExpanded(True)
+        if isinstance(value, dict):
+            for key, val in value.items():
+                child = QTreeWidgetItem()
+                child.setText(0, f"{key}")
+                item.addChild(child)
+                if isinstance(val, (list, dict)):
+                    DictTreeView._fillItem(child, val)
+                else:
+                    child.setText(1, f"{val}")
+        elif isinstance(value, list):
+            for val in value:
+                child = QTreeWidgetItem()
+                item.addChild(child)
+                if type(val) is dict:
+                    child.setText(0, '[dict]')
+                    DictTreeView._fillItem(child, val)
+                elif type(val) is list:
+                    child.setText(0, '[list]')
+                    DictTreeView._fillItem(child, val)
+                else:
+                    child.setText(0, val)
+                    child.setExpanded(True)
 
-  elif isinstance(value, list):
-    for val in value:
-      child = QTreeWidgetItem()
-      item.addChild(child)
-      if type(val) is dict:
-        child.setText(0, '[dict]')
-        fill_item(child, val)
-      elif type(val) is list:
-        child.setText(0, '[list]')
-        fill_item(child, val)
-      else:
-        child.setText(0, (val))
-      child.setExpanded(True)
-  else:
-    # child = QTreeWidgetItem()
-    child = QTableWidgetItem()
-    child.setText(str(value))
-    item.addChild(child)
 
-def fill_widget(widget, value):
-  widget.clear()
-  fill_item(widget.invisibleRootItem(), value)
+class SequencerCoordinate:
+    def __init__(self, treePath: typing.Sequence[int], iterations: typing.Sequence[int]):
+        self.treePath = treePath
+        self.iterations = iterations
 
-#
-# class SequenceCoordinate:
-#     def __init__(self, path: typing.Sequence[int], coord: Coord):
+    @staticmethod
+    def fromDict(d: dict) -> SequencerCoordinate:
+        return SequencerCoordinate(treePath=d['treeIdPath'], iterations=d["stepIterations"])
+
+    @staticmethod
+    def fromJsonFile(path: str) -> SequencerCoordinate:
+        with open(path) as f:
+            return SequencerCoordinate.fromDict(json.load(f))
 
 if __name__ == '__main__':
-    with open(r'C:\Users\nicke\Desktop\demo\sequence.pwsseq') as f:
+    with open(r'C:\Users\nicke\Desktop\data\toast2\sequence.pwsseq') as f:
         s = Step.fromJson(f.read())
     import sys
 
     app = QApplication(sys.argv)
-    import qdarkstyle
-    dark_stylesheet = qdarkstyle.load_stylesheet_pyqt5()
-    app.setStyleSheet(dark_stylesheet)
-
-    #
-    # file = QFile(r"C:\Users\nicke\Desktop\BreezeStyleSheets-master/dark.qss")
-    # file.open(QFile.ReadOnly | QFile.Text)
-    # stream = QTextStream(file)
-    # app.setStyleSheet(stream.readAll())
+    # import qdarkstyle
+    # dark_stylesheet = qdarkstyle.load_stylesheet_pyqt5()
+    # app.setStyleSheet(dark_stylesheet)
 
     W = QWidget()
     W.setLayout(QHBoxLayout())
@@ -197,12 +200,12 @@ if __name__ == '__main__':
     # t = QTextEdit()
     # scroll = QScrollArea()
     # scroll.setViewport(t)
-    w2 = QTreeWidget()
+    w2 = DictTreeView()
     w2.setColumnCount(2)
     w2.setIndentation(10)
 
 
-    w.itemClicked.connect(lambda item, column: fill_widget(w2, item.settings))
+    w.itemClicked.connect(lambda item, column: w2.setDict(item.settings))
 
     W.layout().addWidget(w)
     W.layout().addWidget(w2)
