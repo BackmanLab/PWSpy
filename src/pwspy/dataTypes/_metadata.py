@@ -40,6 +40,7 @@ from pwspy.dataTypes import _jsonSchemasPath
 from pwspy.dataTypes._other import CameraCorrection, Roi
 import pwspy.dataTypes._data as pwsdtd
 from pwspy import dateTimeFormat
+from pwspy.utility.micromanager.pwsseq.pwsSequence import SequencerCoordinate
 from pwspy.utility.misc import cached_property
 
 
@@ -769,8 +770,8 @@ class AcqDir:
         directory: the file path the root directory of the acquisition
     """
     def __init__(self, directory: str):
-        self.filePath = directory #TODO should this be absolute?
-        if (self.pws is None) and (self.dynamics is None): # We must have one of these two items.
+        self.filePath = directory #TODO should this be forced to an absolute path?
+        if (self.pws is None) and (self.dynamics is None) and (len(self.fluorescence) == 0):
             raise OSError(f"Could not find a valid PWS or Dynamics Acquisition at {directory}.")
 
     @cached_property
@@ -796,11 +797,32 @@ class AcqDir:
                 return None
 
     @cached_property
-    def fluorescence(self) -> FluorMetaData:
-        path = os.path.join(self.filePath, 'Fluorescence')
+    def fluorescence(self) -> typing.List[FluorMetaData]:
+        # Newer acquisitions allow for multiple fluorescence images saved to numbered subfolders
+        i = 0
+        imgs = []
+        while True:
+            path = os.path.join(self.filePath, f"Fluorescence_{i}")
+            if not os.path.exists(path):
+                break
+            imgs.append(FluorMetaData.fromTiff(path, acquisitionDirectory=self))
+            i += 1
+        if len(imgs) == 0:  # No files were found.
+            # Old files only had a single fluorescence image with no number on the folder name.
+            path = os.path.join(self.filePath, 'Fluorescence')
+            if os.path.exists(path):
+                return [FluorMetaData.fromTiff(path, acquisitionDirectory=self)]
+            else:
+                return []
+        else:
+            return imgs
+
+    @cached_property
+    def sequencerCoordinate(self) -> SequencerCoordinate:
+        path = os.path.join(self.filePath, "sequencerCoords.json")
         try:
-            return FluorMetaData.fromTiff(path, acquisitionDirectory=self)
-        except ValueError:
+            return SequencerCoordinate.fromJsonFile(path)
+        except Exception:
             return None
 
     @property
@@ -867,5 +889,5 @@ class AcqDir:
             return self.pws.getThumbnail()
         elif self.dynamics is not None:
             return self.dynamics.getThumbnail()
-        elif self.fluorescence is not None:
-            return self.fluorescence.getThumbnail()
+        elif len(self.fluorescence) != 0:
+            return self.fluorescence[0].getThumbnail()

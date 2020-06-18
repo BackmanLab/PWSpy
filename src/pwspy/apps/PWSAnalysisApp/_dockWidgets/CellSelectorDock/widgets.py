@@ -70,7 +70,7 @@ class CellTableWidgetItem:
         else: self.pLabel.setText('N'); self.pLabel.setBackground(QtCore.Qt.white)
         if self.acqDir.dynamics is not None: self.dLabel.setText('Y'); self.dLabel.setBackground(QtCore.Qt.darkGreen)
         else: self.dLabel.setText('N'); self.dLabel.setBackground(QtCore.Qt.white)
-        if self.acqDir.fluorescence is not None: self.fLabel.setText('Y'); self.fLabel.setBackground(QtCore.Qt.darkGreen)
+        if len(self.acqDir.fluorescence) != 0: self.fLabel.setText('Y'); self.fLabel.setBackground(QtCore.Qt.darkGreen)
         else: self.fLabel.setText('N'); self.fLabel.setBackground(QtCore.Qt.white)
         self._items = [self.pathLabel, self.numLabel, self.roiLabel, self.anLabel] #This list is used for changing background color and for setting all items selected.
         self.refresh()
