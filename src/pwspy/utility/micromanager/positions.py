@@ -37,19 +37,8 @@ import scipy.io as spio
 from pwspy.utility.micromanager.PropertyMap import PropertyMap, PropertyMapArray, Property, PropertyArray
 
 
-class _PropertyMappable(metaclass=abc.ABCMeta):
-    @abc.abstractmethod
-    def toPropertyMap(self) -> PropertyMap:
-        pass
-
-    @staticmethod
-    @abc.abstractmethod
-    def fromPropertyMap(pmap: PropertyMap) -> _PropertyMappable:
-        pass
-
-
 @dataclass
-class Position1d(_PropertyMappable):
+class Position1d:
     """A 1D position usually describing the position of a Z-axis translation stage.
 
     Attributes:
@@ -78,7 +67,7 @@ class Position1d(_PropertyMappable):
 
 
 @dataclass
-class Position2d(_PropertyMappable):
+class Position2d:
     """Represents a 2D position for a single xy stage in micromanager.
 
     Attributes:
@@ -154,7 +143,7 @@ class Position2d(_PropertyMappable):
 
 
 @dataclass
-class MultiStagePosition(_PropertyMappable):
+class MultiStagePosition:
     """Mirrors the class of the same name from Micro-Manager. Can contain multiple Positon1d or Position2d objects.
     Ideal for a system with multiple translation stages. It is assumed that there is only a single 2D stage and a single
     1D stage.
@@ -280,7 +269,7 @@ class MultiStagePosition(_PropertyMappable):
         return s
 
 
-class PositionList(_PropertyMappable):
+class PositionList:
     """Represents a micromanager positionList. can be loaded from and saved to a micromanager .pos file.
 
     Args:
@@ -333,7 +322,7 @@ class PositionList(_PropertyMappable):
         return copy.deepcopy(self)
 
     @staticmethod
-    def fromPropertyMap(pmap):
+    def fromPropertyMap(pmap) -> PositionList:
         """Attempt to load a PositionList from a PropertyMap. May throw an exception."""
         if isinstance(pmap, PropertyMap):
             if "StagePositions" in pmap:
@@ -511,6 +500,7 @@ if __name__ == '__main__':
     path2 = r'C:\Users\nicke\Desktop\PositionList5.pos'
     p = PropertyMap.loadFromFile(path1)
     pp = PositionList.fromPropertyMap(p)
+    pp.mirrorX().mirrorY().mirrorX().mirrorY()
     ppp = pp.toPropertyMap()
     ppp.saveToFile(path2)
     with open(path1) as f1, open(path2) as f2:

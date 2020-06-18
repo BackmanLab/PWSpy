@@ -19,18 +19,18 @@
 
 @author: Nick Anthony
 """
+from __future__ import annotations
 from dataclasses import dataclass
 
-from pwspy.utility.micromanager.PropertyMap import Dictable
+from pwspy.utility.micromanager import PropertyMap
 
 @dataclass
-class Coord(Dictable):
+class Coord: #TODO just do our own coord class so we don't have to deal with stupid property map.
     axes:
     indexes:
 
-    def _toDict(self):
+    def toPropertyMap(self) -> PropertyMap:
         pass
 
-    @staticmethod
-    def fromDict(d):
-        pass
+    def fromPropertyMap(pmap: PropertyMap) -> Coord:
+        if "Position" in
