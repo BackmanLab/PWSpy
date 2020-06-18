@@ -66,6 +66,8 @@ class CellTableWidgetItem:
         self.fLabel.setToolTip("Indicates if Fluorescence measurement is present")
         for i in [self.pLabel, self.dLabel, self.fLabel]:
             i.setTextAlignment(QtCore.Qt.AlignCenter)
+        for i in [self.pathLabel, self.pLabel, self.dLabel, self.fLabel]:  # Make uneditable
+            i.setFlags(i.flags() ^ QtCore.Qt.ItemIsEditable)
         if self.acqDir.pws is not None: self.pLabel.setText('Y'); self.pLabel.setBackground(QtCore.Qt.darkGreen)
         else: self.pLabel.setText('N'); self.pLabel.setBackground(QtCore.Qt.white)
         if self.acqDir.dynamics is not None: self.dLabel.setText('Y'); self.dLabel.setBackground(QtCore.Qt.darkGreen)
