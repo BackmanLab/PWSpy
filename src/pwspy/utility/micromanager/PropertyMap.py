@@ -224,6 +224,9 @@ class PropertyMap(_JsonAble):
     def __len__(self):
         return len(self._propDict)
 
+    def __contains__(self, item):
+        return item in self._propDict
+
 
 class PropertyMapArray(_JsonAble):
     """This class is needed due to the dumb way the arrays are jsonified in Micromanager PropertyMaps."""
@@ -252,6 +255,7 @@ PropertyMap._hr.addHook(PropertyMap.hook)
 PropertyMap._hr.addHook(PropertyMapArray.hook)
 PropertyMap._hr.addHook(Property.hook)
 PropertyMap._hr.addHook(_PropertyMapFile.hook)
+PropertyMap._hr.addHook(PropertyArray.hook)
 
 
 if __name__ == '__main__':

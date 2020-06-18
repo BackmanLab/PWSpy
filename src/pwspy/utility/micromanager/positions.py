@@ -29,13 +29,11 @@ import typing
 from dataclasses import dataclass
 from numbers import Number
 from typing import Union
-
 import numpy as np
 import copy
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import scipy.io as spio
-
 from pwspy.utility.micromanager.PropertyMap import PropertyMap, PropertyMapArray, Property, PropertyArray
 
 
@@ -48,6 +46,7 @@ class _PropertyMappable(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def fromPropertyMap(pmap: PropertyMap) -> _PropertyMappable:
         pass
+
 
 @dataclass
 class Position1d(_PropertyMappable):
@@ -66,7 +65,7 @@ class Position1d(_PropertyMappable):
     
     def toPropertyMap(self) -> PropertyMap:
         return PropertyMap({"Device": Property(self.zStage),
-                "Position_um": PropertyArray([self.z])})
+                "Position_um": PropertyArray([Property(self.z)])})
 
     @staticmethod
     def fromPropertyMap(pmap: PropertyMap) -> Position1d:
@@ -98,7 +97,7 @@ class Position2d(_PropertyMappable):
 
     def toPropertyMap(self) -> PropertyMap:
         return PropertyMap({"Device": Property(self.xyStage),
-                        "Position_um": PropertyArray([self.x, self.y])})
+                        "Position_um": PropertyArray([Property(self.x), Property(self.y)])})
 
     @staticmethod
     def fromPropertyMap(pmap: PropertyMap) -> Position2d:
@@ -108,11 +107,13 @@ class Position2d(_PropertyMappable):
         return Position2d(x=x, y=y, xyStage=pmap['Device'].value)
 
 
-    def mirrorX(self):
+    def mirrorX(self) -> Position2d:
         self.x *= -1
+        return self
 
-    def mirrorY(self):
+    def mirrorY(self) -> Position2d:
         self.y *= -1
+        return self
 
     def renameStage(self, newName):
         self.xyStage = newName
@@ -183,16 +184,18 @@ class MultiStagePosition(_PropertyMappable):
             "DevicePositions": PropertyMapArray([i.toPropertyMap() for i in self.positions]),
             "GridCol": Property(0),
             "GridRow": Property(0),
-            "Label": Property(self.label)})
+            "Label": Property(self.label),
+            "Properties": PropertyMap({})
+        })
    
 
     @staticmethod
     def fromPropertyMap(d: PropertyMap) -> MultiStagePosition:
         positions = []
         for i in d['DevicePositions']:
-            if len(i["Position_um"]['array']) == 1:
+            if len(i["Position_um"]) == 1:
                 positions.append(Position1d.fromPropertyMap(i))
-            elif len(i["Position_um"]['array']) == 2:
+            elif len(i["Position_um"]) == 2:
                 positions.append(Position2d.fromPropertyMap(i))
             else:
                 raise Exception("EEEEE")
@@ -329,36 +332,16 @@ class PositionList(_PropertyMappable):
     def copy(self) -> PositionList:
         return copy.deepcopy(self)
 
-    def save(self, savePath: str):
-        if savePath[-4:] != '.pos':
-            savePath += '.pos'
-        with open(savePath, 'w') as f:
-            json.dump(self, f, cls=PositionList.Encoder)
-
-    @classmethod
-    def load(cls, filePath: str) -> PositionList:
-        """Load a `PositionList` froma file saved by Micro-Manager
-
-        Args:
-            filePath: The file path to the .pos position list file.
-
-        Returns:
-            A new instance of `PositionList`
-        """
-        if filePath[-4:] != '.pos':
-            filePath += '.pos'
-        with open(filePath, 'r') as f:
-            return json.load(f, object_hook=hr.getHook())
-
     @staticmethod
     def fromPropertyMap(pmap):
+        """Attempt to load a PositionList from a PropertyMap. May throw an exception."""
         if isinstance(pmap, PropertyMap):
-            if "Stage Positions" in pmap:
-                return PositionList([MultiStagePosition.fromPropertyMap(i) for i in pmap["Stage Positions"]])
+            if "StagePositions" in pmap:
+                return PositionList([MultiStagePosition.fromPropertyMap(i) for i in pmap["StagePositions"]])
         raise Exception("JsonParseException")
 
     def toPropertyMap(self) -> PropertyMap:
-        """Returns the position list as a dict that is formatted just like a `PropertyMap` from Micro-Manager."""
+        """Returns the position list as a PropertyMap that is formatted just like a `PropertyMap` from Micro-Manager."""
         pmap = PropertyMap({"StagePositions": PropertyMapArray([i.toPropertyMap() for i in self.positions])})
         return pmap
 
@@ -524,10 +507,15 @@ class PositionList(_PropertyMappable):
 
 
 if __name__ == '__main__':
-    p, name = PropertyMap.loadFromFile(r'C:\Users\nicke\Desktop\PositionList3.pos')
+    path1 = r'C:\Users\nicke\Desktop\PositionList.pos'
+    path2 = r'C:\Users\nicke\Desktop\PositionList5.pos'
+    p = PropertyMap.loadFromFile(path1)
     pp = PositionList.fromPropertyMap(p)
     ppp = pp.toPropertyMap()
-    ppp.saveToFile(name, r'C:\Users\nicke\Desktop\PositionList4.pos')
+    ppp.saveToFile(path2)
+    with open(path1) as f1, open(path2) as f2:
+        assert f1.read() == f2.read()
+    a = 1
 
     def generateList(data: np.ndarray):
         assert isinstance(data, np.ndarray)
