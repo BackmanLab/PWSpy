@@ -23,7 +23,7 @@ import abc
 import typing
 from typing import List, Optional
 
-from PyQt5 import sip
+import sip
 
 from pwspy import dataTypes as pwsdt
 from pwspy.analysis import AbstractRuntimeAnalysisSettings
