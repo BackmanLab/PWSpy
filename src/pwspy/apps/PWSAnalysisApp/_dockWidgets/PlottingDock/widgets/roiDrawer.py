@@ -212,7 +212,7 @@ class NewRoiDlg(QDialog):
 
 class QueueCheckerThread(QObject):
     roiFinished = pyqtSignal(Roi)
-    roiNeedsOverwrite = pyqtSignal(Roi)
+    roiNeedsOverwrite = pyqtSignal(AcqDir, Roi)
 
     def __init__(self, resultsQ: mp.Queue):
         super().__init__()
@@ -225,13 +225,14 @@ class QueueCheckerThread(QObject):
             if QThread.currentThread().isInterruptionRequested():
                 break
             try:
-                resultCode, roi = self._q.get(True, .5)
+                resultCode, data = self._q.get(True, .5)
             except queue.Empty:
                 continue
             if resultCode is Cmd.SUCESS:
-                self.roiFinished.emit(roi)
+                self.roiFinished.emit(data)
             elif resultCode is Cmd.NEEDSOVERWRITE:
-                self.roiNeedsOverwrite.emit(roi)
+                acq, roi = data
+                self.roiNeedsOverwrite.emit(acq, roi)
             elif resultCode is Cmd.QUIT:
                 break
             elif isinstance(resultCode, Exception):
@@ -269,7 +270,7 @@ class RoiSaverProcess(mp.Process):
                     acq.saveRoi(roi)
                     self._resultQ.put((Cmd.SUCESS, roi), True, 0.5)
                 except OSError:
-                    self._resultQ.put((Cmd.NEEDSOVERWRITE, roi), True, 0.5)
+                    self._resultQ.put((Cmd.NEEDSOVERWRITE, (acq, roi)), True, 0.5)
         except Exception as e:
             self._resultQ.put((e, None), True, 0.5)
 
@@ -314,33 +315,29 @@ class RoiSaverController(QObject):
         self.thread.setObjectName('QueueCheckerThread')
         self.qChecker.moveToThread(self.thread)
         self.thread.started.connect(self.qChecker.doWork)
-        self.qChecker.roiFinished.connect(self.drawSavedRoi)
-        self.qChecker.roiNeedsOverwrite.connect(self.overWriteRoi)
-        # QThread.currentThread().setObjectName("MainThread")
-        # print(f"This thread {QThread.currentThread().objectName()}, {QThread.currentThread()}")
-        # print(f"Created thread {self.thread.objectName()}, {self.thread}")
+        self.qChecker.roiFinished.connect(self._drawSavedRoi)
+        self.qChecker.roiNeedsOverwrite.connect(self._overWriteRoi)
 
-
-    def overWriteRoi(self, roi: Roi):
+    def _overWriteRoi(self, acq: AcqDir, roi: Roi):
         """If the worker raised an `OSError` then we need to ask the user if they want to overwrite. This must be done in the main thread."""
         ans = QMessageBox.question(self.anViewer, 'Overwrite?', f"Roi {roi.name}:{roi.number} already exists. Overwrite?")
         if ans == QMessageBox.Yes:
-            self.acq.saveRoi(roi, overwrite=True)
+            acq.saveRoi(roi, overwrite=True)
             self.anViewer.showRois() #Refresh all rois since we just deleted one as well.
-            self.roiIsSaved()
-        self.finish()
+            self._roiIsSaved()
+        self._finish()
 
-    def drawSavedRoi(self, roi: Roi):
+    def _drawSavedRoi(self, roi: Roi):
         """The worker successfully save the roi, now display it."""
         self.anViewer.addRoi(roi)
-        self.roiIsSaved()
-        self.finish()
+        self._roiIsSaved()
+        self._finish()
 
-    def roiIsSaved(self):
+    def _roiIsSaved(self):
         """Either way, once a  new roi has been saved we want to do this."""
         QApplication.instance().window.cellSelector.refreshCellItems()  # Refresh the cell selection table.
 
-    def finish(self):
+    def _finish(self):
         """Even if the roi wasn't ultimately saved we want to do this."""
         self.placeHolderPoly.remove()
         self.anViewer.canvas.draw_idle()
