@@ -38,7 +38,6 @@ class AnalysisViewer(AnalysisPlotter, RoiPlot):
         self._populateFields()
         self.layout().itemAt(0).insertWidget(0, self.analysisCombo)
         self.changeData(initialField)
-        self.show()
 
     def _populateFields(self):
         currField = self.analysisCombo.currentText()
