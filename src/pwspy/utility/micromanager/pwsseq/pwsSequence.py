@@ -183,6 +183,11 @@ if __name__ == '__main__':
     with open(r'C:\Users\nicke\Desktop\data\toast2\sequence.pwsseq') as f:
         s = Step.fromJson(f.read())
     import sys
+    from pwspy import dataTypes as pwsdt
+    from glob import glob
+
+    acqs = [pwsdt.AcqDir(i) for i in glob(r"C:\Users\nicke\Desktop\data\toast2\Cell*")]
+
 
     app = QApplication(sys.argv)
     # import qdarkstyle
