@@ -214,9 +214,9 @@ class QueueCheckerThread(QObject):
     roiFinished = pyqtSignal(Roi)
     roiNeedsOverwrite = pyqtSignal(Roi)
 
-    def __init__(self, parent: QObject = None):#, resultsQ: mp.Queue):
-        super().__init__(parent)
-        # self._q = resultsQ
+    def __init__(self, resultsQ: mp.Queue):
+        super().__init__()
+        self._q = resultsQ
 
     @pyqtSlot()
     def doWork(self):
@@ -228,12 +228,14 @@ class QueueCheckerThread(QObject):
                 resultCode, roi = self._q.get(True, .5)
             except queue.Empty:
                 continue
-            if resultCode is RoiSaverController.Cmd.SUCESS:
+            if resultCode is Cmd.SUCESS:
                 self.roiFinished.emit(roi)
-            elif resultCode is RoiSaverController.Cmd.NEEDSOVERWRITE:
+            elif resultCode is Cmd.NEEDSOVERWRITE:
                 self.roiNeedsOverwrite.emit(roi)
-            elif resultCode is RoiSaverController.Cmd.QUIT:
+            elif resultCode is Cmd.QUIT:
                 break
+            elif isinstance(resultCode, Exception):
+                raise resultCode
             else:
                 raise ValueError("HUH!")
 
@@ -252,24 +254,27 @@ class RoiSaverProcess(mp.Process):
 
     def run(self):
         """This is what gets run in the other process when `start` is called."""
-        while True:
-            try:
-                item = self._q.get(True, 0.5)
-            except queue.Empty:
-                continue
-            if item is RoiSaverController.Cmd.QUIT:
-                self._resultQ.put(item, True, 0.5)
-                break
-            name, num, verts, datashape, acq = item  # If we got this far then item must be commands for a new saving.
-            roi = Roi.fromVerts(name, num, verts, datashape)
-            try:
-                acq.saveRoi(roi)
-                self._resultQ.put((RoiSaverController.Cmd.SUCESS, roi), True, 0.5)
-            except OSError:
-                self._resultQ.put((RoiSaverController.Cmd.NEEDSOVERWRITE, roi), True, 0.5)
+        try:
+            while True:
+                try:
+                    item = self._q.get(True, 0.5)
+                except queue.Empty:
+                    continue
+                if item is Cmd.QUIT:
+                    self._resultQ.put((item, None), True, 0.5)
+                    break
+                name, num, verts, datashape, acq = item  # If we got this far then item must be commands for a new saving.
+                roi = Roi.fromVerts(name, num, verts, datashape)
+                try:
+                    acq.saveRoi(roi)
+                    self._resultQ.put((Cmd.SUCESS, roi), True, 0.5)
+                except OSError:
+                    self._resultQ.put((Cmd.NEEDSOVERWRITE, roi), True, 0.5)
+        except Exception as e:
+            self._resultQ.put((e, None), True, 0.5)
 
     def requestClose(self):
-        self._q.put(RoiSaverController.Cmd.QUIT, True, 0.5)
+        self._q.put(Cmd.QUIT, True, 0.5)
 
     def saveNewRoi(self, name: str, num: int, verts, datashape, acq: AcqDir):
         """Call this from the main process to start saving in the saver process."""
@@ -281,17 +286,14 @@ class RoiSaverProcess(mp.Process):
 class RoiSaverController(QObject):
     """Instantiating this class begins the process of saving a ROI. This class handles the GUI related stuff in the main thread."""
     def open(self):
-        # self.worker.start()
-        # self.thread.start()
-        # a=1
-        pass
+        self.worker.start()
+        self.thread.start()
 
     def close(self):
         self.worker.requestClose()
         self.thread.requestInterruption()
         self.thread.wait(1000)
         self.worker.join(1) #Wait up to one second for the process to finish cleanly.
-        #TODO check worker.exitcode?
         self.worker.close()
 
     def saveNewRoi(self, name: str, num: int, verts, datashape, acq: AcqDir):
@@ -306,18 +308,17 @@ class RoiSaverController(QObject):
         temporarily frozen while the ROI is saved. It seems the only way to make this faster is to optimize the saving operation."""
         super().__init__(parent)
         self.anViewer = anViewer
-        # self.worker = self.RoiSaverProcess() #self.RoiSaverWorker(name, num, verts, datashape, acq)
+        self.worker = RoiSaverProcess()
         self.thread = QThread()
-        self.qChecker = QueueCheckerThread()#, self.worker.getResultsQ())
+        self.qChecker = QueueCheckerThread(self.worker.getResultsQ())
         self.thread.setObjectName('QueueCheckerThread')
         self.qChecker.moveToThread(self.thread)
         self.thread.started.connect(self.qChecker.doWork)
-        # self.qChecker.roiFinished.connect(self.drawSavedRoi)
-        # self.qChecker.roiNeedsOverwrite.connect(self.overWriteRoi)
-        QThread.currentThread().setObjectName("MainThread")
-        print(f"This thread {QThread.currentThread().objectName()}, {QThread.currentThread()}")
-        print(f"Created thread {self.thread.objectName()}, {self.thread}")
-        self.thread.start()
+        self.qChecker.roiFinished.connect(self.drawSavedRoi)
+        self.qChecker.roiNeedsOverwrite.connect(self.overWriteRoi)
+        # QThread.currentThread().setObjectName("MainThread")
+        # print(f"This thread {QThread.currentThread().objectName()}, {QThread.currentThread()}")
+        # print(f"Created thread {self.thread.objectName()}, {self.thread}")
 
 
     def overWriteRoi(self, roi: Roi):
