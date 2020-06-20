@@ -17,26 +17,20 @@
 
 from __future__ import annotations
 
-import enum
-import queue
-from time import time
 from typing import List, Tuple, Optional
 
 import numpy as np
 from PyQt5 import QtCore, QtGui
-from PyQt5.QtCore import QThread, QObject, pyqtSignal, QMetaObject, pyqtSlot
 from PyQt5.QtWidgets import QWidget, QGridLayout, QButtonGroup, QPushButton, QDialog, QSpinBox, QLabel, \
-    QMessageBox, QMenu, QAction, QApplication
+    QMessageBox, QMenu, QAction
 
+from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.roiDrawerProcess import RoiSaverController
 from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
 from pwspy.dataTypes import AcqDir
-from matplotlib import patches
 import os
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.analysisViewer import AnalysisViewer
 from pwspy.utility.matplotlibWidgets._selectorWidgets.FullImPaintSelector import FullImPaintSelector
-from pwspy.dataTypes import Roi
 from pwspy.utility.matplotlibWidgets import AdjustableSelector, LassoSelector, EllipseSelector, RegionalPaintSelector, PolygonInteractor
-import multiprocessing as mp
 
 
 class RoiDrawer(QWidget):
@@ -210,134 +204,4 @@ class NewRoiDlg(QDialog):
             self.numBox.setValue(0) #start at 0
         super().show()
 
-class QueueCheckerThread(QObject):
-    roiFinished = pyqtSignal(Roi)
-    roiNeedsOverwrite = pyqtSignal(AcqDir, Roi)
 
-    def __init__(self, resultsQ: mp.Queue):
-        super().__init__()
-        self._q = resultsQ
-
-    @pyqtSlot()
-    def doWork(self):
-        print(f"Running doWork on {QThread.currentThread().objectName()}, {QThread.currentThread()}")
-        while True:
-            if QThread.currentThread().isInterruptionRequested():
-                break
-            try:
-                resultCode, data = self._q.get(True, .5)
-            except queue.Empty:
-                continue
-            if resultCode is Cmd.SUCESS:
-                self.roiFinished.emit(data)
-            elif resultCode is Cmd.NEEDSOVERWRITE:
-                acq, roi = data
-                self.roiNeedsOverwrite.emit(acq, roi)
-            elif resultCode is Cmd.QUIT:
-                break
-            elif isinstance(resultCode, Exception):
-                raise resultCode
-            else:
-                raise ValueError("HUH!")
-
-class Cmd(enum.Enum):
-    SUCESS = enum.auto()
-    NEEDSOVERWRITE = enum.auto()
-    QUIT = enum.auto()
-
-
-class RoiSaverProcess(mp.Process):
-    """This class handles the actual saving of the roi and everything that can be performed in a separate process."""
-    def __init__(self):
-        super().__init__()
-        self._q = mp.Queue()
-        self._resultQ = mp.Queue()
-
-    def run(self):
-        """This is what gets run in the other process when `start` is called."""
-        try:
-            while True:
-                try:
-                    item = self._q.get(True, 0.5)
-                except queue.Empty:
-                    continue
-                if item is Cmd.QUIT:
-                    self._resultQ.put((item, None), True, 0.5)
-                    break
-                name, num, verts, datashape, acq = item  # If we got this far then item must be commands for a new saving.
-                roi = Roi.fromVerts(name, num, verts, datashape)
-                try:
-                    acq.saveRoi(roi)
-                    self._resultQ.put((Cmd.SUCESS, roi), True, 0.5)
-                except OSError:
-                    self._resultQ.put((Cmd.NEEDSOVERWRITE, (acq, roi)), True, 0.5)
-        except Exception as e:
-            self._resultQ.put((e, None), True, 0.5)
-
-    def requestClose(self):
-        self._q.put(Cmd.QUIT, True, 0.5)
-
-    def saveNewRoi(self, name: str, num: int, verts, datashape, acq: AcqDir):
-        """Call this from the main process to start saving in the saver process."""
-        self._q.put((name, num, verts, datashape, acq), True, 0.5)
-
-    def getResultsQ(self):
-        return self._resultQ
-
-class RoiSaverController(QObject):
-    """Instantiating this class begins the process of saving a ROI. This class handles the GUI related stuff in the main thread."""
-    def open(self):
-        self.worker.start()
-        self.thread.start()
-
-    def close(self):
-        self.worker.requestClose()
-        self.thread.requestInterruption()
-        self.thread.wait(1000)
-        self.worker.join(1) #Wait up to one second for the process to finish cleanly.
-        self.worker.close()
-
-    def saveNewRoi(self, name: str, num: int, verts, datashape, acq: AcqDir):
-        self.placeHolderPoly = patches.Polygon(verts, facecolor=(0, .5, 0.5, 0.4)) #this is a temporary polygon display until the ROI file is actually ready to be read.
-        self.anViewer.ax.add_patch(self.placeHolderPoly)
-        self.worker.saveNewRoi(name, num, verts, datashape, acq)
-        self.anViewer.canvas.draw_idle()
-
-    def __init__(self, anViewer, parent: QWidget):
-        """This initializer starts a separate thread and runs RoiSaverWorker.doWork on that thread. GUI related work is linked to the appropriate
-        signals from the other thread. This multithreaded approach turns out to be mostly pointless. Because of pythons GIL the roid drawing still becomes
-        temporarily frozen while the ROI is saved. It seems the only way to make this faster is to optimize the saving operation."""
-        super().__init__(parent)
-        self.anViewer = anViewer
-        self.worker = RoiSaverProcess()
-        self.thread = QThread()
-        self.qChecker = QueueCheckerThread(self.worker.getResultsQ())
-        self.thread.setObjectName('QueueCheckerThread')
-        self.qChecker.moveToThread(self.thread)
-        self.thread.started.connect(self.qChecker.doWork)
-        self.qChecker.roiFinished.connect(self._drawSavedRoi)
-        self.qChecker.roiNeedsOverwrite.connect(self._overWriteRoi)
-
-    def _overWriteRoi(self, acq: AcqDir, roi: Roi):
-        """If the worker raised an `OSError` then we need to ask the user if they want to overwrite. This must be done in the main thread."""
-        ans = QMessageBox.question(self.anViewer, 'Overwrite?', f"Roi {roi.name}:{roi.number} already exists. Overwrite?")
-        if ans == QMessageBox.Yes:
-            acq.saveRoi(roi, overwrite=True)
-            self.anViewer.showRois() #Refresh all rois since we just deleted one as well.
-            self._roiIsSaved()
-        self._finish()
-
-    def _drawSavedRoi(self, roi: Roi):
-        """The worker successfully save the roi, now display it."""
-        self.anViewer.addRoi(roi)
-        self._roiIsSaved()
-        self._finish()
-
-    def _roiIsSaved(self):
-        """Either way, once a  new roi has been saved we want to do this."""
-        QApplication.instance().window.cellSelector.refreshCellItems()  # Refresh the cell selection table.
-
-    def _finish(self):
-        """Even if the roi wasn't ultimately saved we want to do this."""
-        self.placeHolderPoly.remove()
-        self.anViewer.canvas.draw_idle()
