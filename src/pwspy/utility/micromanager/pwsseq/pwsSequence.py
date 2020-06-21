@@ -49,8 +49,8 @@ Names = dict(
 )
 
 
-class Step(QTreeWidgetItem):
-    def __init__(self, id: int, settings: dict, stepType: str, children: typing.List[Step] = None):
+class SequencerStep(QTreeWidgetItem):
+    def __init__(self, id: int, settings: dict, stepType: str, children: typing.List[SequencerStep] = None):
         super().__init__(QTreeWidgetItem.UserType)
         self.id = id
         self.settings = settings
@@ -72,8 +72,8 @@ class Step(QTreeWidgetItem):
             return dct
 
     @staticmethod
-    def fromJson(j: str) -> Step:
-        return json.loads(j, object_hook=Step.hook)
+    def fromJson(j: str) -> SequencerStep:
+        return json.loads(j, object_hook=SequencerStep.hook)
 
 
 # class TextOutputStep(Step):
@@ -88,7 +88,7 @@ class Step(QTreeWidgetItem):
 
 
 
-class CoordStep(Step):
+class CoordSequencerStep(SequencerStep):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setText(1, f"i={self.stepIterations()}")
@@ -98,21 +98,21 @@ class CoordStep(Step):
         raise NotImplementedError()
 
 
-class PositionsStep(CoordStep):
+class PositionsStep(CoordSequencerStep):
     def stepIterations(self):
         if not hasattr(self, '_len'):
             self._len = len(PositionList.fromDict(self.settings['posList']))
         return self._len
 
 
-class TimeStep(CoordStep):
+class TimeStep(CoordSequencerStep):
     def stepIterations(self):
         if not hasattr(self, '_len'):
             self._len = self.settings['numFrames']
         return self._len
 
 
-class ZStackStep(CoordStep):
+class ZStackStep(CoordSequencerStep):
     def stepIterations(self):
         if not hasattr(self, '_len'):
             self._len = self.settings['numStacks']
@@ -120,16 +120,16 @@ class ZStackStep(CoordStep):
 
 
 class Types(enum.Enum):
-    ACQ = Step
-    PFS = Step
+    ACQ = SequencerStep
+    PFS = SequencerStep
     POS = PositionsStep
     TIME = TimeStep
-    AF = Step
-    CONFIG = Step
-    PAUSE = Step
-    EVERYN = Step
-    ROOT = Step
-    SUBFOLDER = Step
+    AF = SequencerStep
+    CONFIG = SequencerStep
+    PAUSE = SequencerStep
+    EVERYN = SequencerStep
+    ROOT = SequencerStep
+    SUBFOLDER = SequencerStep
     ZSTACK = ZStackStep
 
 class DictTreeView(QTreeWidget):
@@ -181,7 +181,7 @@ class SequencerCoordinate:
 
 if __name__ == '__main__':
     with open(r'C:\Users\nicke\Desktop\data\toast2\sequence.pwsseq') as f:
-        s = Step.fromJson(f.read())
+        s = SequencerStep.fromJson(f.read())
     import sys
     from pwspy import dataTypes as pwsdt
     from glob import glob
