@@ -38,17 +38,21 @@ class QABCMeta(sip.wrappertype, abc.ABCMeta):
 
 class CellSelector(metaclass=QABCMeta):
 
-    @abc.abstractmethod
-    def addCell(self, fileName: str, workingDir: str): pass
+    # @abc.abstractmethod
+    # def addCell(self, fileName: str, workingDir: str): pass
+
+    # @abc.abstractmethod
+    # def addCells(self, fileNames: List[str], workingDir: str): pass
+
+
+    # @abc.abstractmethod
+    # def clearCells(self): pass
+
+    # @abc.abstractmethod
+    # def updateFilters(self): pass
 
     @abc.abstractmethod
-    def addCells(self, fileNames: List[str], workingDir: str): pass
-
-    @abc.abstractmethod
-    def clearCells(self): pass
-
-    @abc.abstractmethod
-    def updateFilters(self): pass
+    def loadNewCells(self, fileNames: List[str], workingDir: str): pass
 
     @abc.abstractmethod
     def getSelectedCellMetas(self) -> List[pwsdt.AcqDir]: pass

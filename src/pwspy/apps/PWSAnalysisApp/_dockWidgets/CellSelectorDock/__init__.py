@@ -38,14 +38,14 @@ class CellSelectorDock(CellSelector, QDockWidget):
         self.setObjectName('CellSelectorDock')  # needed for restore state to work
         self._widget = QWidget(self)
         layout = QVBoxLayout()
-        self.tableWidget = CellTableWidget(self._widget)
+        self._tableWidget = CellTableWidget(self._widget)
         self._selectionChangeDebounce = QtCore.QTimer()  # This timer prevents the selectionChanged signal from firing too rapidly.
         self._selectionChangeDebounce.setInterval(500)
         self._selectionChangeDebounce.setSingleShot(True)
         self._selectionChangeDebounce.timeout.connect(lambda: self.selectionChanged.emit(self.getSelectedCellMetas()))
 
-        self.tableWidget.itemSelectionChanged.connect(self._selectionChangeDebounce.start)
-        self.refTableWidget = ReferencesTable(self._widget, self.tableWidget)
+        self._tableWidget.itemSelectionChanged.connect(self._selectionChangeDebounce.start)
+        self._refTableWidget = ReferencesTable(self._widget, self._tableWidget)
         self._filterWidget = QWidget(self._widget)
         self.pathFilter = QComboBox(self._filterWidget)
         self.pathFilter.setEditable(True)
@@ -68,8 +68,8 @@ class CellSelectorDock(CellSelector, QDockWidget):
         self._filterWidget.setLayout(_)
         _ = QSplitter()
         _.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        _.addWidget(self.tableWidget)
-        _.addWidget(self.refTableWidget)
+        _.addWidget(self._tableWidget)
+        _.addWidget(self._refTableWidget)
         _.setCollapsible(0, False)
         _.setCollapsible(1, False)
         _.setSizes([300, 100])
@@ -79,7 +79,12 @@ class CellSelectorDock(CellSelector, QDockWidget):
         self._widget.setLayout(layout)
         self.setWidget(self._widget)
 
-    def addCell(self, fileName: str, workingDir: str):
+    def loadNewCells(self, fileNames: List[str], workingDir: str):
+        self._clearCells()
+        self._addCells(fileNames, workingDir)
+        self._updateFilters()
+
+    def _addCell(self, fileName: str, workingDir: str):
         try:
             cell = pwsdt.AcqDir(fileName)
         except OSError:
@@ -87,10 +92,10 @@ class CellSelectorDock(CellSelector, QDockWidget):
         cellItem = CellTableWidgetItem(cell, os.path.split(fileName)[0][len(workingDir) + 1:],
                                         int(fileName.split('Cell')[-1]))
         if cellItem.isReference():
-            self.refTableWidget.updateReferences(True, [cellItem])
-        self.tableWidget.addCellItem(cellItem)
+            self._refTableWidget.updateReferences(True, [cellItem])
+        self._tableWidget.addCellItem(cellItem)
 
-    def addCells(self, fileNames: List[str], workingDir: str):
+    def _addCells(self, fileNames: List[str], workingDir: str):
         cellItems = []
         for f in fileNames:
             try:
@@ -103,15 +108,15 @@ class CellSelectorDock(CellSelector, QDockWidget):
             cellItems.append(CellTableWidgetItem(acq, os.path.split(f)[0][len(workingDir) + 1:],
                                         int(f.split('Cell')[-1])))
         refItems = [i for i in cellItems if i.isReference()]
-        if len(refItems)>0:
-            self.refTableWidget.updateReferences(True, refItems)
-        self.tableWidget.addCellItems(cellItems)
+        if len(refItems) > 0:
+            self._refTableWidget.updateReferences(True, refItems)
+        self._tableWidget.addCellItems(cellItems)
 
-    def clearCells(self):
+    def _clearCells(self):
         self._cells = []
-        self.tableWidget.clearCellItems()
+        self._tableWidget.clearCellItems()
 
-    def updateFilters(self):
+    def _updateFilters(self):
         try:
             self.pathFilter.currentIndexChanged.disconnect()
         except:
@@ -119,7 +124,7 @@ class CellSelectorDock(CellSelector, QDockWidget):
         self.pathFilter.clear()
         self.pathFilter.addItem('.*')
         paths = []
-        for i in self.tableWidget.cellItems:
+        for i in self._tableWidget.cellItems:
             paths.append(i.path)
         self.pathFilter.addItems(set(paths))
         self.pathFilter.currentIndexChanged.connect(self._executeFilter)  # reconnect
@@ -127,7 +132,7 @@ class CellSelectorDock(CellSelector, QDockWidget):
     def _executeFilter(self): #TODO the filter should also hide the reference items. this will require some changes ot the referece item table code.
         path = self.pathFilter.currentText()
         path = path.replace('\\', '\\\\')
-        for item in self.tableWidget.cellItems:
+        for item in self._tableWidget.cellItems:
             text = item.path.replace(r'\\', r'\\\\')
             try:
                 match = re.match(path, text)
@@ -149,22 +154,22 @@ class CellSelectorDock(CellSelector, QDockWidget):
             else:
                 ret = True
             if match and ret:
-                self.tableWidget.setRowHidden(item.row, False)
+                self._tableWidget.setRowHidden(item.row, False)
             else:
-                self.tableWidget.setRowHidden(item.row, True)
+                self._tableWidget.setRowHidden(item.row, True)
 
     def getSelectedCellMetas(self) -> List[pwsdt.AcqDir]:
-        return [i.acqDir for i in self.tableWidget.selectedCellItems]
+        return [i.acqDir for i in self._tableWidget.selectedCellItems]
 
     def getAllCellMetas(self) -> List[pwsdt.AcqDir]:
-        return [i.acqDir for i in self.tableWidget.cellItems]
+        return [i.acqDir for i in self._tableWidget.cellItems]
 
     def getSelectedReferenceMeta(self) -> Optional[pwsdt.AcqDir]:
-        return self.refTableWidget.selectedReferenceMeta
+        return self._refTableWidget.selectedReferenceMeta
 
     def setSelectedCells(self, cells: List[pwsdt.AcqDir]):
         idTags = [i.idTag for i in cells]
-        for item in self.tableWidget.cellItems:
+        for item in self._tableWidget.cellItems:
             if item.acqDir.idTag in idTags:
                 item.setSelected(True)
             else:
@@ -172,8 +177,8 @@ class CellSelectorDock(CellSelector, QDockWidget):
 
     def setSelectedReference(self, ref: pwsdt.AcqDir):
         idTag = ref.idTag
-        for i in range(self.refTableWidget.rowCount()):
-            refitem: ReferencesTableItem = self.refTableWidget.item(i, 0)
+        for i in range(self._refTableWidget.rowCount()):
+            refitem: ReferencesTableItem = self._refTableWidget.item(i, 0)
             if refitem.item.acqDir.idTag == idTag:
                 refitem.setSelected(True)
             else:
@@ -181,7 +186,7 @@ class CellSelectorDock(CellSelector, QDockWidget):
 
     def setHighlightedCells(self, cells: List[pwsdt.AcqDir]):
         idTags = [i.idTag for i in cells]
-        for item in self.tableWidget.cellItems:
+        for item in self._tableWidget.cellItems:
             if item.acqDir.idTag in idTags:
                 item.setHighlighted(True)
             else:
@@ -189,12 +194,12 @@ class CellSelectorDock(CellSelector, QDockWidget):
 
     def setHighlightedReference(self, ref: pwsdt.AcqDir):
         idTag = ref.idTag
-        for i in range(self.refTableWidget.rowCount()):
-            refitem: ReferencesTableItem = self.refTableWidget.item(i, 0)
+        for i in range(self._refTableWidget.rowCount()):
+            refitem: ReferencesTableItem = self._refTableWidget.item(i, 0)
             if refitem.item.acqDir.idTag == idTag:
                 refitem.setHighlighted(True)
             else:
                 refitem.setHighlighted(False)
 
     def refreshCellItems(self):
-        self.tableWidget.refreshCellItems()
+        self._tableWidget.refreshCellItems()
