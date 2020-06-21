@@ -26,46 +26,55 @@ import pwspy.dataTypes as pwsdt
 from pwspy.apps.PWSAnalysisApp._dockWidgets.CellSelectorDock.widgets import ReferencesTableItem
 from .widgets import CellTableWidgetItem, CellTableWidget, ReferencesTable
 from ...componentInterfaces import CellSelector
+from ...plugins import CellSelectorPluginSupport
 
 
 class CellSelectorDock(CellSelector, QDockWidget):
     """This dockwidget is used by the user to select which cells they want to act upon (run an analysis, plot, etc.)"""
-    selectionChanged = QtCore.pyqtSignal(list)
-
     def __init__(self):
         super().__init__("Cell Selector")
+        self._pluginSupport = CellSelectorPluginSupport(self)
+        self._pluginSupport.registerPlugin(AcquisitionSequencerPlugin())
         self.setStyleSheet("QDockWidget > QWidget { border: 1px solid lightgray; }")
         self.setObjectName('CellSelectorDock')  # needed for restore state to work
         self._widget = QWidget(self)
         layout = QVBoxLayout()
+
         self._tableWidget = CellTableWidget(self._widget)
         self._selectionChangeDebounce = QtCore.QTimer()  # This timer prevents the selectionChanged signal from firing too rapidly.
         self._selectionChangeDebounce.setInterval(500)
         self._selectionChangeDebounce.setSingleShot(True)
-        self._selectionChangeDebounce.timeout.connect(lambda: self.selectionChanged.emit(self.getSelectedCellMetas()))
-
+        self._selectionChangeDebounce.timeout.connect(lambda: self._pluginSupport.notifyCellSelectionChanged(self.getSelectedCellMetas()))
         self._tableWidget.itemSelectionChanged.connect(self._selectionChangeDebounce.start)
+
         self._refTableWidget = ReferencesTable(self._widget, self._tableWidget)
-        self._filterWidget = QWidget(self._widget)
-        self.pathFilter = QComboBox(self._filterWidget)
-        self.pathFilter.setEditable(True)
-        self.pathFilter.setStyleSheet('''*     
+        self._refSelectionChangeDebounce = QtCore.QTimer()
+        self._refSelectionChangeDebounce.setInterval(500)
+        self._refSelectionChangeDebounce.setSingleShot(True)
+        self._refSelectionChangeDebounce.timeout.connect(lambda: self._pluginSupport.notifyReferenceSelectionChanged(self.getSelectedReferenceMeta()))
+        self._refTableWidget.itemSelectionChanged.connect(self._refSelectionChangeDebounce.start)
+
+        self._bottomBar = QWidget(self._widget)
+        self._pathFilter = QComboBox(self._bottomBar)
+        self._pathFilter.setEditable(True)
+        self._pathFilter.setStyleSheet('''*     
         QComboBox QAbstractItemView 
             {
             min-width: 200px;
             }
         ''')  # This makes the dropdown wider so we can actually read.
-        width = self.pathFilter.minimumSizeHint().width()
-        self.pathFilter.view().setMinimumWidth(width)
-        self.expressionFilter = QLineEdit(self._filterWidget)
+        width = self._pathFilter.minimumSizeHint().width()
+        self._pathFilter.view().setMinimumWidth(width)
+        self._expressionFilter = QLineEdit(self._bottomBar)
         description = "Python boolean expression.\n\tCell#: {num},\n\tAnalysis names: {analyses},\n\tROI names: {rois},\n\tID tag: {idTag}.\nE.G. `{num} > 5 and 'nucleus' in {rois}`"
-        self.expressionFilter.setPlaceholderText(description.replace('\n', '').replace('\t', ''))  #Strip out the white space
-        self.expressionFilter.setToolTip(description)
-        self.expressionFilter.returnPressed.connect(self._executeFilter)
+        self._expressionFilter.setPlaceholderText(description.replace('\n', '').replace('\t', ''))  #Strip out the white space
+        self._expressionFilter.setToolTip(description)
+        self._expressionFilter.returnPressed.connect(self._executeFilter)
         _ = QGridLayout()
-        _.addWidget(self.pathFilter, 0, 0, 1, 1)
-        _.addWidget(self.expressionFilter, 0, 1, 1, 1)
-        self._filterWidget.setLayout(_)
+        _.addWidget(self._pathFilter, 0, 0, 1, 1)
+        _.addWidget(self._expressionFilter, 0, 1, 1, 1)
+        _.addWidget(self._pluginsButton, 0, 2, 1, 1)
+        self._bottomBar.setLayout(_)
         _ = QSplitter()
         _.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         _.addWidget(self._tableWidget)
@@ -75,7 +84,7 @@ class CellSelectorDock(CellSelector, QDockWidget):
         _.setSizes([300, 100])
         _.setStretchFactor(1, 0); _.setStretchFactor(0, 1)  # Make the references column so it doesn't resize on stretching.
         layout.addWidget(_)
-        layout.addWidget(self._filterWidget)
+        layout.addWidget(self._bottomBar)
         self._widget.setLayout(layout)
         self.setWidget(self._widget)
 
@@ -83,6 +92,7 @@ class CellSelectorDock(CellSelector, QDockWidget):
         self._clearCells()
         self._addCells(fileNames, workingDir)
         self._updateFilters()
+        self._pluginSupport.notifyNewCellsLoaded(self.getAllCellMetas())
 
     def _addCell(self, fileName: str, workingDir: str):
         try:
@@ -118,19 +128,19 @@ class CellSelectorDock(CellSelector, QDockWidget):
 
     def _updateFilters(self):
         try:
-            self.pathFilter.currentIndexChanged.disconnect()
+            self._pathFilter.currentIndexChanged.disconnect()
         except:
             pass
-        self.pathFilter.clear()
-        self.pathFilter.addItem('.*')
+        self._pathFilter.clear()
+        self._pathFilter.addItem('.*')
         paths = []
         for i in self._tableWidget.cellItems:
             paths.append(i.path)
-        self.pathFilter.addItems(set(paths))
-        self.pathFilter.currentIndexChanged.connect(self._executeFilter)  # reconnect
+        self._pathFilter.addItems(set(paths))
+        self._pathFilter.currentIndexChanged.connect(self._executeFilter)  # reconnect
 
     def _executeFilter(self): #TODO the filter should also hide the reference items. this will require some changes ot the referece item table code.
-        path = self.pathFilter.currentText()
+        path = self._pathFilter.currentText()
         path = path.replace('\\', '\\\\')
         for item in self._tableWidget.cellItems:
             text = item.path.replace(r'\\', r'\\\\')
@@ -139,7 +149,7 @@ class CellSelectorDock(CellSelector, QDockWidget):
             except re.error:
                 QMessageBox.information(self, 'Hmm', f'{path} is not a valid regex expression.')
                 return
-            expr = self.expressionFilter.text()
+            expr = self._expressionFilter.text()
             if expr.strip() != '':
                 try:
                     analyses = []
