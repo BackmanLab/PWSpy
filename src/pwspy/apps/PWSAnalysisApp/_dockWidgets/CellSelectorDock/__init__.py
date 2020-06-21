@@ -21,12 +21,12 @@ from typing import List, Optional
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineEdit, QGridLayout, QSplitter, \
-    QSizePolicy, QMessageBox
+    QSizePolicy, QMessageBox, QPushButton, QMenu, QAction
 import pwspy.dataTypes as pwsdt
 from pwspy.apps.PWSAnalysisApp._dockWidgets.CellSelectorDock.widgets import ReferencesTableItem
 from .widgets import CellTableWidgetItem, CellTableWidget, ReferencesTable
-from ...componentInterfaces import CellSelector
-from ...plugins import CellSelectorPluginSupport
+from pwspy.apps.PWSAnalysisApp.componentInterfaces import CellSelector
+from pwspy.apps.PWSAnalysisApp.pluginInterfaces import CellSelectorPluginSupport
 
 
 class CellSelectorDock(CellSelector, QDockWidget):
@@ -34,7 +34,7 @@ class CellSelectorDock(CellSelector, QDockWidget):
     def __init__(self):
         super().__init__("Cell Selector")
         self._pluginSupport = CellSelectorPluginSupport(self)
-        self._pluginSupport.registerPlugin(AcquisitionSequencerPlugin())
+        self._pluginSupport.registerPlugin(AcquisitionSequencerPlugin()) #TODO ideally plugins would be added dynamically, outside of the class definition, this is fine for now though.
         self.setStyleSheet("QDockWidget > QWidget { border: 1px solid lightgray; }")
         self.setObjectName('CellSelectorDock')  # needed for restore state to work
         self._widget = QWidget(self)
@@ -55,6 +55,7 @@ class CellSelectorDock(CellSelector, QDockWidget):
         self._refTableWidget.itemSelectionChanged.connect(self._refSelectionChangeDebounce.start)
 
         self._bottomBar = QWidget(self._widget)
+
         self._pathFilter = QComboBox(self._bottomBar)
         self._pathFilter.setEditable(True)
         self._pathFilter.setStyleSheet('''*     
@@ -65,11 +66,16 @@ class CellSelectorDock(CellSelector, QDockWidget):
         ''')  # This makes the dropdown wider so we can actually read.
         width = self._pathFilter.minimumSizeHint().width()
         self._pathFilter.view().setMinimumWidth(width)
+
         self._expressionFilter = QLineEdit(self._bottomBar)
         description = "Python boolean expression.\n\tCell#: {num},\n\tAnalysis names: {analyses},\n\tROI names: {rois},\n\tID tag: {idTag}.\nE.G. `{num} > 5 and 'nucleus' in {rois}`"
         self._expressionFilter.setPlaceholderText(description.replace('\n', '').replace('\t', ''))  #Strip out the white space
         self._expressionFilter.setToolTip(description)
         self._expressionFilter.returnPressed.connect(self._executeFilter)
+
+        self._pluginsButton = QPushButton("Tools", self)
+        self._pluginsButton.released.connect(self._showPluginMenu)
+
         _ = QGridLayout()
         _.addWidget(self._pathFilter, 0, 0, 1, 1)
         _.addWidget(self._expressionFilter, 0, 1, 1, 1)
@@ -87,6 +93,14 @@ class CellSelectorDock(CellSelector, QDockWidget):
         layout.addWidget(self._bottomBar)
         self._widget.setLayout(layout)
         self.setWidget(self._widget)
+
+    def _showPluginMenu(self):
+        menu = QMenu("plugin menu", self)
+        for plugin in self._pluginSupport.getPlugins():
+            action = QAction(plugin.getName())
+            action.triggered.connect(lambda p=plugin: p.onPluginSelected())
+            menu.addAction(action)
+        menu.exec(self.mapToGlobal(self._pluginsButton.pos()))
 
     def loadNewCells(self, fileNames: List[str], workingDir: str):
         self._clearCells()
