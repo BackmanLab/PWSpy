@@ -26,7 +26,8 @@ import pwspy.dataTypes as pwsdt
 from pwspy.apps.PWSAnalysisApp._dockWidgets.CellSelectorDock.widgets import ReferencesTableItem
 from .widgets import CellTableWidgetItem, CellTableWidget, ReferencesTable
 from pwspy.apps.PWSAnalysisApp.componentInterfaces import CellSelector
-from pwspy.apps.PWSAnalysisApp.pluginInterfaces import CellSelectorPluginSupport
+from pwspy.apps.PWSAnalysisApp.pluginInterfaces import CellSelectorPluginSupport, CellSelectorPlugin
+from pwspy.apps.PWSAnalysisApp.plugins import AcquisitionSequencerPlugin
 
 
 class CellSelectorDock(CellSelector, QDockWidget):
@@ -95,12 +96,16 @@ class CellSelectorDock(CellSelector, QDockWidget):
         self.setWidget(self._widget)
 
     def _showPluginMenu(self):
+
+        def activatePlugin(p: CellSelectorPlugin):
+            p.onPluginSelected()
+
         menu = QMenu("plugin menu", self)
         for plugin in self._pluginSupport.getPlugins():
             action = QAction(plugin.getName())
-            action.triggered.connect(lambda p=plugin: p.onPluginSelected())
+            action.triggered.connect(lambda checked, p=plugin: activatePlugin(p))
             menu.addAction(action)
-        menu.exec(self.mapToGlobal(self._pluginsButton.pos()))
+        menu.exec(self._pluginsButton.mapToGlobal(self._pluginsButton.pos()))
 
     def loadNewCells(self, fileNames: List[str], workingDir: str):
         self._clearCells()
