@@ -35,7 +35,7 @@ class CellSelectorPluginSupport:
 class CellSelectorPlugin(metaclass=QABCMeta):
     @abc.abstractmethod
     def setContext(self, selector: CellSelector):
-        """set the CellSelector that this plugin is associated to."""
+        """Set the CellSelector that this plugin is associated to. This should happen before anything else."""
         pass
 
     @abc.abstractmethod
