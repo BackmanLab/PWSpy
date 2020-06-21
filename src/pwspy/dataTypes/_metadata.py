@@ -805,7 +805,10 @@ class AcqDir:
             path = os.path.join(self.filePath, f"Fluorescence_{i}")
             if not os.path.exists(path):
                 break
-            imgs.append(FluorMetaData.fromTiff(path, acquisitionDirectory=self))
+            try:
+                imgs.append(FluorMetaData.fromTiff(path, acquisitionDirectory=self))
+            except ValueError:
+                logging.getLogger(__name__).info(f"Failed to load fluorescence metadata at {path}")
             i += 1
         if len(imgs) == 0:  # No files were found.
             # Old files only had a single fluorescence image with no number on the folder name.

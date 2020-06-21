@@ -26,8 +26,7 @@ import pwspy.dataTypes as pwsdt
 from pwspy.apps.PWSAnalysisApp._dockWidgets.CellSelectorDock.widgets import ReferencesTableItem
 from .widgets import CellTableWidgetItem, CellTableWidget, ReferencesTable
 from pwspy.apps.PWSAnalysisApp.componentInterfaces import CellSelector
-from pwspy.apps.PWSAnalysisApp.pluginInterfaces import CellSelectorPluginSupport, CellSelectorPlugin
-from pwspy.apps.PWSAnalysisApp.plugins import AcquisitionSequencerPlugin
+from pwspy.apps.PWSAnalysisApp.pluginInterfaces import CellSelectorPluginSupport
 
 
 class CellSelectorDock(CellSelector, QDockWidget):
@@ -35,7 +34,7 @@ class CellSelectorDock(CellSelector, QDockWidget):
     def __init__(self):
         super().__init__("Cell Selector")
         self._pluginSupport = CellSelectorPluginSupport(self)
-        self._pluginSupport.registerPlugin(AcquisitionSequencerPlugin()) #TODO ideally plugins would be added dynamically, outside of the class definition, this is fine for now though.
+        # self._pluginSupport.registerPlugin(AcquisitionSequencerPlugin()) #TODO ideally plugins would be added dynamically, outside of the class definition, this is fine for now though.
         self.setStyleSheet("QDockWidget > QWidget { border: 1px solid lightgray; }")
         self.setObjectName('CellSelectorDock')  # needed for restore state to work
         self._widget = QWidget(self)
@@ -96,14 +95,10 @@ class CellSelectorDock(CellSelector, QDockWidget):
         self.setWidget(self._widget)
 
     def _showPluginMenu(self):
-
-        def activatePlugin(p: CellSelectorPlugin):
-            p.onPluginSelected()
-
         menu = QMenu("plugin menu", self)
         for plugin in self._pluginSupport.getPlugins():
             action = QAction(plugin.getName())
-            action.triggered.connect(lambda checked, p=plugin: activatePlugin(p))
+            action.triggered.connect(lambda checked, p=plugin: p.onPluginSelected())
             menu.addAction(action)
         menu.exec(self._pluginsButton.mapToGlobal(self._pluginsButton.pos()))
 

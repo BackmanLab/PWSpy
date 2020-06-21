@@ -4,17 +4,37 @@ from typing import List
 
 from pwspy import dataTypes as pwsdt
 from pwspy.apps.PWSAnalysisApp.componentInterfaces import QABCMeta, CellSelector
-
+import pwspy.apps.PWSAnalysisApp.plugins
 
 class CellSelectorPluginSupport:
     """A utility class to help manage CellSelectorPlugins"""
     def __init__(self, selector: CellSelector):
-        self._plugins: List[CellSelectorPlugin] = []
+        pluginClasses = self._findPlugins()
+        self._plugins: List[CellSelectorPlugin] = [clazz() for clazz in pluginClasses]
+        for p in self._plugins:
+            p.setContext(selector)
         self._selector = selector
 
-    def registerPlugin(self, plugin: CellSelectorPlugin):
-        self._plugins.append(plugin)
-        plugin.setContext(self._selector)
+    def _findPlugins(self):
+        """Scans the contents of pwspy.appsPWSAnalysisApp.plugins for any modules containing subclasses of CellSelectorPlugin.
+        If someone wants to add a plugin without modifying this source code they can use namespace packages to make
+        it seem as though their plugin module is in pwspy.appsPWSAnalysisApp.plugins"""
+        import pkgutil, importlib, inspect
+        iter_namespace = lambda pkg: pkgutil.iter_modules(pkg.__path__, pkg.__name__ + ".")  # Based on something I saw here https://packaging.python.org/guides/creating-and-discovering-plugins/#using-namespace-packages
+        plugins = []
+
+        for finder, name, ispkg in iter_namespace(pwspy.apps.PWSAnalysisApp.plugins):
+            mod = importlib.import_module(name)
+            for k, v in mod.__dict__.items():
+                if inspect.isclass(v):
+                    if issubclass(v, CellSelectorPlugin):
+                        if v is not CellSelectorPlugin: # Classes are considered subclasses of themselves for some reason
+                            plugins.append(v)
+        return plugins
+
+    # def registerPlugin(self, plugin: CellSelectorPlugin):  # this is from before we automatically scanned for plugins.
+    #     self._plugins.append(plugin)
+    #     plugin.setContext(self._selector)
 
     def getPlugins(self):
         return self._plugins
@@ -33,6 +53,7 @@ class CellSelectorPluginSupport:
 
 
 class CellSelectorPlugin(metaclass=QABCMeta):
+    """Implementions of this class should require no args for the constructor"""
     @abc.abstractmethod
     def setContext(self, selector: CellSelector):
         """Set the CellSelector that this plugin is associated to. This should happen before anything else."""
@@ -62,3 +83,8 @@ class CellSelectorPlugin(metaclass=QABCMeta):
     def onPluginSelected(self):
         """This method will be called when the plugin is activated."""
         pass
+
+if __name__ == '__main__':
+    s = CellSelectorPluginSupport(None)
+    d = s._findPlugins()
+    a = 1
