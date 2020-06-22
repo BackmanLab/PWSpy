@@ -167,8 +167,12 @@ class DictTreeView(QTreeWidget):
 
 class SequencerCoordinate:
     def __init__(self, treePath: typing.Sequence[int], iterations: typing.Sequence[int]):
-        self.treePath = treePath
-        self.iterations = iterations
+        """treePath should be a list of the id numbers for each step in the path to this coordinate.
+        iterations should be a list indicating which iteration of each step the coordinate was from."""
+        assert (self.idPath) == len(self.iterations)
+        self.idPath = tuple(treePath)
+        self.iterations = tuple(iterations)
+        self.fullPath = tuple(zip(self.idPath, self.iterations))
 
     @staticmethod
     def fromDict(d: dict) -> SequencerCoordinate:
@@ -178,6 +182,20 @@ class SequencerCoordinate:
     def fromJsonFile(path: str) -> SequencerCoordinate:
         with open(path) as f:
             return SequencerCoordinate.fromDict(json.load(f))
+
+    def isSubPathOf(self, other: SequencerCoordinate):
+        """Check if `self` is a parent path of the `item` coordinate """
+        assert isinstance(other, SequencerCoordinate)
+        if len(self.fullPath) >= other.fullPath:
+            return False
+        # return self.idPath == other.idPath[:len(self.idPath)] and self.iterations == other.iterations[:len(self.iterations)]
+        return self.fullPath == other.fullPath[:len(self.fullPath)]
+
+    def __eq__(self, other: SequencerCoordinate):
+        """Check if these coordinates are identical"""
+        assert isinstance(other, SequencerCoordinate)
+        # return self.idPath == other.idPath and self.iterations == other.iterations
+        return self.fullPath == other.fullPath
 
 if __name__ == '__main__':
     with open(r'C:\Users\nicke\Desktop\data\toast2\sequence.pwsseq') as f:
