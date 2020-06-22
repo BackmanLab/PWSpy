@@ -23,13 +23,12 @@ class CellSelectorPluginSupport:
         iter_namespace = lambda pkg: pkgutil.iter_modules(pkg.__path__, pkg.__name__ + ".")  # Based on something I saw here https://packaging.python.org/guides/creating-and-discovering-plugins/#using-namespace-packages
         plugins = []
 
-        for finder, name, ispkg in iter_namespace(pwspy.apps.PWSAnalysisApp.plugins):
+        for finder, name, ispkg in iter_namespace(pwspy.apps.PWSAnalysisApp.plugins):  # Find all submodules of the root module
             mod = importlib.import_module(name)
-            for k, v in mod.__dict__.items():
-                if inspect.isclass(v):
-                    if issubclass(v, CellSelectorPlugin):
-                        if v is not CellSelectorPlugin: # Classes are considered subclasses of themselves for some reason
-                            plugins.append(v)
+            clsmembers = inspect.getmembers(mod, lambda member: inspect.isclass(member) and member.__module__ == name)  # Get all the classes that are defined in the module
+            for name, cls in clsmembers:
+                if issubclass(cls, CellSelectorPlugin):
+                    plugins.append(cls)  # Add any class that implements the plugin base class
         return plugins
 
     # def registerPlugin(self, plugin: CellSelectorPlugin):  # this is from before we automatically scanned for plugins.
