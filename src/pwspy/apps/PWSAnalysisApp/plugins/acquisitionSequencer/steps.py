@@ -32,20 +32,6 @@ class SequencerStep(SelfTreeItem):
         if children is not None:
             self.addChildren(children)
 
-    def buildCoordinates(self) -> typing.List[SequencerCoordinate]:
-        ids = []
-        iterations = []
-        step = self
-        while step is not None:
-            i, it = step._getCoordinateItem()
-            ids.append(i)
-            iterations.append(it)
-            step = step.parent()
-
-    def _getCoordinateItem(self) -> typing.Tuple[int, typing.Optional[typing.Tuple[int]]]:
-        """Return the id and the iteration needed to construct a coordinate"""
-        return self.id, None
-
     @staticmethod
     def hook(dct: dict):
         if all([i in dct for i in ("id", 'stepType', 'settings')]):
@@ -66,14 +52,6 @@ class ContainerStep(SequencerStep): pass
 class CoordSequencerStep(ContainerStep):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # self._selectedIterations = tuple()
-        # self.setData(1, f"i={self.stepIterations()}")
-
-    # def setSelectedIterations(self, iterations: typing.Sequence[int]):
-    #     self._selectedIterations = tuple(iterations)
-    #
-    # def getSelectedIterations(self) -> typing.Sequence[int]:
-    #     return self._selectedIterations
 
     @abc.abstractmethod
     def stepIterations(self):  # return the total number of iterations of this step.
@@ -151,12 +129,18 @@ class SequencerCoordinate:
 
 
 class SequencerCoordinateRange:
-    def __init__(self):
-        self._coords: typing.List[SequencerCoordinate] = []
+    def __init__(self, treePath: typing.Sequence[int], iterations: typing.Sequence[typing.Sequence[int]]):
+        """treePath should be a list of the id numbers for each step in the path to this coordinate.
+        iterations should be a list of lists indication the multiple iterations that are part of the range.."""
+        assert len(self.idPath) == len(self.iterations)
+        self.idPath = tuple(treePath)
+        self.iterations = tuple(tuple(i) for i in iterations)
+        self.fullPath = tuple(zip(self.idPath, self.iterations))
+
 
     def addCoord(self, c: SequencerCoordinate):
         self._coords.append(c)
-
+ 
     def __contains__(self, item: SequencerCoordinate):
         if not isinstance(item, SequencerCoordinate):
             return False

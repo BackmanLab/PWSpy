@@ -54,7 +54,6 @@ class EditorWidg(QWidget):
         h1 = self._coordTable.horizontalScrollBar().sizeHint().height()  # Just getting the current height doesn't work for some reason.
         self._coordTable.setMaximumHeight(h1+h2)
         self._coordTable.setMinimumHeight(h1+h2)
-        #
 
         w = 0
         for i in range(step.stepIterations()):
