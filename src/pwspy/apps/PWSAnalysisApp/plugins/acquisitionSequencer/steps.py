@@ -22,6 +22,7 @@ StepTypeNames = dict(
 
 
 class SequencerStep(SelfTreeItem):
+    """Implementation of a TreeItem for representing a sequencer step."""
     def __init__(self, id: int, settings: dict, stepType: str, children: typing.List[SequencerStep] = None):
         super().__init__()
         self.id = id
@@ -31,8 +32,8 @@ class SequencerStep(SelfTreeItem):
         if children is not None:
             self.addChildren(children)
 
-    def __repr__(self):
-        return f"Step: {self.stepType}"
+    # def __repr__(self):
+    #     return f"Step: {self.stepType}"
 
     @staticmethod
     def hook(dct: dict):
@@ -51,7 +52,14 @@ class SequencerStep(SelfTreeItem):
 class CoordSequencerStep(SequencerStep):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._selectedIterations = tuple()
         # self.setData(1, f"i={self.stepIterations()}")
+
+    def setSelectedIterations(self, iterations: typing.Sequence[int]):
+        self._selectedIterations = tuple(iterations)
+
+    def getSelectedIterations(self) -> typing.Sequence[int]:
+        return self._selectedIterations
 
     @abc.abstractmethod
     def stepIterations(self):  # return the total number of iterations of this step.
