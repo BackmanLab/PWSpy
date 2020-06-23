@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import typing
-from io import UnsupportedOperation
+
+from PyQt5 import QtCore
 
 
 class TreeItem:
@@ -31,17 +32,16 @@ class TreeItem:
         return len(self._childItems)
 
     def columnCount(self) -> int:
-        """The treemodel is designed to create one column for each element in itemData"""
-        return len(self._itemData)
+        return 1
 
-    def data(self, column: int) -> typing.Any:
+    def data(self, role: int) -> typing.Any:
         try:
-            return self._itemData[column]
+            return self._itemData[role]
         except KeyError:
             return None
 
-    def setData(self, column: int, data: typing.Any):
-        self._itemData[column] = data
+    def setData(self, role: int, data: typing.Any):
+        self._itemData[role] = data
 
     def parent(self) -> TreeItem:
         return self._parentItem
@@ -55,7 +55,11 @@ class TreeItem:
 
 
 class SelfTreeItem(TreeItem):
-    """A tree item which returns itself as as its `data`"""
-    def columnCount(self): return 1
-    def data(self, column): return self
-    def setData(self, column, data): raise UnsupportedOperation()
+    """A tree item which returns itself as as its own DisplayRole data"""
+    def __init__(self):
+        super().__init__()
+        self.setData(QtCore.Qt.DisplayRole, self)
+
+    # def columnCount(self): return 1
+    # def data(self, role): return self
+    # def setData(self, column, data): raise UnsupportedOperation()

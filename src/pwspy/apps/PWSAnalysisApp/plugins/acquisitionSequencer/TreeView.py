@@ -1,5 +1,6 @@
 import typing
 
+from PyQt5 import QtGui
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QTreeView, QWidget, QTreeWidget, QTreeWidgetItem, QAbstractItemView
 

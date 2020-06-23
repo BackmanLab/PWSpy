@@ -63,7 +63,9 @@ class EditorWidg(QWidget):
 
         #Make the selection match
         for i in range(step.stepIterations()):
-            if i in step.getSelectedIterations():
+            selectedIterations = step.data(QtCore.Qt.EditRole)
+            if selectedIterations is None: selectedIterations = []
+            if i in selectedIterations:
                 sel = True
             else:
                 sel = False
@@ -119,18 +121,20 @@ class MyDelegate(HTMLDelegate):
         self._editing = False
 
     def createEditor(self, parent: QWidget, option: QStyleOptionViewItem, index: QtCore.QModelIndex) -> QWidget:
-        if isinstance(index.data(), CoordSequencerStep):
+        if isinstance(index.internalPointer(), CoordSequencerStep):
             widg = EditorWidg(parent)
-            widg.setFromStep(index.data())
+            widg.setFromStep(index.internalPointer())
             widg.resize(option.rect.size())
             return widg
         else:
-            return None # Don't allow handling other types of values. # super().createEditor(parent, option, index)
+            return None  # Don't allow handling other types of values. # super().createEditor(parent, option, index)
 
     def setModelData(self, editor: EditorWidg, model: QtCore.QAbstractItemModel, index: QtCore.QModelIndex) -> None:
-        step: SequencerStep = model.itemData(index)[0]  # TODO add notion of DataRole
+        # step: SequencerStep = model.itemData(index)[0]  # TODO add notion of DataRole
+        step: SequencerStep = index.internalPointer()
         if isinstance(step, CoordSequencerStep):
-            step.setSelectedIterations(editor.getSelection())
+            step.setData(QtCore.Qt.EditRole, editor.getSelection())
+            # step.setSelectedIterations(editor.getSelection())
         self._editing = None
         self.sizeHintChanged.emit(index)
 
@@ -140,7 +144,7 @@ class MyDelegate(HTMLDelegate):
         return super().editorEvent(event, model, option, index)
 
     def sizeHint(self, option: QStyleOptionViewItem, index: QtCore.QModelIndex) -> QtCore.QSize:
-        if isinstance(index.data(), CoordSequencerStep) and self._editing == index:
+        if isinstance(index.internalPointer(), CoordSequencerStep) and self._editing == index:
             self.initStyleOption(option, index)
             editor = self.createEditor(None, option, index)
             s = editor.sizeHint()
@@ -150,10 +154,12 @@ class MyDelegate(HTMLDelegate):
 
     def displayText(self, value: typing.Any, locale: QtCore.QLocale) -> str:
         if isinstance(value, CoordSequencerStep):
-            if len(value.getSelectedIterations()) == 0 or len(value.getSelectedIterations()) == value.stepIterations():
+            selectedIterations = value.data(QtCore.Qt.EditRole)
+            if selectedIterations is None: selectedIterations = []
+            if len(selectedIterations) == 0 or len(selectedIterations) == value.stepIterations():
                 s = ": all coords"
             else:
-                s = f": {len(value.getSelectedIterations())} coords"
+                s = f": {len(selectedIterations)} coords"
             return "<html>" + StepTypeNames[value.stepType] + "<b>" + s + "</b>" + "</html>"
         if isinstance(value, ContainerStep):
             return StepTypeNames[value.stepType]  # Just return the name.

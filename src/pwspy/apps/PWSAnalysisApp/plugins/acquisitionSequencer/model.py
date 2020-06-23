@@ -9,17 +9,17 @@ class TreeModel(QtCore.QAbstractItemModel):
     def __init__(self, root: TreeItem, parent=None):
         super(TreeModel, self).__init__(parent)
         self._rootItem = TreeItem() # This will be invisible but will determine the header labels.
-        self._rootItem.setData(0, "m")
+        self._rootItem.setData(0, "Steps")
         # self._rootItem.setData(1, "nnnn")
         self._rootItem.addChild(root)
 
-    def columnCount(self, parent: QModelIndex):
+    def columnCount(self, parent: QModelIndex) -> int:
         if parent.isValid():
             return parent.internalPointer().columnCount()
         else:
             return self._rootItem.columnCount()
 
-    def data(self, index: QModelIndex, role: QtCore.Qt.DisplayRole):
+    def data(self, index: QModelIndex, role: int):
         if not index.isValid():
             return None
         if role != QtCore.Qt.DisplayRole:

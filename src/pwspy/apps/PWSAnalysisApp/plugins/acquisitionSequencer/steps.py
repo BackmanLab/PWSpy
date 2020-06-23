@@ -3,7 +3,7 @@ import abc
 import enum
 import json
 import typing
-from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.item import SelfTreeItem
+from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.item import SelfTreeItem, TreeItem
 from pwspy.utility.micromanager import PositionList
 
 StepTypeNames = dict(
@@ -31,9 +31,6 @@ class SequencerStep(SelfTreeItem):
         # self.setData(0, f"{Names[stepType]}")
         if children is not None:
             self.addChildren(children)
-
-    # def __repr__(self):
-    #     return f"Step: {self.stepType}"
 
     def buildCoordinates(self) -> typing.List[SequencerCoordinate]:
         ids = []
@@ -69,14 +66,14 @@ class ContainerStep(SequencerStep): pass
 class CoordSequencerStep(ContainerStep):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._selectedIterations = tuple()
+        # self._selectedIterations = tuple()
         # self.setData(1, f"i={self.stepIterations()}")
 
-    def setSelectedIterations(self, iterations: typing.Sequence[int]):
-        self._selectedIterations = tuple(iterations)
-
-    def getSelectedIterations(self) -> typing.Sequence[int]:
-        return self._selectedIterations
+    # def setSelectedIterations(self, iterations: typing.Sequence[int]):
+    #     self._selectedIterations = tuple(iterations)
+    #
+    # def getSelectedIterations(self) -> typing.Sequence[int]:
+    #     return self._selectedIterations
 
     @abc.abstractmethod
     def stepIterations(self):  # return the total number of iterations of this step.
@@ -99,6 +96,7 @@ class PositionsStep(CoordSequencerStep):
     def getIterationName(self, iteration: int) -> str:
         return self._positionList[iteration].label
 
+
 class TimeStep(CoordSequencerStep):
     def stepIterations(self):
         if not hasattr(self, '_len'):
@@ -107,6 +105,7 @@ class TimeStep(CoordSequencerStep):
 
     def getIterationName(self, iteration: int) -> str:
         return f"{iteration * self.settings['frameIntervalMinutes']} min."
+
 
 class ZStackStep(CoordSequencerStep):
     def stepIterations(self):
@@ -122,7 +121,7 @@ class SequencerCoordinate:
     def __init__(self, treePath: typing.Sequence[int], iterations: typing.Sequence[int]):
         """treePath should be a list of the id numbers for each step in the path to this coordinate.
         iterations should be a list indicating which iteration of each step the coordinate was from."""
-        assert (self.idPath) == len(self.iterations)
+        assert len(self.idPath) == len(self.iterations)
         self.idPath = tuple(treePath)
         self.iterations = tuple(iterations)
         self.fullPath = tuple(zip(self.idPath, self.iterations))
@@ -149,6 +148,7 @@ class SequencerCoordinate:
         assert isinstance(other, SequencerCoordinate)
         # return self.idPath == other.idPath and self.iterations == other.iterations
         return self.fullPath == other.fullPath
+
 
 class SequencerCoordinateRange:
     def __init__(self):
