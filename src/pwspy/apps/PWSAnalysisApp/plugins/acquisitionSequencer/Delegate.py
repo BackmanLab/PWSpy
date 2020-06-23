@@ -9,14 +9,6 @@ import typing
 from .steps import SequencerStep, CoordSequencerStep, StepTypeNames, ContainerStep
 
 
-# class StepWidget(QWidget):
-#     def __init__(self, step: SequencerStep):
-#         super().__init__()
-#         l = QGridLayout()
-#         l.addWidget(QLabel(f"F: {str(step)}"))
-#         self.setLayout(l)
-
-
 class EditorWidg(QWidget):
     def __init__(self, parent: QWidget):
         super().__init__(parent)
@@ -81,19 +73,14 @@ class EditorWidg(QWidget):
         return [i.column() for i in self._coordTable.selectedIndexes()]
 
     def sizeHint(self) -> QtCore.QSize:
-        # return QtCore.QSize(1, self._requiredHeight)  # Width doesn't matter here.
-        # return self.minimumSizeHint()
         h2 = self._coordTable.height()
         return QtCore.QSize(1, h2)  # Width doesn't seem to matter
 
 
 class HTMLDelegate(QStyledItemDelegate):
-
     def paint(self, painter, option, index):
         self.initStyleOption(option, index)
-
         style = option.widget.style() if option.widget else QApplication.style()
-
         doc = QTextDocument()
         doc.setHtml(option.text)
 
@@ -156,8 +143,6 @@ class MyDelegate(HTMLDelegate):
         if isinstance(index.data(), CoordSequencerStep) and self._editing == index:
             self.initStyleOption(option, index)
             editor = self.createEditor(None, option, index)
-            # s = self._paintWidget.sizeHint()
-            # s.setHeight(s.height())# + 20)  #TODO idk how to find out what this paddnig should be
             s = editor.sizeHint()
             return s
         else:
@@ -176,14 +161,3 @@ class MyDelegate(HTMLDelegate):
             return "\u2022" + StepTypeNames[value.stepType]  # For endpoint steps add a bullet
         else:
             super().displayText(value, locale)
-
-    # def paint(self, painter: QPainter, option: 'QStyleOptionViewItem', index: QtCore.QModelIndex) -> None:
-    #     if isinstance(index.data(), CoordSequencerStep):
-    #         painter.save()
-    #         self._paintWidget.setFromStep(index.data())
-    #         self._paintWidget.resize(option.rect.size())
-    #         painter.translate(option.rect.topLeft())
-    #         self._paintWidget.render(painter)#, None, None, None)#, QPoint(), QRegion(), QWidget.DrawChildren)
-    #         painter.restore()
-    #     else:
-    #         super().paint(painter, option, index)
