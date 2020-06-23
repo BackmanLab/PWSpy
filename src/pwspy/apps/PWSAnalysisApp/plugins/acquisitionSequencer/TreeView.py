@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QTreeView, QWidget, QTreeWidget, QTreeWidgetItem, QA
 
 from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.Delegate import MyDelegate
 from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.item import TreeItem
-
+from . import resources
 
 class MyTreeView(QTreeView):
     itemClicked = pyqtSignal(TreeItem)
@@ -15,6 +15,8 @@ class MyTreeView(QTreeView):
         self.setItemDelegate(MyDelegate(self))
         self.setEditTriggers(QAbstractItemView.AllEditTriggers)  # Make editing start on a single click.
         self.setIndentation(10)  # Reduce the default indentation
+        self.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)  # Smooth scrolling
+
 
 
 class DictTreeView(QTreeWidget):

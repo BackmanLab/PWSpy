@@ -63,7 +63,10 @@ class SequencerStep(SelfTreeItem):
         return json.loads(j, object_hook=SequencerStep.hook)
 
 
-class CoordSequencerStep(SequencerStep):
+class ContainerStep(SequencerStep): pass
+
+
+class CoordSequencerStep(ContainerStep):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._selectedIterations = tuple()
@@ -178,15 +181,15 @@ class SequencerCoordinateRange:
 
 class Types(enum.Enum):
     ACQ = SequencerStep
-    PFS = SequencerStep
+    PFS = ContainerStep
     POS = PositionsStep
     TIME = TimeStep
     AF = SequencerStep
-    CONFIG = SequencerStep
+    CONFIG = ContainerStep
     PAUSE = SequencerStep
-    EVERYN = SequencerStep
-    ROOT = SequencerStep
-    SUBFOLDER = SequencerStep
+    EVERYN = ContainerStep
+    ROOT = ContainerStep
+    SUBFOLDER = ContainerStep
     ZSTACK = ZStackStep
 
 

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QPainter, QRegion
 from PyQt5.QtWidgets import QStyledItemDelegate, QWidget, QSpinBox, QStyleOptionViewItem, QStyle, QGridLayout, QLabel, \
-    QTableWidget, QTableWidgetItem, QAbstractItemView, QScrollBar, QSizePolicy
-from PyQt5 import QtCore
+    QTableWidget, QTableWidgetItem, QAbstractItemView, QScrollBar, QSizePolicy, QFrame
+from PyQt5 import QtCore, QtGui
 import typing
-from .steps import SequencerStep, CoordSequencerStep, StepTypeNames
+from .steps import SequencerStep, CoordSequencerStep, StepTypeNames, ContainerStep
 
 
 # class StepWidget(QWidget):
@@ -16,21 +17,30 @@ from .steps import SequencerStep, CoordSequencerStep, StepTypeNames
 #         self.setLayout(l)
 
 
-class EditorWidg(QWidget): #TODO make disabled highlight color the same as active color
+class EditorWidg(QWidget):
     def __init__(self, parent: QWidget):
         super().__init__(parent)
         self.setAutoFillBackground(True)  # Prevents us from getting double vision with the painted version of the widget behind.
         self._coordTable = QTableWidget(self)
         self._coordTable.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
+        # This makes the items stay looking selected even when the table is inactive
+        self._coordTable.setStyleSheet("""QTableWidget::item:active {   
+                                        selection-background-color: darkblue;
+                                        selection-color: white;}
+                                        QTableWidget::item:inactive {
+                                        selection-background-color: darkblue;
+                                        selection-color: white;}""")
+
         self._coordTable.setRowCount(1)
         self._coordTable.horizontalHeader().setVisible(False)
         self._coordTable.verticalHeader().setVisible(False)
         self._coordTable.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)  # Always show scrollbar
         self._coordTable.horizontalScrollBar().setStyleSheet(
-            "QScrollBar:horizontal { height: 20px; }"  # For some reason setting the height directly doesn't work.
+            "QScrollBar:horizontal { height: 15px; }"  # For some reason setting the height directly doesn't work.
         )
         self._coordTable.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)  # Smooth scrolling
+        self._coordTable.sizePolicy().setHorizontalPolicy(QSizePolicy.Expanding)
         self._label = QLabel(self)
         # self._label.sizePolicy().setVerticalPolicy(QSizePolicy.Minimum)
         # self.sizePolicy().setVerticalPolicy(QSizePolicy.Maximum)
@@ -38,6 +48,7 @@ class EditorWidg(QWidget): #TODO make disabled highlight color the same as activ
         self._requiredHeight = self._label.height() + self._coordTable.horizontalScrollBar().height() + self._coordTable.rowHeight(0)
 
         l = QGridLayout()
+        l.setContentsMargins(0, 0, 0, 0)
         l.setVerticalSpacing(0)
         l.addWidget(self._label, 0, 0, 1, 1)
         l.addWidget(self._coordTable, 1, 0, 1, 1, alignment=QtCore.Qt.AlignLeft)
@@ -55,6 +66,7 @@ class EditorWidg(QWidget): #TODO make disabled highlight color the same as activ
         h2 = self._coordTable.rowHeight(0)
         h1 = self._coordTable.horizontalScrollBar().sizeHint().height()  # Just getting the current height doesn't work for some reason.
         self._coordTable.setMaximumHeight(h1+h2)
+        self._coordTable.setMinimumHeight(h1+h2)
         #
         h1 = self._label.minimumSizeHint().height()
         h2 = self._coordTable.height()
@@ -82,12 +94,15 @@ class EditorWidg(QWidget): #TODO make disabled highlight color the same as activ
         h2 = self._coordTable.height()
         return QtCore.QSize(1, h1+h2)  # Width doesn't seem to matter
 
+    def mousePressEvent(self, a0: QtGui.QMouseEvent) -> None:
+        a = 1
+
 class MyDelegate(QStyledItemDelegate):
     def __init__(self, parent: QWidget=None):
         super().__init__(parent=parent)
+        self._paintWidgetRenderedOnce = False
         self._paintWidget = EditorWidg(parent)
         self._paintWidget.setVisible(False)
-        # parent.setStyleSheet("""QAbstractItemView::item { padding: 0; }""")
 
     def createEditor(self, parent: QWidget, option: QStyleOptionViewItem, index: QtCore.QModelIndex) -> QWidget:
         if isinstance(index.data(), CoordSequencerStep):
@@ -106,21 +121,21 @@ class MyDelegate(QStyledItemDelegate):
     def sizeHint(self, option: QStyleOptionViewItem, index: QtCore.QModelIndex) -> QtCore.QSize:
         if isinstance(index.data(), CoordSequencerStep):
             s = self._paintWidget.sizeHint()
-            s.setHeight(s.height() + 40)  #TODO idk how to find out what this paddnig should be
+            s.setHeight(s.height())# + 20)  #TODO idk how to find out what this paddnig should be
             return s
         else:
             return super().sizeHint(option, index)
 
     def displayText(self, value: typing.Any, locale: QtCore.QLocale) -> str:
+        if isinstance(value, ContainerStep):
+            return StepTypeNames[value.stepType]  # Just return the name.
         if isinstance(value, SequencerStep):
-            return StepTypeNames[value.stepType]
+            return "\u2022" + StepTypeNames[value.stepType]  # For endpoint steps add a bullet
         else:
             super().displayText(value, locale)
 
     def paint(self, painter: QPainter, option: 'QStyleOptionViewItem', index: QtCore.QModelIndex) -> None:
         if isinstance(index.data(), CoordSequencerStep):
-            if option.state & QStyle.State_Selected:
-                painter.fillRect(option.rect, option.palette.highlight())
             painter.save()
             self._paintWidget.setFromStep(index.data())
             self._paintWidget.resize(option.rect.size())
