@@ -41,22 +41,17 @@ class EditorWidg(QWidget):
         )
         self._coordTable.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)  # Smooth scrolling
         self._coordTable.sizePolicy().setHorizontalPolicy(QSizePolicy.Expanding)
-        self._label = QLabel(self)
-        # self._label.sizePolicy().setVerticalPolicy(QSizePolicy.Minimum)
-        # self.sizePolicy().setVerticalPolicy(QSizePolicy.Maximum)
 
-        self._requiredHeight = self._label.height() + self._coordTable.horizontalScrollBar().height() + self._coordTable.rowHeight(0)
+        self._requiredHeight = self._coordTable.horizontalScrollBar().height() + self._coordTable.rowHeight(0)
 
         l = QGridLayout()
         l.setContentsMargins(0, 0, 0, 0)
         l.setVerticalSpacing(0)
-        l.addWidget(self._label, 0, 0, 1, 1)
-        l.addWidget(self._coordTable, 1, 0, 1, 1, alignment=QtCore.Qt.AlignLeft)
-        l.setRowStretch(2, 1)  # Allow the actual wigdets to sit at the top of the layout without getting stretched out.
+        l.addWidget(self._coordTable, 0, 0, 1, 1, alignment=QtCore.Qt.AlignLeft)
+        l.setRowStretch(1, 1)  # Allow the actual wigdets to sit at the top of the layout without getting stretched out.
         self.setLayout(l)
 
     def setFromStep(self, step: CoordSequencerStep):
-        self._label.setText(StepTypeNames[step.stepType])
         self._coordTable.setColumnCount(step.stepIterations())
         for i in range(step.stepIterations()):
             self._coordTable.setItem(0, i, QTableWidgetItem(step.getIterationName(i)))
@@ -68,8 +63,6 @@ class EditorWidg(QWidget):
         self._coordTable.setMaximumHeight(h1+h2)
         self._coordTable.setMinimumHeight(h1+h2)
         #
-        h1 = self._label.minimumSizeHint().height()
-        h2 = self._coordTable.height()
 
         w = 0
         for i in range(step.stepIterations()):
@@ -90,9 +83,8 @@ class EditorWidg(QWidget):
     def sizeHint(self) -> QtCore.QSize:
         # return QtCore.QSize(1, self._requiredHeight)  # Width doesn't matter here.
         # return self.minimumSizeHint()
-        h1 = self._label.minimumSizeHint().height()
         h2 = self._coordTable.height()
-        return QtCore.QSize(1, h1+h2)  # Width doesn't seem to matter
+        return QtCore.QSize(1, h2)  # Width doesn't seem to matter
 
 
 class HTMLDelegate(QStyledItemDelegate):
@@ -137,6 +129,7 @@ class MyDelegate(HTMLDelegate):
         self._paintWidgetRenderedOnce = False
         self._paintWidget = EditorWidg(parent)
         self._paintWidget.setVisible(False)
+        self._editing = False
 
     def createEditor(self, parent: QWidget, option: QStyleOptionViewItem, index: QtCore.QModelIndex) -> QWidget:
         if isinstance(index.data(), CoordSequencerStep):
@@ -151,14 +144,24 @@ class MyDelegate(HTMLDelegate):
         step: SequencerStep = model.itemData(index)[0]  # TODO add notion of DataRole
         if isinstance(step, CoordSequencerStep):
             step.setSelectedIterations(editor.getSelection())
+        self._editing = None
+        self.sizeHintChanged.emit(index)
 
-    # def sizeHint(self, option: QStyleOptionViewItem, index: QtCore.QModelIndex) -> QtCore.QSize:
-    #     if isinstance(index.data(), CoordSequencerStep):
-    #         s = self._paintWidget.sizeHint()
-    #         s.setHeight(s.height())# + 20)  #TODO idk how to find out what this paddnig should be
-    #         return s
-    #     else:
-    #         return super().sizeHint(option, index)
+    def editorEvent(self, event: QtCore.QEvent, model: QtCore.QAbstractItemModel, option: 'QStyleOptionViewItem', index: QtCore.QModelIndex) -> bool:
+        self._editing = index
+        self.sizeHintChanged.emit(index)
+        return super().editorEvent(event, model, option, index)
+
+    def sizeHint(self, option: QStyleOptionViewItem, index: QtCore.QModelIndex) -> QtCore.QSize:
+        if isinstance(index.data(), CoordSequencerStep) and self._editing == index:
+            self.initStyleOption(option, index)
+            editor = self.createEditor(None, option, index)
+            # s = self._paintWidget.sizeHint()
+            # s.setHeight(s.height())# + 20)  #TODO idk how to find out what this paddnig should be
+            s = editor.sizeHint()
+            return s
+        else:
+            return super().sizeHint(option, index)
 
     def displayText(self, value: typing.Any, locale: QtCore.QLocale) -> str:
         if isinstance(value, CoordSequencerStep):
