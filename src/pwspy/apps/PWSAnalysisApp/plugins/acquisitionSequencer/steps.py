@@ -35,6 +35,20 @@ class SequencerStep(SelfTreeItem):
     # def __repr__(self):
     #     return f"Step: {self.stepType}"
 
+    def buildCoordinates(self) -> typing.List[SequencerCoordinate]:
+        ids = []
+        iterations = []
+        step = self
+        while step is not None:
+            i, it = step._getCoordinateItem()
+            ids.append(i)
+            iterations.append(it)
+            step = step.parent()
+
+    def _getCoordinateItem(self) -> typing.Tuple[int, typing.Optional[typing.Tuple[int]]]:
+        """Return the id and the iteration needed to construct a coordinate"""
+        return self.id, None
+
     @staticmethod
     def hook(dct: dict):
         if all([i in dct for i in ("id", 'stepType', 'settings')]):
@@ -132,6 +146,34 @@ class SequencerCoordinate:
         assert isinstance(other, SequencerCoordinate)
         # return self.idPath == other.idPath and self.iterations == other.iterations
         return self.fullPath == other.fullPath
+
+class SequencerCoordinateRange:
+    def __init__(self):
+        self._coords: typing.List[SequencerCoordinate] = []
+
+    def addCoord(self, c: SequencerCoordinate):
+        self._coords.append(c)
+
+    def __contains__(self, item: SequencerCoordinate):
+        if not isinstance(item, SequencerCoordinate):
+            return False
+        for coord in self._coords:
+            if coord.isSubPathOf(item) or coord == item:
+                return True
+
+
+    # @staticmethod
+    # def fromStep(step: SequencerStep):
+    #     I = {}
+    #     i = I
+    #     D = {}
+    #     d = D
+    #     while step is not None:
+    #         d[step.id] = {}
+    #         d = d[step.id]
+    #
+    #         step = step.parent()
+    #     return D
 
 
 class Types(enum.Enum):

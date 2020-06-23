@@ -12,7 +12,7 @@ class MyTreeView(QTreeView):
     itemSelectionChanged = pyqtSignal()
     def __init__(self, parent: QWidget = None):
         super().__init__(parent=parent)
-        self.setItemDelegate(MyDelegate())
+        self.setItemDelegate(MyDelegate(self))
         self.setEditTriggers(QAbstractItemView.AllEditTriggers)  # Make editing start on a single click.
         self.setIndentation(10)  # Reduce the default indentation
 

@@ -5,7 +5,6 @@ from PyQt5.QtCore import QModelIndex
 
 from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.item import TreeItem
 
-
 class TreeModel(QtCore.QAbstractItemModel):
     def __init__(self, root: TreeItem, parent=None):
         super(TreeModel, self).__init__(parent)

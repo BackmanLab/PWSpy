@@ -9,11 +9,12 @@ class TreeItem:
     def __init__(self):
         self._parentItem = None
         self._itemData = {}
-        self._childItems = []
+        self._childItems: typing.List[TreeItem] = []
 
     def addChild(self, item: TreeItem):
         item._parentItem = self
         self._childItems.append(item)
+
 
     def addChildren(self, children: typing.Sequence[TreeItem]):
         for i in children:
@@ -22,6 +23,9 @@ class TreeItem:
 
     def child(self, row) -> TreeItem:
         return self._childItems[row]
+
+    def children(self) -> typing.Tuple[TreeItem]:
+        return tuple(self._childItems)
 
     def childCount(self) -> int:
         return len(self._childItems)
