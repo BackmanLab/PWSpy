@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from PyQt5.QtCore import QTimer
-from PyQt5.QtGui import QPainter, QRegion
+from PyQt5.QtCore import QTimer, QSize
+from PyQt5.QtGui import QPainter, QRegion, QTextDocument, QAbstractTextDocumentLayout, QPalette
 from PyQt5.QtWidgets import QStyledItemDelegate, QWidget, QSpinBox, QStyleOptionViewItem, QStyle, QGridLayout, QLabel, \
-    QTableWidget, QTableWidgetItem, QAbstractItemView, QScrollBar, QSizePolicy, QFrame
+    QTableWidget, QTableWidgetItem, QAbstractItemView, QScrollBar, QSizePolicy, QFrame, QApplication
 from PyQt5 import QtCore, QtGui
 import typing
 from .steps import SequencerStep, CoordSequencerStep, StepTypeNames, ContainerStep
@@ -94,10 +94,44 @@ class EditorWidg(QWidget):
         h2 = self._coordTable.height()
         return QtCore.QSize(1, h1+h2)  # Width doesn't seem to matter
 
-    def mousePressEvent(self, a0: QtGui.QMouseEvent) -> None:
-        a = 1
 
-class MyDelegate(QStyledItemDelegate):
+class HTMLDelegate(QStyledItemDelegate):
+
+    def paint(self, painter, option, index):
+        self.initStyleOption(option, index)
+
+        style = option.widget.style() if option.widget else QApplication.style()
+
+        doc = QTextDocument()
+        doc.setHtml(option.text)
+
+        # Painting item without text
+        option.text = ""
+        style.drawControl(QStyle.CE_ItemViewItem, option, painter)
+
+        ctx = QAbstractTextDocumentLayout.PaintContext()
+
+        # Highlighting text if item is selected
+        if (option.state & QStyle.State_Selected):
+            ctx.palette.setColor(QPalette.Text, option.palette.color(QPalette.Active, QPalette.HighlightedText))
+
+        textRect = style.subElementRect(QStyle.SE_ItemViewItemText, option)
+        painter.save()
+        painter.translate(textRect.topLeft())
+        painter.setClipRect(textRect.translated(-textRect.topLeft()))
+        doc.documentLayout().draw(painter, ctx)
+        painter.restore()
+
+    def sizeHint(self, option, index):
+        self.initStyleOption(option, index)
+
+        doc = QTextDocument()
+        doc.setHtml(option.text)
+        doc.setTextWidth(option.rect.width())
+        return QSize(doc.idealWidth(), doc.size().height())
+
+
+class MyDelegate(HTMLDelegate):
     def __init__(self, parent: QWidget=None):
         super().__init__(parent=parent)
         self._paintWidgetRenderedOnce = False
@@ -118,15 +152,21 @@ class MyDelegate(QStyledItemDelegate):
         if isinstance(step, CoordSequencerStep):
             step.setSelectedIterations(editor.getSelection())
 
-    def sizeHint(self, option: QStyleOptionViewItem, index: QtCore.QModelIndex) -> QtCore.QSize:
-        if isinstance(index.data(), CoordSequencerStep):
-            s = self._paintWidget.sizeHint()
-            s.setHeight(s.height())# + 20)  #TODO idk how to find out what this paddnig should be
-            return s
-        else:
-            return super().sizeHint(option, index)
+    # def sizeHint(self, option: QStyleOptionViewItem, index: QtCore.QModelIndex) -> QtCore.QSize:
+    #     if isinstance(index.data(), CoordSequencerStep):
+    #         s = self._paintWidget.sizeHint()
+    #         s.setHeight(s.height())# + 20)  #TODO idk how to find out what this paddnig should be
+    #         return s
+    #     else:
+    #         return super().sizeHint(option, index)
 
     def displayText(self, value: typing.Any, locale: QtCore.QLocale) -> str:
+        if isinstance(value, CoordSequencerStep):
+            if len(value.getSelectedIterations()) == 0 or len(value.getSelectedIterations()) == value.stepIterations():
+                s = ": all coords"
+            else:
+                s = f": {len(value.getSelectedIterations())} coords"
+            return "<html>" + StepTypeNames[value.stepType] + "<b>" + s + "</b>" + "</html>"
         if isinstance(value, ContainerStep):
             return StepTypeNames[value.stepType]  # Just return the name.
         if isinstance(value, SequencerStep):
@@ -134,13 +174,13 @@ class MyDelegate(QStyledItemDelegate):
         else:
             super().displayText(value, locale)
 
-    def paint(self, painter: QPainter, option: 'QStyleOptionViewItem', index: QtCore.QModelIndex) -> None:
-        if isinstance(index.data(), CoordSequencerStep):
-            painter.save()
-            self._paintWidget.setFromStep(index.data())
-            self._paintWidget.resize(option.rect.size())
-            painter.translate(option.rect.topLeft())
-            self._paintWidget.render(painter)#, None, None, None)#, QPoint(), QRegion(), QWidget.DrawChildren)
-            painter.restore()
-        else:
-            super().paint(painter, option, index)
+    # def paint(self, painter: QPainter, option: 'QStyleOptionViewItem', index: QtCore.QModelIndex) -> None:
+    #     if isinstance(index.data(), CoordSequencerStep):
+    #         painter.save()
+    #         self._paintWidget.setFromStep(index.data())
+    #         self._paintWidget.resize(option.rect.size())
+    #         painter.translate(option.rect.topLeft())
+    #         self._paintWidget.render(painter)#, None, None, None)#, QPoint(), QRegion(), QWidget.DrawChildren)
+    #         painter.restore()
+    #     else:
+    #         super().paint(painter, option, index)
