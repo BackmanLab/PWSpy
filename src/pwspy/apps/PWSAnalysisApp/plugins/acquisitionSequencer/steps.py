@@ -3,7 +3,7 @@ import abc
 import enum
 import json
 import typing
-from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.item import SelfTreeItem, TreeItem
+from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.item import SelfTreeItem
 from pwspy.utility.micromanager import PositionList
 
 StepTypeNames = dict(
@@ -93,74 +93,6 @@ class ZStackStep(CoordSequencerStep):
 
     def getIterationName(self, iteration: int) -> str:
         return f"{iteration * self.settings['intervalUm']} μm"
-
-
-class SequencerCoordinate:
-    def __init__(self, treePath: typing.Sequence[int], iterations: typing.Sequence[int]):
-        """treePath should be a list of the id numbers for each step in the path to this coordinate.
-        iterations should be a list indicating which iteration of each step the coordinate was from."""
-        assert len(self.idPath) == len(self.iterations)
-        self.idPath = tuple(treePath)
-        self.iterations = tuple(iterations)
-        self.fullPath = tuple(zip(self.idPath, self.iterations))
-
-    @staticmethod
-    def fromDict(d: dict) -> SequencerCoordinate:
-        return SequencerCoordinate(treePath=d['treeIdPath'], iterations=d["stepIterations"])
-
-    @staticmethod
-    def fromJsonFile(path: str) -> SequencerCoordinate:
-        with open(path) as f:
-            return SequencerCoordinate.fromDict(json.load(f))
-
-    def isSubPathOf(self, other: SequencerCoordinate):
-        """Check if `self` is a parent path of the `item` coordinate """
-        assert isinstance(other, SequencerCoordinate)
-        if len(self.fullPath) >= len(other.fullPath):
-            return False
-        # return self.idPath == other.idPath[:len(self.idPath)] and self.iterations == other.iterations[:len(self.iterations)]
-        return self.fullPath == other.fullPath[:len(self.fullPath)]
-
-    def __eq__(self, other: SequencerCoordinate):
-        """Check if these coordinates are identical"""
-        assert isinstance(other, SequencerCoordinate)
-        # return self.idPath == other.idPath and self.iterations == other.iterations
-        return self.fullPath == other.fullPath
-
-
-class SequencerCoordinateRange:
-    def __init__(self, treePath: typing.Sequence[int], iterations: typing.Sequence[typing.Sequence[int]]):
-        """treePath should be a list of the id numbers for each step in the path to this coordinate.
-        iterations should be a list of lists indication the multiple iterations that are part of the range.."""
-        assert len(self.idPath) == len(self.iterations)
-        self.idPath = tuple(treePath)
-        self.iterations = tuple(tuple(i) for i in iterations)
-        self.fullPath = tuple(zip(self.idPath, self.iterations))
-
-
-    def addCoord(self, c: SequencerCoordinate):
-        self._coords.append(c)
- 
-    def __contains__(self, item: SequencerCoordinate):
-        if not isinstance(item, SequencerCoordinate):
-            return False
-        for coord in self._coords:
-            if coord.isSubPathOf(item) or coord == item:
-                return True
-
-
-    # @staticmethod
-    # def fromStep(step: SequencerStep):
-    #     I = {}
-    #     i = I
-    #     D = {}
-    #     d = D
-    #     while step is not None:
-    #         d[step.id] = {}
-    #         d = d[step.id]
-    #
-    #         step = step.parent()
-    #     return D
 
 
 class Types(enum.Enum):
