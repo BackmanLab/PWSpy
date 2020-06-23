@@ -1,14 +1,16 @@
 import typing
 
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QTreeWidget
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QTreeView, QApplication
 
 from pwspy.apps.PWSAnalysisApp.componentInterfaces import CellSelector
 from pwspy.apps.PWSAnalysisApp.pluginInterfaces import CellSelectorPlugin
 import pwspy.dataTypes as pwsdt
 import os
 
-from pwspy.utility.micromanager.pwsseq.pwsSequence import SequencerStep, DictTreeView
+from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.TreeView import DictTreeView, MyTreeView
+from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.model import TreeModel
+from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.steps import SequencerStep
 
 
 def requirePluginActive(method):
@@ -82,11 +84,12 @@ class SequenceViewer(QWidget):
 
     def __init__(self, parent: QWidget = None):
         super().__init__(parent)
+        self.setWindowTitle("Acquisition Sequence Viewer")
+
         l = QHBoxLayout()
         self.setLayout(l)
 
-        self._sequenceTree = QTreeWidget()
-        self._sequenceTree.setColumnCount(2)
+        self._sequenceTree = QTreeView()
         self._sequenceTree.setIndentation(10)
 
         self._settingsTree = DictTreeView()
@@ -103,6 +106,54 @@ class SequenceViewer(QWidget):
         self._sequenceTree.clear()
         self._sequenceTree.addTopLevelItem(root)
         root.setExpanded(True)
+
+if __name__ == '__main__':
+    with open(r'C:\Users\nicke\Desktop\data\toast2\sequence.pwsseq') as f:
+        s = SequencerStep.fromJson(f.read())
+    import sys
+    from pwspy import dataTypes as pwsdt
+    from glob import glob
+
+    acqs = [pwsdt.AcqDir(i) for i in glob(r"C:\Users\nicke\Desktop\data\toast2\Cell*")]
+
+    import sys
+
+    app = QApplication(sys.argv)
+
+    model = TreeModel(s)
+
+    view = MyTreeView()
+    view.setModel(model)
+    view.setWindowTitle("Simple Tree Model")
+    view.show()
+    sys.exit(app.exec_())
+
+
+    app = QApplication(sys.argv)
+
+    W = QWidget()
+    W.setLayout(QHBoxLayout())
+
+    w = QTreeWidget()
+    w.setColumnCount(2)
+    w.addTopLevelItem(s)
+    w.setIndentation(10)
+
+    w2 = DictTreeView()
+    w2.setColumnCount(2)
+    w2.setIndentation(10)
+
+
+    w.itemClicked.connect(lambda item, column: w2.setDict(item.settings))
+
+    W.layout().addWidget(w)
+    W.layout().addWidget(w2)
+
+
+    W.show()
+    app.exec()
+    a = 1
+
 
 if __name__ == '__main__':
     from pwspy.apps.PWSAnalysisApp.pluginInterfaces import CellSelectorPluginSupport

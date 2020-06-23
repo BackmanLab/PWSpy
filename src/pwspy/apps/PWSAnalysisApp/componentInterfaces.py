@@ -29,7 +29,6 @@ from pwspy import dataTypes as pwsdt
 from pwspy.analysis import AbstractRuntimeAnalysisSettings
 from pwspy.apps.PWSAnalysisApp.utilities.conglomeratedAnalysis import ConglomerateCompilerResults, \
     ConglomerateCompilerSettings
-from pwspy.dataTypes import AcqDir
 
 
 class QABCMeta(sip.wrappertype, abc.ABCMeta):
@@ -67,7 +66,7 @@ class CellSelector(metaclass=QABCMeta):
 
 class ResultsTableController(metaclass=QABCMeta):
     @abc.abstractmethod
-    def addCompilationResult(self, result: ConglomerateCompilerResults, acquisition: AcqDir): pass
+    def addCompilationResult(self, result: ConglomerateCompilerResults, acquisition: pwsdt.AcqDir): pass
 
     @abc.abstractmethod
     def clearCompilationResults(self): pass
