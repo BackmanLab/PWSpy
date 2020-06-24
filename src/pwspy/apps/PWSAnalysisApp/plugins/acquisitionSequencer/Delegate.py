@@ -6,10 +6,12 @@ from PyQt5.QtWidgets import QStyledItemDelegate, QWidget, QSpinBox, QStyleOption
     QTableWidget, QTableWidgetItem, QAbstractItemView, QScrollBar, QSizePolicy, QFrame, QApplication
 from PyQt5 import QtCore, QtGui
 import typing
+
+from .sequencerCoordinate import IterationRangeCoordStep
 from .steps import SequencerStep, CoordSequencerStep, StepTypeNames, ContainerStep
 
 
-class EditorWidg(QWidget):
+class IterationRangeEditor(QWidget):
     def __init__(self, parent: QWidget):
         super().__init__(parent)
         self.setAutoFillBackground(True)  # Prevents us from getting double vision with the painted version of the widget behind.
@@ -62,9 +64,9 @@ class EditorWidg(QWidget):
 
         #Make the selection match
         for i in range(step.stepIterations()):
-            selectedIterations = step.data(QtCore.Qt.EditRole)
-            if selectedIterations is None: selectedIterations = []
-            if i in selectedIterations:
+            selectedIterations: IterationRangeCoordStep = step.data(QtCore.Qt.EditRole)
+            if selectedIterations is None: selectedIterations = IterationRangeCoordStep(step.id, [])  # no iterations selected, should be treated the same as having all iterations selected
+            if i in selectedIterations.iterations:
                 sel = True
             else:
                 sel = False
@@ -111,28 +113,29 @@ class HTMLDelegate(QStyledItemDelegate):
         return QSize(doc.idealWidth(), doc.size().height())
 
 
-class MyDelegate(HTMLDelegate):
+class IterationRangeDelegate(HTMLDelegate):
     def __init__(self, parent: QWidget=None):
         super().__init__(parent=parent)
         self._paintWidgetRenderedOnce = False
-        self._paintWidget = EditorWidg(parent)
+        self._paintWidget = IterationRangeEditor(parent)
         self._paintWidget.setVisible(False)
         self._editing = False
 
     def createEditor(self, parent: QWidget, option: QStyleOptionViewItem, index: QtCore.QModelIndex) -> QWidget:
         if isinstance(index.internalPointer(), CoordSequencerStep):
-            widg = EditorWidg(parent)
+            widg = IterationRangeEditor(parent)
             widg.setFromStep(index.internalPointer())
             widg.resize(option.rect.size())
             return widg
         else:
             return None  # Don't allow handling other types of values. # super().createEditor(parent, option, index)
 
-    def setModelData(self, editor: EditorWidg, model: QtCore.QAbstractItemModel, index: QtCore.QModelIndex) -> None:
+    def setModelData(self, editor: IterationRangeEditor, model: QtCore.QAbstractItemModel, index: QtCore.QModelIndex) -> None:
         # step: SequencerStep = model.itemData(index)[0]  # TODO add notion of DataRole
         step: SequencerStep = index.internalPointer()
         if isinstance(step, CoordSequencerStep):
-            step.setData(QtCore.Qt.EditRole, editor.getSelection())
+            coordRange = IterationRangeCoordStep(step.id, editor.getSelection())
+            step.setData(QtCore.Qt.EditRole, coordRange)
             # step.setSelectedIterations(editor.getSelection())
         self._editing = None
         self.sizeHintChanged.emit(index)
@@ -153,12 +156,16 @@ class MyDelegate(HTMLDelegate):
 
     def displayText(self, value: typing.Any, locale: QtCore.QLocale) -> str:
         if isinstance(value, CoordSequencerStep):
-            selectedIterations = value.data(QtCore.Qt.EditRole)
+            itRangeCoord: IterationRangeCoordStep = value.data(QtCore.Qt.EditRole)
+            selectedIterations = itRangeCoord.iterations
             if selectedIterations is None: selectedIterations = []
             if len(selectedIterations) == 0 or len(selectedIterations) == value.stepIterations():
                 s = ": all coords"
             else:
-                s = f": {len(selectedIterations)} coords"
+                numCoords = len(selectedIterations)
+                s = f": {numCoords} coord"
+                if numCoords > 1:
+                    s += 's'
             return "<html>" + StepTypeNames[value.stepType] + "<b>" + s + "</b>" + "</html>"
         if isinstance(value, ContainerStep):
             return StepTypeNames[value.stepType]  # Just return the name.

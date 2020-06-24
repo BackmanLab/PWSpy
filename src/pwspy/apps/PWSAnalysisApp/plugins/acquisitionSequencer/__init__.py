@@ -8,6 +8,7 @@ from pwspy.apps.PWSAnalysisApp.pluginInterfaces import CellSelectorPlugin
 import pwspy.dataTypes as pwsdt
 import os
 
+from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.SeqAcqDir import SeqAcqDir
 from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.TreeView import DictTreeView, MyTreeView
 from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.model import TreeModel
 from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.steps import SequencerStep
@@ -107,6 +108,7 @@ class SequenceViewer(QWidget):
         self._sequenceTree.addTopLevelItem(root)
         root.setExpanded(True)
 
+
 if __name__ == '__main__':
     with open(r'C:\Users\nicke\Desktop\data\toast2\sequence.pwsseq') as f:
         s = SequencerStep.fromJson(f.read())
@@ -115,6 +117,7 @@ if __name__ == '__main__':
     from glob import glob
 
     acqs = [pwsdt.AcqDir(i) for i in glob(r"C:\Users\nicke\Desktop\data\toast2\Cell*")]
+    sacqs = [SeqAcqDir(acq) for acq in acqs]
 
     import sys
 
@@ -152,11 +155,4 @@ if __name__ == '__main__':
 
     W.show()
     app.exec()
-    a = 1
-
-
-if __name__ == '__main__':
-    from pwspy.apps.PWSAnalysisApp.pluginInterfaces import CellSelectorPluginSupport
-    s = CellSelectorPluginSupport(None)
-    d = s._findPlugins()
     a = 1

@@ -1,21 +1,37 @@
 import typing
 
-from PyQt5 import QtGui
-from PyQt5.QtCore import pyqtSignal
+from PyQt5 import QtGui, QtCore
+from PyQt5.QtCore import pyqtSignal, QItemSelection
 from PyQt5.QtWidgets import QTreeView, QWidget, QTreeWidget, QTreeWidgetItem, QAbstractItemView
 
-from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.Delegate import MyDelegate
-from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.item import TreeItem
+from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer import SequencerStep
+from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.Delegate import IterationRangeDelegate
+from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.sequencerCoordinate import IterationRangeCoordStep, \
+    SequencerCoordinateRange
+
 
 class MyTreeView(QTreeView):
-    itemClicked = pyqtSignal(TreeItem)
-    itemSelectionChanged = pyqtSignal()
+    newCoordSelected = pyqtSignal(SequencerCoordinateRange)
+
     def __init__(self, parent: QWidget = None):
         super().__init__(parent=parent)
-        self.setItemDelegate(MyDelegate(self))
+        self.setItemDelegate(IterationRangeDelegate(self))
         self.setEditTriggers(QAbstractItemView.AllEditTriggers)  # Make editing start on a single click.
         self.setIndentation(10)  # Reduce the default indentation
         self.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)  # Smooth scrolling
+
+        self.selectionModel().selectionChanged.connect(self._selectionChanged)
+
+    def _selectionChanged(self, selected: QItemSelection, deselected: QItemSelection):
+        step: SequencerStep = selected.first()  # We only support a single selection anyways.
+        coordSteps = []
+        while step is not None: # This will break out once we reach the root item.
+            coordStep = step.data(QtCore.Qt.EditRole)  # The item delegate saves an iterationRangeCoordStep in the edit role of steps.
+            if coordStep is None:
+                coordSteps.append(IterationRangeCoordStep(step.id, None))
+            else:
+                coordSteps.append(coordStep)
+        self.newCoordSelected.emit(SequencerCoordinateRange(list(reversed(coordSteps))))
 
 
 class DictTreeView(QTreeWidget):

@@ -50,7 +50,12 @@ class IterationRangeCoordStep:
         self.iterations = iterations
 
     def __contains__(self, item: SequencerCoordinateStep):
-        return self.stepId == item.stepId and item.iteration in self.iterations
+        if self.stepId == item.stepId:
+            if len(self.iterations) == 0:  # If the accepted iterations are empty then we accept any iteration
+                return True
+            elif item.iteration in self.iterations:
+                return True
+        return False
 
 
 class SequencerCoordinateRange:
@@ -65,4 +70,3 @@ class SequencerCoordinateRange:
             if not (item.fullPath[i] in coordRange):
                 return False
         return True
-    
