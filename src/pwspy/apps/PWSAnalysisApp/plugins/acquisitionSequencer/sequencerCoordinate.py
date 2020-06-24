@@ -8,8 +8,8 @@ from pwspy.dataTypes import AcqDir
 class SequencerCoordinateStep:
     """The contribution of a sequencer coordinate from a single step"""
     def __init__(self, id: int, iteration: int = None):
-        self.stepId = id
-        self.iteration = iteration
+        self.stepId = id  # All steps should have a unique id number
+        self.iteration = iteration  # Most steps will keep this as None, iterable steps will have an iteration.
 
     def __eq__(self, other: SequencerCoordinateStep):
         return self.stepId == other.stepId and self.iteration == other.iteration
@@ -47,13 +47,15 @@ class SequencerCoordinate:
 
 class IterationRangeCoordStep:
     """Represents a coordinate for a single step that accepts multiple iterations"""
-    def __init__(self, id: int, iterations: typing.Sequence[int]):
+    def __init__(self, id: int, iterations: typing.Sequence[int] = None):
         self.stepId = id
-        self.iterations = iterations
+        self.iterations = iterations  #Only iterable step types will have this, most types will keep this as None
 
     def __contains__(self, item: SequencerCoordinateStep):
         if self.stepId == item.stepId:
-            if len(self.iterations) == 0:  # If the accepted iterations are empty then we accept any iteration
+            if self.iterations is None:  # This step doesn't have any iterations so there is no need to check anything.
+                return True
+            elif len(self.iterations) == 0:  # If the accepted iterations are empty then we accept any iteration
                 return True
             elif item.iteration in self.iterations:
                 return True

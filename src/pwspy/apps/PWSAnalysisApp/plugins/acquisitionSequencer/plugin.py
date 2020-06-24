@@ -47,6 +47,8 @@ class AcquisitionSequencerPlugin(CellSelectorPlugin):
     @requirePluginActive
     def onNewCellsLoaded(self, cells: typing.List[pwsdt.AcqDir]):
         """This method will be called when the CellSelector indicates that new cells have been loaded to the selector."""
+        if len(cells) == 0: # This causes a crash
+            return
         #Search the parent directory for a `sequence.pwsseq` file containing the sequence information.
         paths = [i.filePath for i in cells]
         commonPath = os.path.commonpath(paths)
@@ -108,9 +110,8 @@ class SequenceViewer(QWidget):
         l.addWidget(self._settingsTree)
 
     def setSequenceStepRoot(self, root: SequencerStep):
-        self._sequenceTree.clear()
-        self._sequenceTree.addTopLevelItem(root)
-        root.setExpanded(True)
+        self._sequenceTree.setRoot(root)
+        self._sequenceTree.expandAll()
 
 
 if __name__ == '__main__':

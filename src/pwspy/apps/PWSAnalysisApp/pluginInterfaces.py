@@ -25,7 +25,7 @@ class CellSelectorPluginSupport:
 
         for finder, name, ispkg in iter_namespace(pwspy.apps.PWSAnalysisApp.plugins):  # Find all submodules of the root module
             mod = importlib.import_module(name)
-            clsmembers = inspect.getmembers(mod, lambda member: inspect.isclass(member) and member.__module__ == name)  # Get all the classes that are defined in the module
+            clsmembers = inspect.getmembers(mod, lambda member: inspect.isclass(member))  # Get all the classes that are defined in the module
             for name, cls in clsmembers:
                 if issubclass(cls, CellSelectorPlugin):
                     plugins.append(cls)  # Add any class that implements the plugin base class

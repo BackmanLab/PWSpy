@@ -1,7 +1,7 @@
 from __future__ import annotations
 import typing
 from PyQt5 import QtCore
-from PyQt5.QtCore import QSize
+from PyQt5.QtCore import QSize, pyqtSignal
 from PyQt5.QtGui import QTextDocument, QAbstractTextDocumentLayout, QPalette
 from PyQt5.QtWidgets import QStyledItemDelegate, QWidget, QStyleOptionViewItem, QStyle, QGridLayout, QTableWidget, \
     QTableWidgetItem, QAbstractItemView, QSizePolicy, QApplication
@@ -112,7 +112,9 @@ class HTMLDelegate(QStyledItemDelegate):
 
 
 class IterationRangeDelegate(HTMLDelegate):
-    def __init__(self, parent: QWidget=None):
+    editingFinished = pyqtSignal()
+
+    def __init__(self, parent: QWidget = None):
         super().__init__(parent=parent)
         self._paintWidgetRenderedOnce = False
         self._paintWidget = IterationRangeEditor(parent)
@@ -129,14 +131,13 @@ class IterationRangeDelegate(HTMLDelegate):
             return None  # Don't allow handling other types of values. # super().createEditor(parent, option, index)
 
     def setModelData(self, editor: IterationRangeEditor, model: QtCore.QAbstractItemModel, index: QtCore.QModelIndex) -> None:
-        # step: SequencerStep = model.itemData(index)[0]  # TODO add notion of DataRole
         step: SequencerStep = index.internalPointer()
         if isinstance(step, CoordSequencerStep):
             coordRange = IterationRangeCoordStep(step.id, editor.getSelection())
             step.setData(QtCore.Qt.EditRole, coordRange)
-            # step.setSelectedIterations(editor.getSelection())
         self._editing = None
         self.sizeHintChanged.emit(index)
+        self.editingFinished.emit()
 
     def editorEvent(self, event: QtCore.QEvent, model: QtCore.QAbstractItemModel, option: 'QStyleOptionViewItem', index: QtCore.QModelIndex) -> bool:
         self._editing = index

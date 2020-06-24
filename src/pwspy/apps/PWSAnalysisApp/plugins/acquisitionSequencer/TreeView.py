@@ -17,7 +17,9 @@ class MyTreeView(QTreeView):
 
     def __init__(self, parent: QWidget = None):
         super().__init__(parent=parent)
-        self.setItemDelegate(IterationRangeDelegate(self))
+        delegate = IterationRangeDelegate(self)
+        self.setItemDelegate(delegate)
+        delegate.editingFinished.connect(lambda: self._selectionChanged(self.selectionModel().selection())) # When we edit an item we still want to process it as a change even though the selection hasn't changed.
         self.setEditTriggers(QAbstractItemView.AllEditTriggers)  # Make editing start on a single click.
         self.setIndentation(10)  # Reduce the default indentation
         self.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)  # Smooth scrolling
@@ -29,7 +31,7 @@ class MyTreeView(QTreeView):
         self.selectionModel().selectionChanged.connect(self._selectionChanged)
         self.selectionModel().currentChanged.connect(self._currentChanged)
 
-    def _selectionChanged(self, selected: QItemSelection, deselected: QItemSelection):
+    def _selectionChanged(self, selected: QItemSelection, deselected: QItemSelection = None):
         idx = selected.indexes()[0]  # We only support a single selection anyways.
         step: SequencerStep = idx.internalPointer()
         coordSteps = []
