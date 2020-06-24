@@ -1,12 +1,10 @@
 from __future__ import annotations
-
-from PyQt5.QtCore import QTimer, QSize
-from PyQt5.QtGui import QPainter, QRegion, QTextDocument, QAbstractTextDocumentLayout, QPalette
-from PyQt5.QtWidgets import QStyledItemDelegate, QWidget, QSpinBox, QStyleOptionViewItem, QStyle, QGridLayout, QLabel, \
-    QTableWidget, QTableWidgetItem, QAbstractItemView, QScrollBar, QSizePolicy, QFrame, QApplication
-from PyQt5 import QtCore, QtGui
 import typing
-
+from PyQt5 import QtCore
+from PyQt5.QtCore import QSize
+from PyQt5.QtGui import QTextDocument, QAbstractTextDocumentLayout, QPalette
+from PyQt5.QtWidgets import QStyledItemDelegate, QWidget, QStyleOptionViewItem, QStyle, QGridLayout, QTableWidget, \
+    QTableWidgetItem, QAbstractItemView, QSizePolicy, QApplication
 from .sequencerCoordinate import IterationRangeCoordStep
 from .steps import SequencerStep, CoordSequencerStep, StepTypeNames, ContainerStep
 
@@ -157,8 +155,10 @@ class IterationRangeDelegate(HTMLDelegate):
     def displayText(self, value: typing.Any, locale: QtCore.QLocale) -> str:
         if isinstance(value, CoordSequencerStep):
             itRangeCoord: IterationRangeCoordStep = value.data(QtCore.Qt.EditRole)
-            selectedIterations = itRangeCoord.iterations
-            if selectedIterations is None: selectedIterations = []
+            if itRangeCoord is None:
+                selectedIterations = []  # TODO this happens for steps where we haven't assigned any iterations (non iterable step types). Should we have a `None` here?
+            else:
+                selectedIterations = itRangeCoord.iterations
             if len(selectedIterations) == 0 or len(selectedIterations) == value.stepIterations():
                 s = ": all coords"
             else:

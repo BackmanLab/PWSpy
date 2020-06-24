@@ -1,6 +1,8 @@
 from __future__ import annotations
 import json
 import typing
+import os
+from pwspy.dataTypes import AcqDir
 
 
 class SequencerCoordinateStep:
@@ -70,3 +72,10 @@ class SequencerCoordinateRange:
             if not (item.fullPath[i] in coordRange):
                 return False
         return True
+
+class SeqAcqDir:
+    def __init__(self, acq: AcqDir):
+        self.acquisitionDirectory = acq
+        path = os.path.join(acq.filePath, "sequencerCoords.json")
+        self.sequencerCoordinate = SequencerCoordinate.fromJsonFile(path)
+

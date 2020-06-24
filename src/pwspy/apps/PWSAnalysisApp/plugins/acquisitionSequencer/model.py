@@ -2,16 +2,18 @@ import typing
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import QModelIndex
-
 from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.item import TreeItem
+
 
 class TreeModel(QtCore.QAbstractItemModel):
     def __init__(self, root: TreeItem, parent=None):
         super(TreeModel, self).__init__(parent)
-        self._rootItem = TreeItem() # This will be invisible but will determine the header labels.
+        self._rootItem = TreeItem()  # This will be invisible but will determine the header labels.
         self._rootItem.setData(0, "Steps")
-        # self._rootItem.setData(1, "nnnn")
         self._rootItem.addChild(root)
+
+    def invisibleRootItem(self) -> TreeItem:
+        return self._rootItem
 
     def columnCount(self, parent: QModelIndex) -> int:
         if parent.isValid():

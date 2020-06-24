@@ -1,7 +1,5 @@
 from __future__ import annotations
-
 import typing
-
 from PyQt5 import QtCore
 
 
