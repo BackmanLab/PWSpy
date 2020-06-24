@@ -22,7 +22,7 @@ def requirePluginActive(method):
     return newMethod
 
 
-class AcquisitionSequencerPlugin(CellSelectorPlugin):
+class AcquisitionSequencerPlugin(CellSelectorPlugin): #TODO switch to a qdialog or dock widget, make sure widget has a parent. Provide new columns to the cell selector and results selector with coordinate?
     def __init__(self):
         self._selector: CellSelector = None
         self._sequence: SequencerStep = None
