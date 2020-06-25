@@ -51,6 +51,11 @@ class TreeItem:
         else:
             return None
 
+    def iterateChildren(self) -> typing.Generator[TreeItem]:
+        """Recursively iterate through all children of this step"""
+        for child in self._childItems:
+            yield child
+            yield from child.iterateChildren()
 
 class SelfTreeItem(TreeItem):
     """A tree item which returns itself as as its own DisplayRole data"""

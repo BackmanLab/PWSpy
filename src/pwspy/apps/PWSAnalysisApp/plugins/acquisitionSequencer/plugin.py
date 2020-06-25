@@ -89,7 +89,7 @@ class AcquisitionSequencerPlugin(CellSelectorPlugin): #TODO switch to a qdialog 
         """The header names for each column."""
         return "Coord. Type", "Coord. Value"
 
-    def getTableWidgets(self, acq: pwsdt.AcqDir) -> typing.Sequence[QWidget]:
+    def getTableWidgets(self, acq: pwsdt.AcqDir) -> typing.Sequence[QWidget]:  #TODO this gets called before the sequence has been loaded. Make it so this isn't required for constructor of cell table widgets.
         """provide a widget for each additional column to represent `acq`"""
         typeNames = {SequencerStepTypes.POS: "Position", SequencerStepTypes.TIME: "Time", SequencerStepTypes.ZSTACK: "Z Stack"}
         try:
