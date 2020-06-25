@@ -84,7 +84,7 @@ class PWSWindow(QMainWindow):
         settings = QtCore.QSettings("BackmanLab", "PWSAnalysis2")
         settings.setValue("geometry", self.saveGeometry())
         settings.setValue("windowState", self.saveState())
-        self.cellSelector.clearCells() #This causes the current cell items to save their metadata.
+        self.cellSelector.close() #This causes the current cell items to save their metadata.
         super().closeEvent(event)
 
     def openInfoPane(self):

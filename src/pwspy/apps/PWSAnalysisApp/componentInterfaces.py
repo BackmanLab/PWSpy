@@ -64,6 +64,9 @@ class CellSelector(metaclass=QABCMeta):
     @abc.abstractmethod
     def refreshCellItems(self): pass
 
+    @abc.abstractmethod
+    def close(self): pass
+
 
 class ResultsTableController(metaclass=QABCMeta):
     @abc.abstractmethod

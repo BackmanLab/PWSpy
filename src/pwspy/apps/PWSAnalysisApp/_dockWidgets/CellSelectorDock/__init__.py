@@ -103,12 +103,6 @@ class CellSelectorDock(CellSelector, QDockWidget):
             menu.addAction(action)
         menu.exec(self._pluginsButton.mapToGlobal(self._pluginsButton.pos()))
 
-    def loadNewCells(self, fileNames: List[str], workingDir: str):
-        self.clearCells()
-        self._addCells(fileNames, workingDir)
-        self._updateFilters()
-        self._pluginSupport.notifyNewCellsLoaded(self.getAllCellMetas())
-
     # def _addCell(self, fileName: str, workingDir: str):
     #     try:
     #         cell = pwsdt.AcqDir(fileName)
@@ -140,7 +134,7 @@ class CellSelectorDock(CellSelector, QDockWidget):
             self._refTableWidget.updateReferences(True, refItems)
         self._tableWidget.addCellItems(cellItems)
 
-    def clearCells(self):  #This is used publically, probably shouldn't be.
+    def _clearCells(self):  #This is used publically, probably shouldn't be.
         self._cells = []
         self._tableWidget.clearCellItems()
 
@@ -185,6 +179,16 @@ class CellSelectorDock(CellSelector, QDockWidget):
                 self._tableWidget.setRowHidden(item.row, False)
             else:
                 self._tableWidget.setRowHidden(item.row, True)
+
+    def close(self):
+        """This makes sure the application metadata is saved."""
+        self._clearCells()
+
+    def loadNewCells(self, fileNames: List[str], workingDir: str):
+        self._clearCells()
+        self._addCells(fileNames, workingDir)
+        self._updateFilters()
+        self._pluginSupport.notifyNewCellsLoaded(self.getAllCellMetas())
 
     def getSelectedCellMetas(self) -> List[pwsdt.AcqDir]:
         return [i.acqDir for i in self._tableWidget.selectedCellItems]
