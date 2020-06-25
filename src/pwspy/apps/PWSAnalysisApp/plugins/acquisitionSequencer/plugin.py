@@ -58,7 +58,11 @@ class AcquisitionSequencerPlugin(CellSelectorPlugin): #TODO switch to a qdialog 
         for i in range(3):
             if os.path.exists(os.path.join(commonPath, 'sequence.pwsseq')):
                 with open(os.path.join(commonPath, 'sequence.pwsseq')) as f:
-                    self._sequence = SequencerStep.fromJson(f.read())
+                    try:
+                        self._sequence = SequencerStep.fromJson(f.read())
+                    except:  # if the file format is messed up this will fail, dont' let it crash the whole plugin though.
+                        commonPath = os.path.split(commonPath)[0]  # Go up one directory
+                        continue
                     self._cells = []
                     for i in cells:
                         try:

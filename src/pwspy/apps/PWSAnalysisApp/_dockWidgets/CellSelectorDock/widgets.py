@@ -71,9 +71,9 @@ class CellTableWidgetItem:
             i.setFlags(i.flags() ^ QtCore.Qt.ItemIsEditable)
         for acq, label in [(self.acqDir.pws, self.pLabel), (self.acqDir.dynamics, self.dLabel)]:
             if acq is not None:
-                self.pLabel.setText('Y'); self.pLabel.setBackground(QtCore.Qt.darkGreen)
+                label.setText('Y'); label.setBackground(QtCore.Qt.darkGreen)
             else:
-                self.pLabel.setText('N'); self.pLabel.setBackground(QtCore.Qt.white)
+                label.setText('N'); label.setBackground(QtCore.Qt.white)
         if len(self.acqDir.fluorescence) != 0: self.fLabel.setText('Y'); self.fLabel.setBackground(QtCore.Qt.darkGreen)
         else: self.fLabel.setText('N'); self.fLabel.setBackground(QtCore.Qt.white)
         self._items = [self.pathLabel, self.numLabel, self.roiLabel, self.anLabel] + self._addWidgets #This list is used for changing background color and for setting all items selected.
@@ -208,10 +208,10 @@ class CellTableWidget(QTableWidget):
                 columns[colName] = (50, True) # Automatically determine width from fontmetrics.
         self.setRowCount(0)
         self.setColumnCount(len(columns))
-        self.setHorizontalHeaderLabels(columns)
+        self.setHorizontalHeaderLabels(columns.keys())
         self.verticalHeader().hide()
-        [self.setColumnWidth(i, w) for i, w in zip(range(len(columns)), [60, 40, 40, 50, 40, 20, 20, 20])] #Set the column widths
-        [self.horizontalHeader().setSectionResizeMode(i, self.horizontalHeader().Fixed) for i in [4, 5, 6, 7]] #set the notes, and p/d/f columns nonresizeable
+        [self.setColumnWidth(i, w) for i, (w, resizable) in enumerate(columns.values())] #Set the column widths
+        [self.horizontalHeader().setSectionResizeMode(i, self.horizontalHeader().Fixed) for i, (w, resizable) in enumerate(columns.values()) if not resizable] #set the notes, and p/d/f columns nonresizeable
         self._cellItems = []
         #This makes the items stay looking selected even when the table is inactive
         self.setStyleSheet("""QTableWidget::item:active {
