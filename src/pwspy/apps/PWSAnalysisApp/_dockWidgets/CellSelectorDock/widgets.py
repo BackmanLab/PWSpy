@@ -51,7 +51,7 @@ class CellTableWidgetItem:
         self.acqDir = acq
         self.num = num
         self.path = label
-        self._addWidgets = [] if additionalWidgets is None else additionalWidgets
+        self.pluginWidgets = [] if additionalWidgets is None else additionalWidgets
         self.notesButton = evalToolTip(QPushButton, acq.getNotes)("Open")
         self.notesButton.setFixedSize(40, 30)
         self.pathLabel = QTableWidgetItem(self.path)
@@ -76,7 +76,7 @@ class CellTableWidgetItem:
                 label.setText('N'); label.setBackground(QtCore.Qt.white)
         if len(self.acqDir.fluorescence) != 0: self.fLabel.setText('Y'); self.fLabel.setBackground(QtCore.Qt.darkGreen)
         else: self.fLabel.setText('N'); self.fLabel.setBackground(QtCore.Qt.white)
-        self._items = [self.pathLabel, self.numLabel, self.roiLabel, self.anLabel] + self._addWidgets #This list is used for changing background color and for setting all items selected.
+        self._items = [self.pathLabel, self.numLabel, self.roiLabel, self.anLabel] + self.pluginWidgets #This list is used for changing background color and for setting all items selected.
         self.refresh()
         self.mdPath = os.path.join(self.acqDir.filePath, 'AnAppPrefs.json')
         try:
@@ -240,20 +240,20 @@ class CellTableWidget(QTableWidget):
         for i in self._cellItems:
             i.refresh()
 
-    def addCellItem(self, item: CellTableWidgetItem) -> None:
-        row = len(self._cellItems)
-        self.setSortingEnabled(False)  # The fact that we are adding items assuming its the last row is a problem if sorting is on.
-        self.setRowCount(row + 1)
-        self.setItem(row, 0, item.pathLabel)
-        self.setItem(row, 1, item.numLabel)
-        self.setItem(row, 2, item.roiLabel)
-        self.setItem(row, 3, item.anLabel)
-        self.setCellWidget(row, 4, item.notesButton)
-        self.setItem(row, 5, item.pLabel)
-        self.setItem(row, 6, item.dLabel)
-        self.setItem(row, 7, item.fLabel)
-        self.setSortingEnabled(True)
-        self._cellItems.append(item)
+    # def addCellItem(self, item: CellTableWidgetItem) -> None:
+    #     row = len(self._cellItems)
+    #     self.setSortingEnabled(False)  # The fact that we are adding items assuming its the last row is a problem if sorting is on.
+    #     self.setRowCount(row + 1)
+    #     self.setItem(row, 0, item.pathLabel)
+    #     self.setItem(row, 1, item.numLabel)
+    #     self.setItem(row, 2, item.roiLabel)
+    #     self.setItem(row, 3, item.anLabel)
+    #     self.setCellWidget(row, 4, item.notesButton)
+    #     self.setItem(row, 5, item.pLabel)
+    #     self.setItem(row, 6, item.dLabel)
+    #     self.setItem(row, 7, item.fLabel)
+    #     self.setSortingEnabled(True)
+    #     self._cellItems.append(item)
 
     def addCellItems(self, items: List[CellTableWidgetItem]) -> None:
         row = len(self._cellItems)
@@ -269,6 +269,8 @@ class CellTableWidget(QTableWidget):
             self.setItem(newrow, 5, item.pLabel)
             self.setItem(newrow, 6, item.dLabel)
             self.setItem(newrow, 7, item.fLabel)
+            for j, widg in enumerate(item.pluginWidgets):
+                self.setItem(newrow, 8+j, widg)
         self.setSortingEnabled(True)
         self._cellItems.extend(items)
 

@@ -1,5 +1,6 @@
 import typing
 
+from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QApplication, QTableWidgetItem, QDialog
 
@@ -35,6 +36,7 @@ class AcquisitionSequencerPlugin(CellSelectorPlugin): #TODO switch to a qdialog 
         """set the CellSelector that this plugin is associated to."""
         self._selector = selector
         self._ui.setParent(parent)
+        self._ui.setWindowFlags(QtCore.Qt.Window) # Without this is just gets added to the main window in a weird way.
 
     @requirePluginActive
     def onCellsSelected(self, cells: typing.List[pwsdt.AcqDir]):
@@ -46,7 +48,7 @@ class AcquisitionSequencerPlugin(CellSelectorPlugin): #TODO switch to a qdialog 
         """This method will be called when the CellSelector indicates that it has had a new reference selected."""
         pass
 
-    @requirePluginActive
+    # @requirePluginActive
     def onNewCellsLoaded(self, cells: typing.List[pwsdt.AcqDir]):
         """This method will be called when the CellSelector indicates that new cells have been loaded to the selector."""
         if len(cells) == 0: # This causes a crash
@@ -91,7 +93,7 @@ class AcquisitionSequencerPlugin(CellSelectorPlugin): #TODO switch to a qdialog 
 
     def getTableWidgets(self, acq: pwsdt.AcqDir) -> typing.Sequence[QWidget]:  #TODO this gets called before the sequence has been loaded. Make it so this isn't required for constructor of cell table widgets.
         """provide a widget for each additional column to represent `acq`"""
-        typeNames = {SequencerStepTypes.POS: "Position", SequencerStepTypes.TIME: "Time", SequencerStepTypes.ZSTACK: "Z Stack"}
+        typeNames = {SequencerStepTypes.POS.name: "Position", SequencerStepTypes.TIME.name: "Time", SequencerStepTypes.ZSTACK.name: "Z Stack"}
         try:
             acq = SeqAcqDir(acq)
         except:
@@ -114,11 +116,11 @@ class AcquisitionSequencerPlugin(CellSelectorPlugin): #TODO switch to a qdialog 
         self._selector.setSelectedCells(select)
 
 
-class SequenceViewer(QDialog):
+class SequenceViewer(QWidget):
     newCoordSelected = pyqtSignal(SequencerCoordinateRange)
 
     def __init__(self, parent: QWidget = None):
-        super().__init__(parent)
+        super().__init__(parent, QtCore.Qt.Window)
         self.setWindowTitle("Acquisition Sequence Viewer")
 
         l = QHBoxLayout()

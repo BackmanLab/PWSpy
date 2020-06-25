@@ -101,7 +101,7 @@ class CellSelectorDock(CellSelector, QDockWidget):
             action = QAction(plugin.getName())
             action.triggered.connect(lambda checked, p=plugin: p.onPluginSelected())
             menu.addAction(action)
-        menu.exec(self._pluginsButton.mapToGlobal(self._pluginsButton.pos()))
+        menu.exec(self._pluginsButton.mapToGlobal(self._pluginsButton.pos())) #TODO this gets the wrong position sometimes.
 
     # def _addCell(self, fileName: str, workingDir: str):
     #     try:
@@ -114,21 +114,14 @@ class CellSelectorDock(CellSelector, QDockWidget):
     #         self._refTableWidget.updateReferences(True, [cellItem])
     #     self._tableWidget.addCellItem(cellItem)
 
-    def _addCells(self, fileNames: List[str], workingDir: str):
+    def _addCells(self, acquisitions: List[pwsdt.AcqDir], workingDir: str):
         cellItems = []
-        for f in fileNames:
-            try:
-                acq = pwsdt.AcqDir(f)
-            except OSError as e:
-                logger = logging.getLogger(__name__)
-                logger.warning(f"Failed to load {f}")
-                logger.exception(e)
-                continue
+        for acq in acquisitions:
             addedWidgets = []
             for plugin in self._pluginSupport.getPlugins():
                 addedWidgets += plugin.getTableWidgets(acq)
-            cellItems.append(CellTableWidgetItem(acq, os.path.split(f)[0][len(workingDir) + 1:],
-                                        int(f.split('Cell')[-1]),  additionalWidgets=addedWidgets))
+            cellItems.append(CellTableWidgetItem(acq, os.path.split(acq.filePath)[0][len(workingDir) + 1:],
+                                        int(acq.filePath.split('Cell')[-1]),  additionalWidgets=addedWidgets))
         refItems = [i for i in cellItems if i.isReference()]
         if len(refItems) > 0:
             self._refTableWidget.updateReferences(True, refItems)
@@ -186,9 +179,19 @@ class CellSelectorDock(CellSelector, QDockWidget):
 
     def loadNewCells(self, fileNames: List[str], workingDir: str):
         self._clearCells()
-        self._addCells(fileNames, workingDir)
+        acqs = []
+        for f in fileNames:
+            try:
+                acqs.append(pwsdt.AcqDir(f))
+            except OSError as e:
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Failed to load {f}")
+                logger.exception(e)
+                continue
+        self._pluginSupport.notifyNewCellsLoaded(acqs)
+        self._addCells(acqs, workingDir)
         self._updateFilters()
-        self._pluginSupport.notifyNewCellsLoaded(self.getAllCellMetas())
+
 
     def getSelectedCellMetas(self) -> List[pwsdt.AcqDir]:
         return [i.acqDir for i in self._tableWidget.selectedCellItems]
