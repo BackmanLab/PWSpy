@@ -104,7 +104,7 @@ class CellSelectorDock(CellSelector, QDockWidget):
         menu.exec(self._pluginsButton.mapToGlobal(self._pluginsButton.pos()))
 
     def loadNewCells(self, fileNames: List[str], workingDir: str):
-        self._clearCells()
+        self.clearCells()
         self._addCells(fileNames, workingDir)
         self._updateFilters()
         self._pluginSupport.notifyNewCellsLoaded(self.getAllCellMetas())
@@ -140,7 +140,7 @@ class CellSelectorDock(CellSelector, QDockWidget):
             self._refTableWidget.updateReferences(True, refItems)
         self._tableWidget.addCellItems(cellItems)
 
-    def _clearCells(self):
+    def clearCells(self):  #This is used publically, probably shouldn't be.
         self._cells = []
         self._tableWidget.clearCellItems()
 
