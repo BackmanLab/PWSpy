@@ -58,7 +58,7 @@ class IterationRangeEditor(QWidget):
         w = 0
         for i in range(step.stepIterations()):
             w += self._coordTable.columnWidth(i)
-        self._coordTable.setMaximumWidth(w+2)  # The plus one gets rid of the scrollbar.
+        self._coordTable.setMaximumWidth(w+2)  # The plus 2 gets rid of the scrollbar.
 
         #Make the selection match
         for i in range(step.stepIterations()):
