@@ -21,6 +21,7 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QTableWidgetItem, QPushButton, QApplication
 import matplotlib.pyplot as plt
 
+
 from pwspy.analysis.compilation import (DynamicsCompilerSettings, GenericCompilerSettings, PWSCompilerSettings, AbstractCompilerSettings)
 from pwspy.apps.PWSAnalysisApp.utilities.conglomeratedAnalysis import ConglomerateCompilerResults
 from pwspy.apps.PWSAnalysisApp.sharedWidgets.tables import CopyableTable, NumberTableWidgetItem
@@ -29,6 +30,13 @@ import os
 
 
 class ResultsTableItem:
+    """This class embodies the results from a single ROI in Qt widget form. This is shown as a single row in the results table widget.
+
+    Args:
+        results: The object containing the results for all analysis types
+        acq: A reference to the directory storing the data files.
+
+    """
     def __init__(self, results: ConglomerateCompilerResults, acq: AcqDir):
         self.results = results
         self.acq = acq
@@ -79,9 +87,12 @@ class ResultsTableItem:
 
 
 class ResultsTable(CopyableTable):
-    itemsCleared = QtCore.pyqtSignal()
+    """
+    This widget is a subclass of QTableWidget which displays all the results. It  can be copied from in CSV form.
+    """
+    itemsCleared = QtCore.pyqtSignal()  # this appears to be unused. Delete?
 
-    # Columns. In the form `name`: (`defaultVisible`, `analysisFieldName`, `compilerSettingsClass, `tooltip`)
+    # Columns. In the form {`name`: (`defaultVisible`, `analysisFieldName`, `compilerSettingsClass, `tooltip`)}
     columns: Dict[str, Tuple[bool, Optional[str], Optional[AbstractCompilerSettings], Optional[str]]]
     columns = {
         "Path": (False, None, None, None),
@@ -118,8 +129,7 @@ class ResultsTable(CopyableTable):
 
     def addItem(self, item: ResultsTableItem) -> None:
         row = len(self._items)
-        # The fact that we are adding items assuming its the last row is a problem if sorting is on.
-        self.setSortingEnabled(False)
+        self.setSortingEnabled(False)  # The fact that we are adding items assuming its the last row is a problem if sorting is on.
         self.setRowCount(row + 1)
 
         self.setItem(row, 0, item.cellPathLabel)
