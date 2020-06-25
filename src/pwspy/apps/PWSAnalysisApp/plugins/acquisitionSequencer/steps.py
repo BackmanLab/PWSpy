@@ -35,7 +35,7 @@ class SequencerStep(SelfTreeItem):
     @staticmethod
     def hook(dct: dict):
         if all([i in dct for i in ("id", 'stepType', 'settings')]):
-            clazz = Types[dct['stepType']].value
+            clazz = SequencerStepTypes[dct['stepType']].value
             s = clazz(**dct)
             return s
         else:
@@ -95,7 +95,7 @@ class ZStackStep(CoordSequencerStep):
         return f"{iteration * self.settings['intervalUm']} μm"
 
 
-class Types(enum.Enum):
+class SequencerStepTypes(enum.Enum):
     ACQ = SequencerStep
     PFS = ContainerStep
     POS = PositionsStep

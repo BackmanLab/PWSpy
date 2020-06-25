@@ -1,19 +1,25 @@
 from __future__ import annotations
 import abc
+import typing
 from typing import List
+
+from PyQt5.QtWidgets import QWidget
 
 from pwspy import dataTypes as pwsdt
 from pwspy.apps.PWSAnalysisApp.componentInterfaces import QABCMeta, CellSelector
 import pwspy.apps.PWSAnalysisApp.plugins
+from pwspy.dataTypes import AcqDir
+
 
 class CellSelectorPluginSupport:
     """A utility class to help manage CellSelectorPlugins"""
-    def __init__(self, selector: CellSelector):
+    def __init__(self, selector: CellSelector, pWidget: QWidget):
         pluginClasses = self._findPlugins()
         self._plugins: List[CellSelectorPlugin] = [clazz() for clazz in pluginClasses]
         for p in self._plugins:
-            p.setContext(selector)
+            p.setContext(selector, pWidget)
         self._selector = selector
+        self._parentWidget = pWidget
 
     def _findPlugins(self):
         """Scans the contents of pwspy.appsPWSAnalysisApp.plugins for any modules containing subclasses of CellSelectorPlugin.
@@ -35,7 +41,7 @@ class CellSelectorPluginSupport:
     #     self._plugins.append(plugin)
     #     plugin.setContext(self._selector)
 
-    def getPlugins(self):
+    def getPlugins(self) -> typing.Sequence[CellSelectorPlugin]:
         return self._plugins
 
     def notifyCellSelectionChanged(self, cells: List[pwsdt.AcqDir]):
@@ -52,9 +58,10 @@ class CellSelectorPluginSupport:
 
 
 class CellSelectorPlugin(metaclass=QABCMeta):
-    """Implementions of this class should require no args for the constructor"""
+    """Base class for  a plugin that can extend the functionality of the `Cell Selector`.
+    Implementions of this class should require no args for the constructor"""
     @abc.abstractmethod
-    def setContext(self, selector: CellSelector):
+    def setContext(self, selector: CellSelector, parentWidget: QWidget):
         """Set the CellSelector that this plugin is associated to. This should happen before anything else."""
         pass
 
@@ -81,6 +88,16 @@ class CellSelectorPlugin(metaclass=QABCMeta):
     @abc.abstractmethod
     def onPluginSelected(self):
         """This method will be called when the plugin is activated."""
+        pass
+
+    @abc.abstractmethod
+    def additionalColumnNames(self) -> typing.Sequence[str]:
+        """The header names for each column."""
+        pass
+
+    @abc.abstractmethod
+    def getTableWidgets(self, acq: pwsdt.AcqDir) -> typing.Sequence[QWidget]:
+        """provide a widget for each additional column to represent `acq`"""
         pass
 
 if __name__ == '__main__':

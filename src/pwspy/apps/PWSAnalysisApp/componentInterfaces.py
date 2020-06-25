@@ -64,9 +64,6 @@ class CellSelector(metaclass=QABCMeta):
     @abc.abstractmethod
     def refreshCellItems(self): pass
 
-    @abc.abstractmethod
-    def topLevelWidget(self) -> QWidget: pass
-
 
 class ResultsTableController(metaclass=QABCMeta):
     @abc.abstractmethod

@@ -33,14 +33,15 @@ class CellSelectorDock(CellSelector, QDockWidget):
     """This dockwidget is used by the user to select which cells they want to act upon (run an analysis, plot, etc.)"""
     def __init__(self):
         super().__init__("Cell Selector")
-        self._pluginSupport = CellSelectorPluginSupport(self)
-        # self._pluginSupport.registerPlugin(AcquisitionSequencerPlugin()) #TODO ideally plugins would be added dynamically, outside of the class definition, this is fine for now though.
+        self._pluginSupport = CellSelectorPluginSupport(self, self)
         self.setStyleSheet("QDockWidget > QWidget { border: 1px solid lightgray; }")
         self.setObjectName('CellSelectorDock')  # needed for restore state to work
         self._widget = QWidget(self)
         layout = QVBoxLayout()
-
-        self._tableWidget = CellTableWidget(self._widget)
+        addedColumns = []
+        for plugin in self._pluginSupport.getPlugins():
+            addedColumns += plugin.additionalColumnNames()
+        self._tableWidget = CellTableWidget(self._widget, addedColumns)
         self._selectionChangeDebounce = QtCore.QTimer()  # This timer prevents the selectionChanged signal from firing too rapidly.
         self._selectionChangeDebounce.setInterval(500)
         self._selectionChangeDebounce.setSingleShot(True)
@@ -108,16 +109,16 @@ class CellSelectorDock(CellSelector, QDockWidget):
         self._updateFilters()
         self._pluginSupport.notifyNewCellsLoaded(self.getAllCellMetas())
 
-    def _addCell(self, fileName: str, workingDir: str):
-        try:
-            cell = pwsdt.AcqDir(fileName)
-        except OSError:
-            return
-        cellItem = CellTableWidgetItem(cell, os.path.split(fileName)[0][len(workingDir) + 1:],
-                                        int(fileName.split('Cell')[-1]))
-        if cellItem.isReference():
-            self._refTableWidget.updateReferences(True, [cellItem])
-        self._tableWidget.addCellItem(cellItem)
+    # def _addCell(self, fileName: str, workingDir: str):
+    #     try:
+    #         cell = pwsdt.AcqDir(fileName)
+    #     except OSError:
+    #         return
+    #     cellItem = CellTableWidgetItem(cell, os.path.split(fileName)[0][len(workingDir) + 1:],
+    #                                     int(fileName.split('Cell')[-1]))
+    #     if cellItem.isReference():
+    #         self._refTableWidget.updateReferences(True, [cellItem])
+    #     self._tableWidget.addCellItem(cellItem)
 
     def _addCells(self, fileNames: List[str], workingDir: str):
         cellItems = []
@@ -129,8 +130,11 @@ class CellSelectorDock(CellSelector, QDockWidget):
                 logger.warning(f"Failed to load {f}")
                 logger.exception(e)
                 continue
+            addedWidgets = []
+            for plugin in self._pluginSupport.getPlugins():
+                addedWidgets += plugin.getTableWidgets(acq)
             cellItems.append(CellTableWidgetItem(acq, os.path.split(f)[0][len(workingDir) + 1:],
-                                        int(f.split('Cell')[-1])))
+                                        int(f.split('Cell')[-1]),  additionalWidgets=addedWidgets))
         refItems = [i for i in cellItems if i.isReference()]
         if len(refItems) > 0:
             self._refTableWidget.updateReferences(True, refItems)

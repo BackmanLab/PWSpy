@@ -47,10 +47,11 @@ def evalToolTip(cls: Type[QWidget], method):
 
 class CellTableWidgetItem:
     """Represents a single row of the CellTableWidget and corresponds to a single PWS acquisition."""
-    def __init__(self, acq: AcqDir, label: str, num: int):
+    def __init__(self, acq: AcqDir, label: str, num: int, additionalWidgets: typing.Sequence[QWidget] = None):
         self.acqDir = acq
         self.num = num
         self.path = label
+        self._addWidgets = [] if additionalWidgets is None else additionalWidgets
         self.notesButton = evalToolTip(QPushButton, acq.getNotes)("Open")
         self.notesButton.setFixedSize(40, 30)
         self.pathLabel = QTableWidgetItem(self.path)
@@ -68,13 +69,14 @@ class CellTableWidgetItem:
             i.setTextAlignment(QtCore.Qt.AlignCenter)
         for i in [self.pathLabel, self.pLabel, self.dLabel, self.fLabel]:  # Make uneditable
             i.setFlags(i.flags() ^ QtCore.Qt.ItemIsEditable)
-        if self.acqDir.pws is not None: self.pLabel.setText('Y'); self.pLabel.setBackground(QtCore.Qt.darkGreen)
-        else: self.pLabel.setText('N'); self.pLabel.setBackground(QtCore.Qt.white)
-        if self.acqDir.dynamics is not None: self.dLabel.setText('Y'); self.dLabel.setBackground(QtCore.Qt.darkGreen)
-        else: self.dLabel.setText('N'); self.dLabel.setBackground(QtCore.Qt.white)
+        for acq, label in [(self.acqDir.pws, self.pLabel), (self.acqDir.dynamics, self.dLabel)]:
+            if acq is not None:
+                self.pLabel.setText('Y'); self.pLabel.setBackground(QtCore.Qt.darkGreen)
+            else:
+                self.pLabel.setText('N'); self.pLabel.setBackground(QtCore.Qt.white)
         if len(self.acqDir.fluorescence) != 0: self.fLabel.setText('Y'); self.fLabel.setBackground(QtCore.Qt.darkGreen)
         else: self.fLabel.setText('N'); self.fLabel.setBackground(QtCore.Qt.white)
-        self._items = [self.pathLabel, self.numLabel, self.roiLabel, self.anLabel] #This list is used for changing background color and for setting all items selected.
+        self._items = [self.pathLabel, self.numLabel, self.roiLabel, self.anLabel] + self._addWidgets #This list is used for changing background color and for setting all items selected.
         self.refresh()
         self.mdPath = os.path.join(self.acqDir.filePath, 'AnAppPrefs.json')
         try:
@@ -192,13 +194,18 @@ class CellTableWidget(QTableWidget):
     referencesChanged = QtCore.pyqtSignal(bool, list)
     itemsCleared = QtCore.pyqtSignal()
 
-    def __init__(self, parent):
+    def __init__(self, parent, additionalColumns: typing.Sequence[str] = None):
         super().__init__(parent)
         self.setSortingEnabled(True)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._showContextMenu)
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
-        columns = ('Path', 'Cell#', 'ROIs', 'Analyses', 'Notes', 'P', 'D', 'F')
+        # Columns in the form {name: (width, resizable)}
+        columns = {'Path': (60, True), 'Cell#': (40, True), 'ROIs': (40, True), 'Analyses': (50, True),
+                   'Notes': (40, False), 'P': (20, False), 'D': (20, False), 'F': (20, False)}
+        if additionalColumns is not None:
+            for colName in additionalColumns:
+                columns[colName] = (50, True) # Automatically determine width from fontmetrics.
         self.setRowCount(0)
         self.setColumnCount(len(columns))
         self.setHorizontalHeaderLabels(columns)

@@ -1,7 +1,7 @@
 import typing
 
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QApplication
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QApplication, QTableWidgetItem, QDialog
 
 from pwspy.apps.PWSAnalysisApp.componentInterfaces import CellSelector
 from pwspy.apps.PWSAnalysisApp.pluginInterfaces import CellSelectorPlugin
@@ -11,7 +11,8 @@ import os
 from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.TreeView import DictTreeView, MyTreeView
 from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.sequencerCoordinate import SequencerCoordinateRange, \
     SeqAcqDir
-from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.steps import SequencerStep
+from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.steps import SequencerStep, CoordSequencerStep, \
+    SequencerStepTypes
 from pwspy.dataTypes import AcqDir
 
 
@@ -30,9 +31,10 @@ class AcquisitionSequencerPlugin(CellSelectorPlugin): #TODO switch to a qdialog 
         self._ui = SequenceViewer()
         self._ui.newCoordSelected.connect(self._updateSelectorSelection)
 
-    def setContext(self, selector: CellSelector):
+    def setContext(self, selector: CellSelector, parent: QWidget):
         """set the CellSelector that this plugin is associated to."""
         self._selector = selector
+        self._ui.setParent(parent)
 
     @requirePluginActive
     def onCellsSelected(self, cells: typing.List[pwsdt.AcqDir]):
@@ -79,6 +81,27 @@ class AcquisitionSequencerPlugin(CellSelectorPlugin): #TODO switch to a qdialog 
         self._ui.show()  # We use ui visibility to determine if the plugin is active or not.
         self.onNewCellsLoaded(self._selector.getAllCellMetas())  # Make sure we're all up to date
 
+    def additionalColumnNames(self) -> typing.Sequence[str]:
+        """The header names for each column."""
+        return "Coord. Type", "Coord. Value"
+
+    def getTableWidgets(self, acq: pwsdt.AcqDir) -> typing.Sequence[QWidget]:
+        """provide a widget for each additional column to represent `acq`"""
+        typeNames = {SequencerStepTypes.POS: "Position", SequencerStepTypes.TIME: "Time", SequencerStepTypes.ZSTACK: "Z Stack"}
+        try:
+            acq = SeqAcqDir(acq)
+        except:
+            return tuple((QTableWidgetItem(), QTableWidgetItem()))
+        coord = acq.sequencerCoordinate
+        idx, iteration = [(i, iteration) for i, iteration in enumerate(coord.iterations) if iteration is not None][-1]
+        for step in self._sequence.iterateChildren():
+            if step.id == coord.ids[idx]:
+                step: CoordSequencerStep
+                val = QTableWidgetItem(step.getIterationName(iteration))
+                t = QTableWidgetItem(typeNames[step.stepType])
+                return tuple((t, val))
+
+
     def _updateSelectorSelection(self, coordRange: SequencerCoordinateRange):
         select: typing.List[AcqDir] = []
         for cell in self._cells:
@@ -87,7 +110,7 @@ class AcquisitionSequencerPlugin(CellSelectorPlugin): #TODO switch to a qdialog 
         self._selector.setSelectedCells(select)
 
 
-class SequenceViewer(QWidget):
+class SequenceViewer(QDialog):
     newCoordSelected = pyqtSignal(SequencerCoordinateRange)
 
     def __init__(self, parent: QWidget = None):

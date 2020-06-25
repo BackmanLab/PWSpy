@@ -40,6 +40,14 @@ class SequencerCoordinate:
             return False
         return self.fullPath == other.fullPath[:len(self.fullPath)]
 
+    @property
+    def iterations(self) -> typing.Sequence[int]:
+        return tuple(i.iteration for i in self.fullPath)
+
+    @property
+    def ids(self) -> typing.Sequence[int]:
+        return tuple(i.stepId for i in self.fullPath)
+
     def __eq__(self, other: SequencerCoordinate):
         """Check if these coordinates are identical"""
         assert isinstance(other, SequencerCoordinate)
