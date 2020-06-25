@@ -1,15 +1,15 @@
 from __future__ import annotations
-
-from PyQt5.QtCore import QTimer, QSize
-from PyQt5.QtGui import QPainter, QRegion, QTextDocument, QAbstractTextDocumentLayout, QPalette
-from PyQt5.QtWidgets import QStyledItemDelegate, QWidget, QSpinBox, QStyleOptionViewItem, QStyle, QGridLayout, QLabel, \
-    QTableWidget, QTableWidgetItem, QAbstractItemView, QScrollBar, QSizePolicy, QFrame, QApplication
-from PyQt5 import QtCore, QtGui
 import typing
+from PyQt5 import QtCore
+from PyQt5.QtCore import QSize, pyqtSignal
+from PyQt5.QtGui import QTextDocument, QAbstractTextDocumentLayout, QPalette
+from PyQt5.QtWidgets import QStyledItemDelegate, QWidget, QStyleOptionViewItem, QStyle, QGridLayout, QTableWidget, \
+    QTableWidgetItem, QAbstractItemView, QSizePolicy, QApplication
+from .sequencerCoordinate import IterationRangeCoordStep
 from .steps import SequencerStep, CoordSequencerStep, StepTypeNames, ContainerStep
 
 
-class EditorWidg(QWidget):
+class IterationRangeEditor(QWidget):
     def __init__(self, parent: QWidget):
         super().__init__(parent)
         self.setAutoFillBackground(True)  # Prevents us from getting double vision with the painted version of the widget behind.
@@ -54,7 +54,6 @@ class EditorWidg(QWidget):
         h1 = self._coordTable.horizontalScrollBar().sizeHint().height()  # Just getting the current height doesn't work for some reason.
         self._coordTable.setMaximumHeight(h1+h2)
         self._coordTable.setMinimumHeight(h1+h2)
-        #
 
         w = 0
         for i in range(step.stepIterations()):
@@ -63,7 +62,9 @@ class EditorWidg(QWidget):
 
         #Make the selection match
         for i in range(step.stepIterations()):
-            if i in step.getSelectedIterations():
+            selectedIterations: IterationRangeCoordStep = step.data(QtCore.Qt.EditRole)
+            if selectedIterations is None: selectedIterations = IterationRangeCoordStep(step.id, [])  # no iterations selected, should be treated the same as having all iterations selected
+            if i in selectedIterations.iterations:
                 sel = True
             else:
                 sel = False
@@ -110,29 +111,33 @@ class HTMLDelegate(QStyledItemDelegate):
         return QSize(doc.idealWidth(), doc.size().height())
 
 
-class MyDelegate(HTMLDelegate):
-    def __init__(self, parent: QWidget=None):
+class IterationRangeDelegate(HTMLDelegate):
+    editingFinished = pyqtSignal()
+
+    def __init__(self, parent: QWidget = None):
         super().__init__(parent=parent)
         self._paintWidgetRenderedOnce = False
-        self._paintWidget = EditorWidg(parent)
+        self._paintWidget = IterationRangeEditor(parent)
         self._paintWidget.setVisible(False)
         self._editing = False
 
     def createEditor(self, parent: QWidget, option: QStyleOptionViewItem, index: QtCore.QModelIndex) -> QWidget:
-        if isinstance(index.data(), CoordSequencerStep):
-            widg = EditorWidg(parent)
-            widg.setFromStep(index.data())
+        if isinstance(index.internalPointer(), CoordSequencerStep):
+            widg = IterationRangeEditor(parent)
+            widg.setFromStep(index.internalPointer())
             widg.resize(option.rect.size())
             return widg
         else:
-            return None # Don't allow handling other types of values. # super().createEditor(parent, option, index)
+            return None  # Don't allow handling other types of values. # super().createEditor(parent, option, index)
 
-    def setModelData(self, editor: EditorWidg, model: QtCore.QAbstractItemModel, index: QtCore.QModelIndex) -> None:
-        step: SequencerStep = model.itemData(index)[0]  # TODO add notion of DataRole
+    def setModelData(self, editor: IterationRangeEditor, model: QtCore.QAbstractItemModel, index: QtCore.QModelIndex) -> None:
+        step: SequencerStep = index.internalPointer()
         if isinstance(step, CoordSequencerStep):
-            step.setSelectedIterations(editor.getSelection())
+            coordRange = IterationRangeCoordStep(step.id, editor.getSelection())
+            step.setData(QtCore.Qt.EditRole, coordRange)
         self._editing = None
         self.sizeHintChanged.emit(index)
+        self.editingFinished.emit()
 
     def editorEvent(self, event: QtCore.QEvent, model: QtCore.QAbstractItemModel, option: 'QStyleOptionViewItem', index: QtCore.QModelIndex) -> bool:
         self._editing = index
@@ -140,7 +145,7 @@ class MyDelegate(HTMLDelegate):
         return super().editorEvent(event, model, option, index)
 
     def sizeHint(self, option: QStyleOptionViewItem, index: QtCore.QModelIndex) -> QtCore.QSize:
-        if isinstance(index.data(), CoordSequencerStep) and self._editing == index:
+        if isinstance(index.internalPointer(), CoordSequencerStep) and self._editing == index:
             self.initStyleOption(option, index)
             editor = self.createEditor(None, option, index)
             s = editor.sizeHint()
@@ -150,10 +155,18 @@ class MyDelegate(HTMLDelegate):
 
     def displayText(self, value: typing.Any, locale: QtCore.QLocale) -> str:
         if isinstance(value, CoordSequencerStep):
-            if len(value.getSelectedIterations()) == 0 or len(value.getSelectedIterations()) == value.stepIterations():
+            itRangeCoord: IterationRangeCoordStep = value.data(QtCore.Qt.EditRole)
+            if itRangeCoord is None:
+                selectedIterations = []  # TODO this happens for steps where we haven't assigned any iterations (non iterable step types). Should we have a `None` here?
+            else:
+                selectedIterations = itRangeCoord.iterations
+            if len(selectedIterations) == 0 or len(selectedIterations) == value.stepIterations():
                 s = ": all coords"
             else:
-                s = f": {len(value.getSelectedIterations())} coords"
+                numCoords = len(selectedIterations)
+                s = f": {numCoords} coord"
+                if numCoords > 1:
+                    s += 's'
             return "<html>" + StepTypeNames[value.stepType] + "<b>" + s + "</b>" + "</html>"
         if isinstance(value, ContainerStep):
             return StepTypeNames[value.stepType]  # Just return the name.

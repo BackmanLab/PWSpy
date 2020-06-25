@@ -32,23 +32,6 @@ class SequencerStep(SelfTreeItem):
         if children is not None:
             self.addChildren(children)
 
-    # def __repr__(self):
-    #     return f"Step: {self.stepType}"
-
-    def buildCoordinates(self) -> typing.List[SequencerCoordinate]:
-        ids = []
-        iterations = []
-        step = self
-        while step is not None:
-            i, it = step._getCoordinateItem()
-            ids.append(i)
-            iterations.append(it)
-            step = step.parent()
-
-    def _getCoordinateItem(self) -> typing.Tuple[int, typing.Optional[typing.Tuple[int]]]:
-        """Return the id and the iteration needed to construct a coordinate"""
-        return self.id, None
-
     @staticmethod
     def hook(dct: dict):
         if all([i in dct for i in ("id", 'stepType', 'settings')]):
@@ -69,14 +52,6 @@ class ContainerStep(SequencerStep): pass
 class CoordSequencerStep(ContainerStep):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._selectedIterations = tuple()
-        # self.setData(1, f"i={self.stepIterations()}")
-
-    def setSelectedIterations(self, iterations: typing.Sequence[int]):
-        self._selectedIterations = tuple(iterations)
-
-    def getSelectedIterations(self) -> typing.Sequence[int]:
-        return self._selectedIterations
 
     @abc.abstractmethod
     def stepIterations(self):  # return the total number of iterations of this step.
@@ -99,6 +74,7 @@ class PositionsStep(CoordSequencerStep):
     def getIterationName(self, iteration: int) -> str:
         return self._positionList[iteration].label
 
+
 class TimeStep(CoordSequencerStep):
     def stepIterations(self):
         if not hasattr(self, '_len'):
@@ -108,6 +84,7 @@ class TimeStep(CoordSequencerStep):
     def getIterationName(self, iteration: int) -> str:
         return f"{iteration * self.settings['frameIntervalMinutes']} min."
 
+
 class ZStackStep(CoordSequencerStep):
     def stepIterations(self):
         if not hasattr(self, '_len'):
@@ -116,67 +93,6 @@ class ZStackStep(CoordSequencerStep):
 
     def getIterationName(self, iteration: int) -> str:
         return f"{iteration * self.settings['intervalUm']} μm"
-
-
-class SequencerCoordinate:
-    def __init__(self, treePath: typing.Sequence[int], iterations: typing.Sequence[int]):
-        """treePath should be a list of the id numbers for each step in the path to this coordinate.
-        iterations should be a list indicating which iteration of each step the coordinate was from."""
-        assert (self.idPath) == len(self.iterations)
-        self.idPath = tuple(treePath)
-        self.iterations = tuple(iterations)
-        self.fullPath = tuple(zip(self.idPath, self.iterations))
-
-    @staticmethod
-    def fromDict(d: dict) -> SequencerCoordinate:
-        return SequencerCoordinate(treePath=d['treeIdPath'], iterations=d["stepIterations"])
-
-    @staticmethod
-    def fromJsonFile(path: str) -> SequencerCoordinate:
-        with open(path) as f:
-            return SequencerCoordinate.fromDict(json.load(f))
-
-    def isSubPathOf(self, other: SequencerCoordinate):
-        """Check if `self` is a parent path of the `item` coordinate """
-        assert isinstance(other, SequencerCoordinate)
-        if len(self.fullPath) >= len(other.fullPath):
-            return False
-        # return self.idPath == other.idPath[:len(self.idPath)] and self.iterations == other.iterations[:len(self.iterations)]
-        return self.fullPath == other.fullPath[:len(self.fullPath)]
-
-    def __eq__(self, other: SequencerCoordinate):
-        """Check if these coordinates are identical"""
-        assert isinstance(other, SequencerCoordinate)
-        # return self.idPath == other.idPath and self.iterations == other.iterations
-        return self.fullPath == other.fullPath
-
-class SequencerCoordinateRange:
-    def __init__(self):
-        self._coords: typing.List[SequencerCoordinate] = []
-
-    def addCoord(self, c: SequencerCoordinate):
-        self._coords.append(c)
-
-    def __contains__(self, item: SequencerCoordinate):
-        if not isinstance(item, SequencerCoordinate):
-            return False
-        for coord in self._coords:
-            if coord.isSubPathOf(item) or coord == item:
-                return True
-
-
-    # @staticmethod
-    # def fromStep(step: SequencerStep):
-    #     I = {}
-    #     i = I
-    #     D = {}
-    #     d = D
-    #     while step is not None:
-    #         d[step.id] = {}
-    #         d = d[step.id]
-    #
-    #         step = step.parent()
-    #     return D
 
 
 class Types(enum.Enum):

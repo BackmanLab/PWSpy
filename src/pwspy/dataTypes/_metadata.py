@@ -40,7 +40,6 @@ from pwspy.dataTypes import _jsonSchemasPath
 from pwspy.dataTypes._other import CameraCorrection, Roi
 import pwspy.dataTypes._data as pwsdtd
 from pwspy import dateTimeFormat
-from pwspy.utility.micromanager.pwsseq.pwsSequence import SequencerCoordinate
 from pwspy.utility.misc import cached_property
 
 
@@ -819,14 +818,6 @@ class AcqDir:
                 return []
         else:
             return imgs
-
-    @cached_property
-    def sequencerCoordinate(self) -> SequencerCoordinate:
-        path = os.path.join(self.filePath, "sequencerCoords.json")
-        try:
-            return SequencerCoordinate.fromJsonFile(path)
-        except Exception:
-            return None
 
     @property
     def idTag(self):

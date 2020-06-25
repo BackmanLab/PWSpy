@@ -24,6 +24,7 @@ import typing
 from typing import List, Optional
 
 import sip
+from PyQt5.QtWidgets import QWidget
 
 from pwspy import dataTypes as pwsdt
 from pwspy.analysis import AbstractRuntimeAnalysisSettings
@@ -62,6 +63,9 @@ class CellSelector(metaclass=QABCMeta):
 
     @abc.abstractmethod
     def refreshCellItems(self): pass
+
+    @abc.abstractmethod
+    def topLevelWidget(self) -> QWidget: pass
 
 
 class ResultsTableController(metaclass=QABCMeta):
