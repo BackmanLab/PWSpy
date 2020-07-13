@@ -1,3 +1,20 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
+
 from typing import List
 
 from cycler import cycler
@@ -10,8 +27,17 @@ from pwspy.utility.matplotlibWidgets.coreClasses import AxManager
 from pwspy.utility.matplotlibWidgets._selectorWidgets import SelectorWidgetBase
 
 
-
 class RegionalPaintSelector(SelectorWidgetBase):
+    """A widget allowing the user to select a rectangular region with a bright region in it such as a fluorescent
+    nucleus. Otsu thresholding will then be used to draw an ROI on the bright region.
+
+     Args:
+        axMan: A reference to the `AxManager` object used to manage drawing the matplotlib `Axes` that this selector widget is active on.
+        image: A reference to a matplotlib `AxesImage`. Selectors may use this reference to get information such as data values from the image
+            for computer vision related tasks.
+        onselect: A callback function that will be called when the selector finishes a selection.
+
+     """
     def __init__(self, axMan: AxManager, im: AxesImage, onselect=None):
         super().__init__(axMan, im)
         self.onselect = onselect
@@ -26,12 +52,18 @@ class RegionalPaintSelector(SelectorWidgetBase):
         return "Click and drag to select a rectangular region to search for objects. Then click the object you would like to select."
 
     def reset(self):
+        """Reset the state of the selector so it's ready for a new selection."""
         self.started = False
         [self.removeArtist(i) for i in self.contours]
         self.contours = []
         self.selectionTime = False
 
     def findContours(self, rect: Rectangle):
+        """Detect bright regions within the specified rectangle and draw them.
+
+        Args:
+            rect: A matplotlib `Rectangle` used to specify the search region of the image for bright regions.
+        """
         x, y = rect.xy
         x = int(x)
         y = int(y)
@@ -44,9 +76,10 @@ class RegionalPaintSelector(SelectorWidgetBase):
         for i in range(len(polys)):
             polys[i] = shapely.affinity.translate(polys[i], xslice.start, yslice.start)  # Apply offset so that coordinates are globally correct.
             polys[i] = polys[i].simplify(3)  # Simplify the polygon a little bit for much faster saving.
-        self.drawRois(polys)
+        self._drawRois(polys)
 
-    def drawRois(self, polys: List[shapelyPolygon]):
+    def _drawRois(self, polys: List[shapelyPolygon]):
+        """Draw ROIs detected by `findContours."""
         if len(polys) > 0:
             alpha = 0.3
             colorCycler = cycler(color=[(1, 0, 0, alpha), (0, 1, 0, alpha), (0, 0, 1, alpha), (1, 1, 0, alpha), (1, 0, 1, alpha)])
@@ -54,7 +87,7 @@ class RegionalPaintSelector(SelectorWidgetBase):
                 p = Polygon(poly.exterior.coords, color=color['color'], animated=True)
                 self.addArtist(p)
                 self.contours.append(p)
-                self.axMan.update()
+            self.axMan.update()
 
     def _press(self, event):
         if event.button == 1:  # Left Click

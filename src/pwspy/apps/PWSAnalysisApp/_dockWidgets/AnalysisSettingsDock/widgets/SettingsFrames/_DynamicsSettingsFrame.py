@@ -1,23 +1,40 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
+
 from __future__ import annotations
 
 import typing
 from PyQt5 import QtCore, QtGui
-from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupBox, QHBoxLayout, QCheckBox
+from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupBox, QHBoxLayout, QCheckBox, QMessageBox
 
 import pwspy.analysis.dynamics
-from pwspy.analysis import dynamics
+from pwspy.apps.PWSAnalysisApp._dockWidgets import CellSelectorDock
 from ._AbstractSettingsFrame import AbstractSettingsFrame
 
 from ._sharedWidgets import ExtraReflectanceSelector, VerticallyCompressedWidget, HardwareCorrections
 
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
-    import  pwspy.dataTypes as pwsdt
 
 
 class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
-    def __init__(self, erManager: ERManager):
+    def __init__(self, erManager: ERManager, cellSelector: CellSelectorDock):
         super().__init__()
+        self.cellSelector = cellSelector
 
         self._frame = VerticallyCompressedWidget(self)
         self._layout = QGridLayout()
@@ -66,24 +83,34 @@ class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
         height += self.scaling.height()
         self._frame.setFixedHeight(height)
 
-    @property
-    def analysisName(self) -> str:
-        return self._analysisNameEdit.text()
-
     def loadFromSettings(self, settings: pwspy.analysis.dynamics.DynamicsAnalysisSettings):
         self.extraReflection.loadFromSettings(settings.numericalAperture, settings.referenceMaterial, settings.extraReflectanceId)
         self.relativeUnits.setCheckState(2 if settings.relativeUnits else 0)
-
-    def loadCameraCorrection(self, camCorr: typing.Optional[pwsdt.CameraCorrection] = None):
-        self.hardwareCorrections.loadCameraCorrection(camCorr)
+        self.hardwareCorrections.loadCameraCorrection(settings.cameraCorrection)
 
     def getSettings(self) -> pwspy.analysis.dynamics.DynamicsRuntimeAnalysisSettings:
         erMetadata, refMaterial, numericalAperture = self.extraReflection.getSettings()
+        refMeta = self.cellSelector.getSelectedReferenceMeta()
+        cellMeta = self.cellSelector.getSelectedCellMetas()
+        name = self._analysisNameEdit.text()
+        if refMeta is None:
+            raise ValueError('Please select a reference Cell.')
+        if name == '':
+            raise ValueError("Please give your analysis a name.")
+        if len(cellMeta) == 0:
+            raise ValueError('Please select cells to analyse.')
+        refMeta = refMeta.dynamics
+        cellMeta = [i.dynamics for i in cellMeta if i.dynamics is not None]  # If we select some acquisitions that don't have dynamics then they'll get stripped out here
+        if refMeta is None:
+            raise ValueError("The selected reference acquisition has no valid Dynamics data.")
+        if len(cellMeta) == 0:
+            raise ValueError("No valid Dynamics acquisitions were selected.")
         return pwspy.analysis.dynamics.DynamicsRuntimeAnalysisSettings(settings=pwspy.analysis.dynamics.DynamicsAnalysisSettings(extraReflectanceId=erMetadata.idTag if erMetadata is not None else None,
                                                                                                                                  referenceMaterial=refMaterial,
                                                                                                                                  numericalAperture=numericalAperture,
-                                                                                                                                 relativeUnits=self.relativeUnits.checkState() != 0),
-                                                                       extraReflectanceMetadata=erMetadata)
-
-    def getCameraCorrection(self) -> pwsdt.CameraCorrection:
-        return self.hardwareCorrections.getCameraCorrection()
+                                                                                                                                 relativeUnits=self.relativeUnits.checkState() != 0,
+                                                                                                                                 cameraCorrection=self.hardwareCorrections.getCameraCorrection()),
+                                                                       extraReflectanceMetadata=erMetadata,
+                                                                       referenceMetadata=refMeta,
+                                                                       cellMetadata=cellMeta,
+                                                                       analysisName=name)

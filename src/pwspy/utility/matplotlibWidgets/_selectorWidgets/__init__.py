@@ -1,25 +1,57 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
+
+from __future__ import annotations
 import copy
 from abc import ABC, abstractmethod
 
+from matplotlib.artist import Artist
 from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 from matplotlib.widgets import AxesWidget
-
 from pwspy.utility.matplotlibWidgets.coreClasses import AxManager
-
-
+import typing
 
 
 class SelectorWidgetBase(AxesWidget, ABC):
     """Base class for other selection widgets in this file. Requires to be managed by an AxManager. Inherited classes
     can implement a number of action handlers like mouse actions and keyboard presses.
     button allows the user to specify which mouse buttons are valid to trigger an event. This can be an int or list of ints.
-    state_modifier_keys should be a dict {state: keyName}, the default is {move=' ', clear='escape', square='shift', center='control'}"""
-    def __init__(self, axMan: AxManager, image: AxesImage, onselect=None, button=None, state_modifier_keys=None):
+    state_modifier_keys should be a dict {state: keyName}, the default is {move=' ', clear='escape', square='shift', center='control'}
+
+    Args:
+        axMan: A reference to the `AxManager` object used to manage drawing the matplotlib `Axes` that this selector widget is active on.
+        image: A reference to a matplotlib `AxesImage`. Selectors may use this reference to get information such as data values from the image
+            for computer vision related tasks.
+        onselect: A callback function that will be called when the selector finishes a selection.
+
+    Attributes:
+        state (set): A `set` that stores strings indicating the current state (Are we dragging the mouse, is the shift
+            key pressed, etc.
+        artists (list): A `list` of matplotlib widgets managed by the selector.
+        axMan (AxManager): The manager for the Axes. Call its `update` method when something needs to be drawn.
+        image (AxesImage): A reference to the image being interacted with. Can be used to get the image data.
+        onselect (Callable): The callback which may be called to finalize a selection.
+    """
+    def __init__(self, axMan: AxManager, image: typing.Optional[AxesImage] = None,
+                 onselect: typing.Optional[typing.Callable] = None):
         AxesWidget.__init__(self, axMan.ax)
         self.onselect = onselect
-        self.visible = True
         self.axMan = axMan
         self.image = image
         self.artists = []
@@ -31,12 +63,6 @@ class SelectorWidgetBase(AxesWidget, ABC):
         self.connect_event('scroll_event', self.on_scroll)
 
         self.state_modifier_keys = dict(move=' ', clear='escape', square='shift', center='control')
-        # self.state_modifier_keys.update(state_modifier_keys or {})
-
-        if isinstance(button, int):
-            self.validButtons = [button]
-        else:
-            self.validButtons = button
 
         # will save the data (position at mouseclick)
         self.eventpress = None
@@ -62,16 +88,13 @@ class SelectorWidgetBase(AxesWidget, ABC):
             self.axMan._update_background(None)
 
     def ignore(self, event):
-        """return *True* if *event* should be ignored"""
+        """return *True* if *event* should be ignored. No event callbacks will be called if this returns true."""
         if not self.active or not self.axMan.ax.get_visible():
             return True
         if not self.canvas.widgetlock.available(self): # If canvas was locked
             return True
         if not hasattr(event, 'button'):
             event.button = None
-        if self.validButtons is not None:  # Only do rectangle selection if event was triggered with a desired button
-            if event.button not in self.validButtons:
-                return True
         if self.eventpress is None:  # If no button was pressed yet ignore the event if it was out of the axes
             return event.inaxes != self.ax
         if event.button == self.eventpress.button:  # If a button was pressed, check if the release-button is the same.
@@ -169,36 +192,24 @@ class SelectorWidgetBase(AxesWidget, ABC):
                     self.state.discard(state)
             self._on_key_release(event)
 
-    def set_visible(self, visible):
+    def set_visible(self, visible: bool):
         """ Set the visibility of our artists """
-        self.visible = visible
         for artist in self.artists:
             artist.set_visible(visible)
         self.axMan.update()
 
-    def addArtist(self, artist):
+    def addArtist(self, artist: Artist):
         """Add a matplotlib artist to be managed."""
-        self.axMan.artists.append(artist)
+        self.axMan.addArtist(artist)
         self.artists.append(artist)
-        if isinstance(artist, Patch):
-            self.axMan.ax.add_patch(artist)
-        elif isinstance(artist, Line2D):
-            self.axMan.ax.add_line(artist)
-        else:
-            self.axMan.ax.add_artist(artist)
 
     def removeArtists(self):
-        for artist in self.artists:
-            self.axMan.artists.remove(artist)
-            artist.remove()
         self.artists = []
-        self.axMan.update()
+        self.axMan.removeArtists()
 
     def removeArtist(self, artist):
         self.artists.remove(artist)
-        self.axMan.artists.remove(artist)
-        artist.remove()
-        self.axMan.update()
+        self.axMan.removeArtist(artist)
 
     # Overridable events
     def _on_key_release(self, event):

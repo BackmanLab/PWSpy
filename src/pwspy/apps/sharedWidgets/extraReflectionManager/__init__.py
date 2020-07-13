@@ -1,12 +1,32 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
+
 from __future__ import annotations
+
+import logging
 import os
+import typing
 from io import IOBase
 from typing import Optional, Dict, List
 
 import httplib2
 from PyQt5 import QtCore
 from PyQt5.QtCore import QObject, QThread
-from PyQt5.QtWidgets import QMessageBox, QWidget
+from PyQt5.QtWidgets import QMessageBox, QWidget, QApplication, QPushButton
 from googleapiclient.http import MediaIoBaseDownload
 
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
@@ -26,7 +46,7 @@ def _offlineDecorator(func):
     is in offline mode. Only works on instance methods."""
     def wrappedFunc(self, *args, **kwargs):
         if self.offlineMode:
-            print("Warning: Attempting to download when ERManager is in offline mode.")
+            logging.getLogger(__name__).warning("Attempting to download when ERManager is in offline mode.")
             raise OfflineError("Is Offline")
         func(self, *args, **kwargs)
     return wrappedFunc
@@ -35,23 +55,40 @@ def _offlineDecorator(func):
 class ERManager:
     """This class expects that the google drive application will already have access to a folder named
     `PWSAnalysisAppHostedFiles` which contains a folder `ExtraReflectanceCubes`, you will
-    have to create these manually if starting on a new Drive account."""
-    def __init__(self, filePath: str):
+    have to create these manually if starting on a new Drive account.
+
+    Args:
+        filePath: The file path to the local folder where Extra Reflection calibration files are stored.
+        parentWidget: An optional reference to a QT widget that will act as the parent to any dialog windows that are opened.
+    """
+    def __init__(self, filePath: str, parentWidget: QWidget = None):
         self._directory = filePath
-        self.offlineMode = False
-        creds = ERDownloader.getCredentials(applicationVars.googleDriveAuthPath)
-        if creds is None:  # Check if the google drive credentials exists and if they don't then give the user a message.
-            msg = QMessageBox.information(None, "Time to log in!", "Please log in to the google drive account containing the PWS Calibration Database. This is currently backman.lab@gmail.com")
-        try:
-            self._downloader = ERDownloader(applicationVars.googleDriveAuthPath)
-        except (TransportError, httplib2.ServerNotFoundError):
-            self.offlineMode = True
-            msg = QMessageBox.information(None, "Internet?", "Google Drive connection failed. Proceeding in offline mode.")
-            self._downloader: ERDownloader = None
+        self.offlineMode, self._downloader = self._logIn(parentWidget)
+
         indexPath = os.path.join(self._directory, 'index.json')
         if not os.path.exists(indexPath) and not self.offlineMode:
             self.download('index.json')
         self.dataComparator = ERDataComparator(self._downloader, self._directory)
+
+    def _logIn(self, parentWidget: QWidget) -> typing.Tuple[bool, ERDownloader]:
+        creds = ERDownloader.getCredentials(applicationVars.googleDriveAuthPath)
+        if creds is None:  # Check if the google drive credentials exists and if they don't then give the user a message.
+            msg = QMessageBox(parentWidget)
+            msg.setIcon(QMessageBox.Information)
+            msg.setText("Please log in to the google drive account containing the PWS Calibration Database. This is currently backman.lab@gmail.com")
+            msg.setWindowTitle("Time to log in!")
+            msg.setWindowModality(QtCore.Qt.WindowModal)
+            okButton = msg.addButton("Ok", QMessageBox.YesRole)
+            skipButton = msg.addButton("Skip (offline mode)", QMessageBox.NoRole)
+            msg.exec()
+            if msg.clickedButton() is skipButton:
+                return True, None
+        try:
+            downloader = ERDownloader(applicationVars.googleDriveAuthPath)
+            return False, downloader
+        except (TransportError, httplib2.ServerNotFoundError):
+            msg = QMessageBox.information(parentWidget, "Internet?", "Google Drive connection failed. Proceeding in offline mode.")
+            return True, None
 
     def createSelectorWindow(self, parent: QWidget):
         return ERSelectorWindow(self, parent)

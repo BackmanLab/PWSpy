@@ -1,3 +1,20 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
+
 from typing import Tuple, List, Optional
 
 from PyQt5 import QtCore, QtGui
@@ -50,14 +67,14 @@ class _MyView(QGraphicsView):
         r.setSize(QSizeF(s, s))
         self.scene().setSceneRect(r)  # Set the scene size to the square that fits in view.
 
-    def resizeEvent(self, event: QtGui.QResizeEvent) -> None:
+    def resizeEvent(self, event: QtGui.QResizeEvent):
         """Every time that the view is resized this event will fire and start the debounce timer. The timer will only
         actually time out if this event doesn't restart it within the timeout period."""
         self._debounce.start()
         super().resizeEvent(event)
 
 
-class PlotNd(QWidget):
+class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of cursor. Open Console doesn't work in ipython.
     """A convenient widget for visualizing data that is 3D or greater. This is a standalone widget which extends the
     functionality of `PlotNdCanvas`.
 
@@ -68,7 +85,8 @@ class PlotNd(QWidget):
             coordinate for each axis of the data array.
         title: A title for the window.
         parent: The Qt Widget that serves as the parent for this widget.
-        indices: An optional tuple of 1d arrays of values to set as the indexes for each dimension of the data.
+        indices: An optional tuple of 1d arrays of values to set as the indexes for each dimension of the data. Elements of the list can be set to `None` to skip
+            setting a custom index for that dimension.
 
     Attributes:
         data: A reference the the 3D or greater numpy array. This can be safely modified.
@@ -171,7 +189,7 @@ class PlotNd(QWidget):
         self.console.do_execute(f"print('');print('');print({msg})", True, 0)
         self.console.activateWindow()  # This should bring the window to the front
 
-    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+    def closeEvent(self, a0: QtGui.QCloseEvent):
         """Overrides the Qt closeEvent to make sure things are cleaned up propertly."""
         if self.console is not None:
             self.console.close()

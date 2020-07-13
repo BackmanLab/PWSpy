@@ -1,7 +1,23 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
+
 # -*- coding: utf-8 -*-
 """
-This module provides a number of functions useful for
-quickly loading files using parallel processing.
+Functions for quickly loading files using parallel processing.
 
 Functions
 ----------
@@ -13,6 +29,8 @@ Functions
 
 """
 __all__ = ['loadAndProcess', 'processParallel']
+
+import logging
 import multiprocessing as mp
 import queue
 import threading as th
@@ -38,18 +56,18 @@ def _load(loadHandle: Union[str, MetaDataBase], lock: mp.Lock):
 def _loadIms(qout: queue.Queue, qin: queue.Queue, lock: th.Lock):
     """When not running in parallel this function is executed in a separate thread to load ImCubes and populate a Queue
     with them."""
+    logger = logging.getLogger(__name__)
     while not qin.empty():
         try:
             index, row = qin.get()
             displayStr = row['cube'].filePath if isinstance(row['cube'], MetaDataBase) else row['cube']
-            print('Starting', displayStr)
+            logger.info(f'Starting {displayStr}')
             im = _load(row['cube'], lock=lock)
             row['cube'] = im
             qout.put((index, row))
             perc = psutil.virtual_memory().percent
-            print("Memory Usage: ", perc, '%')
+            logger.info(f"Memory Usage: {perc}%")
             if perc >= 95:
-                print('quitting')
                 return
         except Exception as e:
             qout.put(e) #Put the error in the queue so it can propagate to the main thread.
@@ -129,7 +147,7 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
     # Error checking
     if 'cube' not in fileFrame.columns:
         raise IndexError("The fileFrame must contain a 'cube' column.")
-    print(f"Starting loading {len(fileFrame)} files.")
+    logging.getLogger(__name__).info(f"Starting loading {len(fileFrame)} files.")
     sTime = time()
     if parallel:
         if processorFunc is None:
@@ -166,7 +184,7 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
                     cubes.append(ret)  # A list of tuples of index, dataframe row
         thread.join()
         indices, cubes = zip(*sorted(cubes)) #This ensures that the return value is in the same order as the input array.
-    print(f"Loading took {time() - sTime} seconds")
+    logging.getLogger(__name__).info(f"Loading took {time() - sTime} seconds")
     ret = pd.DataFrame(list(cubes))
     if origClass is None:
         return ret

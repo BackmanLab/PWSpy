@@ -1,5 +1,23 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
+
 from __future__ import annotations
 import json
+import logging
 import multiprocessing as mp
 import os
 import pathlib
@@ -15,7 +33,6 @@ import jsonschema
 import numpy as np
 import tifffile as tf
 from scipy import io as spio
-
 from pwspy.analysis import AbstractHDFAnalysisResults
 from pwspy.analysis.dynamics import DynamicsAnalysisResults
 from pwspy.analysis.pws import PWSAnalysisResults
@@ -27,12 +44,31 @@ from pwspy.utility.misc import cached_property
 
 
 class MetaDataBase(abc.ABC):
-    """This base class provides that basic functionality to store information about a PWS related acquisition on file."""
-    _jsonSchemaPath = os.path.join(_jsonSchemasPath, 'MetaDataBase.json')
-    with open(_jsonSchemaPath) as f:
-        _jsonSchema = json.load(f)  # This serves as a schematic that can be checked against when loading metadata to make sure it contains the required information.
+    """
+    This base class provides that basic functionality to store information about a PWS related acquisition on file.
+
+    Args:
+        metadata: A dictionary containing the metadata
+        filePath: The path to the location the metadata was loaded from
+        acquisitionDirectory: A reference to the `AcqDir` associated with this object.
+
+    """
+
+    @property
+    @abc.abstractmethod
+    def _jsonSchemaPath(self) -> str:
+        """Each sublass should provide a path to the jsonschema file. this is needed in order to resolve jsonschema references"""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def _jsonSchema(self) -> dict:
+        """Each subclass should provide a json schema loaded from a file.
+        This serves as a schematic that can be checked against when loading metadata to make sure it contains the required information."""
+        pass
 
     def __init__(self, metadata: dict, filePath: Optional[str] = None, acquisitionDirectory: Optional[AcqDir] = None):
+        logger = logging.getLogger(__name__)
         self.filePath = filePath
         if acquisitionDirectory is None:
             if filePath is not None:
@@ -46,16 +82,16 @@ class MetaDataBase(abc.ABC):
             datetime.strptime(self._dict['time'], dateTimeFormat)
         except ValueError:
             try:
-                print("Detected a non-compliant timestamp. attempting to correct.")
+                logger.info("Detected a non-compliant timestamp. attempting to correct.")
                 self._dict['time'] = datetime.strftime(datetime.strptime(self._dict['time'], "%d-%m-%y %H:%M:%S"), dateTimeFormat)
             except ValueError:
-                print("Warning!: The time stamp could not be parsed. Replacing with 1_1_1970")
+                logger.warning("The time stamp could not be parsed. Replacing with 1_1_1970")
                 self._dict['time'] = "1-1-1990 01:01:01"
         if self._dict['system'] == "":
-            print("Warning: The `system` name in the metadata is blank. Check that the PWS System is saving the proper calibration values.")
+            logger.warning("The `system` name in the metadata is blank. Check that the PWS System is saving the proper calibration values.")
         if all([i in self._dict for i in ['darkCounts', 'linearityPoly']]):
             if self._dict['darkCounts'] == 0:
-                print("Warning: Detected a darkCounts value of 0 in the pwsdtd.ImCube Metadata. Check that the PWS System is saving the proper calibration values.")
+                logger.warning("Detected a darkCounts value of 0 in the pwsdtd.ImCube Metadata. Check that the PWS System is saving the proper calibration values.")
             self.cameraCorrection = CameraCorrection(darkCounts=self._dict['darkCounts'],
                                                      linearityPolynomial=self._dict['linearityPoly'])
         else:
@@ -63,24 +99,32 @@ class MetaDataBase(abc.ABC):
 
     @abc.abstractmethod
     def toDataClass(self, lock: mp.Lock) -> pwsdtd.ICBase:
-        """Convert the metadata class to a class that loads the data"""
+        """Convert the metadata class to a class that loads the data
+
+        Args:
+            lock: A `Lock` object used to synchronize IO in multithreaded and multiprocessing applications.
+        """
         pass
 
     @abc.abstractmethod
     def idTag(self) -> str:
-        """Return a string that uniquely identifies this data."""
+        """A string that uniquely identifies this data."""
         pass
 
     @property
     def binning(self) -> int:
-        """The binning setting used by the camera. This is needed in order to properly correct dark counts.
-        This is generally extracted from metadata saved by Micromanager"""
+        """
+        The binning setting used by the camera. This is needed in order to properly correct dark counts.
+        This is generally extracted from metadata saved by Micromanager
+        """
         return self._dict['binning']
 
     @property
     def pixelSizeUm(self) -> float:
-        """The pixelSize expressed in microns. This represents the length of each square pixel in object space. Binning
-        has already been accounted for here. This is generally extracted from metadata saved my MicroManager"""
+        """
+        The pixelSize expressed in microns. This represents the length of each square pixel in object space. Binning
+        has already been accounted for here. This is generally extracted from metadata saved my MicroManager
+        """
         return self._dict['pixelSizeUm']
 
     @property
@@ -100,18 +144,35 @@ class MetaDataBase(abc.ABC):
 
     @staticmethod
     def decodeHdfMetadata(d: h5py.Dataset) -> dict:
-        """Attempt to extract a dictionary of metadata from an HDF5 dataset."""
+        """Attempt to extract a dictionary of metadata from an HDF5 dataset.
+
+        Args:
+            d: The `h5py.Dataset` to load from.
+        Returns:
+            A dictionary containing the metadata
+        """
         assert 'metadata' in d.attrs
         return json.loads(d.attrs['metadata'])
 
     def encodeHdfMetadata(self, d: h5py.Dataset) -> h5py.Dataset:
-        """Save this metadata object as a json string in an HDF5 dataset."""
+        """Save this metadata object as a json string in an HDF5 dataset.
+
+        Args:
+            d: The `h5py.Dataset` to save the metadata to.
+        """
         d.attrs['metadata'] = np.string_(json.dumps(self._dict))
         return d
 
 
 class AnalysisManagerMetaDataBase(MetaDataBase):
-    """Implements the functionality to save, load, etc. analysis files."""
+    """Extends `MetaDataBase` with the functionality to save, load, etc. analysis files.
+
+    Args:
+        metadata: A dictionary containing the metadata
+        filePath: The path to the location the metadata was loaded from
+        acquisitionDirectory: A reference to the `AcqDir` associated with this object.
+
+    """
     def __init__(self, metadata: dict, filePath: Optional[str] = None, acquisitionDirectory: Optional[AcqDir] = None):
         super().__init__(metadata, filePath, acquisitionDirectory)
 
@@ -126,34 +187,65 @@ class AnalysisManagerMetaDataBase(MetaDataBase):
         pass
 
     def getAnalyses(self) -> typing.List[str]:
+        """
+
+        Returns:
+            A list of the names of analyses that were found.
+        """
         assert self.filePath is not None
         return self.getAnalysesAtPath(self.filePath)
 
     @classmethod
     def getAnalysesAtPath(cls, path: str) -> typing.List[str]:
+        """
+
+        Args:
+            path: The path to search for analysis files.
+
+        Returns:
+            A list of the names of analyses that were found.
+        """
         anPath = os.path.join(path, 'analyses')
         if os.path.exists(anPath):
             files = os.listdir(os.path.join(path, 'analyses'))
             return [cls.getAnalysisResultsClass().fileName2Name(f) for f in files]
         else:
-            # print(f"pwsdtd.ImCube at {path} has no `analyses` folder.")
             return []
 
     def saveAnalysis(self, analysis: AbstractHDFAnalysisResults, name: str):
+        """
+
+        Args:
+            analysis: An AnalysisResults object to be saved.
+            name: The name to save the analysis as
+        """
         path = os.path.join(self.filePath, 'analyses')
         if not os.path.exists(path):
             os.mkdir(path)
         analysis.toHDF(path, name)
 
     def loadAnalysis(self, name: str) -> AbstractHDFAnalysisResults:
+        """
+
+        Args:
+            name: The name of the analysis to load.
+
+        Returns:
+            A new instance of an AnalysisResults object.
+        """
         return self.getAnalysisResultsClass().load(os.path.join(self.filePath, 'analyses'), name)
 
     def removeAnalysis(self, name: str):
+        """
+
+        Args:
+            name: The name of the analysis to be deleted
+        """
         os.remove(os.path.join(self.filePath, 'analyses', self.getAnalysisResultsClass().name2FileName(name)))
 
 
 class DynMetaData(AnalysisManagerMetaDataBase):
-    """A class that represents the metadata of a Dynamics Acquisition."""
+    """A class that represents the metadata of a Dynamics acquisition."""
     class FileFormats(enum.Enum):
         """An enumerator identifying the types of file formats that this class can be loaded from."""
         Tiff = enum.auto()
@@ -164,8 +256,8 @@ class DynMetaData(AnalysisManagerMetaDataBase):
     def getAnalysisResultsClass(): return DynamicsAnalysisResults
 
     _jsonSchemaPath = os.path.join(_jsonSchemasPath, 'DynMetaData.json')
-    with open(_jsonSchemaPath) as _f:
-        _jsonSchema = json.load(_f)
+    with open(_jsonSchemaPath) as f:
+        _jsonSchema = json.load(f)
 
     def __init__(self, metadata: dict, filePath: Optional[str] = None, fileFormat: Optional[FileFormats] = None, acquisitionDirectory: Optional[AcqDir] = None):
         self.fileFormat = fileFormat
@@ -192,16 +284,25 @@ class DynMetaData(AnalysisManagerMetaDataBase):
 
     @property
     def wavelength(self) -> int:
+        """The wavelength that this acquisition was acquired at."""
         return self._dict['wavelength']
 
     @property
     def times(self) -> Tuple[float, ...]:
+        """A sequence indicatin the time associated with each 2D slice of the 3rd axis of the `data` array"""
         return self._dict['times']
 
     @classmethod
-    def fromOldPWS(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> DynMetaData:
+    def fromOldPWS(cls, directory: str, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> DynMetaData:
         """Loads old dynamics cubes which were saved the same as old pws cubes. a raw binary file with some metadata saved in random .mat files. Does not support
-        automatic detection of binning, pixel size, camera dark counts, system name."""
+        automatic detection of binning, pixel size, camera dark counts, system name.
+
+        Args:
+            directory: The path to the folder containing the data files load the metadata from.
+
+        Returns:
+            A new instance of `DynMetaData`.
+        """
         if lock is not None:
             lock.acquire()
         try:
@@ -231,7 +332,14 @@ class DynMetaData(AnalysisManagerMetaDataBase):
 
 
     @classmethod
-    def fromTiff(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None):
+    def fromTiff(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> DynMetaData:
+        """
+
+        Args:
+            directory: The path to the folder containing the data files load the metadata from.
+        Returns:
+            A new instance of `DynMetaData` loaded from file.
+        """
         if lock is not None:
             lock.acquire()
         try:
@@ -253,13 +361,22 @@ class DynMetaData(AnalysisManagerMetaDataBase):
         return cls(metadata, filePath=directory, fileFormat=cls.FileFormats.Tiff, acquisitionDirectory=acquisitionDirectory)
 
     def getThumbnail(self) -> np.ndarray:
+        """Return the image used for quick viewing of the acquisition. Has no numeric significance."""
         with tf.TiffFile(os.path.join(self.filePath, 'image_bd.tif')) as f:
             return f.asarray()
 
 
 class ERMetaData:
     """A class representing the extra information related to an ExtraReflectanceCube file. This can be useful as a object
-     to keep track of a ExtraReflectanceCube without having to have the data from the file loaded into memory."""
+    to keep track of a ExtraReflectanceCube without having to have the data from the file loaded into memory.
+
+    Args:
+        inheritedMetadata: The metadata dictionary will often just be inherited information from one of the `ImCubes` that was used to create
+            this ER Cube. While this data can be useful it should be taken with a grain of salt. E.G. the metadata will contain
+            an `exposure` field. In reality this ER Cube will have been created from pwsdtd.ImCubes at a variety of exposures.
+        numericalAperture: The numerical aperture that the ImCubes used to generate this Extra reflection cube were imaged at.
+        filePath: The path to the file that this object is stored in.
+    """
     _jsonSchema = {"$schema": "http://json-schema.org/schema#",
                    '$id': 'extraReflectionMetadataSchema',
                    'title': 'extraReflectionMetadataSchema',
@@ -281,28 +398,36 @@ class ERMetaData:
     _MDTAG = 'metadata'
 
     def __init__(self, inheritedMetadata: dict, numericalAperture: float, filePath: str=None):
-        """The metadata dictionary will often just be inherited information from one of the pwsdtd.ImCubes that was used to create
-        this ER Cube. While this data can be useful it should be taken with a grain of salt. E.G. the metadata will contain
-        an `exposure` field. In reality this ER Cube will have been created from pwsdtd.ImCubes at a variety of exposures."""
         self.inheritedMetadata = inheritedMetadata
         self.inheritedMetadata['numericalAperture'] = numericalAperture
         jsonschema.validate(instance=inheritedMetadata, schema=self._jsonSchema, types={'array': (list, tuple)})
         self.filePath = filePath
 
     @property
-    def idTag(self):
+    def idTag(self) -> str:
+        """A unique tag to identify this acquisition by."""
         return f"ExtraReflection_{self.inheritedMetadata['system']}_{self.inheritedMetadata['time']}"
 
     @property
-    def numericalAperture(self):
+    def numericalAperture(self) -> float:
+        """The numerical aperture that this cube was imaged at."""
         return self.inheritedMetadata['numericalAperture']
 
     @property
     def systemName(self) -> str:
+        """The name of the system that this image was acquired on."""
         return self.inheritedMetadata['system']
 
     @classmethod
     def validPath(cls, path: str) -> Tuple[bool, Union[str, bytes], Union[str, bytes]]:
+        """
+
+        Args:
+            path: The file path to the file to search for valid ExtraReflectance files.
+
+        Returns:
+            A tuple containing: validPath: True if the path is valid, directory: The directory the file is in, name: The name that the object was saved as.
+        """
         if cls._FILESUFFIX in path:
             directory, name = cls.directory2dirName(path)
             with h5py.File(os.path.join(directory, f'{name}{cls._FILESUFFIX}'), 'r') as hf:
@@ -312,33 +437,74 @@ class ERMetaData:
             return False, '', ''
 
     @classmethod
-    def fromHdfFile(cls, directory: str, name: str):
+    def fromHdfFile(cls, directory: str, name: str) -> ERMetaData:
+        """
+
+        Args:
+            directory: The directory the file is saved in.
+            name: The name the object was saved as.
+
+        Returns:
+            A new instance of `ERMetaData` object
+        """
         filePath = cls.dirName2Directory(directory, name)
         with h5py.File(filePath, 'r') as hf:
             dset = hf[cls._DATASETTAG]
             return cls.fromHdfDataset(dset, filePath=filePath)
 
     @classmethod
-    def fromHdfDataset(cls, d: h5py.Dataset, filePath: str = None):
+    def fromHdfDataset(cls, d: h5py.Dataset, filePath: str = None) -> ERMetaData:
+        """
+
+        Args:
+            d: The `h5py.Dataset` to load the object from.
+
+        Returns:
+            A new instance of `ERMetaData` object
+        """
         mdDict = json.loads(d.attrs[cls._MDTAG])
         return cls(mdDict, mdDict['numericalAperture'], filePath=filePath)
 
     def toHdfDataset(self, g: h5py.Group) -> h5py.Group:
+        """
+
+        Args:
+            g: The `h5py.Group` to save the new dataset into.
+
+        """
         g[self._DATASETTAG].attrs[self._MDTAG] = np.string_(json.dumps(self.inheritedMetadata))
         return g
 
     @classmethod
     def directory2dirName(cls, path: str) -> Tuple[Union[bytes, str], Union[bytes, str]]:
+        """
+
+        Args:
+            path: The path to the file that stores an `ExtraReflectanceCube` object.
+
+        Returns:
+            A tuple containing: directory: The directory path, name: The name that the file was saved as.
+        """
         directory, fileName = os.path.split(path)
         name = fileName.split(cls._FILESUFFIX)[0]
         return directory, name
 
     @classmethod
-    def dirName2Directory(cls, directory: str, name: str):
+    def dirName2Directory(cls, directory: str, name: str) -> str:
+        """
+        This is the inverse of `directory2dirName`
+        """
         return os.path.join(directory, f'{name}{cls._FILESUFFIX}')
 
 
 class FluorMetaData(MetaDataBase):
+    """
+    Metadata for a fluorescence image.
+
+    Args:
+        md: A dictionary containing the metadata
+
+    """
     FILENAME = 'fluor.tif'
     MDPATH = 'fluorMetadata.json'
 
@@ -350,7 +516,6 @@ class FluorMetaData(MetaDataBase):
         super().__init__(md, filePath, acquisitionDirectory)
 
     def toDataClass(self, lock: mp.Lock = None) -> pwsdtd.FluorescenceImage:
-        # from pwspy.dataTypes import pwsdtd.FluorescenceImage
         return pwsdtd.FluorescenceImage.fromMetadata(self, lock)
 
     @property
@@ -358,7 +523,15 @@ class FluorMetaData(MetaDataBase):
         return f"Fluor_{self._dict['system']}_{self._dict['time']}"
 
     @classmethod
-    def fromTiff(cls, directory: str, acquisitionDirectory: Optional[AcqDir]):
+    def fromTiff(cls, directory: str, acquisitionDirectory: Optional[AcqDir]) -> FluorMetaData:
+        """Load from a TIFF file.
+
+        Args:
+            directory: The path to the folder to load from.
+
+        Returns:
+            A new instance of `FluorMetaData` loaded from file.
+        """
         if not FluorMetaData.isValidPath(directory):
             raise ValueError(f"Fluorescence image not found in {directory}.")
         with open(os.path.join(directory, FluorMetaData.MDPATH), 'r') as f:
@@ -376,18 +549,36 @@ class FluorMetaData(MetaDataBase):
 
         return FluorMetaData(dic, directory, acquisitionDirectory)
 
-    @staticmethod
-    def isValidPath(directory: str):
-        path = os.path.join(directory, FluorMetaData.FILENAME)
-        path2 = os.path.join(directory, FluorMetaData.MDPATH)
+    @classmethod
+    def isValidPath(cls, directory: str):
+        """
+
+        Args:
+            directory: The path to search for valid files.
+
+        Returns:
+            True if a valid file was found.
+        """
+        path = os.path.join(directory, cls.FILENAME)
+        path2 = os.path.join(directory, cls.MDPATH)
         return os.path.exists(path) and os.path.exists(path2)
 
     def getThumbnail(self) -> np.ndarray:
+        """
+
+        Returns:
+            An image for quick viewing of the acquisition. No numerical significance.
+        """
         with tf.TiffFile(os.path.join(self.filePath, 'image_bd.tif')) as f:
             return f.asarray()
 
 
 class ICMetaData(AnalysisManagerMetaDataBase):
+    """A class that represents the metadata of a PWS acquisition.
+
+    Args:
+        metadata: The dictionary containing the metadata.
+    """
     class FileFormats(enum.Enum):
         RawBinary = enum.auto()
         Tiff = enum.auto()
@@ -398,8 +589,8 @@ class ICMetaData(AnalysisManagerMetaDataBase):
     def getAnalysisResultsClass(): return PWSAnalysisResults
 
     _jsonSchemaPath = os.path.join(_jsonSchemasPath, 'ICMetaData.json')
-    with open(_jsonSchemaPath) as _f:
-        _jsonSchema = json.load(_f)
+    with open(_jsonSchemaPath) as f:
+        _jsonSchema = json.load(f)
 
     def __init__(self, metadata: dict, filePath: Optional[str] = None, fileFormat: ICMetaData.FileFormats = None, acquisitionDirectory: Optional[AcqDir] = None):
         super().__init__(metadata, filePath, acquisitionDirectory=acquisitionDirectory)
@@ -407,7 +598,6 @@ class ICMetaData(AnalysisManagerMetaDataBase):
         self._dict['wavelengths'] = tuple(np.array(self._dict['wavelengths']).astype(float))
 
     def toDataClass(self, lock: mp.Lock = None) -> pwsdtd.ImCube:
-        # from pwspy.dataTypes import pwsdtd.ImCube
         return pwsdtd.ImCube.fromMetadata(self, lock)
 
     @cached_property
@@ -420,6 +610,14 @@ class ICMetaData(AnalysisManagerMetaDataBase):
 
     @classmethod
     def loadAny(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> ICMetaData:
+        """
+        Attempt to load from any file format.
+
+        Args:
+            directory: The file path to load the metadata from.
+        Returns:
+            A new instance of `ICMetaData` loaded from file
+        """
         try:
             return ICMetaData.fromTiff(directory, lock=lock, acquisitionDirectory=acquisitionDirectory)
         except:
@@ -433,6 +631,14 @@ class ICMetaData(AnalysisManagerMetaDataBase):
 
     @classmethod
     def fromOldPWS(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> ICMetaData:
+        """
+        Attempt to load from the old .mat file format.
+
+        Args:
+            directory: The file path to load the metadata from.
+        Returns:
+            A new instance of `ICMetaData` loaded from file
+        """
         if lock is not None:
             lock.acquire()
         try:
@@ -441,7 +647,7 @@ class ICMetaData(AnalysisManagerMetaDataBase):
             except:  # have to use the old metadata
                 info2 = list(spio.loadmat(os.path.join(directory, 'info2.mat'))['info2'].squeeze())
                 info3 = list(spio.loadmat(os.path.join(directory, 'info3.mat'))['info3'].squeeze())
-                print("Json metadata not found. Using backup metadata.")
+                logging.getLogger(__name__).info("Json metadata not found. Using backup metadata.")
                 wv = list(spio.loadmat(os.path.join(directory, 'WV.mat'))['WV'].squeeze())
                 wv = [int(i) for i in wv]  # We will have issues saving later if these are numpy int types.
                 md = {'startWv': info2[0], 'stepWv': info2[1], 'stopWv': info2[2],
@@ -457,6 +663,14 @@ class ICMetaData(AnalysisManagerMetaDataBase):
 
     @classmethod
     def fromNano(cls, directory: str, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> ICMetaData:
+        """
+        Attempt to load from NanoCytomic .mat file format
+
+        Args:
+            directory: The file path to load the metadata from.
+        Returns:
+            A new instance of `ICMetaData` loaded from file
+        """
         if lock is not None:
             lock.acquire()
         try:
@@ -475,6 +689,14 @@ class ICMetaData(AnalysisManagerMetaDataBase):
 
     @classmethod
     def fromTiff(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> ICMetaData:
+        """
+        Attempt to load from the standard TIFF file format.
+
+        Args:
+            directory: The file path to load the metadata from.
+        Returns:
+            A new instance of `ICMetaData` loaded from file
+        """
         if lock is not None:
             lock.acquire()
         try:
@@ -516,10 +738,22 @@ class ICMetaData(AnalysisManagerMetaDataBase):
         return cls(metadata, filePath=directory, fileFormat=ICMetaData.FileFormats.Tiff, acquisitionDirectory=acquisitionDirectory)
 
     def metadataToJson(self, directory):
+        """
+        Save the metadata to a JSON file.
+
+        Args:
+            directory: The folder path to save the new file to.
+
+        """
         with open(os.path.join(directory, 'pwsmetadata.json'), 'w') as f:
             json.dump(self._dict, f)
 
     def getThumbnail(self) -> np.ndarray:
+        """
+
+        Returns:
+            An image for quick viewing of the acquisition. No numerical significance.
+        """
         if self.fileFormat == ICMetaData.FileFormats.NanoMat:
             with h5py.File(os.path.join(self.filePath, 'image_bd.mat'), 'r') as hf:
                 return np.array(hf['image_bd']).T.copy()  # For some reason these are saved transposed?

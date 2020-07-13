@@ -1,18 +1,18 @@
-{ # TODO
+{
     "menu_name": "Anaconda${PY_VER} ${PLATFORM}",
     "menu_items":
     [
         {
             "name": "PWS Analysis",
-            "pywscript": "${PYTHON_SCRIPTS}/spyder-script.py",
-            "workdir": "${PERSONALDIR}/Python Scripts",
-            "icon": "${PYTHON_SCRIPTS}/spyder.ico"
+            "pyscript": "${PYTHON_SCRIPTS}/PWSAnalysis-script.py",
+            "workdir": "${USERPROFILE}",
+            "icon": "${PREFIX}/Menu/cellLogo.ico"
         },
         {
             "name": "PWS ERCreator",
-            "pyscript": "${PYTHON_SCRIPTS}/spyder-script.py --reset",
+            "pyscript": "${PYTHON_SCRIPTS}/ERCreator-script.py",
             "workdir": "${USERPROFILE}",
-            "icon": "${PYTHON_SCRIPTS}/spyder_light.ico"
+            "icon": "${PREFIX}/Menu/cellLogo.ico"
         }
     ]
 }

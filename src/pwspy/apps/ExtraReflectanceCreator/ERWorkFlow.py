@@ -1,3 +1,20 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
+
 import hashlib
 import os
 from datetime import datetime
@@ -14,11 +31,13 @@ from pwspy.dataTypes import Roi
 from pwspy import dateTimeFormat
 from pwspy.utility.reflection import Material
 from pwspy.utility.fileIO import loadAndProcess
-import pwspy.utility.reflection.extraReflectance  as er
+import pwspy.utility.reflection.extraReflectance as er
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+import logging
+
 
 
 def _splitPath(path: str) -> List[str]:
@@ -40,7 +59,8 @@ def scanDirectory(directory: str) -> Dict[str, Any]:
     try:
         cam = CameraCorrection.fromJsonFile(os.path.join(directory, 'cameraCorrection.json'))
     except Exception as e:
-        print(e)
+        logger = logging.getLogger(__name__)
+        logger.exception(e)
         raise Exception(f"Could not load a camera correction at {directory}")
     files = glob(os.path.join(directory, '*', '*', 'Cell*'))
     rows = []
@@ -61,7 +81,8 @@ def _processIm(im: ImCube, args) -> ImCube:
     try:
         im.filterDust(0.8)  # in microns
     except ValueError:
-        print("No pixel size metadata found. assuming a gaussian filter radius of 6 pixels = 1 sigma.")
+        logger = logging.getLogger(__name__)
+        logger.warning("No pixel size metadata found. assuming a gaussian filter radius of 6 pixels = 1 sigma.")
         im.filterDust(6, pixelSize=1) #Do the filtering in units of pixels if no auto pixelsize was found
     return im
 
@@ -136,8 +157,9 @@ class ERWorkFlow:
             matCombos = er.generateMaterialCombos(materials)
             combos = er.getAllCubeCombos(matCombos, cubes)
             erCube, rExtraDict, self.plotnds = er.generateRExtraCubes(combos, theoryR, numericalAperture)
-            print(f"Final data max is {erCube.data.max()}")
-            print(f"Final data min is {erCube.data.min()}")
+            logger = logging.getLogger(__name__)
+            logger.info(f"Final data max is {erCube.data.max()}")
+            logger.info(f"Final data min is {erCube.data.min()}")
             self.figs.extend(self.plotnds) # keep track of opened figures.
             saveName = f'{self.currDir}-{setting}'
             dialog = IndexInfoForm(f'{self.currDir}-{setting}', erCube.metadata.idTag)

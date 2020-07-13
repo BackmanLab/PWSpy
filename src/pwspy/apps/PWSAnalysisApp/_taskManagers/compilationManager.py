@@ -1,7 +1,26 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
+
 from __future__ import annotations
 
+import logging
 import traceback
 
+import logging
 from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QMessageBox, QMainWindow
 from PyQt5 import QtCore
@@ -64,8 +83,9 @@ class CompilationManager(QtCore.QObject):
                 for acq in self.cellMetas:
                     self.result.append(self._process(acq, self.compiler, self.roiNamePattern, self.analysisNamePattern)) # A list of Tuples. each tuple containing a list of warnings and the Acquisition to go with it.
             except Exception as e:
-                print("Compilation error:")
-                traceback.print_exc()
+                logger = logging.getLogger(__name__)
+                logger.warning("Compilation error:")
+                logger.exception(e)
                 self.errorOccurred.emit(e)
 
         @staticmethod

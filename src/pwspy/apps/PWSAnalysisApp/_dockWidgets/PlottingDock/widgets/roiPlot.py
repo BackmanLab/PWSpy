@@ -1,3 +1,21 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
+
+import logging
 import os
 import traceback
 import re
@@ -121,8 +139,9 @@ class RoiPlot(BigPlot):
                 try:
                     self.addRoi(self.metadata.loadRoi(name, num, fformat))
                 except Exception as e:
-                    print(f"Failed to load Roi with name: {name}, number: {num}, format: {fformat.name}")
-                    traceback.print_exc()
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"Failed to load Roi with name: {name}, number: {num}, format: {fformat.name}")
+                    logger.exception(e)
         self.canvas.draw_idle()
 
     def clearRois(self):

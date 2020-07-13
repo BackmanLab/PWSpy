@@ -1,3 +1,20 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
+
 from __future__ import annotations
 import hashlib
 import os, io
@@ -16,7 +33,7 @@ from abc import ABC, abstractmethod
 
 class ERAbstractDirectory(ABC):
     """This class keeps track of the status of a directory that contains our extra reflection subtraction cubes.
-    This can be a local directory on a hard drive or a folder on Google Drive, etc."""
+    This can be implemented as a local directory on a hard drive or a folder on Google Drive, etc., whatever."""
 
     class DataStatus(Enum):
         md5Confict = 'Data MD5 mismatch'
@@ -132,16 +149,6 @@ class EROnlineDirectory(ERAbstractDirectory):
             f = self._downloader.downloadToRam('index.json', f)
             f.seek(0) #Move back to the beginning of the stream for reading.
             self.index = ERIndex.load(f)
-        # tempDir = tempfile.mkdtemp()
-        # indexPath = os.path.join(tempDir, 'index.json')
-        # try:
-        #     self._downloader.download('index.json', indexPath)
-        #     index = ERIndex.loadFromFile(indexPath)
-        #     self.index = index
-        # finally:
-        #     if os.path.exists(indexPath):
-        #         os.remove(indexPath)
-        #     os.rmdir(tempDir)
 
     def getFileStatus(self) -> pandas.DataFrame:
         calculatedIndex = self._buildIndexFromOnlineFiles()

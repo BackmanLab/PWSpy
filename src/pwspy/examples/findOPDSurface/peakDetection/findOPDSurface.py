@@ -1,4 +1,22 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
 
+"""This script detects all local maxima in the spectra of a PWS image and then performs various morphological operations on the peak locations in an
+ attempt to localize the cell surface. It is very finnick and needs to be adjusted for each individual image. I reccomend the "activeContour" script instead."""
 
 if __name__ == '__main__':
     from pwspy.dataTypes import AcqDir
@@ -10,9 +28,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import skimage.morphology as morph
     import skimage.measure as meas
-    from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-    import skan
-    from pwspy.examples.findOPDSurface.funcs import prune3dIm, Skel
+    from pwspy.examples.findOPDSurface.peakDetection.funcs import prune3dIm, Skel
 
     # rootDir = r'G:\Data\NA_i_vs_NA_c\matchedNAi_largeNAc\cells'
     rootDir = r'G:\Data\NA_i_vs_NA_c\smallNAi_largeNAc\cells'
@@ -102,7 +118,7 @@ if __name__ == '__main__':
             arr4[:, :, i] = morph.skeletonize(temp)
 
         print("analyze skeleton 2d")
-        arr5 = prune3dIm(arr4)
+        arr5 = prune3dIm(arr4, plotEveryN=15)
 
 
         #3d regions
@@ -118,7 +134,8 @@ if __name__ == '__main__':
                 coords = (coords[:, 0], coords[:, 1], coords[:,2])
                 arr6[coords] = True
         ThreeDskel = morph.skeletonize(arr6) #3d Skeletonized. This is just used for a cool plot. 2d skeletonized is more useful.
-        s = Skel(ThreeDskel)
+
+        Skel3d = Skel(ThreeDskel)
 
         temp = np.zeros_like(arr6)  # 2d skeletonized
         for i in range(temp.shape[2]):
@@ -140,7 +157,7 @@ if __name__ == '__main__':
         # Interpolate out the Nans
         def interpolateNans(arr, method='linear'):  # 'cubic' may also be good.
             """Interpolate out nan values along the third axis of an array"""
-            from scipy.interpolate import interp2d, griddata
+            from scipy.interpolate import griddata
             x, y = list(range(arr.shape[1])), list(range(arr.shape[0]))
             X, Y = np.meshgrid(x, y)
             nans = np.isnan(arr)
@@ -179,7 +196,7 @@ if __name__ == '__main__':
         plt.colorbar()
         fig.show()
 
-        s.plot()
+        Skel3d.plot()
 
         fig = plt.figure()
         _ = Z.copy()
@@ -192,3 +209,4 @@ if __name__ == '__main__':
 
         print("Done")
         a = 1  # debug here
+    b = 1 # debug breakpoint here

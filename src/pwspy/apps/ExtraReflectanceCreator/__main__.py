@@ -1,8 +1,28 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
+
+import logging
 import os
 from datetime import datetime
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QApplication, QFileDialog, QListWidgetItem, QMessageBox
+
+from pwspy import dateTimeFormat
 from pwspy.apps.ExtraReflectanceCreator.ERWorkFlow import ERWorkFlow
 import matplotlib.pyplot as plt
 
@@ -89,7 +109,8 @@ def isIpython():
     except:
         return False
 
-if __name__ == '__main__':
+
+def main():
     import sys
 
     # This prevents errors from happening silently.
@@ -100,9 +121,19 @@ if __name__ == '__main__':
         sys.exit(1)
     sys.excepthook = exception_hook
 
+    logger = logging.getLogger('pwspy')  # We use the root logger of the pwspy module so that all loggers in pwspy will be captured.
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(logging.StreamHandler(sys.stdout))
+    fHandler = logging.FileHandler(os.path.join(appPath, 'ExtraReflectanceCreatorData', f'log{datetime.now().strftime("%d%m%Y%H%M%S")}.txt'))
+    fHandler.setFormatter(logging.Formatter('%(levelname)s: %(asctime)s %(name)s.%(funcName)s(%(lineno)d) - %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
+    logger.addHandler(fHandler)
+
     if isIpython():
         app = ERApp(sys.argv)
     else:
-        print("Not Ipython")
         app = ERApp(sys.argv)
         sys.exit(app.exec_())
+
+
+if __name__ == '__main__':
+    main()

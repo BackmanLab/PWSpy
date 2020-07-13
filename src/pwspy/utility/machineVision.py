@@ -1,5 +1,22 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
+
 """
-This module provides a number of functions useful processing images. Currently its contents are focused
+Useful functions for processing images. Currently its contents are focused
 on image stabilization.
 
 Functions
@@ -12,7 +29,7 @@ Functions
    edgeDetectRegisterTranslation
 
 """
-
+import logging
 import typing
 import numpy as np
 import matplotlib.pyplot as plt
@@ -101,7 +118,7 @@ def SIFTRegisterTransform(reference: np.ndarray, other: typing.Iterable[np.ndarr
             transforms.append(M)
             matchesMask = mask.ravel().tolist()
         else:
-            print("Not enough matches are found - %d/%d" % (len(good), MIN_MATCH_COUNT))
+            logging.getLogger(__name__).warning("Not enough matches are found - %d/%d" % (len(good), MIN_MATCH_COUNT))
             matchesMask = None
             # M = None
         if debugPlots:
@@ -159,7 +176,7 @@ def edgeDetectRegisterTranslation(reference: np.ndarray, other: typing.Iterable[
         animsEd = [[anEdAx.imshow(to8bit(refEd), 'gray'), anEdAx.text(100, 100, "Reference",  color='w')]]
     for i, (im, edgeIm) in enumerate(zip(other, imEd)):
         shifts, error, phasediff = feature.register_translation(edgeIm, refEd)
-        print(f"Translation: {shifts}, RMS Error: {error}, Phase Difference:{phasediff}")
+        logging.getLogger(__name__).info(f"Translation: {shifts}, RMS Error: {error}, Phase Difference:{phasediff}")
         shifts = np.array([[1, 0, shifts[1]],
                            [0, 1, shifts[0]]], dtype=float) # Convert the shift to an affine transform
         affineTransforms.append(shifts)

@@ -1,3 +1,20 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
+
 # -*- coding: utf-8 -*-
 """
 Created on Fri Apr  3 16:24:11 2020
@@ -166,6 +183,7 @@ class AnnotFig:
 
 
 def _scanIds(s: Skel, ids: typing.List[int]):
+    """Returns a list of indexes of skeleton paths to be removed"""
     idxes = []
     for i in ids:
         matchArr = np.any(s.summary[['node-id-src', 'node-id-dst']] == i, axis=1) #Find all row with an endpoint matching `i`. this is kinda slow. this is the main place that would benefit from optimization
@@ -186,6 +204,7 @@ def _scanIds(s: Skel, ids: typing.List[int]):
     return idxes
 
 def _scanSharedEndpoints(s):
+    """Returns a list of indexes of skeleton paths to be removed"""
     g = s.summary.groupby('ids')
     idxes = []
     for i, group in g:  # Groups of paths that share both end points. These could be loops or groups of branches that start and stop in the same place

@@ -1,3 +1,20 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
+
 from matplotlib.image import AxesImage
 from matplotlib.patches import Polygon
 from shapely.geometry import Polygon as shapelyPolygon, LinearRing
@@ -7,11 +24,19 @@ from pwspy.utility.matplotlibWidgets._selectorWidgets import SelectorWidgetBase
 
 
 class LassoSelector(SelectorWidgetBase):
-    def __init__(self, axMan: AxManager, image: AxesImage, onselect=None, button=None):
-        super().__init__(axMan, image, button=button)
+    """Allows the user to select a region with freehand drawing.
+
+    Args:
+        axMan: A reference to the `AxManager` object used to manage drawing the matplotlib `Axes` that this selector widget is active on.
+        image: A reference to a matplotlib `AxesImage`. Selectors may use this reference to get information such as data values from the image
+            for computer vision related tasks.
+        onselect: A callback function that will be called when the selector finishes a selection.
+    """
+    def __init__(self, axMan: AxManager, image: AxesImage, onselect=None):
+        super().__init__(axMan, image)
         self.onselect = onselect
         self.verts = None
-        self.polygon = Polygon([[0,0]], facecolor=(0, 0, 1, .1), animated=True, edgecolor=(0, 0, 1, .8))
+        self.polygon = Polygon([[0, 0]], facecolor=(0, 0, 1, .1), animated=True, edgecolor=(0, 0, 1, .8))
         self.polygon.set_visible(False)
         self.addArtist(self.polygon)
 #        self.set_active(True) #needed for blitting to work

@@ -1,4 +1,23 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
+
 from __future__ import annotations
+
+import logging
 from datetime import datetime
 from typing import List, Optional
 
@@ -83,7 +102,8 @@ class ERSelectorWindow(QDialog):
         try:
             self._manager.download('index.json', parentWidget=self)
         except OfflineError:
-            print('Offline Mode: Could not update `Extra Reflectance` index file. Connection to Google Drive failed.')
+            logger = logging.getLogger(__name__)
+            logger.warning('Offline Mode: Could not update `Extra Reflectance` index file. Connection to Google Drive failed.')
         self._initialize()
 
     def _initialize(self):
@@ -136,10 +156,13 @@ class ERSelectorWindow(QDialog):
         PlotNd(er.data, indices=[range(er.data.shape[0]), range(er.data.shape[1]), er.wavelengths])
 
     def _downloadCheckedItems(self):
-        for item in self._items:
-            if item.isChecked() and not item.downloaded:
-                # If it is checked then it should be downloaded
-                self._manager.download(item.fileName, parentWidget=self)
+        try :
+            for item in self._items:
+                if item.isChecked() and not item.downloaded:
+                    # If it is checked then it should be downloaded
+                    self._manager.download(item.fileName, parentWidget=self)
+        except OfflineError as e:
+            QMessageBox.information(self, "OfflineMode", "Sorry, for obvious reasons you can't download extra reflection calibration files when running in offline mode.")
         self._initialize()
 
     def _selectLocalFile(self):

@@ -1,6 +1,24 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
+
+import logging
 import os
 import re
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineEdit, QGridLayout, QSplitter, \
@@ -78,8 +96,9 @@ class CellSelectorDock(QDockWidget):
             try:
                 acq = pwsdt.AcqDir(f)
             except OSError as e:
-                print(f"Failed to load {f}")
-                print(e)
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Failed to load {f}")
+                logger.exception(e)
                 continue
             cellItems.append(CellTableWidgetItem(acq, os.path.split(f)[0][len(workingDir) + 1:],
                                         int(f.split('Cell')[-1])))
@@ -142,7 +161,7 @@ class CellSelectorDock(QDockWidget):
     def getAllCellMetas(self) -> List[pwsdt.AcqDir]:
         return [i.acqDir for i in self.tableWidget.cellItems]
 
-    def getSelectedReferenceMeta(self):
+    def getSelectedReferenceMeta(self) -> Optional[pwsdt.AcqDir]:
         return self.refTableWidget.selectedReferenceMeta
 
     def setSelectedCells(self, cells: List[pwsdt.AcqDir]):

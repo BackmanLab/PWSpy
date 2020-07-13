@@ -1,3 +1,20 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
+
 from __future__ import annotations
 from abc import ABC, abstractmethod, ABCMeta
 
@@ -10,8 +27,6 @@ from pwspy.analysis import AbstractRuntimeAnalysisSettings
 
 if typing.TYPE_CHECKING:
     from pwspy.analysis import AbstractAnalysisSettings
-    from pwspy.dataTypes import CameraCorrection
-
 
 class QtAbstractMeta(ABCMeta, type(QObject)):
     """Metaclass that allows implementing ABC and QObject simultaneously"""
@@ -25,25 +40,6 @@ class AbstractSettingsFrame(metaclass=QtAbstractMeta):
         pass
 
     @abstractmethod
-    def loadCameraCorrection(self, camCorr: Optional[CameraCorrection] = None):
-        """Populate the UI to match the `camCorr` camera correction"""
-        pass
-
-
-    @abstractmethod
     def getSettings(self) -> AbstractRuntimeAnalysisSettings:
         """Generate a new settings object based on the current state of the UI"""
-        pass
-
-    @abstractmethod
-    def getCameraCorrection(self) -> Optional[CameraCorrection]:
-        """Generate a new CameraCorrection based on the current state of the UI.
-        Return None for auto detected camera correction"""
-        pass
-
-
-    @property
-    @abstractmethod
-    def analysisName(self) -> str:
-        """Get the name that the user has chosen to save this analysis as."""
         pass

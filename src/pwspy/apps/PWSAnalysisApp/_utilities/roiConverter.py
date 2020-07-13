@@ -1,4 +1,22 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
+
 import copy
+import logging
 import os
 from typing import List
 
@@ -12,17 +30,18 @@ class RoiConverter:
     calculated using the concave hull method which is slow."""
     def __init__(self, cells: List[AcqDir]):
         for cell in cells:
-            print(cell.filePath)
+            logger = logging.getLogger(__name__)
+            logger.info(cell.filePath)
             rois = cell.getRois()
             for name, num, fformat in rois:
                 if fformat == Roi.FileFormats.MAT:
-                    print('\t', name, num, "MAT")
+                    logger.info('\t', name, num, "MAT")
                     roi = Roi.fromMat(cell.filePath, name, num)
                 elif fformat == Roi.FileFormats.HDF:
-                    print('\t', name, num, "LegacyHDF")
+                    logger.info('\t', name, num, "LegacyHDF")
                     roi = Roi.fromHDF_legacy(cell.filePath, name, num)
                 else:
-                    print('\t', "Skipping", name, num, fformat.name)
+                    logger.info('\t', "Skipping", name, num, fformat.name)
                     continue #Conversion of other formats is not supported
                 assert roi.verts is None
                 roi.verts = roi.getBoundingPolygon().get_verts()  # Use concave hull method to generate the vertices.

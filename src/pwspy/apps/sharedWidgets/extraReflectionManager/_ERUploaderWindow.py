@@ -1,5 +1,23 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
+
 from __future__ import annotations
 
+import logging
 import traceback
 from typing import Optional
 
@@ -85,13 +103,13 @@ class ERUploaderWindow(QDialog):
             uploadableRows = np.logical_or(status['Index Comparison'] == ERDataComparator.ComparisonStatus.LocalOnly.value, status['Online Status'] == ERDataDirectory.DataStatus.missing.value)
             if np.any(uploadableRows):  # There is something to upload
                 for i, row, in status.loc[uploadableRows].iterrows():
-                    print(row)
                     fileName = [i.fileName for i in self._manager.dataComparator.local.index.cubes if i.idTag == row['idTag']][0]
                     self._manager.upload(fileName)
                 self._manager.upload('index.json')
             self.refresh()
         except Exception as e:
-            traceback.print_exc()
+            logger = logging.getLogger(__name__)
+            logger.exception(e)
             mess = QMessageBox.information(self, 'Sorry', str(e))
 
     def refresh(self):

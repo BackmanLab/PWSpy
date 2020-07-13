@@ -1,10 +1,29 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
+
 # -*- coding: utf-8 -*-
-"""This script is based on a matlab script written by Lusik Cherkezyan for Nanocytomics.
+"""
+This script is based on a matlab script written by Lusik Cherkezyan for Nanocytomics.
 Nano uses this method to extract rms from phantom make from ChromEM cells embedded in resin.
 The phantom has a strong thin-film spectrum. This script is meant to filter out the thin film components
-of the fourier transfrom and extract RMS from what is left."""
+of the fourier transfrom and extract RMS from what is left.
+"""
 
-#Last tested on pwspy ad745ef0c1ae526e25981b0036f460981397a456
+# Last tested on pwspy ad745ef0c1ae526e25981b0036f460981397a456
 
 
 from pwspy.dataTypes import CameraCorrection, AcqDir, Roi, ImCube, KCube

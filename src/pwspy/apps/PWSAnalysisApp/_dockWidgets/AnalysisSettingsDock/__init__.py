@@ -1,3 +1,20 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
+
 from __future__ import annotations
 from typing import Tuple, List
 from PyQt5.QtWidgets import QDockWidget, QWidget, \
@@ -27,9 +44,9 @@ class AnalysisSettingsDock(QDockWidget):
         widg = QWidget()
         widg.setLayout(QVBoxLayout())
         self.settingsTabWidget = QTabWidget(self)
-        self.PWSSettingsFrame = PWSSettingsFrame(self.erManager)
+        self.PWSSettingsFrame = PWSSettingsFrame(self.erManager, cellSelector)
         self.settingsTabWidget.addTab(self.PWSSettingsFrame, "PWS")
-        self.DynSettingsFrame = DynamicsSettingsFrame(self.erManager)
+        self.DynSettingsFrame = DynamicsSettingsFrame(self.erManager, cellSelector)
         self.settingsTabWidget.addTab(self.DynSettingsFrame, "Dynamics")
         widg.layout().addWidget(self.settingsTabWidget)
         self.addAnalysisButton = QPushButton("Add Analysis")
@@ -48,15 +65,12 @@ class AnalysisSettingsDock(QDockWidget):
     def addAnalysis(self):
         settingsWidget: AbstractSettingsFrame = self.settingsTabWidget.currentWidget()
         try:
-            camCorr = settingsWidget.getCameraCorrection()
             settings = settingsWidget.getSettings()
         except Exception as e:
             QMessageBox.information(self, 'Hold on', str(e))
             return
-        self.analysesQueue.addAnalysis(settingsWidget.analysisName, camCorr, settings,
-                                       self.selector.getSelectedReferenceMeta(),
-                                       self.selector.getSelectedCellMetas())
+        self.analysesQueue.addAnalysis(settings)
 
-    def getListedAnalyses(self) -> List[Tuple[str, AbstractRuntimeAnalysisSettings, List[AcqDir], AcqDir, CameraCorrection, AnalysisListItem]]:
+    def getListedAnalyses(self) -> List[AbstractRuntimeAnalysisSettings]:
         return self.analysesQueue.analyses
 

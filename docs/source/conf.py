@@ -1,3 +1,20 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
+
 # -*- coding: utf-8 -*-
 #
 # Configuration file for the Sphinx documentation builder.
@@ -50,10 +67,12 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     "sphinx_rtd_theme",
-    'sphinx.ext.inheritance_diagram'  #Need to add graphviz/bin to the path for this to work.
+    'sphinx.ext.inheritance_diagram',  #Need to add graphviz/bin to the path for this to work.
+    'sphinx.ext.mathjax'
 ]
 
 autosummary_generate = True
+autodoc_inherit_docstrings = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
