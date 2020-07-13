@@ -72,6 +72,7 @@ class AxManager:
 
     def update(self):
         """Re-render the axes. Call this after you know that something has changed with the plot."""
+        #TODO what is the return value here?
         if not self.ax.get_visible():
             return False
         if self.canvas.supports_blit:
