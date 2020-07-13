@@ -51,4 +51,11 @@ run `install.bat`
 If you have the built package (.tar.gz file) then you can install the package by pointing `conda install` to the it.
 Install the package with `conda install -c file:///{tarGzFileDestination} -c conda-forge pwspy`.
 
+### First time startup
+While the `pwspy` package has many facets one of the major components is the "PWS Analysis App" GUI which is used to analyze PWS data.
+There are multiple ways that you can run this application. 1: On Windows a `PWS Analysis` shortcut should appear in your Start Menu under
+the `Anaconda` category 2: type `PWSAnalysis` into the command prompt for the Conda environment
+that `pwspy` is installed in. 3: In `Anaconda-Navigator` an app named `pwspy` should appear. The first time you run the GUI on a computer you will
+need to sign into the Google Drive database where calibration data is stored, the account name is `backman.lab@gmail.com`.
+
 
