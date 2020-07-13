@@ -84,6 +84,8 @@ class RegionalPaintSelector(SelectorWidgetBase):
             alpha = 0.3
             colorCycler = cycler(color=[(1, 0, 0, alpha), (0, 1, 0, alpha), (0, 0, 1, alpha), (1, 1, 0, alpha), (1, 0, 1, alpha)])
             for poly, color in zip(polys, colorCycler()):
+                if isinstance(poly, MultiPolygon):  # There is a chance for this a Multipolygon rather than just a Polygon.
+                    poly = max(poly, key=lambda a: a.area)  # To fix this we extract the largest polygon from the multipolygon
                 p = Polygon(poly.exterior.coords, color=color['color'], animated=True)
                 self.addArtist(p)
                 self.contours.append(p)
