@@ -29,9 +29,8 @@ from pwspy.dataTypes import AcqDir
 from matplotlib import patches
 import os
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.analysisViewer import AnalysisViewer
-from pwspy.utility.matplotlibWidgets._selectorWidgets.FullImPaintSelector import FullImPaintSelector
 from pwspy.dataTypes import Roi
-from pwspy.utility.matplotlibWidgets import AdjustableSelector, LassoSelector, EllipseSelector, RegionalPaintSelector, PolygonInteractor
+from pwspy.utility.matplotlibWidgets import FullImPaintSelector, AdjustableSelector, LassoSelector, EllipseSelector, RegionalPaintSelector, PolygonInteractor, WaterShedPaintSelector
 
 
 class RoiDrawer(QWidget):
@@ -183,6 +182,9 @@ class RoiDrawer(QWidget):
             fullAction = QAction("Full Image")
             fullAction.triggered.connect(lambda: setSelector(FullImPaintSelector))
             menu.addAction(fullAction)
+            watershedAction = QAction("Watershed")
+            watershedAction.triggered.connect(lambda: setSelector(WaterShedPaintSelector))
+            menu.addAction(watershedAction)
             menu.exec(self.mapToGlobal(self.paintButton.pos()))
 
         elif button is self.noneButton and self.lastButton_ is not button:
