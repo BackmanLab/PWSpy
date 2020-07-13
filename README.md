@@ -43,7 +43,7 @@ More information here: https://docs.conda.io/projects/conda/en/latest/user-guide
 ### Installing from the backmanlab Anaconda channel (recommended)
 `pwspy` is stored online on the lab's Anaconda Cloud account. It can be installed from Conda with the command `conda install -c conda-forge -c backmanlab pwspy`
 
-### Installing with the installtion helper script
+### Installing with the installation helper script
 Set the appropriate Conda environment name to the `env` variable in the first line of `install.bat`.
 run `install.bat`  
 
