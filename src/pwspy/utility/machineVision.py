@@ -53,6 +53,7 @@ def to8bit(arr: np.ndarray) -> np.ndarray:
     if arr.dtype == bool:
         arr = arr.astype(np.uint8) * 255
     else:
+        arr = arr.astype(float) # This solves problems if the array is int16 type
         Min = np.percentile(arr, 0.1)
         arr -= Min
         Max = np.percentile(arr, 99.9)
