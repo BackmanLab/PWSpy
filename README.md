@@ -40,7 +40,7 @@ Create a new environment with `conda create -n {environmentName} python=3.7`. Yo
 
 More information here: https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html
 
-### Installing from the backmanlab Anaconda channel
+### Installing from the backmanlab Anaconda channel (recommended)
 `pwspy` is stored online on the lab's Anaconda Cloud account. It can be installed from Conda with the command `conda install -c conda-forge -c backmanlab pwspy`
 
 ### Installing with the installtion helper script
@@ -53,12 +53,12 @@ Install the package with `conda install -c file:///{tarGzFileDestination} -c con
 
 ### First time startup
 While the `pwspy` package has many facets one of the major components is the "PWS Analysis App" GUI which is used to analyze PWS data.
-There are multiple ways that you can run this application.  
+There are multiple ways that you can run this application:  
 
 1. On Windows a `PWS Analysis` shortcut should appear in your Start Menu under
 the `Anaconda` category  
 
-2. type `PWSAnalysis` into the command prompt for the Conda environment
+2. Type `PWSAnalysis` into the command prompt for the Conda environment
 that `pwspy` is installed in.  
 
 3. In `Anaconda-Navigator` an app named `pwspy` should appear. 
