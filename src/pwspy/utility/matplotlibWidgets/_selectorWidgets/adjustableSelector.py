@@ -312,7 +312,7 @@ class AdjustableSelector:
                  onfinished: typing.Optional[typing.Callable] = None):
         self.axMan = AxManager(ax)
         self.image = image
-        self.selector = selectorClass(self.axMan, self.image, onselect=self._goPoly)
+        self.selector: SelectorWidgetBase = selectorClass(self.axMan, self.image, onselect=self._goPoly)
         self.selector.active = False
         self.adjuster = PolygonInteractor(self.axMan, onselect=self.finish)
         self.adjuster.active = False

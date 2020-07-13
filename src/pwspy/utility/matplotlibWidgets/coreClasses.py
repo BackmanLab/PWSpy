@@ -53,13 +53,7 @@ class AxManager:
         else:
             self.ax.add_artist(artist)
 
-    def removeArtists(self):
         """Remove all artists from this manager"""
-        for artist in self.artists:
-            artist.remove()
-        self.artists = []
-        self.update()
-
     def removeArtist(self, artist: Artist):
         """Remove a single `Artist` from the manaager
 
@@ -72,6 +66,7 @@ class AxManager:
 
     def update(self):
         """Re-render the axes. Call this after you know that something has changed with the plot."""
+        #TODO what is the return value here?
         if not self.ax.get_visible():
             return False
         if self.canvas.supports_blit:
