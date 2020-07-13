@@ -204,8 +204,9 @@ class SelectorWidgetBase(AxesWidget, ABC):
         self.artists.append(artist)
 
     def removeArtists(self):
-        self.artists = []
-        self.axMan.removeArtists()
+        """Remove all artist objects associated with this selector"""
+        for artist in self.artists:
+            self.removeArtist(artist)
 
     def removeArtist(self, artist):
         self.artists.remove(artist)
