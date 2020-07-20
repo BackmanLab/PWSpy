@@ -23,6 +23,7 @@ from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupB
 
 import pwspy.analysis.dynamics
 from pwspy.apps.PWSAnalysisApp._dockWidgets import CellSelectorDock
+from pwspy.utility.reflection import Material
 from ._AbstractSettingsFrame import AbstractSettingsFrame
 
 from ._sharedWidgets import ExtraReflectanceSelector, VerticallyCompressedWidget, HardwareCorrections
@@ -56,6 +57,7 @@ class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
         row += 1
 
         self.extraReflection = ExtraReflectanceSelector(self, erManager)
+        self.extraReflection.loadFromSettings(0.52, Material.Water, None)
         self._layout.addWidget(self.extraReflection, row, 0, 1, 4)
         row += 1
 
@@ -67,6 +69,7 @@ class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
         self.relativeUnits.setToolTip("If checked then reflectance (and therefore all other parameters) will be scaled such that any reflectance matching that\n"
                                       "of the reference image will be 1. If left unchecked then the `Reference Material` will be used to scale reflectance to\n"
                                       "match the actual physical reflectance of the sample.")
+        self.relativeUnits.setChecked(True)
         self.scaling.layout().addWidget(self.relativeUnits)
         self._layout.addWidget(self.scaling, row, 0, 1, 4)
 
