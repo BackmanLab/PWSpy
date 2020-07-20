@@ -106,6 +106,7 @@ class AcquisitionSequencerPlugin(CellSelectorPlugin): #TODO switch to a qdialog 
                 val = QTableWidgetItem(step.getIterationName(iteration))
                 t = QTableWidgetItem(typeNames[step.stepType])
                 return tuple((t, val))
+        return tuple((QTableWidgetItem(), QTableWidgetItem()))  # This will happen if the acquisition has a coords file but the coord isn't actually found in the sequence file.
 
 
     def _updateSelectorSelection(self, coordRange: SequencerCoordinateRange):
