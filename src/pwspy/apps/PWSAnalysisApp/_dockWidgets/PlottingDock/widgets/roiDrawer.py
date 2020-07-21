@@ -168,7 +168,8 @@ class RoiDrawer(QWidget):
 
 class NewRoiDlg(QDialog):
     def __init__(self, parent: RoiDrawer):
-        super().__init__(parent=parent)#, flags=QtCore.Qt.FramelessWindowHint)
+        super().__init__(parent=parent, flags=QtCore.Qt.FramelessWindowHint)
+        self.setWindowTitle("ROI #")
         self.parent = parent
         self.setModal(True)
 
@@ -182,7 +183,7 @@ class NewRoiDlg(QDialog):
         self.okButton.released.connect(self.accept)
         self.cancelButton = QPushButton("Cancel")
         self.cancelButton.released.connect(self.reject)
-        l.addWidget(QLabel("#"), 0, 0, 1, 1, alignment=QtCore.Qt.AlignRight)
+        l.addWidget(QLabel("ROI #"), 0, 0, 1, 1, alignment=QtCore.Qt.AlignRight)
         l.addWidget(self.numBox, 0, 1, 1, 1)
         l.addWidget(self.okButton, 1, 0, 1, 1)
         l.addWidget(self.cancelButton, 1, 1, 1, 1)

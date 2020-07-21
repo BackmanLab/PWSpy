@@ -41,7 +41,7 @@ requirements:
     
 app:
   entry: PWSAnalysis
-  icon: cellLogo64.png
+  icon: cellLogo64.png  #The logo doesn't work :(
   summary: PWS Analysis GUI
   type: desk
   own_environment: False
