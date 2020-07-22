@@ -2,7 +2,7 @@ import typing
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QApplication, QTableWidgetItem, QDialog
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QApplication, QTableWidgetItem, QDialog, QPushButton, QGridLayout
 
 from pwspy.apps.PWSAnalysisApp.componentInterfaces import CellSelector
 from pwspy.apps.PWSAnalysisApp.pluginInterfaces import CellSelectorPlugin
@@ -89,25 +89,26 @@ class AcquisitionSequencerPlugin(CellSelectorPlugin): #TODO switch to a qdialog 
 
     def additionalColumnNames(self) -> typing.Sequence[str]:
         """The header names for each column."""
-        return "Coord. Type", "Coord. Value"
+        return tuple() #return "Coord. Type", "Coord. Value" # We used to add new columns, but it was confusing, better not to.
 
     def getTableWidgets(self, acq: pwsdt.AcqDir) -> typing.Sequence[QWidget]:  #TODO this gets called before the sequence has been loaded. Make it so this isn't required for constructor of cell table widgets.
         """provide a widget for each additional column to represent `acq`"""
-        typeNames = {SequencerStepTypes.POS.name: "Position", SequencerStepTypes.TIME.name: "Time", SequencerStepTypes.ZSTACK.name: "Z Stack"}
-        try:
-            acq = SeqAcqDir(acq)
-        except:
-            return tuple((QTableWidgetItem(), QTableWidgetItem()))
-        coord = acq.sequencerCoordinate
-        idx, iteration = [(i, iteration) for i, iteration in enumerate(coord.iterations) if iteration is not None][-1]
-        for step in self._sequence.iterateChildren():
-            if step.id == coord.ids[idx]:
-                step: CoordSequencerStep
-                val = QTableWidgetItem(step.getIterationName(iteration))
-                t = QTableWidgetItem(typeNames[step.stepType])
-                return tuple((t, val))
-        return tuple((QTableWidgetItem(), QTableWidgetItem()))  # This will happen if the acquisition has a coords file but the coord isn't actually found in the sequence file.
-
+        return tuple()
+        # typeNames = {SequencerStepTypes.POS.name: "Position", SequencerStepTypes.TIME.name: "Time", SequencerStepTypes.ZSTACK.name: "Z Stack"}
+        # try:
+        #     acq = SeqAcqDir(acq)
+        # except:
+        #     return tuple((QTableWidgetItem(), QTableWidgetItem()))
+        # coord = acq.sequencerCoordinate
+        # idx, iteration = [(i, iteration) for i, iteration in enumerate(coord.iterations) if iteration is not None][-1]
+        # for step in self._sequence.iterateChildren():
+        #     if step.id == coord.ids[idx]:
+        #         step: CoordSequencerStep
+        #         val = QTableWidgetItem(step.getIterationName(iteration))
+        #         t = QTableWidgetItem(typeNames[step.stepType])
+        #         return tuple((t, val))
+        # return tuple((QTableWidgetItem(), QTableWidgetItem()))  # This will happen if the acquisition has a coords file but the coord isn't actually found in the sequence file.
+        #
 
     def _updateSelectorSelection(self, coordRange: SequencerCoordinateRange):
         select: typing.List[AcqDir] = []
@@ -124,10 +125,13 @@ class SequenceViewer(QWidget):
         super().__init__(parent, QtCore.Qt.Window)
         self.setWindowTitle("Acquisition Sequence Viewer")
 
-        l = QHBoxLayout()
+        l = QGridLayout()
         self.setLayout(l)
 
         self._sequenceTree = MyTreeView(self)
+
+        self._showSettingsButton = QPushButton("Show Settings")
+        self._showSettingsButton.released.connect(self._showHideSettings)
 
         self._settingsTree = DictTreeView()
         self._settingsTree.setColumnCount(2)
@@ -136,12 +140,34 @@ class SequenceViewer(QWidget):
 
         self._sequenceTree.newCoordSelected.connect(lambda coordRange: self.newCoordSelected.emit(coordRange))
 
-        l.addWidget(self._sequenceTree)
-        l.addWidget(self._settingsTree)
+        l.addWidget(self._sequenceTree, 0, 0)
+        l.addWidget(self._showSettingsButton, 1, 0)
+        l.addWidget(self._settingsTree, 0, 1, 1, 2)
+        self._settingsTree.hide()
 
     def setSequenceStepRoot(self, root: SequencerStep):
         self._sequenceTree.setRoot(root)
         self._sequenceTree.expandAll()
+
+    def _showHideSettings(self):
+        # l = QGridLayout()
+        if self._showSettingsButton.text() == "Show Settings":
+            self._showSettingsButton.setText("Hide Settings")
+            w = self.width()
+            self.setFixedWidth(w*2)
+            self._settingsTree.show()
+            # l.addWidget(self._sequenceTree, 0, 0)
+            # l.addWidget(self._showSettingsButton, 1, 0)
+            # l.addWidget(self._settingsTree, 0, 1, 1, 2)
+        else:
+            self._showSettingsButton.setText("Show Settings")
+            w = self.width()
+            self._settingsTree.hide()
+            self.setFixedWidth(w/2)
+            # l.addWidget(self._sequenceTree, 0, 0)
+            # l.addWidget(self._showSettingsButton, 1, 0)
+        # self.setLayout(l)
+
 
 
 if __name__ == '__main__':
