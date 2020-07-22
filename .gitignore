@@ -9,3 +9,4 @@ docs/source/generated/
 .idea/workspace.xml
 buildScripts/pyInstaller/dist/
 .idea/
+src/pwspy/_version
