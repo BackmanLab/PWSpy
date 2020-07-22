@@ -150,24 +150,15 @@ class SequenceViewer(QWidget):
         self._sequenceTree.expandAll()
 
     def _showHideSettings(self):
-        # l = QGridLayout()
+        w = self.width()
         if self._showSettingsButton.text() == "Show Settings":
             self._showSettingsButton.setText("Hide Settings")
-            w = self.width()
             self.setFixedWidth(w*2)
             self._settingsTree.show()
-            # l.addWidget(self._sequenceTree, 0, 0)
-            # l.addWidget(self._showSettingsButton, 1, 0)
-            # l.addWidget(self._settingsTree, 0, 1, 1, 2)
         else:
             self._showSettingsButton.setText("Show Settings")
-            w = self.width()
             self._settingsTree.hide()
-            self.setFixedWidth(w/2)
-            # l.addWidget(self._sequenceTree, 0, 0)
-            # l.addWidget(self._showSettingsButton, 1, 0)
-        # self.setLayout(l)
-
+            self.setFixedWidth(int(w / 2))
 
 
 if __name__ == '__main__':
