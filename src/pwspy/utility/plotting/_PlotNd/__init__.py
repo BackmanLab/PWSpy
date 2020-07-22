@@ -237,7 +237,7 @@ class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of c
         selected = selected.mean(axis=0)  # Get the average over all selected pixels. We are now down to 1d for a 3d data array, 2d for a 4d data array, et.
         if len(selected.shape) == 1:
             fig, ax = pyplot.subplots()
-            ax.plot(selected)
+            ax.plot(self.canvas._indexes[2], selected)
             ax.set_xlabel(self.canvas.names[2])
             fig.show()
         elif len(selected.shape) == 2:
