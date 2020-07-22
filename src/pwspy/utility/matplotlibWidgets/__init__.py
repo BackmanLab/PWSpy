@@ -27,6 +27,8 @@ Selectors
    LassoSelector
    RegionalPaintSelector
    PointSelector
+   FullImPaintSelector
+   WaterShedPaintSelector
 
 Utility
 --------
@@ -43,6 +45,8 @@ from ._selectorWidgets.ellipse import EllipseSelector
 from ._selectorWidgets.lasso import LassoSelector
 from ._selectorWidgets.paint import RegionalPaintSelector
 from ._selectorWidgets.point import PointSelector
+from ._selectorWidgets.FullImPaintSelector import FullImPaintSelector
+from ._selectorWidgets.WaterShedPaintSelector import WaterShedPaintSelector
 from .coreClasses import AxManager
 
-__all__ = ['AdjustableSelector', 'PolygonInteractor', 'EllipseSelector', 'LassoSelector', 'RegionalPaintSelector', 'PointSelector', 'AxManager']
+__all__ = ['AdjustableSelector', 'PolygonInteractor', 'EllipseSelector', 'LassoSelector', 'RegionalPaintSelector', 'PointSelector', 'AxManager', 'FullImPaintSelector', 'WaterShedPaintSelector']

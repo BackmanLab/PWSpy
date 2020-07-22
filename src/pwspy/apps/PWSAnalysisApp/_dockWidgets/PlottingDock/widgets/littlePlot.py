@@ -57,7 +57,9 @@ class LittlePlot(AnalysisPlotter, QWidget):
 
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
-            AnalysisViewer(metadata=self.acq, analysisLoader=self.analysis, title=self.title, parent=self, initialField=self.analysisField)
+            viewer = AnalysisViewer(metadata=self.acq, analysisLoader=self.analysis, title=self.title, parent=self, initialField=self.analysisField)
+            viewer.show()
+
 
     def changeData(self, field: AnalysisPlotter.PlotFields):
         AnalysisPlotter.changeData(self, field)

@@ -59,7 +59,7 @@ class ERIndex:
 
     @classmethod
     def load(cls, f: TextIO) -> ERIndex:
-        indexFile = json.load(f)
+        indexFile = json.load(f)  # For unknown reasons this rarely raises a JsonDecodeError and the index file needs to be redownloaded.
         jsonschema.validate(indexFile, schema=cls._indexSchema)
         cubes = [ERIndexCube.fromDict(i) for i in indexFile['reflectanceCubes']]
         return cls(cubes, indexFile['creationDate'])

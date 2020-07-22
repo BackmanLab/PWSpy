@@ -40,7 +40,7 @@ from typing import List
 import typing
 
 
-class PWSApp(QApplication):
+class PWSApp(QApplication): #TODO add a scriptable interface to load files, open roi window, run analysis etc.
     def __init__(self, args):
         super().__init__(args)
         self.setApplicationName(f"PWS Analysis v{version.split('-')[0]}")

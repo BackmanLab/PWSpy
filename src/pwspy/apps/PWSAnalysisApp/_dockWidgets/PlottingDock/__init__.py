@@ -139,7 +139,7 @@ class PlottingDock(QDockWidget):
 
     def _enableAnalysisPlottingButtons(self, enable: str):
         enable = enable.lower()
-        if enable == 'false':
+        if enable == 'false': #TODO what is the usage of this state
             for button in self._buttonGroup.buttons():
                 button.setEnabled(False)
             self._roiButton.setEnabled(False)
@@ -171,12 +171,14 @@ class PlottingDock(QDockWidget):
                 messageBox = QMessageBox(self)
                 messageBox.information(self, "Oops!", "Please select the cells you would like to plot.")
                 messageBox.setFixedSize(500, 200)
-            buttonState = 'false'
+            if len(cells) > 0:
+                buttonState = 'partial'
+            else:
+                buttonState = 'false'
             plotsToAdd = []
             for cell in cells:
                 if analysisName.strip() == '': #No analysis name was entered. don't load an analysis, just the thumbnail
                     plotsToAdd.append(LittlePlot(cell, ConglomerateAnalysisResults(None, None), f"{os.path.split(cell.filePath)[-1]}"))
-                    buttonState = 'partial'
                 else:
                     dynAnalysis = pwsAnalysis = None
                     if cell.pws is not None:
@@ -190,7 +192,7 @@ class PlottingDock(QDockWidget):
                         plotsToAdd.append(LittlePlot(cell, ConglomerateAnalysisResults(None, None), f"{analysisName} {os.path.split(cell.filePath)[-1]}", "Analysis Not Found!"))
                     else:
                         plotsToAdd.append(LittlePlot(cell, analysis, f"{analysisName} {os.path.split(cell.filePath)[-1]}"))
-                        buttonState = 'true'
+                        buttonState = 'true'  # Enable all buttons if there were some valid analysis.
             self.addPlots(plotsToAdd)
             self._enableAnalysisPlottingButtons(buttonState)
         except Exception as e:

@@ -33,7 +33,7 @@ from abc import ABC, abstractmethod
 
 class ERAbstractDirectory(ABC):
     """This class keeps track of the status of a directory that contains our extra reflection subtraction cubes.
-    This can be a local directory on a hard drive or a folder on Google Drive, etc."""
+    This can be implemented as a local directory on a hard drive or a folder on Google Drive, etc., whatever."""
 
     class DataStatus(Enum):
         md5Confict = 'Data MD5 mismatch'
@@ -149,16 +149,6 @@ class EROnlineDirectory(ERAbstractDirectory):
             f = self._downloader.downloadToRam('index.json', f)
             f.seek(0) #Move back to the beginning of the stream for reading.
             self.index = ERIndex.load(f)
-        # tempDir = tempfile.mkdtemp()
-        # indexPath = os.path.join(tempDir, 'index.json')
-        # try:
-        #     self._downloader.download('index.json', indexPath)
-        #     index = ERIndex.loadFromFile(indexPath)
-        #     self.index = index
-        # finally:
-        #     if os.path.exists(indexPath):
-        #         os.remove(indexPath)
-        #     os.rmdir(tempDir)
 
     def getFileStatus(self) -> pandas.DataFrame:
         calculatedIndex = self._buildIndexFromOnlineFiles()
