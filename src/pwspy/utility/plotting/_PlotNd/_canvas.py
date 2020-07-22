@@ -99,7 +99,7 @@ class PlotNdCanvas(FigureCanvasQTAgg):
         self.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.setFocus()
 
-        self.data = data
+        self._data = data
 
         Max = np.percentile(self.data[np.logical_not(np.isnan(self.data))], 99.99)
         Min = np.percentile(self.data[np.logical_not(np.isnan(self.data))], 0.01)
@@ -211,11 +211,11 @@ class PlotNdCanvas(FigureCanvasQTAgg):
 
     @property
     def data(self) -> np.ndarray:
-        return self.data
+        return self._data
 
     @data.setter
     def data(self, d: np.ndarray):
-        self.data = d
+        self._data = d
         self.updatePlots()
 
     @ifactive
