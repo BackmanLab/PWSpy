@@ -258,7 +258,7 @@ class PolygonInteractor(SelectorWidgetBase):
                 d.append(pnt2line(p, s0, s1)[0])  # distance from line to click point
             d = np.array(d)
             i = d.argmin()
-            if d.min() <= self.epsilon:
+            if d.min() <= (self.epsilon * 5): #The 5 here was decided arbitrarily
                 x, y = self.markers.get_data()
                 self.markers.set_data(np.insert(x, i + 1, event.xdata), np.insert(y, i + 1, event.ydata))
                 self._interpolate()

@@ -58,7 +58,8 @@ class LassoSelector(SelectorWidgetBase):
             if (self.verts is not None) and (self.onselect is not None):
                 l = shapelyPolygon(LinearRing(self.verts))
                 l = l.buffer(0)
-                l = l.simplify(l.length / 2e2, preserve_topology=False) #TODO far too many handles on small ROIs.
+
+                l = l.simplify(l.length ** .5 / 5, preserve_topology=False)
                 handles = l.exterior.coords
                 self.onselect(self.verts, handles)
 
