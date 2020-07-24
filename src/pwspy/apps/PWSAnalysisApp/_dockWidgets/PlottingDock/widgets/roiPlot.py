@@ -124,8 +124,10 @@ class RoiPlot(BigPlot):
         param.selected = selected
         if selected:
             param.polygon.set_edgecolor((0, 1, 1, 0.9))  # Highlight selected rois.
+            param.polygon.set_linewidth(2)
         else:
             param.polygon.set_edgecolor((0, 1, 0, 0.9))
+            param.polygon.set_linewidth(1)
 
     def getRoiSelected(self, roi: Roi):
         param = [param for param in self.rois if roi is param.roi][0]
@@ -155,7 +157,7 @@ class RoiPlot(BigPlot):
                 self.fig.canvas.draw_idle()
 
             delAction = QAction("Delete Selected ROIs", self, triggered=deleteFunc)
-            moveAction = QAction("Move Selected ROIs", self, triggered=moveFunc)
+            moveAction = QAction("Move Selected ROIs (todo)", self, triggered=moveFunc)
             selectAllAction = QAction("De/Select All", self, triggered=selectAllFunc)
 
             popMenu = QMenu(self)
