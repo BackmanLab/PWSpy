@@ -137,30 +137,34 @@ class RoiPlot(BigPlot):
             self.setRoiSelected(parm.roi, not self.getRoiSelected(parm.roi))
             self.fig.canvas.draw_idle()
         if event.mouseevent.button == 3:  # "3" is the right button
-            deleteFunc = lambda checked: self._deleteROIFromPolygon([param.polygon for param in self.rois if param.selected])
+            def deleteFunc(checked: bool):
+                for param in self.rois:
+                    if param.selected:
+                        param.roi.deleteRoi(os.path.split(param.roi.filePath)[0], param.roi.name, param.roi.number)
+                self.showRois()
+
+            def moveFunc(checked: bool):
+                for param in self.rois:
+                    if param.selected:
+                        pass  # TODO write a matplotlib widget to do move the ROI
+
+            def selectAllFunc(checked: bool):
+                sel = not any([param.selected for param in self.rois]) # Determine whether to selece or deselect all
+                for param in self.rois:
+                    self.setRoiSelected(param.roi, sel)
+                self.fig.canvas.draw_idle()
+
             delAction = QAction("Delete Selected ROIs", self, triggered=deleteFunc)
-            moveFunc = lambda checked: self._moveROIFromPolygon([param.polygon for param in self.rois if param.selected])
             moveAction = QAction("Move Selected ROIs", self, triggered=moveFunc)
-            selectAllFunc = lambda checked: #TODO
             selectAllAction = QAction("De/Select All", self, triggered=selectAllFunc)
 
             popMenu = QMenu(self)
             popMenu.addAction(delAction)
-            popMenu.addAction((moveAction))
+            popMenu.addAction(moveAction)
+            popMenu.addAction(selectAllAction)
 
             cursor = QCursor()
             popMenu.popup(cursor.pos())
-
-    def _deleteROIFromPolygon(self, polys: typing.List[Polygon]):
-        for param in self.rois:
-            if param.polygon in polys:
-                param.roi.deleteRoi(os.path.split(param.roi.filePath)[0], param.roi.name, param.roi.number)
-        self.showRois()
-
-    def _moveROIFromPolygon(self, polys: typing.List[Polygon]):
-        for param in self.rois:
-            if param.polygon in polys:
-                pass #TODO write a matplotlib widget to do move the ROI
 
     def enableHoverAnnotation(self, enable: bool):
         if enable:
