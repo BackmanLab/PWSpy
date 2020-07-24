@@ -200,8 +200,8 @@ class NewRoiDlg(QDialog):
 
     def show(self) -> None:
         if len(self.parent.anViewer.rois) > 0:
-            rois, ims, polys = zip(*self.parent.anViewer.rois)
-            newNum = max([r.number for r in rois]) + 1 #Set the box 1 number abox the maximum found
+            roiParams = self.parent.anViewer.rois
+            newNum = max([param.roi.number for param in roiParams]) + 1 #Set the box 1 number abox the maximum found
             self.numBox.setValue(newNum)
         else:
             self.numBox.setValue(0) #start at 0

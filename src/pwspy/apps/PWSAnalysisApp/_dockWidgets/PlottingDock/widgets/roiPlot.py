@@ -19,8 +19,12 @@ import logging
 import os
 import traceback
 import re
+import typing
+from dataclasses import dataclass
 
 import matplotlib
+from matplotlib.image import AxesImage
+from matplotlib.patches import  Polygon
 import numpy as np
 from PyQt5.QtGui import QCursor, QValidator
 from PyQt5.QtWidgets import QMenu, QAction, QComboBox, QLabel, QPushButton, QHBoxLayout, QDialog, QWidget, QSlider, QGridLayout, QSpinBox, QDoubleSpinBox, \
@@ -34,12 +38,18 @@ from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.bigPlot import 
 from pwspy.dataTypes import Roi, AcqDir
 from pwspy.utility.plotting.roiColor import roiColor
 
+@dataclass
+class RoiParams:
+    roi: Roi
+    overlay: AxesImage
+    polygon: Polygon
+    selected: bool
 
 class RoiPlot(BigPlot):
     """Adds handling for ROIs to the BigPlot class. It might be smarter to encapsulate Bigplot rather than inherit"""
     def __init__(self, acqDir: AcqDir, data: np.ndarray, title: str, parent=None):
         super().__init__(data, title, parent)
-        self.rois = []  # Contains tuples in the form (roi, overlay, poly)
+        self.rois: typing.List[RoiParams] = []  # Contains tuples in the form (roi: Roi, overlay, poly, selected)
 
         self.roiFilter = QComboBox(self)
         self.roiFilter.setEditable(True)
@@ -97,11 +107,11 @@ class RoiPlot(BigPlot):
 
         vis = self.annot.get_visible()
         if event.inaxes == self.ax:
-            for roi, overlay, poly in self.rois:
-                contained, _ = poly.contains(event)
+            for params in self.rois:
+                contained, _ = params.polygon.contains(event)
                 if contained:
                     if not vis:
-                        update_annot(roi, poly)
+                        update_annot(params.roi, params.polygon)
                         self.annot.set_visible(True)
                         self.fig.canvas.draw_idle()
                     return
@@ -109,20 +119,48 @@ class RoiPlot(BigPlot):
                 self.annot.set_visible(False)
                 self.fig.canvas.draw_idle()
 
+    def setRoiSelected(self, roi: Roi, selected: bool):
+        param = [param for param in self.rois if roi is param.roi][0]
+        param.selected = selected
+        if selected:
+            param.polygon.set_edgecolor((0, 1, 1, 0.9))  # Highlight selected rois.
+        else:
+            param.polygon.set_edgecolor((0, 1, 0, 0.9))
+
+    def getRoiSelected(self, roi: Roi):
+        param = [param for param in self.rois if roi is param.roi][0]
+        return param.selected
+
     def _roiPickCallback(self, event):
+        if event.mouseevent.button == 1: #Left click
+            parm = [param for param in self.rois if event.artist is param.polygon][0]
+            self.setRoiSelected(parm.roi, not self.getRoiSelected(parm.roi))
+            self.fig.canvas.draw_idle()
         if event.mouseevent.button == 3:  # "3" is the right button
-            delAction = QAction("Delete ROI", self, triggered=lambda checked, art=event.artist: self.deleteRoiFromPolygon(art))
+            deleteFunc = lambda checked: self._deleteROIFromPolygon([param.polygon for param in self.rois if param.selected])
+            delAction = QAction("Delete Selected ROIs", self, triggered=deleteFunc)
+            moveFunc = lambda checked: self._moveROIFromPolygon([param.polygon for param in self.rois if param.selected])
+            moveAction = QAction("Move Selected ROIs", self, triggered=moveFunc)
+            selectAllFunc = lambda checked: #TODO
+            selectAllAction = QAction("De/Select All", self, triggered=selectAllFunc)
+
             popMenu = QMenu(self)
             popMenu.addAction(delAction)
+            popMenu.addAction((moveAction))
 
             cursor = QCursor()
             popMenu.popup(cursor.pos())
 
-    def deleteRoiFromPolygon(self, artist):
-        for roi, overlay, poly in self.rois:
-            if artist is poly:
-                roi.deleteRoi(os.path.split(roi.filePath)[0], roi.name, roi.number)
+    def _deleteROIFromPolygon(self, polys: typing.List[Polygon]):
+        for param in self.rois:
+            if param.polygon in polys:
+                param.roi.deleteRoi(os.path.split(param.roi.filePath)[0], param.roi.name, param.roi.number)
         self.showRois()
+
+    def _moveROIFromPolygon(self, polys: typing.List[Polygon]):
+        for param in self.rois:
+            if param.polygon in polys:
+                pass #TODO write a matplotlib widget to do move the ROI
 
     def enableHoverAnnotation(self, enable: bool):
         if enable:
@@ -145,10 +183,10 @@ class RoiPlot(BigPlot):
         self.canvas.draw_idle()
 
     def clearRois(self):
-        for roi, overlay, poly in self.rois:
-            if overlay is not None:
-                overlay.remove()
-            poly.remove()
+        for param in self.rois:
+            if param.overlay is not None:
+                param.overlay.remove()
+            param.polygon.remove()
         self.rois = []
 
     def addRoi(self, roi: Roi):
@@ -156,14 +194,14 @@ class RoiPlot(BigPlot):
             poly = roi.getBoundingPolygon()
             poly.set_picker(0)  # allow the polygon to trigger a pickevent
             self.ax.add_patch(poly)
-            self.rois.append((roi, None, poly))
+            self.rois.append(RoiParams(roi, None, poly, False))
         else:  # In the case of old ROI files where the vertices of the outline are not available we have to back-calculate the polygon which does not look good. We make this polygon invisible so it is only used for click detection. we then display an image of the binary mask array.
             overlay = roi.getImage(self.ax) # an image showing the exact shape of the ROI
             poly = roi.getBoundingPolygon() # A polygon used for mouse event handling
             poly.set_visible(False)#poly.set_facecolor((0,0,0,0)) # Make polygon invisible
             poly.set_picker(0) # allow the polygon to trigger a pickevent
             self.ax.add_patch(poly)
-            self.rois.append((roi, overlay, poly))
+            self.rois.append(RoiParams(roi, overlay, poly, False))
 
     def _exportAction(self):
         def showSinCityDlg():
@@ -316,7 +354,7 @@ class SinCityDlg(QDialog):
             self.stale = True
         if self.stale:
             try:
-                rois = [roi for roi, overlay, polygon in self.parentRoiPlot.rois]
+                rois = [parm.roi for parm in self.parentRoiPlot.rois]
                 data = roiColor(self.parentRoiPlot.data, rois, self.vmin.value(), self.vmax.value(), self.scaleBg.value(), hue=self.hue.value(), exponent=self.exp.value(), numScaleBarPix=self.scaleBar.value())
                 self.im.set_data(data)
                 self.fig.canvas.draw_idle()
