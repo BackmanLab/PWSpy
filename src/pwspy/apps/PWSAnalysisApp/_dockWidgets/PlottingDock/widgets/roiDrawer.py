@@ -69,8 +69,21 @@ class RoiDrawer(QWidget):
         self.adjustButton.toggled.connect(self.handleAdjustButton)
         self.previousButton = QPushButton('←')
         self.nextButton = QPushButton('→')
-        self.previousButton.released.connect(self.showPreviousCell)
-        self.nextButton.released.connect(self.showNextCell)
+
+        def showNextCell():
+            self.mdIndex += 1
+            if self.mdIndex >= len(self.metadatas):
+                self.mdIndex = 0
+            self._updateDisplayedCell()
+
+        def showPreviousCell():
+            self.mdIndex -= 1
+            if self.mdIndex < 0:
+                self.mdIndex = len(self.metadatas) - 1
+            self._updateDisplayedCell()
+
+        self.previousButton.released.connect(showPreviousCell)
+        self.nextButton.released.connect(showNextCell)
 
         layout.addWidget(self.noneButton, 0, 0, 1, 1)
         layout.addWidget(self.lassoButton, 0, 1, 1, 1)
@@ -140,18 +153,6 @@ class RoiDrawer(QWidget):
         if self.selector is not None:
             self.selector.adjustable = checkstate
 
-    def showNextCell(self):
-        self.mdIndex += 1
-        if self.mdIndex >= len(self.metadatas):
-            self.mdIndex = 0
-        self._updateDisplayedCell()
-
-    def showPreviousCell(self):
-        self.mdIndex -= 1
-        if self.mdIndex < 0:
-            self.mdIndex = len(self.metadatas) - 1
-        self._updateDisplayedCell()
-
     def _updateDisplayedCell(self):
         currRoi = self.anViewer.roiFilter.currentText() #Since the next cell we look at will likely not have rois of the current name we want to manually force the ROI name to stay the same.
         md, analysis = self.metadatas[self.mdIndex]
@@ -172,9 +173,7 @@ class NewRoiDlg(QDialog):
         self.setWindowTitle("ROI #")
         self.parent = parent
         self.setModal(True)
-
         self.number = None
-
         l = QGridLayout()
         self.numBox = QSpinBox()
         self.numBox.setMaximum(100000)

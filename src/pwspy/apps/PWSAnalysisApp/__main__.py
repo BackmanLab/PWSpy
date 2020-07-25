@@ -18,20 +18,14 @@
 import logging
 import os
 import shutil
-import time
-import traceback
 from glob import glob
-
 from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5 import QtCore
-
 from pwspy.apps.PWSAnalysisApp.App import PWSApp
 from pwspy.apps.PWSAnalysisApp import applicationVars
 from datetime import datetime
-from pwspy import dateTimeFormat
 from pwspy.apps.PWSAnalysisApp import resources
 from pwspy.analysis import defaultSettingsPath
-from pwspy.apps.sharedWidgets.extraReflectionManager.ERIndex import ERIndex
 
 
 def _setupDataDirectories():
