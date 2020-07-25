@@ -46,7 +46,7 @@ class RoiDrawer(QWidget):
         self.saver.open()  # This opens a new thread and a process, make sure to call close when the widget is closed.
 
         self.newRoiDlg = NewRoiDlg(self)
-        self.buttonGroup = QButtonGroup(self)
+
         self.noneButton = QPushButton("Inspect")
         self.lassoButton = QPushButton("Lasso")
         self.lassoButton.setToolTip(LassoSelector.getHelpText())
@@ -55,6 +55,8 @@ class RoiDrawer(QWidget):
         self.paintButton = QPushButton("Paint")
         self.paintButton.setToolTip(RegionalPaintSelector.getHelpText())
         self.lastButton_ = None
+
+        self.buttonGroup = QButtonGroup(self)
         self.buttonGroup.addButton(self.noneButton)
         self.buttonGroup.addButton(self.lassoButton)
         self.buttonGroup.addButton(self.ellipseButton)
@@ -62,13 +64,16 @@ class RoiDrawer(QWidget):
         self.buttonGroup.buttonReleased.connect(self.handleButtons)
         [i.setCheckable(True) for i in self.buttonGroup.buttons()]
         self.noneButton.setChecked(True) #This doesn't seem totrigger handle buttons. we'll do that at the end of the constructor
+
+        def handleAdjustButton(checkstate: bool):
+            if self.selector is not None:
+                self.selector.adjustable = checkstate
+
         self.adjustButton = QPushButton("Tune")
         self.adjustButton.setToolTip(PolygonInteractor.getHelpText())
         self.adjustButton.setCheckable(True)
         self.adjustButton.setMaximumWidth(50)
-        self.adjustButton.toggled.connect(self.handleAdjustButton)
-        self.previousButton = QPushButton('←')
-        self.nextButton = QPushButton('→')
+        self.adjustButton.toggled.connect(handleAdjustButton)
 
         def showNextCell():
             self.mdIndex += 1
@@ -82,6 +87,8 @@ class RoiDrawer(QWidget):
                 self.mdIndex = len(self.metadatas) - 1
             self._updateDisplayedCell()
 
+        self.previousButton = QPushButton('←')
+        self.nextButton = QPushButton('→')
         self.previousButton.released.connect(showPreviousCell)
         self.nextButton.released.connect(showNextCell)
 
@@ -148,10 +155,6 @@ class RoiDrawer(QWidget):
             self.anViewer.enableHoverAnnotation(True)
             self.adjustButton.setEnabled(False)
         self.lastButton_ = button
-
-    def handleAdjustButton(self, checkstate: bool):
-        if self.selector is not None:
-            self.selector.adjustable = checkstate
 
     def _updateDisplayedCell(self):
         currRoi = self.anViewer.roiFilter.currentText() #Since the next cell we look at will likely not have rois of the current name we want to manually force the ROI name to stay the same.
