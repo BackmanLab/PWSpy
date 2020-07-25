@@ -53,7 +53,6 @@ class AxManager:
         else:
             self.ax.add_artist(artist)
 
-        """Remove all artists from this manager"""
     def removeArtist(self, artist: Artist):
         """Remove a single `Artist` from the manaager
 

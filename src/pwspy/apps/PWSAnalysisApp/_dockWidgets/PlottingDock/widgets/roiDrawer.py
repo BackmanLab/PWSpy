@@ -101,7 +101,7 @@ class RoiDrawer(QWidget):
         layout.addWidget(self.nextButton, 0, 7, 1, 1)
         layout.addWidget(self.anViewer, 1, 0, 8, 8)
         self.setLayout(layout)
-        self.selector: AdjustableSelector = AdjustableSelector(self.anViewer.ax, self.anViewer.im, LassoSelector, onfinished=self.finalizeRoi)
+        self.selector: AdjustableSelector = AdjustableSelector(self.anViewer.axManager, self.anViewer.im, LassoSelector, onfinished=self.finalizeRoi)
         self.handleButtons(self.noneButton) #Helps initialize state
         self.show()
 

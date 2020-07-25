@@ -17,12 +17,13 @@
 
 import logging
 import os
-import traceback
 import re
 import typing
 from dataclasses import dataclass
 
 import matplotlib
+from shapely.geometry import Polygon as shapelyPolygon
+from matplotlib.backend_bases import KeyEvent, MouseEvent
 from matplotlib.image import AxesImage
 from matplotlib.patches import  Polygon
 import numpy as np
@@ -30,12 +31,11 @@ from PyQt5.QtGui import QCursor, QValidator
 from PyQt5.QtWidgets import QMenu, QAction, QComboBox, QLabel, QPushButton, QHBoxLayout, QDialog, QWidget, QSlider, QGridLayout, QSpinBox, QDoubleSpinBox, \
     QMessageBox, QVBoxLayout
 from PyQt5 import QtCore
-from matplotlib.backend_bases import NavigationToolbar2
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.bigPlot import BigPlot
 from pwspy.dataTypes import Roi, AcqDir
+from pwspy.utility.matplotlibWidgets import PolygonInteractor, AxManager
 from pwspy.utility.plotting.roiColor import roiColor
 
 @dataclass
@@ -50,6 +50,7 @@ class RoiPlot(BigPlot):
     def __init__(self, acqDir: AcqDir, data: np.ndarray, title: str, parent=None):
         super().__init__(data, title, parent)
         self.rois: typing.List[RoiParams] = []  # Contains tuples in the form (roi: Roi, overlay, poly, selected)
+        self.axManager = AxManager(self.ax)  #This object manages redrawing of the matplotlib axes for us.
 
         self.roiFilter = QComboBox(self)
         self.roiFilter.setEditable(True)
@@ -129,48 +130,75 @@ class RoiPlot(BigPlot):
             param.polygon.set_edgecolor((0, 1, 0, 0.9))
             param.polygon.set_linewidth(1)
 
-    def getRoiSelected(self, roi: Roi):
-        param = [param for param in self.rois if roi is param.roi][0]
-        return param.selected
+    def _keyPressCallback(self, event: KeyEvent):
+        pass
 
-    def _roiPickCallback(self, event):
-        if event.mouseevent.button == 1: #Left click
-            parm = [param for param in self.rois if event.artist is param.polygon][0]
-            self.setRoiSelected(parm.roi, not self.getRoiSelected(parm.roi))
+    def _mouseClickCallback(self, event: MouseEvent):
+        # Determine if a ROI was clicked on
+        _ = [param for param in self.rois if param.polygon.contains(event)[0]]
+        if len(_) > 0:
+            selectedROIParam = _[0]
+        else:
+            selectedROIParam = None #No Roi was clicked
+
+        if event.button == 1 and selectedROIParam is not None: #Left click
+            self.setRoiSelected(selectedROIParam.roi, not selectedROIParam.selected)
             self.fig.canvas.draw_idle()
-        if event.mouseevent.button == 3:  # "3" is the right button
-            def deleteFunc(checked: bool):
+        if event.button == 3:  # "3" is the right button
+            #Actions that can happen even if no ROI was clicked on.
+            def deleteFunc():
                 for param in self.rois:
                     if param.selected:
                         param.roi.deleteRoi(os.path.split(param.roi.filePath)[0], param.roi.name, param.roi.number)
                 self.showRois()
 
-            def moveFunc(checked: bool):
+            def moveFunc():
                 for param in self.rois:
                     if param.selected:
-                        pass  # TODO write a matplotlib widget to do move the ROI
+                        pass  # TODO write a matplotlib widget to do move the ROI and rotate
 
-            def selectAllFunc(checked: bool):
+            def selectAllFunc():
                 sel = not any([param.selected for param in self.rois]) # Determine whether to selece or deselect all
                 for param in self.rois:
                     self.setRoiSelected(param.roi, sel)
                 self.fig.canvas.draw_idle()
 
-            delAction = QAction("Delete Selected ROIs", self, triggered=deleteFunc)
-            moveAction = QAction("Move Selected ROIs (todo)", self, triggered=moveFunc)
-            selectAllAction = QAction("De/Select All", self, triggered=selectAllFunc)
-
             popMenu = QMenu(self)
-            popMenu.addAction(delAction)
-            popMenu.addAction(moveAction)
-            popMenu.addAction(selectAllAction)
+            popMenu.addAction("Delete Selected ROIs", deleteFunc)
+            popMenu.addAction("Move Selected ROIs (todo)", moveFunc)
+            popMenu.addAction("De/Select All", selectAllFunc)
+
+            if selectedROIParam is not None:
+                #Actions that require that a ROI was clicked on.
+                def editFunc():
+                    # extract handle points from the polygon
+                    poly = shapelyPolygon(selectedROIParam.roi.verts)
+                    poly = poly.buffer(0)
+                    poly = poly.simplify(poly.length ** .5 / 5, preserve_topology=False)
+                    handles = poly.exterior.coords
+
+                    def done(verts, handles):
+                        newRoi = Roi.fromVerts(selectedROIParam.roi.name, selectedROIParam.roi.number, np.array(verts), selectedROIParam.roi.mask.shape)
+                        newRoi.toHDF(self.metadata.filePath, overwrite=True)
+                        self._polyWidg.set_active(False)
+                        self._polyWidg.set_visible(False)
+                        self.showRois()
+
+                    self._polyWidg = PolygonInteractor(self.axManager, onselect=done)
+                    self._polyWidg.set_active(True)
+                    self._polyWidg.initialize(handles)
+
+                popMenu.addSeparator()
+                popMenu.addAction("Modify", editFunc)
 
             cursor = QCursor()
             popMenu.popup(cursor.pos())
 
     def enableHoverAnnotation(self, enable: bool):
         if enable:
-            self._toggleCids = [self.canvas.mpl_connect('motion_notify_event', self._hoverCallback), self.canvas.mpl_connect('pick_event', self._roiPickCallback)]
+            self._toggleCids = [self.canvas.mpl_connect('motion_notify_event', self._hoverCallback),
+                                self.canvas.mpl_connect('button_press_event', self._mouseClickCallback),
+                                self.canvas.mpl_connect('key_press_event', self._keyPressCallback)]
         else:
             if self._toggleCids:
                 [self.canvas.mpl_disconnect(cid) for cid in self._toggleCids]

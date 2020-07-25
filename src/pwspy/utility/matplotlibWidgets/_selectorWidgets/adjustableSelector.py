@@ -196,13 +196,13 @@ class PolygonInteractor(SelectorWidgetBase):
         """Reset the state of the selector so it's ready for a new selection."""
         pass  # I'm not sure what should be done here for this selector.
 
-    def initialize(self, verts: typing.Sequence[typing.Tuple[float, float]]):
+    def initialize(self, handles: typing.Sequence[typing.Tuple[float, float]]):
         """Given a set of points this will initialize the artists to them.
 
         Args:
-            verts: A sequence of 2d coordinates to intialize the polygon to.
+            handles: A sequence of 2d coordinates to intialize the polygon to. Each point will become a draggable handle
         """
-        x, y = zip(*verts)
+        x, y = zip(*handles)
         self.markers.set_data(x, y)
         self._interpolate()
         self.set_visible(True)
@@ -308,9 +308,9 @@ class AdjustableSelector:
         onfinished: a callback function when the selection finished. The function should accept a single input argument
             which is a list of the 2d coordinated outlining the selected polygon.
     """
-    def __init__(self, ax: Axes, image: AxesImage, selectorClass: typing.Type[SelectorWidgetBase],
+    def __init__(self, axManager: AxManager, image: AxesImage, selectorClass: typing.Type[SelectorWidgetBase],
                  onfinished: typing.Optional[typing.Callable] = None):
-        self.axMan = AxManager(ax)
+        self.axMan = axManager
         self.image = image
         self.selector: SelectorWidgetBase = selectorClass(self.axMan, self.image, onselect=self._goPoly)
         self.selector.active = False
