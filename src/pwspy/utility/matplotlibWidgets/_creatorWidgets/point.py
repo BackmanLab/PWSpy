@@ -19,10 +19,10 @@ from matplotlib.image import AxesImage
 from matplotlib.patches import Rectangle
 
 from pwspy.utility.matplotlibWidgets.coreClasses import AxManager
-from pwspy.utility.matplotlibWidgets._selectorWidgets import SelectorWidgetBase
+from pwspy.utility.matplotlibWidgets._creatorWidgets import CreatorWidgetBase
 
 
-class PointSelector(SelectorWidgetBase):
+class PointCreator(CreatorWidgetBase):
     def __init__(self, axMan: AxManager, image: AxesImage, onselect=None, sideLength: int = 3):
         """ A selector widget that facilitates the selection of a single point in an image. If `sideLength` is greater than 1 it will actually be a square region.
 

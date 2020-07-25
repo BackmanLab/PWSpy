@@ -26,7 +26,7 @@ from matplotlib.image import AxesImage
 from matplotlib.patches import Ellipse, Circle
 
 from pwspy.utility.matplotlibWidgets.coreClasses import AxManager
-from pwspy.utility.matplotlibWidgets._selectorWidgets import SelectorWidgetBase
+from pwspy.utility.matplotlibWidgets._creatorWidgets import CreatorWidgetBase
 
 class _SelectionStatus(enum.Enum):
     """Helps keep track of where we are in the selection process"""
@@ -34,7 +34,7 @@ class _SelectionStatus(enum.Enum):
     FirstAxis = enum.auto()
     SecondAxis = enum.auto()
 
-class EllipseSelector(SelectorWidgetBase):
+class EllipseCreator(CreatorWidgetBase):
     """Allows the user to select an elliptical region.
 
     Args:
@@ -126,5 +126,5 @@ class EllipseSelector(SelectorWidgetBase):
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots()
-    sel = EllipseSelector(AxManager(ax), None, lambda verts, handles: print(handles))
+    sel = EllipseCreator(AxManager(ax), None, lambda verts, handles: print(handles))
     plt.show()

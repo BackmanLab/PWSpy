@@ -20,10 +20,10 @@ from matplotlib.patches import Polygon
 from shapely.geometry import Polygon as shapelyPolygon, LinearRing
 
 from pwspy.utility.matplotlibWidgets.coreClasses import AxManager
-from pwspy.utility.matplotlibWidgets._selectorWidgets import SelectorWidgetBase
+from pwspy.utility.matplotlibWidgets._creatorWidgets import CreatorWidgetBase
 
 
-class LassoSelector(SelectorWidgetBase):
+class LassoCreator(CreatorWidgetBase):
     """Allows the user to select a region with freehand drawing.
 
     Args:

@@ -35,7 +35,7 @@ from matplotlib.backends.backend_qt5 import NavigationToolbar2QT
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.bigPlot import BigPlot
 from pwspy.dataTypes import Roi, AcqDir
-from pwspy.utility.matplotlibWidgets import PolygonInteractor, AxManager
+from pwspy.utility.matplotlibWidgets import PolygonModifier, AxManager
 from pwspy.utility.plotting.roiColor import roiColor
 
 @dataclass
@@ -184,9 +184,9 @@ class RoiPlot(BigPlot):
                         self._polyWidg.set_visible(False)
                         self.showRois()
 
-                    self._polyWidg = PolygonInteractor(self.axManager, onselect=done)
+                    self._polyWidg = PolygonModifier(self.axManager, onselect=done)
                     self._polyWidg.set_active(True)
-                    self._polyWidg.initialize(handles)
+                    self._polyWidg.initialize([handles])
 
                 popMenu.addSeparator()
                 popMenu.addAction("Modify", editFunc)

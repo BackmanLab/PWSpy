@@ -27,12 +27,12 @@ from shapely.geometry import Polygon as shapelyPolygon, LinearRing, MultiPolygon
 from matplotlib.patches import Polygon
 
 from pwspy.utility.fluorescence import segmentAdaptive, segmentWatershed
-from pwspy.utility.matplotlibWidgets._selectorWidgets.FullImPaintSelector import LabeledSlider
+from pwspy.utility.matplotlibWidgets._creatorWidgets.FullImPaintSelector import LabeledSlider
 from pwspy.utility.matplotlibWidgets.coreClasses import AxManager
-from pwspy.utility.matplotlibWidgets._selectorWidgets import SelectorWidgetBase
+from pwspy.utility.matplotlibWidgets._creatorWidgets import CreatorWidgetBase
 
 
-class WaterShedPaintSelector(SelectorWidgetBase):
+class WaterShedPaintCreator(CreatorWidgetBase):
     """Uses Watershed technique in an attempt to highlight all bright selectable regions in a fluorescence image.
 
     Args:
@@ -141,7 +141,7 @@ class WaterShedPaintDialog(QDialog):
         parentSelector: A reference the the `FullImPaintSelector` that is being used with this dialog.
         parent: A QWidget to serve as the Qt parent for this QWidget.
     """
-    def __init__(self, parentSelector: WaterShedPaintSelector, parent: QWidget):
+    def __init__(self, parentSelector: WaterShedPaintCreator, parent: QWidget):
         super().__init__(parent=parent)
         self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.WindowTitleHint | QtCore.Qt.CustomizeWindowHint) #Get rid of the close button. this is handled by the selector widget active status
         self.parentSelector = parentSelector
@@ -202,7 +202,7 @@ if __name__ == '__main__':
 
     fig, ax = plt.subplots()
     im = ax.imshow(np.random.random((100, 100)))
-    sel = WaterShedPaintSelector(AxManager(ax), im)
+    sel = WaterShedPaintCreator(AxManager(ax), im)
     fig.show()
     plt.pause(.1)
     sel.set_active(True)

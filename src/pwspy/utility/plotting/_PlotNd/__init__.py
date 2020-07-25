@@ -28,7 +28,7 @@ from qtconsole.jupyter_widget import JupyterWidget
 from pwspy.apps.sharedWidgets.rangeSlider import QRangeSlider
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT, FigureCanvasQT
 import numpy as np
-from pwspy.utility.matplotlibWidgets import LassoSelector, PointSelector, AdjustableSelector, AxManager
+from pwspy.utility.matplotlibWidgets import LassoCreator, PointCreator, AdjustableSelector, AxManager
 from pwspy.utility.plotting._PlotNd._canvas import PlotNdCanvas
 from pwspy.utility.plotting._sharedWidgets import AnimationDlg
 
@@ -119,7 +119,7 @@ class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of c
 
         self._lastButton = None
         self._axesManager = AxManager(self.canvas.image.ax)
-        self.selector = AdjustableSelector(self._axesManager, self.canvas.image.im, LassoSelector,
+        self.selector = AdjustableSelector(self._axesManager, self.canvas.image.im, LassoCreator,
                                            onfinished=self._selectorFinished)
 
         self.buttonWidget = QGroupBox("Control", self)
@@ -212,10 +212,10 @@ class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of c
             button: The button that was just pressed.
         """
         if button is self.pointButton and button is not self._lastButton:
-            self.selector.setSelector(PointSelector)
+            self.selector.setSelector(PointCreator)
             self.selector.setActive(True)
         if button is self.lassoButton and button is not self._lastButton:
-            self.selector.setSelector(LassoSelector)
+            self.selector.setSelector(LassoCreator)
             self.selector.setActive(True)
         if button is self.noneButton and button is not self._lastButton:
             self.selector.setActive(False)

@@ -1,31 +1,17 @@
-# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
-#
-# This file is part of PWSpy.
-#
-# PWSpy is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# PWSpy is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
-
 from __future__ import annotations
+import math
 import typing
-from matplotlib.axes import Axes
-from matplotlib.image import AxesImage
+import numpy as np
 from matplotlib.lines import Line2D
 from matplotlib.patches import Polygon
 from scipy import interpolate
-import numpy as np
-from pwspy.utility.matplotlibWidgets.coreClasses import AxManager
-from pwspy.utility.matplotlibWidgets._selectorWidgets import SelectorWidgetBase
-import math
+
+from pwspy.utility.matplotlibWidgets._modifierWidgets import ModifierWidgetBase
+
+if typing.TYPE_CHECKING:
+    from pwspy.utility.matplotlibWidgets import AxManager
+from pwspy.utility.matplotlibWidgets._creatorWidgets import CreatorWidgetBase
+
 
 Vector3 = typing.Tuple[float, float, float]
 Point3 = typing.Tuple[float, float, float]
@@ -50,7 +36,7 @@ def pnt2line(pnt: Point3, start: Point3, end: Point3) -> typing.Tuple[float, Poi
     9  Calculate the distance from nearest to pnt_vec_scaled.
     10 Translate nearest back to the start/end line.
     Malcolm Kesson 16 Dec 2012
-    
+
     Args:
         pnt: A 3d point.
         start: The 3d point indicating the start of a line segment
@@ -61,8 +47,6 @@ def pnt2line(pnt: Point3, start: Point3, end: Point3) -> typing.Tuple[float, Poi
             dist: The distance from `pnt` to the nearest point on the line
             nearest: The nearest point on the line to `pnt`
     """
-
-
     def dot(v, w):
         x, y, z = v
         X, Y, Z = w
@@ -158,7 +142,7 @@ def pnt2line(pnt: Point3, start: Point3, end: Point3) -> typing.Tuple[float, Poi
     return dist, nearest
 
 
-class PolygonInteractor(SelectorWidgetBase):
+class PolygonModifier(ModifierWidgetBase):
     """
     A polygon editor.
     https://matplotlib.org/gallery/event_handling/poly_editor.html
@@ -196,12 +180,13 @@ class PolygonInteractor(SelectorWidgetBase):
         """Reset the state of the selector so it's ready for a new selection."""
         pass  # I'm not sure what should be done here for this selector.
 
-    def initialize(self, handles: typing.Sequence[typing.Tuple[float, float]]):
-        """Given a set of points this will initialize the artists to them.
+    def initialize(self, handles: typing.Sequence[typing.Sequence[typing.Tuple[float, float]]]):
+        """Given a set of points this will initialize the artists to them to begin modification.
 
         Args:
             handles: A sequence of 2d coordinates to intialize the polygon to. Each point will become a draggable handle
         """
+        handles = handles[0] # We don't support multiple polygons in this widget, just select out the first if multiple are passed.
         x, y = zip(*handles)
         self.markers.set_data(x, y)
         self._interpolate()
@@ -295,81 +280,3 @@ class PolygonInteractor(SelectorWidgetBase):
 
         self._interpolate()
         self.axMan.update()
-
-class AdjustableSelector:
-    """This class manages an roi selector. By setting `adjustable` true then when the selector calls its `onselect` function
-    the results will be passed on to a PolygonInteractor for further tweaking. Tweaking can be confirmed by pressing enter.
-    at the end the selector will pass a set of coordinates to the `onfinished` function if it has been set.
-
-    Args:
-        ax: A matplotlib `Axes` to interact with.
-        image: A matplotlib `AxesImage`. Some selectors use the data in this image for their selection.
-        selectorClass: A class that implements `SelectorWidgetBase`. This will be the intial selector used.
-        onfinished: a callback function when the selection finished. The function should accept a single input argument
-            which is a list of the 2d coordinated outlining the selected polygon.
-    """
-    def __init__(self, axManager: AxManager, image: AxesImage, selectorClass: typing.Type[SelectorWidgetBase],
-                 onfinished: typing.Optional[typing.Callable] = None):
-        self.axMan = axManager
-        self.image = image
-        self.selector: SelectorWidgetBase = selectorClass(self.axMan, self.image, onselect=self._goPoly)
-        self.selector.active = False
-        self.adjuster = PolygonInteractor(self.axMan, onselect=self.finish)
-        self.adjuster.active = False
-        self.adjustable = False
-        self.onfinished = onfinished
-
-    def reset(self):
-        """Clear all artists used by the selector. :todo: Shouldn't this check if the `adjuster` is active and reset it as well?"""
-        self.selector.reset()
-
-    @property
-    def adjustable(self) -> bool:
-        """Determines whether or not the polygon interactor will be used to adjust the selection at the end of the initial
-        selection."""
-        return self._adjustable
-
-    @adjustable.setter
-    def adjustable(self, enabled: bool):
-        self._adjustable = enabled
-        if enabled:
-            self.selector.onselect = self._goPoly
-        else:
-            self.selector.onselect = self.finish
-
-    def setActive(self, active: bool):
-        """This activates the selector. for a looping selection you should call this method from the onfinished function."""
-        if active:
-            self.selector.set_active(True)
-            self.selector.set_visible(True)
-        else:
-            self.adjuster.set_active(False)
-            self.adjuster.set_visible(False)
-            self.selector.set_visible(False)
-            self.selector.set_active(False)
-
-    def setSelector(self, selectorClass: typing.Type):
-        """Remove the current selector and replace it with a new type of selector.
-
-        Args:
-            selectorClass: A class the implements `SelectorWidgetBase`.
-        """
-        self.selector.removeArtists()
-        self.selector.set_active(False)
-        self.selector = selectorClass(self.axMan, self.image)
-        self.adjustable = self.adjustable
-
-    def _goPoly(self, verts: typing.Sequence[typing.Sequence[float, float]], handles: typing.Sequence[typing.Sequence[float, float]]):
-        """This callback is registered with the selectorWidget when we are in adjustable mode. Upon completion of the
-        initial selection this callback passes the handles to the polygon adjuster."""
-        self.selector.set_active(False)
-        self.selector.set_visible(False)
-        self.adjuster.set_active(True)
-        self.adjuster.initialize(handles) # It's important that this happens after `set_active` otherwise we get weird drawing issues
-
-    def finish(self, verts, handles):
-        """This callback is registered with the selectorWidget when we are not in adjustable mode. In adjustable mode it
-        is instead registered with the polygon adjuster. It deactivates the class and calls the `onfinished` callback."""
-        self.setActive(False)
-        if self.onfinished is not None:
-            self.onfinished(verts)

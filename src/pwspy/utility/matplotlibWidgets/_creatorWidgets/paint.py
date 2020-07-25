@@ -24,10 +24,10 @@ from shapely.geometry import Polygon as shapelyPolygon, LinearRing, MultiPolygon
 import shapely
 from pwspy.utility.fluorescence import segmentOtsu
 from pwspy.utility.matplotlibWidgets.coreClasses import AxManager
-from pwspy.utility.matplotlibWidgets._selectorWidgets import SelectorWidgetBase
+from pwspy.utility.matplotlibWidgets._creatorWidgets import CreatorWidgetBase
 
 
-class RegionalPaintSelector(SelectorWidgetBase):
+class RegionalPaintCreator(CreatorWidgetBase):
     """A widget allowing the user to select a rectangular region with a bright region in it such as a fluorescent
     nucleus. Otsu thresholding will then be used to draw an ROI on the bright region.
 

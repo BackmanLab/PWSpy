@@ -28,10 +28,10 @@ from matplotlib.patches import Polygon
 
 from pwspy.utility.fluorescence import segmentAdaptive
 from pwspy.utility.matplotlibWidgets.coreClasses import AxManager
-from pwspy.utility.matplotlibWidgets._selectorWidgets import SelectorWidgetBase
+from pwspy.utility.matplotlibWidgets._creatorWidgets import CreatorWidgetBase
 
 
-class FullImPaintSelector(SelectorWidgetBase):
+class FullImPaintCreator(CreatorWidgetBase):
     """Uses adaptive thresholding in an attempt to highlight all bright selectable regions in a fluorescence image.
 
     Args:
@@ -170,7 +170,7 @@ class AdaptivePaintDialog(QDialog):
         parentSelector: A reference the the `FullImPaintSelector` that is being used with this dialog.
         parent: A QWidget to serve as the Qt parent for this QWidget.
     """
-    def __init__(self, parentSelector: FullImPaintSelector, parent: QWidget):
+    def __init__(self, parentSelector: FullImPaintCreator, parent: QWidget):
         super().__init__(parent=parent)
         self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.WindowTitleHint | QtCore.Qt.CustomizeWindowHint) #Get rid of the close button. this is handled by the selector widget active status
         self.parentSelector = parentSelector
@@ -258,7 +258,7 @@ if __name__ == '__main__':
 
     fig, ax = plt.subplots()
     im = ax.imshow(np.random.random((100, 100)))
-    sel = FullImPaintSelector(AxManager(ax), im)
+    sel = FullImPaintCreator(AxManager(ax), im)
     fig.show()
     plt.pause(.1)
     sel.set_active(True)

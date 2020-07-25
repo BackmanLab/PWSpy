@@ -170,7 +170,7 @@ class ICBase(ABC):
         Returns:
             np.ndarray: An array of the 4 XY vertices of the square.
         """
-        from pwspy.utility.matplotlibWidgets import AxManager, PointSelector
+        from pwspy.utility.matplotlibWidgets import AxManager, PointCreator
         verts = [None]
         if displayIndex is None:
            displayIndex = self.data.shape[2]//2
@@ -180,7 +180,7 @@ class ICBase(ABC):
         def select(Verts, handles):
             verts[0] = Verts
         axMan = AxManager(ax)
-        sel = PointSelector(axMan, onselect=select, sideLength=side)
+        sel = PointCreator(axMan, onselect=select, sideLength=side)
         sel.set_active(True)
         fig.show()
         while plt.fignum_exists(fig.number):

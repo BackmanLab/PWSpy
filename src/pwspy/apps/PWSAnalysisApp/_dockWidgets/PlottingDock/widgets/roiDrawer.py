@@ -29,7 +29,7 @@ from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import Conglomer
 from pwspy.dataTypes import AcqDir
 import os
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.analysisViewer import AnalysisViewer
-from pwspy.utility.matplotlibWidgets import FullImPaintSelector, AdjustableSelector, LassoSelector, EllipseSelector, RegionalPaintSelector, PolygonInteractor, WaterShedPaintSelector
+from pwspy.utility.matplotlibWidgets import FullImPaintCreator, AdjustableSelector, LassoCreator, EllipseCreator, RegionalPaintCreator, PolygonModifier, WaterShedPaintCreator
 
 
 class RoiDrawer(QWidget):
@@ -49,11 +49,11 @@ class RoiDrawer(QWidget):
 
         self.noneButton = QPushButton("Inspect")
         self.lassoButton = QPushButton("Lasso")
-        self.lassoButton.setToolTip(LassoSelector.getHelpText())
+        self.lassoButton.setToolTip(LassoCreator.getHelpText())
         self.ellipseButton = QPushButton("Ellipse")
-        self.ellipseButton.setToolTip(EllipseSelector.getHelpText())
+        self.ellipseButton.setToolTip(EllipseCreator.getHelpText())
         self.paintButton = QPushButton("Paint")
-        self.paintButton.setToolTip(RegionalPaintSelector.getHelpText())
+        self.paintButton.setToolTip(RegionalPaintCreator.getHelpText())
         self.lastButton_ = None
 
         self.buttonGroup = QButtonGroup(self)
@@ -70,7 +70,7 @@ class RoiDrawer(QWidget):
                 self.selector.adjustable = checkstate
 
         self.adjustButton = QPushButton("Tune")
-        self.adjustButton.setToolTip(PolygonInteractor.getHelpText())
+        self.adjustButton.setToolTip(PolygonModifier.getHelpText())
         self.adjustButton.setCheckable(True)
         self.adjustButton.setMaximumWidth(50)
         self.adjustButton.toggled.connect(handleAdjustButton)
@@ -101,7 +101,7 @@ class RoiDrawer(QWidget):
         layout.addWidget(self.nextButton, 0, 7, 1, 1)
         layout.addWidget(self.anViewer, 1, 0, 8, 8)
         self.setLayout(layout)
-        self.selector: AdjustableSelector = AdjustableSelector(self.anViewer.axManager, self.anViewer.im, LassoSelector, onfinished=self.finalizeRoi)
+        self.selector: AdjustableSelector = AdjustableSelector(self.anViewer.axManager, self.anViewer.im, LassoCreator, onfinished=self.finalizeRoi)
         self.handleButtons(self.noneButton) #Helps initialize state
         self.show()
 
@@ -121,12 +121,12 @@ class RoiDrawer(QWidget):
 
     def handleButtons(self, button):
         if button is self.lassoButton and self.lastButton_ is not button:
-            self.selector.setSelector(LassoSelector)
+            self.selector.setSelector(LassoCreator)
             self.selector.setActive(True)
             self.anViewer.enableHoverAnnotation(False)
             self.adjustButton.setEnabled(True)
         elif button is self.ellipseButton and self.lastButton_ is not button:
-            self.selector.setSelector(EllipseSelector)
+            self.selector.setSelector(EllipseCreator)
             self.selector.setActive(True)
             self.anViewer.enableHoverAnnotation(False)
             self.adjustButton.setEnabled(True)
@@ -139,13 +139,13 @@ class RoiDrawer(QWidget):
 
             menu = QMenu(self)
             regionalAction = QAction("Regional")
-            regionalAction.triggered.connect(lambda: setSelector(RegionalPaintSelector))
+            regionalAction.triggered.connect(lambda: setSelector(RegionalPaintCreator))
             menu.addAction(regionalAction)
             fullAction = QAction("Full Image")
-            fullAction.triggered.connect(lambda: setSelector(FullImPaintSelector))
+            fullAction.triggered.connect(lambda: setSelector(FullImPaintCreator))
             menu.addAction(fullAction)
             watershedAction = QAction("Watershed")
-            watershedAction.triggered.connect(lambda: setSelector(WaterShedPaintSelector))
+            watershedAction.triggered.connect(lambda: setSelector(WaterShedPaintCreator))
             menu.addAction(watershedAction)
             menu.exec(self.mapToGlobal(self.paintButton.pos()))
 
