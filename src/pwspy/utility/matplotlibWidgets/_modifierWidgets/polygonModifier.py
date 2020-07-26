@@ -170,13 +170,8 @@ class PolygonModifier(ModifierWidgetBase):
 
     @staticmethod
     def getHelpText():
-        return """This Selector will become active after the primary Selector is finished. Click and drag the handle 
-        points to adjust the ROI. Press 'd' to delete a point. Press 'i' to insert a new point. Press 'enter' to accept
-        the selection."""
-
-    def reset(self):
-        """Reset the state of the selector so it's ready for a new selection."""
-        pass  # I'm not sure what should be done here for this selector.
+        return """PolygonModifier: Click and drag the handle points to adjust the ROI. Press 'd' to delete a point. 
+        Press 'i' to insert a new point. Press 'enter' to accept the selection."""
 
     def initialize(self, handles: typing.Sequence[typing.Sequence[typing.Tuple[float, float]]]):
         """Given a set of points this will initialize the artists to them to begin modification.

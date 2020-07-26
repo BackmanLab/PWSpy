@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 
 from matplotlib.artist import Artist
+from matplotlib.backend_bases import LocationEvent, MouseEvent, KeyEvent
 from matplotlib.image import AxesImage
 from matplotlib.widgets import AxesWidget
 import typing
@@ -48,7 +49,7 @@ class InteractiveWidgetBase(AxesWidget):
         self._prev_event = None
         self.state = set()
 
-    def set_active(self, active):
+    def set_active(self, active: bool):
         AxesWidget.set_active(self, active)
         if active:
             self.axMan._update_background(None)
@@ -68,7 +69,7 @@ class InteractiveWidgetBase(AxesWidget):
         # If a button was pressed, check if the release-button is the same.
         return event.inaxes != self.ax or event.button != self.eventpress.button
 
-    def __get_data(self, event):
+    def __get_data(self, event: LocationEvent):
         """Get the xdata and ydata for event, with limits"""
         if event.xdata is None:
             return None, None
@@ -80,7 +81,7 @@ class InteractiveWidgetBase(AxesWidget):
         ydata = min(y1, ydata)
         return xdata, ydata
 
-    def __clean_event(self, event):
+    def __clean_event(self, event: LocationEvent):
         """Clean up an event
         Use prev event if there is no xdata
         Limit the xdata and ydata to the axes limits
@@ -94,7 +95,7 @@ class InteractiveWidgetBase(AxesWidget):
         self._prev_event = event
         return event
 
-    def press(self, event):
+    def press(self, event: MouseEvent):
         """Button press handler and validator"""
         if not self.ignore(event):
             event = self.__clean_event(event)
@@ -108,7 +109,7 @@ class InteractiveWidgetBase(AxesWidget):
             return True
         return False
 
-    def release(self, event):
+    def release(self, event: MouseEvent):
         """Button release event handler and validator"""
         if not self.ignore(event) and self.eventpress:
             event = self.__clean_event(event)
@@ -120,7 +121,7 @@ class InteractiveWidgetBase(AxesWidget):
             return True
         return False
 
-    def onmove(self, event):
+    def onmove(self, event: MouseEvent):
         """Cursor move event handler and validator"""
         if not self.ignore(event):
             event = self.__clean_event(event)
@@ -131,12 +132,12 @@ class InteractiveWidgetBase(AxesWidget):
             return True
         return False
 
-    def on_scroll(self, event):
+    def on_scroll(self, event: MouseEvent):
         """Mouse scroll event handler and validator"""
         if not self.ignore(event):
             self._on_scroll(event)
 
-    def on_key_press(self, event):
+    def on_key_press(self, event: KeyEvent):
         """Key press event handler and validator for all selection widgets"""
         if self.active:
             key = event.key or ''
@@ -149,7 +150,7 @@ class InteractiveWidgetBase(AxesWidget):
                     self.state.add(state)
             self._on_key_press(event)
 
-    def on_key_release(self, event):
+    def on_key_release(self, event: KeyEvent):
         """Key release event handler and validator"""
         if self.active:
             key = event.key or ''
@@ -174,28 +175,34 @@ class InteractiveWidgetBase(AxesWidget):
         for artist in self.artists:
             self.removeArtist(artist)
 
-    def removeArtist(self, artist):
+    def removeArtist(self, artist: Artist):
         self.artists.remove(artist)
         self.axMan.removeArtist(artist)
 
     # Overridable events
-    def _on_key_release(self, event):
+    def _on_key_release(self, event: KeyEvent):
         """Key release event handler"""
         pass
-    def _on_key_press(self, event):
+
+    def _on_key_press(self, event: KeyEvent):
         """Key press event handler - use for widget-specific key press actions."""
         pass
-    def _on_scroll(self, event):
+
+    def _on_scroll(self, event: MouseEvent):
         """Mouse scroll event handler"""
         pass
-    def _ondrag(self, event):
+
+    def _ondrag(self, event: MouseEvent):
         """Cursor move event handler"""
         pass
-    def _onhover(self, event):
+
+    def _onhover(self, event: MouseEvent):
         pass
-    def _release(self, event):
+
+    def _release(self, event: MouseEvent):
         """Button release event handler"""
         pass
-    def _press(self, event):
+
+    def _press(self, event: MouseEvent):
         """Button press handler"""
         pass

@@ -53,7 +53,7 @@ class ModifierWidgetBase(InteractiveWidgetBase, metaclass=ABCMeta):
         self._onselect = onselect
 
     @abstractmethod
-    def initialize(self, setOfVerts: typing.Sequence[PolygonCoords]):
+    def initialize(self, setOfVerts: typing.Sequence[ModifierWidgetBase.PolygonCoords]):
         """Given a set of points this will initialize the artists to them to begin modification.
 
         Args:
@@ -68,7 +68,7 @@ class ModifierWidgetBase(InteractiveWidgetBase, metaclass=ABCMeta):
         """Return a description of the selector which can be used as a tooltip."""
         return "This Selector has no help text."
 
-    def onselect(self, verts: typing.Sequence[PolygonCoords], handles: typing.Sequence[PolygonCoords]):  # This method only exists to make the signature of onselect more obvious
+    def onselect(self, verts: typing.Sequence[ModifierWidgetBase.PolygonCoords], handles: typing.Sequence[ModifierWidgetBase.PolygonCoords]):  # This method only exists to make the signature of onselect more obvious
         """This method should be called when the interaction is done to execute whatever finalization function was specified
         in the constructor.
 
