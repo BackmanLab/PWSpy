@@ -36,6 +36,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.bigPlot import BigPlot
 from pwspy.dataTypes import Roi, AcqDir
 from pwspy.utility.matplotlibWidgets import PolygonModifier, AxManager
+from pwspy.utility.matplotlibWidgets._modifierWidgets.movingModifier import MovingModifier
 from pwspy.utility.plotting.roiColor import roiColor
 
 @dataclass
@@ -153,12 +154,28 @@ class RoiPlot(BigPlot):
                 self.showRois()
 
             def moveFunc():
+                coordSet = []
+                selectedROIParams = []
                 for param in self.rois:
                     if param.selected:
-                        pass  # TODO write a matplotlib widget to do move the ROI and rotate
+                        selectedROIParams.append(param)
+                        coordSet.append(param.roi.verts)
+
+                def done(vertsSet, handles):
+                    for param, verts in zip(selectedROIParams, vertsSet):
+                        newRoi = Roi.fromVerts(param.roi.name, param.roi.number, np.array(verts),
+                                               param.roi.mask.shape)
+                        newRoi.toHDF(self.metadata.filePath, overwrite=True)
+                    self._polyWidg.set_active(False)
+                    self._polyWidg.set_visible(False)
+                    self.showRois()
+
+                self._polyWidg = MovingModifier(self.axManager, onselect=done)
+                self._polyWidg.set_active(True)
+                self._polyWidg.initialize(coordSet)
 
             def selectAllFunc():
-                sel = not any([param.selected for param in self.rois]) # Determine whether to selece or deselect all
+                sel = not any([param.selected for param in self.rois])  # Determine whether to selece or deselect all
                 for param in self.rois:
                     self.setRoiSelected(param.roi, sel)
                 self.fig.canvas.draw_idle()
@@ -178,6 +195,7 @@ class RoiPlot(BigPlot):
                     handles = poly.exterior.coords
 
                     def done(verts, handles):
+                        verts = verts[0]
                         newRoi = Roi.fromVerts(selectedROIParam.roi.name, selectedROIParam.roi.number, np.array(verts), selectedROIParam.roi.mask.shape)
                         newRoi.toHDF(self.metadata.filePath, overwrite=True)
                         self._polyWidg.set_active(False)
