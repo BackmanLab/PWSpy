@@ -26,6 +26,7 @@ class InteractiveWidgetBase(AxesWidget):
         axMan (AxManager): The manager for the Axes. Call its `update` method when something needs to be drawn.
         image (AxesImage): A reference to the image being interacted with. Can be used to get the image data.
     """
+
     def __init__(self, axMan: AxManager, image: typing.Optional[AxesImage] = None):
         AxesWidget.__init__(self, axMan.ax)
         self.axMan = axMan

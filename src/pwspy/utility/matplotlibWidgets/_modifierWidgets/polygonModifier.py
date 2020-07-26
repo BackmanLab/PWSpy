@@ -5,12 +5,10 @@ import numpy as np
 from matplotlib.lines import Line2D
 from matplotlib.patches import Polygon
 from scipy import interpolate
-
 from pwspy.utility.matplotlibWidgets._modifierWidgets import ModifierWidgetBase
 
 if typing.TYPE_CHECKING:
     from pwspy.utility.matplotlibWidgets import AxManager
-from pwspy.utility.matplotlibWidgets._creatorWidgets import CreatorWidgetBase
 
 
 Vector3 = typing.Tuple[float, float, float]

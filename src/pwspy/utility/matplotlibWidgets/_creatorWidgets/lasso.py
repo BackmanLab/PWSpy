@@ -17,7 +17,7 @@
 
 from matplotlib.image import AxesImage
 from matplotlib.patches import Polygon
-from shapely.geometry import Polygon as shapelyPolygon, LinearRing
+from shapely.geometry import Polygon as shapelyPolygon, LinearRing, MultiPolygon
 
 from pwspy.utility.matplotlibWidgets.coreClasses import AxManager
 from pwspy.utility.matplotlibWidgets._creatorWidgets import CreatorWidgetBase
@@ -59,6 +59,8 @@ class LassoCreator(CreatorWidgetBase):
                 l = shapelyPolygon(LinearRing(self.verts))
                 l = l.buffer(0)
                 l = l.simplify(l.length ** .5 / 5, preserve_topology=False)
+                if isinstance(l, MultiPolygon):  # There is a chance for this to be a Multipolygon.
+                    l = max(l, key=lambda a: a.area)  # To fix this we extract the largest polygon from the multipolygon
                 handles = l.exterior.coords
                 self.onselect(self.verts, handles)
 

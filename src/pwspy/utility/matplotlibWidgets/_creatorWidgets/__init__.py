@@ -41,8 +41,13 @@ class CreatorWidgetBase(InteractiveWidgetBase, metaclass=ABCMeta):
         axMan (AxManager): The manager for the Axes. Call its `update` method when something needs to be drawn.
         image (AxesImage): A reference to the image being interacted with. Can be used to get the image data.
     """
+
+    #Typing aliases
+    PolygonCoords = typing.Sequence[typing.Tuple[float, float]]
+    SelectionFunction = typing.Callable[[PolygonCoords, PolygonCoords], None]
+
     def __init__(self, axMan: AxManager, image: typing.Optional[AxesImage] = None,
-                 onselect: typing.Optional[typing.Callable] = None):
+                 onselect: typing.Optional[SelectionFunction] = None):
         super().__init__(axMan, image)
         self._onselect = onselect
 
@@ -57,7 +62,7 @@ class CreatorWidgetBase(InteractiveWidgetBase, metaclass=ABCMeta):
         """Reset the state of the selector so it's ready for a new selection."""
         pass
 
-    def onselect(self, verts: typing.Sequence[typing.Sequence[float, float]], handles: typing.Sequence[typing.Sequence[float, float]]):  # This method only exists to make the signature of onselect more obvious
+    def onselect(self, verts: PolygonCoords, handles: PolygonCoords):  # This method only exists to make the signature of onselect more obvious
         """This method should be called when the interaction is done to execute whatever finalization function was specified
         in the constructor.
 
