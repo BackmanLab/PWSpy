@@ -73,7 +73,10 @@ class AxManager:
                 self.canvas.restore_region(self.background)
             for artist in self.artists:
                 if artist.get_visible():
-                    self.ax.draw_artist(artist)
+                    try:
+                        self.ax.draw_artist(artist)
+                    except AttributeError:
+                        pass  # This can happen if the figure hasn't already had it's initial draw
             try:
                 self.canvas.blit(self.ax.bbox)
             except AttributeError: #Sometimes this happens when first opening
