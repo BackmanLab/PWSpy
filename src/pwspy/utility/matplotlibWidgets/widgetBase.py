@@ -40,7 +40,7 @@ class InteractiveWidgetBase(AxesWidget):
         self.connect_event('key_release_event', self.on_key_release)
         self.connect_event('scroll_event', self.on_scroll)
 
-        self.state_modifier_keys = dict(move=' ', clear='escape', square='shift', center='control')
+        self.state_modifier_keys = dict(space=' ', clear='escape', shift='shift', control='control')
 
         # will save the data (position at mouseclick)
         self.eventpress = None
@@ -102,9 +102,9 @@ class InteractiveWidgetBase(AxesWidget):
             self.eventpress = event
             key = event.key or ''
             key = key.replace('ctrl', 'control')
-            # move state is locked in on a button press
-            if key == self.state_modifier_keys['move']:
-                self.state.add('move')
+            # space state is locked in on a button press
+            if key == self.state_modifier_keys['space']:
+                self.state.add('space')
             self._press(event)
             return True
         return False
@@ -117,7 +117,7 @@ class InteractiveWidgetBase(AxesWidget):
             self._release(event)
             self.eventpress = None
             self.eventrelease = None
-            self.state.discard('move')
+            self.state.discard('space')
             return True
         return False
 
@@ -142,9 +142,9 @@ class InteractiveWidgetBase(AxesWidget):
         if self.active:
             key = event.key or ''
             key = key.replace('ctrl', 'control')
-            if key == self.state_modifier_keys['clear']:
-                self.set_visible(False)
-                return
+            # if key == self.state_modifier_keys['clear']: # This kind of thing can be handled individually by subclasses
+            #     self.set_visible(False)
+            #     return
             for (state, modifier) in self.state_modifier_keys.items():
                 if modifier in key:
                     self.state.add(state)
@@ -172,8 +172,8 @@ class InteractiveWidgetBase(AxesWidget):
 
     def removeArtists(self):
         """Remove all artist objects associated with this selector"""
-        for artist in self.artists:
-            self.removeArtist(artist)
+        while len(self.artists) > 0:  # Using a for loop here has problems since we remove items as we go.
+            self.removeArtist(self.artists[0])
 
     def removeArtist(self, artist: Artist):
         self.artists.remove(artist)
