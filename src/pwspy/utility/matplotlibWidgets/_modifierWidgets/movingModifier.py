@@ -16,7 +16,7 @@ class MovingModifier(ModifierWidgetBase):
     """This iteractive widget allows translating and rotating multiple polygons"""
     def __init__(self, axMan: AxManager, image: AxesImage = None, onselect: typing.Optional[ModifierWidgetBase.SelectionFunction] = None):
         super().__init__(axMan, image=image, onselect=onselect)
-        self.initialPos = None  # The coords where a drag was started
+        self.initialClickPoint = None  # The coords where a drag was started
         self.indicatorLine = Line2D([0, 0], [0, 0], color='k', linestyle='dashed', animated=True)
         self.angleRefLine = Line2D([0, 0], [0, 0], color='r', animated=True)
         self.angleIndicatorLine = Line2D([0, 0], [0, 0], color='b', animated=True)
@@ -25,8 +25,9 @@ class MovingModifier(ModifierWidgetBase):
         self.addArtist(self.angleRefLine)
         self.addArtist(self.angleIndicatorLine)
         self.addArtist(self.transformText)
+        self.setArtistVisible(self.angleIndicatorLine, False)
+        self.setArtistVisible(self.angleRefLine, False)
         self.polygonArtists = []
-
 
     @staticmethod
     def getHelpText():
@@ -48,7 +49,8 @@ class MovingModifier(ModifierWidgetBase):
         self.set_visible(True)
 
     def _press(self, event: MouseEvent):
-        self.initialPos = np.array((event.xdata, event.ydata))
+        self.initialClickPoint = np.array((event.xdata, event.ydata))
+        self.initialTranslation = self.translation
 
     def _ondrag(self, event: MouseEvent):
         mousePoint = np.array((event.xdata, event.ydata))
@@ -61,9 +63,9 @@ class MovingModifier(ModifierWidgetBase):
             delta = mousePoint - self.rotationPivotPoint
             self._setRotation(np.arctan2(delta[1], delta[0]))
         else:
-            delta = mousePoint - self.initialPos  # Difference between current mouse position and initial pos
-            self.indicatorLine.set_data([[self.initialPos[0], event.xdata], [self.initialPos[1], event.ydata]])
-            self._setTranslation(delta)
+            delta = mousePoint - self.initialClickPoint  # Difference between current mouse position and initial pos
+            self.indicatorLine.set_data([[self.initialClickPoint[0], event.xdata], [self.initialClickPoint[1], event.ydata]])
+            self._setTranslation(self.initialTranslation + delta)
             self._setRotationPoint(mousePoint)
 
         self.transformText.set_text(f"Trans: ({self.translation[0]:.1f}, {self.translation[1]:.1f})\nRot: {np.degrees(self.angle):.1f} deg.")
@@ -78,21 +80,26 @@ class MovingModifier(ModifierWidgetBase):
             self.set_active(False)
         elif event.key == 'shift':  # Begin rotation
             self.initializeRotation = True
-            self.angleIndicatorLine.set_visible(True)
-            self.angleRefLine.set_visible(True)
+            self.setArtistVisible(self.angleRefLine, True)
+            self.setArtistVisible(self.angleIndicatorLine, True)
 
     def _on_key_release(self, event: KeyEvent):
         if event.key == 'shift':  # end rotation
-            self.angleIndicatorLine.set_visible(False)
-            self.angleRefLine.set_visible(False)
+            self.setArtistVisible(self.angleRefLine, False)
+            self.setArtistVisible(self.angleIndicatorLine, False)
 
     def _updatePolygons(self):
+        self.affineTransform[0, 2] = self.translation[0]
+        self.affineTransform[1, 2] = self.translation[1]
+        self.affineTransform[0, 0] = self.affineTransform[1, 1] = np.cos(self.angle)
+        self.affineTransform[1, 0] = np.sin(self.angle)
+        self.affineTransform[0, 1] = -self.affineTransform[1, 0]
         for coords, poly in zip(self.originalCoords, self.polygonArtists):
             poly: Polygon
-            coords = np.array(coords) - self.initialPos  # So that any rotation is centered around our initial click position
+            coords = np.array(coords) - (self.rotationPivotPoint - self.translation)  # So that any rotation is centered around our initial click position
             coords = np.hstack([coords, np.ones((len(coords), 1))])
             coords = (self.affineTransform @ coords.T).T
-            coords = coords[:, :2] + self.initialPos # Convert back
+            coords = coords[:, :2] + (self.rotationPivotPoint - self.translation)  # Convert back
             poly.set_xy(coords)
         self.axMan.update()
 
@@ -102,17 +109,17 @@ class MovingModifier(ModifierWidgetBase):
 
     def _setRotation(self, radians: float):
         self.angle = radians
-        self.affineTransform[0, 0] = self.affineTransform[1, 1] = np.cos(self.angle)
-        self.affineTransform[1, 0] = np.sin(self.angle)
-        self.affineTransform[0, 1] = -self.affineTransform[1, 0]
+        # self.affineTransform[0, 0] = self.affineTransform[1, 1] = np.cos(self.angle)
+        # self.affineTransform[1, 0] = np.sin(self.angle)
+        # self.affineTransform[0, 1] = -self.affineTransform[1, 0]
         self.angleIndicatorLine.set_data(
             [self.rotationPivotPoint[0], self.rotationPivotPoint[0] + np.cos(self.angle) * self.lineMagnitude],
             [self.rotationPivotPoint[1], self.rotationPivotPoint[1] + np.sin(self.angle) * self.lineMagnitude])
 
     def _setTranslation(self, translation: typing.Tuple[float, float]):
         self.translation = translation
-        self.affineTransform[0, 2] = translation[0]
-        self.affineTransform[1, 2] = translation[1]
+        # self.affineTransform[0, 2] = translation[0]
+        # self.affineTransform[1, 2] = translation[1]
 
 
 if __name__ == '__main__':
