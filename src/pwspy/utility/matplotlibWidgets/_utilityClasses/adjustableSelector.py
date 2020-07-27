@@ -101,4 +101,7 @@ class AdjustableSelector:
         is instead registered with the polygon adjuster. It deactivates the class and calls the `onfinished` callback."""
         self.setActive(False)
         if self.onfinished is not None:
-            self.onfinished(verts)
+            if self.adjustable:
+                self.onfinished(verts[0])  # The polygon interactor has a slightly different signature than the `creatorwidgets`
+            else:
+                self.onfinished(verts)

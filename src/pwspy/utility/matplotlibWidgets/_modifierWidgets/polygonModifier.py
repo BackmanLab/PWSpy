@@ -241,7 +241,7 @@ class PolygonModifier(ModifierWidgetBase):
                 self.markers.set_data(np.insert(x, i + 1, event.xdata), np.insert(y, i + 1, event.ydata))
                 self._interpolate()
         elif event.key == 'enter':
-            self.onselect(self.poly.xy, self.markers.get_data())
+            self.onselect([self.poly.xy], [self.markers.get_data()])
             return
         self.axMan.update()
 
