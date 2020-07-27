@@ -1,7 +1,5 @@
 from __future__ import annotations
-
 import copy
-
 from matplotlib.artist import Artist
 from matplotlib.backend_bases import LocationEvent, MouseEvent, KeyEvent
 from matplotlib.image import AxesImage
