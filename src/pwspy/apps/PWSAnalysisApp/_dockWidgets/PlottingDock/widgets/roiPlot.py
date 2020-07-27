@@ -48,19 +48,19 @@ class RoiParams:
 
 
 class RoiPlot(QWidget):
-    """Adds handling for ROIs to the BigPlot class. It might be smarter to encapsulate Bigplot rather than inherit"""
-    def __init__(self, acqDir: AcqDir, data: np.ndarray, parent=None, flags: QtCore.Qt.WindowFlags=None):
+    """Adds handling for ROIs to the BigPlot class."""
+    def __init__(self, acqDir: AcqDir, data: np.ndarray, parent=None, flags: QtCore.Qt.WindowFlags = None):
         if flags is not None:
             super().__init__(parent, flags=flags)
         else:
             super().__init__(parent=parent)
         self._plotWidget = BigPlot(data, self)
-        self.data = self._plotWidget.data #TODO These variables are used by other widgets, leftover from when we used inheritance rather than encapsulation, it would be good to redo them.
+        self.data = self._plotWidget.data #TODO These variables are used by other widgets, leftover from when we used inheritance rather than encapsulation, it would be good to get rid of them.
         self.im = self._plotWidget.im
         self.ax = self._plotWidget.ax
         self.canvas = self._plotWidget.canvas
-        self.rois: typing.List[RoiParams] = []  # Contains tuples in the form (roi: Roi, overlay, poly, selected)
-        self.axManager = AxManager(self._plotWidget.ax)  #This object manages redrawing of the matplotlib axes for us.
+        self.rois: typing.List[RoiParams] = []
+        self.axManager = AxManager(self._plotWidget.ax)  # This object manages redrawing of the matplotlib axes for us.
 
         self.roiFilter = QComboBox(self)
         self.roiFilter.setEditable(True)
