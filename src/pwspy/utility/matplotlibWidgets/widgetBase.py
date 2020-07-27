@@ -30,7 +30,7 @@ class InteractiveWidgetBase(AxesWidget):
         AxesWidget.__init__(self, axMan.ax)
         self.axMan = axMan
         self.image = image
-        self.artists = []
+        self._artists = {}
         self.connect_event('motion_notify_event', self.onmove)
         self.connect_event('button_press_event', self.press)
         self.connect_event('button_release_event', self.release)
@@ -159,22 +159,27 @@ class InteractiveWidgetBase(AxesWidget):
 
     def set_visible(self, visible: bool):
         """ Set the visibility of our artists """
-        for artist in self.artists:
-            artist.set_visible(visible)
+        for artist, shouldBeVisible in self._artists.items():
+            artist.set_visible(shouldBeVisible and visible)
         self.axMan.update()
+
+    def setArtistVisible(self, artist: Artist, visible: bool):
+        "set visibility of a single artist, invisible artists will not be reenabled with `set_visible` True."
+        self._artists[artist] = visible
+        artist.set_visible(visible)
 
     def addArtist(self, artist: Artist):
         """Add a matplotlib artist to be managed."""
         self.axMan.addArtist(artist)
-        self.artists.append(artist)
+        self._artists[artist] = True  # New artists are assumed that they should be visible.
 
     def removeArtists(self):
         """Remove all artist objects associated with this selector"""
-        while len(self.artists) > 0:  # Using a for loop here has problems since we remove items as we go.
-            self.removeArtist(self.artists[0])
+        while len(self._artists) > 0:  # Using a for loop here has problems since we remove items as we go.
+            self.removeArtist(list(self._artists.keys())[0])
 
     def removeArtist(self, artist: Artist):
-        self.artists.remove(artist)
+        self._artists.pop(artist)
         self.axMan.removeArtist(artist)
 
     # Overridable events
