@@ -20,7 +20,7 @@ class MovingModifier(ModifierWidgetBase):
         self.indicatorLine = Line2D([0, 0], [0, 0], color='k', linestyle='dashed', animated=True)
         self.angleRefLine = Line2D([0, 0], [0, 0], color='r', animated=True)
         self.angleIndicatorLine = Line2D([0, 0], [0, 0], color='b', animated=True)
-        self.transformText = Text(self.axMan.ax.get_xlim()[0], self.axMan.ax.get_ylim()[0], "")
+        self.transformText = Text(self.axMan.ax.get_xlim()[0], self.axMan.ax.get_ylim()[0], "", animated=True)
         self.addArtist(self.indicatorLine)
         self.addArtist(self.angleRefLine)
         self.addArtist(self.angleIndicatorLine)
