@@ -88,7 +88,7 @@ class PWSAnalysis(AbstractAnalysis):  # TODO Handle the case where pixels are 0,
 
     Args:
         runtimeSettings: The settings used for the analysis
-        ref: The reference acquisition used for analysis
+        ref: The reference acquisition used for analysis #TODO isn't the reference also part of the runtimeSettings?
     """
     def __init__(self, runtimeSettings: PWSRuntimeAnalysisSettings, ref: pwsdt.ImCube): #TODO it would make sense to include the reference in the runtime settings too.
         from pwspy.dataTypes import ExtraReflectanceCube

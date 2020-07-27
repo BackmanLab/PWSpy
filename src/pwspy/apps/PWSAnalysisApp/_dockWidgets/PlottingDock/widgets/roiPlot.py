@@ -46,12 +46,21 @@ class RoiParams:
     polygon: Polygon
     selected: bool
 
-class RoiPlot(BigPlot):
+
+class RoiPlot(QWidget):
     """Adds handling for ROIs to the BigPlot class. It might be smarter to encapsulate Bigplot rather than inherit"""
-    def __init__(self, acqDir: AcqDir, data: np.ndarray, title: str, parent=None):
-        super().__init__(data, title, parent)
+    def __init__(self, acqDir: AcqDir, data: np.ndarray, parent=None, flags: QtCore.Qt.WindowFlags=None):
+        if flags is not None:
+            super().__init__(parent, flags=flags)
+        else:
+            super().__init__(parent=parent)
+        self._plotWidget = BigPlot(data, self)
+        self.data = self._plotWidget.data #TODO These variables are used by other widgets, leftover from when we used inheritance rather than encapsulation, it would be good to redo them.
+        self.im = self._plotWidget.im
+        self.ax = self._plotWidget.ax
+        self.canvas = self._plotWidget.canvas
         self.rois: typing.List[RoiParams] = []  # Contains tuples in the form (roi: Roi, overlay, poly, selected)
-        self.axManager = AxManager(self.ax)  #This object manages redrawing of the matplotlib axes for us.
+        self.axManager = AxManager(self._plotWidget.ax)  #This object manages redrawing of the matplotlib axes for us.
 
         self.roiFilter = QComboBox(self)
         self.roiFilter.setEditable(True)
@@ -60,15 +69,18 @@ class RoiPlot(BigPlot):
         self.exportButton = QPushButton("Export")
         self.exportButton.released.connect(self._exportAction)
 
-        layout = QHBoxLayout()
-        layout.addWidget(QLabel("Roi"), alignment=QtCore.Qt.AlignRight)
-        layout.addWidget(self.roiFilter)
-        layout.addWidget(self.exportButton)
-        self.layout().insertLayout(0, layout)
+        layout = QVBoxLayout()
+        l = QHBoxLayout()
+        l.addWidget(QLabel("Roi"), alignment=QtCore.Qt.AlignRight)
+        l.addWidget(self.roiFilter)
+        l.addWidget(self.exportButton)
+        layout.addLayout(l)
+        layout.addWidget(self._plotWidget)
+        self.setLayout(layout)
 
         self.setRoiPlotMetadata(acqDir)
 
-        self.annot = self.ax.annotate("", xy=(0, 0), xytext=(20, 20), textcoords="offset points",
+        self.annot = self._plotWidget.ax.annotate("", xy=(0, 0), xytext=(20, 20), textcoords="offset points",
                             bbox=dict(boxstyle="round", fc="w"),
                             arrowprops=dict(arrowstyle="->"))
 
@@ -108,18 +120,18 @@ class RoiPlot(BigPlot):
             self.annot.get_bbox_patch().set_alpha(0.4)
 
         vis = self.annot.get_visible()
-        if event.inaxes == self.ax:
+        if event.inaxes == self._plotWidget.ax:
             for params in self.rois:
                 contained, _ = params.polygon.contains(event)
                 if contained:
                     if not vis:
                         update_annot(params.roi, params.polygon)
                         self.annot.set_visible(True)
-                        self.fig.canvas.draw_idle()
+                        self._plotWidget.canvas.draw_idle()
                     return
             if vis:  # If we got here then no hover actions were found.
                 self.annot.set_visible(False)
-                self.fig.canvas.draw_idle()
+                self._plotWidget.canvas.draw_idle()
 
     def setRoiSelected(self, roi: Roi, selected: bool):
         param = [param for param in self.rois if roi is param.roi][0]
@@ -144,7 +156,7 @@ class RoiPlot(BigPlot):
 
         if event.button == 1 and selectedROIParam is not None: #Left click
             self.setRoiSelected(selectedROIParam.roi, not selectedROIParam.selected)
-            self.fig.canvas.draw_idle()
+            self._plotWidget.canvas.draw_idle()
         if event.button == 3:  # "3" is the right button
             #Actions that can happen even if no ROI was clicked on.
             def deleteFunc():
@@ -178,7 +190,7 @@ class RoiPlot(BigPlot):
                 sel = not any([param.selected for param in self.rois])  # Determine whether to selece or deselect all
                 for param in self.rois:
                     self.setRoiSelected(param.roi, sel)
-                self.fig.canvas.draw_idle()
+                self._plotWidget.canvas.draw_idle()
 
             popMenu = QMenu(self)
             popMenu.addAction("Delete Selected ROIs", deleteFunc)
@@ -214,12 +226,12 @@ class RoiPlot(BigPlot):
 
     def enableHoverAnnotation(self, enable: bool):
         if enable:
-            self._toggleCids = [self.canvas.mpl_connect('motion_notify_event', self._hoverCallback),
-                                self.canvas.mpl_connect('button_press_event', self._mouseClickCallback),
-                                self.canvas.mpl_connect('key_press_event', self._keyPressCallback)]
+            self._toggleCids = [self._plotWidget.canvas.mpl_connect('motion_notify_event', self._hoverCallback),
+                                self._plotWidget.canvas.mpl_connect('button_press_event', self._mouseClickCallback),
+                                self._plotWidget.canvas.mpl_connect('key_press_event', self._keyPressCallback)]
         else:
             if self._toggleCids:
-                [self.canvas.mpl_disconnect(cid) for cid in self._toggleCids]
+                [self._plotWidget.canvas.mpl_disconnect(cid) for cid in self._toggleCids]
 
     def showRois(self):
         pattern = self.roiFilter.currentText()
@@ -232,7 +244,7 @@ class RoiPlot(BigPlot):
                     logger = logging.getLogger(__name__)
                     logger.warning(f"Failed to load Roi with name: {name}, number: {num}, format: {fformat.name}")
                     logger.exception(e)
-        self.canvas.draw_idle()
+        self._plotWidget.canvas.draw_idle()
 
     def clearRois(self):
         for param in self.rois:
@@ -245,14 +257,14 @@ class RoiPlot(BigPlot):
         if roi.verts is not None:
             poly = roi.getBoundingPolygon()
             poly.set_picker(0)  # allow the polygon to trigger a pickevent
-            self.ax.add_patch(poly)
+            self._plotWidget.ax.add_patch(poly)
             self.rois.append(RoiParams(roi, None, poly, False))
         else:  # In the case of old ROI files where the vertices of the outline are not available we have to back-calculate the polygon which does not look good. We make this polygon invisible so it is only used for click detection. we then display an image of the binary mask array.
-            overlay = roi.getImage(self.ax) # an image showing the exact shape of the ROI
+            overlay = roi.getImage(self._plotWidget.ax) # an image showing the exact shape of the ROI
             poly = roi.getBoundingPolygon() # A polygon used for mouse event handling
             poly.set_visible(False)#poly.set_facecolor((0,0,0,0)) # Make polygon invisible
             poly.set_picker(0) # allow the polygon to trigger a pickevent
-            self.ax.add_patch(poly)
+            self._plotWidget.ax.add_patch(poly)
             self.rois.append(RoiParams(roi, overlay, poly, False))
 
     def _exportAction(self):
@@ -264,6 +276,9 @@ class RoiPlot(BigPlot):
         act.triggered.connect(showSinCityDlg)
         menu.addAction(act)
         menu.exec(self.mapToGlobal(self.exportButton.pos()))
+
+    def setImageData(self, data: np.ndarray):
+        self._plotWidget.setImageData(data)
 
 
 class WhiteSpaceValidator(QValidator):
@@ -417,12 +432,13 @@ class SinCityDlg(QDialog):
 
 
 if __name__ == '__main__':
-    fPath = r'G:\Aya_NAstudy\matchedNAi_largeNAc\cells\Cell2'
+    fPath = r'C:\Users\nicke\Desktop\demo\toast\t\Cell1'
     from pwspy.dataTypes import AcqDir
     from PyQt5.QtWidgets import QApplication
     acq = AcqDir(fPath)
     import sys
     app = QApplication(sys.argv)
-    b = RoiPlot(acq, acq.pws.getThumbnail(), "Test")
+    b = RoiPlot(acq, acq.dynamics.getThumbnail())
+    b.setWindowTitle("test")
     b.show()
     sys.exit(app.exec())

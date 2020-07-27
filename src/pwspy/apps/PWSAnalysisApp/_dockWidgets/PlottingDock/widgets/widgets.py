@@ -35,17 +35,18 @@ class _PlotFields(Enum):
     The second item of each tuple is a string value matching the attribute name of the associated analysisResults class."""
     Thumbnail = (None, 'thumbnail')
     Fluorescence = (None, 'fluorescence')
-    #PWS specific
+    # PWS specific
     OpdPeak = (_AnalysisTypes.PWS, 'opdPeak')
     MeanReflectance = (_AnalysisTypes.PWS, 'meanReflectance')
     RMS = (_AnalysisTypes.PWS, 'rms')
     AutoCorrelationSlope = (_AnalysisTypes.PWS, 'autoCorrelationSlope')
     RSquared = (_AnalysisTypes.PWS, 'rSquared')
     Ld = (_AnalysisTypes.PWS, 'ld')
-    #Dynamics specific
+    # Dynamics specific
     RMS_t_squared = (_AnalysisTypes.DYN, 'rms_t_squared')
     Diffusion = (_AnalysisTypes.DYN, 'diffusion')
     DynamicsReflectance = (_AnalysisTypes.DYN, 'meanReflectance')
+
 
 class AnalysisPlotter:
     PlotFields = _PlotFields

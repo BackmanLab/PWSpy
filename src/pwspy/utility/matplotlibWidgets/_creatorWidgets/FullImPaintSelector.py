@@ -94,7 +94,7 @@ class FullImPaintCreator(CreatorWidgetBase):
         """If a displayed polygon is clicked on then execute the `onselect` callback."""
         if event.button == 1 and self.onselect is not None:  # Left Click
             coord = (event.xdata, event.ydata)
-            for artist in self.artists:
+            for artist in self._artists:
                 assert isinstance(artist, Polygon)
                 if artist.get_path().contains_point(coord):
                     l = shapelyPolygon(LinearRing(artist.xy))

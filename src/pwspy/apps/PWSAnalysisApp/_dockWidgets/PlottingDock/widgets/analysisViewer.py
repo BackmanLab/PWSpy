@@ -30,8 +30,8 @@ class AnalysisViewer(AnalysisPlotter, RoiPlot):
     """This class is a window that provides convenient viewing of a pws acquisition, analysis, and related images.
     It expands upon the functionality of `BigPlot` which handles ROIs but not analysis images."""
     def __init__(self, metadata: AcqDir, analysisLoader: ConglomerateAnalysisResults, title: str, parent=None,
-                 initialField=AnalysisPlotter.PlotFields.Thumbnail):
-        RoiPlot.__init__(self, metadata, metadata.getThumbnail(), 'title', parent=parent)
+                 initialField=AnalysisPlotter.PlotFields.Thumbnail, flags=None):
+        RoiPlot.__init__(self, metadata, metadata.getThumbnail(), parent=parent, flags=flags)
         AnalysisPlotter.__init__(self, metadata, analysisLoader)
         self.setWindowTitle(title)
         self.analysisCombo = QComboBox(self)
