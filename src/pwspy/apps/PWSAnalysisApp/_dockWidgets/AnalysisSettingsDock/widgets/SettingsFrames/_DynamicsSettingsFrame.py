@@ -23,6 +23,7 @@ from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupB
 
 import pwspy.analysis.dynamics
 from pwspy.apps.PWSAnalysisApp._dockWidgets import CellSelectorDock
+from pwspy.apps.PWSAnalysisApp.componentInterfaces import CellSelector
 from pwspy.utility.reflection import Material
 from ._AbstractSettingsFrame import AbstractSettingsFrame
 
@@ -33,7 +34,7 @@ if typing.TYPE_CHECKING:
 
 
 class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
-    def __init__(self, erManager: ERManager, cellSelector: CellSelectorDock):
+    def __init__(self, erManager: ERManager, cellSelector: CellSelector):
         super().__init__()
         self.cellSelector = cellSelector
 

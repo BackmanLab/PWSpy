@@ -83,8 +83,8 @@ class QueuedAnalysesFrame(QScrollArea):
         # Highlight relevant cells
         cellAcq = [cell.acquisitionDirectory for cell in item.settings.cellMetadata]
         refAcq = item.settings.referenceMetadata.acquisitionDirectory
-        self.parent.selector.setHighlightedCells(cellAcq)
-        self.parent.selector.setHighlightedReference(refAcq)
+        self.parent._selector.setHighlightedCells(cellAcq)
+        self.parent._selector.setHighlightedReference(refAcq)
 
     def displayItemSettings(self, item: AnalysisListItem):
         # Open a dialog

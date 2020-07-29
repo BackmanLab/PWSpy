@@ -25,7 +25,7 @@ from PyQt5.QtWidgets import QWidget, QGridLayout, QButtonGroup, QPushButton, QDi
     QMessageBox, QMenu, QAction
 
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.roiDrawerProcess import RoiSaverController
-from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
+from pwspy.apps.PWSAnalysisApp.utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
 from pwspy.dataTypes import AcqDir
 import os
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.analysisViewer import AnalysisViewer

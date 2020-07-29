@@ -65,7 +65,7 @@ if __name__ == '__main__':
         axes[1].set_ylabel('reflectance')
         axes[1].set_xlabel('nm')
         axes[1].set_title(f"Glass Interface Reflectance. NA={na}")
-        [axes[0].plot(reflectanceHelper._n.index, reflectanceHelper._n[mat]['n'], label=matName) for matName, mat in materials]
+        [axes[0].plot(reflectanceHelper.getRefractiveIndex(mat), label=matName) for matName, mat in materials]
         axes[0].legend()
         for matName, mat in materials:
             r = reflectanceHelper.getReflectance(mat, Material.Glass, NA=na)

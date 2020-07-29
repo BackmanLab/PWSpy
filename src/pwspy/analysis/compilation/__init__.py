@@ -51,8 +51,10 @@ Generic
 
 __all__ = ['DynamicsRoiCompiler', 'DynamicsRoiCompilationResults', 'DynamicsCompilerSettings',
            'PWSRoiCompiler', 'PWSRoiCompilationResults', 'PWSCompilerSettings', 'PWSAnalysisResults',
-           'GenericRoiCompiler', 'GenericRoiCompilationResults', 'GenericCompilerSettings']
+           'GenericRoiCompiler', 'GenericRoiCompilationResults', 'GenericCompilerSettings', 'AbstractRoiCompilationResults',
+           'AbstractRoiCompiler', 'AbstractCompilerSettings']
 
 from ._dynamics import DynamicsCompilerSettings, DynamicsRoiCompilationResults, DynamicsRoiCompiler
 from ._pws import PWSAnalysisResults, PWSCompilerSettings, PWSRoiCompilationResults, PWSRoiCompiler
 from ._generic import GenericCompilerSettings, GenericRoiCompilationResults, GenericRoiCompiler
+from ._abstract import AbstractCompilerSettings, AbstractRoiCompilationResults, AbstractRoiCompiler

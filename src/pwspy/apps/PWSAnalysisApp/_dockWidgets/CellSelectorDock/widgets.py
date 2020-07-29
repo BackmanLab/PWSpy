@@ -28,11 +28,11 @@ from PyQt5.QtGui import QPalette
 from PyQt5.QtWidgets import QPushButton, QTableWidgetItem, QTableWidget, QAbstractItemView, QMenu, QWidget, QMessageBox, \
     QInputDialog, QHeaderView
 
-from pwspy.apps.PWSAnalysisApp._sharedWidgets import ScrollableMessageBox
+from pwspy.apps.PWSAnalysisApp.sharedWidgets import ScrollableMessageBox
 from pwspy.dataTypes import AcqDir, ICMetaData, DynMetaData
 
-from pwspy.apps.PWSAnalysisApp._sharedWidgets.dictDisplayTree import DictDisplayTreeDialog
-from pwspy.apps.PWSAnalysisApp._sharedWidgets.tables import NumberTableWidgetItem
+from pwspy.apps.PWSAnalysisApp.sharedWidgets.dictDisplayTree import DictDisplayTreeDialog
+from pwspy.apps.PWSAnalysisApp.sharedWidgets.tables import NumberTableWidgetItem
 
 def evalToolTip(cls: Type[QWidget], method):
     """Given a QWidget and a function that returns a string, this decorator returns a modified class that will evaluate
@@ -47,10 +47,11 @@ def evalToolTip(cls: Type[QWidget], method):
 
 class CellTableWidgetItem:
     """Represents a single row of the CellTableWidget and corresponds to a single PWS acquisition."""
-    def __init__(self, acq: AcqDir, label: str, num: int):
+    def __init__(self, acq: AcqDir, label: str, num: int, additionalWidgets: typing.Sequence[QWidget] = None):
         self.acqDir = acq
         self.num = num
         self.path = label
+        self.pluginWidgets = [] if additionalWidgets is None else additionalWidgets
         self.notesButton = evalToolTip(QPushButton, acq.getNotes)("Open")
         self.notesButton.setFixedSize(40, 30)
         self.pathLabel = QTableWidgetItem(self.path)
@@ -66,13 +67,16 @@ class CellTableWidgetItem:
         self.fLabel.setToolTip("Indicates if Fluorescence measurement is present")
         for i in [self.pLabel, self.dLabel, self.fLabel]:
             i.setTextAlignment(QtCore.Qt.AlignCenter)
-        if self.acqDir.pws is not None: self.pLabel.setText('Y'); self.pLabel.setBackground(QtCore.Qt.darkGreen)
-        else: self.pLabel.setText('N'); self.pLabel.setBackground(QtCore.Qt.white)
-        if self.acqDir.dynamics is not None: self.dLabel.setText('Y'); self.dLabel.setBackground(QtCore.Qt.darkGreen)
-        else: self.dLabel.setText('N'); self.dLabel.setBackground(QtCore.Qt.white)
-        if self.acqDir.fluorescence is not None: self.fLabel.setText('Y'); self.fLabel.setBackground(QtCore.Qt.darkGreen)
+        for i in [self.pathLabel, self.pLabel, self.dLabel, self.fLabel]:  # Make uneditable
+            i.setFlags(i.flags() ^ QtCore.Qt.ItemIsEditable)
+        for acq, label in [(self.acqDir.pws, self.pLabel), (self.acqDir.dynamics, self.dLabel)]:
+            if acq is not None:
+                label.setText('Y'); label.setBackground(QtCore.Qt.darkGreen)
+            else:
+                label.setText('N'); label.setBackground(QtCore.Qt.white)
+        if len(self.acqDir.fluorescence) != 0: self.fLabel.setText('Y'); self.fLabel.setBackground(QtCore.Qt.darkGreen)
         else: self.fLabel.setText('N'); self.fLabel.setBackground(QtCore.Qt.white)
-        self._items = [self.pathLabel, self.numLabel, self.roiLabel, self.anLabel] #This list is used for changing background color and for setting all items selected.
+        self._items = [self.pathLabel, self.numLabel, self.roiLabel, self.anLabel] + self.pluginWidgets #This list is used for changing background color and for setting all items selected.
         self.refresh()
         self.mdPath = os.path.join(self.acqDir.filePath, 'AnAppPrefs.json')
         try:
@@ -190,19 +194,24 @@ class CellTableWidget(QTableWidget):
     referencesChanged = QtCore.pyqtSignal(bool, list)
     itemsCleared = QtCore.pyqtSignal()
 
-    def __init__(self, parent):
+    def __init__(self, parent, additionalColumns: typing.Sequence[str] = None):
         super().__init__(parent)
         self.setSortingEnabled(True)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._showContextMenu)
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
-        columns = ('Path', 'Cell#', 'ROIs', 'Analyses', 'Notes', 'P', 'D', 'F')
+        # Columns in the form {name: (width, resizable)}
+        columns = {'Path': (60, True), 'Cell#': (40, True), 'ROIs': (40, True), 'Analyses': (50, True),
+                   'Notes': (40, False), 'P': (20, False), 'D': (20, False), 'F': (20, False)}
+        if additionalColumns is not None:
+            for colName in additionalColumns:
+                columns[colName] = (50, True) # Automatically determine width from fontmetrics.
         self.setRowCount(0)
         self.setColumnCount(len(columns))
-        self.setHorizontalHeaderLabels(columns)
+        self.setHorizontalHeaderLabels(columns.keys())
         self.verticalHeader().hide()
-        [self.setColumnWidth(i, w) for i, w in zip(range(len(columns)), [60, 40, 40, 50, 40, 20, 20, 20])] #Set the column widths
-        [self.horizontalHeader().setSectionResizeMode(i, self.horizontalHeader().Fixed) for i in [4, 5, 6, 7]] #set the notes, and p/d/f columns nonresizeable
+        [self.setColumnWidth(i, w) for i, (w, resizable) in enumerate(columns.values())] #Set the column widths
+        [self.horizontalHeader().setSectionResizeMode(i, self.horizontalHeader().Fixed) for i, (w, resizable) in enumerate(columns.values()) if not resizable] #set the notes, and p/d/f columns nonresizeable
         self._cellItems = []
         #This makes the items stay looking selected even when the table is inactive
         self.setStyleSheet("""QTableWidget::item:active {
@@ -231,20 +240,20 @@ class CellTableWidget(QTableWidget):
         for i in self._cellItems:
             i.refresh()
 
-    def addCellItem(self, item: CellTableWidgetItem) -> None:
-        row = len(self._cellItems)
-        self.setSortingEnabled(False)  # The fact that we are adding items assuming its the last row is a problem if sorting is on.
-        self.setRowCount(row + 1)
-        self.setItem(row, 0, item.pathLabel)
-        self.setItem(row, 1, item.numLabel)
-        self.setItem(row, 2, item.roiLabel)
-        self.setItem(row, 3, item.anLabel)
-        self.setCellWidget(row, 4, item.notesButton)
-        self.setItem(row, 5, item.pLabel)
-        self.setItem(row, 6, item.dLabel)
-        self.setItem(row, 7, item.fLabel)
-        self.setSortingEnabled(True)
-        self._cellItems.append(item)
+    # def addCellItem(self, item: CellTableWidgetItem) -> None:
+    #     row = len(self._cellItems)
+    #     self.setSortingEnabled(False)  # The fact that we are adding items assuming its the last row is a problem if sorting is on.
+    #     self.setRowCount(row + 1)
+    #     self.setItem(row, 0, item.pathLabel)
+    #     self.setItem(row, 1, item.numLabel)
+    #     self.setItem(row, 2, item.roiLabel)
+    #     self.setItem(row, 3, item.anLabel)
+    #     self.setCellWidget(row, 4, item.notesButton)
+    #     self.setItem(row, 5, item.pLabel)
+    #     self.setItem(row, 6, item.dLabel)
+    #     self.setItem(row, 7, item.fLabel)
+    #     self.setSortingEnabled(True)
+    #     self._cellItems.append(item)
 
     def addCellItems(self, items: List[CellTableWidgetItem]) -> None:
         row = len(self._cellItems)
@@ -260,6 +269,8 @@ class CellTableWidget(QTableWidget):
             self.setItem(newrow, 5, item.pLabel)
             self.setItem(newrow, 6, item.dLabel)
             self.setItem(newrow, 7, item.fLabel)
+            for j, widg in enumerate(item.pluginWidgets):
+                self.setItem(newrow, 8+j, widg)
         self.setSortingEnabled(True)
         self._cellItems.extend(items)
 
@@ -349,7 +360,7 @@ class CellTableWidget(QTableWidget):
 
     def _displayCellMetadata(self):
         for i in self.selectedCellItems:
-            d = DictDisplayTreeDialog(self, i.acqDir.pws._dict, title=os.path.join(i.path, f"Cell{i.num}"))
+            d = DictDisplayTreeDialog(self, i.acqDir.pws.dict, title=os.path.join(i.path, f"Cell{i.num}"))
             d.show()
 
     def _toggleSelectedCellsInvalid(self, state: bool):

@@ -600,7 +600,7 @@ class DynCube(ICRawBase):
                 metadata = pwsdtmd.DynMetaData.fromOldPWS(directory)
             with open(os.path.join(directory, 'image_cube'), 'rb') as f:
                 data = np.frombuffer(f.read(), dtype=np.uint16)
-            data = data.reshape((metadata._dict['imgHeight'], metadata._dict['imgWidth'], len(metadata.times)), order='F')
+            data = data.reshape((metadata.dict['imgHeight'], metadata.dict['imgWidth'], len(metadata.times)), order='F')
         finally:
             if lock is not None:
                 lock.release()
@@ -682,7 +682,7 @@ class DynCube(ICRawBase):
     def selIndex(self, start, stop) -> DynCube: # Inherit docstring
         data, index = super().selIndex(start, stop)
         md = self.metadata
-        md._dict['times'] = index
+        md.dict['times'] = index
         return DynCube(data, md)
 
     def getAutocorrelation(self) -> np.ndarray:
@@ -766,7 +766,7 @@ class ExtraReflectanceCube(ICBase):
         """
         filePath = pwsdtmd.ERMetaData.dirName2Directory(directory, name)
         with h5py.File(filePath, 'r') as hf:
-            dset = hf[pwsdtmd.ERMetaData._DATASETTAG]
+            dset = hf[pwsdtmd.ERMetaData.DATASETTAG]
             return cls.fromHdfDataset(dset, filePath=filePath)
 
     def toHdfFile(self, directory: str, name: str):
@@ -790,7 +790,7 @@ class ExtraReflectanceCube(ICBase):
         Args:
             g: The `h5py.Group` to save to.
         """
-        g = super().toHdfDataset(g, pwsdtmd.ERMetaData._DATASETTAG)
+        g = super().toHdfDataset(g, pwsdtmd.ERMetaData.DATASETTAG)
         g = self.metadata.toHdfDataset(g)
         return g
 
@@ -928,7 +928,7 @@ class ImCube(ICRawBase):
                 metadata = pwsdtmd.ICMetaData.fromOldPWS(directory)
             with open(os.path.join(directory, 'image_cube'), 'rb') as f:
                 data = np.frombuffer(f.read(), dtype=np.uint16)
-            data = data.reshape((metadata._dict['imgHeight'], metadata._dict['imgWidth'], len(metadata.wavelengths)), order='F')
+            data = data.reshape((metadata.dict['imgHeight'], metadata.dict['imgWidth'], len(metadata.wavelengths)), order='F')
         finally:
             if lock is not None:
                 lock.release()
@@ -1035,7 +1035,7 @@ class ImCube(ICRawBase):
         os.mkdir(directory)
         m = self.metadata
         try:
-            systemId = m._dict['systemId']
+            systemId = m.dict['systemId']
         except KeyError:
             systemId = 0
         info2 = {'info2': np.array([m.wavelengths[0], m.wavelengths[1]-m.wavelengths[0], m.wavelengths[-1], m.exposure, 0, 0, 0, 0, 0, 0],
@@ -1075,14 +1075,14 @@ class ImCube(ICRawBase):
         os.mkdir(outpath)
         self._saveThumbnail(outpath)
         with tf.TiffWriter(open(os.path.join(outpath, 'pws.tif'), 'wb')) as w:
-            w.save(np.rollaxis(im, -1, 0), metadata=self.metadata._dict)
+            w.save(np.rollaxis(im, -1, 0), metadata=self.metadata.dict)
         self.metadata.metadataToJson(outpath)
 
     def selIndex(self, start: float, stop: float) -> ImCube:  # Inherit docstring
         data, index = super().selIndex(start, stop)
         md = copy.deepcopy(self.metadata)  # We are creating a copy of the metadata object because modifying the original metadata object can cause weird issues.
-        assert md._dict is not self.metadata._dict
-        md._dict['wavelengths'] = index
+        assert md.dict is not self.metadata.dict
+        md.dict['wavelengths'] = index
         return ImCube(data, md)
 
     @staticmethod

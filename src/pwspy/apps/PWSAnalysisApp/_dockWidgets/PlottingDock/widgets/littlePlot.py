@@ -22,7 +22,7 @@ from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QPoint
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtWidgets import QMenu, QAction, QWidget, QLabel, QVBoxLayout
-from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
+from pwspy.apps.PWSAnalysisApp.utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
 from pwspy.dataTypes import AcqDir, ImCube
 from .widgets import AnalysisPlotter
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.analysisViewer import AnalysisViewer

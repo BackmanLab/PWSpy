@@ -132,35 +132,6 @@ class AnalysisSummaryDisplay(QDialog):
         if self.analysisSettings is not None:
             msgBox = QMessageBox.information(self, self.analysisName, self.analysisSettings.toJsonString())
 
-
-class CompilationSummaryDisplay(QDialog):
-    def __init__(self, parent: Optional[QWidget], warnings: List[Tuple[ICMetaData, List[Tuple[PWSRoiCompilationResults, Optional[List[AnalysisWarning]]]]]], analysisName: str = '', analysisSettings: PWSAnalysisSettings = None):
-        super().__init__(parent=parent)
-        self.setWindowTitle("Compilation Summary")
-        layout = QVBoxLayout()
-        self.warningTree = QTreeWidget(self)
-        self.warningTree.setHeaderHidden(True)
-        layout.addWidget(self.warningTree)
-        self.setLayout(layout)
-        self._addWarnings(warnings)
-        self.show()
-
-    def _addWarnings(self, warnings: List[Tuple[ICMetaData, List[Tuple[ConglomerateCompilerResults, Optional[List[AnalysisWarning]]]]]]):
-        for meta, roiList in warnings:
-            item = QTreeWidgetItem(self.warningTree)
-            item.setText(0, meta.filePath)
-            for roiResult, roiWarnList in roiList:
-                if len(roiWarnList) > 0:
-                    subItem = QTreeWidgetItem(item)
-                    subItem.setText(0, f"{len(roiWarnList)} warnings: {roiResult.generic.roi.name} {roiResult.generic.roi.number}")
-                    for warn in roiWarnList:
-                        subItem2 = QTreeWidgetItem(subItem)
-                        subItem2.setText(0, warn.shortMsg)
-                        subItem2.setToolTip(0, warn.longMsg)
-
-    def clearWarnings(self):
-        self.warningTree.clear()
-
 if __name__ == '__main__':
     _ = WorkingDirDialog()
     _.show()

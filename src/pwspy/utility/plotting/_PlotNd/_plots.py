@@ -32,11 +32,11 @@ class PlotBase(ABC):
     def __init__(self, ax: plt.Axes, dimensions: typing.Tuple[int, ...]):
         self.ax = ax  # The axes object that this plot exists on.
         self.dimensions = dimensions # The dimensions of ND-array that this plot visualized. 2d for an image, 1d for a plot
-        self._background = None
+        self.background = None
 
     def updateBackground(self):
         """Refresh the background, this is for the purposes of blitting."""
-        self._background = self.ax.figure.canvas.copy_from_bbox(self.ax.bbox)
+        self.background = self.ax.figure.canvas.copy_from_bbox(self.ax.bbox)
 
     def drawArtists(self):
         """Redraw each matplotlib artist managed by this object."""

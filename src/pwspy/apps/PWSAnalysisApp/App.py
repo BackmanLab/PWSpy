@@ -29,20 +29,15 @@ import psutil
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QMessageBox, QSplashScreen
 from pwspy import __version__ as version
-from pwspy.apps.PWSAnalysisApp._utilities import BlinderDialog, RoiConverter
-from pwspy.dataTypes import ICMetaData, AcqDir
-from ._dockWidgets.ResultsTableDock import ConglomerateCompilerResults
-from .dialogs import AnalysisSummaryDisplay, CompilationSummaryDisplay
+from pwspy.apps.PWSAnalysisApp.utilities import BlinderDialog, RoiConverter
+from .dialogs import AnalysisSummaryDisplay
 from ._taskManagers.analysisManager import AnalysisManager
-from ._taskManagers.compilationManager import CompilationManager
 from .mainWindow import PWSWindow
 from . import applicationVars
 from . import resources
 from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
-from typing import List, Tuple, Optional
+from typing import List
 import typing
-if typing.TYPE_CHECKING:
-    from pwspy.analysis.warnings import AnalysisWarning
 
 
 class PWSApp(QApplication): #TODO add a scriptable interface to load files, open roi window, run analysis etc.
@@ -66,37 +61,15 @@ class PWSApp(QApplication): #TODO add a scriptable interface to load files, open
         logger = logging.getLogger(__name__)
         logger.info(f"Initializing with useParallel set to {self.parallelProcessing}.")
         self.anMan.analysisDone.connect(lambda name, settings, warningList: AnalysisSummaryDisplay(self.window, warningList, name, settings))
-        self.compMan = CompilationManager(self.window)
-        self.window.resultsTable.compileButton.released.connect(self.compMan.run)
-        self.compMan.compilationDone.connect(self.handleCompilationResults)
         self.window.fileDialog.directoryChanged.connect(self.changeDirectory)
         self.window.blindAction.triggered.connect(self.openBlindingDialog)
         self.window.roiConvertAction.triggered.connect(self.convertRois)
         self.workingDirectory = None
 
-    def handleCompilationResults(self, inVal: List[Tuple[AcqDir, List[Tuple[ConglomerateCompilerResults, Optional[List[AnalysisWarning]]]]]]):
-        #  Display warnings if necessary.
-        warningStructure = []
-        for acq, roiList in inVal:
-            metaWarnings = []
-            for result, warnList in roiList:
-                if len(warnList) > 0:
-                    metaWarnings.append((result, warnList))
-            if len(metaWarnings) > 0:
-                warningStructure.append((acq.pws, metaWarnings))
-        if len(warningStructure) > 0:
-            CompilationSummaryDisplay(self.window, warningStructure)
-        #  Display the results on the table
-        results = [(acq, result) for acq, roiList in inVal for result, warnings in roiList]
-        self.window.resultsTable.clearCompilationResults()
-        [self.window.resultsTable.addCompilationResult(r, acq) for acq, r in results]
-
     def changeDirectory(self, directory: str, files: List[str]):
         # Load Cells
-        self.window.cellSelector.clearCells()
-        self.window.cellSelector.addCells(files, directory)
+        self.window.cellSelector.loadNewCells(files, directory)
         self.workingDirectory = directory
-        self.window.cellSelector.updateFilters()
         #Change title
         self.window.setWindowTitle(f'{QApplication.instance().applicationName()} - {directory}')
         self.workingDirectory = directory

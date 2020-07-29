@@ -17,3 +17,4 @@
 
 from ._DynamicsSettingsFrame import DynamicsSettingsFrame
 from ._PWSSettingsFrame import PWSSettingsFrame
+from ._AbstractSettingsFrame import AbstractSettingsFrame

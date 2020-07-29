@@ -22,7 +22,7 @@ import os
 from typing import Tuple, List, Optional
 import typing
 from PyQt5.QtCore import QThread
-from pwspy.apps.PWSAnalysisApp._sharedWidgets import ScrollableMessageBox
+from pwspy.apps.PWSAnalysisApp.sharedWidgets import ScrollableMessageBox
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox, QInputDialog
@@ -59,8 +59,7 @@ class AnalysisManager(QtCore.QObject):
         """Run multiple queued analyses as specified by the user."""
         for anSettings in self.app.window.analysisSettings.getListedAnalyses():
             self.runSingle(anSettings)
-            acqs = [i.acquisitionDirectory for i in anSettings.getCellMetadatas()]
-            [cellItem.refresh() for cellMeta in acqs for cellItem in self.app.window.cellSelector.tableWidget.cellItems if cellMeta == cellItem.acqDir] #Refresh our displayed cell info
+            self.app.window.cellSelector.refreshCellItems()  # Refresh our displayed cell info
 
     @safeCallback
     def runSingle(self, anSettings: AbstractRuntimeAnalysisSettings) -> Tuple[str, AbstractAnalysisSettings, List[Tuple[List[AnalysisWarning], pwsdt.AcqDir]]]:
