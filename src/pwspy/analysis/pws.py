@@ -172,7 +172,7 @@ class PWSAnalysis(AbstractAnalysis):  # TODO Handle the case where pixels are 0,
         return cube
 
     def _filterSignal(self, data: np.ndarray, sampleFreq: float):
-        b, a = sps.butter(self.settings.filterOrder, self.settings.filterCutoff, fs=sampleFreq)  # Generatre the filter coefficients
+        b, a = sps.butter(self.settings.filterOrder, self.settings.filterCutoff, fs=sampleFreq)  # Generate the filter coefficients
         return sps.filtfilt(b, a, data, axis=2).astype(data.dtype)  # Actually do the filtering on the data.
 
     # -- Polynomial Fit

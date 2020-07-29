@@ -15,4 +15,4 @@
 # You should have received a copy of the GNU General Public License
 # along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
 
-"""A collection of example which attempt to extract information about the height of the cell surface from PWS data."""
+"""A collection of examples which attempt to extract information about the height of the cell surface from PWS data."""
