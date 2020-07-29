@@ -231,7 +231,8 @@ class CellTableWidget(QTableWidget):
     @property
     def selectedCellItems(self) -> typing.List[CellTableWidgetItem]:
         """Returns the rows that have been selected."""
-        rowIndices = [i.row() for i in self.selectedIndexes()[::self.columnCount()]]
+        rowIndices = [i.row() for i in self.selectedIndexes() if i.column()==0]  # This returns indexes for all items, which means we get several for a single row. Only look at the 0 column indexes.
+
         rowIndices.sort()
         _ = {i.row: i for i in self._cellItems} #Cell items keyed by their current row position.
         return [_[i] for i in rowIndices]
