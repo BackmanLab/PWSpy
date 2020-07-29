@@ -133,16 +133,23 @@ class SequenceViewer(QWidget):
         self._showSettingsButton = QPushButton("Show Settings")
         self._showSettingsButton.released.connect(self._showHideSettings)
 
+        self._selectButton = QPushButton("Update Selection")
+        def func():
+            self.newCoordSelected.emit(self._sequenceTree.getCurrentSelectedCoordinateRange())
+            self._selectButton.setEnabled(False)
+        self._selectButton.released.connect(func)
+
         self._settingsTree = DictTreeView()
         self._settingsTree.setColumnCount(2)
         self._settingsTree.setIndentation(10)
         self._sequenceTree.currentItemChanged.connect(lambda item: self._settingsTree.setDict(item.settings))
 
-        self._sequenceTree.newCoordSelected.connect(lambda coordRange: self.newCoordSelected.emit(coordRange))
+        self._sequenceTree.newCoordSelected.connect(lambda coordRange: self._selectButton.setEnabled(True))
 
         l.addWidget(self._sequenceTree, 0, 0)
-        l.addWidget(self._showSettingsButton, 1, 0)
-        l.addWidget(self._settingsTree, 0, 1, 1, 2)
+        l.addWidget(self._selectButton, 1, 0)
+        l.addWidget(self._showSettingsButton, 2, 0)
+        l.addWidget(self._settingsTree, 0, 1, 1, 3)
         self._settingsTree.hide()
 
     def setSequenceStepRoot(self, root: SequencerStep):

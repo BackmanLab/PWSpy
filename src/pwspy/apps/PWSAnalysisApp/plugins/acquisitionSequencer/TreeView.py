@@ -24,6 +24,7 @@ class MyTreeView(QTreeView):
         self.setIndentation(10)  # Reduce the default indentation
         self.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)  # Smooth scrolling
         self.setSelectionMode(QAbstractItemView.SingleSelection)
+        self._currentCoordRange = None
 
     def setRoot(self, root: SequencerStep):
         self.setModel(TreeModel(root))
@@ -42,7 +43,11 @@ class MyTreeView(QTreeView):
             else:
                 coordSteps.append(coordStep)
             step = step.parent()
-        self.newCoordSelected.emit(SequencerCoordinateRange(list(reversed(coordSteps))))
+        self._currentCoordRange = SequencerCoordinateRange(list(reversed(coordSteps)))
+        self.newCoordSelected.emit(self._currentCoordRange)
+
+    def getCurrentSelectedCoordinateRange(self):
+        return self._currentCoordRange
 
     def _currentChanged(self, current: QModelIndex, previous: QModelIndex):
         self.currentItemChanged.emit(current.internalPointer())
