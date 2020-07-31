@@ -1137,7 +1137,7 @@ class ImCube(ICRawBase):
     def subtractExtraReflection(self, extraReflection: ExtraReflectionCube):  # Inherit docstring
         assert self.data.shape == extraReflection.data.shape
         if not self.processingStatus.normalizedByExposure:
-            raise Exception("This ImCube has not yet been normalized by exposure. are you sure you want to normalize by exposure?")
+            raise Exception("This ImCube has not yet been normalized by exposure. Are you sure you want to subtract system reflectance before doing this?")
         if not self.processingStatus.extraReflectionSubtracted:
             self.data = self.data - extraReflection.data
             self.processingStatus.extraReflectionSubtracted = True

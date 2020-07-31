@@ -276,7 +276,7 @@ class DynMetaData(AnalysisManagerMetaDataBase):
         Returns:
             str: A unique string identifying this acquisition.
         """
-        return f"pwsdtmd.DynCube_{self.dict['system']}_{self.dict['time']}"
+        return f"DynCube_{self.dict['system']}_{self.dict['time']}"
 
     @property
     def wavelength(self) -> int:
@@ -598,7 +598,7 @@ class ICMetaData(AnalysisManagerMetaDataBase):
 
     @cached_property
     def idTag(self) -> str:
-        return f"pwsdtd.ImCube_{self.dict['system']}_{self.dict['time']}"
+        return f"ImCube_{self.dict['system']}_{self.dict['time']}"
 
     @property
     def wavelengths(self) -> Tuple[float, ...]:
