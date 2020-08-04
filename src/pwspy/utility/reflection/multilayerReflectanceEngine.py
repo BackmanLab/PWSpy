@@ -357,7 +357,7 @@ class Stack(StackBase):
         with the same NA."""
         from scipy.integrate import trapz
         d = self.calculateReflectance(NAs)
-        r = (d[Polarization.TE] + d[Polarization.TM]) / 2
+        r = (d[Polarization.TE] + d[Polarization.TM]) / 2  # Reflectance averaged over polarization.
         r = r * 2 * np.pi * NAs #The aperture plane is a disk, higher NAs have larger circumference disks contributing to them. hence the 2pi*na factor.
         inte = trapz(r, NAs, axis=1)
         int2 = trapz(2 * np.pi * NAs, NAs) #This is used for normalization. basically accounting for the fact that na is proportional to radius in aperture plane, not equal.
