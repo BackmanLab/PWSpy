@@ -336,7 +336,8 @@ class Stack(StackBase):
             NA: The numerical apertures to calculate reflectance at.
 
         Returns:
-            You'll just have to look at the code. :todo: If you do, then please update this line.
+            A dictionary containing a reflectance array for each of the two polarizations. The polarization is the key to the dictionary.
+            Each reflectance is a MxN array where M is the number of wavelengths and N is the number of NAs passed to this function.
         """
         out = {}
         for polarization in Polarization:
