@@ -25,14 +25,13 @@ Classes
     :toctree: generated/
 
     PWSAnalysisSettings
-    PWSRuntimeAnalysisSettings
     PWSAnalysisResults
     PWSAnalysis
 
 
 Inheritance
 -------------
-.. inheritance-diagram:: PWSAnalysisSettings PWSRuntimeAnalysisSettings PWSAnalysisResults PWSAnalysis
+.. inheritance-diagram:: PWSAnalysisSettings PWSAnalysisResults PWSAnalysis
     :parts: 1
 
 """
@@ -54,6 +53,7 @@ import pwspy.dataTypes as pwsdt
 from pwspy import dateTimeFormat
 from pwspy.utility.misc import cached_property
 from pwspy.utility.reflection import reflectanceHelper, Material
+from ..dataTypes import ERMetaData
 
 
 def clearError(func):
@@ -87,16 +87,16 @@ class PWSAnalysis(AbstractAnalysis):  # TODO Handle the case where pixels are 0,
     on as many data cubes as you want.
 
     Args:
-        runtimeSettings: The settings used for the analysis
+        settings: The settings used for the analysis
+        extraReflectanceMetadata: the metadata object referring to a calibration file for extra reflectance.
         ref: The reference acquisition used for analysis #TODO isn't the reference also part of the runtimeSettings?
     """
-    def __init__(self, runtimeSettings: PWSRuntimeAnalysisSettings, ref: pwsdt.ImCube): #TODO it would make sense to include the reference in the runtime settings too.
+    def __init__(self, settings: PWSAnalysisSettings, extraReflectanceMetadata: typing.Optional[ERMetaData], ref: pwsdt.ImCube):
         from pwspy.dataTypes import ExtraReflectanceCube
         assert ref.processingStatus.cameraCorrected, "Before attempting to analyze using this reference make sure that it has had camera darkcounts and non-linearity corrected for."
         super().__init__()
         self._initWarnings = []
-        extraReflectance = ExtraReflectanceCube.fromMetadata(runtimeSettings.extraReflectanceMetadata) if runtimeSettings.extraReflectanceMetadata is not None else None
-        settings = runtimeSettings.getSaveableSettings()
+        extraReflectance = ExtraReflectanceCube.fromMetadata(extraReflectanceMetadata) if extraReflectanceMetadata is not None else None
         self.settings = settings
         ref.normalizeByExposure()
         if ref.metadata.pixelSizeUm is not None: #Only works if pixel size was saved in the metadata.
@@ -431,27 +431,3 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
             if newKey not in d.keys():
                 d[newKey] = None #For a while these settings were missing from the code. Allow us to still load old files.
         return cls(**d)
-
-
-@dataclasses.dataclass
-class PWSRuntimeAnalysisSettings(AbstractRuntimeAnalysisSettings):  # Inherit docstring
-    settings: PWSAnalysisSettings
-    extraReflectanceMetadata: Optional[pwsdt.ERMetaData]
-    referenceMetadata: pwsdt.ICMetaData
-    cellMetadata: typing.List[pwsdt.ICMetaData]
-    analysisName: str
-
-    def getSaveableSettings(self) -> PWSAnalysisSettings:
-        return self.settings
-
-    def getAnalysisName(self) -> str:
-        return self.analysisName
-
-    def getReferenceMetadata(self) -> pwsdt.ICMetaData:
-        return self.referenceMetadata
-
-    def getCellMetadatas(self) -> typing.Sequence[pwsdt.ICMetaData]:
-        return self.cellMetadata
-
-    def getExtraReflectanceMetadata(self) -> pwsdt.ERMetaData:
-        return self.extraReflectanceMetadata
