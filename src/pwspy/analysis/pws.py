@@ -46,8 +46,7 @@ import pandas as pd
 from scipy import signal as sps
 import multiprocessing as mp
 from typing import Type, Tuple, List, Optional
-from ._abstract import AbstractHDFAnalysisResults, AbstractAnalysis, AbstractAnalysisResults, AbstractAnalysisSettings, \
-    AbstractRuntimeAnalysisSettings
+from ._abstract import AbstractHDFAnalysisResults, AbstractAnalysis, AbstractAnalysisResults, AbstractAnalysisSettings
 from . import warnings
 import pwspy.dataTypes as pwsdt
 from pwspy import dateTimeFormat

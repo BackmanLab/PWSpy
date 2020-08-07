@@ -45,8 +45,7 @@ import pandas as pd
 from numpy import ma
 import multiprocessing as mp
 import typing
-from . import AbstractAnalysis, warnings, AbstractAnalysisSettings, AbstractRuntimeAnalysisSettings, \
-    AbstractHDFAnalysisResults
+from . import AbstractAnalysis, warnings, AbstractAnalysisSettings, AbstractHDFAnalysisResults
 from pwspy import dateTimeFormat
 import pwspy.dataTypes as pwsdt
 from pwspy.utility.misc import cached_property

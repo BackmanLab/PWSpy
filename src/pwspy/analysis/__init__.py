@@ -33,8 +33,7 @@ Submodules
 """
 import os
 import enum
-from ._abstract import AbstractAnalysisSettings, AbstractAnalysis, AbstractAnalysisResults,\
-    AbstractRuntimeAnalysisSettings, AbstractHDFAnalysisResults
+from ._abstract import AbstractAnalysisSettings, AbstractAnalysis, AbstractAnalysisResults, AbstractHDFAnalysisResults
 
 # TODO replace slope entirely with CDR
 # TODO settings are missing reference IDtag but they exists in the results. Results and settings both contain extra reflectance idTag, reduntant
@@ -42,6 +41,6 @@ from ._abstract import AbstractAnalysisSettings, AbstractAnalysis, AbstractAnaly
 resources = os.path.join(os.path.split(__file__)[0], '_resources')
 defaultSettingsPath = os.path.join(resources, 'defaultAnalysisSettings')
 
-__all__ = ['AbstractAnalysisSettings', 'AbstractAnalysis', 'AbstractAnalysisResults', "AbstractRuntimeAnalysisSettings",
+__all__ = ['AbstractAnalysisSettings', 'AbstractAnalysis', 'AbstractAnalysisResults',
            'AbstractHDFAnalysisResults', 'resources', 'defaultSettingsPath']
 
