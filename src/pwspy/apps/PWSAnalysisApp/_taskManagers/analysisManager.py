@@ -113,7 +113,6 @@ class AnalysisManager(QtCore.QObject):
             logger.info("Initializing analysis")
             analysis = AnalysisClass(anSettings, ref)
             useParallelProcessing = self.app.parallelProcessing
-            #TODO would be good to estimate ram usage here and make a decision on whether or not to go parallel
             if (len(cellMetas) <= 3): #No reason to start 3 parallel processes for less than 3 cells.
                 useParallelProcessing = False
             if useParallelProcessing:
