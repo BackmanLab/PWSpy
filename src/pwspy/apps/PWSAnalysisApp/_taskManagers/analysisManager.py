@@ -28,8 +28,9 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox, QInputDialog
 import pwspy.dataTypes as pwsdt
 from pwspy.analysis import AbstractAnalysisSettings, AbstractAnalysis, AbstractRuntimeAnalysisSettings
-from pwspy.analysis.dynamics import DynamicsAnalysis, DynamicsRuntimeAnalysisSettings
-from pwspy.analysis.pws import PWSAnalysis, PWSRuntimeAnalysisSettings
+from pwspy.analysis.dynamics import DynamicsAnalysis
+from pwspy.analysis.pws import PWSAnalysis
+from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.runtimeSettings import PWSRuntimeAnalysisSettings, DynamicsRuntimeAnalysisSettings
 from pwspy.analysis.warnings import AnalysisWarning
 from pwspy.dataTypes import ICRawBase, ICMetaData, DynMetaData
 from pwspy.utility.fileIO import loadAndProcess
@@ -111,7 +112,7 @@ class AnalysisManager(QtCore.QObject):
                     if ans == QMessageBox.No:
                         return
             logger.info("Initializing analysis")
-            analysis = AnalysisClass(anSettings, ref)
+            analysis = AnalysisClass(anSettings.getSaveableSettings(), anSettings.getExtraReflectanceMetadata(), ref)
             useParallelProcessing = self.app.parallelProcessing
             if (len(cellMetas) <= 3): #No reason to start 3 parallel processes for less than 3 cells.
                 useParallelProcessing = False
@@ -216,3 +217,4 @@ class AnalysisManager(QtCore.QObject):
                 md = None
             im.metadata.saveAnalysis(results, analysisName)
             return warnings, md
+

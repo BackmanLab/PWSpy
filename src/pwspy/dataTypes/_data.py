@@ -37,9 +37,11 @@ from scipy import interpolate as spi
 from scipy.io import savemat
 from . import _metadata as pwsdtmd
 from . import _other
+if typing.TYPE_CHECKING:
+    from ..utility.reflection import Material
 
 
-class ICBase(ABC):
+class ICBase(ABC): #TODO add a `completeNormalization` method
     """A class to handle the data operations common to PWS related `image cubes`. Does not contain any file specific
     functionality. uses the generic `index` attribute which can be overridden by derived classes to be wavelength, wavenumber,
     time, etc.
@@ -451,6 +453,37 @@ class ICRawBase(ICBase, ABC):
                 unwanted internal reflections of the system.
         """
         pass
+
+    def performFullPreProcessing(self, reference: 'self.__class__', referenceMaterial: Material, extraReflectance: ExtraReflectanceCube, cameraCorrection: typing.Optional[_other.CameraCorrection] = None):
+        """
+        Use the `subtractExtraReflection`, `normalizeByReference`, `correctCameraEffects`, and `normalizeByExposure`
+        methods to perform the standard pre-processing that is done before analysis.
+
+        Note: This will also end up applying corrections to the reference data. If you want to perform pre-processing on a whole batch
+        of data then you should implement your own script based on what is done here.
+
+        Args:
+            reference: A data cube to be used as a reference for normalization. Usually an image of a blank dish with cell media or air.
+            referenceMaterial: The material that was imaged in the reference dish. The theoretically expected reflectance will be calculated
+                assuming a "Glass/{Material}" reflective interface.
+            extraReflectance: The data cube containing system internal reflectance calibration information about the specific system
+                configuration that the data was taken with.
+        """
+        from pwspy.utility.reflection.reflectanceHelper import getReflectance
+
+        assert not reference.processingStatus.extraReflectionSubtracted
+        assert not reference.processingStatus.cameraCorrected
+        assert not reference.processingStatus.normalizedByExposure
+        reference.correctCameraEffects(cameraCorrection)
+        reference.normalizeByExposure()
+        self.correctCameraEffects(cameraCorrection)
+        self.normalizeByExposure()
+
+        reflection = ExtraReflectionCube.create(extraReflectance, getReflectance(Material.Glass, referenceMaterial), reference)
+        reference.subtractExtraReflection(reflection)
+        self.subtractExtraReflection(reflection)
+
+        self.normalizeByReference(reference)
 
     @staticmethod
     @abstractmethod
@@ -1137,7 +1170,7 @@ class ImCube(ICRawBase):
     def subtractExtraReflection(self, extraReflection: ExtraReflectionCube):  # Inherit docstring
         assert self.data.shape == extraReflection.data.shape
         if not self.processingStatus.normalizedByExposure:
-            raise Exception("This ImCube has not yet been normalized by exposure. are you sure you want to normalize by exposure?")
+            raise Exception("This ImCube has not yet been normalized by exposure. Are you sure you want to subtract system reflectance before doing this?")
         if not self.processingStatus.extraReflectionSubtracted:
             self.data = self.data - extraReflection.data
             self.processingStatus.extraReflectionSubtracted = True

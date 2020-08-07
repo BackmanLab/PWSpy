@@ -194,8 +194,8 @@ class ERWorkFlow:
 
     def compareDates(self):
         anis = []
-        figs = []
-        verts = self.cubes['cube'].sample(n=1).iloc[0].selectLassoROI()
+        figs = []  # These lists just maintain references to matplotlib figures to keep them responsive.
+        verts = self.cubes['cube'].sample(n=1).iloc[0].selectLassoROI()  # Select a random of the selected cubes and use it to prompt the user for an analysis ROI
         mask = Roi.fromVerts('doesntmatter', 1, verts=verts,
                              dataShape=self.cubes['cube'].sample(n=1).iloc[0].data.shape[:-1])
         for mat in set(self.cubes['material']):

@@ -34,8 +34,6 @@ import numpy as np
 import tifffile as tf
 from scipy import io as spio
 from pwspy.analysis import AbstractHDFAnalysisResults
-from pwspy.analysis.dynamics import DynamicsAnalysisResults
-from pwspy.analysis.pws import PWSAnalysisResults
 from pwspy.dataTypes import _jsonSchemasPath
 from pwspy.dataTypes._other import CameraCorrection, Roi
 import pwspy.dataTypes._data as pwsdtd
@@ -249,7 +247,9 @@ class DynMetaData(AnalysisManagerMetaDataBase):
         Hdf = enum.auto()
 
     @staticmethod
-    def getAnalysisResultsClass(): return DynamicsAnalysisResults
+    def getAnalysisResultsClass():
+        from pwspy.analysis.dynamics import DynamicsAnalysisResults
+        return DynamicsAnalysisResults
 
     _jsonSchemaPath = os.path.join(_jsonSchemasPath, 'DynMetaData.json')
     with open(_jsonSchemaPath) as f:
@@ -276,7 +276,7 @@ class DynMetaData(AnalysisManagerMetaDataBase):
         Returns:
             str: A unique string identifying this acquisition.
         """
-        return f"pwsdtmd.DynCube_{self.dict['system']}_{self.dict['time']}"
+        return f"DynCube_{self.dict['system']}_{self.dict['time']}"
 
     @property
     def wavelength(self) -> int:
@@ -582,7 +582,9 @@ class ICMetaData(AnalysisManagerMetaDataBase):
         NanoMat = enum.auto()
 
     @staticmethod
-    def getAnalysisResultsClass(): return PWSAnalysisResults
+    def getAnalysisResultsClass():
+        from pwspy.analysis.pws import PWSAnalysisResults
+        return PWSAnalysisResults
 
     _jsonSchemaPath = os.path.join(_jsonSchemasPath, 'ICMetaData.json')
     with open(_jsonSchemaPath) as f:
@@ -598,7 +600,7 @@ class ICMetaData(AnalysisManagerMetaDataBase):
 
     @cached_property
     def idTag(self) -> str:
-        return f"pwsdtd.ImCube_{self.dict['system']}_{self.dict['time']}"
+        return f"ImCube_{self.dict['system']}_{self.dict['time']}"
 
     @property
     def wavelengths(self) -> Tuple[float, ...]:
@@ -674,9 +676,9 @@ class ICMetaData(AnalysisManagerMetaDataBase):
                 cubeParams = hf['cubeParameters']
                 lam = cubeParams['lambda']
                 exp = cubeParams['exposure'] #we don't support adaptive exposure.
-                md = {'startWv': lam['start'].value[0][0], 'stepWv': lam['step'].value[0][0], 'stopWv': lam['stop'].value[0][0],
-                      'exposure': exp['base'].value[0][0], 'time': datetime.strptime(np.string_(cubeParams['metadata']['date'].value.astype(np.uint8)).decode(), '%Y%m%dT%H%M%S').strftime(dateTimeFormat),
-                      'system': np.string_(cubeParams['metadata']['hardware']['system']['id'].value.astype(np.uint8)).decode(), 'wavelengths': list(lam['sequence'].value[0]),
+                md = {'startWv': lam['start'][0, 0], 'stepWv': lam['step'][0, 0], 'stopWv': lam['stop'][0, 0],
+                      'exposure': exp['base'][0, 0], 'time': datetime.strptime(np.string_(cubeParams['metadata']['date'].value.astype(np.uint8)).decode(), '%Y%m%dT%H%M%S').strftime(dateTimeFormat),
+                      'system': np.string_(cubeParams['metadata']['hardware']['system']['id'].value.astype(np.uint8)).decode(), 'wavelengths': list(lam['sequence'][0]),
                       'binning': None, 'pixelSizeUm': None}
         finally:
             if lock is not None:
@@ -881,3 +883,6 @@ class AcqDir:
             return self.dynamics.getThumbnail()
         elif len(self.fluorescence) != 0:
             return self.fluorescence[0].getThumbnail()
+
+if __name__ == '__main__':
+    md = ICMetaData.fromNano(r'C:\Users\nicke\Desktop\LTL20b_Tracking cells in 50%EtOH,95%EtOH,Water\95% ethanol\Cell1')

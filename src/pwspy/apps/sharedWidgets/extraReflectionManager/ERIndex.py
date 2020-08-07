@@ -75,6 +75,8 @@ class ERIndex:
 
 
 class ERIndexCube:
+    """Information about a single ExtraReflectance data cube without necesarrily having the data.
+    Useful for matching a local datafile/index entry with an online one."""
     def __init__(self, fileName: str, description: str, idTag: str, name: str, md5: Optional[str]):
         self.fileName = fileName
         self.description = description
@@ -88,3 +90,6 @@ class ERIndexCube:
 
     def toDict(self):
         return {'fileName': self.fileName, 'description': self.description, 'idTag': self.idTag, 'name': self.name, 'md5': self.md5}
+
+    def __repr__(self) -> str:
+        return str(self.toDict())

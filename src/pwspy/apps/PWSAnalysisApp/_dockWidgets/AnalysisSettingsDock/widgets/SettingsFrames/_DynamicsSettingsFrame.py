@@ -28,7 +28,7 @@ from pwspy.utility.reflection import Material
 from ._AbstractSettingsFrame import AbstractSettingsFrame
 
 from ._sharedWidgets import ExtraReflectanceSelector, VerticallyCompressedWidget, HardwareCorrections
-
+from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.runtimeSettings import DynamicsRuntimeAnalysisSettings
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 
@@ -92,7 +92,7 @@ class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
         self.relativeUnits.setCheckState(2 if settings.relativeUnits else 0)
         self.hardwareCorrections.loadCameraCorrection(settings.cameraCorrection)
 
-    def getSettings(self) -> pwspy.analysis.dynamics.DynamicsRuntimeAnalysisSettings:
+    def getSettings(self) -> DynamicsRuntimeAnalysisSettings:
         erMetadata, refMaterial, numericalAperture = self.extraReflection.getSettings()
         refMeta = self.cellSelector.getSelectedReferenceMeta()
         cellMeta = self.cellSelector.getSelectedCellMetas()
@@ -109,7 +109,7 @@ class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
             raise ValueError("The selected reference acquisition has no valid Dynamics data.")
         if len(cellMeta) == 0:
             raise ValueError("No valid Dynamics acquisitions were selected.")
-        return pwspy.analysis.dynamics.DynamicsRuntimeAnalysisSettings(settings=pwspy.analysis.dynamics.DynamicsAnalysisSettings(extraReflectanceId=erMetadata.idTag if erMetadata is not None else None,
+        return DynamicsRuntimeAnalysisSettings(settings=pwspy.analysis.dynamics.DynamicsAnalysisSettings(extraReflectanceId=erMetadata.idTag if erMetadata is not None else None,
                                                                                                                                  referenceMaterial=refMaterial,
                                                                                                                                  numericalAperture=numericalAperture,
                                                                                                                                  relativeUnits=self.relativeUnits.checkState() != 0,

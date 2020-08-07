@@ -23,7 +23,7 @@ from typing import Optional
 
 from PyQt5.QtCore import QObject
 
-from pwspy.analysis import AbstractRuntimeAnalysisSettings
+from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.runtimeSettings import AbstractRuntimeAnalysisSettings
 
 if typing.TYPE_CHECKING:
     from pwspy.analysis import AbstractAnalysisSettings
