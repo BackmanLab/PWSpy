@@ -22,8 +22,6 @@ from PyQt5.QtCore import QSizeF, QTimer
 from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QPushButton, QGraphicsView, \
     QGraphicsScene, QGroupBox, QVBoxLayout, QCheckBox, QButtonGroup
 from matplotlib import pyplot
-from qtconsole.inprocess import QtInProcessKernelManager
-from qtconsole.jupyter_widget import JupyterWidget
 
 from pwspy.apps.sharedWidgets.rangeSlider import QRangeSlider
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT, FigureCanvasQT
@@ -74,7 +72,7 @@ class _MyView(QGraphicsView):
         super().resizeEvent(event)
 
 
-class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of cursor. Open Console doesn't work in ipython.
+class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of cursor.
     """A convenient widget for visualizing data that is 3D or greater. This is a standalone widget which extends the
     functionality of `PlotNdCanvas`.
 
@@ -101,8 +99,6 @@ class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of c
 
         if data.dtype == bool:
             data = data.astype(np.uint8)
-
-        self.console = None
 
         self.canvas = PlotNdCanvas(data, names, initialCoords, indices)
         self.view = _MyView(self.canvas)
@@ -147,9 +143,6 @@ class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of c
         self.noneButton.setChecked(True)
         self.buttonGroup.buttonReleased.connect(self._handleButtons)
 
-        self.consoleButton = QPushButton("Open Console")
-        self.consoleButton.released.connect(self.openConsole)
-
         self.rotateButton = QPushButton("Rotate Axes")
         self.rotateButton.released.connect(self.canvas.rollAxes)
 
@@ -159,7 +152,6 @@ class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of c
         layout = QGridLayout()
         layout.addWidget(self.view, 0, 0, 8, 8)
         layout.addWidget(self.buttonWidget, 0, 8, 4, 1)
-        layout.addWidget(self.consoleButton, 4, 8)
         layout.addWidget(self.rotateButton, 5, 8)
         layout.addWidget(self.saveButton, 6, 8)
         layout.addWidget(NavigationToolbar2QT(self.canvas, self), 10, 0, 1, 8)
@@ -168,33 +160,6 @@ class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of c
         self.setLayout(layout)
 
         self.show()
-
-    def openConsole(self):
-        """Open a python console allowing the user to execute commands. A reference to this object is stored in the
-        console's namespace as `plot`."""
-        if self.console is None:
-            kernel_manager = QtInProcessKernelManager()
-            kernel_manager.start_kernel()
-            kernel = kernel_manager.kernel
-            kernel.gui = 'qt'
-            kernel.shell.push({'plot': self})
-
-            kernel_client = kernel_manager.client()
-            kernel_client.start_channels()
-
-            self.console = JupyterWidget()
-            self.console.kernel_manager = kernel_manager
-            self.console.kernel_client = kernel_client
-        self.console.show()
-        msg = "'''plot: A reference to this PlotNd Object\nDocumentation here: https://pwspy.readthedocs.io/en/dev/generated/generated/generated/pwspy.utility.plotting.PlotNd.html#pwspy.utility.plotting.PlotNd'''"
-        self.console.do_execute(f"print('');print('');print({msg})", True, 0)
-        self.console.activateWindow()  # This should bring the window to the front
-
-    def closeEvent(self, a0: QtGui.QCloseEvent):
-        """Overrides the Qt closeEvent to make sure things are cleaned up propertly."""
-        if self.console is not None:
-            self.console.close()
-        super().closeEvent(a0)
 
     def _updateLimits(self):
         """"""

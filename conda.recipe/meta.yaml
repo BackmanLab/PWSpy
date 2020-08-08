@@ -37,8 +37,7 @@ requirements:
     - py-opencv =4
     - pyqt =5
     - scikit-image
-    - qtconsole
-    
+
 app:
   entry: PWSAnalysis
   icon: cellLogo64.png  #The logo doesn't work :(
