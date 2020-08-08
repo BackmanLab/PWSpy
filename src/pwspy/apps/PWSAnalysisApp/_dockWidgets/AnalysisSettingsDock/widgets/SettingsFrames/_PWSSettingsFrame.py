@@ -24,7 +24,7 @@ from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.Setting
 from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames._sharedWidgets import ExtraReflectanceSelector, HardwareCorrections, \
     QHSpinBox, QHDoubleSpinBox, VerticallyCompressedWidget
 from pwspy.apps.PWSAnalysisApp.componentInterfaces import CellSelector
-
+from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.runtimeSettings import PWSRuntimeAnalysisSettings
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 
@@ -32,7 +32,7 @@ from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupBox, QHBoxLayout, QWidget, QRadioButton, \
     QFrame, QCheckBox
 
-from pwspy.analysis.pws import PWSAnalysisSettings, PWSRuntimeAnalysisSettings
+from pwspy.analysis.pws import PWSAnalysisSettings
 from pwspy.apps.PWSAnalysisApp import applicationVars
 from pwspy.apps.PWSAnalysisApp.sharedWidgets.collapsibleSection import CollapsibleSection
 
