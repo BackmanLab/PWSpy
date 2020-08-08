@@ -218,6 +218,7 @@ class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of c
 
         self.selector.setActive(True)  # Reset the selector.
 
+    # API
     @property
     def data(self):
         return self.canvas.data
@@ -225,6 +226,9 @@ class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of c
     @data.setter
     def data(self, data: np.ndarray):
         self.canvas.data = data
+
+    def setLimits(self, Min: float, Max: float):
+        return self.canvas.updateLimits(Max, Min)
 
 if __name__ == '__main__':
     import sys

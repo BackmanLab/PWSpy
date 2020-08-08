@@ -677,8 +677,8 @@ class ICMetaData(AnalysisManagerMetaDataBase):
                 lam = cubeParams['lambda']
                 exp = cubeParams['exposure'] #we don't support adaptive exposure.
                 md = {'startWv': lam['start'][0, 0], 'stepWv': lam['step'][0, 0], 'stopWv': lam['stop'][0, 0],
-                      'exposure': exp['base'][0, 0], 'time': datetime.strptime(np.string_(cubeParams['metadata']['date'].value.astype(np.uint8)).decode(), '%Y%m%dT%H%M%S').strftime(dateTimeFormat),
-                      'system': np.string_(cubeParams['metadata']['hardware']['system']['id'].value.astype(np.uint8)).decode(), 'wavelengths': list(lam['sequence'][0]),
+                      'exposure': exp['base'][0, 0], 'time': datetime.strptime(np.string_(cubeParams['metadata']['date'][()].astype(np.uint8)).decode(), '%Y%m%dT%H%M%S').strftime(dateTimeFormat),
+                      'system': np.string_(cubeParams['metadata']['hardware']['system']['id'][()].astype(np.uint8)).decode(), 'wavelengths': list(lam['sequence'][0]),
                       'binning': None, 'pixelSizeUm': None}
         finally:
             if lock is not None:
