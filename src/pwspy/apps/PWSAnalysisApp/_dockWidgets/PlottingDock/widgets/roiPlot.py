@@ -115,7 +115,8 @@ class RoiPlot(QWidget):
             self.annot.xy = poly.xy.mean(axis=0)  # Set the location to the center of the polygon.
             text = f"{roi.name}, {roi.number}"
             if self.metadata.pws:  # A day may come where fluorescence is not taken on the same camera as pws, in this case we will have multiple pixel sizes and ROI handling will need an update. for now just assume we'll use PWS pixel size
-                text += f"\n{self.metadata.pws.pixelSizeUm ** 2 * np.sum(roi.mask):.2f} $μm^2$"
+                if self.metadata.pws.pixelSizeUm: # For some systems (nanocytomics) this is None
+                    text += f"\n{self.metadata.pws.pixelSizeUm ** 2 * np.sum(roi.mask):.2f} $μm^2$"
             self.annot.set_text(text)
             self.annot.get_bbox_patch().set_alpha(0.4)
 
@@ -194,7 +195,7 @@ class RoiPlot(QWidget):
 
             popMenu = QMenu(self)
             popMenu.addAction("Delete Selected ROIs", deleteFunc)
-            popMenu.addAction("Move Selected ROIs (todo)", moveFunc)
+            popMenu.addAction("Move Selected ROIs", moveFunc)
             popMenu.addAction("De/Select All", selectAllFunc)
 
             if selectedROIParam is not None:
