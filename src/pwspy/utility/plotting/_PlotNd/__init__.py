@@ -230,6 +230,8 @@ class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of c
     def setLimits(self, Min: float, Max: float):
         return self.canvas.updateLimits(Max, Min)
 
+    def setColorMap(self, cmap):
+        self.canvas.setColorMap(cmap)
 if __name__ == '__main__':
     import sys
     print("Starting")

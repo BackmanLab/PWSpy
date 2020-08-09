@@ -19,6 +19,7 @@ from __future__ import annotations
 import typing
 import numpy as np
 from PyQt5 import QtCore
+import matplotlib as mpl
 from matplotlib import pyplot as plt, gridspec
 from matplotlib.axes import Axes
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
@@ -277,3 +278,6 @@ class PlotNdCanvas(FigureCanvasQTAgg):
         if event.button != 1:  # Only respond to a left click.
             return
         self._processMouse(event.inaxes, event.xdata, event.ydata)
+
+    def setColorMap(self, cmap):
+        self.image.im.set_cmap(cmap)
