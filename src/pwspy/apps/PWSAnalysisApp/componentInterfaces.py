@@ -27,7 +27,7 @@ import sip
 from PyQt5.QtWidgets import QWidget
 
 from pwspy import dataTypes as pwsdt
-from pwspy.analysis import AbstractRuntimeAnalysisSettings
+from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock import AbstractRuntimeAnalysisSettings
 from pwspy.apps.PWSAnalysisApp.utilities.conglomeratedAnalysis import ConglomerateCompilerResults, \
     ConglomerateCompilerSettings
 

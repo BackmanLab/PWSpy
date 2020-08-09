@@ -22,12 +22,14 @@ import os
 from typing import Tuple, List, Optional
 import typing
 from PyQt5.QtCore import QThread
+
+from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock import AbstractRuntimeAnalysisSettings
 from pwspy.apps.PWSAnalysisApp.sharedWidgets import ScrollableMessageBox
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox, QInputDialog
 import pwspy.dataTypes as pwsdt
-from pwspy.analysis import AbstractAnalysisSettings, AbstractAnalysis, AbstractRuntimeAnalysisSettings
+from pwspy.analysis import AbstractAnalysisSettings, AbstractAnalysis
 from pwspy.analysis.dynamics import DynamicsAnalysis
 from pwspy.analysis.pws import PWSAnalysis
 from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.runtimeSettings import PWSRuntimeAnalysisSettings, DynamicsRuntimeAnalysisSettings

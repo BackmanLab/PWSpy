@@ -20,7 +20,7 @@ import typing
 from PyQt5.QtWidgets import QDockWidget, QWidget, \
     QVBoxLayout, QPushButton, QMessageBox, QTabWidget
 
-from pwspy.analysis import AbstractRuntimeAnalysisSettings
+from .runtimeSettings import AbstractRuntimeAnalysisSettings
 from .widgets.QueueAnalysesFrame import AnalysisListItem, QueuedAnalysesFrame
 from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames import PWSSettingsFrame
 from .widgets.SettingsFrames import DynamicsSettingsFrame
