@@ -14,11 +14,11 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
-
+import typing
 from typing import List
 
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QWidget, QGridLayout, QPushButton, QApplication
+from PyQt5.QtWidgets import QWidget, QGridLayout, QPushButton, QApplication, QSplitter, QTreeWidget, QTreeWidgetItem
 import numpy as np
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
@@ -28,8 +28,10 @@ from matplotlib.figure import Figure
 
 from pwspy.utility.plotting._sharedWidgets import AnimationDlg
 
+#Typing aliases
+ArtistCollection = List[Artist]  # A collection of artists that will all be displayed at once.
 
-class MultiPlot(QWidget):
+class MultiPlot(QWidget): #TODO tree view instead of flipping through. add categories.
     """
     A widget that allows the user to flip through a set of matplotlib artists (images, plots, etc.)
 
@@ -37,10 +39,9 @@ class MultiPlot(QWidget):
         artists: A list of lists of matplotlib 'Artists`. each list will comprise a single frame, just like the matplotlib `ArtistAnimation` works.
         title (str): The name for the title of the window
     """
-    def __init__(self, artists: List[List[Artist]], title: str, parent=None):
+    def __init__(self, artists: typing.Dict[str, ArtistCollection], title: str, parent=None):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         self.setWindowTitle(title)
-        layout = QGridLayout()
         self.artists = artists
         self.figure: Figure = artists[0][0].figure  # We are assuming that all artists use the same figure.
         self.ax: Axes = self.artists[0][0].axes
@@ -57,14 +58,24 @@ class MultiPlot(QWidget):
         self.saveButton = QPushButton("Save Animation")
         self.saveButton.released.connect(lambda: AnimationDlg(self.figure, self.artists, self).exec())
 
+        imWidg = QWidget()
+        layout = QGridLayout()
         layout.addWidget(self.canvas, 0, 0, 8, 8)
-        layout.addWidget(self.previousButton, 9, 1, 1, 1)
-        layout.addWidget(self.nextButton, 9, 2, 1, 1)
+        # layout.addWidget(self.previousButton, 9, 1, 1, 1)
+        # layout.addWidget(self.nextButton, 9, 2, 1, 1)
         layout.addWidget(self.saveButton, 9, 7, 1, 1)
         layout.addWidget(NavigationToolbar2QT(self.canvas, self), 10, 0, 1, 4)
-
         layout.setRowStretch(0, 1)  # This causes the plot to take up all the space that isn't needed by the other widgets.
-        self.setLayout(layout)
+        imWidg.setLayout(layout)
+
+        treeWidg = DictTreeView()
+
+        splitter = QSplitter(self)
+        splitter.addWidget(treeWidg)
+        splitter.addWidget(imWidg)
+
+        self.setLayout(QGridLayout())
+        self.layout().addWidget(splitter)
 
         self.index = 0
         self._updateDisplayedImage()
@@ -94,6 +105,39 @@ class MultiPlot(QWidget):
             for artist in frame:
                 artist.set_visible(self.index==i)
         self.canvas.draw_idle()
+
+
+class DictTreeView(QTreeWidget):
+    def setDict(self, d: dict):
+        self.clear()
+        self._fillItem(self.invisibleRootItem(), d)
+
+    @staticmethod
+    def _fillItem(item: QTreeWidgetItem, value: typing.Union[dict, list]):
+        """Recursively populate a tree item with children to match the contents of a `dict`"""
+        item.setExpanded(True)
+        if isinstance(value, dict):
+            for key, val in value.items():
+                child = QTreeWidgetItem()
+                child.setText(0, f"{key}")
+                item.addChild(child)
+                if isinstance(val, (list, dict)):
+                    DictTreeView._fillItem(child, val)
+                else:
+                    child.setText(1, f"{val}")
+        elif isinstance(value, list):
+            for val in value:
+                child = QTreeWidgetItem()
+                item.addChild(child)
+                if type(val) is dict:
+                    child.setText(0, '[dict]')
+                    DictTreeView._fillItem(child, val)
+                elif type(val) is list:
+                    child.setText(0, '[list]')
+                    DictTreeView._fillItem(child, val)
+                else:
+                    child.setText(0, val)
+                    child.setExpanded(True)
 
 
 if __name__ == '__main__':
