@@ -78,10 +78,10 @@ class ImPlot(PlotBase):
             of which dimensions of the data this plot is representing.
 
     """
-    def __init__(self, ax: plt.Axes, verticalIndex, horizontalIndex, dims: typing.Tuple[int, int]):
+    def __init__(self, ax: plt.Axes, verticalIndex, horizontalIndex, dims: typing.Tuple[int, int], cmap=None):
         super().__init__(ax, dims)
         self.shape = (len(verticalIndex), len(horizontalIndex))
-        self.im = self.ax.imshow(np.zeros(self.shape), aspect='auto', animated=True, interpolation=None)
+        self.im = self.ax.imshow(np.zeros(self.shape), aspect='auto', animated=True, interpolation=None, cmap=cmap)
         self.setIndices(verticalIndex, horizontalIndex)
         self.ax.get_yaxis().set_visible(False)
         self.ax.get_xaxis().set_visible(False)

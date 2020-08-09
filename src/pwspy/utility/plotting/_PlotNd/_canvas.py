@@ -46,7 +46,8 @@ class PlotNdCanvas(FigureCanvasQTAgg):
     """
     def __init__(self, data: np.ndarray, names: typing.Tuple[str, ...],
                  initialCoords: typing.Optional[typing.Tuple[int, ...]] = None,
-                 indices: typing.Optional[typing.List] = None):
+                 indices: typing.Optional[typing.List] = None,
+                 cmap: mpl.colors.Colormap = plt.cm.gray):
         assert len(data.shape) >= 3
         assert len(names) == len(data.shape)
         fig = plt.Figure(figsize=(6, 6), tight_layout=True)
@@ -71,7 +72,7 @@ class PlotNdCanvas(FigureCanvasQTAgg):
         ax: plt.Axes = fig.add_subplot(gs[1, extraDims])
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
-        self.image = ImPlot(ax, self.indexes[0], self.indexes[1], (0, 1))
+        self.image = ImPlot(ax, self.indexes[0], self.indexes[1], (0, 1), cmap=cmap)
 
         ax: plt.Axes = fig.add_subplot(gs[1, extraDims + 1], sharey=self.image.ax)
         ax.yaxis.set_ticks_position('right')
@@ -281,3 +282,4 @@ class PlotNdCanvas(FigureCanvasQTAgg):
 
     def setColorMap(self, cmap):
         self.image.im.set_cmap(cmap)
+        #TODO update the colormap too.
