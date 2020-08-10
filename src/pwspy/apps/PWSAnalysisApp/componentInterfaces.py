@@ -19,6 +19,7 @@
 
 @author: Nick Anthony
 """
+from __future__ import annotations
 import abc
 import typing
 from typing import List, Optional
@@ -27,9 +28,10 @@ import sip
 from PyQt5.QtWidgets import QWidget
 
 from pwspy import dataTypes as pwsdt
-from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock import AbstractRuntimeAnalysisSettings
 from pwspy.apps.PWSAnalysisApp.utilities.conglomeratedAnalysis import ConglomerateCompilerResults, \
     ConglomerateCompilerSettings
+if typing.TYPE_CHECKING:
+    from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock import AbstractRuntimeAnalysisSettings
 
 
 class QABCMeta(sip.wrappertype, abc.ABCMeta):

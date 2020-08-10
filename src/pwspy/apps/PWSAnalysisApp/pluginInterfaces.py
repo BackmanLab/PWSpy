@@ -6,9 +6,12 @@ from typing import List
 from PyQt5.QtWidgets import QWidget
 
 from pwspy import dataTypes as pwsdt
-from pwspy.apps.PWSAnalysisApp.componentInterfaces import QABCMeta, CellSelector
+from pwspy.apps.PWSAnalysisApp.componentInterfaces import QABCMeta
 import pwspy.apps.PWSAnalysisApp.plugins
 from pwspy.dataTypes import AcqDir
+if typing.TYPE_CHECKING:
+    from pwspy.apps.PWSAnalysisApp.componentInterfaces import CellSelector
+
 
 
 class CellSelectorPluginSupport:

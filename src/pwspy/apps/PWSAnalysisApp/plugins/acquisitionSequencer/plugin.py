@@ -1,20 +1,20 @@
+from __future__ import annotations
 import typing
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QApplication, QTableWidgetItem, QDialog, QPushButton, QGridLayout
+from PyQt5.QtWidgets import QWidget, QApplication, QPushButton, QGridLayout
 
-from pwspy.apps.PWSAnalysisApp.componentInterfaces import CellSelector
 from pwspy.apps.PWSAnalysisApp.pluginInterfaces import CellSelectorPlugin
 import pwspy.dataTypes as pwsdt
 import os
 
 from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.TreeView import DictTreeView, MyTreeView
-from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.sequencerCoordinate import SequencerCoordinateRange, \
-    SeqAcqDir
-from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.steps import SequencerStep, CoordSequencerStep, \
-    SequencerStepTypes
+from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.sequencerCoordinate import SequencerCoordinateRange, SeqAcqDir
+from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.steps import SequencerStep
 from pwspy.dataTypes import AcqDir
+if typing.TYPE_CHECKING:
+    from pwspy.apps.PWSAnalysisApp.componentInterfaces import CellSelector
 
 
 def requirePluginActive(method):
