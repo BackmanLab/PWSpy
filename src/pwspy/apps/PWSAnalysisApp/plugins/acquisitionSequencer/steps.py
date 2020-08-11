@@ -44,6 +44,20 @@ class SequencerStep(SelfTreeItem):
     @staticmethod
     def fromJson(j: str) -> SequencerStep:
         return json.loads(j, object_hook=SequencerStep.hook)
+    
+    @staticmethod
+    def fromJsonFile(filePath: str) -> SequencerStep:
+        with open(filePath, 'r') as f:
+            return json.loads(f.read(), object_hook=SequencerStep.hook)
+    
+    def __repr__(self):
+        return str(f"Step {self.id}: {self.stepType}")
+    
+    def printSubTree(self, _indent: int = 0):
+        indent = ''.join((['\t'] * _indent))
+        print(f"{indent}{self}")
+        for child in self.children():
+            child.printSubTree(_indent = _indent+1)
 
 
 class ContainerStep(SequencerStep): pass
