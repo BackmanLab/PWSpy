@@ -25,6 +25,7 @@ Functions
 
    segmentOtsu
    segmentAdaptive
+   segmentWatershed
    updateFolderStructure
 
 """
@@ -126,6 +127,15 @@ def segmentAdaptive(image: np.ndarray, minArea: int = 100, adaptiveRange: int = 
 
 
 def segmentWatershed(image: np.ndarray, closingRadius: int = 2, openingRadius: int = 2, minimumArea: int = 2000):
+    """
+    Use watershed with otsu thresholding to segment bright sections of an image. Does a good job of keeping adaject nuclei separate.
+
+    Args:
+        image: a 2d numpy array containing image intensity information.
+        closingRadius: The kernel radius to be used for a binary closing operation that eliminated small empty regions of the segmentation mask
+        openingRadius: The kernel radius to be used for a binary opening operation that eliminated small filled regions of the segmentation mask
+        minimumArea: Polygons below this area (in pixels) will not be returned.
+    """
     image = machineVision.to8bit(image)
     threshold, binary = cv2.threshold(image, 0, 1, cv2.THRESH_BINARY | cv2.THRESH_OTSU) # TODO switch to adaptive?
     binary = morphology.binary_opening(binary, morphology.disk(openingRadius))
