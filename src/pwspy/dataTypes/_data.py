@@ -1255,7 +1255,8 @@ class KCube(ICBase):
         opd = opd / len(self.wavenumbers)
 
         # by multiplying by Hann window we reduce the total power of signal. To account for that,
-        opd = np.abs(opd / np.sqrt(np.mean(w ** 2)))
+        # opd = np.abs(opd / np.sqrt(np.mean(w ** 2))) For the longest time this line was used to correct the caling from windowing. But this equation is for energy not amplitude!!!. The correct formula is below.
+        opd *= len(w) / np.sum(w)  # Correct amplitude scaling error caused by windowing.
 
         # Isolate the desired values in the OPD.
         opd = opd[:, :, :indexOpdStop]
