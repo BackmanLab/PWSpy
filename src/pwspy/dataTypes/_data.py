@@ -1253,17 +1253,24 @@ class KCube(ICBase):
         if not mask is None:
             opd = opd[mask].mean(axis=0)
 
+        dk = self.wavenumbers[1] - self.wavenumbers[0] #The interval that our linear array of wavenumbers is spaced by. Units: radians / micron
+
+
         # Generate the xval for the current OPD.
-        dk = self.wavenumbers[1] - self.wavenumbers[0] #The interval that our linear array of wavenumbers is spaced by
         maxOpd = 2 * np.pi / dk #This is the maximum OPD value we can get with. tighter wavenumber spacing increases OPD range. units of microns
         dOpd = maxOpd / dataLength #The interval we want between values in our opd vector.
-        xVals = dataLength / 2 * np.array(range(fftSize // 2 + 1)) * dOpd / (fftSize // 2 + 1)
+        opdVals = dataLength / 2 * np.array(range(fftSize // 2 + 1)) * dOpd / (fftSize // 2 + 1)
         #The above line is how it was writtne in the matlab code. Couldn't it be simplified down to maxOpd * np.linspace(0, 1, num = fftSize // 2 + 1) / 2 ? I'm not sure what the 2 means though.
-        xVals = xVals[:indexOpdStop]
+
+        # Above is how the old MATLAB code calculated the frequencies. IMO the code below is simpler and more understandable but we'll stick with the old code.
+            # opdVals = np.fft.rfftfreq(fftSize, dk)  # Units: cycles / (radians/microns), equivalent to microns / (radians/cycles)
+            # opdVals *= 2 * np.pi  # Units: microns
+
+        opdVals = opdVals[:indexOpdStop]
 
         opd = opd.astype(self.data.dtype) #Make sure to upscale precision
-        xVals = xVals.astype(self.data.dtype)
-        return opd, xVals
+        opdVals = opdVals.astype(self.data.dtype)
+        return opd, opdVals
 
     def getRMSFromOPD(self, lowerOPD: float, upperOPD: float, useHannWindow: bool = False) -> np.ndarray:
         """
@@ -1279,9 +1286,14 @@ class KCube(ICBase):
         Returns:
             A 2d numpy array of the signal RMS at each XY location in the image.
         """
-        opd, opdIndex = self.getOpd(useHannWindow)
+        data = self.data - self.data.mean(axis=2)[:, :, None]  # Subtract the mean from every pixel so we are only measuring variance.
+        opd = _FFTHelper.getFFTMagnitude(data, useHannWindow, normalization=_FFTHelper.Normalization.POWER)
+        dk = self.wavenumbers[1] - self.wavenumbers[0]  # Units of radians / microns
+        opdIndex = np.fft.rfftfreq(opd.shape[2], dk)  # Units of microns / (radians / cycles)
+        opdIndex *= 2 * np.pi  # Units of microns
         startOpdIdx = np.argmin(np.abs(opdIndex - lowerOPD))  # The index associated with lowerOPD
         stopOpdIdx = np.argmin(np.abs(opdIndex - upperOPD))  # The index associated with upperOPD
+        print(stopOpdIdx, startOpdIdx)
         opdSquaredSum = np.sum(opd[:, :, startOpdIdx:stopOpdIdx+1] ** 2, axis=2)  # Parseval's theorem tells us that this is equivalent to the sum of the squares of our original signal
         opdSquaredSum *= len(self.wavenumbers) / opd.shape[2]  # If the original data and opd were of the same length then the above line would be correct. Since the fft may have been upsampled. we need to normalize.
         return np.sqrt(opdSquaredSum)
@@ -1521,21 +1533,10 @@ class _FFTHelper:
 
         # by multiplying by Hann window we reduce the total power and amplitude of the signal. To account for that,
         if normalization is _FFTHelper.Normalization.POWER:
-            fft *= np.sqrt(len(w) / np.sum(w ** 2)) # Correct the signal so the true power (area under curve) is preserved. This will prevent windowing from affecting integration of RMS but the amplitude of each frequency will be reduced
+            fft *= np.sqrt(len(w) / np.sum(w ** 2)) # Correct the signal so the true power (area under curve) is preserved. This will prevent windowing from affecting integration of RMS but the amplitude of each frequency will be reduced https://dsp.stackexchange.com/questions/47598/does-windowing-affect-parsevals-theorem
         elif normalization is _FFTHelper.Normalization.AMPLITUDE:
-            fft *= len(w) / np.sum(w)  # Correct amplitude scaling error caused by windowing. Does not preserve energy of signal though.
+            fft *= len(w) / np.sum(w)  # Correct amplitude scaling error caused by windowing. Does not preserve energy of signal though. https://www.mathworks.com/matlabcentral/answers/372516-calculate-windowing-correction-factor
         else:
             raise ValueError(f"{normalization} is not a valid normalization.")
 
         return fft
-
-    @staticmethod
-    def getFrequencyIndex(sampleInterval: float, dataLength: int, fftLength: int):
-        """
-        Returns:
-             A 1d numpy array of length `fftLength` giving the frequency values for an FFT.
-        """
-        maxOpd = 2 * np.pi / sampleInterval #This is the maximum OPD value we can get with. tighter wavenumber spacing increases OPD range. units of microns
-        dOpd = maxOpd / dataLength #The interval we want between values in our opd vector.
-        xVals = dataLength / 2 * np.array(range(fftLength // 2 + 1)) * dOpd / (fftLength // 2 + 1)
-        why doesnt this agree with np.fft.rfftfreq?
