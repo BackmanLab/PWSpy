@@ -25,6 +25,7 @@ import os
 import typing
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from enum import Enum
 from typing import Tuple, Optional, Union, Type
 
 import h5py
@@ -1242,20 +1243,9 @@ class KCube(ICBase):
                 2D slice along the 3rd axis of the `opd` data.
 
         """
-        fftSize = int(2 ** (np.ceil(np.log2((2 * len(self.wavenumbers)) - 1))))  # This is the next size of fft that is  at least 2x greater than is needed but is a power of two. Results in interpolation, helps amplitude accuracy and fft efficiency.
-        fftSize *= 2  # We double the fftsize for even more iterpolation. Not sure why, but that's how it was done in the original matlab code.
-        if isHannWindow:  # if hann window checkbox is selected, create hann window
-            w = np.hanning(len(self.wavenumbers))  # Hanning window
-        else:
-            w = np.ones((len(self.wavenumbers)))  # Create unity window
-
-        # Calculate the Fourier Transform of the signal multiplied by Hann window
-        opd = np.fft.rfft(self.data * w[np.newaxis, np.newaxis, :], n=fftSize, axis=2)
-        # Normalize the OPD by the quantity of wavelengths.
-        opd = opd / len(self.wavenumbers)
-
-        # by multiplying by Hann window we reduce the total power of signal. To account for that,
-        opd = np.abs(opd / np.sqrt(np.mean(w ** 2)))
+        dataLength = self.data.shape[2]
+        opd = _FFTHelper.getFFTMagnitude(self.data, isHannWindow, normalization=_FFTHelper.Normalization.POWER)
+        fftSize = opd.shape[-1]  # Due to FFT interpolation the FFT will be longer than the original data.
 
         # Isolate the desired values in the OPD.
         opd = opd[:, :, :indexOpdStop]
@@ -1263,17 +1253,50 @@ class KCube(ICBase):
         if not mask is None:
             opd = opd[mask].mean(axis=0)
 
+        dk = self.wavenumbers[1] - self.wavenumbers[0] #The interval that our linear array of wavenumbers is spaced by. Units: radians / micron
+
+
         # Generate the xval for the current OPD.
-        dk = self.wavenumbers[1] - self.wavenumbers[0] #The interval that our linear array of wavenumbers is spaced by
         maxOpd = 2 * np.pi / dk #This is the maximum OPD value we can get with. tighter wavenumber spacing increases OPD range. units of microns
-        dOpd = maxOpd / len(self.wavenumbers) #The interval we want between values in our opd vector.
-        xVals = len(self.wavenumbers) / 2 * np.array(range(fftSize // 2 + 1)) * dOpd / (fftSize // 2 + 1)
+        dOpd = maxOpd / dataLength #The interval we want between values in our opd vector.
+        opdVals = dataLength / 2 * np.array(range(fftSize)) * dOpd / fftSize
         #The above line is how it was writtne in the matlab code. Couldn't it be simplified down to maxOpd * np.linspace(0, 1, num = fftSize // 2 + 1) / 2 ? I'm not sure what the 2 means though.
-        xVals = xVals[:indexOpdStop]
+
+        # Above is how the old MATLAB code calculated the frequencies. IMO the code below is simpler and more understandable but we'll stick with the old code.
+            # opdVals = np.fft.rfftfreq(fftSize, dk)  # Units: cycles / (radians/microns), equivalent to microns / (radians/cycles)
+            # opdVals *= 2 * np.pi  # Units: microns
+
+        opdVals = opdVals[:indexOpdStop]
 
         opd = opd.astype(self.data.dtype) #Make sure to upscale precision
-        xVals = xVals.astype(self.data.dtype)
-        return opd, xVals
+        opdVals = opdVals.astype(self.data.dtype)
+        return opd, opdVals
+
+    def getRMSFromOPD(self, lowerOPD: float, upperOPD: float, useHannWindow: bool = False) -> np.ndarray:
+        """
+        Use Parseval's Theorem to calculate our signal RMS from the OPD (magnitude of fourier transform). This allows us to calculate RMS using only contributions
+        from certain OPD ranges which ideally are correlated with a specific depth into the sample. In practice the large frequency leakage due to our limited
+        bandwidth of measurement causes this assumption to break down, but it can still be useful if taken with a grain of salt.
+
+        Args:
+            lowerOPD: RMS will be integrated starting at this lower limit of OPD. Note for a reflectance setup like PWS `sampleDepth = OPD / (2 * meanSampleRI)`
+            upperOPD: RMS will be integrated up to this upper OPD limit.
+            useHannWindow: If False then use no windowing on the FFT to calculate OPD. If True then use and Hann window.
+
+        Returns:
+            A 2d numpy array of the signal RMS at each XY location in the image.
+        """
+        data = self.data - self.data.mean(axis=2)[:, :, None]  # Subtract the mean from every pixel so we are only measuring variance.
+        opd = _FFTHelper.getFFTMagnitude(data, useHannWindow, normalization=_FFTHelper.Normalization.POWER)
+        dk = self.wavenumbers[1] - self.wavenumbers[0]  # Units of radians / microns
+        opdIndex = np.fft.rfftfreq(opd.shape[2], dk)  # Units of microns / (radians / cycles)
+        opdIndex *= 2 * np.pi  # Units of microns
+        startOpdIdx = np.argmin(np.abs(opdIndex - lowerOPD))  # The index associated with lowerOPD
+        stopOpdIdx = np.argmin(np.abs(opdIndex - upperOPD))  # The index associated with upperOPD
+        print(stopOpdIdx, startOpdIdx)
+        opdSquaredSum = np.sum(opd[:, :, startOpdIdx:stopOpdIdx+1] ** 2, axis=2)  # Parseval's theorem tells us that this is equivalent to the sum of the squares of our original signal
+        opdSquaredSum *= len(self.wavenumbers) / opd.shape[2]  # If the original data and opd were of the same length then the above line would be correct. Since the fft may have been upsampled. we need to normalize.
+        return np.sqrt(opdSquaredSum)
 
     @staticmethod
     def fromOpd(opd: np.ndarray, xVals: np.ndarray, useHannWindow: bool):
@@ -1448,7 +1471,7 @@ class FluorescenceImage:
             md: The metadata object to load the image from.
 
         Returns:
-            A new instanse of `FluorescenceImage`.
+            A new instance of `FluorescenceImage`.
         """
         path = os.path.join(md.filePath, pwsdtmd.FluorMetaData.FILENAME)
         if lock is not None:
@@ -1471,3 +1494,48 @@ class FluorescenceImage:
             tf.imsave(f, self.data)
         with open(os.path.join(directory, pwsdtmd.FluorMetaData.MDPATH), 'w') as f:
             json.dump(self.metadata, f)
+
+class _FFTHelper:
+    class Normalization(Enum):
+        POWER = 1
+        AMPLITUDE = 2
+
+    @staticmethod
+    def getFFTMagnitude(data: np.ndarray, useHannWindow: bool = False, normalization: Normalization = Normalization.POWER):
+        """
+        Apply windowing, calculate FFT and normalize FFT for the last axis of a real-valued numpy array.
+
+        Args:
+            data: A numpy array. The FFT will be calculated along the last axis of the array. The values of this array must be real.
+            useHannWindow: If True then a Hann window will be applied to the data before the FFT and the proper normalization will be applied.
+            normalization:  When windowing is used the FFT must be normalized using one of two normalizations. "Amplitude" normalization will maintain
+                the peak height of detected frequencies but will not preserve the total area under the curve which is asssociated with the energy/power of the signal.
+                "Power" normalization will preserve the total area under the curve (important when calculating RMS from an OPD signal) but the amplitudes of detected
+                frequencies will generally decrease due to the widened bandwidth associated with windowing.
+
+        Returns:
+            A numpy array with the same number of dimensions as `data`. The last axis of the array will be the magnitude of the FFT of the along the last
+                axis of the `data` array. Note that the length of the last axis will be longer than the last axis of the `data` array due to FFT interpolation.
+        """
+        dataLength = data.shape[-1]
+        fftSize = int(2 ** (np.ceil(np.log2((2 * dataLength) - 1))))  # This is the next size of fft that is  at least 2x greater than is needed but is a power of two. Results in interpolation, helps amplitude accuracy and fft efficiency.
+        fftSize *= 2  # We double the fftsize for even more iterpolation. Not sure why, but that's how it was done in the original matlab code.
+        if useHannWindow:  # if hann window checkbox is selected, create hann window
+            w = np.hanning(dataLength)  # Hanning window
+        else:
+            w = np.ones((dataLength))  # Create unity window
+
+        # Calculate the Fourier Transform of the signal multiplied by Hann window
+        fft = np.fft.rfft(data * w, n=fftSize, axis=data.ndim-1)
+        fft = np.abs(fft)  # We're only interested in the magnitude.
+        # Normalize the FFT by the quantity of wavelengths.
+        fft /= dataLength
+
+        # by multiplying by Hann window we reduce the total power and amplitude of the signal. To account for that,
+        if normalization is _FFTHelper.Normalization.POWER:
+            fft *= np.sqrt(len(w) / np.sum(w ** 2)) # Correct the signal so the true power (area under curve) is preserved. This will prevent windowing from affecting integration of RMS but the amplitude of each frequency will be reduced https://dsp.stackexchange.com/questions/47598/does-windowing-affect-parsevals-theorem
+        elif normalization is _FFTHelper.Normalization.AMPLITUDE:
+            fft *= len(w) / np.sum(w)  # Correct amplitude scaling error caused by windowing. Does not preserve energy of signal though. https://www.mathworks.com/matlabcentral/answers/372516-calculate-windowing-correction-factor
+        else:
+            raise ValueError(f"{normalization} is not a valid normalization.")
+        return fft
