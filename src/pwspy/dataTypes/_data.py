@@ -1259,7 +1259,7 @@ class KCube(ICBase):
         # Generate the xval for the current OPD.
         maxOpd = 2 * np.pi / dk #This is the maximum OPD value we can get with. tighter wavenumber spacing increases OPD range. units of microns
         dOpd = maxOpd / dataLength #The interval we want between values in our opd vector.
-        opdVals = dataLength / 2 * np.array(range(fftSize // 2 + 1)) * dOpd / (fftSize // 2 + 1)
+        opdVals = dataLength / 2 * np.array(range(fftSize)) * dOpd / fftSize
         #The above line is how it was writtne in the matlab code. Couldn't it be simplified down to maxOpd * np.linspace(0, 1, num = fftSize // 2 + 1) / 2 ? I'm not sure what the 2 means though.
 
         # Above is how the old MATLAB code calculated the frequencies. IMO the code below is simpler and more understandable but we'll stick with the old code.
@@ -1538,5 +1538,4 @@ class _FFTHelper:
             fft *= len(w) / np.sum(w)  # Correct amplitude scaling error caused by windowing. Does not preserve energy of signal though. https://www.mathworks.com/matlabcentral/answers/372516-calculate-windowing-correction-factor
         else:
             raise ValueError(f"{normalization} is not a valid normalization.")
-
         return fft
