@@ -92,7 +92,7 @@ class MetaDataBase(abc.ABC):
             self.cameraCorrection = None
 
     @abc.abstractmethod
-    def toDataClass(self, lock: mp.Lock) -> pwsdtd.ICBase:
+    def toDataClass(self, lock: typing.Optional[mp.Lock]) -> pwsdtd.ICBase:
         """Convert the metadata class to a class that loads the data
 
         Args:

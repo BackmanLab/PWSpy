@@ -358,7 +358,7 @@ class PositionList:
         return copy.deepcopy(self)
 
     @staticmethod
-    def fromPropertyMap(pmap) -> PositionList:
+    def fromPropertyMap(pmap: PropertyMap) -> PositionList:
         """Attempt to load a PositionList from a PropertyMap. May throw an exception."""
         if isinstance(pmap, PropertyMap):
             if "StagePositions" in pmap:
