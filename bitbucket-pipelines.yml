@@ -23,8 +23,11 @@ pipelines:
   branches:
     dev:
       - step:
+          name: CondaBuild
+          script:
+            - python buildScripts/conda/build.py
+      - step:
          name: CondaUpload
          trigger: manual
          script:
-           - python buildScripts/conda/build.py
            - anaconda -t $AnacondaCloudToken upload buildScripts/build/noarch/pwspy* --label dev
