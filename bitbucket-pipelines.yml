@@ -19,9 +19,8 @@ pipelines:
         trigger: manual
         script:
           - python tests/test1.py
-   - step:
+    - step:
        name: conda_upload
-       deployment: condaupload
        trigger: manual
        script:
          - python buildScripts\conda\build.py
