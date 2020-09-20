@@ -3,24 +3,28 @@
 # Only use spaces to indent your .yml configuration.
 # -----
 # You can specify a custom docker image from Docker Hub as your build environment.
-image: continuumio/anaconda3
+image: continuumio/miniconda3
 
 pipelines:
   default:
     - step:
+        name: Install
         caches:
           - pip
         script: # Modify the commands below to build your repository.
           - pip install .
-          
     - step:
         name: Test
         deployment: test
         trigger: manual
         script:
           - python tests/test1.py
-    - step:
-       name: conda_upload
-       trigger: manual
-       script:
-         - python buildScripts\conda\build.py
+  branches:
+    dev:
+      - step:
+         name: CondaUpload
+         deployment: production
+         trigger: manual
+         script:
+           - python buildScripts/conda/build.py
+           - anaconda -t $AnacondaCloudToken upload buildScripts/build/noarch/pwspy* --label dev
