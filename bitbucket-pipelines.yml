@@ -25,6 +25,7 @@ pipelines:
       - step:
           name: CondaBuild
           script:
+            - conda install -c conda-forge gitpython
             - python buildScripts/conda/build.py
       - step:
          name: CondaUpload
