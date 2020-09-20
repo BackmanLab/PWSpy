@@ -24,7 +24,6 @@ pipelines:
     dev:
       - step:
          name: CondaUpload
-         deployment: staging
          trigger: manual
          script:
            - python buildScripts/conda/build.py
