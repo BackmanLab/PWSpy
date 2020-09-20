@@ -3,7 +3,7 @@
 # Only use spaces to indent your .yml configuration.
 # -----
 # You can specify a custom docker image from Docker Hub as your build environment.
-image: python:3.7
+image: continuumio/anaconda3
 
 pipelines:
   default:
@@ -18,5 +18,10 @@ pipelines:
         deployment: test
         trigger: manual
         script:
-          - pip install .
           - python tests/test1.py
+   - step:
+       name: conda_upload
+       deployment: condaupload
+       trigger: manual
+       script:
+         - python buildScripts\conda\build.py
