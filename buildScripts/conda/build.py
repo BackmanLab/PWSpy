@@ -19,13 +19,20 @@ import logging
 import os
 import shutil
 import subprocess
-"""This builds the pwpsy conda package and saves it to `build`
-It should be run from the base conda env."""
-import pwspy.version # this should save the version to file.
+import sys
 
+# Constants
 buildScriptDir = os.path.dirname(os.path.abspath(__file__)) #Location of build scripts
 rootDir = os.path.dirname(os.path.dirname(buildScriptDir)) #Parent directory of project.
 buildDir = os.path.join(buildScriptDir, 'build')
+
+
+"""This builds the pwpsy conda package and saves it to `build`
+It should be run from the base conda env."""
+sys.path.append(os.path.join(rootDir, 'src'))  # Add the sourcecode location to "path" so we can import the pwspy package.
+import pwspy.version # this should save the version to file.
+
+
 
 
 #Clean
