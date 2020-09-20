@@ -11,7 +11,8 @@ pipelines:
         name: Install
         caches:
           - pip
-        script: # Modify the commands below to build your repository.
+        script: 
+          - pip install gitpython
           - pip install .
     - step:
         name: Test
