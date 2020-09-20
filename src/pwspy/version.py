@@ -32,6 +32,7 @@ try:
         f.write(version)
     logger.info(f"Saved version, {version}, to the `_version` file.")
 except Exception as e:
+    logger.error(e)
     # import traceback
     # traceback.print_exc()
     pass
