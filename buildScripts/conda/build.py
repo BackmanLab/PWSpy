@@ -41,7 +41,10 @@ if os.path.exists(buildDir):
 os.mkdir(buildDir)
 
 # Build and save to the outputDirectory
-proc = subprocess.Popen(f"conda-build {rootDir} --output-folder {buildDir} -c conda-forge", stdout=None, stderr=subprocess.PIPE)
+buildCmd = f"conda-build {rootDir} --output-folder {buildDir} -c conda-forge"
+if os.name == 'posix':
+    buildCmd = f'bash -c "source activate base; {buildCmd}"'  # this is required for the anaconda environment ot be found through subprocess
+proc = subprocess.Popen(buildCmd, shell=True, stdout=None, stderr=subprocess.PIPE)
 logger = logging.getLogger(__name__)
 logger.info("Waiting for conda-build")
 proc.wait()
