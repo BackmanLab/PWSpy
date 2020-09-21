@@ -3,7 +3,7 @@
 # Only use spaces to indent your .yml configuration.
 # -----
 # You can specify a custom docker image from Docker Hub as your build environment.
-image: continuumio/miniconda3
+image: continuumio/anaconda3
 
 clone:
   depth: 1000 # If we don't have enough clone depth then gitpython won't be able to find the tags for the _version file.
