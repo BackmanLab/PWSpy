@@ -31,7 +31,8 @@ pipelines:
             - conda install -c conda-forge gitpython
             - conda install conda-build
             - python buildScripts/conda/build.py
-            - anaconda -t $AnacondaCloudToken upload buildScripts/build/noarch/pwspy* --label dev
+            - cd buildScripts/conda/build/noarch
+            - anaconda -t $AnacondaCloudToken upload pwspy* --label dev
   custom:
     AnacondaUploadMaster:
       - step:
