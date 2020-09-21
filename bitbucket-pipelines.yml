@@ -37,7 +37,6 @@ pipelines:
     AnacondaUploadMaster:
       - step:
           name: CondaUpload
-          trigger: manual
           script:
             - conda install -c conda-forge gitpython
             - conda install conda-build
