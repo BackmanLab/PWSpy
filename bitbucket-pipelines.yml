@@ -26,18 +26,19 @@ pipelines:
   branches:
     dev:
       - step:
-          name: Start
+          name: CondaUpload
           script:
-           - echo Do Nothing
+            - conda install -c conda-forge gitpython
+            - conda install conda-build
+            - python buildScripts/conda/build.py
+            - anaconda -t $AnacondaCloudToken upload buildScripts/build/noarch/pwspy* --label dev
+  custom:
+    AnacondaUploadMaster:
       - step:
-          name: CondaBuild
+          name: CondaUpload
           trigger: manual
           script:
             - conda install -c conda-forge gitpython
             - conda install conda-build
             - python buildScripts/conda/build.py
-      - step:
-         name: CondaUpload
-         trigger: manual
-         script:
-           - anaconda -t $AnacondaCloudToken upload buildScripts/build/noarch/pwspy* --label dev
+            - anaconda -t $AnacondaCloudToken upload buildScripts/build/noarch/pwspy*
