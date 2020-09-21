@@ -167,8 +167,9 @@ class Roi:
     def __init__(self, name: str, number: int, mask: np.ndarray, verts: np.ndarray, filePath: typing.Optional[str] = None, fileFormat: typing.Optional[Roi.FileFormats] = None):
         assert isinstance(mask, np.ndarray), f"data is a {type(mask)}"
         assert len(mask.shape) == 2
-        assert len(verts.shape) == 2
-        assert verts.shape[1] == 2
+        if verts is not None: #Legacy files don't have verts, we allow that.
+            assert len(verts.shape) == 2
+            assert verts.shape[1] == 2
         assert mask.dtype == np.bool
         self.verts = verts
         self.name = name

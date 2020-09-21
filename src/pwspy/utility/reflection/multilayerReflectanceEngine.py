@@ -333,10 +333,11 @@ class Stack(StackBase):
         parameters can also be calculated.
 
         Args:
-            NA: The numerical apertures to calculate reflectance at.
+            NAs: The numerical apertures to calculate reflectance at.
 
         Returns:
-            You'll just have to look at the code. :todo: If you do, then please update this line.
+            A dictionary containing a reflectance array for each of the two polarizations. The polarization is the key to the dictionary.
+            Each reflectance is a MxN array where M is the number of wavelengths and N is the number of NAs passed to this function.
         """
         out = {}
         for polarization in Polarization:
@@ -354,10 +355,17 @@ class Stack(StackBase):
         """Given an array of NumericalApertures (usually from 0 to NAMax.) This function integrates the reflectance over
         a disc of Numerical Apertures (Just like in a microscope the Aperture plane is a disc shape, with higher NA
         being further from the center.) Ultimately the result of this integration should match the reflectance measured
-        with the same NA."""
+        with the same NA.
+
+        Args:
+            NAs: The numerical apertures to calculate reflectance at.
+
+        Returns:
+            A pandas `Series` with wavelengths as the index and reflectance as the value.
+        """
         from scipy.integrate import trapz
         d = self.calculateReflectance(NAs)
-        r = (d[Polarization.TE] + d[Polarization.TM]) / 2
+        r = (d[Polarization.TE] + d[Polarization.TM]) / 2  # Reflectance averaged over polarization.
         r = r * 2 * np.pi * NAs #The aperture plane is a disk, higher NAs have larger circumference disks contributing to them. hence the 2pi*na factor.
         inte = trapz(r, NAs, axis=1)
         int2 = trapz(2 * np.pi * NAs, NAs) #This is used for normalization. basically accounting for the fact that na is proportional to radius in aperture plane, not equal.

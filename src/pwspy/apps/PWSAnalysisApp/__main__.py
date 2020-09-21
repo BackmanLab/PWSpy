@@ -18,20 +18,14 @@
 import logging
 import os
 import shutil
-import time
-import traceback
 from glob import glob
-
 from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5 import QtCore
-
 from pwspy.apps.PWSAnalysisApp.App import PWSApp
 from pwspy.apps.PWSAnalysisApp import applicationVars
 from datetime import datetime
-from pwspy import dateTimeFormat
 from pwspy.apps.PWSAnalysisApp import resources
 from pwspy.analysis import defaultSettingsPath
-from pwspy.apps.sharedWidgets.extraReflectionManager.ERIndex import ERIndex
 
 
 def _setupDataDirectories():
@@ -84,10 +78,12 @@ def main():
     try:
         os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"  # TODO replace these options with proper high dpi handling. no pixel specific widths.
         QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
-        if isIpython():  # IPython runs its own QApplication so we handle things slightly different.
-            app = PWSApp(sys.argv)
-        else:
-            app = PWSApp(sys.argv)
+        app = PWSApp(sys.argv)
+        # import qdarkstyle
+        # dark_stylesheet = qdarkstyle.load_stylesheet_pyqt5()
+        # app.setStyleSheet(dark_stylesheet)
+
+        if not isIpython():  # IPython runs its own QApplication so we handle things slightly different.
             sys.exit(app.exec_())
     except Exception as e:  # Save error to text file.
         logger.exception(e)

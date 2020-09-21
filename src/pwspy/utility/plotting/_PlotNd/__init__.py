@@ -22,13 +22,11 @@ from PyQt5.QtCore import QSizeF, QTimer
 from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QPushButton, QGraphicsView, \
     QGraphicsScene, QGroupBox, QVBoxLayout, QCheckBox, QButtonGroup
 from matplotlib import pyplot
-from qtconsole.inprocess import QtInProcessKernelManager
-from qtconsole.jupyter_widget import JupyterWidget
 
 from pwspy.apps.sharedWidgets.rangeSlider import QRangeSlider
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT, FigureCanvasQT
 import numpy as np
-from pwspy.utility.matplotlibWidgets import LassoSelector, PointSelector, AdjustableSelector
+from pwspy.utility.matplotlibWidgets import LassoCreator, PointCreator, AdjustableSelector, AxManager
 from pwspy.utility.plotting._PlotNd._canvas import PlotNdCanvas
 from pwspy.utility.plotting._sharedWidgets import AnimationDlg
 
@@ -74,7 +72,7 @@ class _MyView(QGraphicsView):
         super().resizeEvent(event)
 
 
-class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of cursor. Open Console doesn't work in ipython.
+class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of cursor.
     """A convenient widget for visualizing data that is 3D or greater. This is a standalone widget which extends the
     functionality of `PlotNdCanvas`.
 
@@ -102,8 +100,6 @@ class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of c
         if data.dtype == bool:
             data = data.astype(np.uint8)
 
-        self.console = None
-
         self.canvas = PlotNdCanvas(data, names, initialCoords, indices)
         self.view = _MyView(self.canvas)
         self.slider = QRangeSlider(self)
@@ -118,7 +114,8 @@ class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of c
         self.slider.endValueChanged.connect(_)
 
         self._lastButton = None
-        self.selector = AdjustableSelector(self.canvas.image.ax, self.canvas.image.im, LassoSelector,
+        self._axesManager = AxManager(self.canvas.image.ax)
+        self.selector = AdjustableSelector(self._axesManager, self.canvas.image.im, LassoCreator,
                                            onfinished=self._selectorFinished)
 
         self.buttonWidget = QGroupBox("Control", self)
@@ -146,19 +143,15 @@ class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of c
         self.noneButton.setChecked(True)
         self.buttonGroup.buttonReleased.connect(self._handleButtons)
 
-        self.consoleButton = QPushButton("Open Console")
-        self.consoleButton.released.connect(self.openConsole)
-
         self.rotateButton = QPushButton("Rotate Axes")
         self.rotateButton.released.connect(self.canvas.rollAxes)
 
         self.saveButton = QPushButton("Save Animation")
-        self.saveButton.released.connect(lambda: AnimationDlg(self.canvas.fig, (self._animationUpdaterFunc, range(self.canvas._data.shape[2])), self).exec())
+        self.saveButton.released.connect(lambda: AnimationDlg(self.canvas.fig, (self._animationUpdaterFunc, range(self.canvas.data.shape[2])), self).exec())
 
         layout = QGridLayout()
         layout.addWidget(self.view, 0, 0, 8, 8)
         layout.addWidget(self.buttonWidget, 0, 8, 4, 1)
-        layout.addWidget(self.consoleButton, 4, 8)
         layout.addWidget(self.rotateButton, 5, 8)
         layout.addWidget(self.saveButton, 6, 8)
         layout.addWidget(NavigationToolbar2QT(self.canvas, self), 10, 0, 1, 8)
@@ -167,33 +160,6 @@ class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of c
         self.setLayout(layout)
 
         self.show()
-
-    def openConsole(self):
-        """Open a python console allowing the user to execute commands. A reference to this object is stored in the
-        console's namespace as `plot`."""
-        if self.console is None:
-            kernel_manager = QtInProcessKernelManager()
-            kernel_manager.start_kernel()
-            kernel = kernel_manager.kernel
-            kernel.gui = 'qt'
-            kernel.shell.push({'plot': self})
-
-            kernel_client = kernel_manager.client()
-            kernel_client.start_channels()
-
-            self.console = JupyterWidget()
-            self.console.kernel_manager = kernel_manager
-            self.console.kernel_client = kernel_client
-        self.console.show()
-        msg = "'''plot: A reference to this PlotNd Object\nDocumentation here: https://pwspy.readthedocs.io/en/dev/generated/generated/generated/pwspy.utility.plotting.PlotNd.html#pwspy.utility.plotting.PlotNd'''"
-        self.console.do_execute(f"print('');print('');print({msg})", True, 0)
-        self.console.activateWindow()  # This should bring the window to the front
-
-    def closeEvent(self, a0: QtGui.QCloseEvent):
-        """Overrides the Qt closeEvent to make sure things are cleaned up propertly."""
-        if self.console is not None:
-            self.console.close()
-        super().closeEvent(a0)
 
     def _updateLimits(self):
         """"""
@@ -211,10 +177,10 @@ class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of c
             button: The button that was just pressed.
         """
         if button is self.pointButton and button is not self._lastButton:
-            self.selector.setSelector(PointSelector)
+            self.selector.setSelector(PointCreator)
             self.selector.setActive(True)
         if button is self.lassoButton and button is not self._lastButton:
-            self.selector.setSelector(LassoSelector)
+            self.selector.setSelector(LassoCreator)
             self.selector.setActive(True)
         if button is self.noneButton and button is not self._lastButton:
             self.selector.setActive(False)
@@ -237,21 +203,22 @@ class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of c
         selected = selected.mean(axis=0)  # Get the average over all selected pixels. We are now down to 1d for a 3d data array, 2d for a 4d data array, et.
         if len(selected.shape) == 1:
             fig, ax = pyplot.subplots()
-            ax.plot(selected)
+            ax.plot(self.canvas.indexes[2], selected)
             ax.set_xlabel(self.canvas.names[2])
             fig.show()
         elif len(selected.shape) == 2:
             fig, ax = pyplot.subplots()
             im = ax.imshow(selected)
-            im.set_extent([self.canvas._indexes[3][0], self.canvas._indexes[3][-1], self.canvas._indexes[2][0], self.canvas._indexes[2][-1]])
+            im.set_extent([self.canvas.indexes[3][0], self.canvas.indexes[3][-1], self.canvas.indexes[2][0], self.canvas.indexes[2][-1]])
             ax.set_xlabel(self.canvas.names[3])
             ax.set_ylabel(self.canvas.names[2])
             fig.show()
         else:  # selected must be 3d or greater. This means our original data was 5d or greater.
-            p = PlotNd(selected, names=self.canvas.names[2:], indices=self.canvas._indexes[2:])
+            p = PlotNd(selected, names=self.canvas.names[2:], indices=self.canvas.indexes[2:])
 
         self.selector.setActive(True)  # Reset the selector.
 
+    # API
     @property
     def data(self):
         return self.canvas.data
@@ -260,6 +227,11 @@ class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of c
     def data(self, data: np.ndarray):
         self.canvas.data = data
 
+    def setLimits(self, Min: float, Max: float):
+        return self.canvas.updateLimits(Max, Min)
+
+    def setColorMap(self, cmap):
+        self.canvas.setColorMap(cmap)
 if __name__ == '__main__':
     import sys
     print("Starting")

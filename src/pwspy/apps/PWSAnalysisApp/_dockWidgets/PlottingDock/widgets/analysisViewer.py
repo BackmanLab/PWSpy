@@ -20,7 +20,7 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QWidget, QGridLayout, QComboBox
 from typing import Optional
 
-from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
+from pwspy.apps.PWSAnalysisApp.utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
 
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.widgets import AnalysisPlotter
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.roiPlot import RoiPlot
@@ -30,8 +30,8 @@ class AnalysisViewer(AnalysisPlotter, RoiPlot):
     """This class is a window that provides convenient viewing of a pws acquisition, analysis, and related images.
     It expands upon the functionality of `BigPlot` which handles ROIs but not analysis images."""
     def __init__(self, metadata: AcqDir, analysisLoader: ConglomerateAnalysisResults, title: str, parent=None,
-                 initialField=AnalysisPlotter.PlotFields.Thumbnail):
-        RoiPlot.__init__(self, metadata, metadata.getThumbnail(), 'title', parent=parent)
+                 initialField=AnalysisPlotter.PlotFields.Thumbnail, flags=None):
+        RoiPlot.__init__(self, metadata, metadata.getThumbnail(), parent=parent, flags=flags)
         AnalysisPlotter.__init__(self, metadata, analysisLoader)
         self.setWindowTitle(title)
         self.analysisCombo = QComboBox(self)
@@ -63,13 +63,12 @@ class AnalysisViewer(AnalysisPlotter, RoiPlot):
         if self.analysis.pws is not None:
             if 'reflectance' in self.analysis.pws.file.keys(): #This is the normalized 3d data cube. needed to generate the opd.
                 items.append(_.OpdPeak)
-        if self.acq.fluorescence is not None:
-            items.append(_.Fluorescence)
+        for i in range(len(self.acq.fluorescence)):
+            items.append(self._fluorescencePlotFields[i])
         self.analysisCombo.addItems([i.name for i in items])
         if currField in [i.name for i in items]:
             self.analysisCombo.setCurrentText(currField) #Maintain the same field if possible.
         self.analysisCombo.currentTextChanged.connect(self.changeDataByName)  # If this line comes before the analysisCombo.addItems line then it will get triggered when adding items.
-
 
     def changeDataByName(self, field: str):
         field = [enumField for enumField in self.PlotFields if enumField.name == field][0] #This function recieves the name of the Enum item. we want to get the enum item itself.

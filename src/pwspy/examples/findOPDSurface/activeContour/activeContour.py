@@ -39,9 +39,9 @@ def seg(cellDir: str):
 
     Returns:
         A tuple containing:
-            snake: The result of the segmentation.
-            snake2: The result of the segmentation with morphological smoothing applied.
-            opdIndex: The 1d array giving the OPD distance at each slice along the 3rd axis of `snake`.
+            snake: The result of the segmentation. 3d boolean array.
+            snake2: The result of the segmentation with morphological smoothing applied. 3d booleaan array.
+            opdIndex: The 1d array giving the OPD value at each slice along the 3rd axis of `snake`.
 
     """
     try:

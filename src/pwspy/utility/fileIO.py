@@ -192,7 +192,7 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
         return origClass(ret['cube'])
 
 
-def processParallel(fileFrame: pd.DataFrame, processorFunc: typing.Callable, initializer: typing.Callable=None, initArgs: Tuple=None, procArgs: Tuple=None) -> List:
+def processParallel(fileFrame: pd.DataFrame, processorFunc: typing.Callable[[], typing.Any], initializer: typing.Callable=None, initArgs: Tuple=None, procArgs: Tuple=None) -> List:
     """A convenience function to process the rows of a pandas DataFrame in parallel
 
     Parameters
@@ -200,7 +200,7 @@ def processParallel(fileFrame: pd.DataFrame, processorFunc: typing.Callable, ini
     fileFrame
         A dataframe. Each row of the frame will be passed as the first argument to the processorFunc.
     processorFunc
-        A function that each row of the `fileFrame` should be passed to as the first argument. Additional arguments can
+        A function that each row number and row of the `fileFrame` should be passed to as the first and second argument respectively. Additional arguments can
         be passed to processorFunc using the procArgs variable. The function should return the value which you want included
         in the return of `processParrallel`.
     procArgs

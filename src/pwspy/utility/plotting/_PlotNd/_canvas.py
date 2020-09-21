@@ -19,6 +19,7 @@ from __future__ import annotations
 import typing
 import numpy as np
 from PyQt5 import QtCore
+import matplotlib as mpl
 from matplotlib import pyplot as plt, gridspec
 from matplotlib.axes import Axes
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
@@ -45,7 +46,8 @@ class PlotNdCanvas(FigureCanvasQTAgg):
     """
     def __init__(self, data: np.ndarray, names: typing.Tuple[str, ...],
                  initialCoords: typing.Optional[typing.Tuple[int, ...]] = None,
-                 indices: typing.Optional[typing.List] = None):
+                 indices: typing.Optional[typing.List] = None,
+                 cmap: mpl.colors.Colormap = plt.cm.gray):
         assert len(data.shape) >= 3
         assert len(names) == len(data.shape)
         fig = plt.Figure(figsize=(6, 6), tight_layout=True)
@@ -56,10 +58,10 @@ class PlotNdCanvas(FigureCanvasQTAgg):
         self.max = self.min = None  # The minimum and maximum for the color scaling
 
         if indices is None:
-            self._indexes = tuple(range(s) for s in data.shape)
+            self.indexes = tuple(range(s) for s in data.shape)
         else:
             assert len(indices) == len(data.shape)
-            self._indexes = tuple(ind if (ind is not None) else range(s) for ind, s in zip(indices, data.shape))  # If an element is `None` then just use the range of the dimension.
+            self.indexes = tuple(ind if (ind is not None) else range(s) for ind, s in zip(indices, data.shape))  # If an element is `None` then just use the range of the dimension.
 
         extraDims = len(data.shape[2:])  # the first two axes are the image dimensions. Any axes after that are extra dimensions that can be scanned through
 
@@ -70,17 +72,17 @@ class PlotNdCanvas(FigureCanvasQTAgg):
         ax: plt.Axes = fig.add_subplot(gs[1, extraDims])
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
-        self.image = ImPlot(ax, self._indexes[0], self._indexes[1], (0, 1))
+        self.image = ImPlot(ax, self.indexes[0], self.indexes[1], (0, 1), cmap=cmap)
 
         ax: plt.Axes = fig.add_subplot(gs[1, extraDims + 1], sharey=self.image.ax)
         ax.yaxis.set_ticks_position('right')
         ax.get_xaxis().set_visible(False)
-        self.spY = SidePlot(ax, self._indexes[0], True, 0)
+        self.spY = SidePlot(ax, self.indexes[0], True, 0)
 
         ax: plt.Axes = fig.add_subplot(gs[2, extraDims], sharex=self.image.ax)
         ax.xaxis.set_label_coords(.5, .95)
         ax.get_yaxis().set_visible(False)
-        self.spX = SidePlot(ax, self._indexes[1], False, 1)
+        self.spX = SidePlot(ax, self.indexes[1], False, 1)
 
         ax: plt.Axes = fig.add_subplot(gs[0, extraDims])
         self.cbar = CBar(ax, self.image.im)
@@ -90,7 +92,7 @@ class PlotNdCanvas(FigureCanvasQTAgg):
         [extra[i].get_xaxis().set_visible(False) for i in range(extraDims)]
         self.extra = []
         for i, ax in enumerate(extra):
-            self.extra.append(SidePlot(ax, self._indexes[2+i], True, 2 + i))
+            self.extra.append(SidePlot(ax, self.indexes[2 + i], True, 2 + i))
 
         self.artistManagers = [self.spX, self.spY, self.image] + self.extra
         self.names = None
@@ -101,8 +103,8 @@ class PlotNdCanvas(FigureCanvasQTAgg):
 
         self._data = data
 
-        Max = np.percentile(self._data[np.logical_not(np.isnan(self._data))], 99.99)
-        Min = np.percentile(self._data[np.logical_not(np.isnan(self._data))], 0.01)
+        Max = np.percentile(self.data[np.logical_not(np.isnan(self.data))], 99.99)
+        Min = np.percentile(self.data[np.logical_not(np.isnan(self.data))], 0.01)
         self.updateLimits(Max, Min)
 
         self.coords = tuple(i // 2 for i in data.shape) if initialCoords is None else initialCoords
@@ -137,7 +139,7 @@ class PlotNdCanvas(FigureCanvasQTAgg):
         """
         for plot in self.artistManagers:
             slic = tuple(c if i not in plot.dimensions else slice(None) for i, c in enumerate(self.coords))
-            newData = self._data[slic]
+            newData = self.data[slic]
             plot.data = newData
             newCoords = tuple(c for i, c in enumerate(self.coords) if i in plot.dimensions)
             plot.setMarker(newCoords)
@@ -149,8 +151,8 @@ class PlotNdCanvas(FigureCanvasQTAgg):
     def performBlit(self):
         """Re-render the axes efficiently using matplotlib `blitting`."""
         for artistManager in self.artistManagers: # The fact that spX is first here makes it not render on click. sometimes not sure why.
-            if artistManager._background is not None:
-               self.restore_region(artistManager._background)
+            if artistManager.background is not None:
+               self.restore_region(artistManager.background)
             artistManager.drawArtists() #Draw the artists
             self.blit(artistManager.ax.bbox)
 
@@ -193,20 +195,20 @@ class PlotNdCanvas(FigureCanvasQTAgg):
         Args:
             indices: A list or tuple of index values for each dimension of the data array.
         """
-        self._indexes = indices
+        self.indexes = indices
         for plot in self.artistManagers:
             if isinstance(plot, SidePlot):
-                [plot.setIndex(ind) for i, ind in enumerate(self._indexes) if i in plot.dimensions]
+                [plot.setIndex(ind) for i, ind in enumerate(self.indexes) if i in plot.dimensions]
             elif isinstance(plot, ImPlot):
-                plot.setIndices(self._indexes[plot.dimensions[0]], self._indexes[plot.dimensions[1]])
+                plot.setIndices(self.indexes[plot.dimensions[0]], self.indexes[plot.dimensions[1]])
 
     def rollAxes(self):
         """Change the order of the axes of the data. Allows viewing the sideview of the data."""
         self.setAxesNames([self.names[-1]] + list(self.names[:-1]))
-        self.setIndices((self._indexes[-1],) + tuple(self._indexes[:-1]))
+        self.setIndices((self.indexes[-1],) + tuple(self.indexes[:-1]))
         self.coords = (self.coords[-1],) + tuple(self.coords[:-1])
-        axes = list(range(len(self._data.shape)))
-        self.data = np.transpose(self._data, [axes[-1]] + axes[:-1])
+        axes = list(range(len(self.data.shape)))
+        self.data = np.transpose(self.data, [axes[-1]] + axes[:-1])
         self.draw()
 
     @property
@@ -231,7 +233,7 @@ class PlotNdCanvas(FigureCanvasQTAgg):
                 plot = [plot for plot in self.artistManagers if plot.ax == event.inaxes][0]
             except IndexError:  # No plot is being moused over
                 return
-            self.coords = tuple((c + step) % self._data.shape[plot.dimensions[0]] if i in plot.dimensions else c for i, c in enumerate(self.coords))
+            self.coords = tuple((c + step) % self.data.shape[plot.dimensions[0]] if i in plot.dimensions else c for i, c in enumerate(self.coords))
             self.updatePlots()
 
     @ifactive
@@ -277,3 +279,7 @@ class PlotNdCanvas(FigureCanvasQTAgg):
         if event.button != 1:  # Only respond to a left click.
             return
         self._processMouse(event.inaxes, event.xdata, event.ydata)
+
+    def setColorMap(self, cmap):
+        self.image.im.set_cmap(cmap)
+        #TODO update the colormap too.

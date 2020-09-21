@@ -25,13 +25,12 @@ Classes
     :toctree: generated/
 
     DynamicsAnalysisSettings
-    DynamicsRuntimeAnalysisSettings
     DynamicsAnalysisResults
     DynamicsAnalysis
 
 Inheritance
 -------------
-.. inheritance-diagram:: DynamicsAnalysisSettings DynamicsRuntimeAnalysisSettings DynamicsAnalysisResults DynamicsAnalysis
+.. inheritance-diagram:: DynamicsAnalysisSettings DynamicsAnalysisResults DynamicsAnalysis
     :parts: 1
 
 """
@@ -46,12 +45,12 @@ import pandas as pd
 from numpy import ma
 import multiprocessing as mp
 import typing
-from . import AbstractAnalysis, warnings, AbstractAnalysisSettings, AbstractRuntimeAnalysisSettings, \
-    AbstractHDFAnalysisResults
+from . import AbstractAnalysis, warnings, AbstractAnalysisSettings, AbstractHDFAnalysisResults
 from pwspy import dateTimeFormat
 import pwspy.dataTypes as pwsdt
 from pwspy.utility.misc import cached_property
 from pwspy.utility.reflection import reflectanceHelper, Material
+from ..dataTypes import ERMetaData
 
 
 def getFromDict(func):
@@ -79,12 +78,12 @@ class DynamicsAnalysis(AbstractAnalysis):
 
     Args:
         settings: The settings use for the analysis
+        extraReflectanceMetadata: the metadata object referring to a calibration file for extra reflectance.
         ref: A reference acquisition to use for normalization.
     """
-    def __init__(self, settings: DynamicsRuntimeAnalysisSettings, ref: pwsdt.DynCube):
+    def __init__(self, settings: DynamicsAnalysisSettings, extraReflectanceMetadata: typing.Optional[ERMetaData], ref: pwsdt.DynCube):
         super().__init__()
-        extraReflectance = pwsdt.ExtraReflectanceCube.fromMetadata(settings.extraReflectanceMetadata) if settings.extraReflectanceMetadata is not None else None
-        settings = settings.getSaveableSettings()
+        extraReflectance = pwsdt.ExtraReflectanceCube.fromMetadata(extraReflectanceMetadata) if extraReflectanceMetadata is not None else None
         logger = logging.getLogger(__name__)
         assert ref.processingStatus.cameraCorrected
         ref.normalizeByExposure()
@@ -337,27 +336,3 @@ class DynamicsAnalysisSettings(AbstractAnalysisSettings):
             if newKey not in d.keys():
                 d[newKey] = None  # For a while these settings were missing from the code. Allow us to still load old files.
         return cls(**d)
-
-
-@dataclasses.dataclass
-class DynamicsRuntimeAnalysisSettings(AbstractRuntimeAnalysisSettings):  # Inherit docstring
-    settings: DynamicsAnalysisSettings
-    extraReflectanceMetadata: typing.Optional[pwsdt.ERMetaData]
-    referenceMetadata: pwsdt.DynMetaData
-    cellMetadata: typing.List[pwsdt.DynMetaData]
-    analysisName: str
-
-    def getSaveableSettings(self) -> DynamicsAnalysisSettings:  # Inherit docstring
-        return self.settings
-
-    def getAnalysisName(self) -> str:
-        return self.analysisName
-
-    def getReferenceMetadata(self) -> pwsdt.DynMetaData:
-        return self.referenceMetadata
-
-    def getCellMetadatas(self) -> typing.Sequence[pwsdt.DynMetaData]:
-        return self.cellMetadata
-
-    def getExtraReflectanceMetadata(self) -> pwsdt.ERMetaData:
-        return self.extraReflectanceMetadata

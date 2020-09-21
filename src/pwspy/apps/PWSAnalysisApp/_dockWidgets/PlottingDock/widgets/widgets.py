@@ -18,7 +18,7 @@
 from typing import Optional
 import numpy as np
 
-from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
+from pwspy.apps.PWSAnalysisApp.utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
 from pwspy.dataTypes import AcqDir, FluorescenceImage
 from enum import Enum
 
@@ -34,21 +34,38 @@ class _PlotFields(Enum):
     The first item of each tuple indicates which analysis must be available for the image to be displayed.
     The second item of each tuple is a string value matching the attribute name of the associated analysisResults class."""
     Thumbnail = (None, 'thumbnail')
-    Fluorescence = (None, 'fluorescence')
-    #PWS specific
+    Fluorescence0 = (None, 'fluorescence0')
+    Fluorescence1 = (None, 'fluorescence1')
+    Fluorescence2 = (None, 'fluorescence2')
+    Fluorescence3 = (None, 'fluorescence3')
+    Fluorescence4 = (None, 'fluorescence4')
+    Fluorescence5 = (None, 'fluorescence5')
+    Fluorescence6 = (None, 'fluorescence6')
+    Fluorescence7 = (None, 'fluorescence7')
+    Fluorescence8 = (None, 'fluorescence8')
+    Fluorescence9 = (None, 'fluorescence9')  # Hopefully we never need nearly this many.
+    # PWS specific
     OpdPeak = (_AnalysisTypes.PWS, 'opdPeak')
     MeanReflectance = (_AnalysisTypes.PWS, 'meanReflectance')
     RMS = (_AnalysisTypes.PWS, 'rms')
     AutoCorrelationSlope = (_AnalysisTypes.PWS, 'autoCorrelationSlope')
     RSquared = (_AnalysisTypes.PWS, 'rSquared')
     Ld = (_AnalysisTypes.PWS, 'ld')
-    #Dynamics specific
+    # Dynamics specific
     RMS_t_squared = (_AnalysisTypes.DYN, 'rms_t_squared')
     Diffusion = (_AnalysisTypes.DYN, 'diffusion')
     DynamicsReflectance = (_AnalysisTypes.DYN, 'meanReflectance')
 
+
+_FluorescencePlotFields = [_PlotFields.Fluorescence0, _PlotFields.Fluorescence1, _PlotFields.Fluorescence2,
+                           _PlotFields.Fluorescence3, _PlotFields.Fluorescence4, _PlotFields.Fluorescence5,
+                           _PlotFields.Fluorescence6, _PlotFields.Fluorescence7, _PlotFields.Fluorescence8,
+                           _PlotFields.Fluorescence9, ]
+
+
 class AnalysisPlotter:
     PlotFields = _PlotFields
+    _fluorescencePlotFields = _FluorescencePlotFields
 
     def __init__(self, acq: AcqDir, analysis: ConglomerateAnalysisResults = None):
         self.analysisField: AnalysisPlotter.PlotFields = None
@@ -61,8 +78,9 @@ class AnalysisPlotter:
         self.analysisField = field
         if field is _PlotFields.Thumbnail:  # Load the thumbnail from the ICMetadata object
             self.data = self.acq.getThumbnail()
-        elif field is _PlotFields.Fluorescence: #Open the fluorescence image.
-            self.data = FluorescenceImage.fromMetadata(self.acq.fluorescence).data
+        elif field in _FluorescencePlotFields:  # Open the fluorescence image.
+            idx = _FluorescencePlotFields.index(field)  # Get the number for the fluorescence image that has been selected.
+            self.data = FluorescenceImage.fromMetadata(self.acq.fluorescence[idx]).data
         else:
             anType, paramName = field.value
             if anType == _AnalysisTypes.PWS:

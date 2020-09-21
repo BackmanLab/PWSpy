@@ -16,41 +16,52 @@
 # along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
 
 from __future__ import annotations
+
 from PyQt5.QtWidgets import (QDockWidget, QWidget, QFrame, QVBoxLayout, QCheckBox, QScrollArea, QPushButton,
-                             QGridLayout, QLineEdit, QLabel)
+                             QGridLayout, QLineEdit, QLabel, QDialog, QTreeWidget, QTreeWidgetItem)
 from PyQt5 import QtCore
-from pwspy.analysis.compilation import DynamicsCompilerSettings, GenericCompilerSettings, PWSCompilerSettings
-from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateCompilerResults, ConglomerateCompilerSettings
+from pwspy.analysis.compilation import DynamicsCompilerSettings, GenericCompilerSettings, PWSCompilerSettings, \
+    PWSRoiCompilationResults
+from pwspy.apps.PWSAnalysisApp.utilities.conglomeratedAnalysis import ConglomerateCompilerResults, ConglomerateCompilerSettings
 from .widgets import ResultsTable, ResultsTableItem
 import typing
+
+from ..._taskManagers.compilationManager import CompilationManager
+from ...componentInterfaces import ResultsTableController
+
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import AcqDir
+    from pwspy.dataTypes import AcqDir, ICMetaData
+    from pwspy.analysis.warnings import AnalysisWarning
 
 
-class ResultsTableDock(QDockWidget):
+class ResultsTableControllerDock(ResultsTableController, QDockWidget):
     def __init__(self):
         super().__init__("Results")
         self.setStyleSheet("QDockWidget > QWidget { border: 1px solid lightgray; }")
         self.setObjectName('ResultsTableDock')
         self._widget = QWidget()
         self._widget.setLayout(QGridLayout())
-        self.table = ResultsTable()
+        self._table = ResultsTable()
         checkBoxFrame = QFrame()
         checkBoxFrame.setLayout(QVBoxLayout())
         checkBoxFrame.layout().setContentsMargins(1, 1, 1, 1)
         checkBoxFrame.layout().setSpacing(1)
-        self.checkBoxes = []
-        for i, (name, (default, settingsName, compilerClass, tooltip)) in enumerate(self.table.columns.items()):
+        self._checkBoxes = []
+        for i, (name, (default, settingsName, compilerClass, tooltip)) in enumerate(self._table.columns.items()):
             c = QCheckBox(name)
             c.setCheckState(2) if default else c.setCheckState(0)
-            c.stateChanged.connect(lambda state, j=i: self.table.setColumnHidden(j, state == 0))
+            c.stateChanged.connect(lambda state, j=i: self._table.setColumnHidden(j, state == 0))
             checkBoxFrame.layout().addWidget(c)
-            self.checkBoxes.append(c)
-        self.roiNameEdit = QLineEdit('.*', self._widget)
-        self.roiNameEdit.setToolTip("ROIs matching this RegEx pattern will be compiled.")
-        self.analysisNameEdit = QLineEdit('.*', self._widget)
-        self.analysisNameEdit.setToolTip("Analyses matching this RegEx pattern will be compiled.")
-        self.compileButton = QPushButton("Compile")
+            self._checkBoxes.append(c)
+        self._roiNameEdit = QLineEdit('.*', self._widget)
+        self._roiNameEdit.setToolTip("ROIs matching this RegEx pattern will be compiled.")
+        self._analysisNameEdit = QLineEdit('.*', self._widget)
+        self._analysisNameEdit.setToolTip("Analyses matching this RegEx pattern will be compiled.")
+        self._compileButton = QPushButton("Compile")
+
+        self._compMan = CompilationManager(self.window())
+        self._compileButton.released.connect(self._compMan.run)
+        self._compMan.compilationDone.connect(self._handleCompilationResults)
 
         scroll = QScrollArea()
         scroll.setWidget(checkBoxFrame)
@@ -62,28 +73,28 @@ class ResultsTableDock(QDockWidget):
         l = QGridLayout()
         l.addWidget(scroll, 0, 0, 1, 2)
         l.addWidget(QLabel('Analysis:'), 1, 0, 1, 1)
-        l.addWidget(self.analysisNameEdit, 1, 1, 1, 1)
+        l.addWidget(self._analysisNameEdit, 1, 1, 1, 1)
         l.addWidget(QLabel("Roi:"), 2, 0, 1, 1)
-        l.addWidget(self.roiNameEdit, 2, 1, 1, 1)
-        l.addWidget(self.compileButton, 3, 0, 1, 2)
+        l.addWidget(self._roiNameEdit, 2, 1, 1, 1)
+        l.addWidget(self._compileButton, 3, 0, 1, 2)
         sidebar.setLayout(l)
         sidebar.setMaximumWidth(scroll.width()+10)
         self._widget.layout().addWidget(sidebar, 0, 0)
-        self._widget.layout().addWidget(self.table, 0, 1)
+        self._widget.layout().addWidget(self._table, 0, 1)
         self.setWidget(self._widget)
 
     def addCompilationResult(self, result: ConglomerateCompilerResults, acquisition: AcqDir):
-        self.table.addItem(ResultsTableItem(result, acquisition))
+        self._table.addItem(ResultsTableItem(result, acquisition))
 
     def clearCompilationResults(self):
-        self.table.clearCellItems()
+        self._table.clearCellItems()
 
     def getSettings(self) -> ConglomerateCompilerSettings:
         pwskwargs = {}
         dynkwargs = {}
         genkwargs = {}
-        for checkBox in self.checkBoxes:
-            defaultVisible, settingsName, compilerClass, tooltip = self.table.columns[checkBox.text()]
+        for checkBox in self._checkBoxes:
+            defaultVisible, settingsName, compilerClass, tooltip = self._table.columns[checkBox.text()]
             if settingsName is not None:
                 if compilerClass == PWSCompilerSettings:
                     pwskwargs[settingsName] = bool(checkBox.checkState())
@@ -99,7 +110,53 @@ class ResultsTableDock(QDockWidget):
         return ConglomerateCompilerSettings(pws, dyn, gen)
 
     def getRoiName(self) -> str:
-        return self.roiNameEdit.text()
+        return self._roiNameEdit.text()
 
     def getAnalysisName(self) -> str:
-        return self.analysisNameEdit.text()
+        return self._analysisNameEdit.text()
+
+    def _handleCompilationResults(self, inVal: typing.List[typing.Tuple[AcqDir, typing.List[typing.Tuple[ConglomerateCompilerResults, typing.Optional[typing.List[AnalysisWarning]]]]]]):
+        #  Display warnings if necessary.
+        warningStructure = []
+        for acq, roiList in inVal:
+            metaWarnings = []
+            for result, warnList in roiList:
+                if len(warnList) > 0:
+                    metaWarnings.append((result, warnList))
+            if len(metaWarnings) > 0:
+                warningStructure.append((acq.pws, metaWarnings))
+        if len(warningStructure) > 0:
+            CompilationSummaryDisplay(self.window(), warningStructure)
+        #  Display the results on the table
+        results = [(acq, result) for acq, roiList in inVal for result, warnings in roiList]
+        self.clearCompilationResults()
+        [self.addCompilationResult(r, acq) for acq, r in results]
+
+
+class CompilationSummaryDisplay(QDialog):
+    def __init__(self, parent: typing.Optional[QWidget], warnings: typing.List[typing.Tuple[ICMetaData, typing.List[typing.Tuple[PWSRoiCompilationResults, typing.Optional[typing.List[AnalysisWarning]]]]]], analysisName: str = '', analysisSettings: PWSAnalysisSettings = None):
+        super().__init__(parent=parent)
+        self.setWindowTitle("Compilation Summary")
+        layout = QVBoxLayout()
+        self.warningTree = QTreeWidget(self)
+        self.warningTree.setHeaderHidden(True)
+        layout.addWidget(self.warningTree)
+        self.setLayout(layout)
+        self._addWarnings(warnings)
+        self.show()
+
+    def _addWarnings(self, warnings: typing.List[typing.Tuple[ICMetaData, typing.List[typing.Tuple[ConglomerateCompilerResults, typing.Optional[typing.List[AnalysisWarning]]]]]]):
+        for meta, roiList in warnings:
+            item = QTreeWidgetItem(self.warningTree)
+            item.setText(0, meta.filePath)
+            for roiResult, roiWarnList in roiList:
+                if len(roiWarnList) > 0:
+                    subItem = QTreeWidgetItem(item)
+                    subItem.setText(0, f"{len(roiWarnList)} warnings: {roiResult.generic.roi.name} {roiResult.generic.roi.number}")
+                    for warn in roiWarnList:
+                        subItem2 = QTreeWidgetItem(subItem)
+                        subItem2.setText(0, warn.shortMsg)
+                        subItem2.setToolTip(0, warn.longMsg)
+
+    def clearWarnings(self):
+        self.warningTree.clear()

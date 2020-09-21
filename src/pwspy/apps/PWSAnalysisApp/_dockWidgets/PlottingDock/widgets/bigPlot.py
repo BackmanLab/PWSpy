@@ -35,10 +35,9 @@ if typing.TYPE_CHECKING:
 
 
 class BigPlot(QWidget):
-    def __init__(self, data: np.ndarray, title: str, parent=None):
+    def __init__(self, data: np.ndarray, parent=None):
         """A widget that displays an image."""
-        QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
-        self.setWindowTitle(title)
+        super().__init__(parent=parent)
         layout = QGridLayout()
         self.fig = Figure()
         self.ax = self.fig.add_subplot(1, 1, 1)
@@ -51,19 +50,19 @@ class BigPlot(QWidget):
         self.canvas.setFocus()
         self.fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
         self.slider = QRangeSlider(self)
-        self.slider.endValueChanged.connect(self.climImage)
-        self.slider.startValueChanged.connect(self.climImage)
+        self.slider.endValueChanged.connect(self._climImage)
+        self.slider.startValueChanged.connect(self._climImage)
         self.autoDlg = SaturationDialog(self)
-        self.autoDlg.accepted.connect(self.setSaturation)
+        self.autoDlg.accepted.connect(self._setSaturation)
         self.rangeDlg = RangeDialog(self)
-        self.rangeDlg.accepted.connect(self.setRange)
+        self.rangeDlg.accepted.connect(self._setRange)
         self.saturationButton = QPushButton("Auto")
         self.saturationButton.released.connect(self.autoDlg.show)
         self.manualRangeButton = QPushButton("Range")
         self.manualRangeButton.released.connect(self.rangeDlg.show)
         self.cmapCombo = QComboBox(self)
         self.cmapCombo.addItems(['gray', 'jet', 'plasma', 'Reds'])
-        self.cmapCombo.currentTextChanged.connect(self.changeCmap)
+        self.cmapCombo.currentTextChanged.connect(self._changeCmap)
 
         layout.addWidget(self.canvas, 0, 0, 8, 8)
         layout.addWidget(QLabel("Color Range"), 9, 0, 1, 1)
@@ -80,7 +79,7 @@ class BigPlot(QWidget):
         self.setLayout(l)
 
         self.setImageData(data)
-        self.setSaturation()
+        self._setSaturation()
 
 
     def setImageData(self, data: np.ndarray):
@@ -89,25 +88,25 @@ class BigPlot(QWidget):
         self.slider.setMax(np.nanmax(self.data))
         self.slider.setMin(np.nanmin(self.data))
         if self.autoDlg.autoSaturateCheckBox.isChecked():
-            self.setSaturation()
+            self._setSaturation()
         self.canvas.draw_idle()
 
-    def setSaturation(self):
+    def _setSaturation(self):
         percentage = self.autoDlg.value
         m = np.nanpercentile(self.data, percentage)
         M = np.nanpercentile(self.data, 100 - percentage)
         self.slider.setStart(m)
         self.slider.setEnd(M)
 
-    def setRange(self):
+    def _setRange(self):
         self.slider.setStart(self.rangeDlg.minimum)
         self.slider.setEnd(self.rangeDlg.maximum)
 
-    def climImage(self):
+    def _climImage(self):
         self.im.set_clim((self.slider.start(), self.slider.end()))
         self.canvas.draw_idle()
 
-    def changeCmap(self, cMap: str):
+    def _changeCmap(self, cMap: str):
         self.im.set_cmap(cMap)
         self.canvas.draw_idle()
 
@@ -169,11 +168,11 @@ class RangeDialog(QDialog):
 
 
 if __name__ == '__main__':
-    fPath = r'G:\Aya_NAstudy\matchedNAi_largeNAc\cells\Cell2'
+    fPath = r'C:\Users\nicke\Desktop\demo\toast\t\Cell1'
     from pwspy.dataTypes import AcqDir
     acq = AcqDir(fPath)
     import sys
     app = QApplication(sys.argv)
-    b = BigPlot(acq, acq.pws.getThumbnail(), "Test")
+    b = BigPlot(acq.dynamics.getThumbnail())
     b.show()
     sys.exit(app.exec())

@@ -1,0 +1,46 @@
+# This is a sample build configuration for Python.
+# Check our guides at https://confluence.atlassian.com/x/x4UWN for more examples.
+# Only use spaces to indent your .yml configuration.
+# -----
+# You can specify a custom docker image from Docker Hub as your build environment.
+image: continuumio/anaconda3
+
+clone:
+  depth: 1000 # If we don't have enough clone depth then gitpython won't be able to find the tags for the _version file.
+
+pipelines:
+  default:
+    - step:
+        name: Install
+        caches:
+          - pip
+        script:
+          - pip install gitpython
+          - pip install .
+    - step:
+        name: Test
+        deployment: test
+        trigger: manual
+        script:
+          - python tests/test1.py
+  branches:
+    dev:
+      - step:
+          name: CondaUpload
+          script:
+            - conda install -c conda-forge gitpython
+            - conda install conda-build
+            - python buildScripts/conda/build.py
+            - cd buildScripts/conda/build/noarch
+            - anaconda -t $AnacondaCloudToken upload pwspy* --label dev
+  custom:
+    AnacondaUploadMaster:
+      - step:
+          name: CondaUpload
+          trigger: manual
+          script:
+            - conda install -c conda-forge gitpython
+            - conda install conda-build
+            - python buildScripts/conda/build.py
+            - cd buildScripts/conda/build/noarch
+            - anaconda -t $AnacondaCloudToken upload pwspy*

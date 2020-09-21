@@ -27,12 +27,12 @@ from PyQt5 import QtCore
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from pwspy.apps.PWSAnalysisApp._taskManagers.analysisManager import safeCallback
 import re
-from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateCompiler, ConglomerateAnalysisResults
+from pwspy.apps.PWSAnalysisApp.utilities.conglomeratedAnalysis import ConglomerateCompiler, ConglomerateAnalysisResults
 import typing
 if typing.TYPE_CHECKING:
     from typing import Tuple, List, Optional
     from pwspy.dataTypes import AcqDir
-    from pwspy.apps.PWSAnalysisApp._utilities.conglomeratedAnalysis import ConglomerateCompilerSettings, ConglomerateCompilerResults
+    from pwspy.apps.PWSAnalysisApp.utilities.conglomeratedAnalysis import ConglomerateCompilerSettings, ConglomerateCompilerResults
     from pwspy.analysis.warnings import AnalysisWarning
 
 

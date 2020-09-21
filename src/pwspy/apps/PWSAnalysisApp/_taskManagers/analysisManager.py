@@ -22,14 +22,17 @@ import os
 from typing import Tuple, List, Optional
 import typing
 from PyQt5.QtCore import QThread
-from pwspy.apps.PWSAnalysisApp._sharedWidgets import ScrollableMessageBox
+
+from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock import AbstractRuntimeAnalysisSettings
+from pwspy.apps.PWSAnalysisApp.sharedWidgets import ScrollableMessageBox
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox, QInputDialog
 import pwspy.dataTypes as pwsdt
-from pwspy.analysis import AbstractAnalysisSettings, AbstractAnalysis, AbstractRuntimeAnalysisSettings
-from pwspy.analysis.dynamics import DynamicsAnalysis, DynamicsRuntimeAnalysisSettings
-from pwspy.analysis.pws import PWSAnalysis, PWSRuntimeAnalysisSettings
+from pwspy.analysis import AbstractAnalysisSettings, AbstractAnalysis
+from pwspy.analysis.dynamics import DynamicsAnalysis
+from pwspy.analysis.pws import PWSAnalysis
+from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.runtimeSettings import PWSRuntimeAnalysisSettings, DynamicsRuntimeAnalysisSettings
 from pwspy.analysis.warnings import AnalysisWarning
 from pwspy.dataTypes import ICRawBase, ICMetaData, DynMetaData
 from pwspy.utility.fileIO import loadAndProcess
@@ -59,8 +62,7 @@ class AnalysisManager(QtCore.QObject):
         """Run multiple queued analyses as specified by the user."""
         for anSettings in self.app.window.analysisSettings.getListedAnalyses():
             self.runSingle(anSettings)
-            acqs = [i.acquisitionDirectory for i in anSettings.getCellMetadatas()]
-            [cellItem.refresh() for cellMeta in acqs for cellItem in self.app.window.cellSelector.tableWidget.cellItems if cellMeta == cellItem.acqDir] #Refresh our displayed cell info
+            self.app.window.cellSelector.refreshCellItems()  # Refresh our displayed cell info
 
     @safeCallback
     def runSingle(self, anSettings: AbstractRuntimeAnalysisSettings) -> Tuple[str, AbstractAnalysisSettings, List[Tuple[List[AnalysisWarning], pwsdt.AcqDir]]]:
@@ -112,9 +114,8 @@ class AnalysisManager(QtCore.QObject):
                     if ans == QMessageBox.No:
                         return
             logger.info("Initializing analysis")
-            analysis = AnalysisClass(anSettings, ref)
+            analysis = AnalysisClass(anSettings.getSaveableSettings(), anSettings.getExtraReflectanceMetadata(), ref)
             useParallelProcessing = self.app.parallelProcessing
-            #TODO would be good to estimate ram usage here and make a decision on whether or not to go parallel
             if (len(cellMetas) <= 3): #No reason to start 3 parallel processes for less than 3 cells.
                 useParallelProcessing = False
             if useParallelProcessing:
@@ -218,3 +219,4 @@ class AnalysisManager(QtCore.QObject):
                 md = None
             im.metadata.saveAnalysis(results, analysisName)
             return warnings, md
+

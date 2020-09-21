@@ -23,16 +23,18 @@ from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupB
 
 import pwspy.analysis.dynamics
 from pwspy.apps.PWSAnalysisApp._dockWidgets import CellSelectorDock
+from pwspy.apps.PWSAnalysisApp.componentInterfaces import CellSelector
+from pwspy.utility.reflection import Material
 from ._AbstractSettingsFrame import AbstractSettingsFrame
 
 from ._sharedWidgets import ExtraReflectanceSelector, VerticallyCompressedWidget, HardwareCorrections
-
+from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.runtimeSettings import DynamicsRuntimeAnalysisSettings
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 
 
 class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
-    def __init__(self, erManager: ERManager, cellSelector: CellSelectorDock):
+    def __init__(self, erManager: ERManager, cellSelector: CellSelector):
         super().__init__()
         self.cellSelector = cellSelector
 
@@ -56,6 +58,7 @@ class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
         row += 1
 
         self.extraReflection = ExtraReflectanceSelector(self, erManager)
+        self.extraReflection.loadFromSettings(0.52, Material.Water, None)
         self._layout.addWidget(self.extraReflection, row, 0, 1, 4)
         row += 1
 
@@ -67,6 +70,7 @@ class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
         self.relativeUnits.setToolTip("If checked then reflectance (and therefore all other parameters) will be scaled such that any reflectance matching that\n"
                                       "of the reference image will be 1. If left unchecked then the `Reference Material` will be used to scale reflectance to\n"
                                       "match the actual physical reflectance of the sample.")
+        self.relativeUnits.setChecked(True)
         self.scaling.layout().addWidget(self.relativeUnits)
         self._layout.addWidget(self.scaling, row, 0, 1, 4)
 
@@ -88,7 +92,7 @@ class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
         self.relativeUnits.setCheckState(2 if settings.relativeUnits else 0)
         self.hardwareCorrections.loadCameraCorrection(settings.cameraCorrection)
 
-    def getSettings(self) -> pwspy.analysis.dynamics.DynamicsRuntimeAnalysisSettings:
+    def getSettings(self) -> DynamicsRuntimeAnalysisSettings:
         erMetadata, refMaterial, numericalAperture = self.extraReflection.getSettings()
         refMeta = self.cellSelector.getSelectedReferenceMeta()
         cellMeta = self.cellSelector.getSelectedCellMetas()
@@ -105,7 +109,7 @@ class DynamicsSettingsFrame(QScrollArea, AbstractSettingsFrame):
             raise ValueError("The selected reference acquisition has no valid Dynamics data.")
         if len(cellMeta) == 0:
             raise ValueError("No valid Dynamics acquisitions were selected.")
-        return pwspy.analysis.dynamics.DynamicsRuntimeAnalysisSettings(settings=pwspy.analysis.dynamics.DynamicsAnalysisSettings(extraReflectanceId=erMetadata.idTag if erMetadata is not None else None,
+        return DynamicsRuntimeAnalysisSettings(settings=pwspy.analysis.dynamics.DynamicsAnalysisSettings(extraReflectanceId=erMetadata.idTag if erMetadata is not None else None,
                                                                                                                                  referenceMaterial=refMaterial,
                                                                                                                                  numericalAperture=numericalAperture,
                                                                                                                                  relativeUnits=self.relativeUnits.checkState() != 0,

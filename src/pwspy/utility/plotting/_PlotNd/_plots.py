@@ -32,11 +32,11 @@ class PlotBase(ABC):
     def __init__(self, ax: plt.Axes, dimensions: typing.Tuple[int, ...]):
         self.ax = ax  # The axes object that this plot exists on.
         self.dimensions = dimensions # The dimensions of ND-array that this plot visualized. 2d for an image, 1d for a plot
-        self._background = None
+        self.background = None
 
     def updateBackground(self):
         """Refresh the background, this is for the purposes of blitting."""
-        self._background = self.ax.figure.canvas.copy_from_bbox(self.ax.bbox)
+        self.background = self.ax.figure.canvas.copy_from_bbox(self.ax.bbox)
 
     def drawArtists(self):
         """Redraw each matplotlib artist managed by this object."""
@@ -78,10 +78,10 @@ class ImPlot(PlotBase):
             of which dimensions of the data this plot is representing.
 
     """
-    def __init__(self, ax: plt.Axes, verticalIndex, horizontalIndex, dims: typing.Tuple[int, int]):
+    def __init__(self, ax: plt.Axes, verticalIndex, horizontalIndex, dims: typing.Tuple[int, int], cmap=None):
         super().__init__(ax, dims)
         self.shape = (len(verticalIndex), len(horizontalIndex))
-        self.im = self.ax.imshow(np.zeros(self.shape), aspect='auto', animated=True, interpolation=None)
+        self.im = self.ax.imshow(np.zeros(self.shape), aspect='auto', animated=True, interpolation=None, cmap=cmap)
         self.setIndices(verticalIndex, horizontalIndex)
         self.ax.get_yaxis().set_visible(False)
         self.ax.get_xaxis().set_visible(False)

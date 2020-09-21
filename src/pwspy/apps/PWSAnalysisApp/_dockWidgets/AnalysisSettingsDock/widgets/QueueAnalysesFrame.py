@@ -20,10 +20,7 @@ from typing import List, Optional, Tuple
 from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QListWidgetItem, QWidget, QScrollArea, QListWidget, QMessageBox, QMenu, QAction, QDialog, QGridLayout, QPushButton
-
-from pwspy.analysis._abstract import AbstractRuntimeAnalysisSettings
-from pwspy.analysis.dynamics import DynamicsRuntimeAnalysisSettings
-from pwspy.analysis.pws import PWSRuntimeAnalysisSettings
+from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.runtimeSettings import AbstractRuntimeAnalysisSettings, DynamicsRuntimeAnalysisSettings, PWSRuntimeAnalysisSettings
 import typing
 if typing.TYPE_CHECKING:
     from pwspy.apps.PWSAnalysisApp._dockWidgets import AnalysisSettingsDock
@@ -83,8 +80,8 @@ class QueuedAnalysesFrame(QScrollArea):
         # Highlight relevant cells
         cellAcq = [cell.acquisitionDirectory for cell in item.settings.cellMetadata]
         refAcq = item.settings.referenceMetadata.acquisitionDirectory
-        self.parent.selector.setHighlightedCells(cellAcq)
-        self.parent.selector.setHighlightedReference(refAcq)
+        self.parent._selector.setHighlightedCells(cellAcq)
+        self.parent._selector.setHighlightedReference(refAcq)
 
     def displayItemSettings(self, item: AnalysisListItem):
         # Open a dialog

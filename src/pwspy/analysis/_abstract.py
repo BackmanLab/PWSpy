@@ -103,58 +103,6 @@ class AbstractAnalysisSettings(ABC):
         pass
 
 
-class AbstractRuntimeAnalysisSettings(ABC):
-    """This represents all the information that gets passed to an analysis.
-    Unlike AnalysisSettings they can contain objects which are not meant to be saved/loaded.
-    This includes the references to the acquisitions to be analyzed as well as the files used
-    for calibration and normalization"""
-    
-    @abstractmethod
-    def getSaveableSettings(self) -> AbstractAnalysisSettings:
-        """
-
-        Returns:
-            Only the settings which can be saved.
-        """
-        pass
-
-    @abstractmethod
-    def getAnalysisName(self) -> str:
-        """
-
-        Returns:
-            The name the analysis is referred to by
-        """
-        pass
-
-    @abstractmethod
-    def getReferenceMetadata(self) -> AnalysisManagerMetaDataBase:
-        """
-
-        Returns:
-            The metadata object referring to the reference image used for normalization.
-        """
-        pass
-
-    @abstractmethod
-    def getCellMetadatas(self) -> typing.Sequence[AnalysisManagerMetaDataBase]:
-        """
-
-        Returns:
-            A sequence of metadata objects for the acquisitions to be analyzed.
-        """
-        pass
-
-    @abstractmethod
-    def getExtraReflectanceMetadata(self) -> typing.Optional[ERMetaData]:
-        """
-
-        Returns:
-            The metadata object for the extra reflection correction. This can be none if you want to skip this correction.
-        """
-        pass
-
-
 class AbstractAnalysis(ABC):
     """This abstract class lays out the basic skeleton that an analysis class should implement."""
     @abstractmethod

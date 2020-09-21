@@ -25,14 +25,13 @@ Classes
     :toctree: generated/
 
     PWSAnalysisSettings
-    PWSRuntimeAnalysisSettings
     PWSAnalysisResults
     PWSAnalysis
 
 
 Inheritance
 -------------
-.. inheritance-diagram:: PWSAnalysisSettings PWSRuntimeAnalysisSettings PWSAnalysisResults PWSAnalysis
+.. inheritance-diagram:: PWSAnalysisSettings PWSAnalysisResults PWSAnalysis
     :parts: 1
 
 """
@@ -47,13 +46,13 @@ import pandas as pd
 from scipy import signal as sps
 import multiprocessing as mp
 from typing import Type, Tuple, List, Optional
-from ._abstract import AbstractHDFAnalysisResults, AbstractAnalysis, AbstractAnalysisResults, AbstractAnalysisSettings, \
-    AbstractRuntimeAnalysisSettings
+from ._abstract import AbstractHDFAnalysisResults, AbstractAnalysis, AbstractAnalysisResults, AbstractAnalysisSettings
 from . import warnings
 import pwspy.dataTypes as pwsdt
 from pwspy import dateTimeFormat
 from pwspy.utility.misc import cached_property
 from pwspy.utility.reflection import reflectanceHelper, Material
+from ..dataTypes import ERMetaData
 
 
 def clearError(func):
@@ -87,16 +86,16 @@ class PWSAnalysis(AbstractAnalysis):  # TODO Handle the case where pixels are 0,
     on as many data cubes as you want.
 
     Args:
-        runtimeSettings: The settings used for the analysis
-        ref: The reference acquisition used for analysis
+        settings: The settings used for the analysis
+        extraReflectanceMetadata: the metadata object referring to a calibration file for extra reflectance.
+        ref: The reference acquisition used for analysis #TODO isn't the reference also part of the runtimeSettings? Yes, but a lot of preprocessing is done to ref by the `taskManager` before passing it in here, maybe that's not right, but it's a lot of work to fix.
     """
-    def __init__(self, runtimeSettings: PWSRuntimeAnalysisSettings, ref: pwsdt.ImCube): #TODO it would make sense to include the reference in the runtime settings too.
+    def __init__(self, settings: PWSAnalysisSettings, extraReflectanceMetadata: typing.Optional[ERMetaData], ref: pwsdt.ImCube):
         from pwspy.dataTypes import ExtraReflectanceCube
         assert ref.processingStatus.cameraCorrected, "Before attempting to analyze using this reference make sure that it has had camera darkcounts and non-linearity corrected for."
         super().__init__()
         self._initWarnings = []
-        extraReflectance = ExtraReflectanceCube.fromMetadata(runtimeSettings.extraReflectanceMetadata) if runtimeSettings.extraReflectanceMetadata is not None else None
-        settings = runtimeSettings.getSaveableSettings()
+        extraReflectance = ExtraReflectanceCube.fromMetadata(extraReflectanceMetadata) if extraReflectanceMetadata is not None else None
         self.settings = settings
         ref.normalizeByExposure()
         if ref.metadata.pixelSizeUm is not None: #Only works if pixel size was saved in the metadata.
@@ -172,8 +171,11 @@ class PWSAnalysis(AbstractAnalysis):  # TODO Handle the case where pixels are 0,
         return cube
 
     def _filterSignal(self, data: np.ndarray, sampleFreq: float):
-        b, a = sps.butter(self.settings.filterOrder, self.settings.filterCutoff, fs=sampleFreq)  # Generatre the filter coefficients
-        return sps.filtfilt(b, a, data, axis=2).astype(data.dtype)  # Actually do the filtering on the data.
+        if self.settings.filterCutoff is None: # Skip filtering.
+            return data
+        else:
+            b, a = sps.butter(self.settings.filterOrder, self.settings.filterCutoff, fs=sampleFreq)  # Generate the filter coefficients
+            return sps.filtfilt(b, a, data, axis=2).astype(data.dtype)  # Actually do the filtering on the data.
 
     # -- Polynomial Fit
     def _fitPolynomial(self, cube: pwsdt.KCube):
@@ -385,9 +387,9 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
 
     Attributes:
         filterOrder (int): The `order` of the buttersworth filter used for lowpass filtering.
-        filterCutoff (float): The cutoff frequency of the buttersworth filter used for lowpass filtering.
+        filterCutoff (float): The cutoff frequency of the buttersworth filter used for lowpass filtering. Set to `None` to skip lowpass filtering.
         polynomialOrder (int): The order of the polynomial which will be fit to the reflectance and then subtracted before calculating the analysis results.
-        extraReflectanceId (str): The `idtag` of the extra reflection used for correction.
+        extraReflectanceId (str): The `idtag` of the extra reflection used for correction. Set to `None` if extra reflectance calibration is being skipped.
         referenceMaterial (Material): The material that was being imaged in the reference acquisition
         wavelengthStart (int): The acquisition spectra will be truncated at this wavelength before analysis.
         wavelengthStop (int): The acquisition spectra will be truncated after this wavelength before analysis.
@@ -398,11 +400,12 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
         relativeUnits (bool): relativeUnits: If `True` then all calculation are performed such that the reflectance is 1 if it matches the reference. If `False` then we use the
             theoretical reflectance of the reference  (based on NA and reference material) to normalize our results to the actual physical reflectance of
             the sample (about 0.4% for water)
+        cameraCorrection: An object describing the dark counts and non-linearity of the camera used.
     """
     filterOrder: int
-    filterCutoff: float
+    filterCutoff: typing.Optional[float]
     polynomialOrder: int
-    extraReflectanceId: str
+    extraReflectanceId: typing.Optional[str]
     referenceMaterial: Material
     wavelengthStart: int
     wavelengthStop: int
@@ -431,27 +434,3 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
             if newKey not in d.keys():
                 d[newKey] = None #For a while these settings were missing from the code. Allow us to still load old files.
         return cls(**d)
-
-
-@dataclasses.dataclass
-class PWSRuntimeAnalysisSettings(AbstractRuntimeAnalysisSettings):  # Inherit docstring
-    settings: PWSAnalysisSettings
-    extraReflectanceMetadata: Optional[pwsdt.ERMetaData]
-    referenceMetadata: pwsdt.ICMetaData
-    cellMetadata: typing.List[pwsdt.ICMetaData]
-    analysisName: str
-
-    def getSaveableSettings(self) -> PWSAnalysisSettings:
-        return self.settings
-
-    def getAnalysisName(self) -> str:
-        return self.analysisName
-
-    def getReferenceMetadata(self) -> pwsdt.ICMetaData:
-        return self.referenceMetadata
-
-    def getCellMetadatas(self) -> typing.Sequence[pwsdt.ICMetaData]:
-        return self.cellMetadata
-
-    def getExtraReflectanceMetadata(self) -> pwsdt.ERMetaData:
-        return self.extraReflectanceMetadata

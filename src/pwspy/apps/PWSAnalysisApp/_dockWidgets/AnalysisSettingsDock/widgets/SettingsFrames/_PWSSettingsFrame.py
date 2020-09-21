@@ -18,28 +18,27 @@
 from __future__ import annotations
 import os
 from glob import glob
-from typing import Optional, Tuple
 import typing
 
-from pwspy.apps.PWSAnalysisApp._dockWidgets import CellSelectorDock
 from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames._AbstractSettingsFrame import AbstractSettingsFrame
 from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.widgets.SettingsFrames._sharedWidgets import ExtraReflectanceSelector, HardwareCorrections, \
     QHSpinBox, QHDoubleSpinBox, VerticallyCompressedWidget
-
+from pwspy.apps.PWSAnalysisApp.componentInterfaces import CellSelector
+from pwspy.apps.PWSAnalysisApp._dockWidgets.AnalysisSettingsDock.runtimeSettings import PWSRuntimeAnalysisSettings
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QScrollArea, QGridLayout, QLineEdit, QLabel, QGroupBox, QHBoxLayout, QWidget, QRadioButton, \
-    QFrame, QCheckBox, QMessageBox
+    QFrame, QCheckBox
 
-from pwspy.analysis.pws import PWSAnalysisSettings, PWSRuntimeAnalysisSettings
+from pwspy.analysis.pws import PWSAnalysisSettings
 from pwspy.apps.PWSAnalysisApp import applicationVars
-from pwspy.apps.PWSAnalysisApp._sharedWidgets.collapsibleSection import CollapsibleSection
+from pwspy.apps.PWSAnalysisApp.sharedWidgets.collapsibleSection import CollapsibleSection
 
 
 class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
-    def __init__(self, erManager: ERManager, cellSelector: CellSelectorDock):
+    def __init__(self, erManager: ERManager, cellSelector: CellSelector):
         super().__init__()
         self.cellSelector = cellSelector
 
