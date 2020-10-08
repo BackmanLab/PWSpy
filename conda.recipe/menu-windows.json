@@ -6,13 +6,13 @@
             "name": "PWS Analysis",
             "pyscript": "${PYTHON_SCRIPTS}/PWSAnalysis-script.py",
             "workdir": "${USERPROFILE}",
-            "icon": "${PREFIX}/Menu/cellLogo.ico"
+            "icon": "${MENU_DIR}/cellLogo.ico"
         },
         {
             "name": "PWS ERCreator",
             "pyscript": "${PYTHON_SCRIPTS}/ERCreator-script.py",
             "workdir": "${USERPROFILE}",
-            "icon": "${PREFIX}/Menu/cellLogo.ico"
+            "icon": "${MENU_DIR}/cellLogo.ico"
         }
     ]
 }
