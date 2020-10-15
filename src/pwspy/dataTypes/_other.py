@@ -265,7 +265,11 @@ class Roi:
             A new instance of Roi loaded from file
         """
         filePath = os.path.join(directory, f'BW{number}_{name}.mat')
-        return cls(name, number, mask=spio.loadmat(filePath)['BW'].astype(np.bool), verts=None, filePath=filePath, fileFormat=Roi.FileFormats.MAT)
+        try:
+            return cls(name, number, mask=spio.loadmat(filePath)['BW'].astype(np.bool), verts=None, filePath=filePath, fileFormat=Roi.FileFormats.MAT)
+        except KeyError:
+            return cls(name, number, mask=spio.loadmat(filePath)['mask'].astype(np.bool), verts=None, filePath=filePath, fileFormat=Roi.FileFormats.MAT)  # Some Nanocytomics files use 'mask' instead of 'bw'. annoying.    
+
 
     @classmethod
     def loadAny(cls, directory: str, name: str, number: int):

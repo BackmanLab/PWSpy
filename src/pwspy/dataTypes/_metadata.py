@@ -771,6 +771,9 @@ class AcqDir:
         if (self.pws is None) and (self.dynamics is None) and (len(self.fluorescence) == 0):
             raise OSError(f"Could not find a valid PWS or Dynamics Acquisition at {directory}.")
 
+    def __repr__(self):
+        return f"AcqDir({self.filePath})"
+
     @cached_property
     def pws(self) -> Optional[ICMetaData]:
         """ICMetaData: Returns None if no PWS acquisition was found."""
