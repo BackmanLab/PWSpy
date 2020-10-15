@@ -38,9 +38,11 @@ class AnimationDlg(QDialog):
         parent (QWidget): The widget that this dialog will act as the child for.
     """
     class SaveMethods(Enum):
+        MP4 = 'ffmpeg'
         GIF = 'pillow'
         HTML = 'html'
-        MP4 = 'ffmpeg'
+
+    Extensions = {SaveMethods.GIF: 'gif', SaveMethods.HTML: 'html', SaveMethods.MP4: 'mp4'}
 
     def __init__(self, fig, input: Union[List[List[Artist]], Tuple[Callable, Iterable]], parent: QWidget):
         super().__init__(parent)
@@ -59,7 +61,6 @@ class AnimationDlg(QDialog):
         self.fPath = QLineEdit(self)
         self.browseButton = QPushButton(QtGui.QIcon(os.path.join(resources, 'folder.svg')), '')
         self.browseButton.released.connect(self.browseFile)
-
 
         self.methodCombo = QComboBox(self)
         [self.methodCombo.addItem(i.name, i) for i in self.SaveMethods]
@@ -88,19 +89,24 @@ class AnimationDlg(QDialog):
 
         self.setLayout(layout)
 
-    def save(self): #TODO frame interval doesn't seem to work. Automatically fix the file name to match the accepted extension.
+    def save(self):
         """Save the animation to file depending on the settings of the dialog."""
-        if callable(self.input[0]):
-            ani = animation.FuncAnimation(self.figure, self.input[0], frames=self.input[1], interval=self.intervalSpinBox.value())
-        else:
-            ani = animation.ArtistAnimation(self.figure, self.input, interval=self.intervalSpinBox.value())
-        Writer = animation.writers[self.methodCombo.currentData().value]
-        if Writer is animation.FFMpegWriter:
-            writer = Writer(bitrate=-1)  # This should improve quality
-        else:
-            writer = Writer()
         try:
-            ani.save(self.fPath.text(), writer=writer)
+            saveMethod = self.methodCombo.currentData()
+            savePath = self.fPath.text()
+            frameIntervalMs = self.intervalSpinBox.value()
+            if os.path.splitext(savePath)[1] != self.Extensions[saveMethod]:  # Make sure we have the right file extension to avoid an error.
+                savePath += '.' + self.Extensions[saveMethod]
+            if callable(self.input[0]):
+                ani = animation.FuncAnimation(self.figure, self.input[0], frames=self.input[1], interval=frameIntervalMs)
+            else:
+                ani = animation.ArtistAnimation(self.figure, self.input, interval=frameIntervalMs)
+            Writer = animation.writers[saveMethod.value]
+            if Writer is animation.FFMpegWriter:
+                writer = Writer(bitrate=-1, codec='libx264', fps=1000/frameIntervalMs)  # This should improve quality
+            else:
+                writer = Writer(fps=1000/frameIntervalMs)
+            ani.save(savePath, writer=writer)
         except Exception as e:
             traceback.print_exc()
             msg = QMessageBox.warning(self, 'Warning', str(e))

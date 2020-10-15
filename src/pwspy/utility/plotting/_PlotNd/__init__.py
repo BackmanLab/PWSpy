@@ -20,7 +20,7 @@ from typing import Tuple, List, Optional
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QSizeF, QTimer
 from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QPushButton, QGraphicsView, \
-    QGraphicsScene, QGroupBox, QVBoxLayout, QCheckBox, QButtonGroup
+    QGraphicsScene, QGroupBox, QVBoxLayout, QCheckBox, QButtonGroup, QMessageBox
 from matplotlib import pyplot
 
 from pwspy.apps.sharedWidgets.rangeSlider import QRangeSlider
@@ -147,7 +147,7 @@ class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of c
         self.rotateButton.released.connect(self.canvas.rollAxes)
 
         self.saveButton = QPushButton("Save Animation")
-        self.saveButton.released.connect(lambda: AnimationDlg(self.canvas.fig, (self._animationUpdaterFunc, range(self.canvas.data.shape[2])), self).exec())
+        self.saveButton.released.connect(self._saveAnimation)
 
         layout = QGridLayout()
         layout.addWidget(self.view, 0, 0, 8, 8)
@@ -161,14 +161,18 @@ class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of c
 
         self.show()
 
+    def _saveAnimation(self):
+        def animationUpdaterFunc(z: int):
+            """Used by the animation saver to iterate through the 3rd dimension of the data."""
+            self.canvas.coords = self.canvas.coords[:2] + (z,) + self.canvas.coords[3:]
+            self.canvas.updatePlots()
+
+        dlg = AnimationDlg(self.canvas.fig, (animationUpdaterFunc, range(self.canvas.data.shape[2])), self)
+        dlg.exec()
+
     def _updateLimits(self):
         """"""
         self.canvas.updateLimits(self.slider.end(), self.slider.start())
-
-    def _animationUpdaterFunc(self, z: int):
-        """Used by the animation saver to iterate through the 3rd dimension of the data."""
-        self.canvas.coords = self.canvas.coords[:2] + (z,) + self.canvas.coords[3:]
-        self.canvas.updatePlots()
 
     def _handleButtons(self, button: QPushButton):
         """Acts as a callback when one of the ROI drawing buttons is pressed. Activates the corresponding ROI selector
@@ -238,13 +242,13 @@ if __name__ == '__main__':
     x = np.linspace(0, 1, num=100)
     y = np.linspace(0, 1, num=50)
     z = np.linspace(0, 3, num=101)
-    t = np.linspace(0, 1, num=3)
-    c = np.linspace(12, 13, num=3)
-    X, Y, Z, T, C = np.meshgrid(x, y, z, t, c)
-    arr = np.sin(2 * np.pi * 1 * Z) + .5 * X + np.cos(2*np.pi*4*Y) * T**1.5 * C*.1
+    # t = np.linspace(0, 1, num=3)
+    # c = np.linspace(12, 13, num=3)
+    X, Y, Z = np.meshgrid(x, y, z)
+    arr = np.sin(2 * np.pi * 1 * Z) + .5 * X + np.cos(2*np.pi*4*Y)# * T**1.5 * C*.1
     app = QApplication(sys.argv)
-    # p = PlotNd(arr[:,:,:,0, 0], names=('y', 'x', 'z'), indices=[y, x, z]) # 3d
+    p = PlotNd(arr[:,:,:], names=('y', 'x', 'z'), indices=[y, x, z]) # 3d
     # p = PlotNd(arr[:,:,:,:,0], names=('y', 'x', 'z', 't'), indices=[y, x, z, t]) #4d
-    p = PlotNd(arr, names=('y', 'x', 'z', 't', 'c'), indices=[y, x, z, t, c]) #5d
+    # p = PlotNd(arr, names=('y', 'x', 'z', 't', 'c'), indices=[y, x, z, t, c]) #5d
     sys.exit(app.exec_())
 
