@@ -114,7 +114,7 @@ class AcquisitionSequencerPlugin(CellSelectorPlugin): #TODO switch to a qdialog 
         select: typing.List[AcqDir] = []
         for cell in self._cells:
             if cell.sequencerCoordinate in coordRange:
-                select.append(cell.acquisitionDirectory)
+                select.append(cell)
         self._selector.setSelectedCells(select)
 
 
