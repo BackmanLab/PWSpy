@@ -214,7 +214,7 @@ def processParallel(fileFrame: pd.DataFrame, processorFunc: typing.Callable[[], 
     -------
         List containing the results of each execution of `processorFunc`.
     """
-    numProcesses = psutil.cpu_count(logical=False) - 1  # Use one less than number of available cores.
+    numProcesses = psutil.cpu_count(logical=False) - 1  # Use one less than number of available cores. If we use all cores then things can get locked up.
     po = mp.Pool(processes=numProcesses, initializer=initializer, initargs=initArgs)
     try:
         vars = fileFrame.iterrows() if procArgs is None else zip(fileFrame.iterrows(), *zip(*[[procArgs]] * len(fileFrame)))
