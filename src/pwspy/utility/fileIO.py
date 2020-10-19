@@ -192,7 +192,7 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
         return origClass(ret['cube'])
 
 
-def processParallel(fileFrame: pd.DataFrame, processorFunc: typing.Callable[[], typing.Any], initializer: typing.Callable=None, initArgs: Tuple=None, procArgs: Tuple=None) -> List:
+def processParallel(fileFrame: pd.DataFrame, processorFunc: typing.Callable[[], typing.Any], initializer: typing.Callable=None, initArgs: Tuple=None, procArgs: Tuple=None, numProcesses: int = None) -> List:
     """A convenience function to process the rows of a pandas DataFrame in parallel
 
     Parameters
@@ -214,7 +214,8 @@ def processParallel(fileFrame: pd.DataFrame, processorFunc: typing.Callable[[], 
     -------
         List containing the results of each execution of `processorFunc`.
     """
-    numProcesses = psutil.cpu_count(logical=False) - 1  # Use one less than number of available cores. If we use all cores then things can get locked up.
+    if numProcesses is None:
+        numProcesses = psutil.cpu_count(logical=False) - 1  # Use one less than number of available cores. If we use all cores then things can get locked up.
     po = mp.Pool(processes=numProcesses, initializer=initializer, initargs=initArgs)
     try:
         vars = fileFrame.iterrows() if procArgs is None else zip(fileFrame.iterrows(), *zip(*[[procArgs]] * len(fileFrame)))
