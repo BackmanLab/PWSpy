@@ -45,7 +45,8 @@ class _PlotFields(Enum):
     Fluorescence8 = (None, 'fluorescence8')
     Fluorescence9 = (None, 'fluorescence9')  # Hopefully we never need nearly this many.
     # PWS specific
-    OpdPeak = (_AnalysisTypes.PWS, 'opdPeak')
+    OpdPeak = (_AnalysisTypes.PWS, 'opdPeak')  # Even though this isn't really a name of an analysis field we need something unique for this enum value.
+    SingleWavelength = (_AnalysisTypes.PWS, 'singleWavelength')
     MeanReflectance = (_AnalysisTypes.PWS, 'meanReflectance')
     RMS = (_AnalysisTypes.PWS, 'rms')
     AutoCorrelationSlope = (_AnalysisTypes.PWS, 'autoCorrelationSlope')
@@ -94,6 +95,9 @@ class AnalysisPlotter:
             if field is _PlotFields.OpdPeak:  # Return the index corresponding to the max of that pixel's opd funtion.
                 opd, opdIndex = self.analysis.pws.opd
                 self.data = opdIndex[np.argmax(opd, axis=2)]
+            elif field is _PlotFields.SingleWavelength:  # Return the image of the middle wavelength reflectance.
+                _ = self.analysis.pws.reflectance.data
+                self.data = _[:, :, _.shape[2]//2] # + self.analysis.pws.meanReflectance # It actually looks better without the meanReflectance added
             else:
                 self.data = getattr(analysis, paramName)
         assert len(self.data.shape) == 2
