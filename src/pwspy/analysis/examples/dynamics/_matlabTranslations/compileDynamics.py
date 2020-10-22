@@ -20,7 +20,7 @@ import numpy as np
 import os
 import pandas as pd
 
-#TODO this is very nonfunctional. just a sketch
+# This is very nonfunctional. just a sketch
 
 wDir = r''
 cellNums = range(1001, 1015)

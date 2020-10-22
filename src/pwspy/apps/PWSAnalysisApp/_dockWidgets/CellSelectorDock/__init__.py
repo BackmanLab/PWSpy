@@ -31,8 +31,8 @@ from pwspy.apps.PWSAnalysisApp.pluginInterfaces import CellSelectorPluginSupport
 
 class CellSelectorDock(CellSelector, QDockWidget):
     """This dockwidget is used by the user to select which cells they want to act upon (run an analysis, plot, etc.)"""
-    def __init__(self):
-        super().__init__("Cell Selector")
+    def __init__(self, parent: QWidget):
+        super().__init__("Cell Selector", parent=parent)
         self._pluginSupport = CellSelectorPluginSupport(self, self)
         self.setStyleSheet("QDockWidget > QWidget { border: 1px solid lightgray; }")
         self.setObjectName('CellSelectorDock')  # needed for restore state to work

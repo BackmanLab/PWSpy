@@ -35,8 +35,7 @@ import os
 import enum
 from ._abstract import AbstractAnalysisSettings, AbstractAnalysis, AbstractAnalysisResults, AbstractHDFAnalysisResults
 
-# TODO replace slope entirely with CDR
-# TODO settings are missing reference IDtag but they exists in the results. Results and settings both contain extra reflectance idTag, reduntant
+# TODO settings are missing reference IDtag but they exist in the results. Results and settings both contain extra reflectance idTag, reduntant
 
 resources = os.path.join(os.path.split(__file__)[0], '_resources')
 defaultSettingsPath = os.path.join(resources, 'defaultAnalysisSettings')

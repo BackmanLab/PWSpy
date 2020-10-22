@@ -63,6 +63,7 @@ class AnalysisViewer(AnalysisPlotter, RoiPlot):
         if self.analysis.pws is not None:
             if 'reflectance' in self.analysis.pws.file.keys(): #This is the normalized 3d data cube. needed to generate the opd.
                 items.append(_.OpdPeak)
+                items.append(_.SingleWavelength)
         for i in range(len(self.acq.fluorescence)):
             items.append(self._fluorescencePlotFields[i])
         self.analysisCombo.addItems([i.name for i in items])

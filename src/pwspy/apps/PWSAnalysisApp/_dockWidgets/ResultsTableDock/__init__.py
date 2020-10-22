@@ -35,8 +35,8 @@ if typing.TYPE_CHECKING:
 
 
 class ResultsTableControllerDock(ResultsTableController, QDockWidget):
-    def __init__(self):
-        super().__init__("Results")
+    def __init__(self, parent: QWidget):
+        super().__init__("Results", parent=parent)
         self.setStyleSheet("QDockWidget > QWidget { border: 1px solid lightgray; }")
         self.setObjectName('ResultsTableDock')
         self._widget = QWidget()

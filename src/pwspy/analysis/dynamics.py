@@ -216,7 +216,6 @@ class DynamicsAnalysisResults(AbstractHDFAnalysisResults): # Inherit docstring.
     @classmethod
     def create(cls, settings: DynamicsAnalysisSettings, meanReflectance: np.ndarray, rms_t_squared: np.ndarray, reflectance: pwsdt.DynCube, diffusion: np.ndarray,
                 imCubeIdTag: str, referenceIdTag: str, extraReflectionIdTag: typing.Optional[str]): # Inherit docstring.
-        #TODO check datatypes here
         d = {'time': datetime.now().strftime(dateTimeFormat),
             'meanReflectance': meanReflectance,
             'reflectance': reflectance,

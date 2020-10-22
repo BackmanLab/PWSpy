@@ -29,8 +29,8 @@ from pwspy.apps.PWSAnalysisApp.componentInterfaces import CellSelector, Analysis
 
 
 class AnalysisSettingsDock(AnalysisSettingsCreator, QDockWidget):
-    def __init__(self, cellSelector: CellSelector, erManager):
-        super().__init__("Settings")
+    def __init__(self, parent: QWidget, cellSelector: CellSelector, erManager):
+        super().__init__("Settings", parent=parent)
         self._erManager = erManager
         self.setStyleSheet("QDockWidget > QWidget { border: 1px solid lightgray; }")
         self._selector = cellSelector

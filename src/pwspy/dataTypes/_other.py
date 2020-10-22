@@ -265,7 +265,11 @@ class Roi:
             A new instance of Roi loaded from file
         """
         filePath = os.path.join(directory, f'BW{number}_{name}.mat')
-        return cls(name, number, mask=spio.loadmat(filePath)['BW'].astype(np.bool), verts=None, filePath=filePath, fileFormat=Roi.FileFormats.MAT)
+        try:
+            return cls(name, number, mask=spio.loadmat(filePath)['BW'].astype(np.bool), verts=None, filePath=filePath, fileFormat=Roi.FileFormats.MAT)
+        except KeyError:
+            return cls(name, number, mask=spio.loadmat(filePath)['mask'].astype(np.bool), verts=None, filePath=filePath, fileFormat=Roi.FileFormats.MAT)  # Some Nanocytomics files use 'mask' instead of 'bw'. annoying.    
+
 
     @classmethod
     def loadAny(cls, directory: str, name: str, number: int):
@@ -382,10 +386,11 @@ class Roi:
         for fformat, fileNames in files.items():
             if fformat == Roi.FileFormats.HDF:
                 for i in fileNames:
-                    with h5py.File(i, 'r') as hf: # making sure to open this file in read mode make the function way faster!
+                    with h5py.File(i, 'r') as hf:  # making sure to open this file in read mode makes the function way faster!
                         for g in hf.keys():
-                            if isinstance(hf[g], h5py.Group): #Current file format
+                            if isinstance(hf[g], h5py.Group):  # Current file format
                                 if 'mask' in hf[g] and 'verts' in hf[g]:
+                                    assert 'ROI_' in i
                                     name = i.split("ROI_")[-1][:-3]
                                     try:
                                         ret.append((name, int(g), Roi.FileFormats.HDF2))
@@ -394,7 +399,8 @@ class Roi:
                                 else:
                                     raise ValueError("File is missing datasets")
                             elif isinstance(hf[g], h5py.Dataset): #Legacy format
-                                name = i.split('ROI_')[-1][:-3]
+                                assert 'roi_' in i
+                                name = i.split('roi_')[-1][:-3]  # Old files used lower case rather than "ROI_"
                                 try:
                                     ret.append((name, int(g), Roi.FileFormats.HDF))
                                 except ValueError:

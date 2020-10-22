@@ -109,7 +109,7 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
         std = self.data[mask].std(axis=0)
         return mean, std
 
-    def selectLassoROI(self, displayIndex: typing.Optional[int] = None) -> np.ndarray:
+    def selectLassoROI(self, displayIndex: typing.Optional[int] = None, clim: typing.Sequence = None) -> np.ndarray:
         """
         Allow the user to draw a `freehand` ROI on an image of the acquisition.
 
@@ -123,7 +123,8 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
         if displayIndex is None:
             displayIndex = self.data.shape[2]//2
         fig, ax = plt.subplots()
-        ax.imshow(self.data[:, :, displayIndex])
+        data = self.data[:, :, displayIndex]
+        ax.imshow(data, clim=[np.percentile(data, 1), np.percentile(data, 99)])
         fig.suptitle("Close to accept ROI")
 
         def onSelect(verts):

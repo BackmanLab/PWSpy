@@ -217,6 +217,7 @@ class PlotNdCanvas(FigureCanvasQTAgg):
 
     @data.setter
     def data(self, d: np.ndarray):
+        assert d.shape == self._data.shape, "Cannot change the shape of the PlotNd's data" # Don't allow changing the shape of the data. Not supported
         self._data = d
         self.updatePlots()
 

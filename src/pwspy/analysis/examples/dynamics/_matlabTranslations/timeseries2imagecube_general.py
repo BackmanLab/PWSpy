@@ -16,6 +16,7 @@
 # along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
 
 from pwspy.dataTypes import DynCube
+import h5py
 
 outPath = r''
 refPath = r''
@@ -23,4 +24,5 @@ refPath = r''
 ref = DynCube.loadAny(refPath)
 ref.data[:, :, :] = ref.data.mean(axis=2)[:, :, None] #The reference should be static over time. Take the mean to filter out all noise.
 #TODO we should save or report the noise level as well.
-ref.toFile(outPath)
+with h5py.File("outputRef.h5py", 'w') as f:
+    ref.toHdfDataset(f, outPath)

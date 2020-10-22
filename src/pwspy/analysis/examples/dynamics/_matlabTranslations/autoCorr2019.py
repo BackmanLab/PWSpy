@@ -36,7 +36,7 @@ for num in cellNum + [background]: #Loop through all cell folders +1 for backgro
     dyn.correctCameraEffects()
     dyn.normalizeByExposure()
     dyn.normalizeByReference(ref)
-    dyn.data = dyn.data - dyn.data.mean(axis=2)[:, :, None] #Subtract the mean of each spectra #TODO what is the purpose of this?
+    dyn.data = dyn.data - dyn.data.mean(axis=2)[:, :, None] #Subtract the mean of each spectra
 
     if num == background: #If background then generate a random roi
         # Randomly sample points of background to save space
@@ -51,7 +51,7 @@ for num in cellNum + [background]: #Loop through all cell folders +1 for backgro
 
     for roi in rois:
         F = np.fft.rfft(dyn.data[roi.mask], axis=1) #FFT of each spectra in the roi
-        data = np.fft.irfft(F*np.conjugate(F), axis=1) / F.shape[1] #Autocorrelation #TODO Should check if this matches with other methods of calculating autocorrelation. I read that this might only work if the original data is padded with zeros.
+        data = np.fft.irfft(F*np.conjugate(F), axis=1) / F.shape[1] #Autocorrelation
         truncLength = 100
         data = data[:, :truncLength]
-        #TODO save it.
+        #TODO save the result

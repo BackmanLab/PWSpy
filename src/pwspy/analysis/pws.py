@@ -80,7 +80,7 @@ def getFromDict(func):
     return newFunc
 
 
-class PWSAnalysis(AbstractAnalysis):  # TODO Handle the case where pixels are 0, mark them as nan
+class PWSAnalysis(AbstractAnalysis):
     """The standard PWS analysis routine. Initialize and then `run` for as many different ImCubes as you want.
     For a given set of settings and reference you only need to instantiate one instance of this class. You can then perform `run`
     on as many data cubes as you want.
@@ -200,7 +200,7 @@ class PWSAnalysis(AbstractAnalysis):  # TODO Handle the case where pixels are 0,
         assert rms.shape == slope.shape
         k = 2 * np.pi / 0.55
         fact = 1.38 * 1.38 / 2 / k / k
-        A1 = 0.008  # TODO Determine what these constants are. Are they still valid for the newer analysis where we are using actual reflectance rather than just normalizing to reflectance ~= 1 ?
+        A1 = 0.008  # My understanding is that this constant was experimentally determined. Not really sure though.
         A2 = 4
         ld = ((A2 / A1) * fact) * (rms / (-1 * slope.reshape(rms.shape)))
         return ld
@@ -239,7 +239,6 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
     def create(cls, settings: PWSAnalysisSettings, reflectance: pwsdt.KCube, meanReflectance: np.ndarray, rms: np.ndarray,
                polynomialRms: np.ndarray, autoCorrelationSlope: np.ndarray, rSquared: np.ndarray, ld: np.ndarray,
                imCubeIdTag: str, referenceIdTag: str, extraReflectionTag: Optional[str]):  # Inherit docstring
-        #TODO check datatypes here
         d = {'time': datetime.now().strftime(dateTimeFormat),
             'reflectance': reflectance,
             'meanReflectance': meanReflectance,

@@ -14,12 +14,21 @@ class SequencerCoordinateStep:
     def __eq__(self, other: SequencerCoordinateStep):
         return self.stepId == other.stepId and self.iteration == other.iteration
 
+    def __repr__(self):
+        s = f"Step(ID:{self.stepId}"
+        if self.iteration is not None:
+            s += f", i:{self.iteration}"
+        s += ")"
+        return s
 
 class SequencerCoordinate:
     def __init__(self, coordSteps: typing.List[SequencerCoordinateStep]):
         """treePath should be a list of the id numbers for each step in the path to this coordinate.
         iterations should be a list indicating which iteration of each step the coordinate was from."""
         self.fullPath = tuple(coordSteps)
+
+    def __repr__(self):
+        return f"SeqCoord:{self.fullPath}"
 
     @staticmethod
     def fromDict(d: dict) -> SequencerCoordinate:
@@ -83,9 +92,16 @@ class SequencerCoordinateRange:
                 return False
         return True
 
-class SeqAcqDir:
-    def __init__(self, acq: AcqDir):
-        self.acquisitionDirectory = acq
-        path = os.path.join(acq.filePath, "sequencerCoords.json")
+
+class SeqAcqDir(AcqDir):
+    def __init__(self, directory: typing.Union[str, AcqDir]):
+        if isinstance(directory, AcqDir):
+            directory = directory.filePath
+        super().__init__(directory)
+        path = os.path.join(directory, "sequencerCoords.json")
         self.sequencerCoordinate = SequencerCoordinate.fromJsonFile(path)
+
+    def __repr__(self):
+        return f"SeqAcqDir({self.filePath})"
+
 
