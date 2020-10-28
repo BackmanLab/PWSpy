@@ -33,6 +33,7 @@ pipelines:
             - python buildScripts/conda/build.py
             - cd buildScripts/conda/build/noarch
             - anaconda -t $AnacondaCloudToken upload pwspy* --label dev
+
   custom:
     AnacondaUploadMaster:
       - step:

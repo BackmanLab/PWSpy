@@ -887,5 +887,10 @@ class AcqDir:
         elif len(self.fluorescence) != 0:
             return self.fluorescence[0].getThumbnail()
 
+    def getNumber(self) -> int:
+        return int(self.filePath.split("Cell")[-1])
+
+    
+
 if __name__ == '__main__':
     md = ICMetaData.fromNano(r'C:\Users\nicke\Desktop\LTL20b_Tracking cells in 50%EtOH,95%EtOH,Water\95% ethanol\Cell1')
