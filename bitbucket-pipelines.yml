@@ -34,16 +34,6 @@ pipelines:
             - cd buildScripts/conda/build/noarch
             - anaconda -t $AnacondaCloudToken upload pwspy* --label dev
 
-    debugShortcut:
-      - step:
-          name: CondaUpload
-          script:
-            - conda install -c conda-forge gitpython
-            - conda install conda-build
-            - python buildScripts/conda/build.py
-            - cd buildScripts/conda/build/noarch
-            - anaconda -t $AnacondaCloudToken upload pwspy* --label test
-
   custom:
     AnacondaUploadMaster:
       - step:
