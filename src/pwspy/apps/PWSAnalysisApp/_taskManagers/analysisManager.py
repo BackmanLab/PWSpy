@@ -192,7 +192,7 @@ class AnalysisManager(QtCore.QObject):
             """This method is run once for each process that is spawned. it initialized _resources that are shared between each iteration of _process."""
             global pwspyAnalysisAppParallelGlobals
             logger = logging.getLogger(__name__)
-            logger.info('initializing!')
+            logger.info('Initializing analysis shared data.')
             pwspyAnalysisAppParallelGlobals = {'analysis': analysis, 'analysisName': analysisName,
                                                'cameraCorrection': cameraCorrection, 'binning': userSpecifiedBinning}
 
