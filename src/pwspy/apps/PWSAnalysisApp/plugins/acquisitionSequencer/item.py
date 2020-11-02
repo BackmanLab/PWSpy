@@ -4,7 +4,7 @@ from PyQt5 import QtCore
 
 
 class TreeItem:
-    """Basic implementation of an item for a tree. Our treemodel is designed to work with this class and it's subclasses."""
+    """Basic implementation of an item for a tree. Our `treemodel` is designed to work with this class and it's subclasses."""
     def __init__(self):
         self._parentItem = None
         self._itemData = {}
@@ -13,7 +13,6 @@ class TreeItem:
     def addChild(self, item: TreeItem):
         item._parentItem = self
         self._childItems.append(item)
-
 
     def addChildren(self, children: typing.Sequence[TreeItem]):
         for i in children:
@@ -57,12 +56,9 @@ class TreeItem:
             yield child
             yield from child.iterateChildren()
 
+
 class SelfTreeItem(TreeItem):
     """A tree item which returns itself as as its own DisplayRole data"""
     def __init__(self):
         super().__init__()
         self.setData(QtCore.Qt.DisplayRole, self)
-
-    # def columnCount(self): return 1
-    # def data(self, role): return self
-    # def setData(self, column, data): raise UnsupportedOperation()

@@ -26,7 +26,13 @@ class MyTreeView(QTreeView):
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         self._currentCoordRange = None
 
-    def setRoot(self, root: SequencerStep):
+    def setRoot(self, root: SequencerStep) -> None:
+        """
+        Populate the widget with a sequence of acquisition steps
+
+        Args:
+            root: The Root step of the acquisition sequence. All other steps are children of this step.
+        """
         self.setModel(TreeModel(root))
         self.setSelectionModel(QItemSelectionModel(self.model(), self))
         self.selectionModel().selectionChanged.connect(self._selectionChanged)
@@ -37,12 +43,12 @@ class MyTreeView(QTreeView):
         step: SequencerStep = idx.internalPointer()
         coordSteps = []
         while step is not self.model().invisibleRootItem(): # This will break out once we reach the root item.
-            coordStep = step.data(QtCore.Qt.EditRole)  # The item delegate saves an iterationRangeCoordStep in the edit role of steps.
+            coordStep = step.data(QtCore.Qt.EditRole)  # The item delegate saves an iterationRangeCoordStep in the `editRole` data slot of steps.
             if coordStep is None:
                 coordSteps.append(IterationRangeCoordStep(step.id, None))
             else:
                 coordSteps.append(coordStep)
-            step = step.parent()
+            step = step.parent()  # On the next iteration look at the parent of the selected step.
         self._currentCoordRange = SequencerCoordinateRange(list(reversed(coordSteps)))
         self.newCoordSelected.emit(self._currentCoordRange)
 
@@ -54,7 +60,18 @@ class MyTreeView(QTreeView):
 
 
 class DictTreeView(QTreeWidget):
-    def setDict(self, d: dict):
+    """
+    A QTreeWidget that displays that contents of a Python `dict`
+    Read-Only.
+    """
+
+    def setDict(self, d: dict) -> None:
+        """
+        Set the `dict` that this widget displays.
+
+        Args:
+            d: The dictionary to display the contents of.
+        """
         self.clear()
         self._fillItem(self.invisibleRootItem(), d)
 
