@@ -35,7 +35,6 @@ class SequencerStep(SelfTreeItem):
         self.id = id
         self.settings = settings
         self.stepType = stepType
-        # self.setData(0, f"{Names[stepType]}")
         if children is not None:
             self.addChildren(children)
 
@@ -64,17 +63,15 @@ class SequencerStep(SelfTreeItem):
     
     def __repr__(self):  # Text representation of this object.
         return str(f"Step {self.id}: {self.stepType}")
-    
+
     def printSubTree(self, _indent: int = 0) -> None:
         """
         Print out this step and all sub-steps in a human-readable format.
-        Args:
-            _indent: SubSteps will be printed with an indentation of this many spaces.
         """
         indent = ''.join((['\t'] * _indent))
         print(f"{indent}{self}")
         for child in self.children():
-            child.printSubTree(_indent = _indent+1)
+            child.printSubTree(_indent=_indent+1)
 
 
 class ContainerStep(SequencerStep):

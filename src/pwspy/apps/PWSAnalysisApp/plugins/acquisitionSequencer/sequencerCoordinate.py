@@ -21,6 +21,7 @@ class SequencerCoordinateStep:
         s += ")"
         return s
 
+
 class SequencerCoordinate:
     """
     A coordinate that fully defines a position within a `tree` of steps.
@@ -62,6 +63,7 @@ class SequencerCoordinate:
         """Check if these coordinates are identical"""
         assert isinstance(other, SequencerCoordinate)
         return self.fullPath == other.fullPath
+
 
 class IterationRangeCoordStep:
     """Represents a coordinate for a single step that accepts multiple iterations"""
