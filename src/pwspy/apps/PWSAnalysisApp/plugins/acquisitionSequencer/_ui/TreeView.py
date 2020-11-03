@@ -2,7 +2,7 @@ import typing
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSignal, QItemSelection, QModelIndex, QItemSelectionModel
-from PyQt5.QtWidgets import QTreeView, QWidget, QTreeWidget, QTreeWidgetItem, QAbstractItemView
+from PyQt5.QtWidgets import QTreeView, QWidget, QTreeWidget, QTreeWidgetItem, QAbstractItemView, QAbstractItemDelegate
 
 from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer._treeModel.model import TreeModel
 from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.steps import SequencerStep
@@ -39,7 +39,10 @@ class MyTreeView(QTreeView):
         self.selectionModel().currentChanged.connect(self._currentChanged)
 
     def _selectionChanged(self, selected: QItemSelection, deselected: QItemSelection = None):
-        idx = selected.indexes()[0]  # We only support a single selection anyways.
+        try:
+            idx = selected.indexes()[0]  # We only support a single selection anyways.
+        except IndexError:
+            return  # Sometime this can get fired with no selected indexes.
         step: SequencerStep = idx.internalPointer()
         coordSteps = []
         while step is not self.model().invisibleRootItem(): # This will break out once we reach the root item.
