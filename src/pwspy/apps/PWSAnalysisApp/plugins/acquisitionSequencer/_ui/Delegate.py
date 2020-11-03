@@ -8,6 +8,11 @@ from PyQt5.QtWidgets import QStyledItemDelegate, QWidget, QStyleOptionViewItem, 
 from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.sequencerCoordinate import IterationRangeCoordStep
 from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.steps import SequencerStep, CoordSequencerStep, StepTypeNames, ContainerStep
 
+def printFunc(func):
+    def echo_func(*func_args, **func_kwargs):
+        print('Start func: {}'.format(func.__name__))
+        return func(*func_args, **func_kwargs)
+    return echo_func
 
 class IterationRangeEditor(QWidget):
     """
@@ -150,16 +155,21 @@ class IterationRangeDelegate(HTMLDelegate):
     def __init__(self, parent: QWidget = None):
         super().__init__(parent=parent)
         self._editing = False
+        self.editor = None
 
+    @printFunc
     def createEditor(self, parent: QWidget, option: QStyleOptionViewItem, index: QtCore.QModelIndex) -> QWidget:
         if isinstance(index.internalPointer(), CoordSequencerStep):
             widg = IterationRangeEditor(parent)
             widg.setFromStep(index.internalPointer())
             widg.resize(option.rect.size())
+            print('saved editor')
+            self.editor = widg
             return widg
         else:
             return None  # Don't allow handling other types of values. # super().createEditor(parent, option, index)
 
+    @printFunc
     def setModelData(self, editor: IterationRangeEditor, model: QtCore.QAbstractItemModel, index: QtCore.QModelIndex) -> None:
         step: SequencerStep = index.internalPointer()
         if isinstance(step, CoordSequencerStep):
@@ -169,6 +179,7 @@ class IterationRangeDelegate(HTMLDelegate):
         self.sizeHintChanged.emit(index)
         self.editingFinished.emit()
 
+    @printFunc
     def editorEvent(self, event: QtCore.QEvent, model: QtCore.QAbstractItemModel, option: 'QStyleOptionViewItem', index: QtCore.QModelIndex) -> bool:
         self._editing = index
         self.sizeHintChanged.emit(index)

@@ -26,6 +26,13 @@ class MyTreeView(QTreeView):
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         self._currentCoordRange = None
 
+    def commitAndClose(self):
+        print("Commit and Close")
+        delegate: IterationRangeDelegate = self.itemDelegate()
+        print(delegate.editor)
+        self.commitData(delegate.editor)
+        self.closeEditor(delegate.editor, QAbstractItemDelegate.NoHint)
+
     def setRoot(self, root: SequencerStep) -> None:
         """
         Populate the widget with a sequence of acquisition steps
