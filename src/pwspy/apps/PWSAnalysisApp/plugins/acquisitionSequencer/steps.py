@@ -3,7 +3,7 @@ import abc
 import enum
 import json
 import typing
-from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.item import SelfTreeItem
+from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer._treeModel.item import SelfTreeItem
 from pwspy.utility.micromanager import PositionList
 
 StepTypeNames = dict(  # The names to represent the `steps` that can be in an acquisition sequence

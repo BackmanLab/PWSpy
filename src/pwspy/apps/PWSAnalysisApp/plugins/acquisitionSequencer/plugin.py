@@ -6,10 +6,9 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QWidget, QApplication, QPushButton, QGridLayout
 
 from pwspy.apps.PWSAnalysisApp.pluginInterfaces import CellSelectorPlugin
-import pwspy.dataTypes as pwsdt
 import os
 
-from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.TreeView import DictTreeView, MyTreeView
+from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer._ui.TreeView import DictTreeView, MyTreeView
 from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.sequencerCoordinate import SequencerCoordinateRange, SeqAcqDir
 from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.steps import SequencerStep
 from pwspy.dataTypes import AcqDir
@@ -48,10 +47,9 @@ class AcquisitionSequencerPlugin(CellSelectorPlugin): #TODO switch to a qdialog 
         """This method will be called when the CellSelector indicates that it has had a new reference selected."""
         pass
 
-    # @requirePluginActive
     def onNewCellsLoaded(self, cells: typing.List[pwsdt.AcqDir]):
         """This method will be called when the CellSelector indicates that new cells have been loaded to the selector."""
-        if len(cells) == 0: # This causes a crash
+        if len(cells) == 0:  # This causes a crash
             return
         #Search the parent directory for a `sequence.pwsseq` file containing the sequence information.
         paths = [i.filePath for i in cells]

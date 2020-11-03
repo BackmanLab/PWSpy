@@ -4,9 +4,9 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSignal, QItemSelection, QModelIndex, QItemSelectionModel
 from PyQt5.QtWidgets import QTreeView, QWidget, QTreeWidget, QTreeWidgetItem, QAbstractItemView
 
-from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.model import TreeModel
+from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer._treeModel.model import TreeModel
 from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.steps import SequencerStep
-from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.Delegate import IterationRangeDelegate
+from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer._ui.Delegate import IterationRangeDelegate
 from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.sequencerCoordinate import IterationRangeCoordStep, \
     SequencerCoordinateRange
 
