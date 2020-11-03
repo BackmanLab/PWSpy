@@ -122,6 +122,9 @@ class PositionsStep(CoordSequencerStep):
     def getIterationName(self, iteration: int) -> str:
         return self._positionList[iteration].label
 
+    def getPositionList(self) -> PositionList:
+        return self._positionList
+
 
 class TimeStep(CoordSequencerStep):
     def stepIterations(self):
