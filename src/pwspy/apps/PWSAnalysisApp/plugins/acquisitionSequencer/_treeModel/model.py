@@ -2,7 +2,7 @@ import typing
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import QModelIndex
-from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.item import TreeItem
+from .item import TreeItem
 
 
 class TreeModel(QtCore.QAbstractItemModel):

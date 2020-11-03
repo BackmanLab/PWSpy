@@ -5,8 +5,8 @@ from PyQt5.QtCore import QSize, pyqtSignal
 from PyQt5.QtGui import QTextDocument, QAbstractTextDocumentLayout, QPalette
 from PyQt5.QtWidgets import QStyledItemDelegate, QWidget, QStyleOptionViewItem, QStyle, QGridLayout, QTableWidget, \
     QTableWidgetItem, QAbstractItemView, QSizePolicy, QApplication
-from .sequencerCoordinate import IterationRangeCoordStep
-from .steps import SequencerStep, CoordSequencerStep, StepTypeNames, ContainerStep
+from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.sequencerCoordinate import IterationRangeCoordStep
+from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.steps import SequencerStep, CoordSequencerStep, StepTypeNames, ContainerStep
 
 
 class IterationRangeEditor(QWidget):
@@ -149,9 +149,6 @@ class IterationRangeDelegate(HTMLDelegate):
 
     def __init__(self, parent: QWidget = None):
         super().__init__(parent=parent)
-        self._paintWidgetRenderedOnce = False
-        self._paintWidget = IterationRangeEditor(parent)
-        self._paintWidget.setVisible(False)
         self._editing = False
 
     def createEditor(self, parent: QWidget, option: QStyleOptionViewItem, index: QtCore.QModelIndex) -> QWidget:
