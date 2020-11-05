@@ -26,15 +26,12 @@ class SequenceViewer(QWidget):
         def func():
             self._sequenceTree.commitAndClose()
             self.newCoordSelected.emit(self._sequenceTree.getCurrentSelectedCoordinateRange())
-            self._selectButton.setEnabled(False)
         self._selectButton.released.connect(func)
 
         self._settingsTree = DictTreeView()
         self._settingsTree.setColumnCount(2)
         self._settingsTree.setIndentation(10)
         self._sequenceTree.currentItemChanged.connect(lambda item: self._settingsTree.setDict(item.settings))
-
-        self._sequenceTree.newCoordSelected.connect(lambda coordRange: self._selectButton.setEnabled(True))
 
         l.addWidget(self._sequenceTree, 0, 0)
         l.addWidget(self._selectButton, 1, 0)

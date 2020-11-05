@@ -27,11 +27,13 @@ class MyTreeView(QTreeView):
         self._currentCoordRange = None
 
     def commitAndClose(self):
-        print("Commit and Close")
+        #Quickly deselect and reselect. this forces any open editor to commit its changes.
+        idx = self.currentIndex()
+        self.setCurrentIndex(QModelIndex())
+        self.setCurrentIndex(idx)
+
         delegate: IterationRangeDelegate = self.itemDelegate()
-        print(delegate.editor)
-        self.commitData(delegate.editor)
-        self.closeEditor(delegate.editor, QAbstractItemDelegate.NoHint)
+        self.closeEditor(delegate.editor, QAbstractItemDelegate.NoHint)  # Close the editor to indicate to the user that the change has been accepted.
 
     def setRoot(self, root: SequencerStep) -> None:
         """
@@ -66,7 +68,8 @@ class MyTreeView(QTreeView):
         return self._currentCoordRange
 
     def _currentChanged(self, current: QModelIndex, previous: QModelIndex):
-        self.currentItemChanged.emit(current.internalPointer())
+        if current.internalPointer() is not None: # In some cases we may change to index to something blank that has not pointer
+            self.currentItemChanged.emit(current.internalPointer())
 
 
 class DictTreeView(QTreeWidget):
