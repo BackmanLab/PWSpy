@@ -42,7 +42,7 @@ class AnimationDlg(QDialog):
         GIF = 'pillow'
         HTML = 'html'
 
-    Extensions = {SaveMethods.GIF: 'gif', SaveMethods.HTML: 'html', SaveMethods.MP4: 'mp4'}
+    Extensions = {SaveMethods.GIF: '.gif', SaveMethods.HTML: '.html', SaveMethods.MP4: '.mp4'}
 
     def __init__(self, fig, input: Union[List[List[Artist]], Tuple[Callable, Iterable]], parent: QWidget):
         super().__init__(parent)
@@ -96,14 +96,14 @@ class AnimationDlg(QDialog):
             savePath = self.fPath.text()
             frameIntervalMs = self.intervalSpinBox.value()
             if os.path.splitext(savePath)[1] != self.Extensions[saveMethod]:  # Make sure we have the right file extension to avoid an error.
-                savePath += '.' + self.Extensions[saveMethod]
+                savePath += self.Extensions[saveMethod]
             if callable(self.input[0]):
                 ani = animation.FuncAnimation(self.figure, self.input[0], frames=self.input[1], interval=frameIntervalMs)
             else:
                 ani = animation.ArtistAnimation(self.figure, self.input, interval=frameIntervalMs)
             Writer = animation.writers[saveMethod.value]
             if Writer is animation.FFMpegWriter:
-                writer = Writer(bitrate=-1, codec='libx264', fps=1000/frameIntervalMs)  # This should improve quality
+                writer = Writer(bitrate=-1, fps=1000/frameIntervalMs)  # We previously had codec='libx264' here to improve quality. But starting in matplotlib 3.3.1 this prevented the videos from working on windows.
             else:
                 writer = Writer(fps=1000/frameIntervalMs)
             ani.save(savePath, writer=writer)
