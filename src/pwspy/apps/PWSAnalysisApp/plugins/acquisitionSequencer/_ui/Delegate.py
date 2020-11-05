@@ -150,12 +150,14 @@ class IterationRangeDelegate(HTMLDelegate):
     def __init__(self, parent: QWidget = None):
         super().__init__(parent=parent)
         self._editing = False
+        self.editor = None
 
     def createEditor(self, parent: QWidget, option: QStyleOptionViewItem, index: QtCore.QModelIndex) -> QWidget:
         if isinstance(index.internalPointer(), CoordSequencerStep):
             widg = IterationRangeEditor(parent)
             widg.setFromStep(index.internalPointer())
             widg.resize(option.rect.size())
+            self.editor: IterationRangeEditor = widg
             return widg
         else:
             return None  # Don't allow handling other types of values. # super().createEditor(parent, option, index)
