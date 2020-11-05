@@ -98,6 +98,7 @@ class LittlePlot(AnalysisPlotter, QWidget):
 
     def plotAn3d(self):
         refl = self.analysis.pws.reflectance
+        refl += self.analysis.pws.meanReflectance[:, :, None]  # The `reflectance has had the mean subtracted. add it back in.
         self.plotnd = PlotNd(refl.data, title=os.path.split(self.acq.filePath)[-1], names=('y', 'x', 'k (rad/um)'),
                              indices=[range(refl.data.shape[0]), range(refl.data.shape[1]), refl.wavenumbers])
 
