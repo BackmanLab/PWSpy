@@ -200,9 +200,10 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
         Args:
             sigma: This specifies the radius of the gaussian filter used for blurring. The units of the value are determined by `pixelSize`
             pixelSize: The pixel size in microns. Settings this to 1 will effectively causes sigma to be in units of pixels rather than microns."""
+        from scipy import ndimage
         sigma = sigma / pixelSize  # convert from microns to pixels
         for i in range(self.data.shape[2]):
-            self.data[:, :, i] = sp.ndimage.filters.gaussian_filter(self.data[:, :, i], sigma, mode='reflect')
+            self.data[:, :, i] = ndimage.filters.gaussian_filter(self.data[:, :, i], sigma, mode='reflect')
 
     def _indicesMatch(self, other: 'ICBase') -> bool:
         """This check is performed before allowing many arithmetic operations between two data cubes. Makes sure that the Z-axis of the two cubes match."""
