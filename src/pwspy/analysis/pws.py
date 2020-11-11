@@ -88,7 +88,7 @@ class PWSAnalysis(AbstractAnalysis):
     Args:
         settings: The settings used for the analysis
         extraReflectanceMetadata: the metadata object referring to a calibration file for extra reflectance.
-        ref: The reference acquisition used for analysis #TODO isn't the reference also part of the runtimeSettings? Yes, but a lot of preprocessing is done to ref by the `taskManager` before passing it in here, maybe that's not right, but it's a lot of work to fix.
+        ref: The reference acquisition used for analysis.
     """
     def __init__(self, settings: PWSAnalysisSettings, extraReflectanceMetadata: typing.Optional[ERMetaData], ref: pwsdt.ImCube):
         from pwspy.dataTypes import ExtraReflectanceCube
