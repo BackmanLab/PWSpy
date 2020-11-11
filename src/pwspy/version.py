@@ -31,7 +31,7 @@ try:
     with open(versionFile, 'w') as f: #Overwrite the version file
         f.write(version)
     logger.info(f"Saved version, {version}, to the `_version` file.")
-except Exception as e:
+except ModuleNotFoundError as e:  # Git module not installed
     pass
 
 with open(versionFile, 'r') as f:  # We load the version string from a text file. This allows us to easily set the contents of the text file with a build script.

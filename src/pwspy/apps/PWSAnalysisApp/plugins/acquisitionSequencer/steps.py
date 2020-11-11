@@ -3,10 +3,10 @@ import abc
 import enum
 import json
 import typing
-from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.item import SelfTreeItem
+from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer._treeModel.item import SelfTreeItem
 from pwspy.utility.micromanager import PositionList
 
-StepTypeNames = dict(
+StepTypeNames = dict(  # The names to represent the `steps` that can be in an acquisition sequence
     ACQ="Acquisition",
     POS="Multiple Positions",
     TIME="Time Series",
@@ -17,23 +17,35 @@ StepTypeNames = dict(
     PAUSE="Pause",
     ROOT="Initialization",
     AF="Software Autofocus",
-    ZSTACK="Z-Stack"
+    ZSTACK="Z-Stack",
+    AUTOSHUTTER='AutoShutter'
 )
 
 
 class SequencerStep(SelfTreeItem):
-    """Implementation of a TreeItem for representing a sequencer step."""
+    """Implementation of a TreeItem for representing a sequencer step.
+
+    Args:
+        id: The unique integer assigned to this step by the acquisition software
+        settings: The settings for this step. Saved as JSON in the sequence file.
+        stepType: Indicates what type of step this is. E.g. acquisition, time-series, focus lock, etc.
+        children: A list of steps which are direct children of this step.
+    """
     def __init__(self, id: int, settings: dict, stepType: str, children: typing.List[SequencerStep] = None):
         super().__init__()
         self.id = id
         self.settings = settings
         self.stepType = stepType
-        # self.setData(0, f"{Names[stepType]}")
         if children is not None:
             self.addChildren(children)
 
     @staticmethod
     def hook(dct: dict):
+        """
+        This method defines how the JSON library should translate from JSON to one of these objects.
+        Args:
+            dct: The `dict` representing the raw representation of the JSON\
+        """
         if all([i in dct for i in ("id", 'stepType', 'settings')]):
             clazz = SequencerStepTypes[dct['stepType']].value
             s = clazz(**dct)
@@ -50,29 +62,51 @@ class SequencerStep(SelfTreeItem):
         with open(filePath, 'r') as f:
             return json.loads(f.read(), object_hook=SequencerStep.hook)
     
-    def __repr__(self):
+    def __repr__(self):  # Text representation of this object.
         return str(f"Step {self.id}: {self.stepType}")
-    
-    def printSubTree(self, _indent: int = 0):
+
+    def printSubTree(self, _indent: int = 0) -> None:
+        """
+        Print out this step and all sub-steps in a human-readable format.
+        """
         indent = ''.join((['\t'] * _indent))
         print(f"{indent}{self}")
         for child in self.children():
-            child.printSubTree(_indent = _indent+1)
+            child.printSubTree(_indent=_indent+1)
 
 
-class ContainerStep(SequencerStep): pass
+class ContainerStep(SequencerStep):
+    """
+    A class for steps which can contain other steps within it.
+    """
+    pass
 
 
 class CoordSequencerStep(ContainerStep):
+    """
+    A base-class for steps which are iterable. Despite only being a single step they run multiple times in an acquisition.
+    This add some complications as we want to keep track of which iteration the sub-steps of this belong to.
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     @abc.abstractmethod
-    def stepIterations(self):  # return the total number of iterations of this step.
+    def stepIterations(self):
+        """
+        Return the total number of iterations of this step.
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def getIterationName(self, iteration: int) -> str:
+        """
+        Return the name associated with `iteration` E.G. for a multiple-positions step this will be the name assigned to the position in the position list.
+        Args:
+            iteration: The iteeration number we are interested in.
+
+        Returns: A name for the requested iteration.
+
+        """
         raise NotImplementedError()
 
 
@@ -80,6 +114,7 @@ class PositionsStep(CoordSequencerStep):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._positionList = PositionList.fromDict(self.settings['posList'])
+
     def stepIterations(self):
         if not hasattr(self, '_len'):
             self._len = len(self._positionList)
@@ -87,6 +122,9 @@ class PositionsStep(CoordSequencerStep):
 
     def getIterationName(self, iteration: int) -> str:
         return self._positionList[iteration].label
+
+    def getPositionList(self) -> PositionList:
+        return self._positionList
 
 
 class TimeStep(CoordSequencerStep):
@@ -110,6 +148,9 @@ class ZStackStep(CoordSequencerStep):
 
 
 class SequencerStepTypes(enum.Enum):
+    """
+    An enumerator containing the sub-class of `SequencerStep` to use for each type of step.
+    """
     ACQ = SequencerStep
     PFS = ContainerStep
     POS = PositionsStep
@@ -121,5 +162,6 @@ class SequencerStepTypes(enum.Enum):
     ROOT = ContainerStep
     SUBFOLDER = ContainerStep
     ZSTACK = ZStackStep
+    AUTOSHUTTER = ContainerStep
 
 

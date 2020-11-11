@@ -26,16 +26,19 @@ Functions
 
    to8bit
    SIFTRegisterTransform
+   ORBRegisterTransform
    edgeDetectRegisterTranslation
 
 """
+from __future__ import annotations
 import logging
 import typing
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
 from skimage import feature
-
+if typing.TYPE_CHECKING:
+    import cv2
 
 def to8bit(arr: np.ndarray) -> np.ndarray:
     """Converts boolean or float type numpy arrays to 8bit and scales the data to span from 0 to 255. Used for many
@@ -81,40 +84,41 @@ def SIFTRegisterTransform(reference: np.ndarray, other: typing.Iterable[np.ndarr
 
             ArtistAnimation: A reference the animation used to diplay the results of the function.
         """
-    #TODO this function does some weird stuff in the case that MIN_MATTCH_COUNT is not met for some of the images due to variables not being defined.
+    #TODO this function does some weird stuff in the case that MIN_MATCH_COUNT is not met for some of the images due to variables not being defined.
     import cv2
 
     refImg = to8bit(reference)
-    MIN_MATCH_COUNT = 10
+    if mask:
+        mask = mask.astype(np.uint8)
+
+    #Set up flann matcher
     FLANN_INDEX_KDTREE = 0
+    index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
+    search_params = dict(checks=50)
+    flann = cv2.FlannBasedMatcher(index_params, search_params)
 
     # Initiate SIFT detector
-    sift = cv2.xfeatures2d.SIFT_create()  # By default this function is not included, you need a specially built version of Opencv due to patent issues :( Maybe try MOPS instead
-    mask = mask.astype(np.uint8)
+    sift = cv2.SIFT_create()  # By default this function is not included, you need a specially built version of Opencv due to patent issues :( Maybe try MOPS instead. Update: in 2020 the patent expired and now in opencv4 it is included.
     kp1, des1 = sift.detectAndCompute(refImg, mask=mask)
 
     transforms = []
-    anFig, anAx = plt.subplots()
-    anims = []
+    if debugPlots:
+        anFig, anAx = plt.subplots()
+        anims = []
     for img in other:
         otherImg = to8bit(img)
         # find the keypoints and descriptors with SIFT
-        kp2, des2 = sift.detectAndCompute(otherImg, mask=mask)
-        index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
-        search_params = dict(checks=50)
-        flann = cv2.FlannBasedMatcher(index_params, search_params)
-        matches = flann.knnMatch(des1, des2, k=2)
-        # store all the good matches as per Lowe's ratio test.
-        good = []
-        for m, n in matches:
-            if m.distance < 0.7 * n.distance:
-                good.append(m)
+        kp2, des2 = sift.detectAndCompute(otherImg, mask=None)
+
+        good = _knnMatch(flann, des1, des2)
+
+        MIN_MATCH_COUNT = 10
         if len(good) > MIN_MATCH_COUNT:
             src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
             dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
-            M, mask = cv2.estimateAffinePartial2D(src_pts, dst_pts)
+            M, inlierMask = cv2.estimateAffinePartial2D(src_pts, dst_pts)
             transforms.append(M)
-            matchesMask = mask.ravel().tolist()
+            matchesMask = inlierMask.ravel().tolist()
         else:
             logging.getLogger(__name__).warning("Not enough matches are found - %d/%d" % (len(good), MIN_MATCH_COUNT))
             matchesMask = None
@@ -130,13 +134,119 @@ def SIFTRegisterTransform(reference: np.ndarray, other: typing.Iterable[np.ndarr
                                flags=2)
             img2 = cv2.polylines(otherImg, [np.int32(dst)], True, 255, 3, cv2.LINE_AA)
             img3 = cv2.drawMatches(refImg, kp1, img2, kp2, good, None, **draw_params)
-            plt.imshow(img3, 'gray')
-            plt.show()
+            fig, ax = plt.subplots()
+            ax.imshow(img3, 'gray')
     if debugPlots:
-        anFig.suptitle("If transforms worked, cells should not appear to move.")
+        anFig.suptitle("SIFT: If transforms worked, image should not appear to move.")
         an = animation.ArtistAnimation(anFig, anims)
+    else:
+        an = None
     return transforms, an
 
+
+def ORBRegisterTransform(reference: np.ndarray, other: typing.Iterable[np.ndarray], mask: np.ndarray = None, debugPlots: bool = False) -> typing.Tuple[typing.List[np.ndarray], animation.ArtistAnimation]:
+    """Given a 2D reference image and a list of other images of the same scene but shifted a bit this function will use OpenCV to calculate the transform from
+    each of the other images to the reference. The transforms can be inverted using cv2.invertAffineTransform().
+    It will return a list of transforms. Each transform is a 2x3 array in the form returned
+    by opencv.estimateAffinePartial2d(). a boolean mask can be used to select which areas will be searched for features to be used
+    in calculating the transform. 
+
+    Args:
+        reference (np.ndarray): The 2d reference image.
+        other (Iterable[np.ndarray]): An iterable containing the images that you want to calculate the translations for.
+        mask (np.ndarray): A boolean array indicating which parts of the reference image should be analyzed. If `None` then the whole image will be used.
+        debugPlots (bool): Indicates if extra plots should be openend showing the process of the function.
+
+    Returns:
+        tuple: A tuple containing:
+            List[np.ndarray]:  Returns a list of transforms. Each transform is a 2x3 array in the form returned by opencv.estimateAffinePartial2d(). Note that even
+            though they are returned as affine transforms they will only contain translation information, no scaling, shear, or rotation.
+
+            ArtistAnimation: A reference the animation used to diplay the results of the function.
+        """
+    import cv2
+
+    refImg = to8bit(reference)
+    if mask:
+        mask = mask.astype(np.uint8)
+
+    #Create FLANN matcher
+    FLANN_INDEX_LSH = 6
+    index_params = dict(algorithm=FLANN_INDEX_LSH,
+                        table_number=6,  # 12
+                        key_size=12,  # 20
+                        multi_probe_level=1)  # 2
+    search_params = dict(checks=100)
+    flann = cv2.FlannBasedMatcher(index_params, search_params)
+
+    # Initiate ORB detector
+    orb = cv2.ORB_create() # By default this function is not included, you need a specially built version of Opencv due to patent issues :( Maybe try MOPS instead
+    kp1, des1 = orb.detectAndCompute(refImg, mask=mask)
+
+    transforms = []
+    if debugPlots:
+        anFig, anAx = plt.subplots()
+        anims = []
+    for img in other:
+        otherImg = to8bit(img)
+        # find the keypoints and descriptors with ORB
+        kp2, des2 = orb.detectAndCompute(otherImg, mask=None)
+
+        good = _knnMatch(flann, des1, des2)
+
+        MIN_MATCH_COUNT = 10
+        if len(good) > MIN_MATCH_COUNT:
+            src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
+            dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
+            M, inlierMask = cv2.estimateAffinePartial2D(src_pts, dst_pts)
+            transforms.append(M)
+            matchesMask = inlierMask.ravel().tolist()
+        else:
+            logging.getLogger(__name__).warning("Not enough matches are found - %d/%d" % (len(good), MIN_MATCH_COUNT))
+            matchesMask = None
+        if debugPlots:
+            anims.append([anAx.imshow(cv2.warpAffine(otherImg, cv2.invertAffineTransform(M), otherImg.shape), 'gray')])
+            h, w = refImg.shape
+            pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
+            dst = cv2.transform(pts, M)
+            draw_params = dict(matchColor=(0, 255, 0),  # draw matches in green color
+                               singlePointColor=None,
+                               matchesMask=matchesMask,  # draw only inliers
+                               flags=2)
+            img2 = cv2.polylines(otherImg, [np.int32(dst)], True, 255, 3, cv2.LINE_AA)
+            img3 = cv2.drawMatches(refImg, kp1, img2, kp2, good, None, **draw_params)
+            fig, ax = plt.subplots()
+            ax.imshow(img3, 'gray')
+    if debugPlots:
+        anFig.suptitle("ORB: If transforms worked, image should not appear to move.")
+        an = animation.ArtistAnimation(anFig, anims)
+    else:
+        an = None
+    return transforms, an
+
+def _knnMatch(flannMatcher: cv2.FlannBasedMatcher, des1: np.ndarray, des2: np.ndarray) -> typing.List[cv2.DMatch]:
+    """
+    Return a list of sufficiently good matches between keypoint descriptors.
+
+    Args:
+        flannMatcher: The opencv FLANN matcher object
+        des1: An array of `query descriptors` to find matches for.
+        des2: An array of `train descriptors` to check as matches for des1
+    Returns:
+        A list of the selecte opencv DMatch objects
+    """
+    matches = flannMatcher.knnMatch(des1, des2, k=2)  # Return the two best matches. Note, might only return 1 match
+    # store all the good matches as per Lowe's ratio test.
+    good = []
+    for iMatches in matches:
+        if len(iMatches) == 1:
+            good.append(iMatches[0])  # If only one match was found keep it
+        elif len(iMatches) == 2:
+            if iMatches[0].distance < 0.7 * iMatches[1].distance:  # This is known as Lowe's Ratio Test. If two matches were returned only keep the best match if it is sufficiently better than the second best match
+                good.append(iMatches[0])
+        else:
+            raise Exception("Programming Error!")
+    return good
 
 def edgeDetectRegisterTranslation(reference: np.ndarray, other: typing.Iterable[np.ndarray], mask: np.ndarray = None, debugPlots: bool = False, sigma: float = 3) -> typing.Tuple[typing.Iterable[np.ndarray], typing.List]:
     """This function is used to find the relative translation between a reference image and a list of other similar images. Unlike `calculateTransforms` this function

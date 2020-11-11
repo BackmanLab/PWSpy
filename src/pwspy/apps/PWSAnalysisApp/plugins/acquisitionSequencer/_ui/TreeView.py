@@ -2,11 +2,11 @@ import typing
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSignal, QItemSelection, QModelIndex, QItemSelectionModel
-from PyQt5.QtWidgets import QTreeView, QWidget, QTreeWidget, QTreeWidgetItem, QAbstractItemView
+from PyQt5.QtWidgets import QTreeView, QWidget, QTreeWidget, QTreeWidgetItem, QAbstractItemView, QAbstractItemDelegate
 
-from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.model import TreeModel
+from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer._treeModel.model import TreeModel
 from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.steps import SequencerStep
-from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.Delegate import IterationRangeDelegate
+from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer._ui.Delegate import IterationRangeDelegate
 from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.sequencerCoordinate import IterationRangeCoordStep, \
     SequencerCoordinateRange
 
@@ -26,23 +26,41 @@ class MyTreeView(QTreeView):
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         self._currentCoordRange = None
 
-    def setRoot(self, root: SequencerStep):
+    def commitAndClose(self):
+        #Quickly deselect and reselect. this forces any open editor to commit its changes.
+        idx = self.currentIndex()
+        self.setCurrentIndex(QModelIndex())
+        self.setCurrentIndex(idx)
+
+        delegate: IterationRangeDelegate = self.itemDelegate()
+        self.closeEditor(delegate.editor, QAbstractItemDelegate.NoHint)  # Close the editor to indicate to the user that the change has been accepted.
+
+    def setRoot(self, root: SequencerStep) -> None:
+        """
+        Populate the widget with a sequence of acquisition steps
+
+        Args:
+            root: The Root step of the acquisition sequence. All other steps are children of this step.
+        """
         self.setModel(TreeModel(root))
         self.setSelectionModel(QItemSelectionModel(self.model(), self))
         self.selectionModel().selectionChanged.connect(self._selectionChanged)
         self.selectionModel().currentChanged.connect(self._currentChanged)
 
     def _selectionChanged(self, selected: QItemSelection, deselected: QItemSelection = None):
-        idx = selected.indexes()[0]  # We only support a single selection anyways.
+        try:
+            idx = selected.indexes()[0]  # We only support a single selection anyways.
+        except IndexError:
+            return  # Sometime this can get fired with no selected indexes.
         step: SequencerStep = idx.internalPointer()
         coordSteps = []
         while step is not self.model().invisibleRootItem(): # This will break out once we reach the root item.
-            coordStep = step.data(QtCore.Qt.EditRole)  # The item delegate saves an iterationRangeCoordStep in the edit role of steps.
+            coordStep = step.data(QtCore.Qt.EditRole)  # The item delegate saves an iterationRangeCoordStep in the `editRole` data slot of steps.
             if coordStep is None:
                 coordSteps.append(IterationRangeCoordStep(step.id, None))
             else:
                 coordSteps.append(coordStep)
-            step = step.parent()
+            step = step.parent()  # On the next iteration look at the parent of the selected step.
         self._currentCoordRange = SequencerCoordinateRange(list(reversed(coordSteps)))
         self.newCoordSelected.emit(self._currentCoordRange)
 
@@ -50,11 +68,23 @@ class MyTreeView(QTreeView):
         return self._currentCoordRange
 
     def _currentChanged(self, current: QModelIndex, previous: QModelIndex):
-        self.currentItemChanged.emit(current.internalPointer())
+        if current.internalPointer() is not None: # In some cases we may change to index to something blank that has not pointer
+            self.currentItemChanged.emit(current.internalPointer())
 
 
 class DictTreeView(QTreeWidget):
-    def setDict(self, d: dict):
+    """
+    A QTreeWidget that displays that contents of a Python `dict`
+    Read-Only.
+    """
+
+    def setDict(self, d: dict) -> None:
+        """
+        Set the `dict` that this widget displays.
+
+        Args:
+            d: The dictionary to display the contents of.
+        """
         self.clear()
         self._fillItem(self.invisibleRootItem(), d)
 

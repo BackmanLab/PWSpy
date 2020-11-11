@@ -5,11 +5,18 @@ from PyQt5.QtCore import QSize, pyqtSignal
 from PyQt5.QtGui import QTextDocument, QAbstractTextDocumentLayout, QPalette
 from PyQt5.QtWidgets import QStyledItemDelegate, QWidget, QStyleOptionViewItem, QStyle, QGridLayout, QTableWidget, \
     QTableWidgetItem, QAbstractItemView, QSizePolicy, QApplication
-from .sequencerCoordinate import IterationRangeCoordStep
-from .steps import SequencerStep, CoordSequencerStep, StepTypeNames, ContainerStep
+from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.sequencerCoordinate import IterationRangeCoordStep
+from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.steps import SequencerStep, CoordSequencerStep, StepTypeNames, ContainerStep
 
 
 class IterationRangeEditor(QWidget):
+    """
+    This widget appears as a QTableWidget that allows the user to select which iterations should be selected for acquisition steps that have multiple
+    iterations such as time series or multiple position steps.
+
+    Args:
+        parent: The `parent` QWidget of this widget.
+    """
     def __init__(self, parent: QWidget):
         super().__init__(parent)
         self.setAutoFillBackground(True)  # Prevents us from getting double vision with the painted version of the widget behind.
@@ -43,7 +50,13 @@ class IterationRangeEditor(QWidget):
         l.setRowStretch(1, 1)  # Allow the actual wigdets to sit at the top of the layout without getting stretched out.
         self.setLayout(l)
 
-    def setFromStep(self, step: CoordSequencerStep):
+    def setFromStep(self, step: CoordSequencerStep) -> None:
+        """
+        Update the appearance and labels of this widget based on the `Step` provided as input.
+
+        Args:
+            step: An iterable step from the sequencer.
+        """
         self._coordTable.setColumnCount(step.stepIterations())
         for i in range(step.stepIterations()):
             self._coordTable.setItem(0, i, QTableWidgetItem(step.getIterationName(i)))
@@ -70,15 +83,26 @@ class IterationRangeEditor(QWidget):
                 sel = False
             self._coordTable.item(0, i).setSelected(sel)
 
-    def getSelection(self):
+    def getSelection(self) -> typing.List[int]:
+        """
+        Return a list of the column indices that are selected.
+        """
         return [i.column() for i in self._coordTable.selectedIndexes()]
 
     def sizeHint(self) -> QtCore.QSize:
+        """
+        Overrides the default QT function to help with proper sizing.
+        """
         h2 = self._coordTable.height()
         return QtCore.QSize(1, h2)  # Width doesn't seem to matter
 
 
 class HTMLDelegate(QStyledItemDelegate):
+    """
+    Overrides the default QT delegate that displays and edits data in a QT `Model`.
+    Allows rendering of HTML strings.
+    """
+
     def paint(self, painter, option, index):
         self.initStyleOption(option, index)
         style = option.widget.style() if option.widget else QApplication.style()
@@ -104,7 +128,6 @@ class HTMLDelegate(QStyledItemDelegate):
 
     def sizeHint(self, option, index):
         self.initStyleOption(option, index)
-
         doc = QTextDocument()
         doc.setHtml(option.text)
         doc.setTextWidth(option.rect.width())
@@ -112,20 +135,29 @@ class HTMLDelegate(QStyledItemDelegate):
 
 
 class IterationRangeDelegate(HTMLDelegate):
+    """
+    An HTMLDelegate that is specific for the display of a sequencer `Step` that has multiple iterations.
+
+    Args:
+        parent: The parent QWidget of this object.
+
+    Attributes:
+        editingFinished: This Qt signal is fired when the delegate finishes edited it's data in the model.
+    """
+
     editingFinished = pyqtSignal()
 
     def __init__(self, parent: QWidget = None):
         super().__init__(parent=parent)
-        self._paintWidgetRenderedOnce = False
-        self._paintWidget = IterationRangeEditor(parent)
-        self._paintWidget.setVisible(False)
         self._editing = False
+        self.editor = None
 
     def createEditor(self, parent: QWidget, option: QStyleOptionViewItem, index: QtCore.QModelIndex) -> QWidget:
         if isinstance(index.internalPointer(), CoordSequencerStep):
             widg = IterationRangeEditor(parent)
             widg.setFromStep(index.internalPointer())
             widg.resize(option.rect.size())
+            self.editor: IterationRangeEditor = widg
             return widg
         else:
             return None  # Don't allow handling other types of values. # super().createEditor(parent, option, index)

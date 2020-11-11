@@ -32,7 +32,6 @@ Submodules
 
 """
 import os
-import enum
 from ._abstract import AbstractAnalysisSettings, AbstractAnalysis, AbstractAnalysisResults, AbstractHDFAnalysisResults
 
 # TODO settings are missing reference IDtag but they exist in the results. Results and settings both contain extra reflectance idTag, reduntant
@@ -42,4 +41,5 @@ defaultSettingsPath = os.path.join(resources, 'defaultAnalysisSettings')
 
 __all__ = ['AbstractAnalysisSettings', 'AbstractAnalysis', 'AbstractAnalysisResults',
            'AbstractHDFAnalysisResults', 'resources', 'defaultSettingsPath']
+
 

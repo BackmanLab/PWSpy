@@ -6,7 +6,7 @@ from pwspy.dataTypes import AcqDir
 
 
 class SequencerCoordinateStep:
-    """The contribution of a sequencer coordinate from a single step"""
+    """The contribution to a sequencer coordinate from a single step"""
     def __init__(self, id: int, iteration: int = None):
         self.stepId = id  # All steps should have a unique id number
         self.iteration = iteration  # Most steps will keep this as None, iterable steps will have an iteration.
@@ -21,10 +21,12 @@ class SequencerCoordinateStep:
         s += ")"
         return s
 
+
 class SequencerCoordinate:
+    """
+    A coordinate that fully defines a position within a `tree` of steps.
+    """
     def __init__(self, coordSteps: typing.List[SequencerCoordinateStep]):
-        """treePath should be a list of the id numbers for each step in the path to this coordinate.
-        iterations should be a list indicating which iteration of each step the coordinate was from."""
         self.fullPath = tuple(coordSteps)
 
     def __repr__(self):
@@ -62,6 +64,7 @@ class SequencerCoordinate:
         assert isinstance(other, SequencerCoordinate)
         return self.fullPath == other.fullPath
 
+
 class IterationRangeCoordStep:
     """Represents a coordinate for a single step that accepts multiple iterations"""
     def __init__(self, id: int, iterations: typing.Sequence[int] = None):
@@ -80,6 +83,9 @@ class IterationRangeCoordStep:
 
 
 class SequencerCoordinateRange:
+    """
+    A coordinate that can have multiple iterations selected at once.
+    """
     def __init__(self, coordSteps: typing.Sequence[IterationRangeCoordStep]):
         self.fullPath = tuple(coordSteps)
 
@@ -94,6 +100,10 @@ class SequencerCoordinateRange:
 
 
 class SeqAcqDir(AcqDir):
+    """
+    A subclasss of AcqDir that has will also search for a sequencerCoordinate file
+    and load it as an attribute.
+    """
     def __init__(self, directory: typing.Union[str, AcqDir]):
         if isinstance(directory, AcqDir):
             directory = directory.filePath
