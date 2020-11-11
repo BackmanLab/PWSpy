@@ -97,7 +97,8 @@ class PWSAnalysis(AbstractAnalysis):
         self._initWarnings = []
         extraReflectance = ExtraReflectanceCube.fromMetadata(extraReflectanceMetadata) if extraReflectanceMetadata is not None else None
         self.settings = settings
-        ref.normalizeByExposure()
+        if not ref.processingStatus.normalizedByExposure:
+            ref.normalizeByExposure()
         if ref.metadata.pixelSizeUm is not None: #Only works if pixel size was saved in the metadata.
             ref.filterDust(.75)  # Apply a blur to filter out dust particles. This is in microns. I'm not sure if this is the optimal value.
         if settings.referenceMaterial is None:
@@ -433,3 +434,19 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
             if newKey not in d.keys():
                 d[newKey] = None #For a while these settings were missing from the code. Allow us to still load old files.
         return cls(**d)
+
+    @classmethod
+    def getDefaultSettingsNames(cls) -> typing.Tuple[str]:
+        from . import defaultSettingsPath
+        from glob import glob
+        names = []
+        for i in glob(os.path.join(defaultSettingsPath, '*.json')):
+            if os.path.isfile(i):
+                name = os.path.basename(i).split(f"_{cls.FileSuffix}.json")[0]
+                names += [name]
+        return tuple(names)
+
+    @classmethod
+    def loadDefaultSettings(cls, name: str) -> PWSAnalysisSettings:
+        from . import defaultSettingsPath
+        return cls.fromJson(defaultSettingsPath, name)
