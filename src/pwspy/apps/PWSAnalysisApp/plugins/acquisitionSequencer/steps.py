@@ -17,7 +17,8 @@ StepTypeNames = dict(  # The names to represent the `steps` that can be in an ac
     PAUSE="Pause",
     ROOT="Initialization",
     AF="Software Autofocus",
-    ZSTACK="Z-Stack"
+    ZSTACK="Z-Stack",
+    AUTOSHUTTER='AutoShutter'
 )
 
 
@@ -161,5 +162,6 @@ class SequencerStepTypes(enum.Enum):
     ROOT = ContainerStep
     SUBFOLDER = ContainerStep
     ZSTACK = ZStackStep
+    AUTOSHUTTER = ContainerStep
 
 
