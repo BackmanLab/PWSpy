@@ -67,11 +67,11 @@ def _loadIms(qout: queue.Queue, qin: queue.Queue, lock: th.Lock):
             qout.put((index, row))
             perc = psutil.virtual_memory().percent
             logger.info(f"Memory Usage: {perc}%")
-            if perc >= 95:  # TODO maybe it makes more sense to wait here until memory usage decreases?
+            if perc >= 95:  # TODO maybe it makes more sense to wait here until memory usage decreases? No, actually make the queue of a limited length and block if the queue is too full.
                 logger.info("Memory limit exceeded. Exiting to avoid lock-up.")
                 return
         except Exception as e:
-            qout.put(e) #Put the error in the queue so it can propagate to the main thread.
+            qout.put(e)  # Put the error in the queue so it can propagate to the main thread.
             raise e
 
 def _procWrap(procFunc, lock: th.Lock):
