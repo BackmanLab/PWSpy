@@ -52,7 +52,6 @@ import pwspy.dataTypes as pwsdt
 from pwspy import dateTimeFormat
 from pwspy.utility.misc import cached_property
 from pwspy.utility.reflection import reflectanceHelper, Material
-from ..dataTypes import ERMetaData
 
 
 def clearError(func):
@@ -114,7 +113,7 @@ class PWSAnalysis(AbstractAnalysis):
         if extraReflectance is None:
             Iextra = None
             self._initWarnings.append(warnings.AnalysisWarning("Ignoring extra reflection correction.", "That's all"))
-        elif isinstance(extraReflectance, ERMetaData):  # Load an extraReflectanceCube and use it in conjunction with the reference to generate an extraReflectionCube
+        elif isinstance(extraReflectance, pwsdt.ERMetaData):  # Load an extraReflectanceCube and use it in conjunction with the reference to generate an extraReflectionCube
             extraReflectance = ExtraReflectanceCube.fromMetadata(extraReflectance) if extraReflectance is not None else None
             if extraReflectance.metadata.numericalAperture != settings.numericalAperture:
                 self._initWarnings.append(warnings.AnalysisWarning("NA mismatch!", f"The numerical aperture of your analysis does not match the NA of the Extra Reflectance Calibration. Calibration File NA: {extraReflectance.metadata.numericalAperture}. PWSAnalysis NA: {settings.numericalAperture}."))
