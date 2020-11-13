@@ -105,7 +105,7 @@ def SIFTRegisterTransform(reference: np.ndarray, other: typing.Iterable[np.ndarr
     if debugPlots:
         anFig, anAx = plt.subplots()
         anims = []
-    for img in other:
+    for i, img in enumerate(other):
         otherImg = to8bit(img)
         # find the keypoints and descriptors with SIFT
         kp2, des2 = sift.detectAndCompute(otherImg, mask=None)
@@ -117,13 +117,13 @@ def SIFTRegisterTransform(reference: np.ndarray, other: typing.Iterable[np.ndarr
             src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
             dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
             M, inlierMask = cv2.estimateAffinePartial2D(src_pts, dst_pts)
-            transforms.append(M)
             matchesMask = inlierMask.ravel().tolist()
         else:
-            logging.getLogger(__name__).warning("Not enough matches are found - %d/%d" % (len(good), MIN_MATCH_COUNT))
+            logging.getLogger(__name__).warning(f"Image {i}: Not enough matches are found - {len(good)}/{MIN_MATCH_COUNT}")
+            M = None
             matchesMask = None
-            # M = None
-        if debugPlots:
+        transforms.append(M)
+        if debugPlots and (M is not None):
             anims.append([anAx.imshow(cv2.warpAffine(otherImg, cv2.invertAffineTransform(M), otherImg.shape), 'gray')])
             h, w = refImg.shape
             pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
@@ -187,7 +187,7 @@ def ORBRegisterTransform(reference: np.ndarray, other: typing.Iterable[np.ndarra
     if debugPlots:
         anFig, anAx = plt.subplots()
         anims = []
-    for img in other:
+    for i, img in enumerate(other):
         otherImg = to8bit(img)
         # find the keypoints and descriptors with ORB
         kp2, des2 = orb.detectAndCompute(otherImg, mask=None)
@@ -199,12 +199,13 @@ def ORBRegisterTransform(reference: np.ndarray, other: typing.Iterable[np.ndarra
             src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
             dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
             M, inlierMask = cv2.estimateAffinePartial2D(src_pts, dst_pts)
-            transforms.append(M)
             matchesMask = inlierMask.ravel().tolist()
         else:
-            logging.getLogger(__name__).warning("Not enough matches are found - %d/%d" % (len(good), MIN_MATCH_COUNT))
+            logging.getLogger(__name__).warning(f"Image {i}: Not enough matches are found - {len(good)}/{MIN_MATCH_COUNT}")
+            M = None
             matchesMask = None
-        if debugPlots:
+        transforms.append(M)
+        if debugPlots and (M is not None):
             anims.append([anAx.imshow(cv2.warpAffine(otherImg, cv2.invertAffineTransform(M), otherImg.shape), 'gray')])
             h, w = refImg.shape
             pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)

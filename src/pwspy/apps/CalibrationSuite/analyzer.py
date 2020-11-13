@@ -14,12 +14,14 @@ from pwspy.apps.CalibrationSuite.TransformGenerator import TransformGenerator
 from pwspy.utility.reflection import Material
 import pwspy.analysis.pws as pwsAnalysis
 import numpy as np
-import glob
+from glob import glob
 import os
-
+import pandas as pd
+import logging
 
 settings = pwsAnalysis.PWSAnalysisSettings.loadDefaultSettings("Recommended")
 settings.referenceMaterial = Material.Air
+
 
 class ITOAnalyzer:
     _SETTINGS = settings
@@ -37,7 +39,7 @@ class ITOAnalyzer:
                     print(f"Failed to load measurement at directory {f}")
                     print(traceback.print_exc())
 
-        self._matcher = TransformGenerator(self._template.analysisResults)
+        self._matcher = TransformGenerator(self._template.analysisResults, debugMode=True, fastMode=True)
 
         dates = [datetime.strptime(i.name, self._DATETIMEFORMAT) for i in _measurements]
         self._data = pd.DataFrame({"measurements": _measurements}, index=dates)
@@ -46,7 +48,7 @@ class ITOAnalyzer:
 
     def _generateTransforms(self, useCached: bool = True):
         # TODO how to cache transforms (Save to measurement directory with a reference to the template directory?)
-        transforms = self._matcher.match(self._data.measurements)
+        transforms = self._matcher.match([i.analysisResults for i in self._data.measurements])
         self._data['transforms'] = transforms
 
     def transformData(self):

@@ -1,15 +1,18 @@
+import logging
 import os
 
 from pwspy import dataTypes as pwsdt
 from pwspy.analysis import pws as pwsAnalysis
+from glob import glob
 
 
 class ITOMeasurement:
     ANALYSIS_NAME = 'ITOCalibration'
+
     def __init__(self, directory: str, settings: pwsAnalysis.PWSAnalysisSettings):
         self.name = os.path.basename(directory)
 
-        acqs = [pwsdt.AcqDir(f) for f in os.path.join(directory, "Cell*")]
+        acqs = [pwsdt.AcqDir(f) for f in glob(os.path.join(directory, "Cell*"))]
         itoAcq = [acq for acq in acqs if acq.getNumber() < 900]
         assert len(itoAcq) == 1, "There must be one and only one ITO film acquisition. Cell number should be less than 900."
         self._itoAcq = itoAcq[0]
@@ -25,12 +28,14 @@ class ITOMeasurement:
         self._results: pwsAnalysis.PWSAnalysisResults = self._itoAcq.pws.loadAnalysis(self.ANALYSIS_NAME)
 
     def _generateAnalysis(self, settings: pwsAnalysis.PWSAnalysisSettings):
+        logger = logging.getLogger(__name__)
+        logger.debug(f"Generating Analysis for {self.name}")
         ref = self._refAcq.pws.toDataClass()
         ref.correctCameraEffects()
         analysis = pwsAnalysis.PWSAnalysis(settings, None, ref)
         im = self._itoAcq.pws.toDataClass()
         im.correctCameraEffects()
-        results = analysis.run(im)
+        results, warnings = analysis.run(im)
         self._itoAcq.pws.saveAnalysis(results, self.ANALYSIS_NAME)
 
     def _hasAnalysis(self) -> bool:
