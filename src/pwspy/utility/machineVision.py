@@ -225,6 +225,7 @@ def ORBRegisterTransform(reference: np.ndarray, other: typing.Iterable[np.ndarra
         an = None
     return transforms, an
 
+
 def _knnMatch(flannMatcher: cv2.FlannBasedMatcher, des1: np.ndarray, des2: np.ndarray) -> typing.List[cv2.DMatch]:
     """
     Return a list of sufficiently good matches between keypoint descriptors.

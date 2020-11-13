@@ -31,7 +31,11 @@ from pwspy.apps import appPath
 from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 import traceback
 
+
 class ERApp(QApplication):
+    """
+    An application for generating the "ExtraReflectance" calibration files from a set of reference reflectance measurements.
+    """
     def __init__(self, args):
         QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
         super().__init__(args)

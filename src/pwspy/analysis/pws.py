@@ -182,7 +182,7 @@ class PWSAnalysis(AbstractAnalysis):
         return cube
 
     def _filterSignal(self, data: np.ndarray, sampleFreq: float):
-        if self.settings.filterCutoff is None: # Skip filtering.
+        if self.settings.filterCutoff is None:  # Skip filtering.
             return data
         else:
             b, a = sps.butter(self.settings.filterOrder, self.settings.filterCutoff, fs=sampleFreq)  # Generate the filter coefficients
@@ -370,6 +370,16 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
         """The `idtag` of the extra reflectance correction used."""
         return bytes(np.array(self.file['extraReflectionTag'])).decode()
 
+    def releaseMemory(self):
+        """
+        The cached properties continue to stay in RAM until they are deleted, this method deletes all cached data to release the memory.
+        """
+        for field in self.fields():
+            try:
+                delattr(self, field)
+            except AttributeError:
+                pass  # Fields that haven't yet been loaded won't be present for deletion
+
 
 class LegacyPWSAnalysisResults(AbstractAnalysisResults):
     """Allows loading of the .mat files that were used by matlab analysis code to save analysis results. Only partially implemented."""
@@ -397,7 +407,7 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
 
     Attributes:
         filterOrder (int): The `order` of the buttersworth filter used for lowpass filtering.
-        filterCutoff (float): The cutoff frequency of the buttersworth filter used for lowpass filtering. Set to `None` to skip lowpass filtering.
+        filterCutoff (float): The cutoff frequency of the buttersworth filter used for lowpass filtering. Frequency unit is 1/wavelength . Set to `None` to skip lowpass filtering.
         polynomialOrder (int): The order of the polynomial which will be fit to the reflectance and then subtracted before calculating the analysis results.
         extraReflectanceId (str): The `idtag` of the extra reflection used for correction. Set to `None` if extra reflectance calibration is being skipped.
         referenceMaterial (Material): The material that was being imaged in the reference acquisition

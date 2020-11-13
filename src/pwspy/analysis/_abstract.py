@@ -271,3 +271,4 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
     def __del__(self):
         if self.file:  # Make sure to release the file if it's still open.
             self.file.close()
+

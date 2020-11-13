@@ -18,6 +18,7 @@ from glob import glob
 import os
 import pandas as pd
 import logging
+from scipy.ndimage import binary_dilation
 
 settings = pwsAnalysis.PWSAnalysisSettings.loadDefaultSettings("Recommended")
 settings.referenceMaterial = Material.Air
@@ -39,7 +40,7 @@ class ITOAnalyzer:
                     print(f"Failed to load measurement at directory {f}")
                     print(traceback.print_exc())
 
-        self._matcher = TransformGenerator(self._template.analysisResults, debugMode=True, fastMode=True)
+        self._matcher = TransformGenerator(self._template.analysisResults, debugMode=False, fastMode=True)
 
         dates = [datetime.strptime(i.name, self._DATETIMEFORMAT) for i in _measurements]
         self._data = pd.DataFrame({"measurements": _measurements}, index=dates)
@@ -52,20 +53,36 @@ class ITOAnalyzer:
         self._data['transforms'] = transforms
 
     def transformData(self):
+        logger = logging.getLogger(__name__)
+
         def applyTransform(row):
-            tform = row.transforms
-            #TODO determine how much the images will overlap and crop by that amount.
-            im = row.measurements.results.meanReflectance
+            if row.transforms is None:
+                logger.debug(f"Skipping transformation of {row.measurements.name}")
+                return None, None
+            logger.debug(f"Starting data transformation of {row.measurements.name}")
+            # TODO default warp interpolation is bilinear, should we instead use nearest-neighbor?
+            im = row.measurements.analysisResults.meanReflectance
             tform = cv2.invertAffineTransform(row.transforms)
-            meanReflectance = cv2.warpAffine(im, tform, im.shape)
-            data = row.measurements.results.reflectance
-            reflectance = np.zeros_like(data)
-            for i in range(data.shape[2]):
-                reflectance[:, :, i] = cv2.warpAffine(data[:, :, i], tform, data.shape[:2])
+            meanReflectance = cv2.warpAffine(im, tform, im.shape, borderValue=-666.0)  # Blank regions after transform will have value -666, can be used to generate a mask.
+            mask = meanReflectance == -666.0
+            mask = binary_dilation(mask) # Due to interpolation we sometimes get weird values at the edge. dilate the mask so that those edges get cut off.
+            kcube = row.measurements.analysisResults.reflectance
+            reflectance = np.zeros_like(kcube.data)
+            for i in range(kcube.data.shape[2]):
+                reflectance[:, :, i] = cv2.warpAffine(kcube.data[:, :, i], tform, kcube.data.shape[:2]) + meanReflectance
+            row.measurements.analysisResults.releaseMemory()
+            reflectance[mask] = np.nan
+            return tuple((reflectance,))  # Bad things happen if you put a numpy array directly into a dataframe. That's why we have the tuple.
 
-            return meanReflectance, reflectance
+        self._data['reflectance'] = self._data.apply(applyTransform, axis=1)
 
-        out = self._data.apply(applyTransform, axis=1)
-        a = 1
 
-    #TODO measure average spectrum over a fine grid of the transformed image.
+class CubeComparer:
+    """
+    Compares the 3d reflectance cube of the template with the reflectance cube of a test measurement.
+    The test reflectance array should have already been transformed so that they are aligned.
+    Any blank section of the transformed array should be np.nan
+    """
+    def init(self, template: np.ndarray, test: np.ndarray):
+        
+    # TODO measure average spectrum over a fine grid of the transformed image.

@@ -1,6 +1,7 @@
+import dataclasses
 import logging
 import os
-
+import numpy as np
 from pwspy import dataTypes as pwsdt
 from pwspy.analysis import pws as pwsAnalysis
 from glob import glob
@@ -49,10 +50,8 @@ class ITOMeasurement:
     def idTag(self) -> str:
         return self._itoAcq.pws.idTag + '||' + self._refAcq.idTag
 
-    # @property
-    # def meanReflectance(self) -> np.ndarray:
-    #     return self._results.meanReflectance
-    #
-    # @property
-    # def reflectance(self) -> pwsdt.KCube:
-    #     return self._results.reflectance
+
+@dataclasses.dataclass
+class CalibrationResult:
+    templateIdTag: str
+    affineTransform: np.ndarray

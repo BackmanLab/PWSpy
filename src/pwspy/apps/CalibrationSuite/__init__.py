@@ -15,4 +15,5 @@ if __name__ == '__main__':
     logger.addHandler(logging.StreamHandler(sys.stdout))
     logger.debug("Start ITO Analyzer")
     app = ITOAnalyzer(directory, os.path.join(directory, '10_20_2020'))
-    a = 1
+    app.transformData()
+    a = 1  # Debug Breakpoint
