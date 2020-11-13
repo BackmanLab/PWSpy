@@ -64,10 +64,10 @@ def _loadIms(qout: queue.Queue, qin: queue.Queue, lock: th.Lock):
             logger.info(f'Starting {displayStr}')
             im = _load(row['cube'], lock=lock)
             row['cube'] = im
-            qout.put((index, row))
+            qout.put((index, row), block=True)  # Once the queue is full we will block here so that we don't overfill the RAM.
             perc = psutil.virtual_memory().percent
             logger.info(f"Memory Usage: {perc}%")
-            if perc >= 95:  # TODO maybe it makes more sense to wait here until memory usage decreases? No, actually make the queue of a limited length and block if the queue is too full.
+            if perc >= 95:
                 logger.info("Memory limit exceeded. Exiting to avoid lock-up.")
                 return
         except Exception as e:
@@ -165,7 +165,7 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
     else:
         if initializer:
             initializer(*initArgs)
-        qout = queue.Queue()
+        qout = queue.Queue(maxsize=3)  # Once 3 cells are loaded into the queue it will block so that they can be processed. Prevents us from using way to much RAM.
         qin = queue.Queue()
         [qin.put(f) for f in fileFrame.iterrows()]
         lock = th.Lock()
