@@ -8,15 +8,19 @@ class ITOMeasurement:
     ANALYSIS_NAME = 'ITOCalibration'
     def __init__(self, directory: str, settings: pwsAnalysis.PWSAnalysisSettings):
         self.name = os.path.basename(directory)
-        itoAcq = os.path.join(directory, "Cell1")
-        self._itoAcq = pwsdt.AcqDir(itoAcq)
-        refAcq = os.path.join(directory, "Cell999")
-        self._refAcq = pwsdt.AcqDir(refAcq)
+
+        acqs = [pwsdt.AcqDir(f) for f in os.path.join(directory, "Cell*")]
+        itoAcq = [acq for acq in acqs if acq.getNumber() < 900]
+        assert len(itoAcq) == 1, "There must be one and only one ITO film acquisition. Cell number should be less than 900."
+        self._itoAcq = itoAcq[0]
+        refAcq = [acq for acq in acqs if acq.getNumber() > 900]
+        assert len(refAcq) == 1, "There must be one and only one reference acquisition. Cell number should be greater than 900."
+        self._refAcq = refAcq[0]
 
         if not self._hasAnalysis():
             self._generateAnalysis(settings)
         else:
-            pass # TODO check that settings match the preiously don't analysis
+            pass  # TODO check that settings match the previously done analysis
 
         self._results: pwsAnalysis.PWSAnalysisResults = self._itoAcq.pws.loadAnalysis(self.ANALYSIS_NAME)
 
