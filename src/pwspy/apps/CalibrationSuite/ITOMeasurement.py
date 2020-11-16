@@ -1,6 +1,9 @@
+from __future__ import annotations
 import dataclasses
 import logging
 import os
+import typing
+
 import numpy as np
 from pwspy import dataTypes as pwsdt
 from pwspy.analysis import pws as pwsAnalysis
@@ -11,6 +14,7 @@ class ITOMeasurement:
     ANALYSIS_NAME = 'ITOCalibration'
 
     def __init__(self, directory: str, settings: pwsAnalysis.PWSAnalysisSettings):
+        self.filePath = os.path.abspath(directory)
         self.name = os.path.basename(directory)
 
         acqs = [pwsdt.AcqDir(f) for f in glob(os.path.join(directory, "Cell*"))]
@@ -50,8 +54,16 @@ class ITOMeasurement:
     def idTag(self) -> str:
         return self._itoAcq.pws.idTag + '||' + self._refAcq.idTag
 
+    def saveCalibrationResult(self, result: CalibrationResult):
+        result.toHDFFile(self.filePath, result.templateIdTag)
+
+    def listCalibrationResults(self) -> typing.Tuple[str]:
+        
 
 @dataclasses.dataclass
 class CalibrationResult:
     templateIdTag: str
     affineTransform: np.ndarray
+
+    def toHDFFile(self, directory: str, name: str):
+

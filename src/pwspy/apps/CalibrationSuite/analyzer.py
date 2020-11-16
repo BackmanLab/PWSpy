@@ -84,5 +84,5 @@ class CubeComparer:
     Any blank section of the transformed array should be np.nan
     """
     def init(self, template: np.ndarray, test: np.ndarray):
-        
+
     # TODO measure average spectrum over a fine grid of the transformed image.
