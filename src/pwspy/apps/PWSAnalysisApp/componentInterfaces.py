@@ -23,10 +23,7 @@ from __future__ import annotations
 import abc
 import typing
 from typing import List, Optional
-
 import sip
-from PyQt5.QtWidgets import QWidget
-
 from pwspy import dataTypes as pwsdt
 from pwspy.apps.PWSAnalysisApp.utilities.conglomeratedAnalysis import ConglomerateCompilerResults, \
     ConglomerateCompilerSettings
@@ -35,6 +32,7 @@ if typing.TYPE_CHECKING:
 
 
 class QABCMeta(sip.wrappertype, abc.ABCMeta):
+    """This metaclass allows us to use abstract classes alongside Qt"""
     pass
 
 

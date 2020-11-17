@@ -86,3 +86,4 @@ class CubeComparer:
     def init(self, template: np.ndarray, test: np.ndarray):
 
     # TODO measure average spectrum over a fine grid of the transformed image.
+    # TODO calculate 3d cross correlation function and measure slope in various directions.

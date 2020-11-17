@@ -7,8 +7,7 @@ from PyQt5.QtWidgets import QWidget, QApplication
 from pwspy.apps.PWSAnalysisApp.pluginInterfaces import CellSelectorPlugin
 import os
 
-from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer._ui.TreeView import MyTreeView
-from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer._ui.widget import SequenceViewer
+from ._ui.widget import SequenceViewer
 from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.sequencerCoordinate import SequencerCoordinateRange, SeqAcqDir
 from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer.steps import SequencerStep
 from pwspy.dataTypes import AcqDir
@@ -17,13 +16,14 @@ if typing.TYPE_CHECKING:
 
 
 def requirePluginActive(method):
+    """A decorator that only runs the decorated function if the plugin UI is open"""
     def newMethod(self, *args, **kwargs):
         if self._ui.isVisible():  # If the ui isn't visible then we consider the plugin to be off.
             method(self, *args, **kwargs)
     return newMethod
 
 
-class AcquisitionSequencerPlugin(CellSelectorPlugin): #TODO switch to a qdialog or dock widget, make sure widget has a parent. Provide new columns to the cell selector and results selector with coordinate?
+class AcquisitionSequencerPlugin(CellSelectorPlugin): #TODO switch to a qdialog or dock widget, make sure widget has a parent. Why is this needed?
     def __init__(self):
         self._selector: CellSelector = None
         self._sequence: SequencerStep = None
@@ -117,6 +117,8 @@ class AcquisitionSequencerPlugin(CellSelectorPlugin): #TODO switch to a qdialog 
 
 
 if __name__ == '__main__':
+    from pwspy.apps.PWSAnalysisApp.plugins.acquisitionSequencer._ui.TreeView import MyTreeView
+
     with open(r'C:\Users\nicke\Desktop\data\toast2\sequence.pwsseq') as f:
         s = SequencerStep.fromJson(f.read())
     import sys
