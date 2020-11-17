@@ -56,7 +56,10 @@ class LassoCreator(CreatorWidgetBase):
     def _release(self, event):
         if event.button == 1: #Left click
             if (self.verts is not None) and (self.onselect is not None):
-                l = shapelyPolygon(LinearRing(self.verts))
+                try:
+                    l = shapelyPolygon(LinearRing(self.verts))
+                except ValueError:
+                    return  # If the user clicks without dragging there will just be a single coordinate, this will result in an error when trying to convert to a `LinearRing`
                 l = l.buffer(0)
                 l = l.simplify(l.length ** .5 / 5, preserve_topology=False)
                 if isinstance(l, MultiPolygon):  # There is a chance for this to be a Multipolygon.
