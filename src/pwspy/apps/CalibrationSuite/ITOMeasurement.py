@@ -58,7 +58,7 @@ class ITOMeasurement:
         result.toHDFFile(self.filePath, result.templateIdTag)
 
     def listCalibrationResults(self) -> typing.Tuple[str]:
-        
+        pass
 
 @dataclasses.dataclass
 class CalibrationResult:
@@ -66,4 +66,4 @@ class CalibrationResult:
     affineTransform: np.ndarray
 
     def toHDFFile(self, directory: str, name: str):
-
+        pass
