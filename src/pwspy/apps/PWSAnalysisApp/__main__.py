@@ -79,7 +79,7 @@ def main():
         os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"  # TODO replace these options with proper high dpi handling. no pixel specific widths.
         QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
         app = PWSApp(sys.argv)
-        # import qdarkstyle
+        # import qdarkstyle  # Would need to fix a lot of color issues ans size issue for this to work.
         # dark_stylesheet = qdarkstyle.load_stylesheet_pyqt5()
         # app.setStyleSheet(dark_stylesheet)
 

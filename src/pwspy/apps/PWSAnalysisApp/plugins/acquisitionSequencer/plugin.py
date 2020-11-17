@@ -64,9 +64,9 @@ class AcquisitionSequencerPlugin(CellSelectorPlugin): #TODO switch to a qdialog 
                         commonPath = os.path.split(commonPath)[0]  # Go up one directory
                         continue
                     self._cells = []
-                    for i in cells:
+                    for cell in cells:
                         try:
-                            self._cells.append(SeqAcqDir(i)) # TODO should probably verify that the coords match up with the sequence we loaded.
+                            self._cells.append(SeqAcqDir(cell))  # TODO should probably verify that the coords match up with the sequence we loaded.
                         except:  # Coordinates weren't found
                             pass
                     self._ui.setSequenceStepRoot(self._sequence)
