@@ -94,7 +94,14 @@ class CubeComparer:
         self._test = test
 
     def getCrossCorrelation(self):
-        corr = correlate(self._template, self._test)
+        corr = correlate(self._template, self._test)  #Need to crop the nan regions
         return corr
     # TODO measure average spectrum over a fine grid of the transformed image.
     # TODO calculate 3d cross correlation function and measure slope in various directions.
+    # TODO SSIM, MSE
+
+
+class CubeSplitter:
+    """
+    Progressively splits a large cube into smaller and smaller cubes in the xy plane and performs an operation on the smaller cube sections.
+    """

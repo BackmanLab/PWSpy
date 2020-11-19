@@ -27,7 +27,7 @@ class MyTreeView(QTreeView):
         self._currentCoordRange = None
 
     def commitAndClose(self):
-        #Quickly deselect and reselect. this forces any open editor to commit its changes.
+        """Quickly deselect and reselect. this forces any open editor to commit its changes."""
         idx = self.currentIndex()
         self.setCurrentIndex(QModelIndex())
         self.setCurrentIndex(idx)
