@@ -8,7 +8,7 @@ from matplotlib.lines import Line2D
 from matplotlib.patches import Polygon
 from matplotlib.text import Text
 
-from pwspy.utility.matplotlibWidgets import AxManager
+from pwspy.utility.matplotlibWidgets.coreClasses import AxManager
 from pwspy.utility.matplotlibWidgets._modifierWidgets import ModifierWidgetBase
 
 
