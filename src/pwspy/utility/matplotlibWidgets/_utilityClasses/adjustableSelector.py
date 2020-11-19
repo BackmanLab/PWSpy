@@ -37,13 +37,13 @@ class AdjustableSelector:
             which is a list of the 2d coordinated outlining the selected polygon.
     """
     def __init__(self, axManager: AxManager, image: AxesImage, selectorClass: typing.Type[CreatorWidgetBase],
-                 onfinished: typing.Optional[typing.Callable] = None):
+                 onfinished: typing.Optional[typing.Callable] = None, onPolyTuningCancelled: typing.Optional[typing.Callable] = None):
         self.axMan = axManager
         self.image = image
         self.selector: CreatorWidgetBase = selectorClass(self.axMan, self.image, onselect=self._goPoly)
         self.selector.active = False
         from pwspy.utility.matplotlibWidgets import PolygonModifier
-        self.adjuster = PolygonModifier(self.axMan, onselect=self.finish)
+        self.adjuster = PolygonModifier(self.axMan, onselect=self.finish, onCancelled=onPolyTuningCancelled)
         self.adjuster.active = False
         self.adjustable = False
         self.onfinished = onfinished

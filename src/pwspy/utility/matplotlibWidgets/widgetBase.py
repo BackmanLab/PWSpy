@@ -48,7 +48,10 @@ class InteractiveWidgetBase(AxesWidget):
         self.state = set()
 
     def __del__(self):
-        self.removeArtists()
+        try:
+            self.removeArtists()
+        except TypeError:  # Sometimes when the program closes the order that objects are deleted in causes a None typeerror to occur here.
+            pass
 
     def set_active(self, active: bool):
         AxesWidget.set_active(self, active)
