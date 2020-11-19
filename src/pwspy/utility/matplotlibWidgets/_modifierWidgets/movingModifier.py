@@ -14,8 +14,9 @@ from pwspy.utility.matplotlibWidgets._modifierWidgets import ModifierWidgetBase
 
 class MovingModifier(ModifierWidgetBase):
     """This iteractive widget allows translating and rotating multiple polygons"""
-    def __init__(self, axMan: AxManager, image: AxesImage = None, onselect: typing.Optional[ModifierWidgetBase.SelectionFunction] = None):
+    def __init__(self, axMan: AxManager, image: AxesImage = None, onselect: typing.Optional[ModifierWidgetBase.SelectionFunction] = None, onCancelled: typing.Optional[typing.Callable] = None):
         super().__init__(axMan, image=image, onselect=onselect)
+        self._cancelFunc = onCancelled
         self.initialClickPoint = None  # The coords where a drag was started
         self.indicatorLine = Line2D([0, 0], [0, 0], color='k', linestyle='dashed', animated=True)
         self.angleRefLine = Line2D([0, 0], [0, 0], color='r', animated=True)
@@ -73,7 +74,9 @@ class MovingModifier(ModifierWidgetBase):
 
     def _on_key_press(self, event: KeyEvent):
         if event.key == 'escape':
-            self.initialize(self.originalCoords)  # Reset
+            self.set_visible(False)
+            self.set_active(False)
+            if self._cancelFunc is not None: self._cancelFunc()  # Cancel
         elif event.key == 'enter':
             newCoordSet = [poly.get_xy() for poly in self.polygonArtists]
             self.onselect(newCoordSet, newCoordSet)

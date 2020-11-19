@@ -52,7 +52,6 @@ import pwspy.dataTypes as pwsdt
 from pwspy import dateTimeFormat
 from pwspy.utility.misc import cached_property
 from pwspy.utility.reflection import reflectanceHelper, Material
-from ..dataTypes import ERMetaData
 
 
 def clearError(func):
@@ -87,15 +86,17 @@ class PWSAnalysis(AbstractAnalysis):
 
     Args:
         settings: The settings used for the analysis
-        extraReflectanceMetadata: the metadata object referring to a calibration file for extra reflectance.
+        extraReflectance: An object used to correct for stray reflectance present in the imaging system. This can be of type:
+            None: No correction will be performed.
+            ERMetaData (Recommended): The metadata object referring to a calibration file for extra reflectance. It will be processed in conjunction with the reference immage to produce an ExtraReflectionCube representing the stray reflectance in units of camera counts/ms.
+            ExtraReflectionCube: An object representing the stray reflection in units of counts/ms. It is up to the user to make sure that the data is scaled appropriately to match the data being analyzed.
         ref: The reference acquisition used for analysis.
     """
-    def __init__(self, settings: PWSAnalysisSettings, extraReflectanceMetadata: typing.Optional[ERMetaData], ref: pwsdt.ImCube):
+    def __init__(self, settings: PWSAnalysisSettings, extraReflectance: typing.Optional[typing.Union[pwsdt.ERMetaData, pwsdt.ExtraReflectionCube]], ref: pwsdt.ImCube):
         from pwspy.dataTypes import ExtraReflectanceCube
         assert ref.processingStatus.cameraCorrected, "Before attempting to analyze using this reference make sure that it has had camera darkcounts and non-linearity corrected for."
         super().__init__()
         self._initWarnings = []
-        extraReflectance = ExtraReflectanceCube.fromMetadata(extraReflectanceMetadata) if extraReflectanceMetadata is not None else None
         self.settings = settings
         if not ref.processingStatus.normalizedByExposure:
             ref.normalizeByExposure()
@@ -107,14 +108,23 @@ class PWSAnalysis(AbstractAnalysis):
             assert extraReflectance is None, "Extra reflectance calibration relies on being provided with the theoretical reflectance of our reference."
         else:
             theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, wavelengths=ref.wavelengths, NA=settings.numericalAperture)
+
+        #Handle the extra reflection cube.
         if extraReflectance is None:
             Iextra = None
             self._initWarnings.append(warnings.AnalysisWarning("Ignoring extra reflection correction.", "That's all"))
-        else:
+        elif isinstance(extraReflectance, pwsdt.ERMetaData):  # Load an extraReflectanceCube and use it in conjunction with the reference to generate an extraReflectionCube
+            extraReflectance = ExtraReflectanceCube.fromMetadata(extraReflectance) if extraReflectance is not None else None
             if extraReflectance.metadata.numericalAperture != settings.numericalAperture:
                 self._initWarnings.append(warnings.AnalysisWarning("NA mismatch!", f"The numerical aperture of your analysis does not match the NA of the Extra Reflectance Calibration. Calibration File NA: {extraReflectance.metadata.numericalAperture}. PWSAnalysis NA: {settings.numericalAperture}."))
-            Iextra = pwsdt.ExtraReflectionCube.create(extraReflectance, theoryR, ref) #Convert from reflectance to predicted counts/ms.
-            ref.subtractExtraReflection(Iextra)  # remove the extra reflection from our data#
+            Iextra = pwsdt.ExtraReflectionCube.create(extraReflectance, theoryR, ref) #Convert from reflectance to predicted counts/ms for the internal reflections of the system.
+        elif isinstance(extraReflectance, pwsdt.ExtraReflectionCube): # An extraReflectionCube (counts/ms rather than a reflectance percentage) has been directly provided by the user. No need to generate one from the reference.
+            Iextra = extraReflectance
+        else:
+            raise TypeError(f"`extraReflectance` of type: {type(extraReflectance)} is not supported.")
+        if Iextra is not None:
+            ref.subtractExtraReflection(Iextra)  # remove the extra reflection from our reference data
+
         if not settings.relativeUnits:
             ref = ref / theoryR[None, None, :]  # now when we normalize by our reference we will get a result in units of physical reflectance rather than arbitrary units.
         self.ref = ref
@@ -141,7 +151,7 @@ class PWSAnalysis(AbstractAnalysis):
         if not self.settings.skipAdvanced:
             # RMS - POLYFIT
             # The RMS should be calculated on the mean-subtracted polyfit. This may
-            # also be accomplished by calculating the standard-deviation.
+            # also be accomplished by calculating the standard-deviation. This is a pointless metric IMO.
             rmsPoly = cubePoly.std(axis=2)
 
             slope, rSquared = cube.getAutoCorrelation(self.settings.autoCorrMinSub, self.settings.autoCorrStopIndex)

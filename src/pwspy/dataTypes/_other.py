@@ -447,7 +447,7 @@ class Roi:
 
     def getBoundingPolygon(self) -> patches.Polygon:
         """Return a matplotlib `Polygon` representing the bounding polygon of the `mask`. In the case where a `mask` was
-        saved but `vertices` were not. This uses the 'Concave Hull` method to estimate the vertices of the bounding
+        saved but `vertices` were not this uses the 'Concave Hull` method to estimate the vertices of the bounding
         polygon of the `mask`.
 
         Returns:

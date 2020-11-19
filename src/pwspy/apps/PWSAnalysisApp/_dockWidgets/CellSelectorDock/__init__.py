@@ -20,6 +20,7 @@ import re
 from typing import List, Optional
 
 from PyQt5 import QtCore
+from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineEdit, QGridLayout, QSplitter, \
     QSizePolicy, QMessageBox, QPushButton, QMenu, QAction
 import pwspy.dataTypes as pwsdt
@@ -101,7 +102,7 @@ class CellSelectorDock(CellSelector, QDockWidget):
             action = QAction(plugin.getName())
             action.triggered.connect(lambda checked, p=plugin: p.onPluginSelected())
             menu.addAction(action)
-        menu.exec(self._pluginsButton.mapToGlobal(self._pluginsButton.pos())) #TODO this gets the wrong position sometimes.
+        menu.exec(self._pluginsButton.mapToGlobal(QPoint(0, self._pluginsButton.height())))
 
     # def _addCell(self, fileName: str, workingDir: str):
     #     try:

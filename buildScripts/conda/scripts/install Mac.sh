@@ -1,5 +1,6 @@
 #!/bin/sh
 currDir="$(pwd)"
-conda create -n pwspy -c python=3.7
-conda activate pwspy
+eval "$(conda shell.bash hook)"
+conda create -n pwspyEnv -c python=3.8
+conda activate pwspyEnv
 conda install -c file://"$currDir" -c defaults -c conda-forge pwspy --force-reinstall

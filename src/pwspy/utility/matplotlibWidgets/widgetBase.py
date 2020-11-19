@@ -47,6 +47,9 @@ class InteractiveWidgetBase(AxesWidget):
         self._prev_event = None
         self.state = set()
 
+    def __del__(self):
+        self.removeArtists()
+
     def set_active(self, active: bool):
         AxesWidget.set_active(self, active)
         if active:
