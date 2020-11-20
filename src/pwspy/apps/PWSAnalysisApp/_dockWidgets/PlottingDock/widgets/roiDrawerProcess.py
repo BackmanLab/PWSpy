@@ -1,11 +1,15 @@
 import enum
+import logging
 import multiprocessing as mp
+import os
 import queue
-
+from datetime import datetime
+from time import time
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, QThread
 from PyQt5.QtWidgets import QWidget, QMessageBox, QApplication
 from matplotlib import patches
 
+from pwspy.apps.PWSAnalysisApp import applicationVars
 from pwspy.dataTypes import Roi, AcqDir
 
 
@@ -21,9 +25,12 @@ class _QueueCheckerThread(QObject):
 
     @pyqtSlot()
     def doWork(self):
+        logger = logging.getLogger(__name__)
+        logger.info(f"Starting Roi results thread.")
         while True:
             try:
-                resultCode, data = self._q.get(True, .3)  #Periodically check the queue for new information.
+                resultCode, data = self._q.get(True, .1)  #Periodically check the queue for new information.
+                logger.info(f"Received Roi Result from child process")
             except queue.Empty:
                 continue
             if resultCode is _Cmd.SUCESS:
@@ -33,6 +40,7 @@ class _QueueCheckerThread(QObject):
                 self.roiNeedsOverwrite.emit(acq, roi)
             elif resultCode is _Cmd.QUIT:
                 QThread.currentThread().quit()  # Child process has reported that it is closing, we should close this thread too.
+                logger.info(f"Received command to exit ROI thread")
                 break
             elif isinstance(resultCode, Exception):
                 raise resultCode  # The child process has crashed and returned an error.
@@ -56,20 +64,34 @@ class _RoiSaverProcess(mp.Process):
 
     def run(self):
         """This is what gets run in the other process when `start` is called."""
+        logger = logging.getLogger("RoiProcess")
+        fHandler = logging.FileHandler(os.path.join(applicationVars.dataDirectory, f'RoiProcesslog{datetime.now().strftime("%d%m%Y%H%M%S")}.txt'))
+        fHandler.setFormatter(logging.Formatter('%(levelname)s: %(asctime)s %(name)s.%(funcName)s(%(lineno)d) - %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
+        logger.addHandler(fHandler)
+        logger.setLevel(logging.DEBUG)
+        logger.info("Process Opened")
         try:
             while True:
                 try:
-                    item = self._q.get(True, 0.2) # Periodically check the queue for new commands.
+                    item = self._q.get(True, 0.1)  # Periodically check the queue for new commands.
+                    logger.info(f"Item received")
                 except queue.Empty:
                     continue
                 if item is _Cmd.QUIT:  # We received instructions to end the process
                     self._resultQ.put((item, None), False)  # Pass the command back out the queue as confirmation.
+                    logger.info("Quitting")
                     break
                 name, num, verts, datashape, acq = item  # If we got this far then item must be commands for a new saving.
+                logger.info(f"Received ROI {name} {num}")
+                sTime = time()
                 roi = Roi.fromVerts(name, num, verts, datashape)
+                logger.info(f"Roi creation took {time()-sTime} seconds.")
                 try:
+                    sTime = time()
                     acq.saveRoi(roi)
+                    logger.info(f"Roi saving took {time()-sTime} seconds.")
                     self._resultQ.put((_Cmd.SUCESS, roi), False)  # Tell the main process that saving is completed.
+                    logger.info(f"Roi placed in queue")
                 except OSError:
                     self._resultQ.put((_Cmd.NEEDSOVERWRITE, (acq, roi)), False)  # Tell the main process that there is a file conflict and we need to overwrite the ROI.
         except Exception as e:
@@ -82,6 +104,7 @@ class _RoiSaverProcess(mp.Process):
     def saveNewRoi(self, name: str, num: int, verts, datashape, acq: AcqDir):
         """Call this from the main process to start saving in the saver process."""
         self._q.put((name, num, verts, datashape, acq), True, 0.5)
+        logging.getLogger(__name__).info(f"Sent roi {name} {num} to child process")
 
     def getResultsQ(self):
         """Information is passed from the child process back to the main process through this queue."""
