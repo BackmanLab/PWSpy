@@ -201,13 +201,12 @@ class Roi:
         assert len(dataShape) == 2
         assert verts.shape[1] == 2
         assert len(verts.shape) == 2
-        x = np.arange(dataShape[1])
-        y = np.arange(dataShape[0])
-        X, Y = np.meshgrid(x, y)
-        coords = list(zip(X.flatten(), Y.flatten()))
-        matches = path.Path(verts).contains_points(coords)
-        mask = matches.reshape(dataShape)
+        iVerts = np.rint([verts]).astype(np.int32)  # The brackets here convert to a 3d array which is what cv2.fillpoly expects. We have to round to integers for cv2 to work.
+        mask = np.zeros(dataShape, dtype=np.int32)
+        cv2.fillPoly(mask, iVerts, 1)
+        mask = mask.astype(bool)
         return cls(name, number, mask, verts)
+
 
     @classmethod
     def fromHDF_legacy(cls, directory: str, name: str, number: int) -> Roi:
@@ -417,8 +416,8 @@ class Roi:
         return ret
 
     def transform(self, matrix: np.ndarray) -> Roi:
-        """Teturn a copy of this Roi that has been transformed by an affine transform matrix like the one returned by
-        opencv.estimateRigidTransform. This can be obtained using ICBase's getTransform method.
+        """Return a copy of this Roi that has been transformed by an affine transform matrix like the one returned by
+        opencv.estimateRigidTransform. This can be obtained using the functions in the utility.machineVision module.
 
         Args:
             matrix: A 2x3 numpy array representing an affine transformation.
@@ -447,7 +446,7 @@ class Roi:
 
     def getBoundingPolygon(self) -> patches.Polygon:
         """Return a matplotlib `Polygon` representing the bounding polygon of the `mask`. In the case where a `mask` was
-        saved but `vertices` were not. This uses the 'Concave Hull` method to estimate the vertices of the bounding
+        saved but `vertices` were not this uses the 'Concave Hull` method to estimate the vertices of the bounding
         polygon of the `mask`.
 
         Returns:

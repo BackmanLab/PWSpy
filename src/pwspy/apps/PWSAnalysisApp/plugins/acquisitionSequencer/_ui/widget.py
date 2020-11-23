@@ -24,6 +24,7 @@ class SequenceViewer(QWidget):
 
         self._selectButton = QPushButton("Update Selection")
         def func():
+            self._sequenceTree.commitAndClose() 
             self.newCoordSelected.emit(self._sequenceTree.getCurrentSelectedCoordinateRange())
         self._selectButton.released.connect(func)
 

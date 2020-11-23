@@ -188,6 +188,7 @@ class CellTableWidgetItem:
         for i in self._items:
             i.setBackground(color)
 
+
 class CellTableWidget(QTableWidget):
     """This is the table from which the user can select which cells to analyze, plot, etc. Each row of the table is
     represented by a CellTableWidgetItem which are stored in the self._cellItems list"""
@@ -299,6 +300,9 @@ class CellTableWidget(QTableWidget):
             mdAction.triggered.connect(self._displayCellMetadata)
             anAction = menu.addAction("View analysis settings")
             anAction.triggered.connect(self._displayAnalysisSettings)
+            if os.name == 'nt':  # Must be on windows.
+                folderAction = menu.addAction("Open folder")
+                folderAction.triggered.connect(lambda: [os.startfile(os.path.realpath(cellItem.acqDir.filePath)) for cellItem in self.selectedCellItems])
 
             menu.addSeparator()
             delAnAction = menu.addAction("Delete analysis by name")

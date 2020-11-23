@@ -40,8 +40,9 @@ Utility
    AxManager
 
 """
-from pwspy.utility.matplotlibWidgets._utilityClasses.adjustableSelector import AdjustableSelector
+from ._utilityClasses.adjustableSelector import AdjustableSelector
 from ._modifierWidgets.polygonModifier import PolygonModifier
+from ._modifierWidgets.movingModifier import MovingModifier
 from ._creatorWidgets.ellipse import EllipseCreator
 from ._creatorWidgets.lasso import LassoCreator
 from ._creatorWidgets.paint import RegionalPaintCreator
@@ -51,4 +52,5 @@ from ._creatorWidgets.WaterShedPaintSelector import WaterShedPaintCreator
 from .coreClasses import AxManager
 
 __all__ = ['AdjustableSelector', 'EllipseCreator', 'LassoCreator', 'RegionalPaintCreator',
-           'PointCreator', 'AxManager', 'FullImPaintCreator', 'WaterShedPaintCreator']
+           'PointCreator', 'AxManager', 'FullImPaintCreator', 'WaterShedPaintCreator', 'PolygonModifier',
+           'MovingModifier']

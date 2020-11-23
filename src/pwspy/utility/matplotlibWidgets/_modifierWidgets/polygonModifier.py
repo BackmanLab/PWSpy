@@ -158,8 +158,9 @@ class PolygonModifier(ModifierWidgetBase):
     """
     epsilon: int = 10  # max pixel distance to count as a vertex hit
 
-    def __init__(self, axMan: AxManager, onselect: typing.Optional[typing.Callable] = None):
+    def __init__(self, axMan: AxManager, onselect: typing.Optional[ModifierWidgetBase.SelectionFunction] = None, onCancelled: typing.Optional[typing.Callable] = None):
         super().__init__(axMan, None, onselect=onselect)
+        self._cancelFunc = onCancelled
         self.markers = Line2D([0], [0], ls="", marker='o', markerfacecolor='r', animated=True)
         self._ind = None  # the active vert
         self._hoverInd = None
@@ -190,7 +191,7 @@ class PolygonModifier(ModifierWidgetBase):
         x, y = self.markers.get_data()
         tck, u = interpolate.splprep([x, y], s=0, per=True)
         # evaluate the spline fits for 1000 evenly spaced distance values
-        xi, yi = interpolate.splev(np.linspace(0, 1, 1000), tck)
+        xi, yi = interpolate.splev(np.linspace(0, 1, 200), tck)
         self.poly.set_xy(list(zip(xi, yi)))
 
     def _get_ind_under_point(self, event):
@@ -243,6 +244,11 @@ class PolygonModifier(ModifierWidgetBase):
         elif event.key == 'enter':
             self.onselect([self.poly.xy], [self.markers.get_data()])
             return
+        elif event.key == 'escape':
+            self.set_visible(False)
+            self.set_active(False)
+            if self._cancelFunc is not None: self._cancelFunc() # Cancel
+
         self.axMan.update()
 
     def _onhover(self, event):

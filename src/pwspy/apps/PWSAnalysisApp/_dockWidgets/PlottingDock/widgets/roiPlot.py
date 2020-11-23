@@ -59,7 +59,7 @@ class RoiPlot(QWidget):
         self.im = self._plotWidget.im
         self.ax = self._plotWidget.ax
         self.canvas = self._plotWidget.canvas
-        self.rois: typing.List[RoiParams] = []
+        self.rois: typing.List[RoiParams] = []  # This list hold information about the ROIs that are currently displayed.
         self.axManager = AxManager(self._plotWidget.ax)  # This object manages redrawing of the matplotlib axes for us.
 
         self.roiFilter = QComboBox(self)
@@ -151,7 +151,7 @@ class RoiPlot(QWidget):
         # Determine if a ROI was clicked on
         _ = [param for param in self.rois if param.polygon.contains(event)[0]]
         if len(_) > 0:
-            selectedROIParam = _[0]
+            selectedROIParam = _[0]  # There should have only been one roi clicked on. select the first one from the list (hopefully only one there anyway)
         else:
             selectedROIParam = None #No Roi was clicked
 
@@ -182,8 +182,13 @@ class RoiPlot(QWidget):
                     self._polyWidg.set_active(False)
                     self._polyWidg.set_visible(False)
                     self.showRois()
+                    self.enableHoverAnnotation(True)
 
-                self._polyWidg = MovingModifier(self.axManager, onselect=done)
+                def cancelled():
+                    self.enableHoverAnnotation(True)
+
+                self.enableHoverAnnotation(False) #This should be reenabled when the widget is finished or cancelled.
+                self._polyWidg = MovingModifier(self.axManager, onselect=done, onCancelled=cancelled)
                 self._polyWidg.set_active(True)
                 self._polyWidg.initialize(coordSet)
 
@@ -194,9 +199,16 @@ class RoiPlot(QWidget):
                 self._plotWidget.canvas.draw_idle()
 
             popMenu = QMenu(self)
-            popMenu.addAction("Delete Selected ROIs", deleteFunc)
-            popMenu.addAction("Move Selected ROIs", moveFunc)
-            popMenu.addAction("De/Select All", selectAllFunc)
+            deleteAction = popMenu.addAction("Delete Selected ROIs", deleteFunc)
+            moveAction = popMenu.addAction("Move Selected ROIs", moveFunc)
+            selectAllAction = popMenu.addAction("De/Select All", selectAllFunc)
+
+            if not any([roiParam.selected for roiParam in self.rois]): # If no rois are selected then some actions can't be performed
+                deleteAction.setEnabled(False)
+                moveAction.setEnabled(False)
+
+            moveAction.setToolTip(MovingModifier.getHelpText())
+            popMenu.setToolTipsVisible(True)
 
             if selectedROIParam is not None:
                 #Actions that require that a ROI was clicked on.
@@ -213,10 +225,15 @@ class RoiPlot(QWidget):
                         newRoi.toHDF(self.metadata.filePath, overwrite=True)
                         self._polyWidg.set_active(False)
                         self._polyWidg.set_visible(False)
+                        self.enableHoverAnnotation(True)
                         self.showRois()
 
-                    self._polyWidg = PolygonModifier(self.axManager, onselect=done)
+                    def cancelled():
+                        self.enableHoverAnnotation(True)
+
+                    self._polyWidg = PolygonModifier(self.axManager, onselect=done, onCancelled=cancelled)
                     self._polyWidg.set_active(True)
+                    self.enableHoverAnnotation(False)
                     self._polyWidg.initialize([handles])
 
                 popMenu.addSeparator()

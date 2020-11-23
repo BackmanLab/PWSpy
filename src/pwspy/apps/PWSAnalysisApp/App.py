@@ -66,7 +66,25 @@ class PWSApp(QApplication): #TODO add a scriptable interface to load files, open
         self.window.roiConvertAction.triggered.connect(self.convertRois)
         self.workingDirectory = None
 
-    def changeDirectory(self, directory: str, files: List[str]):
+    def changeDirectory(self, directory: str, recursive: bool):
+        from glob import glob
+        pattern = [os.path.join('**', 'Cell[0-9]*')] if recursive else ['Cell[0-9]*']
+        files = []
+        for patt in pattern:
+            files.extend(glob(os.path.join(directory, patt), recursive=recursive))
+        if len(files) == 0:
+            QMessageBox.information(self.window, "Hmm", "No PWS files were found.")
+            return
+        nums = []
+        newFiles = []
+        for f in files:
+            try:
+                nums.append(int(os.path.split(f)[-1].split('Cell')[-1]))
+                newFiles.append(f)
+            except ValueError:
+                pass
+        nums, files = zip(*sorted(zip(nums, newFiles)))
+        files = list(files)
         # Load Cells
         self.window.cellSelector.loadNewCells(files, directory)
         self.workingDirectory = directory
