@@ -42,8 +42,7 @@ class RoiDrawer(QWidget):
 
         self.mdIndex = 0
         self.anViewer = AnalysisViewer(metadatas[self.mdIndex][0], metadatas[self.mdIndex][1], 'title')
-        self.saver = RoiSaverController(self.anViewer, self)
-        self.saver.open()  # This opens a new thread and a process, make sure to call close when the widget is closed.
+        self.saver = RoiSaverController(self.anViewer)
 
         self.newRoiDlg = NewRoiDlg(self)
 
@@ -166,7 +165,6 @@ class RoiDrawer(QWidget):
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         self.selector.setActive(False) #This cleans up remaining resources of the selector widgets.
-        self.saver.close()  # should close the saver process and threads.
         super().closeEvent(a0)
 
 
