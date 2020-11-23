@@ -14,11 +14,12 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
-
-
+from PyQt5 import QtGui
+import os
 from PyQt5.QtWidgets import QMainWindow, QWidget, QGridLayout, QListWidget, QComboBox, QPushButton, \
     QLabel, QDoubleSpinBox, QCheckBox
 
+from pwspy.apps import resources
 from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 
 
@@ -30,6 +31,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.explorerWindow = manager.createManagerWindow(self)
         self.setWindowTitle("Extra Reflectance Creator")
+        self.setWindowIcon(QtGui.QIcon(os.path.join(resources, 'cellLogo.png')))
+
         widg = QWidget()
         layout = QGridLayout()
         self.listWidg = QListWidget(self)
