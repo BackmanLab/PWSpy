@@ -17,6 +17,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import traceback
 from typing import Optional
@@ -29,6 +30,7 @@ import pandas as pd
 import typing
 import numpy as np
 
+from pwspy.apps.sharedWidgets.extraReflectionManager.ERIndex import ERIndex
 from pwspy.apps.sharedWidgets.extraReflectionManager._ERDataDirectory import ERDataDirectory
 from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataComparator import ERDataComparator
 from pwspy.dataTypes import ExtraReflectanceCube
@@ -57,13 +59,18 @@ class ERUploaderWindow(QDialog):
         self.table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.uploadButton = QPushButton("Upload to Drive")
         self.uploadButton.released.connect(self._updateGDrive)
+        self.uploadButton.setToolTip("Upload any files for which the status is `Local Only` to the google drive account.")
         self.refreshButton = QPushButton('Refresh')
         self.refreshButton.setToolTip("Rescan the files in the applications data directory.")
         self.refreshButton.released.connect(self.refresh)
+        self.updateIndexButton = QPushButton("Update Index File")
+        self.updateIndexButton.setToolTip("Download the online index file and merge it with our local index file.")
+        self.updateIndexButton.released.connect(self._updateIndexFile)
         self.layout().addWidget(self.table)
         l = QHBoxLayout()
         l.setContentsMargins(0, 0, 0, 0)
         l.addWidget(self.uploadButton)
+        l.addWidget(self.updateIndexButton)
         l.addWidget(self.refreshButton)
         w = QWidget()
         w.setLayout(l)
@@ -117,6 +124,12 @@ class ERUploaderWindow(QDialog):
         self._manager.dataComparator.updateIndexes()
         self.fileStatus = self._manager.dataComparator.compare()
         self.table.setModel(PandasModel(self.fileStatus))
+
+    def _updateIndexFile(self):
+        self._manager.dataComparator.online.updateIndex()
+        index = ERIndex.merge(self._manager.dataComparator.local.index, self._manager.dataComparator.online.index)
+        self._manager.dataComparator.local.saveNewIndex(index)
+        self.refresh()
 
 
 class PandasModel(QtCore.QAbstractTableModel):
