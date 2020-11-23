@@ -269,5 +269,5 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
         return cls(file, None, name)
 
     def __del__(self):
-        if self.file:  # Make sure to release the file if it's still open.
+        if self.file is not None:  # Make sure to release the file if it's still open.
             self.file.close()
