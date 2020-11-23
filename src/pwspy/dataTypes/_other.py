@@ -201,13 +201,12 @@ class Roi:
         assert len(dataShape) == 2
         assert verts.shape[1] == 2
         assert len(verts.shape) == 2
-        x = np.arange(dataShape[1])
-        y = np.arange(dataShape[0])
-        X, Y = np.meshgrid(x, y)
-        coords = list(zip(X.flatten(), Y.flatten()))
-        matches = path.Path(verts).contains_points(coords)
-        mask = matches.reshape(dataShape)
+        iVerts = np.rint([verts]).astype(np.int32)  # The brackets here convert to a 3d array which is what cv2.fillpoly expects. We have to round to integers for cv2 to work.
+        mask = np.zeros(dataShape, dtype=np.int32)
+        cv2.fillPoly(mask, iVerts, 1)
+        mask = mask.astype(bool)
         return cls(name, number, mask, verts)
+
 
     @classmethod
     def fromHDF_legacy(cls, directory: str, name: str, number: int) -> Roi:
