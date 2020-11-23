@@ -43,7 +43,7 @@ if typing.TYPE_CHECKING:
 
 
 class WorkingDirDialog(QDialog):
-    directoryChanged = QtCore.pyqtSignal(str, list)
+    directoryChanged = QtCore.pyqtSignal(str, bool)
 
     def __init__(self, parent=None):
         super().__init__(parent,
@@ -69,24 +69,8 @@ class WorkingDirDialog(QDialog):
     def _scanButtonPushed(self):
         self.directory = self.textLine.text()
         recursive = self.recursiveCheckbox.checkState() != 0
-        pattern = [os.path.join('**', 'Cell[0-9]*')] if recursive else ['Cell[0-9]*']
-        files = []
-        for patt in pattern:
-            files.extend(glob(os.path.join(self.directory, patt), recursive=recursive))
-        if len(files) == 0:
-            QMessageBox.information(self, "Hmm", "No PWS files were found.")
-        else:
-            nums = []
-            newFiles = []
-            for f in files:
-                try:
-                    nums.append(int(os.path.split(f)[-1].split('Cell')[-1]))
-                    newFiles.append(f)
-                except ValueError:
-                    pass
-            nums, files = zip(*sorted(zip(nums, newFiles)))
-            self.directoryChanged.emit(self.directory, list(files))
-            self.accept()
+        self.directoryChanged.emit(self.directory, recursive)
+        self.accept()
 
     def browseFile(self):
         _ = QFileDialog.getExistingDirectory(self, 'Working Directory', self.directory)

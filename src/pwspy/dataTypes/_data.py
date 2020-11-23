@@ -887,7 +887,7 @@ class ExtraReflectionCube(ICBase):
         Returns:
             A new instance of `ExtraReflectionCube`.
         """
-        I0 = reference.data / (theoryR[None, None, :] + reflectance.data)  # I0 is the intensity of the illumination source, reconstructed in units of `counts`. this is an inversion of our assumption that reference = I0*(referenceReflectance + extraReflectance)
+        I0 = reference.data / (np.array(theoryR)[None, None, :] + reflectance.data)  # I0 is the intensity of the illumination source, reconstructed in units of `counts`. this is an inversion of our assumption that reference = I0*(referenceReflectance + extraReflectance)
         data = reflectance.data * I0  # converting extraReflectance to the extra reflection in units of counts
         return cls(data, reflectance.wavelengths, reflectance.metadata)
 

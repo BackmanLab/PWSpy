@@ -191,7 +191,7 @@ class PolygonModifier(ModifierWidgetBase):
         x, y = self.markers.get_data()
         tck, u = interpolate.splprep([x, y], s=0, per=True)
         # evaluate the spline fits for 1000 evenly spaced distance values
-        xi, yi = interpolate.splev(np.linspace(0, 1, 1000), tck)
+        xi, yi = interpolate.splev(np.linspace(0, 1, 200), tck)
         self.poly.set_xy(list(zip(xi, yi)))
 
     def _get_ind_under_point(self, event):

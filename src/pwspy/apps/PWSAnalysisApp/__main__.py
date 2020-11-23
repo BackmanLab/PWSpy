@@ -79,6 +79,11 @@ def main():
         os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"  # TODO replace these options with proper high dpi handling. no pixel specific widths.
         QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
         app = PWSApp(sys.argv)
+        #Testing script
+        # app.changeDirectory(r'\\backmanlabnas\home\Year3\ethanolTimeSeries\AndrewNUData\+15', False)
+        # app.window.cellSelector.setSelectedCells([app.window.cellSelector.getAllCellMetas()[0]])
+        # app.window.plots._refreshButton.released.emit()
+        # app.window.plots._startRoiDrawing()
         # import qdarkstyle
         # dark_stylesheet = qdarkstyle.load_stylesheet_pyqt5()
         # app.setStyleSheet(dark_stylesheet)
