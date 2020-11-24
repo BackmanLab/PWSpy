@@ -290,7 +290,7 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
     @getFromDict
     def time(self) -> str:
         """The time that the analysis was performed."""
-        return self.file['time']
+        return self.file['time']  # TODO is this a bug that it doesn't have the same string decoding as the idtag properties?
 
     @cached_property
     @clearError
