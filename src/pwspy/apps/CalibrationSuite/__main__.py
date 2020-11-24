@@ -1,4 +1,5 @@
-from pwspy.apps.CalibrationSuite.analyzer import CubeComparer, CubeSplitter
+from pwspy.apps.CalibrationSuite._utility import CubeSplitter
+from pwspy.apps.CalibrationSuite._scorers import CubeComparer
 from pwspy.apps.CalibrationSuite.analyzer import ITOAnalyzer
 import os
 import logging
@@ -27,17 +28,17 @@ def main():
     app = ITOAnalyzer(directory, os.path.join(directory, '10_20_2020'))
     logger.debug("Comparing")
     ri = 1  # Random index
-    comp = CubeComparer(app._template.analysisResults.reflectance.data, app._data.iloc[ri].reflectance[0])
+    # comp = CubeComparer(app._template.analysisResults.reflectance.data, app._data.iloc[ri].reflectance[0])
     # from scipy.signal import correlate
     # out = correlate(comp._template, comp._test, method='direct')  # Need to do something about the nans before this will work
     c = CubeSplitter(app._template.analysisResults.reflectance.data[:-12,:-13, :])
     clim = (np.percentile(c._arr.mean(axis=2), 1), np.percentile(c._arr.mean(axis=2), 99))
     plt.figure()
     plt.imshow(c._arr.mean(axis=2), clim=clim)
-    factors = [2,3,4]
+    factors = [1, 2, 3]
     for factor in factors:
         subArrs = c.subdivide(factor)
-        fig, axs = plt.subplots(factor, factor)
+        fig, axs = plt.subplots(2**factor, 2**factor)
         for i, subArrList in enumerate(subArrs):
             for j, subArr in enumerate(subArrList):
                 axs[i, j].imshow(subArr.mean(axis=2), clim=clim)

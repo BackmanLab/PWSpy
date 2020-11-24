@@ -70,7 +70,7 @@ class CalibrationResult:
 
     def toHDFFile(self, directory: str, name: str):
         with h5py.File(os.path.join(directory, f'{name}_calResult.h5'), 'w') as hf:
-            dset = hf.create_dataset('transformedData', data=self.transformedData)
+            hf.create_dataset('transformedData', data=self.transformedData)
             hf.create_dataset('affineTransform', data=self.affineTransform)
             hf.create_dataset('templateIdTag', data=np.string_(self.templateIdTag))
 

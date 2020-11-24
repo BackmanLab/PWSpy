@@ -5,7 +5,6 @@ Created on Mon Oct 26 16:44:06 2020
 @author: nick
 """
 import traceback
-import typing
 from datetime import datetime
 import cv2
 from pwspy.apps.CalibrationSuite.ITOMeasurement import ITOMeasurement
@@ -18,7 +17,6 @@ import os
 import pandas as pd
 import logging
 from scipy.ndimage import binary_dilation
-from scipy.signal import correlate
 import weakref
 settings = pwsAnalysis.PWSAnalysisSettings.loadDefaultSettings("Recommended")
 settings.referenceMaterial = Material.Air
@@ -79,60 +77,3 @@ class ITOAnalyzer:
         self._data['reflectance'] = self._data.apply(applyTransform, axis=1)
 
 
-class CubeComparer:
-    """
-    Compares the 3d reflectance cube of the template with the reflectance cube of a test measurement.
-    The test reflectance array should have already been transformed so that they are aligned.
-    Any blank section of the transformed test array should be `numpy.nan`
-
-    Args:
-        template: A 3d array of reflectance data that the test array will be compared against
-        test: A 3d array to compare agains the template array. Since it is likely that the original data will need to have been transformed
-            in order to align with the template there will blank regions. The pixels in the blank regions should be set to a value of `numpy.nan`
-    """
-    def __init__(self, template: np.ndarray, test: np.ndarray):
-        assert isinstance(template, np.ndarray)
-        assert isinstance(test, np.ndarray)
-        self._template = template
-        self._test = test
-
-    def getCrossCorrelation(self):
-        corr = correlate(self._template, self._test)  #Need to crop the nan regions
-        return corr
-    # TODO measure average spectrum over a fine grid of the transformed image.
-    # TODO calculate 3d cross correlation function and measure slope in various directions.
-    # TODO SSIM, MSE
-
-
-class CubeSplitter:
-    """
-    Progressively splits a large cube into smaller and smaller cubes in the xy plane and performs an operation on the smaller cube sections.
-
-    Args:
-        arr: The original array we want to work with, May be 2 or 3 dimensional.
-    """
-    def __init__(self, arr: np.ndarray):
-        assert (len(arr.shape) == 2) or (len(arr.shape) == 3)
-        self._arr = arr
-
-    def subdivide(self, factor: int) -> typing.List[typing.List[np.ndarray]]:
-        """
-        Split the array into a list of lists of sub arrays. The remainder pixels that can't be divided up equally are left out.
-
-        Args:
-            factor: The number to split each axis of the array by. For example, if `factor` is 2 then the array will be split into 4 arrays with sides that are half as long as the original.
-
-        Returns:
-            A list of lists of subdivided arrays from the original array.
-        """
-        shp = self._arr.shape
-        divSize = (shp[0] // factor, shp[1] // factor)
-        lst = []
-        for i in range(factor):
-            subLst = []
-            for j in range(factor):
-                slc = (slice(divSize[0]*i, divSize[0]*(i+1)), slice(divSize[1]*j, divSize[1]*(j+1)))
-                subArr = self._arr[slc]
-                subLst.append(subArr)
-            lst.append(subLst)
-        return lst
