@@ -7,7 +7,7 @@ Created on Mon Oct 26 16:44:06 2020
 import traceback
 from datetime import datetime
 import cv2
-from pwspy.apps.CalibrationSuite.ITOMeasurement import ITOMeasurement
+from pwspy.apps.CalibrationSuite.ITOMeasurement import ITOMeasurement, CalibrationResult
 from pwspy.apps.CalibrationSuite.TransformGenerator import TransformGenerator
 from pwspy.utility.reflection import Material
 import pwspy.analysis.pws as pwsAnalysis
@@ -18,8 +18,11 @@ import pandas as pd
 import logging
 from scipy.ndimage import binary_dilation
 import weakref
+
 settings = pwsAnalysis.PWSAnalysisSettings.loadDefaultSettings("Recommended")
 settings.referenceMaterial = Material.Air
+
+logger = logging.getLogger(__name__)
 
 
 class ITOAnalyzer:
@@ -41,39 +44,54 @@ class ITOAnalyzer:
         self._matcher = TransformGenerator(self._template.analysisResults, debugMode=False, fastMode=True)
 
         dates = [datetime.strptime(i.name, self._DATETIMEFORMAT) for i in self._measurements]
-        self._data = pd.DataFrame({"measurements": [weakref.ref(i) for i in self._measurements]}, index=dates)
+        # self._data = pd.DataFrame({"measurements": [weakref.ref(i) for i in self._measurements]}, index=dates)
 
         #TODO use calibration results to save/load cached results
         self._generateTransforms()
-        self.transformData()
 
     def _generateTransforms(self, useCached: bool = True):
         # TODO how to cache transforms (Save to measurement directory with a reference to the template directory?)
-        transforms = self._matcher.match([i().analysisResults for i in self._data.measurements])
-        self._data['transforms'] = transforms
+        resultPairs = []
+        if useCached:
+            needsProcessing = []
+            for m in self._measurements:
+                if self._template.idTag in m.listCalibrationResults():
+                    logger.debug(f"Loading cached results for {m.name}")
+                    result = m.loadCalibrationResult(self._template.idTag)
+                    resultPairs.append((m, result))
+                else:
+                    needsProcessing.append(m)
+        else:
+            needsProcessing = self._measurements
+        transforms = self._matcher.match([i.analysisResults for i in needsProcessing])
+        for transform, measurement in zip(transforms, needsProcessing):
+            logger.debug(f"Generating new results for {measurement.name}")
+            reflectance = self._applyTransform(transform, measurement)
+            if reflectance is not None: # If no transformation was found then the data cannot be used
+                result = CalibrationResult(self._template.idTag, transform, reflectance)
+                measurement.saveCalibrationResult(result, overwrite=True)
+                resultPairs.append((measurement, result))
+        self.resultPairs = resultPairs
 
-    def transformData(self):
-        logger = logging.getLogger(__name__)
+    @staticmethod
+    def _applyTransform(transform, measurement):
+        if transform is None:
+            logger.debug(f"Skipping transformation of {measurement.name}")
+            return None
+        logger.debug(f"Starting data transformation of {measurement.name}")
+        # TODO default warp interpolation is bilinear, should we instead use nearest-neighbor?
+        im = measurement.analysisResults.meanReflectance
+        tform = cv2.invertAffineTransform(transform)
+        meanReflectance = cv2.warpAffine(im, tform, im.shape, borderValue=-666.0)  # Blank regions after transform will have value -666, can be used to generate a mask.
+        mask = meanReflectance == -666.0
+        mask = binary_dilation(mask)  # Due to interpolation we sometimes get weird values at the edge. dilate the mask so that those edges get cut off.
+        kcube = measurement.analysisResults.reflectance
+        reflectance = np.zeros_like(kcube.data)
+        for i in range(kcube.data.shape[2]):
+            reflectance[:, :, i] = cv2.warpAffine(kcube.data[:, :, i], tform, kcube.data.shape[:2]) + meanReflectance
+        measurement.analysisResults.releaseMemory()
+        reflectance[mask] = np.nan
+        return reflectance
 
-        def applyTransform(row):
-            if row.transforms is None:
-                logger.debug(f"Skipping transformation of {row.measurements().name}")
-                return None, None
-            logger.debug(f"Starting data transformation of {row.measurements().name}")
-            # TODO default warp interpolation is bilinear, should we instead use nearest-neighbor?
-            im = row.measurements().analysisResults.meanReflectance
-            tform = cv2.invertAffineTransform(row.transforms)
-            meanReflectance = cv2.warpAffine(im, tform, im.shape, borderValue=-666.0)  # Blank regions after transform will have value -666, can be used to generate a mask.
-            mask = meanReflectance == -666.0
-            mask = binary_dilation(mask)  # Due to interpolation we sometimes get weird values at the edge. dilate the mask so that those edges get cut off.
-            kcube = row.measurements().analysisResults.reflectance
-            reflectance = np.zeros_like(kcube.data)
-            for i in range(kcube.data.shape[2]):
-                reflectance[:, :, i] = cv2.warpAffine(kcube.data[:, :, i], tform, kcube.data.shape[:2]) + meanReflectance
-            row.measurements().analysisResults.releaseMemory()
-            reflectance[mask] = np.nan
-            return tuple((reflectance,))  # Bad things happen if you put a numpy array directly into a dataframe. That's why we have the tuple.
-
-        self._data['reflectance'] = self._data.apply(applyTransform, axis=1)
 
 

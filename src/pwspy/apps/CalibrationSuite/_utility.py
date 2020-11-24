@@ -17,7 +17,7 @@ class CubeSplitter:
     def subdivide(self, factor: int):
         return self._subdivide(2**factor)
 
-    def _subdivide(self, factor: int) -> typing.List[typing.List[np.ndarray]]:
+    def _subdivide(self, factor: int) -> np.ndarray:
         """
         Split the array into a list of lists of sub arrays. The remainder pixels that can't be divided up equally are left out.
 
@@ -25,7 +25,7 @@ class CubeSplitter:
             factor: The number to split each axis of the array by. For example, if `factor` is 2 then the array will be split into 4 arrays with sides that are half as long as the original.
 
         Returns:
-            A list of lists of subdivided arrays from the original array.
+            A 2D numpy array where each element contains a subdivided array from the original array.
         """
         shp = self._arr.shape
         divSize = (shp[0] // factor, shp[1] // factor)
