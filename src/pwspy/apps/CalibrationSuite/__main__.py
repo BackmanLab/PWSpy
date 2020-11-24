@@ -1,4 +1,4 @@
-from pwspy.apps.CalibrationSuite.analyzer import CubeComparer
+from pwspy.apps.CalibrationSuite.analyzer import CubeComparer, CubeSplitter
 from pwspy.apps.CalibrationSuite.analyzer import ITOAnalyzer
 import os
 import logging
@@ -6,6 +6,7 @@ import sys
 import matplotlib.pyplot as plt
 from pwspy.utility.plotting import PlotNd
 import pandas as pd
+import numpy as np
 
 def configureLogger():
     logger = logging.getLogger("pwspy")  # We get the root logger so that all loggers in pwspy will be handled.
@@ -24,13 +25,22 @@ def main():
 
     logger.debug("Start ITO Analyzer")
     app = ITOAnalyzer(directory, os.path.join(directory, '10_20_2020'))
-    logger.debug("Transforming")
-    app.transformData()
     logger.debug("Comparing")
     ri = 1  # Random index
     comp = CubeComparer(app._template.analysisResults.reflectance.data, app._data.iloc[ri].reflectance[0])
-    from scipy.signal import correlate
-    out = correlate(comp._template, comp._test, method='direct')  # Need to do something about the nans before this will work
+    # from scipy.signal import correlate
+    # out = correlate(comp._template, comp._test, method='direct')  # Need to do something about the nans before this will work
+    c = CubeSplitter(app._template.analysisResults.reflectance.data[:-12,:-13, :])
+    clim = (np.percentile(c._arr.mean(axis=2), 1), np.percentile(c._arr.mean(axis=2), 99))
+    plt.figure()
+    plt.imshow(c._arr.mean(axis=2), clim=clim)
+    factors = [2,3,4]
+    for factor in factors:
+        subArrs = c.subdivide(factor)
+        fig, axs = plt.subplots(factor, factor)
+        for i, subArrList in enumerate(subArrs):
+            for j, subArr in enumerate(subArrList):
+                axs[i, j].imshow(subArr.mean(axis=2), clim=clim)
 
     a = 1  # Debug Breakpoint
 

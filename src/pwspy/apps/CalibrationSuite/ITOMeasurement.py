@@ -4,6 +4,7 @@ import logging
 import os
 import typing
 
+import h5py
 import numpy as np
 from pwspy import dataTypes as pwsdt
 from pwspy.analysis import pws as pwsAnalysis
@@ -60,10 +61,23 @@ class ITOMeasurement:
     def listCalibrationResults(self) -> typing.Tuple[str]:
         pass
 
+
 @dataclasses.dataclass
 class CalibrationResult:
     templateIdTag: str
     affineTransform: np.ndarray
+    transformedData: np.ndarray
 
     def toHDFFile(self, directory: str, name: str):
-        pass
+        with h5py.File(os.path.join(directory, f'{name}_calResult.h5'), 'w') as hf:
+            dset = hf.create_dataset('transformedData', data=self.transformedData)
+            hf.create_dataset('affineTransform', data=self.affineTransform)
+            hf.create_dataset('templateIdTag', data=np.string_(self.templateIdTag))
+
+    @classmethod
+    def fromHDFFile(cls, directory: str, name: str):
+        with h5py.File(os.path.join(directory, f"{name}_calResult.h5"), 'r') as hf:
+            d = {}
+            for field in dataclasses.fields(cls):
+                d[field.name] = hf[field.name]
+        return cls(**d)
