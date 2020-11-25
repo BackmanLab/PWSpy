@@ -108,13 +108,13 @@ class CalibrationResult(AbstractHDFAnalysisResults):
     def getValidDataSlice(self) -> typing.Tuple[slice, slice]:
         """Use the affine transformation from a calibration result to create a 2d slice that will select out only the valid parts of the data"""
         shape = self.transformedData.shape
-        origRect = np.array([[0, 0], [0, shape[1]], [shape[0], shape[1]], [shape[0], 0]])
+        origRect = np.array([[0, 0], [shape[1], 0], [shape[1], shape[0]], [0, shape[0]]])  # Coordinates are in X,Y format rather than row, column
         # Generate coordinates of corners of the original image after affine transformation.
         tRect = cv2.transform(origRect[None, :, :], cv2.invertAffineTransform(self.affineTransform))[0, :, :]  # For some reason this needs to be 3d for opencv to work.
-        leftCoords = [tRect[0][1], tRect[3][1]]
-        topCoords = [tRect[2][0], tRect[3][0]]
-        rightCoords = [tRect[1][1], tRect[2][1]]
-        bottomCoords = [tRect[0][0], tRect[1][0]]
+        leftCoords = [tRect[0][0], tRect[3][0]]
+        topCoords = [tRect[2][1], tRect[3][1]]
+        rightCoords = [tRect[1][0], tRect[2][0]]
+        bottomCoords = [tRect[0][1], tRect[1][1]]
         # Select the rectancle that fits entirely into the transformed corner coordinate set. That way all data is garaunteed to be valid.
         left = max(leftCoords)
         top = min(topCoords)
