@@ -5,7 +5,6 @@ Created on Mon Oct 26 16:44:06 2020
 @author: nick
 """
 import traceback
-from datetime import datetime
 import cv2
 from pwspy.apps.CalibrationSuite.ITOMeasurement import ITOMeasurement, CalibrationResult
 from pwspy.apps.CalibrationSuite.TransformGenerator import TransformGenerator
@@ -15,10 +14,10 @@ import pwspy.analysis.pws as pwsAnalysis
 import numpy as np
 from glob import glob
 import os
-import pandas as pd
 import logging
 from scipy.ndimage import binary_dilation
-import weakref
+from ._scorers import *
+from pwspy.utility.plotting import PlotNd
 
 settings = pwsAnalysis.PWSAnalysisSettings.loadDefaultSettings("Recommended")
 settings.referenceMaterial = Material.Air
@@ -45,6 +44,10 @@ class ITOAnalyzer:
         self._matcher = TransformGenerator(self._template.analysisResults, debugMode=False, fastMode=True)
 
         self._generateTransforms(useCached=True)
+        a = 1
+        scorer1 = XCorrScorer(self._template.analysisResults, self._measurements[1].loadCalibrationResult(self._template.idTag))
+        scorer2 = MSEScorer(self._template.analysisResults, self._measurements[1].loadCalibrationResult(self._template.idTag))
+        scorer3 = SSimScorer(self._template.analysisResults, self._measurements[1].loadCalibrationResult(self._template.idTag))
 
     def _generateTransforms(self, useCached: bool = True):
         resultPairs = []

@@ -2,7 +2,9 @@ import abc
 
 import numpy as np
 from scipy.signal import correlate
+from skimage import measure, metrics
 
+from pwspy.analysis.pws import PWSAnalysisResults
 from pwspy.apps.CalibrationSuite.ITOMeasurement import CalibrationResult
 
 
@@ -17,10 +19,10 @@ class Scorer(abc.ABC):
         test: A 3d array to compare agains the template array. Since it is likely that the original data will need to have been transformed
             in order to align with the template there will blank regions. The pixels in the blank regions should be set to a value of `numpy.nan`
     """
-    def __init__(self, template: np.ndarray, test: CalibrationResult):
-        assert isinstance(template, np.ndarray)
+    def __init__(self, template: PWSAnalysisResults, test: CalibrationResult):
+        assert isinstance(template, PWSAnalysisResults)
         assert isinstance(test, CalibrationResult)
-        self._template = template
+        self._template = template.reflectance.data + template.meanReflectance[:, :, None]
         self._test = test
 
     @abc.abstractmethod
@@ -34,24 +36,32 @@ class Scorer(abc.ABC):
 
 
 class XCorrScorer(Scorer):
-    def __init__(self, template: np.ndarray, test: CalibrationResult):
-        super().__init__(template, test)
+    def score(self) -> float:
+        slc = self._test.getValidDataSlice()  # This slice is used to crop out any NAN regions from the data since these will mess up the x-correlation
+        tempData = self._template[slc]
+        testData = self._test.transformedData[slc]
+        # Normalize Data. Correlation will pad with 0s so make sure the mean of the data is 0
+        tempData = (tempData - tempData.mean()) / tempData.std()
+        testData = (testData - testData.mean()) / (testData.std() * testData.size)
 
-    def score(self):
+        corr = correlate(tempData, testData, mode='same')  # This would be faster if we did mode='valid', there would only be one value. But tiny alignment issues would result it us getting a lower correlation.
+        return corr.max()
+
+
+class SSimScorer(Scorer):
+    def score(self) -> float:
         slc = self._test.getValidDataSlice()
+        tempData = self._template[slc]
+        testData = self._test.transformedData[slc]
+        return metrics.structural_similarity(tempData, testData)
 
-        corr = correlate(self._template[slc], self._test.transformedData[slc])  #Need to crop the nan regions
-        return corr
-    # TODO measure average spectrum over a fine grid of the transformed image.
-    # TODO calculate 3d cross correlation function and measure slope in various directions.
 
-# class SSimScorer(Scorer):
-#     pass
-#
-#
-# class MSEScorer(Scorer):
-#     pass
-#
+class MSEScorer(Scorer):
+    def score(self) -> float:
+        slc = self._test.getValidDataSlice()
+        tempData = self._template[slc]
+        testData = self._test.transformedData[slc]
+        return metrics.mean_squared_error(tempData, testData)
 #
 # class CNNScorer(Scorer):
 #     pass
