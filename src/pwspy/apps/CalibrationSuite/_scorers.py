@@ -3,6 +3,8 @@ import abc
 import numpy as np
 from scipy.signal import correlate
 
+from pwspy.apps.CalibrationSuite.ITOMeasurement import CalibrationResult
+
 
 class Scorer(abc.ABC):
     """
@@ -15,9 +17,9 @@ class Scorer(abc.ABC):
         test: A 3d array to compare agains the template array. Since it is likely that the original data will need to have been transformed
             in order to align with the template there will blank regions. The pixels in the blank regions should be set to a value of `numpy.nan`
     """
-    def __init__(self, template: np.ndarray, test: np.ndarray):
+    def __init__(self, template: np.ndarray, test: CalibrationResult):
         assert isinstance(template, np.ndarray)
-        assert isinstance(test, np.ndarray)
+        assert isinstance(test, CalibrationResult)
         self._template = template
         self._test = test
 
@@ -32,11 +34,13 @@ class Scorer(abc.ABC):
 
 
 class XCorrScorer(Scorer):
-    def __init__(self, template: np.ndarray, test: np.ndarray):
+    def __init__(self, template: np.ndarray, test: CalibrationResult):
         super().__init__(template, test)
 
     def score(self):
-        corr = correlate(self._template, self._test)  #Need to crop the nan regions
+        slc = self._test.getValidDataSlice()
+
+        corr = correlate(self._template[slc], self._test.transformedData[slc])  #Need to crop the nan regions
         return corr
     # TODO measure average spectrum over a fine grid of the transformed image.
     # TODO calculate 3d cross correlation function and measure slope in various directions.

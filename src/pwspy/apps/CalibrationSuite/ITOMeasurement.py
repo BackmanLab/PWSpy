@@ -3,13 +3,12 @@ import dataclasses
 import logging
 import os
 import typing
-
+import cv2
 import h5py
 import numpy as np
 from pwspy import dataTypes as pwsdt
 from pwspy.analysis import pws as pwsAnalysis
 from glob import glob
-
 from pwspy.utility.misc import cached_property
 
 
@@ -104,3 +103,26 @@ class CalibrationResult:
         if not path.endswith(cls.FileSuffix):
             raise NameError(f"{path} is not recognized as a calibration results file.")
         return os.path.basename(path)[:-len(cls.FileSuffix)]
+
+    def getValidDataSlice(self) -> typing.Tuple[slice, slice]:
+        """Use the affine transformation from a calibration result to create a 2d slice that will select out only the valid parts of the data"""
+        shape = self.transformedData.shape
+        origRect = np.array([(0, 0), (0, shape[1]), (shape[0], shape[1]), (shape[0], 0)])
+        # Generate coordinates of corners of the original image after affine transformation.
+        tRect = cv2.transform(origRect[None, :, :], cv2.invertAffineTransform(self.affineTransform))[0, :, :]  # For some reason this needs to be 3d for opencv to work.
+        leftCoords = [tRect[0][1], tRect[3][1]]
+        topCoords = [tRect[2][0], tRect[3][0]]
+        rightCoords = [tRect[1][1], tRect[2][1]]
+        bottomCoords = [tRect[0][0], tRect[1][0]]
+        # Select the rectancle that fits entirely into the transformed corner coordinate set. That way all data is garaunteed to be valid.
+        left = max(leftCoords)
+        top = min(topCoords)
+        right = min(rightCoords)
+        bottom = max(bottomCoords)
+        # Make sure no coordinates lie outside the array indices
+        left = max([0, left])
+        top = min([shape[0], top])
+        right = min([shape[1], right])
+        bottom = max([0, bottom])
+        slc = (slice(bottom, top), slice(left, right))  # A rectangular slice garaunteed to lie entirely inside the valid data aread, even if the transform has rotation.
+        return slc
