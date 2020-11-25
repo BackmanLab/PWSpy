@@ -157,6 +157,31 @@ class AbstractAnalysisResults(ABC):
         pass
 
 
+def _clearError(func):
+    """This decorator tries to run the original function. If the function raises a keyerror then we raise a new keyerror with a clearer message. This is intended to be used with `field` accessors of implementations
+    of `AbstractHDFAnalysisResults`."""
+    def newFunc(*args):
+        try:
+            return func(*args)
+        except KeyError:
+            raise KeyError(f"The analysis file does not contain a {func.__name__} item.")
+    newFunc.__name__ = func.__name__  # failing to do this renaming can mess with other decorators e.g. cached_property
+    return newFunc
+
+
+def _getFromDict(func):
+    """This decorator makes it so that when the method is run we will check if our class instance has a `file` property. If not, then we will attempt to access a `dict` property which is keyed
+    by the same name as our original method. Otherwide we simply run the method. This is intended for use with implementations of `AbstractHDFAnalysisResults`"""
+    def newFunc(self, *args):
+        if self.file is None:
+            return self.dict[func.__name__]
+        else:
+            return func(self, *args)
+
+    newFunc.__name__ = func.__name__
+    return newFunc
+
+
 class AbstractHDFAnalysisResults(AbstractAnalysisResults):
     """
     This abstract class implements methods of `AbstractAnalysisResults` for an object that can be saved and loaded to/from an HDF file.
@@ -168,6 +193,13 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
         variablesDict: To create a new object from variables, provide a dictionary keyed by all the field names.
         analysisName: Optionally store the name of the analysis.
     """
+    @staticmethod
+    def FieldDecorator(func):
+        """Decorate functions in subclasses that access their fields from the HDF file with this decorator. It will:
+        1: Make it so the data is load from disk on the first access and stored in memory for every further access.
+        2: Report an understandable error if the field isn't found in the HDF file.
+        3: Make the accessors work even if the the object isn't associated with an HDF file."""
+        return cached_property(_clearError(_getFromDict(func)))
 
     #TODO this holds onto the reference to the h5py.File meaning that the file can't be deleted until the object has been deleted. Maybe that's good. but it causes some problems.
     def __init__(self, file: typing.Optional[h5py.File] = None, variablesDict: typing.Optional[dict] = None, analysisName: typing.Optional[str] = None):
@@ -186,7 +218,7 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
 
     @staticmethod
     @abstractmethod
-    def fields() -> typing.Tuple[str]:
+    def fields() -> typing.Tuple[str, ...]:
         """
 
         Returns:
