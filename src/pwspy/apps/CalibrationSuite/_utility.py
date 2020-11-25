@@ -1,7 +1,8 @@
 import typing
 
+import cv2
 import numpy as np
-
+from skimage.transform import AffineTransform
 
 class CubeSplitter:
     """
@@ -38,3 +39,26 @@ class CubeSplitter:
                 subLst.append(subArr)
             lst.append(subLst)
         return np.array(lst)
+class CVAffineTransform(AffineTransform):
+    """
+    Extends SciKit-Learn Image Affine Transformation to work more easily with the 2x3 matrices that OpenCV uses as an affine transform.
+    """
+    @classmethod
+    def fromPartialMatrix(cls, matrix: np.ndarray):
+        """
+        Produces a new instance from a 2x3 matrix of the type used in most OpenCV functions.
+
+        Args:
+            matrix: A 2x3 numpy array
+        """
+        assert matrix.shape == (2, 3)
+        matrix = np.vstack([matrix, [0, 0, 1]])
+        return AffineTransform(matrix=matrix)
+
+    def toPartialMatrix(self) -> np.ndarray:
+        """
+
+        Returns:
+            A 2x3 numpy array that can be used with most OpenCV functions.
+        """
+        return self.params[:2, :]
