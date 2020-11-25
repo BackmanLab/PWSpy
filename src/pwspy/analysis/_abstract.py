@@ -251,7 +251,7 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
         """
         pass
 
-    def toHDF(self, directory: str, name: str):
+    def toHDF(self, directory: str, name: str, overwrite: bool = False):
         """
         Save the AnalysisResults object to an HDF file in `directory`. The name of the file will be determined by `name`. If you want to know what the full file name
         will be you can use this class's `name2FileName` method.
@@ -259,10 +259,11 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
         Args:
             directory: The path to the folder to save the file in.
             name: The name of the analysis. This determines the file name.
+            overwrite: If `True` then any existing file of the same name will be replaced.
         """
         from pwspy.dataTypes import ICBase  # Need this for instance checking
         fileName = osp.join(directory, self.name2FileName(name))
-        if osp.exists(fileName):
+        if (not overwrite) and osp.exists(fileName):
             raise OSError(f'{fileName} already exists.')
         with h5py.File(fileName, 'w') as hf:
             # Save version
