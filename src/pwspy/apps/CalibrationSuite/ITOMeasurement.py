@@ -7,7 +7,7 @@ import cv2
 import h5py
 import numpy as np
 from pwspy import dataTypes as pwsdt
-from pwspy.analysis import pws as pwsAnalysis
+from pwspy.analysis import pws as pwsAnalysis, AbstractHDFAnalysisResults
 from glob import glob
 from pwspy.utility.misc import cached_property
 
@@ -59,55 +59,56 @@ class ITOMeasurement:
     def saveCalibrationResult(self, result: CalibrationResult, overwrite: bool = False):
         if (result.templateIdTag in self.listCalibrationResults()) and (not overwrite):
             raise FileExistsError(f"A calibration result named {result.templateIdTag} already exists.")
-        result.toHDFFile(self.filePath, result.templateIdTag, overwrite=overwrite)
+        result.toHDF(self.filePath, result.templateIdTag, overwrite=overwrite)
 
     def loadCalibrationResult(self, templateIdTag: str) -> CalibrationResult:
-        return CalibrationResult.fromHDFFile(self.filePath, templateIdTag)
+        return CalibrationResult.load(self.filePath, templateIdTag)
 
     def listCalibrationResults(self) -> typing.Tuple[str]:
         return tuple([CalibrationResult.fileName2Name(f) for f in glob(os.path.join(self.filePath, f'*{CalibrationResult.FileSuffix}'))])
 
 
-@dataclasses.dataclass
-class CalibrationResult:
-    templateIdTag: str
-    affineTransform: np.ndarray
-    transformedData: np.ndarray
-
+class CalibrationResult(AbstractHDFAnalysisResults):
     FileSuffix = "_calResult.h5"
 
-    def toHDFFile(self, directory: str, name: str, overwrite: bool = False):
-        fName = os.path.join(directory, f'{name}_calResult.h5')
-        if os.path.exists(fName) and (not overwrite):
-            raise FileExistsError(f"The calibration results file {fName} already exists.")
-        with h5py.File(fName, 'w') as hf:
-            hf.create_dataset('transformedData', data=self.transformedData)
-            hf.create_dataset('affineTransform', data=self.affineTransform)
-            hf.create_dataset('templateIdTag', data=np.string_(self.templateIdTag))
-
     @classmethod
-    def fromHDFFile(cls, directory: str, name: str):
-        with h5py.File(os.path.join(directory, f"{name}{cls.FileSuffix}"), 'r') as hf:
-            d = {}
-            for field in dataclasses.fields(cls):
-                dset = hf[field.name]
-                if (h5py.check_string_dtype(dset.dtype)) is not None: # This is a string field
-                    d[field.name] = bytes(np.array(dset)).decode()
-                else:  # Must be a numpy array
-                    d[field.name] = np.array(dset)
-        return cls(**d)
+    def create(cls, templateIdTag: str, affineTransform: np.ndarray, transformedData: np.ndarray):  # Inherit docstring
+        d = {'templateIdTag': templateIdTag,
+            'affineTransform': affineTransform,
+            'transformedData': transformedData}
+        return cls(None, d)
 
-    @classmethod
-    def fileName2Name(cls, path: str):
+    @staticmethod
+    def fields() -> typing.Tuple[str, ...]:
+        return ('templateIdTag', 'affineTransform', 'transformedData')
+
+    @AbstractHDFAnalysisResults.FieldDecorator
+    def templateIdTag(self) -> str:
+        return bytes(self.file['templateIdTag']).decode()
+
+    @AbstractHDFAnalysisResults.FieldDecorator
+    def affineTransform(self) -> np.ndarray:
+        return np.array(self.file['affineTransform'])
+
+    @AbstractHDFAnalysisResults.FieldDecorator
+    def transformedData(self) -> np.ndarray:
+        return np.array(self.file['transformedData'])
+
+    @staticmethod
+    def name2FileName(name: str) -> str:
+        return f"{name}{CalibrationResult.FileSuffix}"
+
+    @staticmethod
+    def fileName2Name(fileName: str) -> str:
         """Provided with the full path to and HDF file containing results this function returns the 'name' used to save the file."""
-        if not path.endswith(cls.FileSuffix):
-            raise NameError(f"{path} is not recognized as a calibration results file.")
-        return os.path.basename(path)[:-len(cls.FileSuffix)]
+        if not fileName.endswith(CalibrationResult.FileSuffix):
+            raise NameError(f"{fileName} is not recognized as a calibration results file.")
+        return os.path.basename(fileName)[:-len(CalibrationResult.FileSuffix)]
 
     def getValidDataSlice(self) -> typing.Tuple[slice, slice]:
         """Use the affine transformation from a calibration result to create a 2d slice that will select out only the valid parts of the data"""
         shape = self.transformedData.shape
-        origRect = np.array([(0, 0), (0, shape[1]), (shape[0], shape[1]), (shape[0], 0)])
+        origRect = np.array([[0, 0], [0, shape[1]], [shape[0], shape[1]], [shape[0], 0]])
         # Generate coordinates of corners of the original image after affine transformation.
         tRect = cv2.transform(origRect[None, :, :], cv2.invertAffineTransform(self.affineTransform))[0, :, :]  # For some reason this needs to be 3d for opencv to work.
         leftCoords = [tRect[0][1], tRect[3][1]]
