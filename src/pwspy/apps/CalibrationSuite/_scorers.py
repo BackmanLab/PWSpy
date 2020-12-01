@@ -1,4 +1,5 @@
 import abc
+import typing
 
 import numpy as np
 from scipy.signal import correlate
@@ -6,6 +7,7 @@ from skimage import measure, metrics
 
 from pwspy.analysis.pws import PWSAnalysisResults
 from pwspy.apps.CalibrationSuite.ITOMeasurement import CalibrationResult
+from pwspy.utility.misc import cached_property
 
 
 class Scorer(abc.ABC):
@@ -48,7 +50,7 @@ class XCorrScorer(Scorer):
         return corr.max()
 
 
-class SSimScorer(Scorer):
+class SSimScorer(Scorer):  # TODO look into the `full` out parameters of metrics.structural_similarity
     def score(self) -> float:
         slc = self._test.getValidDataSlice()
         tempData = self._template[slc]
@@ -61,7 +63,33 @@ class MSEScorer(Scorer):
         slc = self._test.getValidDataSlice()
         tempData = self._template[slc]
         testData = self._test.transformedData[slc]
-        return metrics.mean_squared_error(tempData, testData)
+        return max([1 - metrics.mean_squared_error(tempData, testData), 0])  # TODO we need a smarter way to convert this to a value between 0 and 1.
+
+
+class CombinedScorer(Scorer):
+    def __init__(self, template: PWSAnalysisResults, test: CalibrationResult):
+        super().__init__(template, test)
+        self._mse = MSEScorer(template, test)
+        self._ssim = SSimScorer(template, test)
+        self._corr = XCorrScorer(template, test)
+
+    @cached_property
+    def _scores(self) -> typing.Dict[str, float]:
+        """A dictionary containing the score for each scorer contained.
+        This is only executed once for each instance of this class, then the cached value is used."""
+        return dict(
+            mse=self._mse.score(),
+            ssim=self._ssim.score(),
+            xcorr=self._corr.score()
+        )
+
+    def score(self) -> float:
+        # TODO not sure how to mix the scores.
+        score = 0
+        for k, v in self._scores:
+            score += v
+        return score / len(self._scores)
+
 #
 # class CNNScorer(Scorer):
 #     pass
