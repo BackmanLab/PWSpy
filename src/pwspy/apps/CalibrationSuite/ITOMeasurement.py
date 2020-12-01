@@ -78,6 +78,10 @@ class CalibrationResult(AbstractHDFAnalysisResults):
             'transformedData': transformedData}
         return cls(None, d)
 
+    def toHDF(self, directory: str, name: str, overwrite: bool = False):
+        """Overwrite super-implementation to default to compression of data. Cuts file size by more than half."""
+        super().toHDF(directory, name, overwrite=overwrite, compression='gzip')
+
     @staticmethod
     def fields() -> typing.Tuple[str, ...]:
         return ('templateIdTag', 'affineTransform', 'transformedData')

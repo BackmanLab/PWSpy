@@ -31,7 +31,7 @@ class ITOAnalyzer:
 
     def __init__(self, directory: str, templateDirectory: str):
         self._template = ITOMeasurement(templateDirectory, self._SETTINGS)
-
+        #TODO separate the tasks of loading measuremments from file and of processing measurements.That way various loaders can be swapped in.
         self._measurements = []
         for f in glob(os.path.join(directory, '*')):
             if os.path.isdir(f):
@@ -45,9 +45,12 @@ class ITOAnalyzer:
 
         self._generateTransforms(useCached=True)
         a = 1
-        scorer1 = XCorrScorer(self._template.analysisResults, self._measurements[1].loadCalibrationResult(self._template.idTag))
-        scorer2 = MSEScorer(self._template.analysisResults, self._measurements[1].loadCalibrationResult(self._template.idTag))
-        scorer3 = SSimScorer(self._template.analysisResults, self._measurements[1].loadCalibrationResult(self._template.idTag))
+        self.scores = []
+        for measurement, result in self.resultPairs:
+            logger.debug(f"Scoring measurement {measurement.name}")
+            scorer = CombinedScorer(self._template.analysisResults, result)
+            self.scores.append(scorer._scores)
+        a = 1
 
     def _generateTransforms(self, useCached: bool = True):
         resultPairs = []
@@ -76,7 +79,7 @@ class ITOAnalyzer:
                 transform = CVAffineTransform(scale=1, rotation=0, shear=0, translation=transform.translation)  # Coerce scale and rotation
                 transform = transform.toPartialMatrix()
                 reflectance = self._applyTransform(transform, measurement)
-                result = CalibrationResult(self._template.idTag, transform, reflectance)
+                result = CalibrationResult.create(self._template.idTag, transform, reflectance)
                 measurement.saveCalibrationResult(result, overwrite=True)
                 resultPairs.append((measurement, result))
         self.resultPairs = resultPairs
