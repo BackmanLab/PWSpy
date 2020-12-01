@@ -297,7 +297,7 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
         new.data = ret
         return new
 
-    def toHdfDataset(self, g: h5py.Group, name: str, fixedPointCompression: bool = True) -> h5py.Group:
+    def toHdfDataset(self, g: h5py.Group, name: str, fixedPointCompression: bool = True, compression: str = None) -> h5py.Group:
         """
         Save the data of this class to a new HDF dataset.
 
@@ -306,6 +306,7 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
             name (str): the name of the new HDF dataset in group `g`.
             fixedPointCompression (bool): if True then save the data in a special 16bit fixed-point format. Testing has shown that this has a
                 maximum conversion error of 1.4e-3 percent. Saving is ~10% faster but requires only 50% the hard drive space.
+            compression: The value of this argument will be passed to h5py.create_dataset for numpy arrays. See h5py documentation for available options.
 
         Returns:
             h5py.Group: This is the the same h5py.Group that was passed in a `g`. It should now have a new dataset by the name of 'name'
@@ -322,13 +323,13 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
             fpData = fpData / (M - m)
             fpData *= (2 ** 16 - 1)
             fpData = fpData.astype(np.uint16)
-            dset = g.create_dataset(name, data=fpData)  # , chunks=(64,64,self.data.shape[2]), compression=2)
+            dset = g.create_dataset(name, data=fpData, compression=compression)  # , chunks=(64,64,self.data.shape[2]), compression=2)
             dset.attrs['index'] = np.array(self.index)
             dset.attrs['type'] = np.string_(f"{self._hdfTypeName}_fp")
             dset.attrs['min'] = m
             dset.attrs['max'] = M
         else:
-            dset = g.create_dataset(name, data=self.data)
+            dset = g.create_dataset(name, data=self.data, compression=compression)
             dset.attrs['index'] = np.array(self.index)
             dset.attrs['type'] = np.string_(self._hdfTypeName)
         return g

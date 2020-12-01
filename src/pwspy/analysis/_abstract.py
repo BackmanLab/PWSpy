@@ -251,7 +251,7 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
         """
         pass
 
-    def toHDF(self, directory: str, name: str, overwrite: bool = False):
+    def toHDF(self, directory: str, name: str, overwrite: bool = False, compression: str = None):
         """
         Save the AnalysisResults object to an HDF file in `directory`. The name of the file will be determined by `name`. If you want to know what the full file name
         will be you can use this class's `name2FileName` method.
@@ -260,6 +260,7 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
             directory: The path to the folder to save the file in.
             name: The name of the analysis. This determines the file name.
             overwrite: If `True` then any existing file of the same name will be replaced.
+            compression: The value of this argument will be passed to h5py.create_dataset for numpy arrays. See h5py documentation for available options.
         """
         from pwspy.dataTypes import ICBase  # Need this for instance checking
         fileName = osp.join(directory, self.name2FileName(name))
@@ -273,13 +274,13 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
                 k = field
                 v = getattr(self, field)
                 if isinstance(v, AbstractAnalysisSettings):
-                    v = v.toJsonString()
+                    v = v.toJsonString() # Convert to string, then string case will then handle saving the string.
                 if isinstance(v, str):
                     hf.create_dataset(k, data=np.string_(v))  # h5py recommends encoding strings this way for compatability.
                 elif isinstance(v, ICBase):
                     hf = v.toHdfDataset(hf, k, fixedPointCompression=True)
                 elif isinstance(v, np.ndarray):
-                    hf.create_dataset(k, data=v)
+                    hf.create_dataset(k, data=v, compression=compression)
                 elif v is None:
                     pass
                 else:
