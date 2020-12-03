@@ -17,6 +17,7 @@
 
 from __future__ import annotations
 import hashlib
+import json
 import os, io
 from enum import Enum
 from glob import glob
@@ -67,6 +68,11 @@ class ERDataDirectory(ERAbstractDirectory):
     def updateIndex(self):
         with open(os.path.join(self._directory, 'index.json'), 'r') as f:
             self.index = ERIndex.load(f)
+
+    def saveNewIndex(self, index: ERIndex):
+        with open(os.path.join(self._directory, 'index.json'), 'w') as f:
+            json.dump(index.toDict(), f, indent=4)
+        self.index = index
 
     def getFileStatus(self, skipMD5: bool = False) -> pandas.DataFrame:
         files = glob(ERMetaData.dirName2Directory(self._directory, '*'))

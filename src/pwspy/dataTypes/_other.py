@@ -416,8 +416,8 @@ class Roi:
         return ret
 
     def transform(self, matrix: np.ndarray) -> Roi:
-        """Teturn a copy of this Roi that has been transformed by an affine transform matrix like the one returned by
-        opencv.estimateRigidTransform. This can be obtained using ICBase's getTransform method.
+        """Return a copy of this Roi that has been transformed by an affine transform matrix like the one returned by
+        opencv.estimateRigidTransform. This can be obtained using the functions in the utility.machineVision module.
 
         Args:
             matrix: A 2x3 numpy array representing an affine transformation.

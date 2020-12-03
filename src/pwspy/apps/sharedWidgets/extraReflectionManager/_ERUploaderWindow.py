@@ -17,6 +17,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import traceback
 from typing import Optional
@@ -29,6 +30,7 @@ import pandas as pd
 import typing
 import numpy as np
 
+from pwspy.apps.sharedWidgets.extraReflectionManager.ERIndex import ERIndex
 from pwspy.apps.sharedWidgets.extraReflectionManager._ERDataDirectory import ERDataDirectory
 from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataComparator import ERDataComparator
 from pwspy.dataTypes import ExtraReflectanceCube
@@ -57,13 +59,18 @@ class ERUploaderWindow(QDialog):
         self.table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.uploadButton = QPushButton("Upload to Drive")
         self.uploadButton.released.connect(self._updateGDrive)
+        self.uploadButton.setToolTip("Upload any files for which the status is `Local Only` to the google drive account.")
         self.refreshButton = QPushButton('Refresh')
         self.refreshButton.setToolTip("Rescan the files in the applications data directory.")
         self.refreshButton.released.connect(self.refresh)
+        self.updateIndexButton = QPushButton("Update Index File")
+        self.updateIndexButton.setToolTip("Download the online index file and merge it with our local index file.")
+        self.updateIndexButton.released.connect(self._updateIndexFile)
         self.layout().addWidget(self.table)
         l = QHBoxLayout()
         l.setContentsMargins(0, 0, 0, 0)
         l.addWidget(self.uploadButton)
+        l.addWidget(self.updateIndexButton)
         l.addWidget(self.refreshButton)
         w = QWidget()
         w.setLayout(l)
@@ -98,9 +105,9 @@ class ERUploaderWindow(QDialog):
         """Checks for all files taht are present locally but not on the server. Uploads those file and then overwrites the index."""
         try:
             status = self.fileStatus
-            if not np.all(status['Local Status'] == ERDataDirectory.DataStatus.found.value):
-                raise ValueError("Uploading cannot be performed if the local directory status is not perfect.")
-            uploadableRows = np.logical_or(status['Index Comparison'] == ERDataComparator.ComparisonStatus.LocalOnly.value, status['Online Status'] == ERDataDirectory.DataStatus.missing.value)
+            if not np.all((status['Index Comparison'] == ERDataComparator.ComparisonStatus.LocalOnly.value) | (status['Index Comparison'] == ERDataComparator.ComparisonStatus.Match.value)):
+                raise ValueError("Uploading cannot be performed if the local index file is not valid. Try updating the index file.")
+            uploadableRows = (status['Index Comparison'] == ERDataComparator.ComparisonStatus.LocalOnly.value) | (status['Online Status'] == ERDataDirectory.DataStatus.missing.value)
             if np.any(uploadableRows):  # There is something to upload
                 for i, row, in status.loc[uploadableRows].iterrows():
                     fileName = [i.fileName for i in self._manager.dataComparator.local.index.cubes if i.idTag == row['idTag']][0]
@@ -117,6 +124,12 @@ class ERUploaderWindow(QDialog):
         self._manager.dataComparator.updateIndexes()
         self.fileStatus = self._manager.dataComparator.compare()
         self.table.setModel(PandasModel(self.fileStatus))
+
+    def _updateIndexFile(self):
+        self._manager.dataComparator.online.updateIndex()
+        index = ERIndex.merge(self._manager.dataComparator.local.index, self._manager.dataComparator.online.index)
+        self._manager.dataComparator.local.saveNewIndex(index)
+        self.refresh()
 
 
 class PandasModel(QtCore.QAbstractTableModel):

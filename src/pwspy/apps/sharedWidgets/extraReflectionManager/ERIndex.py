@@ -59,7 +59,7 @@ class ERIndex:
 
     @classmethod
     def load(cls, f: TextIO) -> ERIndex:
-        indexFile = json.load(f)  # For unknown reasons this rarely raises a JsonDecodeError and the index file needs to be redownloaded.
+        indexFile = json.load(f)  # For unknown reasons this can sometime raises a JsonDecodeError and the index file needs to be redownloaded.
         jsonschema.validate(indexFile, schema=cls._indexSchema)
         cubes = [ERIndexCube.fromDict(i) for i in indexFile['reflectanceCubes']]
         return cls(cubes, indexFile['creationDate'])
@@ -72,6 +72,37 @@ class ERIndex:
             if i.idTag == idTag:
                 return i
         raise ValueError(f"No item with idTag {idTag} was found.")
+
+    @classmethod
+    def merge(cls, index1: ERIndex, index2: ERIndex) -> ERIndex:
+        """
+        Provided two ERIndex objects this method will return a new ERIndex that merges the entries from both indices.
+        If both indices contain an ERIndexCube entry that is similar but not identical a value error will be raised.
+        Args:
+            index1: The first ERIndex object
+            index2: The seconds ERIndex object
+
+        Returns:
+            A new ERIndex object that combines the entries from both inputs.
+        """
+        import itertools
+        newCubes = []
+        idx1Cubes = [cube for cube in index1.cubes]
+        idx2Cubes = [cube for cube in index2.cubes]
+        for cube in idx1Cubes:
+            match = [cube.idTag == c.idTag for c in idx2Cubes]
+            if any(match): # The entry exists in both indexes, check for consistency
+                matchingCube = next(itertools.compress(idx2Cubes, match))
+                if cube != matchingCube:  # The idTags match but the entries are not identical
+                    raise ValueError(f"The two indices contain entries that have the same idTags but do not match.")
+                else:
+                    newCubes.append(cube)
+                    idx2Cubes.remove(matchingCube)
+            else:  # index1 entry wasn't found in index2
+                newCubes.append(cube)
+        for cube in idx2Cubes:  # Everthing still left in this list should be unique to index 2.
+            newCubes.append(cube)
+        return ERIndex(newCubes)
 
 
 class ERIndexCube:
@@ -93,3 +124,7 @@ class ERIndexCube:
 
     def __repr__(self) -> str:
         return str(self.toDict())
+
+    def __eq__(self, other: ERIndex):
+        assert isinstance(other, ERIndexCube)
+        return self.toDict() == other.toDict()

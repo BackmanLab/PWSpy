@@ -107,7 +107,7 @@ def acfd(d: NumberOrArray, lmin: NumberOrArray, lmax: NumberOrArray) -> NumberOr
     return out
 
 
-def calcDSize(raw_rms: NumberOrArray, noise: float, NAi: float):
+def calcDSize(raw_rms: np.ndarray, noise: float, NAi: float):
     """
     The `system_correction` argument from the original MATLAB function has been excluded. We assume that any RMS
     values being provided to this function have already been properly corrected for hardware defects.
@@ -122,13 +122,12 @@ def calcDSize(raw_rms: NumberOrArray, noise: float, NAi: float):
     Returns:
         d_size: :todo:
     """
-    assert isinstance(raw_rms, np.ndarray)
     sigma = np.sqrt(raw_rms**2 - noise**2)  # The MATLAB version will return complex numbers if this is negative. This implementation returns `nan`
     d_size = sigma * 13.8738 * NAi + 1.473
     return d_size
 
 
-def sigma2D(raw_rms: NumberOrArray, noise: float, NAi: float) -> np.ndarray:
+def sigma2D(raw_rms: np.ndarray, noise: float, NAi: float) -> np.ndarray:
     """Converts d_size to D precisely. This function can be significantly slower than
     `sigma2DApproximation` but more closely follows the analytical solution.
 
@@ -156,7 +155,7 @@ def sigma2D(raw_rms: NumberOrArray, noise: float, NAi: float) -> np.ndarray:
     return d_exact
 
 
-def sigma2DApproximation(raw_rms: NumberOrArray, noise: float, NAi: float) -> np.ndarray:
+def sigma2DApproximation(raw_rms: np.ndarray, noise: float, NAi: float) -> np.ndarray:
     """Converts d_size to D using a 15th degree polynomial approximation of the `sigma2D` function. This function can be
     significantly faster than `sigma2D` but is not guaranteed to be accurate especially at extreme input values.
 
