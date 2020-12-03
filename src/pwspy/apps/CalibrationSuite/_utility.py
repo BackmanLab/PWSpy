@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 from skimage.transform import AffineTransform
 
+
 class CubeSplitter:
     """
     Progressively splits a large cube into smaller and smaller cubes in the xy plane and performs an operation on the smaller cube sections.
@@ -39,6 +40,8 @@ class CubeSplitter:
                 subLst.append(subArr)
             lst.append(subLst)
         return np.array(lst)
+
+
 class CVAffineTransform(AffineTransform):
     """
     Extends SciKit-Learn Image Affine Transformation to work more easily with the 2x3 matrices that OpenCV uses as an affine transform.
