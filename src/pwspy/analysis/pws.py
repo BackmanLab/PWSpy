@@ -182,11 +182,27 @@ class PWSAnalysis(AbstractAnalysis):
         return cube
 
     def _filterSignal(self, data: np.ndarray, sampleFreq: float):
-        if self.settings.filterCutoff is None: # Skip filtering.
+        """
+        Performs highpass and lowpass filtering on the spectra with a buttersworth filter.
+
+        Args:
+            data: A 3d array that will be filtered along axis 2.
+            sampleFreq: The requency that the samples were collected at. The units of this value should match the units of the filter cutoff.
+
+        Returns:
+            `data` after being filtered.
+        """
+        if (self.settings.lowpassCutoff is None) and (self.settings.highpassCutoff is None):  # Skip filtering.
             return data
-        else:
-            b, a = sps.butter(self.settings.filterOrder, self.settings.filterCutoff, fs=sampleFreq)  # Generate the filter coefficients
+        elif (self.settings.lowpassCutoff is not None) and (self.settings.highpassCutoff is None):  # Lowpass only
+            b, a = sps.butter(self.settings.filterOrder, self.settings.lowpassCutoff, fs=sampleFreq, btype='lowpass')  # Generate the filter coefficients
             return sps.filtfilt(b, a, data, axis=2).astype(data.dtype)  # Actually do the filtering on the data.
+        elif (self.settings.highpassCutoff is not None) and (self.settings.lowpassCutoff is None):  # highpass filtering.
+            b, a = sps.butter(self.settings.filterOrder, self.settings.highpassCutoff, fs=sampleFreq, btype='highpass')
+            return sps.filtfilt(b, a, data, axis=2).astype(data.dtype)
+        else:  # If neither cutoff is None then do bandpass filtering.
+            b, a = sps.butter(self.settings.filterOrder, [self.settings.lowpassCutoff, self.settings.highpassCutoff], fs=sampleFreq, btype='bandpass')
+            return sps.filtfilt(b, a, data, axis=2).astype(data.dtype)
 
     # -- Polynomial Fit
     def _fitPolynomial(self, cube: pwsdt.KCube):
@@ -397,7 +413,8 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
 
     Attributes:
         filterOrder (int): The `order` of the buttersworth filter used for lowpass filtering.
-        filterCutoff (float): The cutoff frequency of the buttersworth filter used for lowpass filtering. Set to `None` to skip lowpass filtering.
+        lowpassCutoff (float): The cutoff frequency of the buttersworth filter used for lowpass filtering. Set to `None` to skip lowpass filtering.
+        highpassCutoff (float): The cutoff frequency of the buttersworth filter used for highpass filtering. Set to `None` to skip highpass filtering.
         polynomialOrder (int): The order of the polynomial which will be fit to the reflectance and then subtracted before calculating the analysis results.
         extraReflectanceId (str): The `idtag` of the extra reflection used for correction. Set to `None` if extra reflectance calibration is being skipped.
         referenceMaterial (Material): The material that was being imaged in the reference acquisition
@@ -413,7 +430,8 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
         cameraCorrection: An object describing the dark counts and non-linearity of the camera used.
     """
     filterOrder: int
-    filterCutoff: typing.Optional[float]
+    lowpassCutoff: typing.Optional[float]
+    highpassCutoff: typing.Optional[float]
     polynomialOrder: int
     extraReflectanceId: typing.Optional[str]
     referenceMaterial: Material

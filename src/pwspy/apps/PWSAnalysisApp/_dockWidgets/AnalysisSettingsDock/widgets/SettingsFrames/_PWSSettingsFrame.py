@@ -201,7 +201,7 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
 
     def loadFromSettings(self, settings: PWSAnalysisSettings):
         self.filterOrder.setValue(settings.filterOrder)
-        self.filterCutoff.setValue(settings.filterCutoff)
+        self.filterCutoff.setValue(settings.lowpassCutoff)
         self.polynomialOrder.setValue(settings.polynomialOrder)
         self.extraReflection.loadFromSettings(settings.numericalAperture, settings.referenceMaterial, settings.extraReflectanceId)
         self.wavelengthStop.setValue(settings.wavelengthStop)
@@ -230,7 +230,8 @@ class PWSSettingsFrame(AbstractSettingsFrame, QScrollArea):
         if len(cellMeta) == 0:
             raise ValueError("No valid PWS acquisitions were selected.")
         return PWSRuntimeAnalysisSettings(settings=PWSAnalysisSettings(filterOrder=self.filterOrder.value(),
-                                                                       filterCutoff=self.filterCutoff.value(),
+                                                                       lowpassCutoff=self.filterCutoff.value(),
+                                                                       highpassCutoff=None, # This parameter was added after the GUI was created and hasn't yet had support added.
                                                                        polynomialOrder=self.polynomialOrder.value(),
                                                                        referenceMaterial=refMaterial,
                                                                        wavelengthStart=self.wavelengthStart.value(),

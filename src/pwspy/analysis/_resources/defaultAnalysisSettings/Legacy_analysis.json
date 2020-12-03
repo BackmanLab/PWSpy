@@ -1,5 +1,6 @@
 {"filterOrder": 2,
-  "filterCutoff": 0.15,
+  "lowpassCutoff": 0.15,
+  "highpassCutoff": null,
   "polynomialOrder": 0,
   "extraReflectanceId": null,
   "referenceMaterial": null,
