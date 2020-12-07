@@ -29,6 +29,7 @@ class AbstractMeasurementLoader(abc.ABC):
 class DateMeasurementLoader(AbstractMeasurementLoader):
     _SETTINGS = settings
     _DATETIMEFORMAT = "%m_%d_%Y"
+
     def __init__(self, directory: str, templateDirectory: str):
         self._template = ITOMeasurement(templateDirectory, self._SETTINGS)
         self._measurements = []
@@ -36,14 +37,16 @@ class DateMeasurementLoader(AbstractMeasurementLoader):
             if os.path.isdir(f):
                 try:
                     self._measurements.append(ITOMeasurement(f, self._SETTINGS))
-                except Exception as e:
+                except:
                     print(f"Failed to load measurement at directory {f}")
                     print(traceback.print_exc())
 
         self._measurements = tuple(self._measurements)
 
+    @property
     def template(self) -> ITOMeasurement:
         return self._template
 
+    @property
     def measurements(self) -> typing.Iterable[ITOMeasurement]:
         return self._measurements

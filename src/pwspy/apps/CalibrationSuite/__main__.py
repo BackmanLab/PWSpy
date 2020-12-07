@@ -4,6 +4,8 @@ import os
 import logging
 import sys
 import matplotlib.pyplot as plt
+
+from pwspy.apps.CalibrationSuite.loaders import DateMeasurementLoader
 from pwspy.utility.plotting import PlotNd
 import pandas as pd
 import numpy as np
@@ -24,7 +26,8 @@ def main():
     logger = configureLogger()
 
     logger.debug("Start ITO Analyzer")
-    app = ITOAnalyzer(directory, os.path.join(directory, '10_20_2020'))
+    loader = DateMeasurementLoader(directory, os.path.join(directory, '10_20_2020'))
+    app = ITOAnalyzer(loader)
     logger.debug("Comparing")
     ri = 1  # Random index
     # comp = CubeComparer(app._template.analysisResults.reflectance.data, app._data.iloc[ri].reflectance[0])
