@@ -44,7 +44,7 @@ class CubeSplitter:
 
 class CVAffineTransform(AffineTransform):
     """
-    Extends SciKit-Learn Image Affine Transformation to work more easily with the 2x3 matrices that OpenCV uses as an affine transform.
+    Extends "SciKit-Image" `AffineTransform` to work more easily with the 2x3 matrices that OpenCV uses as an affine transform.
     """
     @classmethod
     def fromPartialMatrix(cls, matrix: np.ndarray):

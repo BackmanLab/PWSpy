@@ -9,10 +9,20 @@ import numpy as np
 from pwspy import dataTypes as pwsdt
 from pwspy.analysis import pws as pwsAnalysis, AbstractHDFAnalysisResults
 from glob import glob
+
+from pwspy.analysis.pws import PWSAnalysisResults
 from pwspy.utility.misc import cached_property
 
 
 class ITOMeasurement:
+    """
+    This class represents a single measurement of ITO thin film calibration. This consists of a raw acquisition of the ITO thin film
+    as well as an acquisition of a reference image of a glass-water interface which is used for normalization.
+
+    Args:
+        directory: The file path to the folder containing both acquision folders.
+    """
+
     ANALYSIS_NAME = 'ITOCalibration'
 
     def __init__(self, directory: str, settings: pwsAnalysis.PWSAnalysisSettings):
@@ -28,13 +38,12 @@ class ITOMeasurement:
         self._refAcq = refAcq[0]
 
         if not self._hasAnalysis():
-            self._generateAnalysis(settings)
+            self._results = self._generateAnalysis(settings)
         else:
-            pass  # TODO check that settings match the previously done analysis
+            self._results: pwsAnalysis.PWSAnalysisResults = self._itoAcq.pws.loadAnalysis(self.ANALYSIS_NAME)
+            assert self._results.settings == settings
 
-        self._results: pwsAnalysis.PWSAnalysisResults = self._itoAcq.pws.loadAnalysis(self.ANALYSIS_NAME)
-
-    def _generateAnalysis(self, settings: pwsAnalysis.PWSAnalysisSettings):
+    def _generateAnalysis(self, settings: pwsAnalysis.PWSAnalysisSettings) -> pwsAnalysis.PWSAnalysisResults:
         logger = logging.getLogger(__name__)
         logger.debug(f"Generating Analysis for {self.name}")
         ref = self._refAcq.pws.toDataClass()
@@ -44,6 +53,7 @@ class ITOMeasurement:
         im.correctCameraEffects()
         results, warnings = analysis.run(im)
         self._itoAcq.pws.saveAnalysis(results, self.ANALYSIS_NAME)
+        return results
 
     def _hasAnalysis(self) -> bool:
         return self.ANALYSIS_NAME in self._itoAcq.pws.getAnalyses()
@@ -69,10 +79,14 @@ class ITOMeasurement:
 
 
 class CalibrationResult(AbstractHDFAnalysisResults):
+    """
+    Represents the results from a single calibration to a template data cube. Can be easily saved/loaded to and HDF file.
+    """
+
     FileSuffix = "_calResult.h5"
 
     @classmethod
-    def create(cls, templateIdTag: str, affineTransform: np.ndarray, transformedData: np.ndarray):  # Inherit docstring
+    def create(cls, templateIdTag: str, affineTransform: np.ndarray, transformedData: np.ndarray) -> CalibrationResult:  # Inherit docstring
         d = {'templateIdTag': templateIdTag,
             'affineTransform': affineTransform,
             'transformedData': transformedData}
@@ -84,7 +98,11 @@ class CalibrationResult(AbstractHDFAnalysisResults):
 
     @staticmethod
     def fields() -> typing.Tuple[str, ...]:
-        return ('templateIdTag', 'affineTransform', 'transformedData')
+        return (
+            'templateIdTag',  # The `IdTag` of the ITOMeasurement that was used as the `template` for this calibration analysis
+            'affineTransform',  # A 2x3 matrix specifying the affine transformation between the template data and this data.
+            'transformedData'  # The data after having been warped by `afffineTransform` invalid regions of data will be marked as numpy.nan
+        )
 
     @AbstractHDFAnalysisResults.FieldDecorator
     def templateIdTag(self) -> str:

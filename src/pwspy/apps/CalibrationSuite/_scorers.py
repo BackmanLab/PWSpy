@@ -14,7 +14,7 @@ class Scorer(abc.ABC):
     """
     Compares the 3d reflectance cube of the template with the reflectance cube of a test measurement.
     The test reflectance array should have already been transformed so that they are aligned.
-    Any blank section of the transformed test array should be `numpy.nan` # TODO cropping
+    Any blank section of the transformed test array should be `numpy.nan`
 
     Args:
         template: A 3d array of reflectance data that the test array will be compared against
@@ -84,7 +84,7 @@ class CombinedScorer(Scorer):
         )
 
     def score(self) -> float:
-        # TODO not sure how to mix the scores.
+        # TODO not sure how to mix the scores. Just taking the average right now.
         score = 0
         for k, v in self._scores:
             score += v

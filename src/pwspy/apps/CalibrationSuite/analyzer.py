@@ -24,14 +24,27 @@ settings.referenceMaterial = Material.Air
 
 logger = logging.getLogger(__name__)
 
+class AbstractMeasurementLoader(abc.ABC):
+    """
+    In charge of loading ITO measurements from a folder structure. Multiple classes of this type could be made to support loading from
+    different folder organization schemes.
+    """
+    @property
+    @abc.abstractmethod
+    def template(self) -> ITOMeasurement:
+        pass
 
-class ITOAnalyzer:
+    @property
+    @abc.abstractmethod
+    def measurements(self) -> typing.Iterable[ITOMeasurement]:
+        pass
+
+
+class DateMeasurementLoader(AbstractMeasurementLoader):
     _SETTINGS = settings
     _DATETIMEFORMAT = "%m_%d_%Y"
-
     def __init__(self, directory: str, templateDirectory: str):
         self._template = ITOMeasurement(templateDirectory, self._SETTINGS)
-        #TODO separate the tasks of loading measuremments from file and of processing measurements.That way various loaders can be swapped in.
         self._measurements = []
         for f in glob(os.path.join(directory, '*')):
             if os.path.isdir(f):
@@ -41,14 +54,33 @@ class ITOAnalyzer:
                     print(f"Failed to load measurement at directory {f}")
                     print(traceback.print_exc())
 
-        self._matcher = TransformGenerator(self._template.analysisResults, debugMode=False, fastMode=True)
+        self._measurements = tuple(self._measurements)
 
-        self._generateTransforms(useCached=True)
-        a = 1
+    def template(self) -> ITOMeasurement:
+        return self._template
+
+    def measurements(self) -> typing.Iterable[ITOMeasurement]:
+        return self._measurements
+
+
+class ITOAnalyzer:
+    """
+    This class uses a template measurement to analyze a series of other measurements and give them scores for how well they match to the template.
+
+    Args:
+        loader: An object that loads the template and measurements from file.
+    """
+    def __init__(self, loader: AbstractMeasurementLoader):
+        self._loader = loader
+
+        self._matcher = TransformGenerator(loader.template.analysisResults, debugMode=False, fastMode=True)
+
+        self.resultPairs = self._generateTransforms(useCached=True)
+
         self.scores = []
         for measurement, result in self.resultPairs:
             logger.debug(f"Scoring measurement {measurement.name}")
-            scorer = CombinedScorer(self._template.analysisResults, result)
+            scorer = CombinedScorer(loader.template.analysisResults, result)
             self.scores.append(scorer._scores)
         a = 1
 
@@ -56,15 +88,15 @@ class ITOAnalyzer:
         resultPairs = []
         if useCached:
             needsProcessing = []
-            for m in self._measurements:
-                if self._template.idTag in m.listCalibrationResults():
+            for m in self._loader.measurements:
+                if self._loader.template.idTag in m.listCalibrationResults():
                     logger.debug(f"Loading cached results for {m.name}")
-                    result = m.loadCalibrationResult(self._template.idTag)
+                    result = m.loadCalibrationResult(self._loader.template.idTag)
                     resultPairs.append((m, result))
                 else:
                     needsProcessing.append(m)
         else:
-            needsProcessing = self._measurements
+            needsProcessing = self._loader.measurements
         transforms = self._matcher.match([i.analysisResults for i in needsProcessing])
 
         for transform, measurement in zip(transforms, needsProcessing):
@@ -79,16 +111,15 @@ class ITOAnalyzer:
                 transform = CVAffineTransform(scale=1, rotation=0, shear=0, translation=transform.translation)  # Coerce scale and rotation
                 transform = transform.toPartialMatrix()
                 reflectance = self._applyTransform(transform, measurement)
-                result = CalibrationResult.create(self._template.idTag, transform, reflectance)
+                result = CalibrationResult.create(self._loader.template.idTag, transform, reflectance)
                 measurement.saveCalibrationResult(result, overwrite=True)
                 resultPairs.append((measurement, result))
-        self.resultPairs = resultPairs
+        return resultPairs
 
     @staticmethod
     def _applyTransform(transform, measurement):
         logger.debug(f"Starting data transformation of {measurement.name}")
         # TODO default warp interpolation is bilinear, should we instead use nearest-neighbor?
-        #TODO warp coordinates of the corners of the image, this can be used to get the nan-less slices.
         im = measurement.analysisResults.meanReflectance
         tform = cv2.invertAffineTransform(transform)
         meanReflectance = cv2.warpAffine(im, tform, im.shape, borderValue=-666.0)  # Blank regions after transform will have value -666, can be used to generate a mask.
