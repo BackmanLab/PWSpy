@@ -16,12 +16,18 @@ class CubeSplitter:
         assert (len(arr.shape) == 2) or (len(arr.shape) == 3)
         self._arr = arr
 
-    def subdivide(self, factor: int):
+    def subdivide(self, factor: int) -> np.ndarray:
+        """Subdivide the array into a2d numpy array of sub arrays.
+
+        Args:
+            factor: The exponent of 2 that each of the first 2 dimentions of this array should be split by.
+            E.G. if `factor` is 3 then the array will be divided into 8 parts on the first to axes resulting in 64 subarrays.
+        """
         return self._subdivide(2**factor)
 
     def _subdivide(self, factor: int) -> np.ndarray:
         """
-        Split the array into a list of lists of sub arrays. The remainder pixels that can't be divided up equally are left out.
+        Split the array into a 2d numpy array of sub arrays. The remainder pixels that can't be divided up equally are left out.
 
         Args:
             factor: The number to split each axis of the array by. For example, if `factor` is 2 then the array will be split into 4 arrays with sides that are half as long as the original.
@@ -40,6 +46,22 @@ class CubeSplitter:
                 subLst.append(subArr)
             lst.append(subLst)
         return np.array(lst)
+
+    def apply(self, func: typing.Callable, factor: int) -> np.ndarray:
+        """
+        Apply the function `func` to the subarrays.
+        Args:
+            func: A function that takes a single `numpy.ndarray` as the first argument and returns a single number.
+            factor: See the description of the `factor` argument for the `CubeSplitter.subdivide` method.
+
+        Returns:
+            A 2d numpy array where the value of each element is the result of `func` for the corresponding subarray.
+        """
+        medArr = self.subdivide(factor)
+        outArr = np.zeros_like(medArr).astype(np.float)
+        for i in range(outArr.shape[0]):
+            for j in range(outArr.shape[1]):
+                outArr[i, j] = func(medArr[i, j])
 
 
 class CVAffineTransform(AffineTransform):

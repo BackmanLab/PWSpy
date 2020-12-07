@@ -23,7 +23,7 @@ def requirePluginActive(method):
     return newMethod
 
 
-class AcquisitionSequencerPlugin(CellSelectorPlugin): #TODO switch to a qdialog or dock widget, make sure widget has a parent. Why is this needed?
+class AcquisitionSequencerPlugin(CellSelectorPlugin):
     def __init__(self):
         self._selector: CellSelector = None
         self._sequence: SequencerStep = None
