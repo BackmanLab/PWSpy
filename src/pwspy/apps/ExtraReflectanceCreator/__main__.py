@@ -128,7 +128,10 @@ def main():
     logger = logging.getLogger('pwspy')  # We use the root logger of the pwspy module so that all loggers in pwspy will be captured.
     logger.setLevel(logging.DEBUG)
     logger.addHandler(logging.StreamHandler(sys.stdout))
-    fHandler = logging.FileHandler(os.path.join(appPath, 'ExtraReflectanceCreatorData', f'log{datetime.now().strftime("%d%m%Y%H%M%S")}.txt'))
+    appDataPath = os.path.join(appPath, 'ExtraReflectanceCreatorData')
+    if not os.path.exists(appDataPath):
+        os.mkdir(appDataPath)
+    fHandler = logging.FileHandler(os.path.join(appDataPath, f'log{datetime.now().strftime("%d%m%Y%H%M%S")}.txt'))
     fHandler.setFormatter(logging.Formatter('%(levelname)s: %(asctime)s %(name)s.%(funcName)s(%(lineno)d) - %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
     logger.addHandler(fHandler)
 
