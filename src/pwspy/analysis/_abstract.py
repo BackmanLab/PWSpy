@@ -33,6 +33,7 @@ class AbstractAnalysisSettings(ABC):
     These classes represent everything about the settings of an anlysis that can be reliably saved and then loaded again.
     The settings that are actually passed to the analyiss are the RuntimeSettings which can contain items that can't reliably be
     loaded from a json file (for example, references to data files which may not still be at the same file path if someone tried to load the settings"""
+
     @classmethod
     def fromJson(cls, filePath: str, name: str) -> AbstractAnalysisSettings:
         """Create a new instance of this class from a json text file.

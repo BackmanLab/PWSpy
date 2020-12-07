@@ -21,7 +21,7 @@ class TransformGenerator:
         self._matcherFunc = ORBRegisterTransform if fastMode else SIFTRegisterTransform
         self._debugMode = debugMode
         self._template = template
-        self._debugAnimationRef = None  # Just used to keep the animation alive.
+        self._debugAnimationRef = None  # Just a reference used to keep the animation alive.
 
     def match(self, ims: typing.Iterable[pwsAnalysis.PWSAnalysisResults]) -> typing.Iterable[np.ndarray]:
         """Run feature matching on a set of data.
@@ -35,4 +35,3 @@ class TransformGenerator:
         trans, self._debugAnimationRef = self._matcherFunc(self._template.meanReflectance, [im.meanReflectance for im in ims], debugPlots=self._debugMode)
         logger.debug(f"Matching took {time.time() - matchTime} seconds")
         return trans
-    
