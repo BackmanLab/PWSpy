@@ -62,6 +62,7 @@ class CubeSplitter:
         for i in range(outArr.shape[0]):
             for j in range(outArr.shape[1]):
                 outArr[i, j] = func(medArr[i, j])
+        return outArr
 
 
 class CVAffineTransform(AffineTransform):

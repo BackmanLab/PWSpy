@@ -29,11 +29,7 @@ def main():
     loader = DateMeasurementLoader(directory, os.path.join(directory, '10_20_2020'))
     app = ITOAnalyzer(loader)
     logger.debug("Comparing")
-    ri = 1  # Random index
-    # comp = CubeComparer(app._template.analysisResults.reflectance.data, app._data.iloc[ri].reflectance[0])
-    # from scipy.signal import correlate
-    # out = correlate(comp._template, comp._test, method='direct')  # Need to do something about the nans before this will work
-    c = CubeSplitter(app._template.analysisResults.reflectance.data[:-12,:-13, :])
+    c = CubeSplitter(app._loader.template.analysisResults.reflectance.data[:-12, :-13, :])
     clim = (np.percentile(c._arr.mean(axis=2), 1), np.percentile(c._arr.mean(axis=2), 99))
     plt.figure()
     plt.imshow(c._arr.mean(axis=2), clim=clim)
@@ -46,6 +42,7 @@ def main():
                 axs[i, j].imshow(subArr.mean(axis=2), clim=clim)
 
     a = 1  # Debug Breakpoint
+
 
 if __name__ == '__main__':
     main()
