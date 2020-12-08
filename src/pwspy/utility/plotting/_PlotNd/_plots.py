@@ -218,7 +218,7 @@ class SidePlot(PlotBase):
 
     def valueToCoord(self, value):
         """Given a value of this plot's index return the nearest corresponding coordinate [0, 1, 2, ...]"""
-        coord = np.where(np.abs(self.index - value) == np.min(np.abs(self.index - value)))[0]
+        coord = np.argmin(np.abs(self.index - value))
         return int(coord)
 
     def setRange(self, Min, Max):
