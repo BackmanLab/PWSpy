@@ -18,13 +18,11 @@ class Scorer(abc.ABC):
 
     Args:
         template: A 3d array of reflectance data that the test array will be compared against
-        test: A 3d array to compare agains the template array. Since it is likely that the original data will need to have been transformed
+        test: A 3d array to compare against the template array. Since it is likely that the original data will need to have been transformed
             in order to align with the template there will blank regions. The pixels in the blank regions should be set to a value of `numpy.nan`
     """
-    def __init__(self, template: PWSAnalysisResults, test: CalibrationResult):
-        assert isinstance(template, PWSAnalysisResults)
-        assert isinstance(test, CalibrationResult)
-        self._template = template.reflectance.data + template.meanReflectance[:, :, None]
+    def __init__(self, template: np.ndarray, test: np.ndarray):
+        self._template = template
         self._test = test
 
     @abc.abstractmethod
@@ -39,9 +37,8 @@ class Scorer(abc.ABC):
 
 class XCorrScorer(Scorer):
     def score(self) -> float:
-        slc = self._test.getValidDataSlice()  # This slice is used to crop out any NAN regions from the data since these will mess up the x-correlation
-        tempData = self._template[slc]
-        testData = self._test.transformedData[slc]
+        tempData = self._template
+        testData = self._test
         # Normalize Data. Correlation will pad with 0s so make sure the mean of the data is 0
         tempData = (tempData - tempData.mean()) / tempData.std()
         testData = (testData - testData.mean()) / (testData.std() * testData.size)
@@ -50,24 +47,22 @@ class XCorrScorer(Scorer):
         return corr.max()
 
 
-class SSimScorer(Scorer):  # TODO look into the `full` out parameters of metrics.structural_similarity
+class SSimScorer(Scorer):
     def score(self) -> float:
-        slc = self._test.getValidDataSlice()
-        tempData = self._template[slc]
-        testData = self._test.transformedData[slc]
+        tempData = self._template
+        testData = self._test
         return metrics.structural_similarity(tempData, testData)
 
 
 class MSEScorer(Scorer):
     def score(self) -> float:
-        slc = self._test.getValidDataSlice()
-        tempData = self._template[slc]
-        testData = self._test.transformedData[slc]
+        tempData = self._template
+        testData = self._test
         return max([1 - metrics.mean_squared_error(tempData, testData), 0])  # TODO we need a smarter way to convert this to a value between 0 and 1.
 
 
 class CombinedScorer(Scorer):
-    def __init__(self, template: PWSAnalysisResults, test: CalibrationResult):
+    def __init__(self, template: np.ndarray, test: np.ndarray):
         super().__init__(template, test)
         self._mse = MSEScorer(template, test)
         self._ssim = SSimScorer(template, test)
