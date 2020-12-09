@@ -85,7 +85,7 @@ class DualCubeSplitter:
             A 2d numpy array where the value of each element is the result of `func` for the corresponding subarray.
         """
         medArr1, medArr2 = self.subdivide(factor)
-        outArr = np.zeros_like(medArr1).astype(np.float)
+        outArr = np.zeros(medArr1.shape[:2])
         for i in range(outArr.shape[0]):
             for j in range(outArr.shape[1]):
                 outArr[i, j] = func(medArr1[i, j], medArr2[i, j])
