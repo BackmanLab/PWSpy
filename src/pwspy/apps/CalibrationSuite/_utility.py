@@ -65,6 +65,33 @@ class CubeSplitter:
         return outArr
 
 
+class DualCubeSplitter:
+    def __init__(self, arr1: np.ndarray, arr2: np.ndarray):
+        assert arr1.shape == arr2.shape, "Both arrays must have the same shape."
+        self._c1 = CubeSplitter(arr1)
+        self._c2 = CubeSplitter(arr2)
+
+    def subdivide(self, factor: int):
+        return self._c1.subdivide(factor), self._c2.subdivide(factor)
+
+    def apply(self, func, factor: int):
+        """
+        Apply the function `func` to the subarrays.
+        Args:
+            func: A function that takes two `numpy.ndarray` as the first two arguments and returns a single number.
+            factor: See the description of the `factor` argument for the `CubeSplitter.subdivide` method.
+
+        Returns:
+            A 2d numpy array where the value of each element is the result of `func` for the corresponding subarray.
+        """
+        medArr1, medArr2 = self.subdivide(factor)
+        outArr = np.zeros_like(medArr1).astype(np.float)
+        for i in range(outArr.shape[0]):
+            for j in range(outArr.shape[1]):
+                outArr[i, j] = func(medArr1[i, j], medArr2[i, j])
+        return outArr
+
+
 class CVAffineTransform(AffineTransform):
     """
     Extends "SciKit-Image" `AffineTransform` to work more easily with the 2x3 matrices that OpenCV uses as an affine transform.
