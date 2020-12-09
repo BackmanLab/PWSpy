@@ -89,13 +89,18 @@ class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of c
     Attributes:
         data: A reference the the 3D or greater numpy array. This can be safely modified.
     """
-    def __init__(self, data: np.ndarray, names: Tuple[str, ...] = ('y', 'x', 'z'),
+    _defaultNames = ('y', 'x', 'z', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th')
+
+    def __init__(self, data: np.ndarray, names: Tuple[str, ...] = None,
                  initialCoords: Optional[Tuple[int, ...]] = None, title: Optional[str] = '',
                  parent: Optional[QWidget] = None, indices: List[np.ndarray] = None):
         super().__init__(parent=parent)
 
 
         self.setWindowTitle(str(title))  # Convert to string just in case
+
+        if names is None:
+            names = PlotNd._defaultNames[:len(data.shape)]
 
         if data.dtype == bool:
             data = data.astype(np.uint8)
