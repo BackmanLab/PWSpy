@@ -27,19 +27,8 @@ def main():
 
     logger.debug("Start ITO Analyzer")
     loader = DateMeasurementLoader(directory, os.path.join(directory, '10_20_2020'))
-    app = ITOAnalyzer(loader)
-    logger.debug("Comparing")
-    c = CubeSplitter(app._loader.template.analysisResults.reflectance.data[:-12, :-13, :])
-    clim = (np.percentile(c._arr.mean(axis=2), 1), np.percentile(c._arr.mean(axis=2), 99))
-    plt.figure()
-    plt.imshow(c._arr.mean(axis=2), clim=clim)
-    factors = [1, 2, 3]
-    for factor in factors:
-        subArrs = c.subdivide(factor)
-        fig, axs = plt.subplots(2**factor, 2**factor)
-        for i, subArrList in enumerate(subArrs):
-            for j, subArr in enumerate(subArrList):
-                axs[i, j].imshow(subArr.mean(axis=2), clim=clim)
+    app = ITOAnalyzer(loader, useCached=False)
+
 
     a = 1  # Debug Breakpoint
 

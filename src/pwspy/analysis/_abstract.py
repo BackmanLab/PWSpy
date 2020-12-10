@@ -276,6 +276,8 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
                 v = getattr(self, field)
                 if isinstance(v, AbstractAnalysisSettings):
                     v = v.toJsonString() # Convert to string, then string case will then handle saving the string.
+                elif isinstance(v, dict):  # Save as json. The str case will handle the actual saving.
+                    v = json.dumps(v)
                 if isinstance(v, str):
                     hf.create_dataset(k, data=np.string_(v))  # h5py recommends encoding strings this way for compatability.
                 elif isinstance(v, ICBase):

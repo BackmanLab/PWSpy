@@ -44,21 +44,21 @@ class XCorrScorer(Scorer):
         testData = (testData - testData.mean()) / (testData.std() * testData.size)
 
         corr = correlate(tempData, testData, mode='same')  # This would be faster if we did mode='valid', there would only be one value. But tiny alignment issues would result it us getting a lower correlation.
-        return corr.max()
+        return float(corr.max())
 
 
 class SSimScorer(Scorer):
     def score(self) -> float:
         tempData = self._template
         testData = self._test
-        return metrics.structural_similarity(tempData, testData)
+        return float(metrics.structural_similarity(tempData, testData))
 
 
 class MSEScorer(Scorer):
     def score(self) -> float:
         tempData = self._template
         testData = self._test
-        return max([1 - metrics.mean_squared_error(tempData, testData), 0])  # TODO we need a smarter way to convert this to a value between 0 and 1.
+        return float(max([1 - metrics.mean_squared_error(tempData, testData), 0]))  # TODO we need a smarter way to convert this to a value between 0 and 1.
 
 
 class CombinedScorer(Scorer):
