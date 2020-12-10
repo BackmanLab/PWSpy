@@ -6,6 +6,7 @@ import sys
 import matplotlib.pyplot as plt
 
 from pwspy.apps.CalibrationSuite.loaders import DateMeasurementLoader
+from pwspy.apps.CalibrationSuite.reviewer import Reviewer
 from pwspy.utility.plotting import PlotNd
 import pandas as pd
 import numpy as np
@@ -27,7 +28,8 @@ def main():
 
     logger.debug("Start ITO Analyzer")
     loader = DateMeasurementLoader(directory, os.path.join(directory, '10_20_2020'))
-    app = ITOAnalyzer(loader, useCached=False)
+    anlzr = ITOAnalyzer(loader, useCached=True)
+    rvwr = Reviewer(loader)
 
 
     a = 1  # Debug Breakpoint
