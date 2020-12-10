@@ -33,5 +33,5 @@ class TransformGenerator:
         matchTime = time.time()
         logger.debug("Start match.")
         trans, self._debugAnimationRef = self._matcherFunc(self._template.meanReflectance, [im.meanReflectance for im in ims], debugPlots=self._debugMode)
-        logger.debug(f"Matching took {time.time() - matchTime} seconds")
+        logger.debug(f"Image matching took {time.time() - matchTime} seconds")
         return trans

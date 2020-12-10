@@ -28,7 +28,7 @@ class ITOAnalyzer:
     Args:
         loader: An object that loads the template and measurements from file.
     """
-    def __init__(self, loader: AbstractMeasurementLoader, useCached: bool = True):
+    def __init__(self, loader: AbstractMeasurementLoader, useCached: bool = True, debugMode: bool = False):
         self._loader = loader
 
         resultPairs = []
@@ -44,7 +44,7 @@ class ITOAnalyzer:
         else:
             needsProcessing = self._loader.measurements
 
-        self._matcher = TransformGenerator(loader.template.analysisResults, debugMode=False, fastMode=True)
+        self._matcher = TransformGenerator(loader.template.analysisResults, debugMode=debugMode, fastMode=True)
         transforms = self._matcher.match([i.analysisResults for i in needsProcessing])
 
         transformedData = []

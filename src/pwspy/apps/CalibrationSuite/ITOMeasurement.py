@@ -150,7 +150,7 @@ class CalibrationResult(AbstractHDFAnalysisResults):
 
     @AbstractHDFAnalysisResults.FieldDecorator
     def scores(self) -> dict:
-        return json.loads(np.string_(self.file['transformedData']))
+        return json.loads(bytes(np.array(self.file['scores'])).decode())
 
     @staticmethod
     def name2FileName(name: str) -> str:
