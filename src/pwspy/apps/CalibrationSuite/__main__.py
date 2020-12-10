@@ -1,5 +1,5 @@
 from pwspy.apps.CalibrationSuite._utility import CubeSplitter
-from pwspy.apps.CalibrationSuite.analyzer import ITOAnalyzer
+from pwspy.apps.CalibrationSuite.analyzer import Analyzer
 import os
 import logging
 import sys
@@ -28,7 +28,7 @@ def main():
 
     logger.debug("Start ITO Analyzer")
     loader = DateMeasurementLoader(directory, os.path.join(directory, '10_20_2020'))
-    anlzr = ITOAnalyzer(loader, useCached=True)
+    anlzr = Analyzer(loader, useCached=True)
     rvwr = Reviewer(loader)
 
 

@@ -27,6 +27,10 @@ class AbstractMeasurementLoader(abc.ABC):
 
 
 class DateMeasurementLoader(AbstractMeasurementLoader):
+    """
+    This loader assumes that the data for a single measurement (ITO acquisition with and reference acquisition) are stored together in a folder that is named
+    with a date of format {Month}_{Day}_{Year}
+    """
     _SETTINGS = settings
     _DATETIMEFORMAT = "%m_%d_%Y"
 

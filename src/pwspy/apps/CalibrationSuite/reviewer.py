@@ -23,8 +23,10 @@ class Reviewer:
         ax2 = ax.twinx()
         ax.plot(df.mse, label='MSE')
         ax.plot(df.ssim, label='SSIM')
-        ax2.plot(df.displacement, label="Displacement (px)")
+        ax2.plot(df.displacement, label="Displacement (px)", linestyle='--')
         ax.plot(df.xcorr, label="XCorr")
+        ax.set_xticklabels(labels=df.name)
         ax.legend()
+        ax2.legend()
 
         #TODO plot correlation with displacement
