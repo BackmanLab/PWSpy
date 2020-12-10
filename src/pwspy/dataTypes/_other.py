@@ -186,7 +186,7 @@ class Roi:
         Args:
             name: The name used to identify this ROI. Multiple ROIs can share the same name but must have unique numbers.
             number: The number used to identify this ROI. Each ROI with the same name must have a unique number.
-            verts: A sequence of 2D coordinates indicating the border of the ROI.
+            verts: A sequence of 2D (x, y) coordinates indicating the border of the ROI.
             dataShape: A tuple giving the shape of the array that this Roi is associated with.
 
         Returns:
@@ -463,6 +463,14 @@ class Roi:
             return patches.Polygon(cHull.exterior.coords, facecolor=(1, 0, 0, 0.5), linewidth=1, edgecolor=(0,1,0,.9))
         else:
             return patches.Polygon(self.verts, facecolor=(1, 0, 0, 0.5), linewidth=1, edgecolor=(0,1,0,0.9))
+
+    def getBoundingBox(self) -> typing.Tuple[float, float, float, float]:
+        """
+        Returns:
+            A tuple of length 4 giving the coordinates of the rectangle that encloses this ROI in the form: (top, left, bottom, right)
+        """
+        xCoords, yCoords = tuple(zip(*self.verts))  # Split (x,y) coords into x and then y
+        return max(yCoords), min(xCoords), min(yCoords), max(xCoords)
 
     def __repr__(self):
         return f"Roi({self.name}, {self.number})"
