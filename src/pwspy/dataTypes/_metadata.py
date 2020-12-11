@@ -172,7 +172,7 @@ class AnalysisManager(abc.ABC):
 
     @staticmethod
     @abc.abstractmethod
-    def getAnalysisResultsClass() -> AbstractHDFAnalysisResults:
+    def getAnalysisResultsClass() -> typing.Type[AbstractHDFAnalysisResults]:
         """
 
         Returns:
@@ -247,7 +247,7 @@ class DynMetaData(MetaDataBase, AnalysisManager):
         Hdf = enum.auto()
 
     @staticmethod
-    def getAnalysisResultsClass():
+    def getAnalysisResultsClass() -> typing.Type[AbstractHDFAnalysisResults]:
         from pwspy.analysis.dynamics import DynamicsAnalysisResults
         return DynamicsAnalysisResults
 
@@ -582,7 +582,7 @@ class ICMetaData(MetaDataBase, AnalysisManager):
         NanoMat = enum.auto()
 
     @staticmethod
-    def getAnalysisResultsClass():
+    def getAnalysisResultsClass() -> typing.Type[AbstractHDFAnalysisResults]:
         from pwspy.analysis.pws import PWSAnalysisResults
         return PWSAnalysisResults
 

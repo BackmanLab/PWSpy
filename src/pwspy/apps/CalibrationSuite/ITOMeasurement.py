@@ -1,22 +1,20 @@
 from __future__ import annotations
-import dataclasses
 import json
 import logging
 import os
 import typing
 import cv2
-import h5py
 import numpy as np
 from pwspy import dataTypes as pwsdt
 from pwspy.analysis import pws as pwsAnalysis, AbstractHDFAnalysisResults
 from glob import glob
 
-from pwspy.analysis.pws import PWSAnalysisResults
+from pwspy.dataTypes import AnalysisManager
 from pwspy.utility.misc import cached_property
 import math
 
 
-class ITOMeasurement:
+class ITOMeasurement(AnalysisManager):
     """
     This class represents a single measurement of ITO thin film calibration. This consists of a raw acquisition of the ITO thin film
     as well as an acquisition of a reference image of a glass-water interface which is used for normalization.
@@ -28,6 +26,7 @@ class ITOMeasurement:
     ANALYSIS_NAME = 'ITOCalibration'
 
     def __init__(self, homeDir: str, itoAcq: pwsdt.AcqDir, refAcq: pwsdt.AcqDir, settings: pwsAnalysis.PWSAnalysisSettings, name: str):
+        super().__init__(homeDir)
         self.filePath = os.path.abspath(homeDir)
         self.name = name
         self._itoAcq = itoAcq
@@ -36,8 +35,13 @@ class ITOMeasurement:
         if not self._hasAnalysis():
             self._results = self._generateAnalysis(settings)
         else:
-            self._results: pwsAnalysis.PWSAnalysisResults = self._itoAcq.pws.loadAnalysis(self.ANALYSIS_NAME)
-            assert self._results.settings == settings
+            self._results: pwsAnalysis.PWSAnalysisResults = self.loadAnalysis(self.ANALYSIS_NAME)
+            assert self._results.settings == settings  # Make sure the same settings were used for the previously stored analysis results.
+            assert self._results.referenceIdTag == self._refAcq.idTag  # Make sure the same reference was used in the previously stored analysis results
+
+    @staticmethod
+    def getAnalysisResultsClass() -> typing.Type[AbstractHDFAnalysisResults]:
+        return pwsAnalysis.PWSAnalysisResults
 
     def _generateAnalysis(self, settings: pwsAnalysis.PWSAnalysisSettings) -> pwsAnalysis.PWSAnalysisResults:
         logger = logging.getLogger(__name__)
@@ -48,13 +52,11 @@ class ITOMeasurement:
         im = self._itoAcq.pws.toDataClass()
         im.correctCameraEffects()
         results, warnings = analysis.run(im)
-        results.toHDF(self.filePath, self.ANALYSIS_NAME, compression='gzip')
-        self._itoAcq.pws.saveAnalysis(results, self.ANALYSIS_NAME)
+        self.saveAnalysis(results, self.ANALYSIS_NAME)
         return results
 
     def _hasAnalysis(self) -> bool:
-        PWSAnalysisResults.get
-        return self.ANALYSIS_NAME in self._itoAcq.pws.getAnalyses()
+        return self.ANALYSIS_NAME in self.getAnalyses()
 
     @property
     def analysisResults(self) -> pwsAnalysis.PWSAnalysisResults:
