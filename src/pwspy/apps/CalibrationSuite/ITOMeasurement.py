@@ -32,9 +32,15 @@ class ITOMeasurement(AnalysisManager):
         self._itoAcq = itoAcq
         self._refAcq = refAcq
 
+        if not os.path.exists(homeDir):
+            os.mkdir(homeDir)
+
+        logger = logging.getLogger(__name__)
         if not self._hasAnalysis():
+            logger.debug(f"Generating analysis for {self.name}")
             self._results = self._generateAnalysis(settings)
         else:
+            logger.debug(f"Loading cached analysis for {self.name}")
             self._results: pwsAnalysis.PWSAnalysisResults = self.loadAnalysis(self.ANALYSIS_NAME)
             assert self._results.settings == settings  # Make sure the same settings were used for the previously stored analysis results.
             assert self._results.referenceIdTag == self._refAcq.idTag  # Make sure the same reference was used in the previously stored analysis results
@@ -44,8 +50,7 @@ class ITOMeasurement(AnalysisManager):
         return pwsAnalysis.PWSAnalysisResults
 
     def _generateAnalysis(self, settings: pwsAnalysis.PWSAnalysisSettings) -> pwsAnalysis.PWSAnalysisResults:
-        logger = logging.getLogger(__name__)
-        logger.debug(f"Generating Analysis for {self.name}")
+
         ref = self._refAcq.pws.toDataClass()
         ref.correctCameraEffects()
         analysis = pwsAnalysis.PWSAnalysis(settings, None, ref)
@@ -105,6 +110,7 @@ class TransformedData:
         bottom = max([0, bottom])
         slc = (slice(bottom, top), slice(left, right))  # A rectangular slice garaunteed to lie entirely inside the valid data aread, even if the transform has rotation.
         return slc
+
 
 class CalibrationResult(AbstractHDFAnalysisResults):
     """
