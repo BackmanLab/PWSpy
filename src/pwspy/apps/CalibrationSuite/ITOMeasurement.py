@@ -22,22 +22,16 @@ class ITOMeasurement:
     as well as an acquisition of a reference image of a glass-water interface which is used for normalization.
 
     Args:
-        directory: The file path to the folder containing both acquision folders.
+
     """
 
     ANALYSIS_NAME = 'ITOCalibration'
 
-    def __init__(self, directory: str, settings: pwsAnalysis.PWSAnalysisSettings):
-        self.filePath = os.path.abspath(directory)
-        self.name = os.path.basename(directory)
-
-        acqs = [pwsdt.AcqDir(f) for f in glob(os.path.join(directory, "Cell*"))]
-        itoAcq = [acq for acq in acqs if acq.getNumber() < 900]
-        assert len(itoAcq) == 1, "There must be one and only one ITO film acquisition. Cell number should be less than 900."
-        self._itoAcq = itoAcq[0]
-        refAcq = [acq for acq in acqs if acq.getNumber() > 900]
-        assert len(refAcq) == 1, "There must be one and only one reference acquisition. Cell number should be greater than 900."
-        self._refAcq = refAcq[0]
+    def __init__(self, homeDir: str, itoAcq: pwsdt.AcqDir, refAcq: pwsdt.AcqDir, settings: pwsAnalysis.PWSAnalysisSettings, name: str):
+        self.filePath = os.path.abspath(homeDir)
+        self.name = name
+        self._itoAcq = itoAcq
+        self._refAcq = refAcq
 
         if not self._hasAnalysis():
             self._results = self._generateAnalysis(settings)
@@ -54,10 +48,12 @@ class ITOMeasurement:
         im = self._itoAcq.pws.toDataClass()
         im.correctCameraEffects()
         results, warnings = analysis.run(im)
+        results.toHDF(self.filePath, self.ANALYSIS_NAME, compression='gzip')
         self._itoAcq.pws.saveAnalysis(results, self.ANALYSIS_NAME)
         return results
 
     def _hasAnalysis(self) -> bool:
+        PWSAnalysisResults.get
         return self.ANALYSIS_NAME in self._itoAcq.pws.getAnalyses()
 
     @property
