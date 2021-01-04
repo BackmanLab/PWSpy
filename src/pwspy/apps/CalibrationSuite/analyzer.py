@@ -18,8 +18,6 @@ import matplotlib.pyplot as plt
 
 settings.referenceMaterial = Material.Air
 
-logger = logging.getLogger(__name__)
-
 
 class Analyzer:
     """
@@ -28,8 +26,10 @@ class Analyzer:
     Args:
         loader: An object that loads the template and measurements from file.
     """
-    def __init__(self, loader: AbstractMeasurementLoader, useCached: bool = True, debugMode: bool = False):
+    def __init__(self, loader: AbstractMeasurementLoader, useCached: bool = True, debugMode: bool = False, fastMode: bool = True):
         self._loader = loader
+
+        logger = logging.getLogger(__name__)
 
         resultPairs = []
         if useCached:
@@ -44,7 +44,7 @@ class Analyzer:
         else:
             needsProcessing = self._loader.measurements
 
-        self._matcher = TransformGenerator(loader.template.analysisResults, debugMode=debugMode, fastMode=True)
+        self._matcher = TransformGenerator(loader.template.analysisResults, debugMode=debugMode, fastMode=fastMode)
         transforms = self._matcher.match([i.analysisResults for i in needsProcessing])
 
         transformedData = []
@@ -121,11 +121,11 @@ class Analyzer:
 
     @staticmethod
     def _applyTransform(transform, measurement):
+        logger = logging.getLogger(__name__)
         logger.debug(f"Starting data transformation of {measurement.name}")
-        # TODO default warp interpolation is bilinear, should we instead use nearest-neighbor?
         im = measurement.analysisResults.meanReflectance
         tform = cv2.invertAffineTransform(transform)
-        meanReflectance = cv2.warpAffine(im, tform, im.shape, borderValue=-666.0)  # Blank regions after transform will have value -666, can be used to generate a mask.
+        meanReflectance = cv2.warpAffine(im, tform, im.shape, borderValue=-666.0, flags=cv2.INTER_NEAREST)  # Blank regions after transform will have value -666, can be used to generate a mask.
         mask = meanReflectance == -666.0
         mask = binary_dilation(mask)  # Due to interpolation we sometimes get weird values at the edge. dilate the mask so that those edges get cut off.
         kcube = measurement.analysisResults.reflectance

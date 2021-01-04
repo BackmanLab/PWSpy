@@ -33,7 +33,7 @@ class ITOMeasurement(AnalysisManager):
         self._refAcq = refAcq
 
         if not os.path.exists(homeDir):
-            os.mkdir(homeDir)
+            os.makedirs(homeDir)
 
         logger = logging.getLogger(__name__)
         if not self._hasAnalysis():
@@ -77,7 +77,10 @@ class ITOMeasurement(AnalysisManager):
         result.toHDF(self.filePath, result.templateIdTag, overwrite=overwrite)
 
     def loadCalibrationResult(self, templateIdTag: str) -> CalibrationResult:
-        return CalibrationResult.load(self.filePath, templateIdTag)
+        try:
+            return CalibrationResult.load(self.filePath, templateIdTag)
+        except OSError:
+            raise OSError(f"No CalibrationResult file found for template: {templateIdTag} for measurement: {self.name}")
 
     def listCalibrationResults(self) -> typing.Tuple[str]:
         return tuple([CalibrationResult.fileName2Name(f) for f in glob(os.path.join(self.filePath, f'*{CalibrationResult.FileSuffix}'))])

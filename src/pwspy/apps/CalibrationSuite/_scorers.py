@@ -58,7 +58,7 @@ class MSEScorer(Scorer):
     def score(self) -> float:
         tempData = self._template
         testData = self._test
-        return float(max([1 - metrics.mean_squared_error(tempData, testData), 0]))  # TODO we need a smarter way to convert this to a value between 0 and 1.
+        return metrics.mean_squared_error(tempData, testData)  # TODO we need a smarter way to convert this to a value between 0 and 1.
 
 
 class CombinedScorer(Scorer):
