@@ -301,7 +301,7 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
         """
         filePath = osp.join(directory, cls.name2FileName(name))
         if not osp.exists(filePath):
-            raise OSError("The analysis file does not exist.")
+            raise OSError(f"The {cls.__name__} analysis file does not exist. {filePath}")
         file = h5py.File(filePath, 'r')
         return cls(file, None, name)
 

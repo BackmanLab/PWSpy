@@ -40,6 +40,9 @@ from skimage import feature
 if typing.TYPE_CHECKING:
     import cv2
 
+logger = logging.getLogger(__name__)
+
+
 def to8bit(arr: np.ndarray) -> np.ndarray:
     """Converts boolean or float type numpy arrays to 8bit and scales the data to span from 0 to 255. Used for many
     OpenCV functions.
@@ -84,7 +87,6 @@ def SIFTRegisterTransform(reference: np.ndarray, other: typing.Iterable[np.ndarr
 
             ArtistAnimation: A reference the animation used to diplay the results of the function.
         """
-    #TODO this function does some weird stuff in the case that MIN_MATCH_COUNT is not met for some of the images due to variables not being defined.
     import cv2
 
     refImg = to8bit(reference)
@@ -98,7 +100,7 @@ def SIFTRegisterTransform(reference: np.ndarray, other: typing.Iterable[np.ndarr
     flann = cv2.FlannBasedMatcher(index_params, search_params)
 
     # Initiate SIFT detector
-    sift = cv2.SIFT_create()  # By default this function is not included, you need a specially built version of Opencv due to patent issues :( Maybe try MOPS instead. Update: in 2020 the patent expired and now in opencv4 it is included.
+    sift = cv2.SIFT_create()
     kp1, des1 = sift.detectAndCompute(refImg, mask=mask)
 
     transforms = []
@@ -106,20 +108,21 @@ def SIFTRegisterTransform(reference: np.ndarray, other: typing.Iterable[np.ndarr
         anFig, anAx = plt.subplots()
         anims = []
     for i, img in enumerate(other):
+        logger.debug(f"Calculating SIFT matches for image {i} of {len(other)}")
         otherImg = to8bit(img)
         # find the keypoints and descriptors with SIFT
         kp2, des2 = sift.detectAndCompute(otherImg, mask=None)
 
         good = _knnMatch(flann, des1, des2)
 
-        MIN_MATCH_COUNT = 10
+        MIN_MATCH_COUNT = 5
         if len(good) > MIN_MATCH_COUNT:
             src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
             dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
             M, inlierMask = cv2.estimateAffinePartial2D(src_pts, dst_pts)
             matchesMask = inlierMask.ravel().tolist()
         else:
-            logging.getLogger(__name__).warning(f"Image {i}: Not enough matches are found - {len(good)}/{MIN_MATCH_COUNT}")
+            logger.warning(f"Image {i}: Not enough matches are found - {len(good)}/{MIN_MATCH_COUNT}")
             M = None
             matchesMask = None
         transforms.append(M)
@@ -180,7 +183,7 @@ def ORBRegisterTransform(reference: np.ndarray, other: typing.Iterable[np.ndarra
     flann = cv2.FlannBasedMatcher(index_params, search_params)
 
     # Initiate ORB detector
-    orb = cv2.ORB_create() # By default this function is not included, you need a specially built version of Opencv due to patent issues :( Maybe try MOPS instead
+    orb = cv2.ORB_create()
     kp1, des1 = orb.detectAndCompute(refImg, mask=mask)
 
     transforms = []
@@ -194,7 +197,7 @@ def ORBRegisterTransform(reference: np.ndarray, other: typing.Iterable[np.ndarra
 
         good = _knnMatch(flann, des1, des2)
 
-        MIN_MATCH_COUNT = 10
+        MIN_MATCH_COUNT = 5
         if len(good) > MIN_MATCH_COUNT:
             src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
             dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
