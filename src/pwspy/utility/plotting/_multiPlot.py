@@ -41,13 +41,13 @@ class MultiPlot(QWidget):
         QWidget.__init__(self, parent=parent, flags=QtCore.Qt.Window)
         self.setWindowTitle(title)
         layout = QGridLayout()
-        self.artists = artists
+        self._artists = artists
         self.figure: Figure = artists[0][0].figure  # We are assuming that all artists use the same figure.
-        self.ax: Axes = self.artists[0][0].axes
+        self.ax: Axes = self._artists[0][0].axes
 
-        self.canvas = FigureCanvasQTAgg(self.figure)
-        self.canvas.setFocusPolicy(QtCore.Qt.ClickFocus) #Not sure what this is for
-        self.canvas.setFocus()
+        self._canvas = FigureCanvasQTAgg(self.figure)
+        self._canvas.setFocusPolicy(QtCore.Qt.ClickFocus) #Not sure what this is for
+        self._canvas.setFocus()
 
         self.previousButton = QPushButton('←')
         self.nextButton = QPushButton('→')
@@ -55,45 +55,46 @@ class MultiPlot(QWidget):
         self.nextButton.released.connect(self.showNextIm)
 
         self.saveButton = QPushButton("Save Animation")
-        self.saveButton.released.connect(lambda: AnimationDlg(self.figure, self.artists, self).exec())
+        self.saveButton.released.connect(lambda: AnimationDlg(self.figure, self._artists, self).exec())
 
-        layout.addWidget(self.canvas, 0, 0, 8, 8)
+        layout.addWidget(self._canvas, 0, 0, 8, 8)
         layout.addWidget(self.previousButton, 9, 1, 1, 1)
         layout.addWidget(self.nextButton, 9, 2, 1, 1)
         layout.addWidget(self.saveButton, 9, 7, 1, 1)
-        layout.addWidget(NavigationToolbar2QT(self.canvas, self), 10, 0, 1, 4)
+        layout.addWidget(NavigationToolbar2QT(self._canvas, self), 10, 0, 1, 4)
 
         layout.setRowStretch(0, 1)  # This causes the plot to take up all the space that isn't needed by the other widgets.
         self.setLayout(layout)
 
-        self.index = 0
+        self._index = 0  # Keeps track of which frame we are currently viewing.
         self._updateDisplayedImage()
+        plt.close(self.figure)  # A separate figure window will have been opened during the creation of our artists. This is extra and should be closed.
 
     def showPreviousIm(self):
         """Display the previous set of display elements."""
-        self.index -= 1
-        if self.index < 0:
-            self.index = len(self.artists) - 1
+        self._index -= 1
+        if self._index < 0:
+            self._index = len(self._artists) - 1
         self._updateDisplayedImage()
 
     def showNextIm(self):
         """Display the next set of display elements."""
-        self.index += 1
-        if self.index >= len(self.artists):
-            self.index = 0
+        self._index += 1
+        if self._index >= len(self._artists):
+            self._index = 0
         self._updateDisplayedImage()
 
     def imshow(self, *args, **kwargs):
         """Mirrors the pyplot.imshow function. Adds a new image to the set of images shown by this widget."""
-        self.artists.append([self.ax.imshow(*args, **kwargs)])
-        self.index = len(self.artists)-1
+        self._artists.append([self.ax.imshow(*args, **kwargs)])
+        self._index = len(self._artists) - 1
         self._updateDisplayedImage()
 
     def _updateDisplayedImage(self):
-        for i, frame in enumerate(self.artists):
+        for i, frame in enumerate(self._artists):
             for artist in frame:
-                artist.set_visible(self.index==i)
-        self.canvas.draw_idle()
+                artist.set_visible(self._index == i)
+        self._canvas.draw_idle()
 
 
 if __name__ == '__main__':
