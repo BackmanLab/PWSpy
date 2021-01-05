@@ -36,8 +36,7 @@ class Reviewer:
         ax2.plot(x, df.displacement, label="Displacement (px)", linestyle='--')
         ax.plot(x, df.xcorr, label="XCorr")
         ax.set_xticks(x)
-        ax.set_xticklabels(labels=df.name)
-        plt.xticks(rotation=20)
+        ax.set_xticklabels(labels=df.name, rotation=20)
         ax.legend()
         ax2.legend()
 
