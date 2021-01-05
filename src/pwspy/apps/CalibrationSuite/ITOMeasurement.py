@@ -106,6 +106,8 @@ class TransformedData:
         top = math.floor(min(topCoords))
         right = math.floor(min(rightCoords))
         bottom = math.ceil(max(bottomCoords))
+        # Depending on which interpolation method is used to cv2.warpAffine the image array one pixel at the edge may be NaN. Crop one off each edge just in case.
+        left += 1; right -= 1; top -= 1; bottom += 1
         # Make sure no coordinates lie outside the array indices
         left = max([0, left])
         top = min([shape[0], top])
