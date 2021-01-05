@@ -307,5 +307,8 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
 
     def __del__(self):
         if self.file is not None:  # Make sure to release the file if it's still open.
-            self.file.close()
+            try:
+                self.file.close()
+            except:  # Sometimes when python is shutting down this causes an error. Doesn't matter though.
+                pass
 
