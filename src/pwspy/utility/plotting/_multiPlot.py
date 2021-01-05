@@ -25,7 +25,7 @@ from matplotlib.axes import Axes
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-
+import matplotlib.pyplot as plt
 from pwspy.utility.plotting._sharedWidgets import AnimationDlg
 
 

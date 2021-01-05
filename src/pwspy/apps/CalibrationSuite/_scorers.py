@@ -44,6 +44,7 @@ class XCorrScorer(Scorer):
         testData = (testData - testData.mean()) / (testData.std() * testData.size)
 
         corr = correlate(tempData, testData, mode='same')  # This would be faster if we did mode='valid', there would only be one value. But tiny alignment issues would result it us getting a lower correlation.
+        assert not np.any(np.isnan(corr)), "NaN values found in XCorrScorer"
         return float(corr.max())
 
 
@@ -51,14 +52,18 @@ class SSimScorer(Scorer):
     def score(self) -> float:
         tempData = self._template
         testData = self._test
-        return float(metrics.structural_similarity(tempData, testData))
+        score = float(metrics.structural_similarity(tempData, testData))
+        assert not np.isnan(score), "NaN value found in SSimScorer"
+        return score
 
 
 class MSEScorer(Scorer):
     def score(self) -> float:
         tempData = self._template
         testData = self._test
-        return metrics.mean_squared_error(tempData, testData)  # TODO we need a smarter way to convert this to a value between 0 and 1.
+        score = metrics.mean_squared_error(tempData, testData)  # TODO we need a smarter way to convert this to a value between 0 and 1.
+        assert not np.isnan(score), "NaN value found in MSEScorer"
+        return score
 
 
 class CombinedScorer(Scorer):

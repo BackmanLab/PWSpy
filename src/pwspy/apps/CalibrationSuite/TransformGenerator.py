@@ -1,3 +1,5 @@
+from __future__ import annotations
+import enum
 import time
 import typing
 
@@ -5,7 +7,7 @@ import numpy as np
 import logging
 
 from pwspy.analysis import pws as pwsAnalysis
-from pwspy.utility.machineVision import ORBRegisterTransform, SIFTRegisterTransform
+from pwspy.utility.machineVision import ORBRegisterTransform, SIFTRegisterTransform, crossCorrelateRegisterTranslation
 
 
 class TransformGenerator:
@@ -14,11 +16,18 @@ class TransformGenerator:
 
     Args:
         template: The PWS analysis results to be used as a template. We will try to find the transform that matches our data to this template.
-        fastMode: If `True` then used the ORB algorithm for feature matching rather than SIFT. This is much faster but may not be as reliable.
+        method: Selects which method to use for generating affine transformations between images.
         debugMode: If `True` then some plots will be opened to help with understanding the performance of the feature matcher.
     """
-    def __init__(self, template: pwsAnalysis.PWSAnalysisResults, fastMode: bool = False, debugMode: bool = False):
-        self._matcherFunc = ORBRegisterTransform if fastMode else SIFTRegisterTransform
+    def __init__(self, template: pwsAnalysis.PWSAnalysisResults, method: TransformGenerator.Method = None, debugMode: bool = False):
+        if method == TransformGenerator.Method.SIFT or method is None:
+            self._matcherFunc = SIFTRegisterTransform
+        elif method == TransformGenerator.Method.ORB:
+            self._matcherFunc = ORBRegisterTransform
+        elif method == TransformGenerator.Method.XCORR:
+            self._matcherFunc = crossCorrelateRegisterTranslation
+        else:
+            raise ValueError(f"TransformGenerator method {method} is not supported.")
         self._debugMode = debugMode
         self._template = template
         self._debugAnimationRef = None  # Just a reference used to keep the animation alive.
@@ -35,3 +44,8 @@ class TransformGenerator:
         trans, self._debugAnimationRef = self._matcherFunc(self._template.meanReflectance, [im.meanReflectance for im in ims], debugPlots=self._debugMode)
         logger.debug(f"Image matching took {time.time() - matchTime} seconds")
         return trans
+
+    class Method(enum.Enum):
+        SIFT = "Slow but generally more successful than ORB"
+        ORB = "Faster than SIFT and usually good enough"
+        XCORR = "Doesn't support rotation or scale changes, only translation. Very fast and accurate."

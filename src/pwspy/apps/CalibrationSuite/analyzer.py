@@ -26,7 +26,7 @@ class Analyzer:
     Args:
         loader: An object that loads the template and measurements from file.
     """
-    def __init__(self, loader: AbstractMeasurementLoader, useCached: bool = True, debugMode: bool = False, fastMode: bool = True):
+    def __init__(self, loader: AbstractMeasurementLoader, useCached: bool = True, debugMode: bool = False, method: TransformGenerator.Method = TransformGenerator.Method.XCORR):
         self._loader = loader
 
         logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ class Analyzer:
         else:
             needsProcessing = self._loader.measurements
 
-        self._matcher = TransformGenerator(loader.template.analysisResults, debugMode=debugMode, fastMode=fastMode)
+        self._matcher = TransformGenerator(loader.template.analysisResults, debugMode=debugMode, method=method)
         transforms = self._matcher.match([i.analysisResults for i in needsProcessing])
 
         transformedData = []
