@@ -482,6 +482,8 @@ class ERMetaData:
             A tuple containing: directory: The directory path, name: The name that the file was saved as.
         """
         directory, fileName = os.path.split(path)
+        if not fileName.endswith(cls.FILESUFFIX):
+            raise ValueError(f"The file name \"{fileName}\" is not recognized as a {cls.__name__} file. Should end with \"{cls.FILESUFFIX}\".")
         name = fileName.split(cls.FILESUFFIX)[0]
         return directory, name
 
