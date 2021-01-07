@@ -857,6 +857,7 @@ class AcqDir:
     def editNotes(self):
         """Create a `notes.txt` file if it doesn't already exists and open it in a text editor."""
         filepath = os.path.join(self.filePath, 'notes.txt')
+        filepath = os.path.normpath(filepath)  # Sometime there can be an error if we don't clean the file path like this.
         if not os.path.exists(filepath):
             with open(filepath, 'w') as f:
                 pass
