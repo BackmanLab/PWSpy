@@ -1,17 +1,14 @@
 from __future__ import annotations
-import json
 import logging
 import os
 import typing
-import cv2
-import numpy as np
 from pwspy import dataTypes as pwsdt
 from pwspy.analysis import pws as pwsAnalysis, AbstractHDFAnalysisResults
 from glob import glob
 
+from pwspy.apps.CalibrationSuite.fileTypes import TransformedData, ScoreResults
 from pwspy.dataTypes import AnalysisManager
 from pwspy.utility.misc import cached_property
-import math
 
 
 class ITOMeasurement(AnalysisManager):
@@ -71,105 +68,32 @@ class ITOMeasurement(AnalysisManager):
     def idTag(self) -> str:
         return self._itoAcq.pws.idTag.replace(':', '_') + '__' + self._refAcq.idTag.replace(':', '_') # We want this to be able to be used as a file name so sanitize the characters
 
-    def saveCalibrationResult(self, result: CalibrationResult, overwrite: bool = False):
-        if (result.templateIdTag in self.listCalibrationResults()) and (not overwrite):
+    def saveTransformedData(self, result: TransformedData, overwrite: bool = False):
+        if (result.templateIdTag in self.listTransformedData()) and (not overwrite):
             raise FileExistsError(f"A calibration result named {result.templateIdTag} already exists.")
         result.toHDF(self.filePath, result.templateIdTag, overwrite=overwrite)
 
-    def loadCalibrationResult(self, templateIdTag: str) -> CalibrationResult:
+    def loadTransformedData(self, templateIdTag: str) -> TransformedData:
         try:
-            return CalibrationResult.load(self.filePath, templateIdTag)
+            return TransformedData.load(self.filePath, templateIdTag)
         except OSError:
-            raise OSError(f"No CalibrationResult file found for template: {templateIdTag} for measurement: {self.name}")
+            raise OSError(f"No TransformedData file found for template: {templateIdTag} for measurement: {self.name}")
 
-    def listCalibrationResults(self) -> typing.Tuple[str]:
-        return tuple([CalibrationResult.fileName2Name(f) for f in glob(os.path.join(self.filePath, f'*{CalibrationResult.FileSuffix}'))])
+    def listTransformedData(self) -> typing.Tuple[str]:
+        return tuple([TransformedData.fileName2Name(f) for f in glob(os.path.join(self.filePath, f'*{TransformedData.FileSuffix}'))])
 
+    def saveScoreResults(self, result: ScoreResults, name: str, overwrite: bool = False):
+        if (name in self.listScoreResults()) and (not overwrite):
+            raise FileExistsError(f"A ScoreResults file named {name} already exists.")
+        result.toHDF(self.filePath, name, overwrite=overwrite)
 
-class TransformedData:
-    def __init__(self, affineTransform: np.ndarray, transformedData: np.ndarray):
-        self.affineTransform = affineTransform
-        self.data = transformedData
+    def loadScoreResults(self, name: str) -> ScoreResults:
+        try:
+            return ScoreResults.load(self.filePath, name)
+        except OSError:
+            raise OSError(f"No ScoreResults file found with name: {name} for measurement: {self.name}")
 
-    def getValidDataSlice(self) -> typing.Tuple[slice, slice]:
-        """Use the affine transformation from a calibration result to create a 2d slice that will select out only the valid parts of the data"""
-        shape = self.data.shape
-        origRect = np.array([[0, 0], [shape[1], 0], [shape[1], shape[0]], [0, shape[0]]]).astype(np.float32)  # Coordinates are in X,Y format rather than row, column
-        # Generate coordinates of corners of the original image after affine transformation.
-        tRect = cv2.transform(origRect[None, :, :], cv2.invertAffineTransform(self.affineTransform))[0, :, :]  # For some reason this needs to be 3d for opencv to work.
-        leftCoords = [tRect[0][0], tRect[3][0]]
-        topCoords = [tRect[2][1], tRect[3][1]]
-        rightCoords = [tRect[1][0], tRect[2][0]]
-        bottomCoords = [tRect[0][1], tRect[1][1]]
-        # Select the rectancle that fits entirely into the transformed corner coordinate set. That way all data is guaranteed to be valid.
-        left = math.ceil(max(leftCoords))
-        top = math.floor(min(topCoords))
-        right = math.floor(min(rightCoords))
-        bottom = math.ceil(max(bottomCoords))
-        # Depending on which interpolation method is used to cv2.warpAffine the image array one pixel at the edge may be NaN. Crop one off each edge just in case.
-        left += 1; right -= 1; top -= 1; bottom += 1
-        # Make sure no coordinates lie outside the array indices
-        left = max([0, left])
-        top = min([shape[0], top])
-        right = min([shape[1], right])
-        bottom = max([0, bottom])
-        slc = (slice(bottom, top), slice(left, right))  # A rectangular slice garaunteed to lie entirely inside the valid data aread, even if the transform has rotation.
-        return slc
-
-
-class CalibrationResult(AbstractHDFAnalysisResults):
-    """
-    Represents the results from a single calibration to a template data cube. Can be easily saved/loaded to and HDF file.
-    """
-
-    FileSuffix = "_calResult.h5"
-
-    @classmethod
-    def create(cls, templateIdTag: str, affineTransform: np.ndarray, transformedData: np.ndarray, scores: dict) -> CalibrationResult:  # Inherit docstring
-        d = {'templateIdTag': templateIdTag,
-             'affineTransform': affineTransform,
-             'transformedData': transformedData,
-             'scores': scores}
-        return cls(None, d)
-
-    def toHDF(self, directory: str, name: str, overwrite: bool = False):
-        """Overwrite super-implementation to default to compression of data. Cuts file size by more than half."""
-        super().toHDF(directory, name, overwrite=overwrite, compression='gzip')
-
-    @staticmethod
-    def fields() -> typing.Tuple[str, ...]:
-        return (
-            'templateIdTag',  # The `IdTag` of the ITOMeasurement that was used as the `template` for this calibration analysis
-            'affineTransform',  # A 2x3 matrix specifying the affine transformation between the template data and this data.
-            'transformedData',  # The data after having been warped by `afffineTransform` invalid regions of data will be marked as numpy.nan
-            'scores'  # A dictionary containing the various score outputs. TBD exactly what this contains.
-        )
-
-    @AbstractHDFAnalysisResults.FieldDecorator
-    def templateIdTag(self) -> str:
-        return bytes(self.file['templateIdTag']).decode()
-
-    @AbstractHDFAnalysisResults.FieldDecorator
-    def affineTransform(self) -> np.ndarray:
-        return np.array(self.file['affineTransform'])
-
-    @AbstractHDFAnalysisResults.FieldDecorator
-    def transformedData(self) -> np.ndarray:
-        return np.array(self.file['transformedData'])
-
-    @AbstractHDFAnalysisResults.FieldDecorator
-    def scores(self) -> dict:
-        return json.loads(bytes(np.array(self.file['scores'])).decode())
-
-    @staticmethod
-    def name2FileName(name: str) -> str:
-        return f"{name}{CalibrationResult.FileSuffix}"
-
-    @staticmethod
-    def fileName2Name(fileName: str) -> str:
-        """Provided with the full path to and HDF file containing results this function returns the 'name' used to save the file."""
-        if not fileName.endswith(CalibrationResult.FileSuffix):
-            raise NameError(f"{fileName} is not recognized as a calibration results file.")
-        return os.path.basename(fileName)[:-len(CalibrationResult.FileSuffix)]
+    def listScoreResults(self) -> typing.Tuple[str]:
+        return tuple([ScoreResults.fileName2Name(f) for f in glob(os.path.join(self.filePath, f'*{ScoreResults.FileSuffix}'))])
 
 

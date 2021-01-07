@@ -16,6 +16,7 @@
 # along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
 
 """
+This module contains Abstract classes used to define the methods that should be implemented by various objects that are central to the PWSAnalysisApp.
 
 @author: Nick Anthony
 """

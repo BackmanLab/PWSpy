@@ -5,23 +5,75 @@ Created on Mon Oct 26 16:44:06 2020
 @author: nick
 """
 import cv2
-from pwspy.apps.CalibrationSuite.ITOMeasurement import ITOMeasurement, TransformedData
+from pwspy.apps.CalibrationSuite.ITOMeasurement import ITOMeasurement
 from pwspy.apps.CalibrationSuite.TransformGenerator import TransformGenerator
-from pwspy.apps.CalibrationSuite._utility import CVAffineTransform, CubeSplitter, DualCubeSplitter
 from pwspy.utility.reflection import Material
-import logging
 from scipy.ndimage import binary_dilation
 from ._scorers import *
+from ._utility import CVAffineTransform
+from .fileTypes import ScoreResults, TransformedData
 from .loaders import settings, AbstractMeasurementLoader
-from pwspy.utility.plotting import PlotNd
+from pwspy.utility.plotting import MultiPlot
 import matplotlib.pyplot as plt
+import pwspy.dataTypes as pwsdt
 
 settings.referenceMaterial = Material.Air
+logger = logging.getLogger(__name__)
+
+class TransformedDataScorer:
+    """This class uses a template measurement to analyze a series of other measurements and give them scores for how well they match to the template."""
+
+    def __init__(self, loader: AbstractMeasurementLoader, scoreName: str, debugMode: bool = False, blurSigma: float = None):
+        # Scoring the bulk arrays
+        templateArr: np.ndarray = (loader.template.analysisResults.reflectance + loader.template.analysisResults.meanReflectance[:, :, None]).data
+        if blurSigma is not None:
+            templateArr = self._blur3dDataLaterally(templateArr, blurSigma)
+        for measurement in loader.measurements:
+            logger.debug(f"Scoring measurement {measurement.name}")
+            tData = measurement.loadTransformedData(loader.template.idTag)
+            slc = tData.getValidDataSlice()
+            templateSubArr = templateArr[slc]
+            testArr = tData.transformedData[slc]
+            if blurSigma is not None:
+                testArr = self._blur3dDataLaterally(testArr, blurSigma)
+            scorer = CombinedScorer(templateSubArr, testArr)
+            scoreResult = ScoreResults.create(scores=scorer._scores,
+                                              transformedDataIdTag=tData.idTag)
+            measurement.saveScoreResults(scoreResult, scoreName)
+            if debugMode:
+                fig = plt.figure()
+                artists = [
+                    [plt.imshow(templateSubArr.mean(axis=2), cmap='gray'),
+                     plt.text(10, 10, 'Template', color='red')],
+                    [plt.imshow(testArr.mean(axis=2), cmap='gray'),
+                     plt.text(10, 10, 'Test', color='red')]
+                ]
+                mp = MultiPlot(artists, f'{measurement.name} {scorer._scores}')
+                mp.show()
+
+    @staticmethod
+    def _blur3dDataLaterally(data: np.ndarray, sigma: float) -> np.ndarray:
+        """
+        Blur a 3D array along the first and second dimension.
+        Args:
+            data: A 3d numpy array
+            sigma: The width of the gaussian kernel used for blurring. In units of pixels.
+
+        Returns:
+            The blurred data.
+        """
+        from scipy import ndimage
+        newData = np.zeros_like(data)
+        for i in range(data.shape[2]):
+            newData[:, :, i] = ndimage.filters.gaussian_filter(data[:, :, i], sigma, mode='reflect')
+        return newData
 
 
-class Analyzer:
+class TransformedDataSaver:
     """
-    This class uses a template measurement to analyze a series of other measurements and give them scores for how well they match to the template.
+    This class uses a template measurement to identify the affine transformation between the template data and the test data. The test data is
+    aligned to the template and saved to an HDF file.
+
 
     Args:
         loader: An object that loads the template and measurements from file.
@@ -29,17 +81,15 @@ class Analyzer:
     def __init__(self, loader: AbstractMeasurementLoader, useCached: bool = True, debugMode: bool = False, method: TransformGenerator.Method = TransformGenerator.Method.XCORR):
         self._loader = loader
 
-        logger = logging.getLogger(__name__)
-
         resultPairs = []
         if useCached:
             needsProcessing = []
             for m in self._loader.measurements:
-                if self._loader.template.idTag in m.listCalibrationResults():
+                if self._loader.template.idTag in m.listTransformedData():
                     logger.debug(f"Loading cached results for {m.name}")
-                    result = m.loadCalibrationResult(self._loader.template.idTag)
+                    result = m.loadTransformedData(self._loader.template.idTag)
                     resultPairs.append((m, result))
-                else:
+                else:  # No cached result was found. Add the measurement to the `needProcessing` list
                     needsProcessing.append(m)
         else:
             needsProcessing = self._loader.measurements
@@ -54,51 +104,8 @@ class Analyzer:
             else:
                 transformedData.append(self._transformData(measurement, transform))
 
-        # Scoring the bulk arrays
-        for measurement, data in zip(needsProcessing, transformedData):
-            logger.debug(f"Scoring measurement {measurement.name}")
-            slc = data.getValidDataSlice()
-            templateArr = (loader.template.analysisResults.reflectance + loader.template.analysisResults.meanReflectance[:, :, None])[slc]
-            testArr = data.data[slc]
-            scorer = CombinedScorer(templateArr, testArr)
-            result = CalibrationResult.create(
-                templateIdTag=loader.template.idTag,
-                affineTransform=data.affineTransform,
-                transformedData=data.data,
-                scores=scorer._scores
-            )
-            measurement.saveCalibrationResult(result, overwrite=True)
-        a = 1
-
-        # Use the cube splitter to view scores at a smaller scale
-        # idx = 1
-        # slc = self.resultPairs[idx][1].getValidDataSlice()
-        # arr1 = self.resultPairs[idx][1].transformedData[slc]
-        # arr2 = self._loader.template.analysisResults.reflectance.data + self._loader.template.analysisResults.meanReflectance[:, :, None]
-        # arr2 = arr2[slc]
-        # c = DualCubeSplitter(arr2, arr1)
-        # def score(arr1, arr2):
-        #     comb = MSEScorer(arr1, arr2)
-        #     return comb.score()
-        # for factor in range(1, 5):
-        #     out = c.apply(score, factor)
-        #     plt.figure()
-        #     plt.imshow(out, cmap='gray')
-        #     plt.colorbar()
-        # a = 1
-
-        # View the full SSIM result array
-        # idx = 0
-        # slc = self.resultPairs[idx][1].getValidDataSlice()
-        # arr1 = self.resultPairs[idx][1].transformedData[slc]
-        # arr2 = self._loader.template.analysisResults.reflectance.data + self._loader.template.analysisResults.meanReflectance[:, :, None]
-        # arr2 = arr2[slc]
-        # from skimage.metrics import structural_similarity
-        # score, full = structural_similarity(arr2, arr1, full=True)
-        # p = PlotNd(full)
-        # a = 1
-        # for measurement, result in self.resultPairs:
-        #     logger.debug(f"Scoring SubArrays of {measurement.name}")
+        for measurement, tData in zip(needsProcessing, transformedData):
+            measurement.saveTransformedData(tData, overwrite=True)
 
     def _transformData(self, measurement: ITOMeasurement, transform: np.ndarray) -> TransformedData:
         """
@@ -110,17 +117,26 @@ class Analyzer:
         Returns:
             A transformeddata object
         """
-        # Refine transform, set scale=1 and rotation=0, we only expect to have translation.  TODO Maybe we shouldn't be coercing rotation?
+        # transform = self._coerceAffineTransform(transform)
+        reflectance = self._applyTransform(transform, measurement)
+        return TransformedData.create(templateIdTag=self._loader.template.idTag,
+                                      affineTransform=transform,
+                                      transformedData=reflectance,
+                                      methodName=self._matcher.getMethodName())
+
+    @staticmethod
+    def _coerceAffineTransform(transform: np.ndarray):
+        """This is not currently used but it used to be, keeping it around just in case. Given a 2x3 affine transform the transform will have its scale set
+        to 1 and its rotation set to 0, leaving only translation."""
         transform = CVAffineTransform.fromPartialMatrix(transform)
         assert abs(transform.scale[0]-1) < .005, f"The estimated transform includes a scaling factor of {abs(transform.scale[0]-1)*100} percent!"
         assert np.abs(np.rad2deg(transform.rotation)) < .2, f"The estimated transform includes a rotation of {np.rad2deg(transform.rotation)} degrees!"
         transform = CVAffineTransform(scale=1, rotation=0, shear=0, translation=transform.translation)  # Coerce scale and rotation
         transform = transform.toPartialMatrix()
-        reflectance = self._applyTransform(transform, measurement)
-        return TransformedData(transform, reflectance)
+        return transform
 
     @staticmethod
-    def _applyTransform(transform, measurement):
+    def _applyTransform(transform: np.ndarray, measurement: ITOMeasurement):
         logger = logging.getLogger(__name__)
         logger.debug(f"Starting data transformation of {measurement.name}")
         im = measurement.analysisResults.meanReflectance
@@ -137,4 +153,8 @@ class Analyzer:
         return reflectance
 
 
-
+class Analyzer:
+    def __init__(self, loader: AbstractMeasurementLoader, useCached: bool = True, debugMode: bool = False,
+                 method: TransformGenerator.Method = TransformGenerator.Method.XCORR, blurSigma: float = None):
+        self.transformer = TransformedDataSaver(loader, useCached, debugMode, method)
+        self.scorer = TransformedDataScorer(loader, 'score', debugMode, blurSigma)

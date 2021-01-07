@@ -47,3 +47,33 @@ class Reviewer:
         fig.suptitle("Displacement vs. Score")
         for s in ['mse', 'ssim', 'xcorr']:
             ax.scatter(df.displacement, df[s], label=s)
+
+        # Use the cube splitter to view scores at a smaller scale
+        # idx = 1
+        # slc = self.resultPairs[idx][1].getValidDataSlice()
+        # arr1 = self.resultPairs[idx][1].transformedData[slc]
+        # arr2 = self._loader.template.analysisResults.reflectance.data + self._loader.template.analysisResults.meanReflectance[:, :, None]
+        # arr2 = arr2[slc]
+        # c = DualCubeSplitter(arr2, arr1)
+        # def score(arr1, arr2):
+        #     comb = MSEScorer(arr1, arr2)
+        #     return comb.score()
+        # for factor in range(1, 5):
+        #     out = c.apply(score, factor)
+        #     plt.figure()
+        #     plt.imshow(out, cmap='gray')
+        #     plt.colorbar()
+        # a = 1
+
+        # View the full SSIM result array
+        # idx = 0
+        # slc = self.resultPairs[idx][1].getValidDataSlice()
+        # arr1 = self.resultPairs[idx][1].transformedData[slc]
+        # arr2 = self._loader.template.analysisResults.reflectance.data + self._loader.template.analysisResults.meanReflectance[:, :, None]
+        # arr2 = arr2[slc]
+        # from skimage.metrics import structural_similarity
+        # score, full = structural_similarity(arr2, arr1, full=True)
+        # p = PlotNd(full)
+        # a = 1
+        # for measurement, result in self.resultPairs:
+        #     logger.debug(f"Scoring SubArrays of {measurement.name}")

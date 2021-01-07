@@ -28,9 +28,13 @@ class TransformGenerator:
             self._matcherFunc = crossCorrelateRegisterTranslation
         else:
             raise ValueError(f"TransformGenerator method {method} is not supported.")
+        self._method = method
         self._debugMode = debugMode
         self._template = template
         self._debugAnimationRef = None  # Just a reference used to keep the animation alive.
+
+    def getMethodName(self) -> str:
+        return self._method.name
 
     def match(self, ims: typing.Iterable[pwsAnalysis.PWSAnalysisResults]) -> typing.Iterable[np.ndarray]:
         """Run feature matching on a set of data.

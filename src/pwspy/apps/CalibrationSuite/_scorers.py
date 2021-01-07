@@ -1,13 +1,13 @@
 import abc
+import logging
 import typing
 
 import numpy as np
 from scipy.signal import correlate
 from skimage import measure, metrics
 
-from pwspy.analysis.pws import PWSAnalysisResults
-from pwspy.apps.CalibrationSuite.ITOMeasurement import CalibrationResult
 from pwspy.utility.misc import cached_property
+from time import time
 
 
 class Scorer(abc.ABC):
@@ -77,10 +77,20 @@ class CombinedScorer(Scorer):
     def _scores(self) -> typing.Dict[str, float]:
         """A dictionary containing the score for each scorer contained.
         This is only executed once for each instance of this class, then the cached value is used."""
+        logger = logging.getLogger(__name__)
+        t = time()
+        mse = self._mse.score()
+        logger.debug(f"MSE score took {time() - t}")
+        t = time()
+        ssim = self._ssim.score()
+        logger.debug(f"SSIM score took {time() - t}")
+        t = time()
+        xcorr = self._corr.score()
+        logger.debug(f"XCORR score took {time() - t}")
         return dict(
-            mse=self._mse.score(),
-            ssim=self._ssim.score(),
-            xcorr=self._corr.score()
+            mse=mse,
+            ssim=ssim,
+            xcorr=xcorr
         )
 
     def score(self) -> float:
