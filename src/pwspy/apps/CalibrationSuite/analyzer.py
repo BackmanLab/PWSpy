@@ -37,9 +37,8 @@ class TransformedDataScorer:
             if blurSigma is not None:
                 testArr = self._blur3dDataLaterally(testArr, blurSigma)
             scorer = CombinedScorer(templateSubArr, testArr)
-            scoreResult = ScoreResults.create(scores=scorer._scores,
-                                              transformedDataIdTag=tData.idTag)
-            measurement.saveScoreResults(scoreResult, scoreName)
+            scoreResult = ScoreResults(scorer._scores)
+            tData.addScore(scoreName, scoreResult)
             if debugMode:
                 fig = plt.figure()
                 artists = [

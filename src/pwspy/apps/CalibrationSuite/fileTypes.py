@@ -97,38 +97,35 @@ class TransformedData(AbstractHDFAnalysisResults):
         """Override super-implementation to default to gzip compression of data. Cuts file size by more than half."""
         super().toHDF(directory, name, overwrite=overwrite, compression=compression)
 
+    def addScore(self, name: str, scores: ScoreResults):
+        if self.file is None:
+            raise ValueError("Cannot save score to TransformedData that is not yet saved to file")
+        if 'scores' not in self.file:
+            self.file.create_group('scores')
+        self.file['scores'].create_dataset(name, data=np.string_(scores.toJson()))
 
-class ScoreResults(AbstractHDFAnalysisResults):
-    FileSuffix = "_calibrationScore.h5"
+    def getScore(self, name: str) -> ScoreResults:
+        if self.file is None:
+            raise ValueError("Cannot load scores from TransformedData that is not yet saved to file")
+        if 'scores' not in self.file:
+            raise KeyError(f"No score named {name}")
+        return ScoreResults.fromJson(bytes(self.file[name][()]).decode())
+
+    def listScore(self) -> typing.Tuple[str, ...]:
+        if self.file is None:
+            raise ValueError("Cannot load scores from TransformedData that is not yet saved to file")
+        if 'scores' not in self.file:
+            return tuple()
+        return tuple(self.file['scores'].keys())
+
+
+class ScoreResults:
+    def __init__(self, scoresDict: dict):
+        self._d = scoresDict
 
     @classmethod
-    def create(cls, scores: dict, transformedDataIdTag: str) -> ScoreResults:  # Inherit docstring
-        d = {'scores': scores,
-             'transformedDataIdTag': transformedDataIdTag}
-        return cls(None, d)
+    def fromJson(cls, jsonStr: str):
+        return cls(json.loads(jsonStr))
 
-    @staticmethod
-    def fields() -> typing.Tuple[str, ...]:
-        return (
-            'scores',
-            'transformedDataIdTag'
-        )
-
-    @staticmethod
-    def name2FileName(name: str) -> str:
-        return f"{name}{ScoreResults.FileSuffix}"
-
-    @staticmethod
-    def fileName2Name(fileName: str) -> str:
-        """Provided with the full path to and HDF file containing results this function returns the 'name' used to save the file."""
-        if not fileName.endswith(ScoreResults.FileSuffix):
-            raise NameError(f"{fileName} is not recognized as a ScoreResults file.")
-        return os.path.basename(fileName)[:-len(ScoreResults.FileSuffix)]
-
-    @AbstractHDFAnalysisResults.FieldDecorator
-    def scores(self) -> dict:
-        return json.loads(bytes(np.array(self.file['scores'])).decode())
-
-    @AbstractHDFAnalysisResults.FieldDecorator
-    def transformedDataIdTag(self) -> str:
-        return bytes(np.array(self.file['transformeDataIdTag'])).decode()
+    def toJson(self) -> str:
+        return json.dumps(self._d)
