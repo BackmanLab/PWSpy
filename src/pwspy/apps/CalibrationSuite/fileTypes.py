@@ -5,6 +5,7 @@ import os
 import typing
 from datetime import datetime
 import cv2
+import h5py
 import numpy as np
 from pwspy import dateTimeFormat
 from pwspy.analysis import AbstractHDFAnalysisResults
@@ -117,6 +118,23 @@ class TransformedData(AbstractHDFAnalysisResults):
         if 'scores' not in self.file:
             return tuple()
         return tuple(self.file['scores'].keys())
+
+    @classmethod
+    def load(cls, directory: str, name: str) -> AbstractHDFAnalysisResults:
+        """Load an analyis results object from an HDF5 file located in `directory`. We override the base class method so we can open the file as 'a' mode instead of 'r' so we can add scored to the file as we go.
+
+        Args:
+            directory: The path to the folder containing the file.
+            name: The name of the analysis.
+        Returns:
+            A new instance of analysis results loaded from file.
+        """
+        import os.path as osp
+        filePath = osp.join(directory, cls.name2FileName(name))
+        if not osp.exists(filePath):
+            raise OSError(f"The {cls.__name__} analysis file does not exist. {filePath}")
+        file = h5py.File(filePath, 'a')
+        return cls(file, None, name)
 
 
 class ScoreResults:

@@ -20,6 +20,7 @@ import pwspy.dataTypes as pwsdt
 settings.referenceMaterial = Material.Air
 logger = logging.getLogger(__name__)
 
+
 class TransformedDataScorer:
     """This class uses a template measurement to analyze a series of other measurements and give them scores for how well they match to the template."""
 
