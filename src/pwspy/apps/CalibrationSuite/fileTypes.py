@@ -110,7 +110,7 @@ class TransformedData(AbstractHDFAnalysisResults):
             raise ValueError("Cannot load scores from TransformedData that is not yet saved to file")
         if 'scores' not in self.file:
             raise KeyError(f"No score named {name}")
-        return ScoreResults.fromJson(bytes(self.file[name][()]).decode())
+        return ScoreResults.fromJson(bytes(self.file['scores'][name][()]).decode())
 
     def listScore(self) -> typing.Tuple[str, ...]:
         if self.file is None:
@@ -139,11 +139,11 @@ class TransformedData(AbstractHDFAnalysisResults):
 
 class ScoreResults:
     def __init__(self, scoresDict: dict):
-        self._d = scoresDict
+        self.scores = scoresDict
 
     @classmethod
     def fromJson(cls, jsonStr: str):
         return cls(json.loads(jsonStr))
 
     def toJson(self) -> str:
-        return json.dumps(self._d)
+        return json.dumps(self.scores)

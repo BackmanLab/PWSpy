@@ -1,11 +1,9 @@
 import abc
 import logging
 import typing
-
 import numpy as np
 from scipy.signal import correlate
-from skimage import measure, metrics
-
+from skimage import metrics
 from pwspy.utility.misc import cached_property
 from time import time
 

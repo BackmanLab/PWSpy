@@ -66,11 +66,11 @@ def configureLogger():
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
+    import experimentInfo
     plt.ion()
-    wdir = r'\\backmanlabnas.myqnapcloud.com\home\Year3\ITOPositionStability\ITOCalibrationSensitivity'
     logger = configureLogger()
     measurementSet = 'xcorr_blurScan'
-    loader = Loader(wdir, measurementSet)
+    loader = Loader(experimentInfo.workingDirectory, measurementSet)
     transformer = TransformedDataSaver(loader, useCached=True, debugMode=True, method=TransformGenerator.Method.XCORR)
     for blur in list(range(1, 20)) + [None]:
         print(f"Starting blur {blur}")

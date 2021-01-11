@@ -6,12 +6,12 @@ import numpy as np
 
 
 class Reviewer:
-    def __init__(self, loader: AbstractMeasurementLoader):
+    def __init__(self, loader: AbstractMeasurementLoader, scoreName: str):
         self._loader = loader
         results = []
         for i in loader.measurements:
             try:
-                result = i.loadCalibrationResult(loader.template.idTag)
+                result = i.loadTransformedData(loader.template.idTag)
             except OSError:
                 result = None  # Calibration must have failed. wasn't saved.
             results.append(result)
@@ -21,7 +21,7 @@ class Reviewer:
         for result, measurement in zip(results, loader.measurements):
             if result is None:
                 continue
-            scores = result.scores
+            scores = result.getScore(scoreName).scores
             displacement = CVAffineTransform.fromPartialMatrix(result.affineTransform).translation
             displacement = np.sqrt(displacement[0]**2 + displacement[1]**2)
             l.append({**scores, 'displacement': displacement, 'name': measurement.name, 'measurement': measurement, 'result': result})
