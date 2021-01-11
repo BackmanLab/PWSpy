@@ -39,6 +39,8 @@ from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
 from typing import List
 import typing
 
+logger = logging.getLogger(__name__)
+
 
 class PWSApp(QApplication): #TODO add a scriptable interface to load files, open roi window, run analysis etc.
     def __init__(self, args):
@@ -46,8 +48,11 @@ class PWSApp(QApplication): #TODO add a scriptable interface to load files, open
         self.setApplicationName(f"PWS Analysis v{version.split('-')[0]}")
         splash = QSplashScreen(QPixmap(os.path.join(resources, 'pwsLogo.png')))
         splash.show()
+        logger.debug("Initialize ERManager")
         self.ERManager = ERManager(applicationVars.extraReflectionDirectory)
+        logger.debug("Finish constructing ERManager")
         self.window = PWSWindow(self.ERManager)
+        logger.debug("Finish constructing window")
         splash.finish(self.window)
         self.anMan = AnalysisManager(self)
         self.window.runAction.connect(self.anMan.runList)
@@ -58,7 +63,6 @@ class PWSApp(QApplication): #TODO add a scriptable interface to load files, open
             self.parallelProcessing = False  # Determines if analysis and compilation should be run in parallel or not.
         self.window.parallelAction.setChecked(self.parallelProcessing)
         self.window.parallelAction.toggled.connect(lambda checked: setattr(self, 'parallelProcessing', checked))
-        logger = logging.getLogger(__name__)
         logger.info(f"Initializing with useParallel set to {self.parallelProcessing}.")
         self.anMan.analysisDone.connect(lambda name, settings, warningList: AnalysisSummaryDisplay(self.window, warningList, name, settings))
         self.window.fileDialog.directoryChanged.connect(self.changeDirectory)

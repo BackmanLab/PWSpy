@@ -53,11 +53,22 @@ def _setupDataDirectories():
 
 def main():
     import sys
+    import getopt
+
+    debugMode = False
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], '', ['debug'])
+        optNames, optVals = zip(*opts)
+        if '--debug' in optNames:
+            debugMode = True
+    except getopt.GetoptError as e:
+        print(e)
+        sys.exit(1)
 
     def isIpython():
         try:
-            return __IPYTHON__
-        except:
+            return __IPYTHON__  # Only defined if we are running within ipython
+        except NameError:
             return False
 
     _setupDataDirectories()  # this must happen before the logger can be instantiated
@@ -71,11 +82,16 @@ def main():
         sys.exit(1)
     sys.excepthook = exception_hook
 
-    logger.setLevel(logging.DEBUG)
     logger.addHandler(logging.StreamHandler(sys.stdout))
     fHandler = logging.FileHandler(os.path.join(applicationVars.dataDirectory, f'log{datetime.now().strftime("%d%m%Y%H%M%S")}.txt'))
     fHandler.setFormatter(logging.Formatter('%(levelname)s: %(asctime)s %(name)s.%(funcName)s(%(lineno)d) - %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
     logger.addHandler(fHandler)
+    if debugMode:
+        logger.setLevel(logging.DEBUG)
+        logger.info("Logger set to debug mode.")
+    else:
+        logger.setLevel(logging.INFO)
+        
     try:
         os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"  # TODO replace these options with proper high dpi handling. no pixel specific widths.
         QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
