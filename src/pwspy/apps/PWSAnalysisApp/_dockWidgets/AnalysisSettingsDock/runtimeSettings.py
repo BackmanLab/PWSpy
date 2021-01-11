@@ -5,7 +5,7 @@ import typing
 from pwspy.analysis import AbstractAnalysisSettings
 from pwspy.analysis.dynamics import DynamicsAnalysisSettings
 from pwspy.analysis.pws import PWSAnalysisSettings
-from pwspy.dataTypes import AnalysisManagerMetaDataBase
+from pwspy.dataTypes import MetaDataBase
 
 
 class AbstractRuntimeAnalysisSettings(ABC):
@@ -33,7 +33,7 @@ class AbstractRuntimeAnalysisSettings(ABC):
         pass
 
     @abstractmethod
-    def getReferenceMetadata(self) -> AnalysisManagerMetaDataBase:
+    def getReferenceMetadata(self) -> MetaDataBase:
         """
 
         Returns:
@@ -42,7 +42,7 @@ class AbstractRuntimeAnalysisSettings(ABC):
         pass
 
     @abstractmethod
-    def getCellMetadatas(self) -> typing.Sequence[AnalysisManagerMetaDataBase]:
+    def getCellMetadatas(self) -> typing.Sequence[MetaDataBase]:
         """
 
         Returns:

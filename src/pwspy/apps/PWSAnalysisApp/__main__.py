@@ -60,16 +60,17 @@ def main():
         except:
             return False
 
+    _setupDataDirectories()  # this must happen before the logger can be instantiated
+    logger = logging.getLogger('pwspy')  # We use the root logger of the pwspy module so that all loggers in pwspy will be captured.
+
     # This prevents errors from happening silently. Found on stack overflow.
     sys.excepthook_backup = sys.excepthook
     def exception_hook(exctype, value, traceBack):
-        print(exctype, value, traceBack)
-        sys.excepthook_backup(exctype, value, traceBack)
+        logger.exception("Unhandled Exception! :", exc_info=value, stack_info=True)
+        sys.excepthook_backup(exctype, value, traceBack)  # Run the rror through the default exception hook
         sys.exit(1)
     sys.excepthook = exception_hook
 
-    _setupDataDirectories() # this must happen before the logger can be instantiated
-    logger = logging.getLogger('pwspy') # We use the root logger of the pwspy module so that all loggers in pwspy will be captured.
     logger.setLevel(logging.DEBUG)
     logger.addHandler(logging.StreamHandler(sys.stdout))
     fHandler = logging.FileHandler(os.path.join(applicationVars.dataDirectory, f'log{datetime.now().strftime("%d%m%Y%H%M%S")}.txt'))
