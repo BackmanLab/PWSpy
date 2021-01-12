@@ -16,57 +16,91 @@ from .loaders import settings, AbstractMeasurementLoader
 from pwspy.utility.plotting import MultiPlot
 import matplotlib.pyplot as plt
 import pwspy.dataTypes as pwsdt
+import multiprocessing as mp
+from pwspy.utility.fileIO import processParallel
+import pandas as pd
 
 settings.referenceMaterial = Material.Air
-logger = logging.getLogger(__name__)
+
+
+def _blur3dDataLaterally(data: np.ndarray, sigma: float) -> np.ndarray:
+    """
+    Blur a 3D array along the first and second dimension.
+    Args:
+        data: A 3d numpy array
+        sigma: The width of the gaussian kernel used for blurring. In units of pixels.
+
+    Returns:
+        The blurred data.
+    """
+    from scipy import ndimage
+    newData = np.zeros_like(data)
+    for i in range(data.shape[2]):
+        newData[:, :, i] = ndimage.filters.gaussian_filter(data[:, :, i], sigma, mode='reflect')
+    return newData
+
+
+def _score(measurement: ITOMeasurement, scoreName: str, blurSigma: float, templateIdTag: str, templateArr: np.ndarray, lock: mp.Lock = None):
+    logger = logging.getLogger(__name__)
+    logger.debug(f"Scoring measurement {measurement.name}")
+    tData = measurement.loadTransformedData(templateIdTag=templateIdTag)
+    slc = tData.getValidDataSlice()
+    templateSubArr = templateArr[slc]
+    testArr = tData.transformedData[slc]
+    if blurSigma is not None:
+        testArr = _blur3dDataLaterally(testArr, blurSigma)
+    scorer = CombinedScorer(templateSubArr, testArr)
+    scoreResult = ScoreResults(scorer._scores)
+    if lock is not None: lock.acquire()
+    try:
+        tData.addScore(scoreName, scoreResult)
+    finally:
+        if lock is not None: lock.release()
+
+
+def parallelInit(lck: mp.Lock, templateArr: np.ndarray):
+    global _lock
+    _lock = lck
+    global _templateArr
+    _templateArr = templateArr
+
+
+def parallelScoreWrapper(row, args):
+    i, row = row
+    mp.get_logger().warning(f"Scoring measurement {row.measurement.name}")  # We use warning since the `info` level already has a log of unwanted messages.
+    _score(row.measurement, *args, templateArr=_templateArr, lock=_lock)
+
+
+def createSharedArray(array: np.ndarray) -> np.ndarray:
+    import ctypes
+    assert array.dtype == np.float32
+    sharedArr = mp.RawArray(ctypes.c_float, array.size)
+    npSharedArr = np.frombuffer(sharedArr, dtype=array.dtype).reshape(array.shape)
+    np.copyto(npSharedArr, array)
+    return npSharedArr
 
 
 class TransformedDataScorer:
     """This class uses a template measurement to analyze a series of other measurements and give them scores for how well they match to the template."""
 
-    def __init__(self, loader: AbstractMeasurementLoader, scoreName: str, debugMode: bool = False, blurSigma: float = None):
+    def __init__(self, loader: AbstractMeasurementLoader, scoreName: str, debugMode: bool = False, blurSigma: float = None, parallel: bool = False):
         # Scoring the bulk arrays
         templateArr: np.ndarray = (loader.template.analysisResults.reflectance + loader.template.analysisResults.meanReflectance[:, :, None]).data
         if blurSigma is not None:
-            templateArr = self._blur3dDataLaterally(templateArr, blurSigma)
-        for measurement in loader.measurements:
-            logger.debug(f"Scoring measurement {measurement.name}")
-            tData = measurement.loadTransformedData(loader.template.idTag)
-            slc = tData.getValidDataSlice()
-            templateSubArr = templateArr[slc]
-            testArr = tData.transformedData[slc]
-            if blurSigma is not None:
-                testArr = self._blur3dDataLaterally(testArr, blurSigma)
-            scorer = CombinedScorer(templateSubArr, testArr)
-            scoreResult = ScoreResults(scorer._scores)
-            tData.addScore(scoreName, scoreResult)
-            if debugMode:
-                fig = plt.figure()
-                artists = [
-                    [plt.imshow(templateSubArr.mean(axis=2), cmap='gray'),
-                     plt.text(10, 10, 'Template', color='red')],
-                    [plt.imshow(testArr.mean(axis=2), cmap='gray'),
-                     plt.text(10, 10, 'Test', color='red')]
-                ]
-                mp = MultiPlot(artists, f'{measurement.name} {scorer._scores}')
-                mp.show()
+            templateArr = _blur3dDataLaterally(templateArr, blurSigma)
+        df = pd.DataFrame({"measurement": loader.measurements})
 
-    @staticmethod
-    def _blur3dDataLaterally(data: np.ndarray, sigma: float) -> np.ndarray:
-        """
-        Blur a 3D array along the first and second dimension.
-        Args:
-            data: A 3d numpy array
-            sigma: The width of the gaussian kernel used for blurring. In units of pixels.
-
-        Returns:
-            The blurred data.
-        """
-        from scipy import ndimage
-        newData = np.zeros_like(data)
-        for i in range(data.shape[2]):
-            newData[:, :, i] = ndimage.filters.gaussian_filter(data[:, :, i], sigma, mode='reflect')
-        return newData
+        if parallel:
+            # m = mp.Manager()
+            mplogger = mp.get_logger()
+            mplogger.setLevel(logging.WARNING)
+            lock = mp.Lock()
+            sharedArr = createSharedArray(templateArr)
+            out = processParallel(df, parallelScoreWrapper, procArgs=(scoreName, blurSigma, loader.template.idTag),
+                                  initializer=parallelInit, initArgs=(lock, sharedArr), numProcesses=1)
+        else:
+            procArgs = (scoreName, blurSigma, loader.template.idTag, templateArr)
+            out = df.apply(lambda row: _score(row.measurement, *procArgs), axis=1)
 
 
 class TransformedDataSaver:
@@ -80,6 +114,7 @@ class TransformedDataSaver:
     """
     def __init__(self, loader: AbstractMeasurementLoader, useCached: bool = True, debugMode: bool = False, method: TransformGenerator.Method = TransformGenerator.Method.XCORR):
         self._loader = loader
+        logger = logging.getLogger(__name__)
 
         resultPairs = []
         if useCached:
