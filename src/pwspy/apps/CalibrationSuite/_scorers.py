@@ -2,7 +2,7 @@ import abc
 import logging
 import typing
 import numpy as np
-from scipy.signal import correlate
+import scipy.signal as sps
 from skimage import metrics
 from pwspy.utility.misc import cached_property
 from time import time
@@ -39,9 +39,18 @@ class XCorrScorer(Scorer):
         testData = self._test
         # Normalize Data. Correlation will pad with 0s so make sure the mean of the data is 0
         tempData = (tempData - tempData.mean()) / tempData.std()
-        testData = (testData - testData.mean()) / (testData.std() * testData.size)
+        testData = (testData - testData.mean()) / (testData.std() * testData.size)  # The division by testData.size here gives us a final xcorrelation that maxes out at 1.
 
-        corr = correlate(tempData, testData, mode='same')  # This would be faster if we did mode='valid', there would only be one value. But tiny alignment issues would result it us getting a lower correlation.
+        #Using mode='same' takes too much memory and too much time, but we still want to be aable to examing how the xcorrelation is shifted from 0.
+        #We manually pad one array with zeros and use mode='valid' to manually select how far out to calculate the xcorrelation
+        padding = (5, 5, 10)  # ypad, xpad, zpad, padding of this length will be added on each size of each axis. The final shape of the correlation output will be 2 * n + 1
+        padding = tuple((i, i) for i in padding)# Translate the padding tuple to a form understood by numpy
+        tempData = np.pad(tempData, padding)  # 0 padding.
+        import time
+        stime = time.time()
+        corr = sps.correlate(tempData, testData, mode='valid')  # This would be faster if we did mode='valid', there would only be one value. But tiny alignment issues would result it us getting a lower correlation.
+        ftime = time.time() - stime
+        print(ftime)
         assert not np.any(np.isnan(corr)), "NaN values found in XCorrScorer"
         return float(corr.max())
 
