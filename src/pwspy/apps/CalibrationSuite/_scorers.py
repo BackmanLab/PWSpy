@@ -2,7 +2,7 @@ import abc
 import logging
 import typing
 import numpy as np
-from scipy.signal import correlate
+import scipy.signal as sps
 from skimage import metrics
 from pwspy.utility.misc import cached_property
 from time import time
@@ -41,9 +41,40 @@ class XCorrScorer(Scorer):
         tempData = (tempData - tempData.mean()) / tempData.std()
         testData = (testData - testData.mean()) / (testData.std() * testData.size)
 
-        corr = correlate(tempData, testData, mode='same')  # This would be faster if we did mode='valid', there would only be one value. But tiny alignment issues would result it us getting a lower correlation.
+        corr = sps.correlate(tempData, testData, mode='same')  # This would be faster if we did mode='valid', there would only be one value. But tiny alignment issues would result it us getting a lower correlation.
         assert not np.any(np.isnan(corr)), "NaN values found in XCorrScorer"
         return float(corr.max())
+
+
+class LateralXCorrScorer(Scorer):
+    def score(self) -> float:
+        # Select a single wavelength image from the middle of the array.
+        tempData = self._template[:, :, self._template.shape[2]//2]
+        testData = self._test[:, :, self._test.shape[2]//2]
+
+        # Normalize Data. Correlation will pad with 0s so make sure the mean of the data is 0
+        tempData = (tempData - tempData.mean()) / tempData.std()
+        testData = (testData - testData.mean()) / (testData.std() * testData.size)  # The division by testData.size here gives us a final xcorrelation that maxes out at 1.
+        corr = sps.correlate(tempData, testData, mode='same')
+        return float(corr.max())  # TODO also evaluate shift and decay rate
+
+
+class AxialXCorrScorer(Scorer):
+    def score(self) -> float:
+        #TODO average then xcorr or xcorr and then average?
+        tempData = self._template
+        testData = self._test
+        #Very hard to find support for 1d correlation on an Nd array. scipy.signal.fftconvolve appears to be the best option
+        corr = sps.fftconvolve(tempData, self._reverse_and_conj(testData), axes=2, mode='same')
+        return float(corr.max()) # TODO also evaluate shift and decay rate
+
+    @staticmethod
+    def _reverse_and_conj(x):
+        """
+        Reverse array `x` in all dimensions and perform the complex conjugate.
+        Copied from scipy.signal, This makes a convolution effectively a correlation. Modified to only effect the 2nd axis
+        """
+        return x[:, :, ::-1].conj()
 
 
 class SSimScorer(Scorer):
