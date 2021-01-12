@@ -217,10 +217,10 @@ class PWSAnalysis(AbstractAnalysis):
         return ld
 
     def copySharedDataToSharedMemory(self):  # Inherit docstring
-        refdata = mp.RawArray('f', self.ref.data.size)
-        refdata = np.frombuffer(refdata, dtype=np.float32).reshape(self.ref.data.shape)
-        np.copyto(refdata, self.ref.data)
-        self.ref.data = refdata
+        refdata = mp.RawArray('f', self.ref.data.size)  # Create an empty ctypes array of shared memory
+        refdata = np.frombuffer(refdata, dtype=np.float32).reshape(self.ref.data.shape)  # Wrap the shared memory array in a numpy array and reshape back to origianl shape
+        np.copyto(refdata, self.ref.data)  # Copy our ImCubes data to the shared memory array.
+        self.ref.data = refdata # Reassign the shared memory array to our ImCube object data attribute.
 
         if self.extraReflection is not None:
             iedata = mp.RawArray('f', self.extraReflection.data.size)
