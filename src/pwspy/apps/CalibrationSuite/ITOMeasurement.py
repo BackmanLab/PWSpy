@@ -35,12 +35,12 @@ class ITOMeasurement(AnalysisManager):
         logger = logging.getLogger(__name__)
         if not self._hasAnalysis():
             logger.debug(f"Generating analysis for {self.name}")
-            self._results = self._generateAnalysis(settings)
+            results = self._generateAnalysis(settings)
         else:
             logger.debug(f"Loading cached analysis for {self.name}")
-            self._results: pwsAnalysis.PWSAnalysisResults = self.loadAnalysis(self.ANALYSIS_NAME)
-            assert self._results.settings == settings  # Make sure the same settings were used for the previously stored analysis results.
-            assert self._results.referenceIdTag == self._refAcq.idTag  # Make sure the same reference was used in the previously stored analysis results
+            results = self.analysisResults
+            assert results.settings == settings  # Make sure the same settings were used for the previously stored analysis results.
+            assert results.referenceIdTag == self._refAcq.idTag  # Make sure the same reference was used in the previously stored analysis results
 
     @staticmethod
     def getAnalysisResultsClass() -> typing.Type[AbstractHDFAnalysisResults]:
@@ -62,7 +62,7 @@ class ITOMeasurement(AnalysisManager):
 
     @property
     def analysisResults(self) -> pwsAnalysis.PWSAnalysisResults:
-        return self._results
+        return self.loadAnalysis(self.ANALYSIS_NAME)
 
     @cached_property
     def idTag(self) -> str:

@@ -1,6 +1,6 @@
 
 from pwspy.apps.CalibrationSuite.reviewer import Reviewer
-from run import Loader
+from loader import Loader
 import os
 import matplotlib.pyplot as plt
 from pwspy.utility.plotting import PlotNd
