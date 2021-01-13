@@ -37,15 +37,18 @@ def loadDataFrame(measurementSet: str) -> pd.DataFrame:
         scoreDict = {'name': measurement.name}
         for scoreName in scoreNames:
             score = result.getScore(scoreName)
-            scoreDict[scoreName] = score
+            scoreDict[f"{scoreName}_score"] = score
         l2.append(scoreDict)
 
     df = pd.DataFrame(l)
     df2 = pd.DataFrame(l2)
 
-    df = pd.merge(df, df2, on='name', suffixes=('', '_score'))
+    df = pd.merge(df, df2, on='name')
     return df
+
+
 if __name__ == '__main__':
+    import matplotlib as mpl
     plt.ion()
 
     #TODO split the SSIM
@@ -56,6 +59,7 @@ if __name__ == '__main__':
 
     df['exp'] = df.apply(lambda row: row['name'].split('_')[0], axis=1)
     df['setting'] = df.apply(lambda row: '_'.join(row['name'].split('_')[1:]), axis=1)
+    scoreNames = [colName.split('_') for colName in df.columns if colName.endswith("_score")]
 
     # Generate a column indicating for each experiment which order they should be plotted in based on the contents of the experimentInfo dictionary
     a = df.groupby('exp', as_index=False).apply(
@@ -65,12 +69,16 @@ if __name__ == '__main__':
     a.index = a.index.get_level_values(1) # Get the original index back
     df['idx'] = a
 
+    # Plot MSE Score
     for expName, g in df.groupby('exp'):
         fig, ax = plt.subplots()
         fig.suptitle(expName)
         g = g.sort_values('idx')
-        for score in ['mse', 'ssim', 'xcorr']:
-            ax.scatter(g.idx, g[score], label=score)
+        colors = mpl.cm.nipy_spectral(np.linspace(0, 1, num=len(scoreNames)))
+        for scoreName, color in zip(scoreNames, colors):
+            scores = g[f"{scoreName}_score"]
+            scores = [i.mse.score for i in scores]
+            ax.scatter(g.idx, scores, label=scoreName, color=color)
         plt.xticks(ticks=g.idx, labels=g.setting, rotation=20)
         ax.legend()
 
