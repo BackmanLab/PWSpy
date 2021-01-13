@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 
 
-class Reviewer:
+class Reviewer:  # Deprecated
     def __init__(self, loader: AbstractMeasurementLoader, scoreName: str):
         self._loader = loader
         results = []

@@ -9,6 +9,7 @@ import h5py
 import numpy as np
 from pwspy import dateTimeFormat
 from pwspy.analysis import AbstractHDFAnalysisResults
+from pwspy.apps.CalibrationSuite._scorers import Score
 
 
 class TransformedData(AbstractHDFAnalysisResults):
@@ -98,7 +99,7 @@ class TransformedData(AbstractHDFAnalysisResults):
         """Override super-implementation to default to gzip compression of data. Cuts file size by more than half."""
         super().toHDF(directory, name, overwrite=overwrite, compression=compression)
 
-    def addScore(self, name: str, scores: ScoreResults, overwrite: bool = False):
+    def addScore(self, name: str, scores: Score, overwrite: bool = False):
         if self.file is None:
             raise ValueError("Cannot save score to TransformedData that is not yet saved to file")
         if 'scores' not in self.file:
@@ -107,12 +108,12 @@ class TransformedData(AbstractHDFAnalysisResults):
             del self.file['scores'][name]
         self.file['scores'].create_dataset(name, data=np.string_(scores.toJson()))
 
-    def getScore(self, name: str) -> ScoreResults:
+    def getScore(self, name: str) -> Score:
         if self.file is None:
             raise ValueError("Cannot load scores from TransformedData that is not yet saved to file")
         if 'scores' not in self.file:
             raise KeyError(f"No score named {name}")
-        return ScoreResults.fromJson(bytes(self.file['scores'][name][()]).decode())
+        return Score.fromJson(bytes(self.file['scores'][name][()]).decode())
 
     def listScore(self) -> typing.Tuple[str, ...]:
         if self.file is None:
@@ -138,25 +139,3 @@ class TransformedData(AbstractHDFAnalysisResults):
         file = h5py.File(filePath, 'a')
         return cls(file, None, name)
 
-
-class ScoreResults:
-    def __init__(self, scoresDict: dict):
-        self.scores = scoresDict
-
-    @classmethod
-    def fromJson(cls, jsonStr: str):
-        return cls(json.loads(jsonStr))
-
-    def toJson(self) -> str:
-        return json.dumps(self.scores, cls=ScoreResults.NumpyEncoder)
-
-    class NumpyEncoder(json.JSONEncoder):
-        def default(self, obj):
-            if isinstance(obj, np.ndarray):
-                return obj.tolist()
-            elif isinstance(obj, np.integer):
-                return int(obj)
-            elif isinstance(obj, np.floating):
-                return float(obj)
-            else:
-                return super().default(obj)

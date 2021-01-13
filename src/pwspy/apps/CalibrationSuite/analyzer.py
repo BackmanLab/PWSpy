@@ -11,7 +11,7 @@ from pwspy.utility.reflection import Material
 from scipy.ndimage import binary_dilation
 from ._scorers import *
 from ._utility import CVAffineTransform
-from .fileTypes import ScoreResults, TransformedData
+from .fileTypes import TransformedData
 from .loaders import settings, AbstractMeasurementLoader
 from pwspy.utility.plotting import MultiPlot
 import matplotlib.pyplot as plt
@@ -49,13 +49,14 @@ def _score(measurement: ITOMeasurement, scoreName: str, blurSigma: float, templa
     testArr = tData.transformedData[slc]
     if blurSigma is not None:
         testArr = _blur3dDataLaterally(testArr, blurSigma)
-    scorer = CombinedScorer(templateSubArr, testArr)
-    scoreResult = ScoreResults(scorer.score())
-    if lock is not None: lock.acquire()
+    score = CombinedScore.create(templateSubArr, testArr)
+    if lock is not None:
+        lock.acquire()
     try:
-        tData.addScore(scoreName, scoreResult, overwrite=True)
+        tData.addScore(scoreName, score, overwrite=True)
     finally:
-        if lock is not None: lock.release()
+        if lock is not None:
+            lock.release()
 
 
 def parallelInit(lck: mp.Lock, templateArr: np.ndarray):
@@ -97,7 +98,7 @@ class TransformedDataScorer:
             lock = mp.Lock()
             sharedArr = createSharedArray(templateArr)
             out = processParallel(df, parallelScoreWrapper, procArgs=(scoreName, blurSigma, loader.template.idTag),
-                                  initializer=parallelInit, initArgs=(lock, sharedArr), numProcesses=3)
+                                  initializer=parallelInit, initArgs=(lock, sharedArr), numProcesses=4)
         else:
             procArgs = (scoreName, blurSigma, loader.template.idTag, templateArr)
             out = df.apply(lambda row: _score(row.measurement, *procArgs), axis=1)

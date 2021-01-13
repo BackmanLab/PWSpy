@@ -6,7 +6,7 @@ from pwspy import dataTypes as pwsdt
 from pwspy.analysis import pws as pwsAnalysis, AbstractHDFAnalysisResults
 from glob import glob
 
-from pwspy.apps.CalibrationSuite.fileTypes import TransformedData, ScoreResults
+from pwspy.apps.CalibrationSuite.fileTypes import TransformedData
 from pwspy.dataTypes import AnalysisManager
 from pwspy.utility.misc import cached_property
 
@@ -81,19 +81,3 @@ class ITOMeasurement(AnalysisManager):
 
     def listTransformedData(self) -> typing.Tuple[str]:
         return tuple([TransformedData.fileName2Name(f) for f in glob(os.path.join(self.filePath, f'*{TransformedData.FileSuffix}'))])
-
-    def saveScoreResults(self, result: ScoreResults, name: str, overwrite: bool = False):
-        if (name in self.listScoreResults()) and (not overwrite):
-            raise FileExistsError(f"A ScoreResults file named {name} already exists.")
-        result.toHDF(self.filePath, name, overwrite=overwrite)
-
-    def loadScoreResults(self, name: str) -> ScoreResults:
-        try:
-            return ScoreResults.load(self.filePath, name)
-        except OSError:
-            raise OSError(f"No ScoreResults file found with name: {name} for measurement: {self.name}")
-
-    def listScoreResults(self) -> typing.Tuple[str]:
-        return tuple([ScoreResults.fileName2Name(f) for f in glob(os.path.join(self.filePath, f'*{ScoreResults.FileSuffix}'))])
-
-

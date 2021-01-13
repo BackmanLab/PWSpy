@@ -22,7 +22,7 @@ class AbstractMeasurementLoader(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def measurements(self) -> typing.Iterable[ITOMeasurement]:
+    def measurements(self) -> typing.Sequence[ITOMeasurement]:
         pass
 
 
