@@ -7,10 +7,9 @@ import typing
 import numpy as np
 import scipy.signal as sps
 from skimage import metrics
-from pwspy.utility.misc import cached_property
 from time import time
 
-#TODO device a way to inject a cube splitter into a scorer for more efficient high granularity socring
+#TODO devise a way to inject a cube splitter into a scorer for more efficient high granularity socring
 
 @dataclasses.dataclass
 class Score(abc.ABC):
@@ -38,19 +37,16 @@ class Score(abc.ABC):
 
     @classmethod
     def fromJson(cls, jsonStr: str):
-        return cls(**json.loads(jsonStr))
+        import dacite  # This is iffy. only way right now to load nested dataclasses from json.
+        return dacite.from_dict(data_class=cls, data=json.loads(jsonStr))  # Allows loading of nested dataclasses
+        # return cls(**json.loads(jsonStr))
 
     def toJson(self) -> str:
-        return json.dumps(self.toDict(), cls=Score.JSONEncoder)
-
-    def toDict(self) -> dict:
-        return {f"Score_{type(self)}": dataclasses.asdict(self)}
+        return json.dumps(dataclasses.asdict(self), cls=Score.JSONEncoder)
 
     class JSONEncoder(json.JSONEncoder):
         def default(self, obj):
-            if isinstance(obj, Score):
-                return obj.toDict()
-            elif isinstance(obj, np.ndarray):
+            if isinstance(obj, np.ndarray):
                 return obj.tolist()
             elif isinstance(obj, np.integer):
                 return int(obj)
@@ -74,7 +70,7 @@ class XCorrScore(Score):  # Terrible performance, don't use.
 
 @dataclasses.dataclass
 class LateralXCorrScore(Score):
-    shift: typing.Tuple[int, int]
+    shift: list
     cdrY: float
     cdrX: float
 
@@ -193,7 +189,7 @@ class CombinedScore(Score):
         )
         # TODO not sure how to mix the scores. Just taking the average right now.
         score = 0
-        for k, v in scores:
+        for k, v in scores.items():
             score += v.score
         d = cls(score=score / len(scores), **scores)
         return d
