@@ -11,7 +11,7 @@ from pwspy.utility.reflection import Material
 from scipy.ndimage import binary_dilation
 from ._scorers import *
 from ._utility import CVAffineTransform
-from .fileTypes import ScoreResults, TransformedData
+from .fileTypes import TransformedData
 from .loaders import settings, AbstractMeasurementLoader
 from pwspy.utility.plotting import MultiPlot
 import matplotlib.pyplot as plt
@@ -98,7 +98,7 @@ class TransformedDataScorer:
             lock = mp.Lock()
             sharedArr = createSharedArray(templateArr)
             out = processParallel(df, parallelScoreWrapper, procArgs=(scoreName, blurSigma, loader.template.idTag),
-                                  initializer=parallelInit, initArgs=(lock, sharedArr), numProcesses=3)
+                                  initializer=parallelInit, initArgs=(lock, sharedArr), numProcesses=4)
         else:
             procArgs = (scoreName, blurSigma, loader.template.idTag, templateArr)
             out = df.apply(lambda row: _score(row.measurement, *procArgs), axis=1)
