@@ -50,7 +50,7 @@ def _score(measurement: ITOMeasurement, scoreName: str, blurSigma: float, templa
     if blurSigma is not None:
         testArr = _blur3dDataLaterally(testArr, blurSigma)
     scorer = CombinedScorer(templateSubArr, testArr)
-    scoreResult = ScoreResults(scorer._scores)
+    scoreResult = ScoreResults(scorer.score())
     if lock is not None: lock.acquire()
     try:
         tData.addScore(scoreName, scoreResult, overwrite=True)
