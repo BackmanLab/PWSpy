@@ -6,7 +6,7 @@ from pwspy import dataTypes as pwsdt
 from pwspy.analysis import pws as pwsAnalysis, AbstractHDFAnalysisResults
 from glob import glob
 
-from pwspy.apps.CalibrationSuite.fileTypes import TransformedData, ScoreResults
+from pwspy.apps.CalibrationSuite.fileTypes import TransformedData
 from pwspy.dataTypes import AnalysisManager
 from pwspy.utility.misc import cached_property
 

@@ -1,4 +1,7 @@
+from __future__ import annotations
 import abc
+import dataclasses
+import json
 import logging
 import typing
 import numpy as np
@@ -9,7 +12,8 @@ from time import time
 
 #TODO device a way to inject a cube splitter into a scorer for more efficient high granularity socring
 
-class Scorer(abc.ABC):
+@dataclasses.dataclass
+class Score(abc.ABC):
     """
     Compares the 3d reflectance cube of the template with the reflectance cube of a test measurement.
     The test reflectance array should have already been transformed so that they are aligned.
@@ -20,12 +24,11 @@ class Scorer(abc.ABC):
         test: A 3d array to compare against the template array. Since it is likely that the original data will need to have been transformed
             in order to align with the template there will blank regions. The pixels in the blank regions should be set to a value of `numpy.nan`
     """
-    def __init__(self, template: np.ndarray, test: np.ndarray):
-        self._template = template
-        self._test = test
+    score: float
 
+    @classmethod
     @abc.abstractmethod
-    def score(self) -> dict:
+    def create(cls, template: np.ndarray, test: np.ndarray) -> Score:
         """
 
         Returns:
@@ -33,25 +36,53 @@ class Scorer(abc.ABC):
         """
         pass
 
+    @classmethod
+    def fromJson(cls, jsonStr: str):
+        return cls(**json.loads(jsonStr))
 
-class XCorrScorer(Scorer):  # Terrible performance, don't use.
-    def score(self) -> float:
-        tempData = self._template
-        testData = self._test
+    def toJson(self) -> str:
+        return json.dumps(self.toDict(), cls=Score.JSONEncoder)
+
+    def toDict(self) -> dict:
+        return {f"Score_{type(self)}": dataclasses.asdict(self)}
+
+    class JSONEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, Score):
+                return obj.toDict()
+            elif isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif isinstance(obj, np.integer):
+                return int(obj)
+            elif isinstance(obj, np.floating):
+                return float(obj)
+            else:
+                return super().default(obj)
+
+@dataclasses.dataclass
+class XCorrScore(Score):  # Terrible performance, don't use.
+
+    @classmethod
+    def create(cls, tempData: np.ndarray, testData: np.ndarray) -> Score:
         # Normalize Data. Correlation will pad with 0s so make sure the mean of the data is 0
         tempData = (tempData - tempData.mean()) / tempData.std()
         testData = (testData - testData.mean()) / (testData.std() * testData.size)
 
         corr = sps.correlate(tempData, testData, mode='same')  # This would be faster if we did mode='valid', there would only be one value. But tiny alignment issues would result it us getting a lower correlation.
         assert not np.any(np.isnan(corr)), "NaN values found in XCorrScorer"
-        return float(corr.max())
+        return cls(score=corr.max())
 
+@dataclasses.dataclass
+class LateralXCorrScore(Score):
+    shift: typing.Tuple[int, int]
+    cdrY: float
+    cdrX: float
 
-class LateralXCorrScorer(Scorer):
-    def score(self) -> dict:
+    @classmethod
+    def create(cls, tempData: np.ndarray, testData: np.ndarray) -> Score:
         # Select a single wavelength image from the middle of the array.
-        tempData = self._template[:, :, self._template.shape[2]//2]
-        testData = self._test[:, :, self._test.shape[2]//2]
+        tempData = tempData[:, :, tempData.shape[2]//2]
+        testData = testData[:, :, testData.shape[2]//2]
 
         # Normalize Data. Correlation will pad with 0s so make sure the mean of the data is 0
         tempData = (tempData - tempData.mean()) / tempData.std()
@@ -59,8 +90,8 @@ class LateralXCorrScorer(Scorer):
         corr = sps.correlate(tempData, testData, mode='full')  # Using 'full' here instead of 'same' means that we can reliably know the index of the zero-shift element of the output
         zeroShiftIdx = (corr.shape[0]//2, corr.shape[1]//2)
         peakIdx = np.unravel_index(corr.argmax(), corr.shape)
-        cdrY, cdrX = self._calculate2DCDR(corr, peakIdx, 2)
-        return {'score': float(corr.max()), 'shift': (peakIdx[0]-zeroShiftIdx[0], peakIdx[1]-zeroShiftIdx[1]), 'cdrY': cdrY, 'cdrX': cdrX}
+        cdrY, cdrX = cls._calculate2DCDR(corr, peakIdx, 2)
+        return cls(**{'score': float(corr.max()), 'shift': (peakIdx[0]-zeroShiftIdx[0], peakIdx[1]-zeroShiftIdx[1]), 'cdrY': cdrY, 'cdrX': cdrX})
 
     @staticmethod
     def _calculate2DCDR(corr: np.ndarray, peakIdx: typing.Tuple[int, int], interval: int) -> typing.Tuple[float, float]:
@@ -75,23 +106,25 @@ class LateralXCorrScorer(Scorer):
         cdrX = (cdr2 + cdr1) / 2  # Take the average of the cdr in each direction
         return cdrY, cdrX
 
+@dataclasses.dataclass
+class AxialXCorrScore(Score):
+    shift: int
+    cdr: float
 
-class AxialXCorrScorer(Scorer):
-    def score(self) -> dict:
-        tempData = self._template
-        testData = self._test
+    @classmethod
+    def create(cls, tempData: np.ndarray, testData: np.ndarray) -> AxialXCorrScore:
         #Normalize Each XY pixel sso that the xcorrelation hasa max of 1.
         tempData = (tempData - tempData.mean(axis=2)[:, :, None]) / tempData.std(axis=2)[:, :, None]
         testData = (testData - testData.mean(axis=2)[:, :, None]) / (
                     testData.std(axis=2)[:, :, None] * testData.shape[2])  # The division by testData.size here gives us a final xcorrelation that maxes out at 1.
 
         #Very hard to find support for 1d correlation on an Nd array. scipy.signal.fftconvolve appears to be the best option
-        corr = sps.fftconvolve(tempData, self._reverse_and_conj(testData), axes=2, mode='full')
+        corr = sps.fftconvolve(tempData, cls._reverse_and_conj(testData), axes=2, mode='full')
         corr = corr.mean(axis=(0, 1))
         zeroShiftIdx = corr.shape[0]//2
         peakIdx = corr.argmax()
-        cdr = self._calculate1DCDR(corr, peakIdx, 2)
-        return {'score': float(corr.max()), 'shift': peakIdx-zeroShiftIdx, 'cdr': float(cdr)}
+        cdr = cls._calculate1DCDR(corr, peakIdx, 2)
+        return cls(**{'score': float(corr.max()), 'shift': peakIdx-zeroShiftIdx, 'cdr': float(cdr)})
 
     @staticmethod
     def _reverse_and_conj(x):
@@ -108,63 +141,61 @@ class AxialXCorrScorer(Scorer):
         return (cdr2 + cdr1) / 2  # Take the average of the cdr in each direction
 
 
-class SSimScorer(Scorer):
-    def score(self) -> dict:
-        tempData = self._template
-        testData = self._test
+@dataclasses.dataclass
+class SSimScore(Score):
+
+    @classmethod
+    def create(cls, tempData: np.ndarray, testData: np.ndarray) -> SSimScore:
         score = float(metrics.structural_similarity(tempData, testData))
         assert not np.isnan(score), "NaN value found in SSimScorer"
-        return {'score': score}
+        return cls(score=score)
 
 
-class MSEScorer(Scorer):
-    def score(self) -> dict:
-        tempData = self._template
-        testData = self._test
+@dataclasses.dataclass
+class MSEScore(Score):
+    mse: float
+
+    @classmethod
+    def create(cls, tempData: np.ndarray, testData: np.ndarray) -> MSEScore:
         mse = metrics.mean_squared_error(tempData, testData)  # TODO we need a smarter way to convert this to a value between 0 and 1.
         assert not np.isnan(mse), "NaN value found in MSEScorer"
         nmse = mse / (tempData**2).sum()
-        return {'score': nmse, 'mse': mse}
+        return cls(score=nmse, mse=mse)
 
 
-class CombinedScorer(Scorer):
-    def __init__(self, template: np.ndarray, test: np.ndarray):
-        super().__init__(template, test)
-        self._mse = MSEScorer(template, test)
-        self._ssim = SSimScorer(template, test)
-        self._latCorr = LateralXCorrScorer(template, test)
-        self._axCorr = AxialXCorrScorer(template, test)
+@dataclasses.dataclass
+class CombinedScore(Score):
+    mse: MSEScore
+    latxcorr: LateralXCorrScore
+    ssim: SSimScore
+    axxcorr: AxialXCorrScore
 
-    @cached_property
-    def _scores(self) -> typing.Dict[str, float]:
-        """A dictionary containing the score for each scorer contained.
-        This is only executed once for each instance of this class, then the cached value is used."""
+    @classmethod
+    def create(cls, template: np.ndarray, test: np.ndarray) -> CombinedScore:
         logger = logging.getLogger(__name__)
         t = time()
-        mse = self._mse.score()
+        mse = MSEScore.create(template, test)
         logger.debug(f"MSE score took {time() - t}")
         t = time()
-        ssim = self._ssim.score()
+        ssim = SSimScore.create(template, test)
         logger.debug(f"SSIM score took {time() - t}")
         t = time()
-        latxcorr = self._latCorr.score()
+        latxcorr = LateralXCorrScore.create(template, test)
         logger.debug(f"LatXCORR score took {time() - t}")
         t = time()
-        axxcorr = self._axCorr.score()
+        axxcorr = AxialXCorrScore.create(template, test)
         logger.debug(f"AxXCORR score took {time() - t}")
-        return dict(
+        scores = dict(
             mse=mse,
             ssim=ssim,
             latxcorr=latxcorr,
             axxcorr=axxcorr
         )
-
-    def score(self) -> dict:
         # TODO not sure how to mix the scores. Just taking the average right now.
         score = 0
-        for k, v in self._scores:
-            score += v['score']
-        d = {'score': score / len(self._scores)} | self._scores
+        for k, v in scores:
+            score += v.score
+        d = cls(score=score / len(scores), **scores)
         return d
 
 #

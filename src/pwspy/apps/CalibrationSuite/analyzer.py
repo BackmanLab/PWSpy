@@ -49,13 +49,14 @@ def _score(measurement: ITOMeasurement, scoreName: str, blurSigma: float, templa
     testArr = tData.transformedData[slc]
     if blurSigma is not None:
         testArr = _blur3dDataLaterally(testArr, blurSigma)
-    scorer = CombinedScorer(templateSubArr, testArr)
-    scoreResult = ScoreResults(scorer.score())
-    if lock is not None: lock.acquire()
+    score = CombinedScore.create(templateSubArr, testArr)
+    if lock is not None:
+        lock.acquire()
     try:
-        tData.addScore(scoreName, scoreResult, overwrite=True)
+        tData.addScore(scoreName, score, overwrite=True)
     finally:
-        if lock is not None: lock.release()
+        if lock is not None:
+            lock.release()
 
 
 def parallelInit(lck: mp.Lock, templateArr: np.ndarray):
