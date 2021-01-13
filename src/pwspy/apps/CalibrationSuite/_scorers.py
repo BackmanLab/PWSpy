@@ -91,7 +91,7 @@ class AxialXCorrScorer(Scorer):
         zeroShiftIdx = corr.shape[0]//2
         peakIdx = corr.argmax()
         cdr = self._calculate1DCDR(corr, peakIdx, 2)
-        return {'score': float(corr.max()), 'shift': (peakIdx[0]-zeroShiftIdx[0], peakIdx[1]-zeroShiftIdx[1]), 'cdr': cdr}
+        return {'score': float(corr.max()), 'shift': peakIdx-zeroShiftIdx, 'cdr': float(cdr)}
 
     @staticmethod
     def _reverse_and_conj(x):
@@ -164,7 +164,8 @@ class CombinedScorer(Scorer):
         score = 0
         for k, v in self._scores:
             score += v['score']
-        return {'score': score / len(self._scores), 'details': self._scores}
+        d = {'score': score / len(self._scores)} | self._scores
+        return d
 
 #
 # class CNNScorer(Scorer):

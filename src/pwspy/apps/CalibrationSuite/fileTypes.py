@@ -148,4 +148,15 @@ class ScoreResults:
         return cls(json.loads(jsonStr))
 
     def toJson(self) -> str:
-        return json.dumps(self.scores)
+        return json.dumps(self.scores, cls=ScoreResults.NumpyEncoder)
+
+    class NumpyEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif isinstance(obj, np.integer):
+                return int(obj)
+            elif isinstance(obj, np.floating):
+                return float(obj)
+            else:
+                return super().default(obj)
