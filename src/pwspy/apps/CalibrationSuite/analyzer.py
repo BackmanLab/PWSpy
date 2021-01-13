@@ -53,7 +53,7 @@ def _score(measurement: ITOMeasurement, scoreName: str, blurSigma: float, templa
     scoreResult = ScoreResults(scorer._scores)
     if lock is not None: lock.acquire()
     try:
-        tData.addScore(scoreName, scoreResult)
+        tData.addScore(scoreName, scoreResult, overwrite=True)
     finally:
         if lock is not None: lock.release()
 
@@ -97,7 +97,7 @@ class TransformedDataScorer:
             lock = mp.Lock()
             sharedArr = createSharedArray(templateArr)
             out = processParallel(df, parallelScoreWrapper, procArgs=(scoreName, blurSigma, loader.template.idTag),
-                                  initializer=parallelInit, initArgs=(lock, sharedArr), numProcesses=1)
+                                  initializer=parallelInit, initArgs=(lock, sharedArr), numProcesses=3)
         else:
             procArgs = (scoreName, blurSigma, loader.template.idTag, templateArr)
             out = df.apply(lambda row: _score(row.measurement, *procArgs), axis=1)

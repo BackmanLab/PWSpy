@@ -98,11 +98,13 @@ class TransformedData(AbstractHDFAnalysisResults):
         """Override super-implementation to default to gzip compression of data. Cuts file size by more than half."""
         super().toHDF(directory, name, overwrite=overwrite, compression=compression)
 
-    def addScore(self, name: str, scores: ScoreResults):
+    def addScore(self, name: str, scores: ScoreResults, overwrite: bool = False):
         if self.file is None:
             raise ValueError("Cannot save score to TransformedData that is not yet saved to file")
         if 'scores' not in self.file:
             self.file.create_group('scores')
+        if overwrite and (name in self.file['scores']):
+            del self.file['scores'][name]
         self.file['scores'].create_dataset(name, data=np.string_(scores.toJson()))
 
     def getScore(self, name: str) -> ScoreResults:
