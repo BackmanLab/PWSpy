@@ -115,7 +115,7 @@ class TransformedData(AbstractHDFAnalysisResults):
             raise KeyError(f"No score named {name}")
         return Score.fromJson(bytes(self.file['scores'][name][()]).decode())
 
-    def listScore(self) -> typing.Tuple[str, ...]:
+    def getScoreNames(self) -> typing.Tuple[str, ...]:
         if self.file is None:
             raise ValueError("Cannot load scores from TransformedData that is not yet saved to file")
         if 'scores' not in self.file:
