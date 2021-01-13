@@ -37,5 +37,5 @@ class Loader(AbstractMeasurementLoader):
         return self._template
 
     @property
-    def measurements(self) -> typing.Iterable[ITOMeasurement]:
+    def measurements(self) -> typing.Tuple[ITOMeasurement]:
         return tuple(self._measurements)
