@@ -118,6 +118,8 @@ class TransformedData(AbstractHDFAnalysisResults):
     def clearScores(self):
         if self.file is None:
             raise ValueError("Cannot load scores from TransformedData that is not yet saved to file")
+        if 'scores' not in self.file:  # There are no scores to remove
+            return
         del self.file['scores']
 
     def getScoreNames(self) -> typing.Tuple[str, ...]:
