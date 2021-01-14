@@ -267,27 +267,28 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
         fileName = osp.join(directory, self.name2FileName(name))
         if (not overwrite) and osp.exists(fileName):
             raise OSError(f'{fileName} already exists.')
-        with h5py.File(fileName, 'w') as hf:
-            # Save version
-            hf.create_dataset('pwspy_version', data=np.string_(self._currentmoduleversion))
-            # Save fields defined by implementing subclass
-            for field in self.fields():
-                k = field
-                v = getattr(self, field)
-                if isinstance(v, AbstractAnalysisSettings):
+        with open(fileName, 'wb') as pythonFile:
+            with h5py.File(pythonFile, 'w', driver='fileobj') as hf:  # Using the default driver causes write errors when writing from windows to a Samba shared server. Using a reference to a python `File Object` solves this issue.
+                # Save version
+                hf.create_dataset('pwspy_version', data=np.string_(self._currentmoduleversion))
+                # Save fields defined by implementing subclass
+                for field in self.fields():
+                    k = field
+                    v = getattr(self, field)
+                    if isinstance(v, AbstractAnalysisSettings):
                     v = v.toJsonString() # Convert to string, then string case will then handle saving the string.
                 elif isinstance(v, dict):  # Save as json. The str case will handle the actual saving.
                     v = json.dumps(v)
-                if isinstance(v, str):
-                    hf.create_dataset(k, data=np.string_(v))  # h5py recommends encoding strings this way for compatability.
-                elif isinstance(v, ICBase):
-                    hf = v.toHdfDataset(hf, k, fixedPointCompression=True)
-                elif isinstance(v, np.ndarray):
+                    if isinstance(v, str):
+                        hf.create_dataset(k, data=np.string_(v))  # h5py recommends encoding strings this way for compatability.
+                    elif isinstance(v, ICBase):
+                        hf = v.toHdfDataset(hf, k, fixedPointCompression=True)
+                    elif isinstance(v, np.ndarray):
                     hf.create_dataset(k, data=v, compression=compression)
-                elif v is None:
-                    pass
-                else:
-                    raise TypeError(f"Analysis results type {k}, {type(v)} not supported or expected")
+                    elif v is None:
+                        pass
+                    else:
+                        raise TypeError(f"Analysis results type {k}, {type(v)} not supported or expected")
 
     @classmethod
     def load(cls, directory: str, name: str) -> AbstractHDFAnalysisResults:

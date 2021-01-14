@@ -1256,18 +1256,17 @@ class KCube(ICBase):
         if not mask is None:
             opd = opd[mask].mean(axis=0)
 
-        dk = self.wavenumbers[1] - self.wavenumbers[0] #The interval that our linear array of wavenumbers is spaced by. Units: radians / micron
-
+        dk = self.wavenumbers[1] - self.wavenumbers[0]  # The interval that our linear array of wavenumbers is spaced by. Units: radians / micron
 
         # Generate the xval for the current OPD.
-        maxOpd = 2 * np.pi / dk #This is the maximum OPD value we can get with. tighter wavenumber spacing increases OPD range. units of microns
-        dOpd = maxOpd / dataLength #The interval we want between values in our opd vector.
+        maxOpd = 2 * np.pi / dk  # This is the maximum OPD value we can get with. tighter wavenumber spacing increases OPD range. units of microns
+        dOpd = maxOpd / dataLength  # The interval we want between values in our opd vector.
         opdVals = dataLength / 2 * np.array(range(fftSize)) * dOpd / fftSize
-        #The above line is how it was writtne in the matlab code. Couldn't it be simplified down to maxOpd * np.linspace(0, 1, num = fftSize // 2 + 1) / 2 ? I'm not sure what the 2 means though.
+        # The above line is how it was written in the matlab code. Couldn't it be simplified down to maxOpd * np.linspace(0, 1, num = fftSize // 2 + 1) / 2 ? I'm not sure what the 2 means though.
 
         # Above is how the old MATLAB code calculated the frequencies. IMO the code below is simpler and more understandable but we'll stick with the old code.
-            # opdVals = np.fft.rfftfreq(fftSize, dk)  # Units: cycles / (radians/microns), equivalent to microns / (radians/cycles)
-            # opdVals *= 2 * np.pi  # Units: microns
+        # opdVals = np.fft.rfftfreq(fftSize, dk)  # Units: cycles / (radians/microns), equivalent to microns / (radians/cycles)
+        # opdVals *= 2 * np.pi  # Units: microns
 
         opdVals = opdVals[:indexOpdStop]
 

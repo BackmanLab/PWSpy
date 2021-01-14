@@ -53,28 +53,45 @@ def _setupDataDirectories():
 
 def main():
     import sys
+    import getopt
+
+    debugMode = False
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], '', ['debug'])
+        optNames, optVals = zip(*opts)
+        if '--debug' in optNames:
+            debugMode = True
+    except getopt.GetoptError as e:
+        print(e)
+        sys.exit(1)
 
     def isIpython():
         try:
-            return __IPYTHON__
-        except:
+            return __IPYTHON__  # Only defined if we are running within ipython
+        except NameError:
             return False
+
+    _setupDataDirectories()  # this must happen before the logger can be instantiated
+    logger = logging.getLogger('pwspy')  # We use the root logger of the pwspy module so that all loggers in pwspy will be captured.
 
     # This prevents errors from happening silently. Found on stack overflow.
     sys.excepthook_backup = sys.excepthook
     def exception_hook(exctype, value, traceBack):
-        print(exctype, value, traceBack)
-        sys.excepthook_backup(exctype, value, traceBack)
+        logger.exception("Unhandled Exception! :", exc_info=value, stack_info=True)
+        sys.excepthook_backup(exctype, value, traceBack)  # Run the rror through the default exception hook
         sys.exit(1)
     sys.excepthook = exception_hook
 
-    _setupDataDirectories() # this must happen before the logger can be instantiated
-    logger = logging.getLogger('pwspy') # We use the root logger of the pwspy module so that all loggers in pwspy will be captured.
-    logger.setLevel(logging.DEBUG)
     logger.addHandler(logging.StreamHandler(sys.stdout))
     fHandler = logging.FileHandler(os.path.join(applicationVars.dataDirectory, f'log{datetime.now().strftime("%d%m%Y%H%M%S")}.txt'))
     fHandler.setFormatter(logging.Formatter('%(levelname)s: %(asctime)s %(name)s.%(funcName)s(%(lineno)d) - %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
     logger.addHandler(fHandler)
+    if debugMode:
+        logger.setLevel(logging.DEBUG)
+        logger.info("Logger set to debug mode.")
+    else:
+        logger.setLevel(logging.INFO)
+        
     try:
         os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"  # TODO replace these options with proper high dpi handling. no pixel specific widths.
         QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
