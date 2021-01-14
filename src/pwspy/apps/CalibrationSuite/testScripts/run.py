@@ -13,6 +13,7 @@ reload(logging)  # This prevents the sys.stdout handler from being added mlutipl
 import sys
 import time
 
+
 def configureLogger():
     logger = logging.getLogger()  # We get the root logger so that all loggers in pwspy will be handled.
     logger.setLevel(logging.DEBUG)
@@ -28,12 +29,13 @@ if __name__ == '__main__':
     import experimentInfo
     plt.ion()
     logger = configureLogger()
-    measurementSet = 'xcorr_blurScan_testYesParr'
+    measurementSet = 'xcorr_blurScan2'
     loader = Loader(experimentInfo.workingDirectory, measurementSet)
-    transformer = TransformedDataSaver(loader, useCached=True, debugMode=True, method=TransformGenerator.Method.XCORR)
-    for blur in list(range(1, 5)) + [None]:
+    transformer = TransformedDataSaver(loader, useCached=True, debugMode=False, method=TransformGenerator.Method.XCORR)
+    for blur in list(range(1, 20)) + [None]:
         logger.info(f"Starting blur {blur}")
         stime = time.time()
-        scorer = TransformedDataScorer(loader, str(blur), debugMode=True, blurSigma=blur, parallel=True)
+        scorer = TransformedDataScorer(loader, str(blur), debugMode=False, blurSigma=blur,
+                                       parallel=True)
         logger.info(f"Total score time: {time.time() - stime}")
     a = 1  # BreakPoint
