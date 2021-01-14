@@ -156,7 +156,7 @@ class MSEScore(Score):
         mse = metrics.mean_squared_error(tempData, testData)  # TODO we need a smarter way to convert this to a value between 0 and 1.
         assert not np.isnan(mse), "NaN value found in MSEScorer"
         nmse = mse / (tempData**2).sum()
-        return cls(score=nmse, mse=mse)
+        return cls(score=1 - nmse, mse=mse)
 
 
 @dataclasses.dataclass
