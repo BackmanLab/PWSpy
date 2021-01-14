@@ -52,14 +52,14 @@ if __name__ == '__main__':
     plt.ion()
 
     #TODO split the SSIM
-    measurementSet = 'xcorr_blurScan'
+    measurementSet = 'xcorr_blurScan2'
 
     df = loadDataFrame(measurementSet)
 
 
     df['exp'] = df.apply(lambda row: row['name'].split('_')[0], axis=1)
     df['setting'] = df.apply(lambda row: '_'.join(row['name'].split('_')[1:]), axis=1)
-    scoreNames = [colName.split('_') for colName in df.columns if colName.endswith("_score")]
+    scoreNames = [colName.split('_')[0] for colName in df.columns if colName.endswith("_score")]  # Assumes there is no '_' in the score name
 
     # Generate a column indicating for each experiment which order they should be plotted in based on the contents of the experimentInfo dictionary
     a = df.groupby('exp', as_index=False).apply(
@@ -72,12 +72,51 @@ if __name__ == '__main__':
     # Plot MSE Score
     for expName, g in df.groupby('exp'):
         fig, ax = plt.subplots()
-        fig.suptitle(expName)
+        fig.suptitle(f"MSE {expName}")
         g = g.sort_values('idx')
         colors = mpl.cm.nipy_spectral(np.linspace(0, 1, num=len(scoreNames)))
         for scoreName, color in zip(scoreNames, colors):
             scores = g[f"{scoreName}_score"]
             scores = [i.mse.score for i in scores]
+            ax.scatter(g.idx, scores, label=scoreName, color=color)
+        plt.xticks(ticks=g.idx, labels=g.setting, rotation=20)
+        ax.legend()
+
+    # Plot SSIM Score
+    for expName, g in df.groupby('exp'):
+        fig, ax = plt.subplots()
+        fig.suptitle(f"SSIM {expName}")
+        g = g.sort_values('idx')
+        colors = mpl.cm.nipy_spectral(np.linspace(0, 1, num=len(scoreNames)))
+        for scoreName, color in zip(scoreNames, colors):
+            scores = g[f"{scoreName}_score"]
+            scores = [i.ssim.score for i in scores]
+            ax.scatter(g.idx, scores, label=scoreName, color=color)
+        plt.xticks(ticks=g.idx, labels=g.setting, rotation=20)
+        ax.legend()
+
+    # Plot LatXCorr Score
+    for expName, g in df.groupby('exp'):
+        fig, ax = plt.subplots()
+        fig.suptitle(f"LatXCorr {expName}")
+        g = g.sort_values('idx')
+        colors = mpl.cm.nipy_spectral(np.linspace(0, 1, num=len(scoreNames)))
+        for scoreName, color in zip(scoreNames, colors):
+            scores = g[f"{scoreName}_score"]
+            scores = [i.latxcorr.score for i in scores]
+            ax.scatter(g.idx, scores, label=scoreName, color=color)
+        plt.xticks(ticks=g.idx, labels=g.setting, rotation=20)
+        ax.legend()
+
+        # Plot AxXCorr Score
+    for expName, g in df.groupby('exp'):
+        fig, ax = plt.subplots()
+        fig.suptitle(f"AxXCorr {expName}")
+        g = g.sort_values('idx')
+        colors = mpl.cm.nipy_spectral(np.linspace(0, 1, num=len(scoreNames)))
+        for scoreName, color in zip(scoreNames, colors):
+            scores = g[f"{scoreName}_score"]
+            scores = [i.axxcorr.score for i in scores]
             ax.scatter(g.idx, scores, label=scoreName, color=color)
         plt.xticks(ticks=g.idx, labels=g.setting, rotation=20)
         ax.legend()

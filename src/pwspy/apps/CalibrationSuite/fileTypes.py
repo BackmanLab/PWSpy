@@ -9,7 +9,7 @@ import h5py
 import numpy as np
 from pwspy import dateTimeFormat
 from pwspy.analysis import AbstractHDFAnalysisResults
-from pwspy.apps.CalibrationSuite._scorers import Score
+from pwspy.apps.CalibrationSuite._scorers import Score, CombinedScore
 
 
 class TransformedData(AbstractHDFAnalysisResults):
@@ -108,12 +108,17 @@ class TransformedData(AbstractHDFAnalysisResults):
             del self.file['scores'][name]
         self.file['scores'].create_dataset(name, data=np.string_(scores.toJson()))
 
-    def getScore(self, name: str) -> Score:
+    def getScore(self, name: str) -> CombinedScore:
         if self.file is None:
             raise ValueError("Cannot load scores from TransformedData that is not yet saved to file")
-        if 'scores' not in self.file:
+        if name not in self.file['scores']:
             raise KeyError(f"No score named {name}")
-        return Score.fromJson(bytes(self.file['scores'][name][()]).decode())
+        return CombinedScore.fromJson(bytes(self.file['scores'][name][()]).decode())
+
+    def clearScores(self):
+        if self.file is None:
+            raise ValueError("Cannot load scores from TransformedData that is not yet saved to file")
+        del self.file['scores']
 
     def getScoreNames(self) -> typing.Tuple[str, ...]:
         if self.file is None:
