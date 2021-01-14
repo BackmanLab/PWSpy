@@ -11,6 +11,7 @@ from time import time
 
 #TODO devise a way to inject a cube splitter into a scorer for more efficient high granularity socring
 
+
 @dataclasses.dataclass
 class Score(abc.ABC):
     """
@@ -23,7 +24,7 @@ class Score(abc.ABC):
         test: A 3d array to compare against the template array. Since it is likely that the original data will need to have been transformed
             in order to align with the template there will blank regions. The pixels in the blank regions should be set to a value of `numpy.nan`
     """
-    score: float
+    score: float  # This attribute will be inherited by all deriving classes. Should be a value between 0 and 1
 
     @classmethod
     @abc.abstractmethod
@@ -55,9 +56,9 @@ class Score(abc.ABC):
             else:
                 return super().default(obj)
 
+
 @dataclasses.dataclass
 class XCorrScore(Score):  # Terrible performance, don't use.
-
     @classmethod
     def create(cls, tempData: np.ndarray, testData: np.ndarray) -> Score:
         # Normalize Data. Correlation will pad with 0s so make sure the mean of the data is 0
@@ -67,6 +68,7 @@ class XCorrScore(Score):  # Terrible performance, don't use.
         corr = sps.correlate(tempData, testData, mode='same')  # This would be faster if we did mode='valid', there would only be one value. But tiny alignment issues would result it us getting a lower correlation.
         assert not np.any(np.isnan(corr)), "NaN values found in XCorrScorer"
         return cls(score=corr.max())
+
 
 @dataclasses.dataclass
 class LateralXCorrScore(Score):
@@ -101,6 +103,7 @@ class LateralXCorrScore(Score):
         cdr2 = (corrX[peakIdx[1]] - corrX[peakIdx[1] - interval]) / interval
         cdrX = (cdr2 + cdr1) / 2  # Take the average of the cdr in each direction
         return cdrY, cdrX
+
 
 @dataclasses.dataclass
 class AxialXCorrScore(Score):
@@ -139,10 +142,9 @@ class AxialXCorrScore(Score):
 
 @dataclasses.dataclass
 class SSimScore(Score):
-
     @classmethod
     def create(cls, tempData: np.ndarray, testData: np.ndarray) -> SSimScore:
-        score = float(metrics.structural_similarity(tempData, testData))
+        score = float(metrics.structural_similarity(tempData, testData, gaussian_weights=True, sigma=1.5))  # The parameters here are meant to make the implementation match that of Wang et. al
         assert not np.isnan(score), "NaN value found in SSimScorer"
         return cls(score=score)
 
