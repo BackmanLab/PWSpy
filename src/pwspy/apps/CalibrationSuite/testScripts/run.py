@@ -29,13 +29,20 @@ if __name__ == '__main__':
     import experimentInfo
     plt.ion()
     logger = configureLogger()
-    measurementSet = 'xcorr_blurScan2'
+    measurementSet = 'xcorr_blurScan'
     loader = Loader(experimentInfo.workingDirectory, measurementSet)
     transformer = TransformedDataSaver(loader, useCached=True, debugMode=False, method=TransformGenerator.Method.XCORR)
-    for blur in list(range(1, 20)) + [None]:
+
+    # CLear all existing scores.
+    for m in loader.measurements:
+        tData = m.loadTransformedData(loader.template.idTag)
+        tData.clearScores()
+
+    # Start scoring.
+    for blur in list(range(1, 15)) + [None]:
         logger.info(f"Starting blur {blur}")
         stime = time.time()
         scorer = TransformedDataScorer(loader, str(blur), debugMode=False, blurSigma=blur,
-                                       parallel=True)
+                                       parallel=False)
         logger.info(f"Total score time: {time.time() - stime}")
     a = 1  # BreakPoint

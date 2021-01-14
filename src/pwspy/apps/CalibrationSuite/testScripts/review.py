@@ -77,7 +77,7 @@ if __name__ == '__main__':
         colors = mpl.cm.nipy_spectral(np.linspace(0, 1, num=len(scoreNames)))
         for scoreName, color in zip(scoreNames, colors):
             scores = g[f"{scoreName}_score"]
-            scores = [i.mse.score for i in scores]
+            scores = [i.nrmse.score for i in scores]
             ax.scatter(g.idx, scores, label=scoreName, color=color)
         plt.xticks(ticks=g.idx, labels=g.setting, rotation=20)
         ax.legend()
@@ -108,7 +108,7 @@ if __name__ == '__main__':
         plt.xticks(ticks=g.idx, labels=g.setting, rotation=20)
         ax.legend()
 
-        # Plot AxXCorr Score
+    # Plot AxXCorr Score
     for expName, g in df.groupby('exp'):
         fig, ax = plt.subplots()
         fig.suptitle(f"AxXCorr {expName}")

@@ -150,20 +150,17 @@ class SSimScore(Score):
 
 
 @dataclasses.dataclass
-class MSEScore(Score):
-    mse: float
-
+class RMSEScore(Score):
     @classmethod
-    def create(cls, tempData: np.ndarray, testData: np.ndarray) -> MSEScore:
-        mse = metrics.mean_squared_error(tempData, testData)  # TODO we need a smarter way to convert this to a value between 0 and 1.
-        assert not np.isnan(mse), "NaN value found in MSEScorer"
-        nmse = mse / (tempData**2).sum()
-        return cls(score=1 - nmse, mse=mse)
+    def create(cls, tempData: np.ndarray, testData: np.ndarray) -> RMSEScore:
+        nrmse = metrics.normalized_root_mse(tempData, testData, normalization='euclidean')
+        assert not np.isnan(nrmse), "NaN value found in RMSEScorer"
+        return cls(score=1 - nrmse)
 
 
 @dataclasses.dataclass
 class CombinedScore(Score):
-    mse: MSEScore
+    nrmse: RMSEScore
     latxcorr: LateralXCorrScore
     ssim: SSimScore
     axxcorr: AxialXCorrScore
@@ -172,7 +169,7 @@ class CombinedScore(Score):
     def create(cls, template: np.ndarray, test: np.ndarray) -> CombinedScore:
         logger = logging.getLogger(__name__)
         t = time()
-        mse = MSEScore.create(template, test)
+        mse = RMSEScore.create(template, test)
         logger.debug(f"MSE score took {time() - t}")
         t = time()
         ssim = SSimScore.create(template, test)
