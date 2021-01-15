@@ -13,11 +13,11 @@ class CubeSplitter:
         arr: The original array we want to work with, May be 2 or 3 dimensional.
     """
     def __init__(self, arr: np.ndarray):
-        assert (len(arr.shape) == 2) or (len(arr.shape) == 3)
+        assert len(arr.shape) in (2, 3), "Only 2 or 3 dimensional arrays are supported."
         self._arr = arr
 
     def subdivide(self, factor: int) -> np.ndarray:
-        """Subdivide the array into a2d numpy array of sub arrays.
+        """Subdivide the array into a 2d numpy array of sub arrays.
 
         Args:
             factor: The exponent of 2 that each of the first 2 dimentions of this array should be split by.
