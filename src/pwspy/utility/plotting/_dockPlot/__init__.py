@@ -1,8 +1,7 @@
 import typing
 
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QMainWindow, QApplication, QDockWidget, QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, \
-    QLabel
+from PyQt5.QtWidgets import QMainWindow, QApplication, QDockWidget, QWidget, QGridLayout
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
@@ -11,7 +10,6 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 class DockablePlotWindow(QMainWindow):
 
     def __init__(self, title: str = "Dockable Plots"):
-        self._startApp()
         super().__init__(parent=None)
         self.setWindowTitle(title)
         self._plots: typing.List[DockablePlot] = []
@@ -19,12 +17,6 @@ class DockablePlotWindow(QMainWindow):
         self.resize(1024, 768)
 
         self.show()
-
-    def _startApp(self):
-        self._app = QApplication([])
-
-    def run(self):
-        self._app.exec()
 
     def subplots(self, title: str, dockArea: str = 'top', **kwargs):
         dockMap = {'top': QtCore.Qt.TopDockWidgetArea, 'bottom': QtCore.Qt.BottomDockWidgetArea,
@@ -77,12 +69,33 @@ if __name__ == '__main__':
 
     names = ['plot', 'data', 'bs']
     areas = ['left', 'right', 'bottom', 'top']
+
+    def plot(ax):
+        x = np.linspace(0, 1)
+        y = np.random.random(x.size)
+        ax.plot(x, y, ls='--')
+
+    def im(ax):
+        d = np.random.random((50, 50))
+        ax.imshow(d)
+
+    funcs = [plot, im]
+
+    app = QApplication([])
+
     w = DockablePlotWindow()
+    for i in range(10):
+
+        fig, ax = w.subplots(random.choice(names), dockArea=random.choice(areas))
+        random.choice(funcs)(ax)
+
+    w2 = DockablePlotWindow(title="2nd Plot Window")
     for i in range(10):
         x = np.linspace(0, 1)
         y = np.random.random(x.size)
-        fig, ax = w.subplots(random.choice(names), dockArea=random.choice(areas))
+        fig, ax = w2.subplots(random.choice(names), dockArea=random.choice(areas))
         ax.plot(x, y, ls='--')
 
-    w.run()
+    app.exec()
+
     a = 1
