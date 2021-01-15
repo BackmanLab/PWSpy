@@ -1,3 +1,4 @@
+from PyQt5.QtWidgets import QApplication
 from numpy.core import long
 
 from pwspy.apps.CalibrationSuite._utility import CVAffineTransform
@@ -5,7 +6,7 @@ from pwspy.apps.CalibrationSuite.reviewer import Reviewer
 from loader import Loader
 import os
 import matplotlib.pyplot as plt
-from pwspy.utility.plotting import PlotNd
+from pwspy.utility.plotting import PlotNd, DockablePlotWindow
 import experimentInfo
 import pandas as pd
 import numpy as np
@@ -52,7 +53,7 @@ def loadDataFrame(measurementSet: str) -> pd.DataFrame:
 
 if __name__ == '__main__':
     import matplotlib as mpl
-    plt.ion()
+    plt.ioff()
 
     measurementSet = 'xcorr_blurScan'
 
@@ -75,10 +76,12 @@ if __name__ == '__main__':
                 cmap=scoreCmap))
         cbar.set_label("Blur (px)")
 
+    expSides = {'centered': 'left', 'translation': 'right', 'fieldstop': 'bottom'}
+    app = QApplication([])
+    expWindow = DockablePlotWindow("Experiment Comparison")
     # Plot NRMSE Score
     for expName, g in df.groupby('experiment'):
-        fig, ax = plt.subplots()
-        fig.suptitle(f"NRMSE {expName}")
+        fig, ax = expWindow.subplots(title=f"NRMSE {expName}", dockArea=expSides[expName])
         g = g.sort_values('idx')
         for scoreName, color in zip(scoreNames, scoreColors):
             scores = g[f"{scoreName}_score"]
@@ -89,8 +92,7 @@ if __name__ == '__main__':
 
     # Plot SSIM Score
     for expName, g in df.groupby('experiment'):
-        fig, ax = plt.subplots()
-        fig.suptitle(f"SSIM {expName}")
+        fig, ax = expWindow.subplots(f"SSIM {expName}", expSides[expName])
         g = g.sort_values('idx')
         for scoreName, color in zip(scoreNames, scoreColors):
             scores = g[f"{scoreName}_score"]
@@ -101,8 +103,7 @@ if __name__ == '__main__':
 
     # Plot LatXCorr Score
     for expName, g in df.groupby('experiment'):
-        fig, ax = plt.subplots()
-        fig.suptitle(f"LatXCorr {expName}")
+        fig, ax = expWindow.subplots(f"LatXCorr {expName}", expSides[expName])
         g = g.sort_values('idx')
         for scoreName, color in zip(scoreNames, scoreColors):
             scores = g[f"{scoreName}_score"]
@@ -113,8 +114,7 @@ if __name__ == '__main__':
 
     # Plot AxXCorr Score
     for expName, g in df.groupby('experiment'):
-        fig, ax = plt.subplots()
-        fig.suptitle(f"AxXCorr {expName}")
+        fig, ax = expWindow.subplots(f"AxXCorr {expName}", expSides[expName])
         g = g.sort_values('idx')
         for scoreName, color in zip(scoreNames, scoreColors):
             scores = g[f"{scoreName}_score"]
@@ -124,8 +124,7 @@ if __name__ == '__main__':
         drawBlurCBar()
 
     for expName, g in df.groupby('experiment'):
-        fig, ax = plt.subplots()
-        fig.suptitle(f"Axial Shift: {expName}")
+        fig, ax = expWindow.subplots(f"Axial Shift {expName}", expSides[expName])
         g = g.sort_values('idx')
         for scoreName, color in zip(scoreNames, scoreColors):
             scores = g[f"{scoreName}_score"]
@@ -135,8 +134,7 @@ if __name__ == '__main__':
         drawBlurCBar()
 
     for expName, g in df.groupby('experiment'):
-        fig, ax = plt.subplots()
-        fig.suptitle(f"Axial CDR: {expName}")
+        fig, ax = expWindow.subplots(f"Axial CDR {expName}", expSides[expName])
         g = g.sort_values('idx')
         for scoreName, color in zip(scoreNames, scoreColors):
             scores = g[f"{scoreName}_score"]
@@ -146,8 +144,7 @@ if __name__ == '__main__':
         drawBlurCBar()
 
     for expName, g in df.groupby('experiment'):
-        fig, ax = plt.subplots()
-        fig.suptitle(f"Lateral CDR_x (Normalized): {expName}")
+        fig, ax = expWindow.subplots(f"Lat CDR_x (normed) {expName}", expSides[expName])
         g = g.sort_values('idx')
         for scoreName, color in zip(scoreNames, scoreColors):
             scores = g[f"{scoreName}_score"]
@@ -158,8 +155,7 @@ if __name__ == '__main__':
         drawBlurCBar()
 
     for expName, g in df.groupby('experiment'):
-        fig, ax = plt.subplots()
-        fig.suptitle(f"Lateral CDR_y (Normalized): {expName}")
+        fig, ax = expWindow.subplots(f"Lat CDR_y (normed) {expName}", expSides[expName])
         g = g.sort_values('idx')
         for scoreName, color in zip(scoreNames, scoreColors):
             scores = g[f"{scoreName}_score"]
@@ -170,8 +166,7 @@ if __name__ == '__main__':
         drawBlurCBar()
 
     for expName, g in df.groupby('experiment'):
-        fig, ax = plt.subplots()
-        fig.suptitle(f"Lateral Shift: {expName}")
+        fig, ax = expWindow.subplots(f"Lateral Shift {expName}", expSides[expName])
         g = g.sort_values('idx')
         for scoreName, color in zip(scoreNames, scoreColors):
             scores = g[f"{scoreName}_score"]
@@ -180,11 +175,12 @@ if __name__ == '__main__':
         plt.xticks(ticks=g.settingQuantity, labels=g.setting, rotation=20)
         drawBlurCBar()
 
+    refCompWindow = DockablePlotWindow("Reference Comparison")
+
     ### Plots comparing the aligned images to eachother ###
     g = df[df.isref]
     g.index = list(range(len(g)))
-    fig, ax = plt.subplots()
-    fig.suptitle("Axial XCorr: Correctly Aligned")
+    fig, ax = refCompWindow.subplots("Axial XCorr")
     for scoreName, color in zip(scoreNames, scoreColors):
         scores = g[f"{scoreName}_score"]
         scores = [i.axxcorr.score for i in scores]
@@ -194,8 +190,7 @@ if __name__ == '__main__':
 
     g = df[df.isref]
     g.index = list(range(len(g)))
-    fig, ax = plt.subplots()
-    fig.suptitle("Lateral XCorr: Correctly Aligned")
+    fig, ax = refCompWindow.subplots("Lateral XCorr")
     for scoreName, color in zip(scoreNames, scoreColors):
         scores = g[f"{scoreName}_score"]
         scores = [i.latxcorr.score for i in scores]
@@ -205,8 +200,7 @@ if __name__ == '__main__':
 
     g = df[df.isref]
     g.index = list(range(len(g)))
-    fig, ax = plt.subplots()
-    fig.suptitle("NRMSE: Correctly Aligned")
+    fig, ax = refCompWindow.subplots("NRMSE")
     for scoreName, color in zip(scoreNames, scoreColors):
         scores = g[f"{scoreName}_score"]
         scores = [i.nrmse.score for i in scores]
@@ -215,8 +209,7 @@ if __name__ == '__main__':
 
     g = df[df.isref]
     g.index = list(range(len(g)))
-    fig, ax = plt.subplots()
-    fig.suptitle("SSIM: Correctly Aligned")
+    fig, ax = refCompWindow.subplots("SSIM")
     for scoreName, color in zip(scoreNames, scoreColors):
         scores = g[f"{scoreName}_score"]
         scores = [i.ssim.score for i in scores]
@@ -226,8 +219,7 @@ if __name__ == '__main__':
 
     g = df[df.isref]
     g.index = list(range(len(g)))
-    fig, ax = plt.subplots()
-    fig.suptitle("Lateral CDR_x: Correctly Aligned")
+    fig, ax = refCompWindow.subplots("Lateral CDR_x")
     for scoreName, color in zip(scoreNames, scoreColors):
         scores = g[f"{scoreName}_score"]
         scores = [i.latxcorr.cdrX for i in scores]
@@ -237,8 +229,7 @@ if __name__ == '__main__':
 
     g = df[df.isref]
     g.index = list(range(len(g)))
-    fig, ax = plt.subplots()
-    fig.suptitle("Lateral CDR_y: Correctly Aligned")
+    fig, ax = refCompWindow.subplots("Lateral CDR_y")
     for scoreName, color in zip(scoreNames, scoreColors):
         scores = g[f"{scoreName}_score"]
         scores = [i.latxcorr.cdrY for i in scores]
@@ -248,8 +239,7 @@ if __name__ == '__main__':
 
     g = df[df.isref]
     g.index = list(range(len(g)))
-    fig, ax = plt.subplots()
-    fig.suptitle("Lateral Shift: Correctly Aligned")
+    fig, ax = refCompWindow.subplots("Lateral Shift")
     for scoreName, color in zip(scoreNames, scoreColors):
         scores = g[f"{scoreName}_score"]
         scores = [np.sqrt(np.sum(np.array(i.latxcorr.shift)**2)/2) for i in scores]
@@ -259,8 +249,7 @@ if __name__ == '__main__':
 
     g = df[df.isref]
     g.index = list(range(len(g)))
-    fig, ax = plt.subplots()
-    fig.suptitle("Axial Shift: Correctly Aligned")
+    fig, ax = refCompWindow.subplots("Axial Shift")
     for scoreName, color in zip(scoreNames, scoreColors):
         scores = g[f"{scoreName}_score"]
         scores = [i.axxcorr.shift for i in scores]
@@ -268,4 +257,5 @@ if __name__ == '__main__':
     plt.xticks(ticks=g.index, labels=g.experiment, rotation=20)
     drawBlurCBar()
 
+    app.exec()
     a = 1

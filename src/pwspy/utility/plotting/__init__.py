@@ -38,3 +38,4 @@ Functions
 from ._multiPlot import MultiPlot
 from ._PlotNd import PlotNd, PlotNdCanvas
 from .roiColor import roiColor
+from ._dockPlot import DockablePlotWindow

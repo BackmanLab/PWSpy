@@ -241,6 +241,8 @@ class PlotNd(QWidget): #TODO add function and GUI method to set coordinates of c
 
     def setColorMap(self, cmap):
         self.canvas.setColorMap(cmap)
+
+
 if __name__ == '__main__':
     import sys
     print("Starting")

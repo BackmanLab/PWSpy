@@ -32,10 +32,7 @@ It should be run from the base conda env."""
 sys.path.append(os.path.join(rootDir, 'src'))  # Add the sourcecode location to "path" so we can import the pwspy package.
 import pwspy.version # this should save the version to file.
 
-
-
-
-#Clean
+# Clean
 if os.path.exists(buildDir):
     shutil.rmtree(buildDir)
 os.mkdir(buildDir)
@@ -54,8 +51,8 @@ if proc.returncode != 0:
 else:
     logger.info("Success")
     
-#Upload to Anaconda
-#The user can enable conda upload in order to automatically do this after build.
+# Upload to Anaconda
+# The user can enable conda upload in order to automatically do this after build.
     
 
 #Copy the other scripts

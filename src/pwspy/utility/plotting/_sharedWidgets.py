@@ -21,11 +21,10 @@ from enum import Enum
 from typing import List, Union, Callable, Tuple, Iterable
 
 from PyQt5 import QtGui
-from PyQt5.QtWidgets import QDialog, QWidget, QSpinBox, QLineEdit, QPushButton, QComboBox, QVBoxLayout, QHBoxLayout, QLabel, QMessageBox, QFileDialog
+from PyQt5.QtWidgets import QDialog, QWidget, QSpinBox, QLineEdit, QPushButton, QComboBox, QVBoxLayout, QHBoxLayout, \
+    QLabel, QMessageBox, QFileDialog, QFileIconProvider
 from matplotlib import animation
 from matplotlib.artist import Artist
-
-from pwspy.apps import resources
 
 
 class AnimationDlg(QDialog):
@@ -59,7 +58,8 @@ class AnimationDlg(QDialog):
         self.intervalSpinBox.setValue(100)
 
         self.fPath = QLineEdit(self)
-        self.browseButton = QPushButton(QtGui.QIcon(os.path.join(resources, 'folder.svg')), '')
+
+        self.browseButton = QPushButton(QFileIconProvider().icon(QFileIconProvider.Folder), '')
         self.browseButton.released.connect(self.browseFile)
 
         self.methodCombo = QComboBox(self)
