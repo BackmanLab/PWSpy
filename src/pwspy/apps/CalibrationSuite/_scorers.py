@@ -9,7 +9,8 @@ import scipy.signal as sps
 from skimage import metrics
 from time import time
 
-#TODO devise a way to inject a cube splitter into a scorer for more efficient high granularity socring
+#TODO devise a way to inject a cube splitter into a scorer for more efficient high granularity scoring
+from pwspy.apps.CalibrationSuite._utility import DualCubeSplitter
 
 
 @dataclasses.dataclass
@@ -17,12 +18,11 @@ class Score(abc.ABC):
     """
     Compares the 3d reflectance cube of the template with the reflectance cube of a test measurement.
     The test reflectance array should have already been transformed so that they are aligned.
-    Any blank section of the transformed test array should be `numpy.nan`
 
     Args:
         template: A 3d array of reflectance data that the test array will be compared against
         test: A 3d array to compare against the template array. Since it is likely that the original data will need to have been transformed
-            in order to align with the template there will blank regions. The pixels in the blank regions should be set to a value of `numpy.nan`
+            in order to align with the template the resulting blank regions must be cropped out.
     """
     score: float  # This attribute will be inherited by all deriving classes. Should be a value between 0 and 1
 
@@ -192,6 +192,45 @@ class CombinedScore(Score):
             score += v.score
         d = cls(score=score / len(scores), **scores)
         return d
+
+@dataclasses.dataclass
+class SplitScore(Score):
+    score: np.ndarray
+
+    @classmethod
+    def create(cls, template: np.ndarray, test: np.ndarray) -> SplitScore:
+        splitter = DualCubeSplitter(template, test)
+
+        def func(arr1, arr2):
+            score = CombinedScore.create(arr1, arr2)
+            return np.array([score.score, score.nrmse.score, score.ssim.score,
+                             score.latxcorr.score, score.latxcorr.cdrX,
+                             score.latxcorr.cdrY, score.latxcorr.shift[0],
+                             score.latxcorr.shift[1], score.axxcorr.score,
+                             score.axxcorr.cdr, score.axxcorr.shift])
+
+        out = splitter.apply(func, 2)
+        return cls(score=out)
+
+if __name__ == '__main__':
+    from pwspy.apps.CalibrationSuite.ITOMeasurement import ITOMeasurement
+    import os
+    from pwspy.analysis.pws import PWSAnalysisSettings
+    from pwspy.utility.reflection import Material
+    import pwspy.dataTypes as pwsdt
+
+    wdir = r'\\backmanlabnas.myqnapcloud.com\home\Year3\ITOPositionStability\AppTest'
+    settings = PWSAnalysisSettings.loadDefaultSettings("recommended")
+    settings.referenceMaterial = Material.Air
+
+    def genMeasurement(name: str):
+        hDir = os.path.join(wdir, name)
+        return ITOMeasurement(hDir, pwsdt.AcqDir(os.path.join(hDir, "Cell1")), pwsdt.AcqDir(os.path.join(hDir, "Cell999")), settings, name)
+
+    temp = genMeasurement('10_20_2020')
+    test = genMeasurement('1_15_2016')
+    a = 1
+
 
 #
 # class CNNScorer(Scorer):
