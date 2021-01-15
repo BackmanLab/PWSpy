@@ -2,7 +2,7 @@
 A python module supporting operations related to Partial Wave Spectroscopy.
 
 ## Documentation
-This project is automatically documented by "Sphinx". If you have Sphinx installed then you can compile documentation to HTML. 
+This project is automatically documented by "Sphinx". If you have Sphinx installed then you can compile documentation to HTML 
 by navigating to the `docs` folder and running `make html`. Formats other than HTML are also possible. Documentation is
 hosted online at [ReadTheDocs](https://pwspy.readthedocs.io/en/dev/) updating of documentation from the current version on Bitbucket can be performed
 by signing into the lab's account at `readthedocs.org`.
@@ -24,7 +24,7 @@ Set the appropriate Conda environment name to the `env` variable in the first li
 run `install.bat`  
 
 #### Installing Manually
-If you have the built package (.tar.gz file) then you can install the package by pointing `conda install` to the it.
+If you have the built package (.tar.gz file) then you can install the package by pointing `conda install` to it.
 Install the package with `conda install -c file:///{tarGzFileDestination} -c conda-forge pwspy`.
 
 #### First time startup
