@@ -31,6 +31,7 @@ from ...componentInterfaces import ResultsTableController
 
 if typing.TYPE_CHECKING:
     from pwspy.dataTypes import AcqDir, ICMetaData
+    from pwspy.analysis.pws import PWSAnalysisSettings
     from pwspy.analysis.warnings import AnalysisWarning
 
 

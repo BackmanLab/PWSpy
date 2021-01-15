@@ -31,7 +31,7 @@ from .exceptions import OfflineError
 
 import typing
 
-from pwspy.utility.plotting import PlotNd
+from mpl_qt_viz.visualizers import PlotNd
 
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager
@@ -76,6 +76,7 @@ class ERTreeWidgetItem(QTreeWidgetItem):
 class ERSelectorWindow(QDialog):
     selectionChanged = QtCore.pyqtSignal(object) #Usually an ERMetaData object, sometimes None
 
+    # noinspection PyUnresolvedReferences
     def __init__(self, manager: ERManager, parent: Optional[QWidget] = None):
         self._manager = manager
         self._selectedMetadata: Optional[pwsdt.ERMetaData] = None

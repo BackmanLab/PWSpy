@@ -35,8 +35,7 @@ from matplotlib.backends.backend_qt5 import NavigationToolbar2QT
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.bigPlot import BigPlot
 from pwspy.dataTypes import Roi, AcqDir
-from pwspy.utility.matplotlibWidgets import PolygonModifier, AxManager
-from pwspy.utility.matplotlibWidgets._modifierWidgets.movingModifier import MovingModifier
+from mpl_qt_viz.roiSelection import PolygonModifier, AxManager, MovingModifier
 from pwspy.utility.plotting.roiColor import roiColor
 
 @dataclass

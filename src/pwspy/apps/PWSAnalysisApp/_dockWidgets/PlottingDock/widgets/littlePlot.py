@@ -26,7 +26,7 @@ from pwspy.apps.PWSAnalysisApp.utilities.conglomeratedAnalysis import Conglomera
 from pwspy.dataTypes import AcqDir, ImCube
 from .widgets import AnalysisPlotter
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.analysisViewer import AnalysisViewer
-from pwspy.utility.plotting import PlotNd
+from mpl_qt_viz.visualizers import PlotNd
 
 
 class LittlePlot(AnalysisPlotter, QWidget):

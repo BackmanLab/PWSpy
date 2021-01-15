@@ -26,19 +26,19 @@ from typing import Optional, Dict, List
 import httplib2
 from PyQt5 import QtCore
 from PyQt5.QtCore import QObject, QThread
-from PyQt5.QtWidgets import QMessageBox, QWidget, QApplication, QPushButton
+from PyQt5.QtWidgets import QMessageBox, QWidget
+from google.auth.exceptions import TransportError
 from googleapiclient.http import MediaIoBaseDownload
 
+from pwspy.apps.PWSAnalysisApp import applicationVars
 from pwspy.apps.sharedWidgets.dialogs import BusyDialog
 from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataComparator import ERDataComparator
 from pwspy.apps.sharedWidgets.extraReflectionManager._ERDataDirectory import ERDataDirectory, EROnlineDirectory
-from ._ERSelectorWindow import ERSelectorWindow
-from ._ERUploaderWindow import ERUploaderWindow
 from pwspy.dataTypes import ERMetaData
 from pwspy.utility import GoogleDriveDownloader
+from ._ERSelectorWindow import ERSelectorWindow
+from ._ERUploaderWindow import ERUploaderWindow
 from .exceptions import OfflineError
-from pwspy.apps.PWSAnalysisApp import applicationVars
-from google.auth.exceptions import TransportError
 
 
 def _offlineDecorator(func):

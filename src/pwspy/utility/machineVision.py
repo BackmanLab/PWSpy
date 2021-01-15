@@ -38,6 +38,7 @@ import matplotlib.pyplot as plt
 from matplotlib import animation
 from skimage import feature
 from skimage import registration
+from mpl_qt_viz.visualizers import MultiPlot
 if typing.TYPE_CHECKING:
     import cv2
 
@@ -299,7 +300,6 @@ def edgeDetectRegisterTranslation(reference: np.ndarray, other: typing.Iterable[
             animsEd.append([anEdAx.imshow(cv2.warpAffine(to8bit(edgeIm), cv2.invertAffineTransform(shifts), edgeIm.shape), 'gray'),  anEdAx.text(100, 100, str(i),  color='w')])
             anims.append([anAx.imshow(cv2.warpAffine(to8bit(im), cv2.invertAffineTransform(shifts), im.shape), 'gray'),  anAx.text(100, 100, str(i), color='r')])
     if debugPlots:
-        from pwspy.utility.plotting import MultiPlot
         an = [MultiPlot(anims, "If transforms worked, cells should not appear to move."), MultiPlot(animsEd, "If transforms worked, cells should not appear to move.")]
         [i.show() for i in an]
     else:
@@ -342,7 +342,6 @@ def crossCorrelateRegisterTranslation(reference: np.ndarray, other: typing.Itera
                 anAx.imshow(cv2.warpAffine(to8bit(im), cv2.invertAffineTransform(shifts), im.shape), 'gray'),
                 anAx.text(100, 100, str(i), color='r')])
     if debugPlots:
-        from pwspy.utility.plotting import MultiPlot
         an = MultiPlot(anims, "If transforms worked, images should not appear to move.")
         an.show()
     else:

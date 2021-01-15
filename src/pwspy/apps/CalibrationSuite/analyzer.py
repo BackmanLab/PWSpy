@@ -4,21 +4,16 @@ Created on Mon Oct 26 16:44:06 2020
 
 @author: nick
 """
+import multiprocessing as mp
 import cv2
-from pwspy.apps.CalibrationSuite.ITOMeasurement import ITOMeasurement
-from pwspy.apps.CalibrationSuite.TransformGenerator import TransformGenerator
-from pwspy.utility.reflection import Material
+import pandas as pd
 from scipy.ndimage import binary_dilation
+from pwspy.apps.CalibrationSuite.TransformGenerator import TransformGenerator
+from pwspy.utility.fileIO import processParallel
 from ._scorers import *
 from ._utility import CVAffineTransform
 from .fileTypes import TransformedData
 from .loaders import settings, AbstractMeasurementLoader
-from pwspy.utility.plotting import MultiPlot
-import matplotlib.pyplot as plt
-import pwspy.dataTypes as pwsdt
-import multiprocessing as mp
-from pwspy.utility.fileIO import processParallel
-import pandas as pd
 
 settings.referenceMaterial = Material.Air
 
