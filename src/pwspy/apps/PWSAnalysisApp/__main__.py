@@ -58,9 +58,10 @@ def main():
     debugMode = False
     try:
         opts, args = getopt.getopt(sys.argv[1:], '', ['debug'])
-        optNames, optVals = zip(*opts)
-        if '--debug' in optNames:
-            debugMode = True
+        if len(opts) > 0:  # If any arguments were found
+            optNames, optVals = zip(*opts)
+            if '--debug' in optNames:
+                debugMode = True
     except getopt.GetoptError as e:
         print(e)
         sys.exit(1)
