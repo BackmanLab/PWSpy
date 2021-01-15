@@ -54,7 +54,6 @@ if __name__ == '__main__':
     import matplotlib as mpl
     plt.ion()
 
-    #TODO split the SSIM
     measurementSet = 'xcorr_blurScan'
 
     df = loadDataFrame(measurementSet)

@@ -169,7 +169,7 @@ class CombinedScore(Score):
     def create(cls, template: np.ndarray, test: np.ndarray) -> CombinedScore:
         logger = logging.getLogger(__name__)
         t = time()
-        mse = RMSEScore.create(template, test)
+        nrmse = RMSEScore.create(template, test)
         logger.debug(f"MSE score took {time() - t}")
         t = time()
         ssim = SSimScore.create(template, test)
@@ -181,7 +181,7 @@ class CombinedScore(Score):
         axxcorr = AxialXCorrScore.create(template, test)
         logger.debug(f"AxXCORR score took {time() - t}")
         scores = dict(
-            mse=mse,
+            nrmse=nrmse,
             ssim=ssim,
             latxcorr=latxcorr,
             axxcorr=axxcorr
