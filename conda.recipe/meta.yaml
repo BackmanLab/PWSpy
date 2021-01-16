@@ -37,6 +37,7 @@ requirements:
     - py-opencv =4
     - pyqt =5
     - scikit-image
+    - mpl_qt_viz  # Plotting package available on PyPi and conda-forge. Written for this project by Nick Anthony
 
 app:
   entry: PWSAnalysis
