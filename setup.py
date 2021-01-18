@@ -26,8 +26,8 @@ import os
 
 with open(osp.join('src', 'pwspy', 'version.py')) as f:
     currwd = os.getcwd()
-    os.chdir(osp.join(currwd, 'src','pwspy')) #The version.py file will run from the wrong location if we don't manually set it here.
-    exec(f.read()) # Run version py to initialize the pwspyVersion variable
+    os.chdir(osp.join(currwd, 'src', 'pwspy'))  # The version.py file will run from the wrong location if we don't manually set it here.
+    exec(f.read())  # Run version py to initialize the pwspyVersion variable
     os.chdir(currwd)
 
 setup(name='pwspy',
@@ -52,7 +52,7 @@ setup(name='pwspy',
                         'opencv-python', #opencv is required but naming differences between conda and pip seem to cause issues. Maybe should be commented out?
                         'PyQt5',
                         'scikit-image',
-                        'mpl_qt_viz'],  # Plotting package available on PyPi and conda-forge. Written for this project by Nick Anthony
+                        'mpl_qt_viz'],  # Plotting package available on PyPi and the backmanlab anaconda cloud account. Written for this project by Nick Anthony
       package_dir={'': 'src'},
       package_data={'pwspy': ['utility/reflection/refractiveIndexFiles/*',
                               'utility/thinFilmInterferenceFiles/*',
