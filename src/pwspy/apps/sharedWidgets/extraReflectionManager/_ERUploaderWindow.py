@@ -34,7 +34,8 @@ from pwspy.apps.sharedWidgets.extraReflectionManager.ERIndex import ERIndex
 from pwspy.apps.sharedWidgets.extraReflectionManager._ERDataDirectory import ERDataDirectory
 from pwspy.apps.sharedWidgets.extraReflectionManager.ERDataComparator import ERDataComparator
 from pwspy.dataTypes import ExtraReflectanceCube
-from pwspy.utility.plotting import PlotNd
+from mpl_qt_viz.visualizers import PlotNd
+
 
 if typing.TYPE_CHECKING:
     from pwspy.apps.sharedWidgets.extraReflectionManager import ERManager

@@ -24,7 +24,7 @@ if __name__ == '__main__':
     import os
     import scipy as sp
     import numpy as np
-    from pwspy.utility.plotting import PlotNd, MultiPlot
+    from mpl_qt_viz.visualizers import PlotNd, MultiPlot
     import matplotlib.pyplot as plt
     import skimage.morphology as morph
     import skimage.measure as meas

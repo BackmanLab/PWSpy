@@ -29,7 +29,7 @@ from pwspy.apps.PWSAnalysisApp.utilities.conglomeratedAnalysis import Conglomera
 from pwspy.dataTypes import AcqDir
 import os
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.analysisViewer import AnalysisViewer
-from pwspy.utility.matplotlibWidgets import FullImPaintCreator, AdjustableSelector, LassoCreator, EllipseCreator, RegionalPaintCreator, PolygonModifier, WaterShedPaintCreator
+from mpl_qt_viz.roiSelection import FullImPaintCreator, AdjustableSelector, LassoCreator, EllipseCreator, RegionalPaintCreator, PolygonModifier, WaterShedPaintCreator
 
 
 class RoiDrawer(QWidget):

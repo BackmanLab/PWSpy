@@ -6,7 +6,7 @@ from pwspy.apps.CalibrationSuite.reviewer import Reviewer
 from loader import Loader
 import os
 import matplotlib.pyplot as plt
-from pwspy.utility.plotting import PlotNd, DockablePlotWindow
+from mpl_qt_viz.visualizers import PlotNd, DockablePlotWindow
 import experimentInfo
 import pandas as pd
 import numpy as np

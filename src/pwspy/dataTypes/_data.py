@@ -174,7 +174,7 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
         Returns:
             np.ndarray: An array of the 4 XY vertices of the square.
         """
-        from pwspy.utility.matplotlibWidgets import AxManager, PointCreator
+        from mpl_qt_viz.roiSelection import AxManager, PointCreator
         verts = [None]
         if displayIndex is None:
            displayIndex = self.data.shape[2]//2
@@ -388,7 +388,7 @@ class ICRawBase(ICBase, ABC):
             return {'camCorrected': self.cameraCorrected, 'exposureNormed': self.normalizedByExposure, 'erSubtracted': self.extraReflectionSubtracted, 'refNormed': self.normalizedByReference}
 
         @classmethod
-        def fromDict(cls, d: dict) -> 'ProcessingStatus':
+        def fromDict(cls, d: dict) -> ICBase.ProcessingStatus:
             return cls(cameraCorrected=d['camCorrected'], normalizedByExposure=d['exposureNormed'], extraReflectionSubtracted=d['erSubtracted'], normalizedByReference=d['refNormed'])
 
     def __init__(self, data: np.ndarray, index: tuple, metadata: pwsdtmd.MetaDataBase, processingStatus: ProcessingStatus=None, dtype=np.float32):

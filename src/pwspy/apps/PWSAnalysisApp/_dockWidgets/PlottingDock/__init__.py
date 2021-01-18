@@ -16,24 +16,22 @@
 # along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
 
 import logging
-import traceback
+import os
 from typing import List
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDockWidget, QWidget, QHBoxLayout, QScrollArea, QVBoxLayout, QPushButton, QMessageBox, \
     QLabel, QLineEdit, QSizePolicy, QButtonGroup, QFrame
 
-from pwspy.apps.PWSAnalysisApp._dockWidgets import CellSelectorDock
-from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.roiDrawer import RoiDrawer
 import pwspy.dataTypes as pwsdt
+from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.roiDrawer import RoiDrawer
 from pwspy.apps.sharedWidgets.utilityWidgets import AspectRatioWidget
 from .widgets.littlePlot import LittlePlot
-import os
-
-from ...utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
 from ...componentInterfaces import CellSelector
+from ...utilities.conglomeratedAnalysis import ConglomerateAnalysisResults
 
 
+# noinspection PyUnresolvedReferences
 class PlottingDock(QDockWidget):
     def __init__(self, selector: CellSelector):
         super().__init__("Plotting")

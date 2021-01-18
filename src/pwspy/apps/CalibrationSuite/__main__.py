@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 from pwspy.apps.CalibrationSuite.loaders import DateMeasurementLoader
 from pwspy.apps.CalibrationSuite.reviewer import Reviewer
-from pwspy.utility.plotting import PlotNd
+from mpl_qt_viz.visualizers import PlotNd
 import pandas as pd
 import numpy as np
 
