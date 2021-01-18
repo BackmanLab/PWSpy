@@ -159,11 +159,23 @@ class RMSEScore(Score):
 
 
 @dataclasses.dataclass
+class ReflectanceScorer(Score):
+    reflectanceRatio: float
+
+    @classmethod
+    def create(cls, tempData: np.ndarray, testData: np.ndarray) -> ReflectanceScorer:
+        meanReflectanceRatio = float(np.mean(testData / tempData))
+        score = 1 - np.abs(1-meanReflectanceRatio)
+        return cls(score=score, reflectanceRatio=meanReflectanceRatio)
+
+
+@dataclasses.dataclass
 class CombinedScore(Score):
     nrmse: RMSEScore
     latxcorr: LateralXCorrScore
     ssim: SSimScore
     axxcorr: AxialXCorrScore
+    reflectance: ReflectanceScorer
 
     @classmethod
     def create(cls, template: np.ndarray, test: np.ndarray) -> CombinedScore:
@@ -180,11 +192,15 @@ class CombinedScore(Score):
         t = time()
         axxcorr = AxialXCorrScore.create(template, test)
         logger.debug(f"AxXCORR score took {time() - t}")
+        t = time()
+        r = ReflectanceScorer.create(template, test)
+        logger.debug(f"Reflectance score took {time() - t}")
         scores = dict(
             nrmse=nrmse,
             ssim=ssim,
             latxcorr=latxcorr,
-            axxcorr=axxcorr
+            axxcorr=axxcorr,
+            reflectance=r
         )
         # TODO not sure how to mix the scores. Just taking the average right now.
         score = 0
@@ -192,6 +208,7 @@ class CombinedScore(Score):
             score += v.score
         d = cls(score=score / len(scores), **scores)
         return d
+
 
 @dataclasses.dataclass
 class SplitScore(Score):
