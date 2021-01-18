@@ -4,6 +4,7 @@ Created on Mon Oct 26 16:44:06 2020
 
 @author: nick
 """
+from __future__ import annotations
 import multiprocessing as mp
 import cv2
 import pandas as pd
@@ -14,6 +15,7 @@ from ._scorers import *
 from ._utility import CVAffineTransform
 from .fileTypes import TransformedData
 from .loaders import settings, AbstractMeasurementLoader
+from pwspy.utility.reflection import Material
 
 settings.referenceMaterial = Material.Air
 
