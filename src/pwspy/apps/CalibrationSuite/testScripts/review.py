@@ -216,6 +216,7 @@ if __name__ == '__main__':
         scores = [i.nrmse.score for i in scores]
         ax.scatter(g.index, scores, label=scoreName, color=color)
     plt.xticks(ticks=g.index, labels=g.experiment, rotation=20)
+    drawBlurCBar()
 
     g = df[df.isref]
     g.index = list(range(len(g)))
