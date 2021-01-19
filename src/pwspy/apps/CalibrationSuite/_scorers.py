@@ -116,8 +116,8 @@ class AxialXCorrScore(Score):
         #Normalize Each XY pixel sso that the xcorrelation hasa max of 1.
         tempData = (tempData - tempData.mean(axis=2)[:, :, None]) / tempData.std(axis=2)[:, :, None]
         testData = (testData - testData.mean(axis=2)[:, :, None]) / testData.std(axis=2)[:, :, None]
-        # Interpolate by 4x along the spectral axis for better resolution in axial shift
-        upsampleFactor = 4
+        # Interpolate by 2x along the spectral axis for better resolution in axial shift. 4x used too much memory
+        upsampleFactor = 2
         x = np.linspace(0, 1, num=tempData.shape[2])
         x2 = np.linspace(0, 1, num=tempData.shape[2] * upsampleFactor)
         tempData = interp1d(x, tempData, axis=2, kind='cubic')(x2)
