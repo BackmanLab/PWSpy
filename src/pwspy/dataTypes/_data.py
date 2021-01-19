@@ -174,7 +174,7 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
         Returns:
             np.ndarray: An array of the 4 XY vertices of the square.
         """
-        from mpl_qt_viz.roiSelection import AxManager, PointCreator
+        from mpl_qt_viz.roiSelection import PointCreator
         verts = [None]
         if displayIndex is None:
            displayIndex = self.data.shape[2]//2
@@ -183,8 +183,7 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
         fig.suptitle("Close to accept ROI")
         def select(Verts, handles):
             verts[0] = Verts
-        axMan = AxManager(ax)
-        sel = PointCreator(axMan, onselect=select, sideLength=side)
+        sel = PointCreator(ax, onselect=select, sideLength=side)
         sel.set_active(True)
         fig.show()
         while plt.fignum_exists(fig.number):
