@@ -118,8 +118,9 @@ class AxialXCorrScore(Score):
         testData = (testData - testData.mean(axis=2)[:, :, None]) / (
                     testData.std(axis=2)[:, :, None] * testData.shape[2])  # The division by testData.size here gives us a final xcorrelation that maxes out at 1.
         # Interpolate by 4x along the spectral axis for better resolution in axial shift
+        upsampleFactor = 4
         x = np.linspace(0, 1, num=tempData.shape[2])
-        x2 = np.linspace(0, 1, num=tempData.shape[2] * 4)
+        x2 = np.linspace(0, 1, num=tempData.shape[2] * upsampleFactor)
         tempData = interp1d(x, tempData, axis=2, kind='cubic')(x2)
         testData = interp1d(x, testData, axis=2, kind='cubic')(x2)
         # Very hard to find support for 1d correlation on an Nd array. scipy.signal.fftconvolve appears to be the best option
@@ -128,7 +129,8 @@ class AxialXCorrScore(Score):
         zeroShiftIdx = corr.shape[0]//2
         peakIdx = corr.argmax()
         cdr = cls._calculate1DCDR(corr, peakIdx, 2)
-        return cls(**{'score': float(corr.max()), 'shift': peakIdx-zeroShiftIdx, 'cdr': float(cdr)})
+        shift = (peakIdx-zeroShiftIdx) / upsampleFactor  # Measured in pixels (before upsampling) pixels will be determined by the wavelength settings of acquisition.
+        return cls(**{'score': float(corr.max()), 'shift': shift, 'cdr': float(cdr)})
 
     @staticmethod
     def _reverse_and_conj(x):
