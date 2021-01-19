@@ -52,7 +52,7 @@ setup(name='pwspy',
                         'opencv-python', #opencv is required but naming differences between conda and pip seem to cause issues. Maybe should be commented out?
                         'PyQt5',
                         'scikit-image',
-                        'mpl_qt_viz'],  # Plotting package available on PyPi and the backmanlab anaconda cloud account. Written for this project by Nick Anthony
+                        'mpl_qt_viz>=1.0.5'],  # Plotting package available on PyPi and the backmanlab anaconda cloud account. Written for this project by Nick Anthony
       package_dir={'': 'src'},
       package_data={'pwspy': ['utility/reflection/refractiveIndexFiles/*',
                               'utility/thinFilmInterferenceFiles/*',
