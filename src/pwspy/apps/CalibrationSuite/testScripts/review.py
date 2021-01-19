@@ -53,9 +53,9 @@ def loadDataFrame(measurementSet: str) -> pd.DataFrame:
 
 if __name__ == '__main__':
     import matplotlib as mpl
-    plt.ioff()
+    # plt.ioff()
 
-    measurementSet = 'xcorr_blurScan'
+    measurementSet = 'xcorr_blurScan_2'
 
     df = loadDataFrame(measurementSet)
     df = pd.merge(df, experimentInfo.experiment, on=('experiment', 'setting'))
@@ -175,6 +175,16 @@ if __name__ == '__main__':
         plt.xticks(ticks=g.settingQuantity, labels=g.setting, rotation=20)
         drawBlurCBar()
 
+    for expName, g in df.groupby('experiment'):
+        fig, ax = expWindow.subplots(f"Reflectance {expName}", expSides[expName])
+        g = g.sort_values('idx')
+        for scoreName, color in zip(scoreNames, scoreColors):
+            scores = g[f"{scoreName}_score"]
+            scores = [i.reflectance.reflectanceRatio for i in scores]
+            ax.scatter(g.settingQuantity, scores, label=scoreName, color=color)
+        plt.xticks(ticks=g.settingQuantity, labels=g.setting, rotation=20)
+        drawBlurCBar()
+
     refCompWindow = DockablePlotWindow("Reference Comparison")
 
     ### Plots comparing the aligned images to eachother ###
@@ -253,6 +263,16 @@ if __name__ == '__main__':
     for scoreName, color in zip(scoreNames, scoreColors):
         scores = g[f"{scoreName}_score"]
         scores = [i.axxcorr.shift for i in scores]
+        ax.scatter(g.index, scores, label=scoreName, color=color)
+    plt.xticks(ticks=g.index, labels=g.experiment, rotation=20)
+    drawBlurCBar()
+
+    g = df[df.isref]
+    g.index = list(range(len(g)))
+    fig, ax = refCompWindow.subplots("Reflectance Ratio")
+    for scoreName, color in zip(scoreNames, scoreColors):
+        scores = g[f"{scoreName}_score"]
+        scores = [i.reflectance.reflectanceRatio for i in scores]
         ax.scatter(g.index, scores, label=scoreName, color=color)
     plt.xticks(ticks=g.index, labels=g.experiment, rotation=20)
     drawBlurCBar()
