@@ -115,8 +115,7 @@ class AxialXCorrScore(Score):
     def create(cls, tempData: np.ndarray, testData: np.ndarray) -> AxialXCorrScore:
         #Normalize Each XY pixel sso that the xcorrelation hasa max of 1.
         tempData = (tempData - tempData.mean(axis=2)[:, :, None]) / tempData.std(axis=2)[:, :, None]
-        testData = (testData - testData.mean(axis=2)[:, :, None]) / (
-                    testData.std(axis=2)[:, :, None] * testData.shape[2])  # The division by testData.size here gives us a final xcorrelation that maxes out at 1.
+        testData = (testData - testData.mean(axis=2)[:, :, None]) / testData.std(axis=2)[:, :, None]
         # Interpolate by 4x along the spectral axis for better resolution in axial shift
         upsampleFactor = 4
         x = np.linspace(0, 1, num=tempData.shape[2])
@@ -124,6 +123,7 @@ class AxialXCorrScore(Score):
         tempData = interp1d(x, tempData, axis=2, kind='cubic')(x2)
         testData = interp1d(x, testData, axis=2, kind='cubic')(x2)
         # Very hard to find support for 1d correlation on an Nd array. scipy.signal.fftconvolve appears to be the best option
+        testData = testData / testData.shape[2]  # The division by testData.size here gives us a final xcorrelation that maxes out at 1.
         corr = sps.fftconvolve(tempData, cls._reverse_and_conj(testData), axes=2, mode='full')
         corr = corr.mean(axis=(0, 1))
         zeroShiftIdx = corr.shape[0]//2
