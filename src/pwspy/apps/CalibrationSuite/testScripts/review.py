@@ -54,9 +54,10 @@ def loadDataFrame(measurementSet: str) -> pd.DataFrame:
 if __name__ == '__main__':
     import matplotlib as mpl
 
-    measurementSet = 'xcorr_blurScan_3'
+    measurementSet = 'xcorr_blurScan_4'
 
     df = loadDataFrame(measurementSet)
+    print("Loaded Dataframe")
     df = pd.merge(df, experimentInfo.experiment, on=('experiment', 'setting'))
     df['setting'] = df['setting'].apply(lambda val: val.replace('_', '.'))  # Replace the underscores with period to make the NA look better in plots
 

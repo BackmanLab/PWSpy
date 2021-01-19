@@ -108,7 +108,7 @@ class LateralXCorrScore(Score):
 
 @dataclasses.dataclass
 class AxialXCorrScore(Score):
-    shift: int
+    shift: float
     cdr: float
 
     @classmethod
