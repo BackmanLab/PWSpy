@@ -38,7 +38,7 @@ if os.path.exists(buildDir):
 os.mkdir(buildDir)
 
 # Build and save to the outputDirectory
-buildCmd = f"conda-build {rootDir} --output-folder {buildDir} -c conda-forge"
+buildCmd = f"conda-build {rootDir} --output-folder {buildDir} -c conda-forge -c backmanlab"
 if os.name == 'posix':
     buildCmd = f'bash -c "source activate base; {buildCmd}"'  # this is required for the anaconda environment ot be found through subprocess
 proc = subprocess.Popen(buildCmd, shell=True, stdout=None, stderr=subprocess.PIPE)
