@@ -35,7 +35,7 @@ from matplotlib.backends.backend_qt5 import NavigationToolbar2QT
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from pwspy.apps.PWSAnalysisApp._dockWidgets.PlottingDock.widgets.bigPlot import BigPlot
 from pwspy.dataTypes import Roi, AcqDir
-from mpl_qt_viz.roiSelection import PolygonModifier, AxManager, MovingModifier
+from mpl_qt_viz.roiSelection import PolygonModifier, MovingModifier
 from pwspy.utility.plotting.roiColor import roiColor
 
 @dataclass
@@ -54,12 +54,11 @@ class RoiPlot(QWidget):
         else:
             super().__init__(parent=parent)
         self._plotWidget = BigPlot(data, self)
-        self.data = self._plotWidget.data #TODO These variables are used by other widgets, leftover from when we used inheritance rather than encapsulation, it would be good to get rid of them.
+        self.data = self._plotWidget.data  # TODO These variables are used by other widgets, leftover from when we used inheritance rather than encapsulation, it would be good to get rid of them.
         self.im = self._plotWidget.im
         self.ax = self._plotWidget.ax
         self.canvas = self._plotWidget.canvas
         self.rois: typing.List[RoiParams] = []  # This list hold information about the ROIs that are currently displayed.
-        self.axManager = AxManager(self._plotWidget.ax)  # This object manages redrawing of the matplotlib axes for us.
 
         self.roiFilter = QComboBox(self)
         self.roiFilter.setEditable(True)
@@ -187,7 +186,7 @@ class RoiPlot(QWidget):
                     self.enableHoverAnnotation(True)
 
                 self.enableHoverAnnotation(False) #This should be reenabled when the widget is finished or cancelled.
-                self._polyWidg = MovingModifier(self.axManager, onselect=done, onCancelled=cancelled)
+                self._polyWidg = MovingModifier(self.ax, onselect=done, onCancelled=cancelled)
                 self._polyWidg.set_active(True)
                 self._polyWidg.initialize(coordSet)
 
@@ -230,7 +229,7 @@ class RoiPlot(QWidget):
                     def cancelled():
                         self.enableHoverAnnotation(True)
 
-                    self._polyWidg = PolygonModifier(self.axManager, onselect=done, onCancelled=cancelled)
+                    self._polyWidg = PolygonModifier(self.ax, onselect=done, onCancelled=cancelled)
                     self._polyWidg.set_active(True)
                     self.enableHoverAnnotation(False)
                     self._polyWidg.initialize([handles])
