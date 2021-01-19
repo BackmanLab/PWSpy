@@ -8,6 +8,7 @@ import numpy as np
 import scipy.signal as sps
 from skimage import metrics
 from time import time
+from scipy.interpolate import interp1d
 
 #TODO devise a way to inject a cube splitter into a scorer for more efficient high granularity scoring
 from pwspy.apps.CalibrationSuite._utility import DualCubeSplitter
@@ -116,8 +117,12 @@ class AxialXCorrScore(Score):
         tempData = (tempData - tempData.mean(axis=2)[:, :, None]) / tempData.std(axis=2)[:, :, None]
         testData = (testData - testData.mean(axis=2)[:, :, None]) / (
                     testData.std(axis=2)[:, :, None] * testData.shape[2])  # The division by testData.size here gives us a final xcorrelation that maxes out at 1.
-
-        #Very hard to find support for 1d correlation on an Nd array. scipy.signal.fftconvolve appears to be the best option
+        # Interpolate by 4x along the spectral axis for better resolution in axial shift
+        x = np.linspace(0, 1, num=tempData.shape[2])
+        x2 = np.linspace(0, 1, num=tempData.shape[2] * 4)
+        tempData = interp1d(x, tempData, axis=2, kind='cubic')(x2)
+        testData = interp1d(x, testData, axis=2, kind='cubic')(x2)
+        # Very hard to find support for 1d correlation on an Nd array. scipy.signal.fftconvolve appears to be the best option
         corr = sps.fftconvolve(tempData, cls._reverse_and_conj(testData), axes=2, mode='full')
         corr = corr.mean(axis=(0, 1))
         zeroShiftIdx = corr.shape[0]//2
