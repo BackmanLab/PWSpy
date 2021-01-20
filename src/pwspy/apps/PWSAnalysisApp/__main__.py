@@ -43,8 +43,6 @@ def _setupDataDirectories():
         with open(os.path.join(applicationVars.extraReflectionDirectory, 'readme.txt'), 'w') as f:
             f.write("""Extra reflection `data cubes` and an index file are stored on the Backman Lab google drive account.
             Download the index file and any data cube you plan to use to this folder.""")
-        #add an empty index file to avoid crashes if running in offline-mode
-        shutil.copyfile(os.path.join(resources, 'index.json'), os.path.join(applicationVars.extraReflectionDirectory, 'index.json'))
     if not os.path.exists(applicationVars.googleDriveAuthPath):
         os.mkdir(applicationVars.googleDriveAuthPath)
         shutil.copyfile(os.path.join(resources, 'credentials.json'),

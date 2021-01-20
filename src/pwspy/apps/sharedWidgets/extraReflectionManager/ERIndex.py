@@ -17,6 +17,7 @@
 
 from __future__ import annotations
 import json
+import logging
 import os
 from datetime import datetime
 from typing import List, Optional, TextIO
@@ -27,6 +28,7 @@ from pwspy import dateTimeFormat
 
 
 class ERIndex:
+    FILENAME = 'index.json'  # TODO replace hardcoded `index.json` throughout the library with a reference to this variable.
     _indexSchema = {
         "$schema": "http://json-schema.org/schema#",
         '$id': 'extraReflectionIndexSchema',
@@ -50,6 +52,7 @@ class ERIndex:
             'creationDate': {'type': 'string'}
         }
     }
+
     def __init__(self, cubes: List[ERIndexCube], creationDate: Optional[str] = None):
         self.cubes = cubes
         if creationDate is None:
@@ -59,13 +62,22 @@ class ERIndex:
 
     @classmethod
     def load(cls, f: TextIO) -> ERIndex:
-        indexFile = json.load(f)  # For unknown reasons this can sometime raises a JsonDecodeError and the index file needs to be redownloaded.
+        try:
+            indexFile = json.load(f)  # For unknown reasons this can sometime raises a JsonDecodeError and the index file needs to be redownloaded.
+        except json.JSONDecodeError as e:
+            f.seek(0)
+            logging.getLogger(__name__).error(f"ERIndex.load() encountered a json.JSONDecodeError. File contents:\n {f.read()}")
+            raise e  # Other parts of the application rely on this error to determine what to do.
         jsonschema.validate(indexFile, schema=cls._indexSchema)
         cubes = [ERIndexCube.fromDict(i) for i in indexFile['reflectanceCubes']]
         return cls(cubes, indexFile['creationDate'])
 
     def toDict(self) -> dict:
         return {'creationDate': self.creationDate, 'reflectanceCubes': [i.toDict() for i in self.cubes]}
+
+    def toJson(self, directory: str):
+        with open(os.path.join(directory, self.FILENAME), 'w') as f:
+            json.dump(self.toDict(), f, indent=4)
 
     def getItemFromIdTag(self, idTag: str) -> ERIndexCube:
         for i in self.cubes:
@@ -100,7 +112,7 @@ class ERIndex:
                     idx2Cubes.remove(matchingCube)
             else:  # index1 entry wasn't found in index2
                 newCubes.append(cube)
-        for cube in idx2Cubes:  # Everthing still left in this list should be unique to index 2.
+        for cube in idx2Cubes:  # Everything still left in this list should be unique to index 2.
             newCubes.append(cube)
         return ERIndex(newCubes)
 

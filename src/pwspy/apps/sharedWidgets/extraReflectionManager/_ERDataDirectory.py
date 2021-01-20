@@ -18,6 +18,7 @@
 from __future__ import annotations
 import hashlib
 import json
+import logging
 import os, io
 from enum import Enum
 from glob import glob
@@ -66,12 +67,25 @@ class ERDataDirectory(ERAbstractDirectory):
         super().__init__()
 
     def updateIndex(self):
-        with open(os.path.join(self._directory, 'index.json'), 'r') as f:
-            self.index = ERIndex.load(f)
+        indexPath = os.path.join(self._directory, ERIndex.FILENAME)
+        if not os.path.exists(indexPath):
+            self.index = self._createNewIndexFile()
+        else:
+            try:
+                with open(indexPath, 'r') as f:
+                    self.index = ERIndex.load(f)
+            except json.JSONDecodeError as e: # For unknown reasons the file sometime becomes corrupt. delete and start fresh
+                logging.getLogger(__name__).warning("The ERIndex file was corrupt. Deleted and starting fresh.")
+                os.remove(indexPath)
+                self.index = self._createNewIndexFile()
+
+    def _createNewIndexFile(self) -> ERIndex:
+        index = ERIndex([])
+        index.toJson(self._directory)
+        return index
 
     def saveNewIndex(self, index: ERIndex):
-        with open(os.path.join(self._directory, 'index.json'), 'w') as f:
-            json.dump(index.toDict(), f, indent=4)
+        index.toJson(self._directory)
         self.index = index
 
     def getFileStatus(self, skipMD5: bool = False) -> pandas.DataFrame:
