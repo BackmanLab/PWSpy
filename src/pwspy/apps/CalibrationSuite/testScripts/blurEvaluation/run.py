@@ -42,7 +42,7 @@ if __name__ == '__main__':
     for blur in list(range(1, 15)) + [None]:
         logger.info(f"Starting blur {blur}")
         stime = time.time()
-        scorer = TransformedDataScorer(loader, str(blur), debugMode=False, blurSigma=blur,
+        scorer = TransformedDataScorer(loader, str(blur), blurSigma=blur,
                                        parallel=False)
         logger.info(f"Total score time: {time.time() - stime}")
     a = 1  # BreakPoint

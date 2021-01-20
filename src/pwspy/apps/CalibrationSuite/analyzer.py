@@ -81,7 +81,7 @@ def createSharedArray(array: np.ndarray) -> np.ndarray:
 class TransformedDataScorer:
     """This class uses a template measurement to analyze a series of other measurements and give them scores for how well they match to the template."""
 
-    def __init__(self, loader: AbstractMeasurementLoader, scoreName: str, debugMode: bool = False, blurSigma: float = None, parallel: bool = False):
+    def __init__(self, loader: AbstractMeasurementLoader, scoreName: str, blurSigma: float = 2, parallel: bool = False):
         # Scoring the bulk arrays
         templateArr: np.ndarray = (loader.template.analysisResults.reflectance + loader.template.analysisResults.meanReflectance[:, :, None]).data
         if blurSigma is not None:
@@ -190,4 +190,4 @@ class Analyzer:
     def __init__(self, loader: AbstractMeasurementLoader, useCached: bool = True, debugMode: bool = False,
                  method: TransformGenerator.Method = TransformGenerator.Method.XCORR, blurSigma: float = None):
         self.transformer = TransformedDataSaver(loader, useCached, debugMode, method)
-        self.scorer = TransformedDataScorer(loader, 'score', debugMode, blurSigma)
+        self.scorer = TransformedDataScorer(loader, 'score', blurSigma)
