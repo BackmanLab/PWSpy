@@ -6,7 +6,7 @@ Created on Thu Dec 10 17:08:42 2020
 """
 from pwspy.apps.CalibrationSuite.TransformGenerator import TransformGenerator
 from pwspy.apps.CalibrationSuite.analyzer import Analyzer, TransformedDataSaver, TransformedDataScorer
-from loader import Loader
+from ..loader import Loader
 from importlib import reload
 import logging
 reload(logging)  # This prevents the sys.stdout handler from being added mlutiple times when we re-run the script in spyder.

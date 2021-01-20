@@ -3,7 +3,7 @@ from numpy.core import long
 
 from pwspy.apps.CalibrationSuite._utility import CVAffineTransform
 from pwspy.apps.CalibrationSuite.reviewer import Reviewer
-from loader import Loader
+from ..loader import Loader
 import os
 import matplotlib.pyplot as plt
 from mpl_qt_viz.visualizers import PlotNd, DockablePlotWindow
