@@ -1,6 +1,7 @@
 import pandas as pd
 import experimentInfo
 from pwspy.apps.CalibrationSuite.testScripts.loader import Loader
+import graphviz
 
 
 def loadDataFrame(measurementSet: str, scoreName: str) -> pd.DataFrame:
@@ -27,12 +28,19 @@ def loadDataFrame(measurementSet: str, scoreName: str) -> pd.DataFrame:
     df['experiment'] = df.apply(lambda row: row['measurementName'].split('_')[0], axis=1)
     df['setting'] = df.apply(lambda row: '_'.join(row['measurementName'].split('_')[1:]), axis=1)
     del df['measurementName']
-
-    # Bool tags for training
-    df['apertureCentered'] = (df['experiment'] != 'translation') | ((df['experiment'] == 'translation') & (df['setting'] == 'centered'))
-    df['naCorrect'] = (df['experiment'] != 'centered') | ((df['experiment'] == 'centered') & (df['setting'] == '0_52'))
-    df["fieldStopCorrect"] = (df['experiment'] != 'fieldstop') | ((df['experiment'] == 'fieldstop') & (df['setting'] == 'open'))
+    df = pd.merge(df, experimentInfo.experiment, on=('experiment', 'setting'))
     return df
+
+
+def viewTree(decTree, featNames, classNames, filePath='temp.png'):
+    dot_data = tree.export_graphviz(decTree, out_file=None,
+        feature_names=featNames,
+        class_names=classNames,
+        filled=True, rounded=True,
+        special_characters=True)
+    graph = graphviz.Source(dot_data)
+    graph.render(filename=filePath, format='png', view=True)
+
 
 if __name__ == '__main__':
     from sklearn import tree
@@ -56,15 +64,47 @@ if __name__ == '__main__':
     }
     for k, v in funcDict.items():
         df[k] = df.apply(v, axis=1)
-
-    classificationCols = ['apertureCentered', 'naCorrect', 'fieldStopCorrect']
     inputCols = list(funcDict.keys())
 
-    inputs = np.array(df[inputCols])
-    outputs = np.array(df[classificationCols])
 
+    # 3 Classes # TODO am I doing this right? read docs.
+    outputs = pd.DataFrame(
+        {'apertureCentered': (df['experiment'] != 'translation') |
+                               ((df['experiment'] == 'translation') & df['isref']),
+        'naCorrect': (df['experiment'] != 'centered') |
+                        ((df['experiment'] == 'centered') & df['isref']),
+        "fieldStopCorrect": (df['experiment'] != 'fieldstop') |
+                                ((df['experiment'] == 'fieldstop') & df['isref'])
+        })
+    inputs = df[inputCols]
     clsfr = tree.DecisionTreeClassifier()
     clsfr.fit(inputs, outputs)
+    viewTree(clsfr, inputCols, outputs.columns)
 
+    # 1 Class.
+    outputs = df['isref']
+    inputs = df[inputCols]
+    clsfr = tree.DecisionTreeClassifier()
+    clsfr.fit(inputs, outputs)
+    viewTree(clsfr, inputCols, outputs.columns)
 
+    # 5 Classes
+    outputs = pd.DataFrame(
+        {'apertureCentered': (df['experiment'] != 'translation') |
+                               ((df['experiment'] == 'translation') & df['isref']),
+         'apertureBig': (df['experiment'] != 'centered') & (df['settingQuantity'] > 0.52),
+         'apertureSmall': (df['experiment'] != 'centered') & (df['settingQuantity'] < 0.52),
+        'naCorrect': (df['experiment'] != 'centered') |
+                        ((df['experiment'] == 'centered') & df['isref']),
+        "fieldStopCorrect": (df['experiment'] != 'fieldstop') |
+                                ((df['experiment'] == 'fieldstop') & df['isref'])
+        })
+    inputs = df[inputCols]
+    clsfr = tree.DecisionTreeClassifier()
+    clsfr.fit(inputs, outputs)
+    viewTree(clsfr, inputCols, outputs.columns)
+
+    """
+    TODO: more classifications. only one classification. TTest between aligned/notaligned
+    """
     a = 1
