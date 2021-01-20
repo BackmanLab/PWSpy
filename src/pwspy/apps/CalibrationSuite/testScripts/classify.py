@@ -91,9 +91,9 @@ if __name__ == '__main__':
     # 5 Classes
     outputs = pd.DataFrame(
         {'apertureCentered': (df['experiment'] != 'translation') |
-                               ((df['experiment'] == 'translation') & df['isref']),
-         'apertureBig': (df['experiment'] != 'centered') & (df['settingQuantity'] > 0.52),
-         'apertureSmall': (df['experiment'] != 'centered') & (df['settingQuantity'] < 0.52),
+                                ((df['experiment'] == 'translation') & df['isref']),
+        'apertureBig': (df['experiment'] != 'centered') & (df['settingQuantity'] > 0.52),
+        'apertureSmall': (df['experiment'] != 'centered') & (df['settingQuantity'] < 0.52),
         'naCorrect': (df['experiment'] != 'centered') |
                         ((df['experiment'] == 'centered') & df['isref']),
         "fieldStopCorrect": (df['experiment'] != 'fieldstop') |
@@ -105,6 +105,6 @@ if __name__ == '__main__':
     viewTree(clsfr, inputCols, outputs.columns)
 
     """
-    TODO: more classifications. only one classification. TTest between aligned/notaligned
+    TODO: TTest between aligned/notaligned
     """
     a = 1
