@@ -17,7 +17,7 @@ jobs:
         run: |
           conda install setuptools_scm conda-build anaconda-client
       - name: Build
-        run: conda build . --output-folder ./condaDist   
+        run: conda build . -c conda-forge -c backmanlab --output-folder ./condaDist   
       - name: publish-to-conda
         shell: bash -l {0}  # This is needed in order to activate the bash environment created by conda. Otherwise the `anaconda` command won't be found
         run: anaconda -t ${{ secrets.ANACONDA_TOKEN }} upload condaDist/noarch/pwspy*
