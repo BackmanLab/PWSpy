@@ -32,9 +32,9 @@ requirements:
     - scikit-image
 
 about:
-  home: https://bitbucket.org/backmanlab/pwspython/src/master/
+  home: https://github.com/nanthony21/PWSpy
   summary: "A framework for working with Partial Wave Spectroscopy files."
   description: "A framework for working with Partial Wave Spectroscopy files."
   doc_url: https://pwspy.readthedocs.io/en/dev/
-  dev_url: https://bitbucket.org/backmanlab/pwspython/src/master/
+  dev_url: https://github.com/nanthony21/PWSpy
   
