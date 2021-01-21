@@ -5,6 +5,7 @@ Created on Mon Oct 26 16:44:06 2020
 @author: nick
 """
 from __future__ import annotations
+import typing as t_
 import multiprocessing as mp
 import cv2
 import pandas as pd
@@ -81,7 +82,7 @@ def createSharedArray(array: np.ndarray) -> np.ndarray:
 class TransformedDataScorer:
     """This class uses a template measurement to analyze a series of other measurements and give them scores for how well they match to the template."""
 
-    def __init__(self, loader: AbstractMeasurementLoader, scoreName: str, blurSigma: float = 2, parallel: bool = False):
+    def __init__(self, loader: AbstractMeasurementLoader, scoreName: str, blurSigma: t_.Optional[float] = 2, parallel: bool = False):
         # Scoring the bulk arrays
         templateArr: np.ndarray = (loader.template.analysisResults.reflectance + loader.template.analysisResults.meanReflectance[:, :, None]).data
         if blurSigma is not None:
