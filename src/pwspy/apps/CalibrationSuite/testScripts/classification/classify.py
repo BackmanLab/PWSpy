@@ -39,7 +39,7 @@ def viewTree(decTree, featNames, classNames, title='temp'):
     fig.suptitle(title)
     tree.plot_tree(decTree,
                    feature_names=featNames,
-                   class_names=classNames,
+                   class_names=[str(i) for i in classNames],
                    filled=True)
 
     # dot_data = tree.export_graphviz(decTree, out_file=None,
@@ -96,8 +96,7 @@ if __name__ == '__main__':
     mlTree = MultiOutputClassifier(tree.DecisionTreeClassifier())
     mlTree.fit(inputs, outputs)
     for labelName, clsfr in zip(outputs.columns, mlTree.estimators_):
-        viewTree(clsfr, inputCols, [f"not_{labelName}", labelName])
-
+        viewTree(clsfr, inputCols, [f"not_{labelName}", labelName], title=labelName)
 
     # 5 Classes. We want multilabel, except that the three aperture classes are mutually exclusive (multiclass)
     def determineAperture(row):
