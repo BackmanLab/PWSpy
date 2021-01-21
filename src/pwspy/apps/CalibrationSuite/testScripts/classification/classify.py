@@ -35,23 +35,24 @@ def loadDataFrame(measurementSet: str, scoreName: str) -> pd.DataFrame:
 
 
 def viewTree(decTree, featNames, classNames, title='temp'):
-    # fig = plt.figure()
-    # fig.suptitle(title)
-    # tree.plot_tree(decTree,
-    #                feature_names=featNames,
-    #                class_names=classNames,
-    #                filled=True)
-    dot_data = tree.export_graphviz(decTree, out_file=None,
-        feature_names=featNames,
-        class_names=classNames,
-        filled=True, rounded=True,
-        special_characters=True)
-    graph = graphviz.Source(dot_data)
-    sfx = 0
-    while os.path.exists(f"{title}_{sfx}.png"):  # Without this auto-renaming the `view` option causes all calls to show the same image (the last one)
-        sfx += 1
-    fullPath = f"{title}_{sfx}.png"
-    graph.render(filename=fullPath, format='png', view=True)
+    fig = plt.figure()
+    fig.suptitle(title)
+    tree.plot_tree(decTree,
+                   feature_names=featNames,
+                   class_names=classNames,
+                   filled=True)
+
+    # dot_data = tree.export_graphviz(decTree, out_file=None,
+    #     feature_names=featNames,
+    #     class_names=classNames,
+    #     filled=True, rounded=True,
+    #     special_characters=True)
+    # graph = graphviz.Source(dot_data)
+    # sfx = 0
+    # while os.path.exists(f"{title}_{sfx}.png"):  # Without this auto-renaming the `view` option causes all calls to show the same image (the last one)
+    #     sfx += 1
+    # fullPath = f"{title}_{sfx}.png"
+    # graph.render(filename=fullPath, format='png', view=True)
 
 
 if __name__ == '__main__':
@@ -97,24 +98,29 @@ if __name__ == '__main__':
     for labelName, clsfr in zip(outputs.columns, mlTree.estimators_):
         viewTree(clsfr, inputCols, [f"not_{labelName}", labelName])
 
+
     # 5 Classes. We want multilabel, except that the three aperture classes are mutually exclusive (multiclass)
+    def determineAperture(row):
+        if (row['settingQuantity'] > 0.52) & (row['experiment'] == 'centered'):
+            return 'apertureBig'
+        elif (row['experiment'] == 'centered') & (row['settingQuantity'] < 0.52):
+            return 'apertureSmall'
+        else:
+            return 'naCorrect'
+
     outputs = [
         pd.DataFrame({'apertureCentered': (df['experiment'] != 'translation') |
                                 ((df['experiment'] == 'translation') & df['isref'])}),
-        pd.DataFrame({
-            'apertureBig': ((df['settingQuantity'] > 0.52) & (df['experiment']=='centered')),
-            'apertureSmall': ((df['experiment']=='centered') & (df['settingQuantity'] < 0.52)),
-            'naCorrect': (df['experiment'] != 'centered') |
-                        ((df['experiment'] == 'centered') & df['isref'])}),
+        pd.DataFrame({'na': df.apply(determineAperture, axis=1)}),
         pd.DataFrame({"fieldStopCorrect": (df['experiment'] != 'fieldstop') |
                                 ((df['experiment'] == 'fieldstop') & df['isref'])})
     ]
+
+
     inputs = df[inputCols]
     for output in outputs:
         clsfr = tree.DecisionTreeClassifier()
         clsfr.fit(inputs, output)
-        outLabels = list(output.columns) if len(output.columns)>1 else [f"not_{output.columns[0]}", output.columns[0]]  # In the case of only one target the tree will treat it as two classes, [not_target, yes_target]
-        clsfr.classes_ = outLabels
-        viewTree(clsfr, inputCols, outLabels, title=str(outLabels))
+        viewTree(clsfr, inputCols, clsfr.classes_, title=output.columns[0])
 
     a = 1
