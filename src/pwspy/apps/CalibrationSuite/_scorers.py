@@ -8,6 +8,7 @@ import numpy as np
 import scipy.signal as sps
 from skimage import metrics
 from time import time
+from scipy.interpolate import interp1d
 
 #TODO devise a way to inject a cube splitter into a scorer for more efficient high granularity scoring
 from pwspy.apps.CalibrationSuite._utility import DualCubeSplitter
@@ -107,23 +108,29 @@ class LateralXCorrScore(Score):
 
 @dataclasses.dataclass
 class AxialXCorrScore(Score):
-    shift: int
+    shift: float
     cdr: float
 
     @classmethod
     def create(cls, tempData: np.ndarray, testData: np.ndarray) -> AxialXCorrScore:
         #Normalize Each XY pixel sso that the xcorrelation hasa max of 1.
         tempData = (tempData - tempData.mean(axis=2)[:, :, None]) / tempData.std(axis=2)[:, :, None]
-        testData = (testData - testData.mean(axis=2)[:, :, None]) / (
-                    testData.std(axis=2)[:, :, None] * testData.shape[2])  # The division by testData.size here gives us a final xcorrelation that maxes out at 1.
-
-        #Very hard to find support for 1d correlation on an Nd array. scipy.signal.fftconvolve appears to be the best option
+        testData = (testData - testData.mean(axis=2)[:, :, None]) / testData.std(axis=2)[:, :, None]
+        # Interpolate by 2x along the spectral axis for better resolution in axial shift. 4x used too much memory
+        upsampleFactor = 2
+        x = np.linspace(0, 1, num=tempData.shape[2])
+        x2 = np.linspace(0, 1, num=tempData.shape[2] * upsampleFactor)
+        tempData = interp1d(x, tempData, axis=2, kind='cubic')(x2)
+        testData = interp1d(x, testData, axis=2, kind='cubic')(x2)
+        # Very hard to find support for 1d correlation on an Nd array. scipy.signal.fftconvolve appears to be the best option
+        testData = testData / testData.shape[2]  # The division by testData.size here gives us a final xcorrelation that maxes out at 1.
         corr = sps.fftconvolve(tempData, cls._reverse_and_conj(testData), axes=2, mode='full')
         corr = corr.mean(axis=(0, 1))
         zeroShiftIdx = corr.shape[0]//2
         peakIdx = corr.argmax()
         cdr = cls._calculate1DCDR(corr, peakIdx, 2)
-        return cls(**{'score': float(corr.max()), 'shift': peakIdx-zeroShiftIdx, 'cdr': float(cdr)})
+        shift = (peakIdx-zeroShiftIdx) / upsampleFactor  # Measured in pixels (before upsampling) pixels will be determined by the wavelength settings of acquisition.
+        return cls(**{'score': float(corr.max()), 'shift': shift, 'cdr': float(cdr)})
 
     @staticmethod
     def _reverse_and_conj(x):
@@ -159,11 +166,23 @@ class RMSEScore(Score):
 
 
 @dataclasses.dataclass
+class ReflectanceScorer(Score):
+    reflectanceRatio: float
+
+    @classmethod
+    def create(cls, tempData: np.ndarray, testData: np.ndarray) -> ReflectanceScorer:
+        meanReflectanceRatio = float(np.mean(testData / tempData))
+        score = 1 - np.abs(1-meanReflectanceRatio)
+        return cls(score=score, reflectanceRatio=meanReflectanceRatio)
+
+
+@dataclasses.dataclass
 class CombinedScore(Score):
     nrmse: RMSEScore
     latxcorr: LateralXCorrScore
     ssim: SSimScore
     axxcorr: AxialXCorrScore
+    reflectance: ReflectanceScorer
 
     @classmethod
     def create(cls, template: np.ndarray, test: np.ndarray) -> CombinedScore:
@@ -180,11 +199,15 @@ class CombinedScore(Score):
         t = time()
         axxcorr = AxialXCorrScore.create(template, test)
         logger.debug(f"AxXCORR score took {time() - t}")
+        t = time()
+        r = ReflectanceScorer.create(template, test)
+        logger.debug(f"Reflectance score took {time() - t}")
         scores = dict(
             nrmse=nrmse,
             ssim=ssim,
             latxcorr=latxcorr,
-            axxcorr=axxcorr
+            axxcorr=axxcorr,
+            reflectance=r
         )
         # TODO not sure how to mix the scores. Just taking the average right now.
         score = 0
@@ -192,6 +215,7 @@ class CombinedScore(Score):
             score += v.score
         d = cls(score=score / len(scores), **scores)
         return d
+
 
 @dataclasses.dataclass
 class SplitScore(Score):

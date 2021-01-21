@@ -3,7 +3,7 @@ from numpy.core import long
 
 from pwspy.apps.CalibrationSuite._utility import CVAffineTransform
 from pwspy.apps.CalibrationSuite.reviewer import Reviewer
-from loader import Loader
+from ..loader import Loader
 import os
 import matplotlib.pyplot as plt
 from mpl_qt_viz.visualizers import PlotNd, DockablePlotWindow
@@ -53,11 +53,11 @@ def loadDataFrame(measurementSet: str) -> pd.DataFrame:
 
 if __name__ == '__main__':
     import matplotlib as mpl
-    plt.ioff()
 
-    measurementSet = 'xcorr_blurScan'
+    measurementSet = 'xcorr_blurScan_4'
 
     df = loadDataFrame(measurementSet)
+    print("Loaded Dataframe")
     df = pd.merge(df, experimentInfo.experiment, on=('experiment', 'setting'))
     df['setting'] = df['setting'].apply(lambda val: val.replace('_', '.'))  # Replace the underscores with period to make the NA look better in plots
 
@@ -79,6 +79,7 @@ if __name__ == '__main__':
     expSides = {'centered': 'left', 'translation': 'right', 'fieldstop': 'bottom'}
     app = QApplication([])
     expWindow = DockablePlotWindow("Experiment Comparison")
+
     # Plot NRMSE Score
     for expName, g in df.groupby('experiment'):
         fig, ax = expWindow.subplots(title=f"NRMSE {expName}", dockArea=expSides[expName])
@@ -112,37 +113,7 @@ if __name__ == '__main__':
         plt.xticks(ticks=g.settingQuantity, labels=g.setting, rotation=20)
         drawBlurCBar()
 
-    # Plot AxXCorr Score
-    for expName, g in df.groupby('experiment'):
-        fig, ax = expWindow.subplots(f"AxXCorr {expName}", expSides[expName])
-        g = g.sort_values('idx')
-        for scoreName, color in zip(scoreNames, scoreColors):
-            scores = g[f"{scoreName}_score"]
-            scores = [i.axxcorr.score for i in scores]
-            ax.scatter(g.settingQuantity, scores, label=scoreName, color=color)
-        plt.xticks(ticks=g.settingQuantity, labels=g.setting, rotation=20)
-        drawBlurCBar()
-
-    for expName, g in df.groupby('experiment'):
-        fig, ax = expWindow.subplots(f"Axial Shift {expName}", expSides[expName])
-        g = g.sort_values('idx')
-        for scoreName, color in zip(scoreNames, scoreColors):
-            scores = g[f"{scoreName}_score"]
-            scores = [i.axxcorr.shift for i in scores]
-            ax.scatter(g.settingQuantity, scores, label=scoreName, color=color)
-        plt.xticks(ticks=g.settingQuantity, labels=g.setting, rotation=20)
-        drawBlurCBar()
-
-    for expName, g in df.groupby('experiment'):
-        fig, ax = expWindow.subplots(f"Axial CDR {expName}", expSides[expName])
-        g = g.sort_values('idx')
-        for scoreName, color in zip(scoreNames, scoreColors):
-            scores = g[f"{scoreName}_score"]
-            scores = [i.axxcorr.cdr for i in scores]
-            ax.scatter(g.settingQuantity, scores, label=scoreName, color=color)
-        plt.xticks(ticks=g.settingQuantity, labels=g.setting, rotation=20)
-        drawBlurCBar()
-
+    # Lateral CDR_x
     for expName, g in df.groupby('experiment'):
         fig, ax = expWindow.subplots(f"Lat CDR_x (normed) {expName}", expSides[expName])
         g = g.sort_values('idx')
@@ -154,6 +125,7 @@ if __name__ == '__main__':
         plt.xticks(ticks=g.settingQuantity, labels=g.setting, rotation=20)
         drawBlurCBar()
 
+    # Lateral CDR_y
     for expName, g in df.groupby('experiment'):
         fig, ax = expWindow.subplots(f"Lat CDR_y (normed) {expName}", expSides[expName])
         g = g.sort_values('idx')
@@ -165,6 +137,7 @@ if __name__ == '__main__':
         plt.xticks(ticks=g.settingQuantity, labels=g.setting, rotation=20)
         drawBlurCBar()
 
+    # Lateral Shift
     for expName, g in df.groupby('experiment'):
         fig, ax = expWindow.subplots(f"Lateral Shift {expName}", expSides[expName])
         g = g.sort_values('idx')
@@ -175,29 +148,67 @@ if __name__ == '__main__':
         plt.xticks(ticks=g.settingQuantity, labels=g.setting, rotation=20)
         drawBlurCBar()
 
+
+    # Plot AxXCorr Score
+    for expName, g in df.groupby('experiment'):
+        fig, ax = expWindow.subplots(f"AxXCorr {expName}", expSides[expName])
+        g = g.sort_values('idx')
+        for scoreName, color in zip(scoreNames, scoreColors):
+            scores = g[f"{scoreName}_score"]
+            scores = [i.axxcorr.score for i in scores]
+            ax.scatter(g.settingQuantity, scores, label=scoreName, color=color)
+        plt.xticks(ticks=g.settingQuantity, labels=g.setting, rotation=20)
+        drawBlurCBar()
+
+    # Axial Shift
+    for expName, g in df.groupby('experiment'):
+        fig, ax = expWindow.subplots(f"Axial Shift {expName}", expSides[expName])
+        g = g.sort_values('idx')
+        for scoreName, color in zip(scoreNames, scoreColors):
+            scores = g[f"{scoreName}_score"]
+            scores = [i.axxcorr.shift for i in scores]
+            ax.scatter(g.settingQuantity, scores, label=scoreName, color=color)
+        plt.xticks(ticks=g.settingQuantity, labels=g.setting, rotation=20)
+        drawBlurCBar()
+
+    # Axial CDR
+    for expName, g in df.groupby('experiment'):
+        fig, ax = expWindow.subplots(f"Axial CDR {expName}", expSides[expName])
+        g = g.sort_values('idx')
+        for scoreName, color in zip(scoreNames, scoreColors):
+            scores = g[f"{scoreName}_score"]
+            scores = [i.axxcorr.cdr for i in scores]
+            ax.scatter(g.settingQuantity, scores, label=scoreName, color=color)
+        plt.xticks(ticks=g.settingQuantity, labels=g.setting, rotation=20)
+        drawBlurCBar()
+
+    # Reflectance
+    for expName, g in df.groupby('experiment'):
+        fig, ax = expWindow.subplots(f"Reflectance {expName}", expSides[expName])
+        g = g.sort_values('idx')
+        for scoreName, color in zip(scoreNames, scoreColors):
+            scores = g[f"{scoreName}_score"]
+            scores = [i.reflectance.reflectanceRatio for i in scores]
+            ax.scatter(g.settingQuantity, scores, label=scoreName, color=color)
+        plt.xticks(ticks=g.settingQuantity, labels=g.setting, rotation=20)
+        drawBlurCBar()
+
+    # Score
+    for expName, g in df.groupby('experiment'):
+        fig, ax = expWindow.subplots(f"Avg. Score {expName}", expSides[expName])
+        g = g.sort_values('idx')
+        for scoreName, color in zip(scoreNames, scoreColors):
+            scores = g[f"{scoreName}_score"]
+            scores = [i.score for i in scores]
+            ax.scatter(g.settingQuantity, scores, label=scoreName, color=color)
+        plt.xticks(ticks=g.settingQuantity, labels=g.setting, rotation=20)
+        drawBlurCBar()
+
     refCompWindow = DockablePlotWindow("Reference Comparison")
 
     ### Plots comparing the aligned images to eachother ###
-    g = df[df.isref]
-    g.index = list(range(len(g)))
-    fig, ax = refCompWindow.subplots("Axial XCorr")
-    for scoreName, color in zip(scoreNames, scoreColors):
-        scores = g[f"{scoreName}_score"]
-        scores = [i.axxcorr.score for i in scores]
-        ax.scatter(g.index, scores, label=scoreName, color=color)
-    plt.xticks(ticks=g.index, labels=g.experiment, rotation=20)
-    drawBlurCBar()
 
-    g = df[df.isref]
-    g.index = list(range(len(g)))
-    fig, ax = refCompWindow.subplots("Lateral XCorr")
-    for scoreName, color in zip(scoreNames, scoreColors):
-        scores = g[f"{scoreName}_score"]
-        scores = [i.latxcorr.score for i in scores]
-        ax.scatter(g.index, scores, label=scoreName, color=color)
-    plt.xticks(ticks=g.index, labels=g.experiment, rotation=20)
-    drawBlurCBar()
-
+    # NRMSE
     g = df[df.isref]
     g.index = list(range(len(g)))
     fig, ax = refCompWindow.subplots("NRMSE")
@@ -206,7 +217,9 @@ if __name__ == '__main__':
         scores = [i.nrmse.score for i in scores]
         ax.scatter(g.index, scores, label=scoreName, color=color)
     plt.xticks(ticks=g.index, labels=g.experiment, rotation=20)
+    drawBlurCBar()
 
+    # SSIM
     g = df[df.isref]
     g.index = list(range(len(g)))
     fig, ax = refCompWindow.subplots("SSIM")
@@ -217,6 +230,18 @@ if __name__ == '__main__':
     plt.xticks(ticks=g.index, labels=g.experiment, rotation=20)
     drawBlurCBar()
 
+    # Lateral XCorr
+    g = df[df.isref]
+    g.index = list(range(len(g)))
+    fig, ax = refCompWindow.subplots("Lateral XCorr")
+    for scoreName, color in zip(scoreNames, scoreColors):
+        scores = g[f"{scoreName}_score"]
+        scores = [i.latxcorr.score for i in scores]
+        ax.scatter(g.index, scores, label=scoreName, color=color)
+    plt.xticks(ticks=g.index, labels=g.experiment, rotation=20)
+    drawBlurCBar()
+
+    # Lateral CDR_x
     g = df[df.isref]
     g.index = list(range(len(g)))
     fig, ax = refCompWindow.subplots("Lateral CDR_x")
@@ -227,6 +252,7 @@ if __name__ == '__main__':
     plt.xticks(ticks=g.index, labels=g.experiment, rotation=20)
     drawBlurCBar()
 
+    # Lateral CDR_y
     g = df[df.isref]
     g.index = list(range(len(g)))
     fig, ax = refCompWindow.subplots("Lateral CDR_y")
@@ -237,6 +263,7 @@ if __name__ == '__main__':
     plt.xticks(ticks=g.index, labels=g.experiment, rotation=20)
     drawBlurCBar()
 
+    # Lateral Shift
     g = df[df.isref]
     g.index = list(range(len(g)))
     fig, ax = refCompWindow.subplots("Lateral Shift")
@@ -247,12 +274,57 @@ if __name__ == '__main__':
     plt.xticks(ticks=g.index, labels=g.experiment, rotation=20)
     drawBlurCBar()
 
+    # Axial XCorr
+    g = df[df.isref]
+    g.index = list(range(len(g)))
+    fig, ax = refCompWindow.subplots("Axial XCorr")
+    for scoreName, color in zip(scoreNames, scoreColors):
+        scores = g[f"{scoreName}_score"]
+        scores = [i.axxcorr.score for i in scores]
+        ax.scatter(g.index, scores, label=scoreName, color=color)
+    plt.xticks(ticks=g.index, labels=g.experiment, rotation=20)
+    drawBlurCBar()
+
+    # Axial Shift
     g = df[df.isref]
     g.index = list(range(len(g)))
     fig, ax = refCompWindow.subplots("Axial Shift")
     for scoreName, color in zip(scoreNames, scoreColors):
         scores = g[f"{scoreName}_score"]
         scores = [i.axxcorr.shift for i in scores]
+        ax.scatter(g.index, scores, label=scoreName, color=color)
+    plt.xticks(ticks=g.index, labels=g.experiment, rotation=20)
+    drawBlurCBar()
+
+    # Axial CDR
+    g = df[df.isref]
+    g.index = list(range(len(g)))
+    fig, ax = refCompWindow.subplots("Axial CDR")
+    for scoreName, color in zip(scoreNames, scoreColors):
+        scores = g[f"{scoreName}_score"]
+        scores = [i.axxcorr.cdr for i in scores]
+        ax.scatter(g.index, scores, label=scoreName, color=color)
+    plt.xticks(ticks=g.index, labels=g.experiment, rotation=20)
+    drawBlurCBar()
+
+    # Reflectance Ratio
+    g = df[df.isref]
+    g.index = list(range(len(g)))
+    fig, ax = refCompWindow.subplots("Reflectance Ratio")
+    for scoreName, color in zip(scoreNames, scoreColors):
+        scores = g[f"{scoreName}_score"]
+        scores = [i.reflectance.reflectanceRatio for i in scores]
+        ax.scatter(g.index, scores, label=scoreName, color=color)
+    plt.xticks(ticks=g.index, labels=g.experiment, rotation=20)
+    drawBlurCBar()
+
+    # Score
+    g = df[df.isref]
+    g.index = list(range(len(g)))
+    fig, ax = refCompWindow.subplots("Avg. Score")
+    for scoreName, color in zip(scoreNames, scoreColors):
+        scores = g[f"{scoreName}_score"]
+        scores = [i.score for i in scores]
         ax.scatter(g.index, scores, label=scoreName, color=color)
     plt.xticks(ticks=g.index, labels=g.experiment, rotation=20)
     drawBlurCBar()

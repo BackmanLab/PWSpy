@@ -6,7 +6,7 @@ Created on Thu Dec 10 17:08:42 2020
 """
 from pwspy.apps.CalibrationSuite.TransformGenerator import TransformGenerator
 from pwspy.apps.CalibrationSuite.analyzer import Analyzer, TransformedDataSaver, TransformedDataScorer
-from loader import Loader
+from ..loader import Loader
 from importlib import reload
 import logging
 reload(logging)  # This prevents the sys.stdout handler from being added mlutiple times when we re-run the script in spyder.
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     for blur in list(range(1, 15)) + [None]:
         logger.info(f"Starting blur {blur}")
         stime = time.time()
-        scorer = TransformedDataScorer(loader, str(blur), debugMode=False, blurSigma=blur,
+        scorer = TransformedDataScorer(loader, str(blur), blurSigma=blur,
                                        parallel=False)
         logger.info(f"Total score time: {time.time() - stime}")
     a = 1  # BreakPoint
