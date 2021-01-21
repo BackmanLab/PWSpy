@@ -23,7 +23,6 @@ file and type `pip install .`. This file is also used by the Conda recipe (build
 from setuptools import setup, find_packages
 import setuptools_scm
 
-
 setup(name='pwspy',
       version=setuptools_scm.get_version(write_to="src/pwspy/version.py"),
       description='A framework for working with Partial Wave Spectroscopy files.',
