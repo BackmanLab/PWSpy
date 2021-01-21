@@ -30,7 +30,6 @@ buildDir = os.path.join(buildScriptDir, 'build')
 """This builds the pwpsy conda package and saves it to `build`
 It should be run from the base conda env."""
 sys.path.append(os.path.join(rootDir, 'src'))  # Add the sourcecode location to "path" so we can import the pwspy package.
-import pwspy.version # this should save the version to file.
 
 # Clean
 if os.path.exists(buildDir):

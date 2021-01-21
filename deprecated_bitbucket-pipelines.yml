@@ -1,0 +1,39 @@
+
+image: continuumio/anaconda3
+
+clone:
+  depth: 1000 # If we don't have enough clone depth then setuptools_scm won't be able to find the tags for the version file.
+
+pipelines:
+  default:
+    - step:
+        name: Install
+        caches:
+          - pip
+        script:
+          - pip install .
+    - step:
+        name: Test
+        deployment: test
+        trigger: manual
+        script:
+          - python tests/test1.py
+  branches:
+    dev:
+      - step:
+          name: CondaUpload
+          script:
+            - conda install setuptools_scm conda-build
+            - python buildScripts/conda/build.py
+            - cd buildScripts/conda/build/noarch
+            - anaconda -t $AnacondaCloudToken upload pwspy* --label dev
+
+  custom:
+    AnacondaUploadMaster:
+      - step:
+          name: CondaUpload
+          script:
+            - conda install setuptools_scm conda-build
+            - python buildScripts/conda/build.py
+            - cd buildScripts/conda/build/noarch
+            - anaconda -t $AnacondaCloudToken upload pwspy*

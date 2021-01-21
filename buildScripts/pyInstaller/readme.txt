@@ -1,1 +1,0 @@
-building to a pyinstaller exe seems to introduce new bugs. not sure how to solve these.
