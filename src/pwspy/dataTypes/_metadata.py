@@ -158,8 +158,8 @@ class MetaDataBase(abc.ABC):
         return d
 
 
-class AnalysisManagerMetaDataBase(MetaDataBase):
-    """Extends `MetaDataBase` with the functionality to save, load, etc. analysis files.
+class AnalysisManager(abc.ABC):
+    """Handles the functionality to save, load, etc. analysis files.
 
     Args:
         metadata: A dictionary containing the metadata
@@ -167,12 +167,12 @@ class AnalysisManagerMetaDataBase(MetaDataBase):
         acquisitionDirectory: A reference to the `AcqDir` associated with this object.
 
     """
-    def __init__(self, metadata: dict, filePath: Optional[str] = None, acquisitionDirectory: Optional[AcqDir] = None):
-        super().__init__(metadata, filePath, acquisitionDirectory)
+    def __init__(self, filePath: str):
+        self.__filePath = filePath
 
     @staticmethod
     @abc.abstractmethod
-    def getAnalysisResultsClass() -> AbstractHDFAnalysisResults:
+    def getAnalysisResultsClass() -> typing.Type[AbstractHDFAnalysisResults]:
         """
 
         Returns:
@@ -186,8 +186,8 @@ class AnalysisManagerMetaDataBase(MetaDataBase):
         Returns:
             A list of the names of analyses that were found.
         """
-        assert self.filePath is not None
-        return self.getAnalysesAtPath(self.filePath)
+        assert self.__filePath is not None
+        return self.getAnalysesAtPath(self.__filePath)
 
     @classmethod
     def getAnalysesAtPath(cls, path: str) -> typing.List[str]:
@@ -213,7 +213,7 @@ class AnalysisManagerMetaDataBase(MetaDataBase):
             analysis: An AnalysisResults object to be saved.
             name: The name to save the analysis as
         """
-        path = os.path.join(self.filePath, 'analyses')
+        path = os.path.join(self.__filePath, 'analyses')
         if not os.path.exists(path):
             os.mkdir(path)
         analysis.toHDF(path, name)
@@ -227,7 +227,7 @@ class AnalysisManagerMetaDataBase(MetaDataBase):
         Returns:
             A new instance of an AnalysisResults object.
         """
-        return self.getAnalysisResultsClass().load(os.path.join(self.filePath, 'analyses'), name)
+        return self.getAnalysisResultsClass().load(os.path.join(self.__filePath, 'analyses'), name)
 
     def removeAnalysis(self, name: str):
         """
@@ -235,10 +235,10 @@ class AnalysisManagerMetaDataBase(MetaDataBase):
         Args:
             name: The name of the analysis to be deleted
         """
-        os.remove(os.path.join(self.filePath, 'analyses', self.getAnalysisResultsClass().name2FileName(name)))
+        os.remove(os.path.join(self.__filePath, 'analyses', self.getAnalysisResultsClass().name2FileName(name)))
 
 
-class DynMetaData(AnalysisManagerMetaDataBase):
+class DynMetaData(MetaDataBase, AnalysisManager):
     """A class that represents the metadata of a Dynamics acquisition."""
     class FileFormats(enum.Enum):
         """An enumerator identifying the types of file formats that this class can be loaded from."""
@@ -247,7 +247,7 @@ class DynMetaData(AnalysisManagerMetaDataBase):
         Hdf = enum.auto()
 
     @staticmethod
-    def getAnalysisResultsClass():
+    def getAnalysisResultsClass() -> typing.Type[AbstractHDFAnalysisResults]:
         from pwspy.analysis.dynamics import DynamicsAnalysisResults
         return DynamicsAnalysisResults
 
@@ -257,7 +257,8 @@ class DynMetaData(AnalysisManagerMetaDataBase):
 
     def __init__(self, metadata: dict, filePath: Optional[str] = None, fileFormat: Optional[FileFormats] = None, acquisitionDirectory: Optional[AcqDir] = None):
         self.fileFormat = fileFormat
-        super().__init__(metadata, filePath, acquisitionDirectory=acquisitionDirectory)
+        MetaDataBase.__init__(self, metadata, filePath, acquisitionDirectory=acquisitionDirectory)
+        AnalysisManager.__init__(self, filePath)
 
     def toDataClass(self, lock: mp.Lock = None) -> pwsdtd.DynCube:
         """
@@ -325,7 +326,6 @@ class DynMetaData(AnalysisManagerMetaDataBase):
             if lock is not None:
                 lock.release()
         return cls(md, filePath=directory, fileFormat=DynMetaData.FileFormats.RawBinary, acquisitionDirectory=acquisitionDirectory)
-
 
     @classmethod
     def fromTiff(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> DynMetaData:
@@ -482,6 +482,8 @@ class ERMetaData:
             A tuple containing: directory: The directory path, name: The name that the file was saved as.
         """
         directory, fileName = os.path.split(path)
+        if not fileName.endswith(cls.FILESUFFIX):
+            raise ValueError(f"The file name \"{fileName}\" is not recognized as a {cls.__name__} file. Should end with \"{cls.FILESUFFIX}\".")
         name = fileName.split(cls.FILESUFFIX)[0]
         return directory, name
 
@@ -569,7 +571,7 @@ class FluorMetaData(MetaDataBase):
             return f.asarray()
 
 
-class ICMetaData(AnalysisManagerMetaDataBase):
+class ICMetaData(MetaDataBase, AnalysisManager):
     """A class that represents the metadata of a PWS acquisition.
 
     Args:
@@ -582,7 +584,7 @@ class ICMetaData(AnalysisManagerMetaDataBase):
         NanoMat = enum.auto()
 
     @staticmethod
-    def getAnalysisResultsClass():
+    def getAnalysisResultsClass() -> typing.Type[AbstractHDFAnalysisResults]:
         from pwspy.analysis.pws import PWSAnalysisResults
         return PWSAnalysisResults
 
@@ -591,7 +593,8 @@ class ICMetaData(AnalysisManagerMetaDataBase):
         _jsonSchema = json.load(f)
 
     def __init__(self, metadata: dict, filePath: Optional[str] = None, fileFormat: ICMetaData.FileFormats = None, acquisitionDirectory: Optional[AcqDir] = None):
-        super().__init__(metadata, filePath, acquisitionDirectory=acquisitionDirectory)
+        MetaDataBase.__init__(self, metadata, filePath, acquisitionDirectory=acquisitionDirectory)
+        AnalysisManager.__init__(self, filePath)
         self.fileFormat: ICMetaData.FileFormats = fileFormat
         self.dict['wavelengths'] = tuple(np.array(self.dict['wavelengths']).astype(float))
 
@@ -767,7 +770,7 @@ class AcqDir:
         directory: the file path the root directory of the acquisition
     """
     def __init__(self, directory: str):
-        self.filePath = directory #TODO should this be forced to an absolute path?
+        self.filePath = directory #TODO should this be forced to an absolute path? Doesn't appear to be causing any problems like it is now.
         if (self.pws is None) and (self.dynamics is None) and (len(self.fluorescence) == 0):
             raise OSError(f"Could not find a valid PWS or Dynamics Acquisition at {directory}.")
 
@@ -856,6 +859,7 @@ class AcqDir:
     def editNotes(self):
         """Create a `notes.txt` file if it doesn't already exists and open it in a text editor."""
         filepath = os.path.join(self.filePath, 'notes.txt')
+        filepath = os.path.normpath(filepath)  # Sometime there can be an error if we don't clean the file path like this.
         if not os.path.exists(filepath):
             with open(filepath, 'w') as f:
                 pass

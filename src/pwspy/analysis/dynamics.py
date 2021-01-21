@@ -53,22 +53,6 @@ from pwspy.utility.reflection import reflectanceHelper, Material
 from ..dataTypes import ERMetaData
 
 
-def getFromDict(func):
-    """
-    This decorator makes it so that the function will only be evaluated if self.file is not None.
-    If self.file is None then we will just search self.dict for a value with a key matching the name of the decorated function.
-    We use this because while we often want to load data from a file for use, we also want to support the case of an object
-    that has been created but has not yet been saved to a file."""
-    def newFunc(self, *args):
-        if self.file is None:
-            return self.dict[func.__name__]
-        else:
-            return func(self, *args)
-
-    newFunc.__name__ = func.__name__
-    return newFunc
-
-
 class DynamicsAnalysis(AbstractAnalysis):
     """This class performs the analysis of RMS_t_squared and D (diffusion). It is based on a set of MATLAB scripts written
     by Scott Gladstein. The original scripts can be found in the `_oldMatlab` subpackage.
@@ -202,8 +186,9 @@ class DynamicsAnalysis(AbstractAnalysis):
 
 class DynamicsAnalysisResults(AbstractHDFAnalysisResults): # Inherit docstring.
     @staticmethod
-    def fields(): # Inherit docstring.
-        return ['meanReflectance', 'reflectance', 'rms_t_squared', 'diffusion', 'time', 'settings', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionIdTag']
+    def fields():   # Inherit docstring.
+        return ('meanReflectance', 'reflectance', 'rms_t_squared', 'diffusion', 'time',
+                'settings', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionIdTag')
 
     @staticmethod
     def name2FileName(name: str) -> str: # Inherit docstring.
@@ -227,60 +212,51 @@ class DynamicsAnalysisResults(AbstractHDFAnalysisResults): # Inherit docstring.
             'settings': settings}
         return cls(None, d)
 
-    @cached_property
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def meanReflectance(self) -> np.ndarray:
         """A 2D array giving the reflectance of the image averaged over the full spectra."""
         dset = self.file['meanReflectance']
         return np.array(dset)
 
-    @cached_property
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def rms_t_squared(self) -> np.ndarray:
         """A 2D array giving the spectral variance at each position in the image."""
         dset = self.file['rms_t_squared']
         return np.array(dset)
 
-    @cached_property
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def settings(self) -> DynamicsAnalysisSettings:
         """The settings used to generate these results."""
         return DynamicsAnalysisSettings.fromJsonString(self.file['settings'])
 
-    @cached_property
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def reflectance(self) -> pwsdt.DynCube:
         """A dynamics cube containing the 3D reflectance array after all corrections and analysis."""
         dset = self.file['reflectance']
         return pwsdt.DynCube.fromHdfDataset(dset)
 
-    @cached_property
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def diffusion(self) -> np.ndarray:
         """A 2D array indicating the diffusion at each position in the image."""
         dset = self.file['diffusion']
         return np.array(dset)
 
-    @cached_property
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def imCubeIdTag(self) -> str:
         """The idtag of the dynamics cube that was analyzed."""
         return bytes(np.array(self.file['imCubeIdTag'])).decode()
 
-    @cached_property
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def referenceIdTag(self) -> str:
         """The idtag of the dynamics cube that was used as a reference for normalization."""
         return bytes(np.array(self.file['referenceIdTag'])).decode()
 
-    @cached_property
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def time(self) -> str:
         """The time that the analysis was performed."""
         return self.file['time']
 
-    @cached_property
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def extraReflectionIdTag(self) -> str:
         """The idtag of the extra reflection correction that was used."""
         return bytes(np.array(self.file['extraReflectionIdTag'])).decode()

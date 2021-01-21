@@ -21,7 +21,6 @@ import numpy as np
 from skimage import morphology, segmentation
 import matplotlib.pyplot as plt
 import scipy.ndimage as ndi
-import matplotlib
 
 # Convert snake to height map
 def volume3Dto2D(arr3d, valueIndex=None, fillValue=0):

@@ -182,7 +182,7 @@ class PWSAnalysis(AbstractAnalysis):
         return cube
 
     def _filterSignal(self, data: np.ndarray, sampleFreq: float):
-        if self.settings.filterCutoff is None: # Skip filtering.
+        if self.settings.filterCutoff is None:  # Skip filtering.
             return data
         else:
             b, a = sps.butter(self.settings.filterOrder, self.settings.filterCutoff, fs=sampleFreq)  # Generate the filter coefficients
@@ -217,10 +217,10 @@ class PWSAnalysis(AbstractAnalysis):
         return ld
 
     def copySharedDataToSharedMemory(self):  # Inherit docstring
-        refdata = mp.RawArray('f', self.ref.data.size)
-        refdata = np.frombuffer(refdata, dtype=np.float32).reshape(self.ref.data.shape)
-        np.copyto(refdata, self.ref.data)
-        self.ref.data = refdata
+        refdata = mp.RawArray('f', self.ref.data.size)  # Create an empty ctypes array of shared memory
+        refdata = np.frombuffer(refdata, dtype=np.float32).reshape(self.ref.data.shape)  # Wrap the shared memory array in a numpy array and reshape back to origianl shape
+        np.copyto(refdata, self.ref.data)  # Copy our ImCubes data to the shared memory array.
+        self.ref.data = refdata # Reassign the shared memory array to our ImCube object data attribute.
 
         if self.extraReflection is not None:
             iedata = mp.RawArray('f', self.extraReflection.data.size)
@@ -235,8 +235,8 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
 
     @staticmethod
     def fields():  # Inherit docstring
-        return ['time', 'reflectance', 'meanReflectance', 'rms', 'polynomialRms', 'autoCorrelationSlope', 'rSquared',
-                'ld', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionTag', 'settings']
+        return ('time', 'reflectance', 'meanReflectance', 'rms', 'polynomialRms', 'autoCorrelationSlope', 'rSquared',
+                'ld', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionTag', 'settings')
 
     @staticmethod
     def name2FileName(name: str) -> str:  # Inherit docstring
@@ -264,95 +264,71 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
             'settings': settings}
         return cls(None, d)
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def settings(self) -> PWSAnalysisSettings:
         """The settings used for the analysis"""
         return PWSAnalysisSettings.fromJsonString(bytes(np.array(self.file['settings'])).decode())
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def imCubeIdTag(self) -> str:
         """The idtag of the acquisition that was analyzed."""
         return bytes(np.array(self.file['imCubeIdTag'])).decode()
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def referenceIdTag(self) -> str:
         """The idtag of the acquisition that was used as a reference for normalization."""
         return bytes(np.array(self.file['referenceIdTag'])).decode()
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def time(self) -> str:
         """The time that the analysis was performed."""
-        return self.file['time']
+        return self.file['time']  # TODO is this a bug that it doesn't have the same string decoding as the idtag properties?
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def reflectance(self) -> pwsdt.KCube:
         """The KCube containing the 3D reflectance data after all corrections and analysis."""
         dset = self.file['reflectance']
         return pwsdt.KCube.fromHdfDataset(dset)
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def meanReflectance(self) -> np.ndarray:
         """A 2D array giving the reflectance of the image averaged over the full spectra."""
         dset = self.file['meanReflectance']
         return np.array(dset)
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def rms(self) -> np.ndarray:
         """A 2D array giving the spectral variance at each posiiton in the image."""
         dset = self.file['rms']
         return np.array(dset)
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def polynomialRms(self) -> np.ndarray:
         """A 2D array giving the variance of the polynomial fit that was subtracted from the reflectance before
         calculating RMS."""
         dset = self.file['polynomialRms']
         return np.array(dset)
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def autoCorrelationSlope(self) -> np.ndarray:
         """A 2D array giving the slope of the ACF of the spectra at each position in the image."""
         dset = self.file['autoCorrelationSlope']
         return np.array(dset)
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def rSquared(self) -> np.ndarray:
         """A 2D array giving the r^2 coefficient of determination for the linear fit to the logarithm of the ACF. This
         basically tells us how confident to be in the `autoCorrelationSlope`."""
         dset = self.file['rSquared']
         return np.array(dset)
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def ld(self) -> np.ndarray:
         """A 2D array giving Ld. A parameter derived from RMS and the ACF slope."""
         dset = self.file['ld']
         return np.array(dset)
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def opd(self) -> Tuple[np.ndarray, np.ndarray]:
         """
         A tuple containing: `opd`: The 3D array of values, `opdIndex`: The sequence of OPD values associated with each
@@ -363,12 +339,20 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
         opd, opdIndex = cube.getOpd(isHannWindow=False, indexOpdStop=100)
         return opd, opdIndex
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def extraReflectionTag(self) -> str:
         """The `idtag` of the extra reflectance correction used."""
         return bytes(np.array(self.file['extraReflectionTag'])).decode()
+
+    def releaseMemory(self):
+        """
+        The cached properties continue to stay in RAM until they are deleted, this method deletes all cached data to release the memory.
+        """
+        for field in self.fields():
+            try:
+                delattr(self, field)
+            except AttributeError:
+                pass  # Fields that haven't yet been loaded won't be present for deletion
 
 
 class LegacyPWSAnalysisResults(AbstractAnalysisResults):
@@ -397,7 +381,7 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
 
     Attributes:
         filterOrder (int): The `order` of the buttersworth filter used for lowpass filtering.
-        filterCutoff (float): The cutoff frequency of the buttersworth filter used for lowpass filtering. Set to `None` to skip lowpass filtering.
+        filterCutoff (float): The cutoff frequency of the buttersworth filter used for lowpass filtering. Frequency unit is 1/wavelength . Set to `None` to skip lowpass filtering.
         polynomialOrder (int): The order of the polynomial which will be fit to the reflectance and then subtracted before calculating the analysis results.
         extraReflectanceId (str): The `idtag` of the extra reflection used for correction. Set to `None` if extra reflectance calibration is being skipped.
         referenceMaterial (Material): The material that was being imaged in the reference acquisition

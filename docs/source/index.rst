@@ -1,10 +1,8 @@
-Contents
-=========
+:mod:`pwspy`
+===============
 
-.. toctree::
-   :maxdepth: 3
+.. automodule:: pwspy
 
-   pwspy
 
 Indices and tables
 ==================

@@ -39,7 +39,7 @@ from . import version
 
 __author__ = 'Nick Anthony'
 
-__version__ = version.pwspyVersion
+__version__ = version.version
 
 dateTimeFormat = "%d-%m-%Y %H:%M:%S"
 

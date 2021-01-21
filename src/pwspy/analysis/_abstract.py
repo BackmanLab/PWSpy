@@ -25,7 +25,7 @@ import typing
 from pwspy import __version__ as pwspyversion
 from pwspy.utility.misc import cached_property
 if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import ICBase, MetaDataBase, AnalysisManagerMetaDataBase, ERMetaData
+    from pwspy.dataTypes import ICBase
 
 
 class AbstractAnalysisSettings(ABC):
@@ -33,6 +33,7 @@ class AbstractAnalysisSettings(ABC):
     These classes represent everything about the settings of an anlysis that can be reliably saved and then loaded again.
     The settings that are actually passed to the analyiss are the RuntimeSettings which can contain items that can't reliably be
     loaded from a json file (for example, references to data files which may not still be at the same file path if someone tried to load the settings"""
+
     @classmethod
     def fromJson(cls, filePath: str, name: str) -> AbstractAnalysisSettings:
         """Create a new instance of this class from a json text file.
@@ -157,6 +158,31 @@ class AbstractAnalysisResults(ABC):
         pass
 
 
+def _clearError(func):
+    """This decorator tries to run the original function. If the function raises a keyerror then we raise a new keyerror with a clearer message. This is intended to be used with `field` accessors of implementations
+    of `AbstractHDFAnalysisResults`."""
+    def newFunc(*args):
+        try:
+            return func(*args)
+        except KeyError:
+            raise KeyError(f"The analysis file does not contain a {func.__name__} item.")
+    newFunc.__name__ = func.__name__  # failing to do this renaming can mess with other decorators e.g. cached_property
+    return newFunc
+
+
+def _getFromDict(func):
+    """This decorator makes it so that when the method is run we will check if our class instance has a `file` property. If not, then we will attempt to access a `dict` property which is keyed
+    by the same name as our original method. Otherwide we simply run the method. This is intended for use with implementations of `AbstractHDFAnalysisResults`"""
+    def newFunc(self, *args):
+        if self.file is None:
+            return self.dict[func.__name__]
+        else:
+            return func(self, *args)
+
+    newFunc.__name__ = func.__name__
+    return newFunc
+
+
 class AbstractHDFAnalysisResults(AbstractAnalysisResults):
     """
     This abstract class implements methods of `AbstractAnalysisResults` for an object that can be saved and loaded to/from an HDF file.
@@ -168,6 +194,13 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
         variablesDict: To create a new object from variables, provide a dictionary keyed by all the field names.
         analysisName: Optionally store the name of the analysis.
     """
+    @staticmethod
+    def FieldDecorator(func):
+        """Decorate functions in subclasses that access their fields from the HDF file with this decorator. It will:
+        1: Make it so the data is load from disk on the first access and stored in memory for every further access.
+        2: Report an understandable error if the field isn't found in the HDF file.
+        3: Make the accessors work even if the the object isn't associated with an HDF file."""
+        return cached_property(_clearError(_getFromDict(func)))
 
     #TODO this holds onto the reference to the h5py.File meaning that the file can't be deleted until the object has been deleted. Maybe that's good. but it causes some problems.
     def __init__(self, file: typing.Optional[h5py.File] = None, variablesDict: typing.Optional[dict] = None, analysisName: typing.Optional[str] = None):
@@ -186,7 +219,7 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
 
     @staticmethod
     @abstractmethod
-    def fields() -> typing.Tuple[str]:
+    def fields() -> typing.Tuple[str, ...]:
         """
 
         Returns:
@@ -219,7 +252,7 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
         """
         pass
 
-    def toHDF(self, directory: str, name: str):
+    def toHDF(self, directory: str, name: str, overwrite: bool = False, compression: str = None):
         """
         Save the AnalysisResults object to an HDF file in `directory`. The name of the file will be determined by `name`. If you want to know what the full file name
         will be you can use this class's `name2FileName` method.
@@ -227,30 +260,35 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
         Args:
             directory: The path to the folder to save the file in.
             name: The name of the analysis. This determines the file name.
+            overwrite: If `True` then any existing file of the same name will be replaced.
+            compression: The value of this argument will be passed to h5py.create_dataset for numpy arrays. See h5py documentation for available options.
         """
         from pwspy.dataTypes import ICBase  # Need this for instance checking
         fileName = osp.join(directory, self.name2FileName(name))
-        if osp.exists(fileName):
+        if (not overwrite) and osp.exists(fileName):
             raise OSError(f'{fileName} already exists.')
-        with h5py.File(fileName, 'w') as hf:
-            # Save version
-            hf.create_dataset('pwspy_version', data=np.string_(self._currentmoduleversion))
-            # Save fields defined by implementing subclass
-            for field in self.fields():
-                k = field
-                v = getattr(self, field)
-                if isinstance(v, AbstractAnalysisSettings):
-                    v = v.toJsonString()
-                if isinstance(v, str):
-                    hf.create_dataset(k, data=np.string_(v))  # h5py recommends encoding strings this way for compatability.
-                elif isinstance(v, ICBase):
-                    hf = v.toHdfDataset(hf, k, fixedPointCompression=True)
-                elif isinstance(v, np.ndarray):
-                    hf.create_dataset(k, data=v)
-                elif v is None:
-                    pass
-                else:
-                    raise TypeError(f"Analysis results type {k}, {type(v)} not supported or expected")
+        with open(fileName, 'wb') as pythonFile:
+            with h5py.File(pythonFile, 'w', driver='fileobj') as hf:  # Using the default driver causes write errors when writing from windows to a Samba shared server. Using a reference to a python `File Object` solves this issue.
+                # Save version
+                hf.create_dataset('pwspy_version', data=np.string_(self._currentmoduleversion))
+                # Save fields defined by implementing subclass
+                for field in self.fields():
+                    k = field
+                    v = getattr(self, field)
+                    if isinstance(v, AbstractAnalysisSettings):
+                        v = v.toJsonString() # Convert to string, then string case will then handle saving the string.
+                    elif isinstance(v, dict):  # Save as json. The str case will handle the actual saving.
+                        v = json.dumps(v)
+                    if isinstance(v, str):
+                        hf.create_dataset(k, data=np.string_(v))  # h5py recommends encoding strings this way for compatability.
+                    elif isinstance(v, ICBase):
+                        hf = v.toHdfDataset(hf, k, fixedPointCompression=True)
+                    elif isinstance(v, np.ndarray):
+                        hf.create_dataset(k, data=v, compression=compression)
+                    elif v is None:
+                        pass
+                    else:
+                        raise TypeError(f"Analysis results type {k}, {type(v)} not supported or expected")
 
     @classmethod
     def load(cls, directory: str, name: str) -> AbstractHDFAnalysisResults:
@@ -264,10 +302,14 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
         """
         filePath = osp.join(directory, cls.name2FileName(name))
         if not osp.exists(filePath):
-            raise OSError("The analysis file does not exist.")
+            raise OSError(f"The {cls.__name__} analysis file does not exist. {filePath}")
         file = h5py.File(filePath, 'r')
         return cls(file, None, name)
 
     def __del__(self):
         if self.file is not None:  # Make sure to release the file if it's still open.
-            self.file.close()
+            try:
+                self.file.close()
+            except:  # Sometimes when python is shutting down this causes an error. Doesn't matter though.
+                pass
+

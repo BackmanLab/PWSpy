@@ -2,7 +2,7 @@
 A python module supporting operations related to Partial Wave Spectroscopy.
 
 ## Documentation
-This project is automatically documented by "Sphinx". If you have Sphinx installed then you can compile documentation to HTML. 
+This project is automatically documented by "Sphinx". If you have Sphinx installed then you can compile documentation to HTML 
 by navigating to the `docs` folder and running `make html`. Formats other than HTML are also possible. Documentation is
 hosted online at [ReadTheDocs](https://pwspy.readthedocs.io/en/dev/) updating of documentation from the current version on Bitbucket can be performed
 by signing into the lab's account at `readthedocs.org`.
@@ -24,23 +24,8 @@ Set the appropriate Conda environment name to the `env` variable in the first li
 run `install.bat`  
 
 #### Installing Manually
-If you have the built package (.tar.gz file) then you can install the package by pointing `conda install` to the it.
+If you have the built package (.tar.gz file) then you can install the package by pointing `conda install` to it.
 Install the package with `conda install -c file:///{tarGzFileDestination} -c conda-forge pwspy`.
-
-#### First time startup
-While the `pwspy` package has many facets one of the major components is the "PWS Analysis App" GUI which is used to analyze PWS data.
-There are multiple ways that you can run this application:  
-
-1. On Windows a `PWS Analysis` shortcut should appear in your Start Menu under
-the `Anaconda` category  
-
-2. Type `PWSAnalysis` into the command prompt for the Conda environment
-that `pwspy` is installed in.  
-
-3. In `Anaconda-Navigator` an app named `pwspy` should appear. 
-
-The first time you run the GUI on a computer you will
-need to sign into the Google Drive database where calibration data is stored, the account name is `backman.lab@gmail.com`.
 
  
 ## Building from source and distributing

@@ -48,7 +48,7 @@ from functools import reduce
 import pandas as pd
 from dataclasses import dataclass
 from matplotlib import animation
-from pwspy.utility.plotting import PlotNd
+from mpl_qt_viz.visualizers import PlotNd
 
 
 MCombo = Tuple[Material, Material]  # This is just an alias to shorten some of the type hinting.

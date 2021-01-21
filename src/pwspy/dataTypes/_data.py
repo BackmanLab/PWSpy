@@ -174,7 +174,7 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
         Returns:
             np.ndarray: An array of the 4 XY vertices of the square.
         """
-        from pwspy.utility.matplotlibWidgets import AxManager, PointCreator
+        from mpl_qt_viz.roiSelection import PointCreator
         verts = [None]
         if displayIndex is None:
            displayIndex = self.data.shape[2]//2
@@ -183,8 +183,7 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
         fig.suptitle("Close to accept ROI")
         def select(Verts, handles):
             verts[0] = Verts
-        axMan = AxManager(ax)
-        sel = PointCreator(axMan, onselect=select, sideLength=side)
+        sel = PointCreator(ax, onselect=select, sideLength=side)
         sel.set_active(True)
         fig.show()
         while plt.fignum_exists(fig.number):
@@ -297,7 +296,7 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
         new.data = ret
         return new
 
-    def toHdfDataset(self, g: h5py.Group, name: str, fixedPointCompression: bool = True) -> h5py.Group:
+    def toHdfDataset(self, g: h5py.Group, name: str, fixedPointCompression: bool = True, compression: str = None) -> h5py.Group:
         """
         Save the data of this class to a new HDF dataset.
 
@@ -306,6 +305,7 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
             name (str): the name of the new HDF dataset in group `g`.
             fixedPointCompression (bool): if True then save the data in a special 16bit fixed-point format. Testing has shown that this has a
                 maximum conversion error of 1.4e-3 percent. Saving is ~10% faster but requires only 50% the hard drive space.
+            compression: The value of this argument will be passed to h5py.create_dataset for numpy arrays. See h5py documentation for available options.
 
         Returns:
             h5py.Group: This is the the same h5py.Group that was passed in a `g`. It should now have a new dataset by the name of 'name'
@@ -322,13 +322,13 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
             fpData = fpData / (M - m)
             fpData *= (2 ** 16 - 1)
             fpData = fpData.astype(np.uint16)
-            dset = g.create_dataset(name, data=fpData)  # , chunks=(64,64,self.data.shape[2]), compression=2)
+            dset = g.create_dataset(name, data=fpData, compression=compression)  # , chunks=(64,64,self.data.shape[2]), compression=2)
             dset.attrs['index'] = np.array(self.index)
             dset.attrs['type'] = np.string_(f"{self._hdfTypeName}_fp")
             dset.attrs['min'] = m
             dset.attrs['max'] = M
         else:
-            dset = g.create_dataset(name, data=self.data)
+            dset = g.create_dataset(name, data=self.data, compression=compression)
             dset.attrs['index'] = np.array(self.index)
             dset.attrs['type'] = np.string_(self._hdfTypeName)
         return g
@@ -387,7 +387,7 @@ class ICRawBase(ICBase, ABC):
             return {'camCorrected': self.cameraCorrected, 'exposureNormed': self.normalizedByExposure, 'erSubtracted': self.extraReflectionSubtracted, 'refNormed': self.normalizedByReference}
 
         @classmethod
-        def fromDict(cls, d: dict) -> 'ProcessingStatus':
+        def fromDict(cls, d: dict) -> ICBase.ProcessingStatus:
             return cls(cameraCorrected=d['camCorrected'], normalizedByExposure=d['exposureNormed'], extraReflectionSubtracted=d['erSubtracted'], normalizedByReference=d['refNormed'])
 
     def __init__(self, data: np.ndarray, index: tuple, metadata: pwsdtmd.MetaDataBase, processingStatus: ProcessingStatus=None, dtype=np.float32):
@@ -1255,18 +1255,17 @@ class KCube(ICBase):
         if not mask is None:
             opd = opd[mask].mean(axis=0)
 
-        dk = self.wavenumbers[1] - self.wavenumbers[0] #The interval that our linear array of wavenumbers is spaced by. Units: radians / micron
-
+        dk = self.wavenumbers[1] - self.wavenumbers[0]  # The interval that our linear array of wavenumbers is spaced by. Units: radians / micron
 
         # Generate the xval for the current OPD.
-        maxOpd = 2 * np.pi / dk #This is the maximum OPD value we can get with. tighter wavenumber spacing increases OPD range. units of microns
-        dOpd = maxOpd / dataLength #The interval we want between values in our opd vector.
+        maxOpd = 2 * np.pi / dk  # This is the maximum OPD value we can get with. tighter wavenumber spacing increases OPD range. units of microns
+        dOpd = maxOpd / dataLength  # The interval we want between values in our opd vector.
         opdVals = dataLength / 2 * np.array(range(fftSize)) * dOpd / fftSize
-        #The above line is how it was writtne in the matlab code. Couldn't it be simplified down to maxOpd * np.linspace(0, 1, num = fftSize // 2 + 1) / 2 ? I'm not sure what the 2 means though.
+        # The above line is how it was written in the matlab code. Couldn't it be simplified down to maxOpd * np.linspace(0, 1, num = fftSize // 2 + 1) / 2 ? I'm not sure what the 2 means though.
 
         # Above is how the old MATLAB code calculated the frequencies. IMO the code below is simpler and more understandable but we'll stick with the old code.
-            # opdVals = np.fft.rfftfreq(fftSize, dk)  # Units: cycles / (radians/microns), equivalent to microns / (radians/cycles)
-            # opdVals *= 2 * np.pi  # Units: microns
+        # opdVals = np.fft.rfftfreq(fftSize, dk)  # Units: cycles / (radians/microns), equivalent to microns / (radians/cycles)
+        # opdVals *= 2 * np.pi  # Units: microns
 
         opdVals = opdVals[:indexOpdStop]
 
