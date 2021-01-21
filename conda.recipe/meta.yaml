@@ -1,21 +1,21 @@
+{% set version = load_setup_py_data().get("version") %}  # In order for this to work we must install setuptools_scm prior to running conda-build, hopefully they'll fix that.
 
 package:
   name: pwspy
-  version: {{ environ['GIT_DESCRIBE_TAG'] + '.' + environ.get('GIT_DESCRIBE_NUMBER', '')  }}
+  version: {{ version }}
 
 source:
   path: .. #tells conda-build that the source code is in the parent directory.
 
 build:
   noarch: python
-  number: {{ GIT_DESCRIBE_NUMBER }}
-  string: {{environ['GIT_DESCRIBE_HASH']}}
+  number: 0
 
 requirements:
   build:
     - python >=3.7
     - setuptools
-    - gitpython
+    - setuptools_scm
 
   run:
     - python >=3.7
@@ -28,11 +28,7 @@ requirements:
     - pandas
     - matplotlib >=1.4
     - jsonschema
-    - google-api-python-client 
-    - google-auth-httplib2
-    - google-auth-oauthlib
     - opencv =4
-    - pyqt =5
     - scikit-image
     - mpl_qt_viz >=1.0.5  # Plotting package available on PyPi and the backmanlab anaconda cloud account. Written for this project by Nick Anthony
 
