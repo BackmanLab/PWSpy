@@ -30,7 +30,6 @@ requirements:
     - jsonschema
     - opencv =4
     - scikit-image
-    - mpl_qt_viz >=1.0.5  # Plotting package available on PyPi and the backmanlab anaconda cloud account. Written for this project by Nick Anthony
 
 about:
   home: https://bitbucket.org/backmanlab/pwspython/src/master/
