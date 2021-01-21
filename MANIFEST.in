@@ -1,0 +1,6 @@
+recursive-exclude tutorials *
+recursive-exclude docs *
+recursive-exclude conda.recipe * 
+recursive-exclude buildScripts * 
+recursive-exclude .idea * 
+recursive-exclude .github *
