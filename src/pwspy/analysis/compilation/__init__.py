@@ -24,7 +24,6 @@ PWS
 .. autosummary::
    :toctree: generated/
 
-   PWSAnalysisResults
    PWSCompilerSettings
    PWSRoiCompilationResults
    PWSRoiCompiler
@@ -50,11 +49,11 @@ Generic
 """
 
 __all__ = ['DynamicsRoiCompiler', 'DynamicsRoiCompilationResults', 'DynamicsCompilerSettings',
-           'PWSRoiCompiler', 'PWSRoiCompilationResults', 'PWSCompilerSettings', 'PWSAnalysisResults',
-           'GenericRoiCompiler', 'GenericRoiCompilationResults', 'GenericCompilerSettings', 'AbstractRoiCompilationResults',
+           'PWSRoiCompiler', 'PWSRoiCompilationResults', 'PWSCompilerSettings', 'GenericRoiCompiler',
+           'GenericRoiCompilationResults', 'GenericCompilerSettings', 'AbstractRoiCompilationResults',
            'AbstractRoiCompiler', 'AbstractCompilerSettings']
 
 from ._dynamics import DynamicsCompilerSettings, DynamicsRoiCompilationResults, DynamicsRoiCompiler
-from ._pws import PWSAnalysisResults, PWSCompilerSettings, PWSRoiCompilationResults, PWSRoiCompiler
+from ._pws import PWSCompilerSettings, PWSRoiCompilationResults, PWSRoiCompiler
 from ._generic import GenericCompilerSettings, GenericRoiCompilationResults, GenericRoiCompiler
 from ._abstract import AbstractCompilerSettings, AbstractRoiCompilationResults, AbstractRoiCompiler
