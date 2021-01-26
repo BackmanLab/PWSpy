@@ -32,14 +32,14 @@ if t_.TYPE_CHECKING:
 @dataclass
 class PWSCompilerSettings(AbstractCompilerSettings):
     """These settings determine which values should be processed during compilation"""
-    reflectance: bool
-    rms: bool
-    polynomialRms: bool
-    autoCorrelationSlope: bool
-    rSquared: bool
-    ld: bool
-    opd: bool
-    meanSigmaRatio: bool
+    reflectance: bool = False
+    rms: bool = False
+    polynomialRms: bool = False
+    autoCorrelationSlope: bool = False
+    rSquared: bool = False
+    ld: bool = False
+    opd: bool = False
+    meanSigmaRatio: bool = False
 
 
 @dataclass
