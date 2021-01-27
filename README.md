@@ -34,9 +34,11 @@ Install the package with `conda install -c file:///{tarGzFileDestination} -c con
 First you will need the `Conda` package manager. If you have installed Anaconda then Conda is included.
 On Windows you will need to use the `Anaconda Prompt` rather than the default Windows `Command Prompt`.
 In addition you will need:  
- - conda-build: `conda install conda-build`  
- - anaconda-client: `conda install anaconda-client`  
- - gitpython: `conda install -c conda-forge gitpython`  
+ - conda-build 
+ - anaconda-client 
+ - setuptools_scm
+
+These can be installed via: `conda install conda-build anaconda-client setuptools_scm`  
 
 #### Automatic Method (Recommended):
 Use the python in your `base` anaconda environment to run `python installScripts\build.py`.
@@ -46,10 +48,6 @@ files here but the most important one is `build/noarch/pwspy_xxxxxxxxxx.tar.gz`.
 This will update the module version in the `_version` file and run the conda-build and deploy steps.
 The version number can be understood as `a.b.c.d-xyz` where `a.b.c` are numbers set manually with a Git `Tag`, `d` is the number of commits since 
 `a.b.c` was tagged, `xyz` is the short sha hash for the git commit.
-
-#### Manual Method:  
-You will need to update the `_version` file on your own, this can be done by simply running `import pwspy` in python in an environment that has `gitpython` installed. Next, navigate to the root directory of the project and use `conda-build . --output-folder build -c conda-forge` to build the package. The package will appear as a .tar.gz file in the `build/noarch` directory.
-Copy `install.bat` from the `installScripts` folder to `{outputDestination}`. The `{outputDestination}` folder is all that is needed for distribution.
 
 #### Uploading a newly built version of the package to Anaconda Cloud
 The lab has a `Cloud` account at anaconda.org. The username is `backmanlab` and the password is `UNKNOWN!!!!` (do not put the password here, this git repository is publically available, we prefer not to get hacked).

@@ -43,7 +43,7 @@ def checkMeanSpectraRatio(ratio: float) -> Optional[AnalysisWarning]:
     correlated spectra. By averaging the spectra of all pixels in a region we can get a `mean spectra`. Ideally we would
     expect this to be flat but realistically we se some variation due to the natural spectral reflectance profile of the sample.
     If this mean spectra changes it suggests something has changed in the system and we want to be aware of this."""
-    if ratio > 0.4: #TODO the upper and lower bounds here were arbitrarily chosen without any testing.
+    if ratio > 0.4:  # TODO the upper and lower bounds here were arbitrarily chosen without any testing.
         return AnalysisWarning("Mean RMS ratio too high", f"Ratio between variance of mean ROI spectra and mean of spectra variance in ROI is {ratio} (>0.4). This suggests that the ROI is absorbing or fluorescing, or something stranger could be happening.")
     elif ratio < 0.3:
         return AnalysisWarning("Mean RMS ratio too low", f"Ratio between variance of mean ROI spectra and mean of spectra variance in ROI is {ratio} (<0.3). This suggests that the ROI is absorbing or fluorescing, or something stranger could be happening.")
