@@ -26,7 +26,6 @@ Subpackages
    :toctree: generated/
 
    analysis
-   apps
    dataTypes
    examples
    utility

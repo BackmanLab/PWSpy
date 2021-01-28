@@ -22,8 +22,11 @@ import matplotlib.pyplot as plt
 import matplotlib
 
 
-def roiColor(data, rois: List[Roi], vmin, vmax, scale_bg, hue=0, exponent=1, numScaleBarPix=0):
-    """Given a 2D image of data this funciton will scale the data, apply an exponential curve, and color the ROI regions with Hue.
+def roiColor(data: np.ndarray, rois: List[Roi], vmin, vmax, scale_bg, hue=0, exponent=1, numScaleBarPix=0):
+    """
+    Given a 2D image of data this function will scale the data, apply an exponential curve, and color the ROI regions with Hue.
+    Used in many presentations and publications.
+
     Args:
         data (np.ndarray): an MxN array of data to be imaged
         rois (List[Roi]): a list of Roi objects. the regions inside a roi will be colored.
@@ -33,6 +36,7 @@ def roiColor(data, rois: List[Roi], vmin, vmax, scale_bg, hue=0, exponent=1, num
         hue (float): A value of 0-1 indicating the hue of the colored regions.
         exponent (float): The exponent used to curve the color map for more pleasing results.
         numScaleBarPix (float): The length of the scale bar in number of pixels.
+
     Returns:
         np.ndarray: MxNx3 RGB array of the image"""
 

@@ -30,7 +30,6 @@ Modules
    plotting
    reflection
    micromanager
-   matplotlibWidgets
    DConversion
 
 """
