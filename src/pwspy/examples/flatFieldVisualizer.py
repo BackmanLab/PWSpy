@@ -32,7 +32,6 @@ from pwspy.dataTypes import Roi
 
 #TODO change the theoretical CSV file to use BK7 instead of SIO2. Our measurements are still not matching theory though. Is this because of all the extra scattering?
 
-plt.ion()
 __spec__ = None
 
 
@@ -53,8 +52,9 @@ if __name__ == "__main__":
     
     files = glob(os.path.join(wDir, '*'))
     files = [f for f in files if os.path.isdir(f)]
-    
-    
+
+    plt.ion()
+
     # %% Loading
     theory = pd.read_csv(os.path.join(thinFilmPath, '2um_sio2_ITO_air.txt'), delimiter='\t', index_col=0)
     theory = theory.loc[500:700:2]
