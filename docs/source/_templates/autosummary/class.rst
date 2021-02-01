@@ -6,3 +6,4 @@
 .. auto{{ objtype }}:: {{ objname }}
    :show-inheritance:
    :members:
+   :inherited-members:

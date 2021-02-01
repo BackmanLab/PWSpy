@@ -176,7 +176,7 @@ class AnalysisManager(abc.ABC):
         """
 
         Returns:
-            AbstractHDFAnalysisResults: The class that contains analysis results for this acquisition type
+            The class that is used to contain analysis results for this acquisition type.
         """
         pass
 
