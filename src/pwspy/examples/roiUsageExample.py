@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Feb  1 11:52:40 2021
+Loop through all ROIs for all acquisitions in a directory and plot a histogram of the RMS values within the ROI.
 
-@author: nick
+@author: Nick Anthony
 """
 import pwspy.dataTypes as pwsdt
 import matplotlib.pyplot as plt

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Jan 13 11:45:44 2021
+Load the OPD from a previosly saved analysis result and plot it using a special multi-dimensional plotting widget.
 
-@author: backman05
+@author: Nick Anthony
 """
 
 import pwspy.dataTypes as pwsdt
-from pwspy.utility.plotting import PlotNd
+from mpl_qt_viz.visualizers import PlotNd
 
 imageDirectory = r'\\backmanlabnas.myqnapcloud.com\home\Year3\ethanolTimeSeries\LTL20l_Pure\Track_3hrs\Cell3'
 
