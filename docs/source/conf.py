@@ -1,4 +1,4 @@
-# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+# Copyright 2018-2021 Nick Anthony, Backman Biophotonics Lab, Northwestern University
 #
 # This file is part of PWSpy.
 #
@@ -39,7 +39,7 @@ import pwspy
 # -- Project information -----------------------------------------------------
 
 project = 'pwspy'
-copyright = '2020, Nick Anthony'
+copyright = '2021, Nick Anthony'
 author = 'Nick Anthony'
 
 # The short X.Y version
