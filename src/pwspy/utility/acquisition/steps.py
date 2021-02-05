@@ -5,6 +5,8 @@ import json
 import typing
 from ._treeModel.item import TreeItem
 from pwspy.utility.micromanager import PositionList
+import os
+
 
 StepTypeNames = dict(  # The names to represent the `steps` that can be in an acquisition sequence
     ACQ="Acquisition",
@@ -165,3 +167,26 @@ class SequencerStepTypes(enum.Enum):
     AUTOSHUTTER = ContainerStep
 
 
+class RuntimeSequenceSettings:
+    """
+    This represents the object saved when a new acquisition is run.
+    """
+    FILENAME = "sequence.rtpwsseq"
+    OLDFILENAME = "sequence.pwsseq"
+
+    def __init__(self, uuid: str, dateString: str, rootStep: SequencerStep):
+        self.uuid = uuid
+        self.dateString = dateString
+        self.rootStep = rootStep
+
+    @classmethod
+    def fromJsonFile(cls, directory: str):
+        if os.path.exists(os.path.join(directory, cls.FILENAME)):
+            with open(os.path.join(directory, cls.FILENAME), 'r') as f:
+                return cls(**json.load(f, object_hook=SequencerStep.hook))
+        elif os.path.exists(os.path.join(directory, cls.OLDFILENAME)):
+            with open(os.path.join(directory, cls.OLDFILENAME)) as f:
+                rootStep = json.load(f, object_hook=SequencerStep.hook)
+            return cls(uuid=None, dateString=None, rootStep=rootStep)  # Old sequence files didn't have a uuid or date. Too bad
+        else:
+            raise FileNotFoundError(f"No valide sequence file found in: {directory}")

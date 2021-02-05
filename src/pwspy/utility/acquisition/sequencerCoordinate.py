@@ -26,8 +26,9 @@ class SequencerCoordinate:
     """
     A coordinate that fully defines a position within a `tree` of steps.
     """
-    def __init__(self, coordSteps: typing.List[SequencerCoordinateStep]):
+    def __init__(self, coordSteps: typing.List[SequencerCoordinateStep], uuid: str):
         self.fullPath = tuple(coordSteps)
+        self.uuid = uuid  # Matches the uuid of the sequence file that ran this acquisition.
 
     def __repr__(self):
         return f"SeqCoord:{self.fullPath}"
@@ -37,7 +38,11 @@ class SequencerCoordinate:
         c = []
         for id, iteration in zip(d['treeIdPath'], d["stepIterations"]):
             c.append(SequencerCoordinateStep(id, iteration))
-        return SequencerCoordinate(c)
+        if 'uuid' in d:
+            uuid = d['uuid']
+        else:
+            uuid = None
+        return SequencerCoordinate(c, uuid)
 
     @staticmethod
     def fromJsonFile(path: str) -> SequencerCoordinate:
