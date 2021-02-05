@@ -770,6 +770,7 @@ class AcqDir:
         directory: the file path the root directory of the acquisition
     """
     def __init__(self, directory: str):
+        directory = os.path.normpath(directory)  # This is important to avoid false negatives when comparing filePaths between objects.
         self.filePath = directory #TODO should this be forced to an absolute path? Doesn't appear to be causing any problems like it is now.
         if (self.pws is None) and (self.dynamics is None) and (len(self.fluorescence) == 0):
             raise OSError(f"Could not find a valid PWS or Dynamics Acquisition at {directory}.")
