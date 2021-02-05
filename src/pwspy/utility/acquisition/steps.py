@@ -3,7 +3,7 @@ import abc
 import enum
 import json
 import typing
-from ._treeModel.item import SelfTreeItem
+from ._treeModel.item import TreeItem
 from pwspy.utility.micromanager import PositionList
 
 StepTypeNames = dict(  # The names to represent the `steps` that can be in an acquisition sequence
@@ -22,7 +22,7 @@ StepTypeNames = dict(  # The names to represent the `steps` that can be in an ac
 )
 
 
-class SequencerStep(SelfTreeItem):
+class SequencerStep(TreeItem):
     """Implementation of a TreeItem for representing a sequencer step.
 
     Args:

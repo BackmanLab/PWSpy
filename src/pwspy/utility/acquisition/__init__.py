@@ -1,6 +1,11 @@
+import typing as t_
+from .steps import SequencerStep
+from .sequencerCoordinate import SeqAcqDir
+import os
+from glob import glob
 
 
-def loadDirectory(directory: str) -> typing.Tuple[SequencerStep, typing.List[SeqAcqDir]]:
+def loadDirectory(directory: str) -> t_.Tuple[SequencerStep, t_.List[SeqAcqDir]]:
     """
     If `directory` contains a dataset acquired with the acquisition sequencer then this function will return a python
     object representing the sequence settings and a list of references to the acquisitions that are part of the sequence.

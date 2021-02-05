@@ -1,6 +1,5 @@
 from __future__ import annotations
 import typing
-from PyQt5 import QtCore
 
 
 class TreeItem:
@@ -28,18 +27,6 @@ class TreeItem:
     def childCount(self) -> int:
         return len(self._childItems)
 
-    def columnCount(self) -> int:
-        return 1
-
-    def data(self, role: int) -> typing.Any:
-        try:
-            return self._itemData[role]
-        except KeyError:
-            return None
-
-    def setData(self, role: int, data: typing.Any):
-        self._itemData[role] = data
-
     def parent(self) -> TreeItem:
         return self._parentItem
 
@@ -56,9 +43,11 @@ class TreeItem:
             yield child
             yield from child.iterateChildren()
 
+    def data(self, role: int) -> typing.Any:
+        try:
+            return self._itemData[role]
+        except KeyError:
+            return None
 
-class SelfTreeItem(TreeItem):
-    """A tree item which returns itself as as its own DisplayRole data"""
-    def __init__(self):
-        super().__init__()
-        self.setData(QtCore.Qt.DisplayRole, self)
+    def setData(self, role: int, data: typing.Any):
+        self._itemData[role] = data
