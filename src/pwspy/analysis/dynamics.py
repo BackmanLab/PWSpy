@@ -69,8 +69,10 @@ class DynamicsAnalysis(AbstractAnalysis):
         super().__init__()
         extraReflectance = pwsdt.ExtraReflectanceCube.fromMetadata(extraReflectanceMetadata) if extraReflectanceMetadata is not None else None
         logger = logging.getLogger(__name__)
-        assert ref.processingStatus.cameraCorrected
-        ref.normalizeByExposure()
+        if not ref.processingStatus.cameraCorrected:
+            ref.correctCameraEffects(settings.cameraCorrection)
+        if not ref.processingStatus.normalizedByExposure:
+            ref.normalizeByExposure()
         if ref.metadata.pixelSizeUm is not None:  # Only works if pixel size was saved in the metadata.
             ref.filterDust(.75)  # Apply a blur to filter out dust particles. This is in microns. I'm not sure if this is the optimal value.
         if settings.referenceMaterial is None:
@@ -101,9 +103,11 @@ class DynamicsAnalysis(AbstractAnalysis):
         self.extraReflection = Iextra
 
     def run(self, cube: pwsdt.DynCube) -> typing.Tuple[DynamicsAnalysisResults, typing.List[warnings.AnalysisWarning]]:  # Inherit docstring
-        assert cube.processingStatus.cameraCorrected
         warns = []
-        cube.normalizeByExposure()
+        if not cube.processingStatus.cameraCorrected:
+            cube.correctCameraEffects(self.settings.cameraCorrection)
+        if not cube.processingStatus.normalizedByExposure:
+            cube.normalizeByExposure()
         if self.extraReflection is not None:
             cube.subtractExtraReflection(self.extraReflection)
         cube.normalizeByReference(self.refMean)
