@@ -206,17 +206,18 @@ class AnalysisManager(abc.ABC):
         else:
             return []
 
-    def saveAnalysis(self, analysis: AbstractHDFAnalysisResults, name: str):
+    def saveAnalysis(self, analysis: AbstractHDFAnalysisResults, name: str, overwrite: bool = False):
         """
 
         Args:
             analysis: An AnalysisResults object to be saved.
             name: The name to save the analysis as
+            overwrite: If `True` then any existing file of the same name will be replaced. If `False` an exception will be raised.
         """
         path = os.path.join(self.__filePath, 'analyses')
         if not os.path.exists(path):
             os.mkdir(path)
-        analysis.toHDF(path, name)
+        analysis.toHDF(path, name, overwrite=overwrite)
 
     def loadAnalysis(self, name: str) -> AbstractHDFAnalysisResults:
         """
