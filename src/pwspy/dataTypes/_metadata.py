@@ -25,6 +25,7 @@ import subprocess
 import sys
 import typing
 import abc
+import warnings
 from datetime import datetime
 import enum
 from typing import Optional, Tuple, Union, List
@@ -844,8 +845,9 @@ class AcqDir:
 
     def loadRoi(self, name: str, num: int, fformat: Roi.FileFormats = None) -> Roi:
         """Load a Roi that has been saved to file in the acquisition's file path."""
-        assert isinstance(name, str)
-        assert isinstance(num, int)
+
+        assert isinstance(name, str), f"The ROI name must be a string. Got a {type(name)}"
+        assert isinstance(num, int), f"The ROI number must be an integer. Got a {type(num)}"
         if fformat == Roi.FileFormats.MAT:
             return Roi.fromMat(self.filePath, name, num)
         elif fformat == Roi.FileFormats.HDF2:
@@ -900,7 +902,12 @@ class AcqDir:
     def getNumber(self) -> int:
         return int(self.filePath.split("Cell")[-1])
 
-    
+    def __setstate__(self, state):
+        """When the object is unpickled this will check if the file path is still valid."""
+        if not os.path.exists(state['filePath']):
+            warnings.warn(f"{self.__class__.__name__} file path cannot be found. {state['filePath']}")
+        self.__dict__ = state  # This is the default thing to do to unpicle the object.
+
 
 if __name__ == '__main__':
     md = ICMetaData.fromNano(r'C:\Users\nicke\Desktop\LTL20b_Tracking cells in 50%EtOH,95%EtOH,Water\95% ethanol\Cell1')
