@@ -771,13 +771,17 @@ class AcqDir:
         directory: the file path the root directory of the acquisition
     """
     def __init__(self, directory: str):
-        directory = os.path.normpath(directory)  # This is important to avoid false negatives when comparing filePaths between objects.
-        self.filePath = directory #TODO should this be forced to an absolute path? Doesn't appear to be causing any problems like it is now.
+        self.filePath = os.path.abspath(directory)  # Forcing an absolute path helps by: A: normalizing the path so string comparisons work. B: making sure that if the object is pickled and then unpickled from a different working direcotory the path will still be valid if the data is unmoved.
         if (self.pws is None) and (self.dynamics is None) and (len(self.fluorescence) == 0):
             raise OSError(f"Could not find a valid PWS or Dynamics Acquisition at {directory}.")
 
     def __repr__(self):
-        return f"AcqDir({self.filePath})"
+        if len(self.filePath) > 20:
+            path = ("%.15s" % self.filePath[::-1])[::-1]  # This is confusing. We cut everything but the last characters to make long paths readable.
+            path = "..." + path  # Add ellipsis
+        else:
+            path = self.filePath
+        return f"{self.__class__.__name__}({path})"
 
     @cached_property
     def pws(self) -> Optional[ICMetaData]:

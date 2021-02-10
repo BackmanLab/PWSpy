@@ -116,7 +116,3 @@ class SeqAcqDir(AcqDir):
         path = os.path.join(directory, "sequencerCoords.json")
         self.sequencerCoordinate = SequencerCoordinate.fromJsonFile(path)
 
-    def __repr__(self):
-        return f"SeqAcqDir({self.filePath})"
-
-
