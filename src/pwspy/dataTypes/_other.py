@@ -431,17 +431,22 @@ class Roi:
             verts = None
         return Roi(self.name, self.number, mask=mask, verts=verts) #intentionally ditching the filepath and fileformat data here since the new roi is not associated with a saved file.
 
-    def getImage(self, ax: plt.Axes) -> AxesImage:
+    def getImage(self, ax: plt.Axes, alpha: float = 0.5, value: float = 0.5, cmap='Reds', **kwargs) -> AxesImage:
         """Return a matplotlib `AxesImage` representing the `mask` of the Roi. The image will be displayed on `ax`.
 
         Args:
             ax: The matplotlib `Axes` to add the plot to.
+            alpha: The transparency of the image
+            value: A number between 0 and 1 to determine the color of the overlay.
+            cmap: The Matplotlib colormap that will be used to determine color.
+            kwargs: These keyword arguments will be passed to the matplotlib.imshow function.
         Returns:
              A reference to the matplotlib `AxesImage`.
         """
-        arr = self.mask.astype(np.uint8)*255
+        assert (value >= 0) and (value <= 1)
+        arr = self.mask.astype(np.uint8) * int(255 * value)
         arr = np.ma.masked_array(arr, arr == 0)
-        im = ax.imshow(arr, alpha=0.5, clim=[0, 400], cmap='Reds')
+        im = ax.imshow(arr, alpha=alpha, clim=[0, 255], cmap=cmap, **kwargs)
         return im
 
     def getBoundingPolygon(self) -> patches.Polygon:
