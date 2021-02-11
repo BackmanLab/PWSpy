@@ -231,7 +231,7 @@ class DynamicsAnalysisResults(AbstractHDFAnalysisResults): # Inherit docstring.
     @AbstractHDFAnalysisResults.FieldDecorator
     def settings(self) -> DynamicsAnalysisSettings:
         """The settings used to generate these results."""
-        return DynamicsAnalysisSettings.fromJsonString(self.file['settings'])
+        return DynamicsAnalysisSettings.fromJsonString(bytes(np.array(self.file['settings'])).decode())
 
     @AbstractHDFAnalysisResults.FieldDecorator
     def reflectance(self) -> pwsdt.DynCube:
