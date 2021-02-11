@@ -412,7 +412,7 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
 
     FileSuffix = 'analysis'  # This is used for saving and loading to json
 
-    def _asDict(self) -> dict:  # Inherit docstring
+    def asDict(self) -> dict:  # Inherit docstring
         d = dataclasses.asdict(self)
         if self.referenceMaterial is None:
             d['referenceMaterial'] = None

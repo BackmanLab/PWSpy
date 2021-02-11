@@ -299,7 +299,7 @@ class DynamicsAnalysisSettings(AbstractAnalysisSettings):
         assert self.diffusionRegressionLength > 0
         assert self.diffusionRegressionLength < 20  # Even 20 is probably way too long, unless a system is created with extremely low noise.
 
-    def _asDict(self) -> dict:
+    def asDict(self) -> dict:
         d = dataclasses.asdict(self)
         if self.referenceMaterial is None:
             d['referenceMaterial'] = None
