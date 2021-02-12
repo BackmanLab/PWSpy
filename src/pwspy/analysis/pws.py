@@ -397,7 +397,8 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
         relativeUnits (bool): relativeUnits: If `True` then all calculation are performed such that the reflectance is 1 if it matches the reference. If `False` then we use the
             theoretical reflectance of the reference  (based on NA and reference material) to normalize our results to the actual physical reflectance of
             the sample (about 0.4% for water)
-        cameraCorrection: An object describing the dark counts and non-linearity of the camera used. This is not actually used by the PWSAnalysis class, it is just stored for retrospection.
+        cameraCorrection: An object describing the dark counts and non-linearity of the camera used. If the data supplied to the PWSAnalysis class has already been corrected then this
+            setting will not be used. Setting this to `None` will result in the camera correcting being automatically determined based on the image files' metadata.
     """
     filterOrder: int
     filterCutoff: typing.Optional[float]
@@ -411,7 +412,7 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
     autoCorrMinSub: bool  # Determines if the autocorrelation should have it's minimum subtracted from it before processing. This is mathematically nonsense but is needed if the autocorrelation has negative values in it.
     numericalAperture: float
     relativeUnits: bool  # determines if reflectance (and therefore the other parameters) should be calculated in absolute units of reflectance or just relative to the reflectance of the reference image.
-    cameraCorrection: pwsdt.CameraCorrection
+    cameraCorrection: typing.Optional[pwsdt.CameraCorrection]
 
     FileSuffix = 'analysis'  # This is used for saving and loading to json
 

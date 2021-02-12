@@ -281,17 +281,18 @@ class DynamicsAnalysisSettings(AbstractAnalysisSettings):
             relativeUnits: If `True` then all calculation are performed such that the reflectance is 1 if it matches the reference. If `False` then we use the
                 theoretical reflectance of the reference  (based on NA and reference material) to normalize our results to the actual physical reflectance of
                 the sample (about 0.4% for water)
-            cameraCorrection: An object describing the dark counts and non-linearity of the camera used.  This is not actually used by the PWSAnalysis class, it is just stored for retrospection.
+            cameraCorrection: An object describing the dark counts and non-linearity of the camera used. If the data supplied to the DynamicsAnalysis class has already been corrected then this
+                setting will not be used. Setting this to `None` will result in the camera correcting being automatically determined based on the image files' metadata.
             diffusionRegressionLength: The original matlab scripts for analysis of dynamics data determined the slope of the log(ACF) by looking only at the
                 first two indices, (log(ACF)[1]-log(ACF)[0])/dt. This results in very noisy results. However as you at higher index value of the log(ACF) the
                 noise becomes much worse. A middle ground is to perform linear regression on the first 4 indices to determine the slope. You can adjust that
                 number here.
     """
-    extraReflectanceId: str
+    extraReflectanceId: typing.Optional[str]
     referenceMaterial: Material
     numericalAperture: float
     relativeUnits: bool
-    cameraCorrection: pwsdt.CameraCorrection
+    cameraCorrection: typing.Optional[pwsdt.CameraCorrection]
     diffusionRegressionLength: int = 3
 
     FileSuffix = "dynAnalysis"  # This is used for setting the filename when saving and loading to json
