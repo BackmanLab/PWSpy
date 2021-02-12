@@ -89,10 +89,11 @@ class PWSAnalysis(AbstractAnalysis):
         extraReflectance: An object used to correct for stray reflectance present in the imaging system. This can be of type:
             None: No correction will be performed.
             ERMetaData (Recommended): The metadata object referring to a calibration file for extra reflectance. It will be processed in conjunction with the reference immage to produce an ExtraReflectionCube representing the stray reflectance in units of camera counts/ms.
+            ExtraReflectanceCube: Effectively identical to supplying an ERMataData object.
             ExtraReflectionCube: An object representing the stray reflection in units of counts/ms. It is up to the user to make sure that the data is scaled appropriately to match the data being analyzed.
         ref: The reference acquisition used for analysis.
     """
-    def __init__(self, settings: PWSAnalysisSettings, extraReflectance: typing.Optional[typing.Union[pwsdt.ERMetaData, pwsdt.ExtraReflectionCube]], ref: pwsdt.ImCube):
+    def __init__(self, settings: PWSAnalysisSettings, extraReflectance: typing.Optional[typing.Union[pwsdt.ERMetaData, pwsdt.ExtraReflectanceCube, pwsdt.ExtraReflectionCube]], ref: pwsdt.ImCube):
         from pwspy.dataTypes import ExtraReflectanceCube
         super().__init__()
         self._initWarnings = []
@@ -115,7 +116,8 @@ class PWSAnalysis(AbstractAnalysis):
             Iextra = None
             self._initWarnings.append(warnings.AnalysisWarning("Ignoring extra reflection correction.", "That's all"))
         elif isinstance(extraReflectance, pwsdt.ERMetaData):  # Load an extraReflectanceCube and use it in conjunction with the reference to generate an extraReflectionCube
-            extraReflectance = ExtraReflectanceCube.fromMetadata(extraReflectance) if extraReflectance is not None else None
+            extraReflectance = ExtraReflectanceCube.fromMetadata(extraReflectance)
+        if isinstance(extraReflectance, pwsdt.ExtraReflectanceCube):  # This case will be handled if the argument was supplied as an ExtraReflectance cube or if it was supplied as ERMetaData
             if extraReflectance.metadata.numericalAperture != settings.numericalAperture:
                 self._initWarnings.append(warnings.AnalysisWarning("NA mismatch!", f"The numerical aperture of your analysis does not match the NA of the Extra Reflectance Calibration. Calibration File NA: {extraReflectance.metadata.numericalAperture}. PWSAnalysis NA: {settings.numericalAperture}."))
             Iextra = pwsdt.ExtraReflectionCube.create(extraReflectance, theoryR, ref) #Convert from reflectance to predicted counts/ms for the internal reflections of the system.

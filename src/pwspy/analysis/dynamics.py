@@ -48,9 +48,7 @@ import typing
 from . import AbstractAnalysis, warnings, AbstractAnalysisSettings, AbstractHDFAnalysisResults
 from pwspy import dateTimeFormat
 import pwspy.dataTypes as pwsdt
-from pwspy.utility.misc import cached_property
 from pwspy.utility.reflection import reflectanceHelper, Material
-from ..dataTypes import ERMetaData
 
 
 class DynamicsAnalysis(AbstractAnalysis):
@@ -62,12 +60,13 @@ class DynamicsAnalysis(AbstractAnalysis):
 
     Args:
         settings: The settings use for the analysis
-        extraReflectanceMetadata: the metadata object referring to a calibration file for extra reflectance.
+        extraReflectance: the metadata object referring to a calibration file for extra reflectance. You can optionally proide the ExtraReflectanceCube rather than just the metadata object referring to it.
         ref: A reference acquisition to use for normalization.
     """
-    def __init__(self, settings: DynamicsAnalysisSettings, extraReflectanceMetadata: typing.Optional[ERMetaData], ref: pwsdt.DynCube):
+    def __init__(self, settings: DynamicsAnalysisSettings, extraReflectance: typing.Optional[typing.Union[pwsdt.ERMetaData, pwsdt.ExtraReflectanceCube]], ref: pwsdt.DynCube):
         super().__init__()
-        extraReflectance = pwsdt.ExtraReflectanceCube.fromMetadata(extraReflectanceMetadata) if extraReflectanceMetadata is not None else None
+        if isinstance(extraReflectance, pwsdt.ERMetaData): # In the case the extraReflectance is an ExtraReflectanceCube or `None` no action needs to take place.
+            extraReflectance = pwsdt.ExtraReflectanceCube.fromMetadata(extraReflectance)
         logger = logging.getLogger(__name__)
         if not ref.processingStatus.cameraCorrected:
             ref.correctCameraEffects(settings.cameraCorrection)
