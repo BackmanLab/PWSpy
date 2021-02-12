@@ -94,10 +94,11 @@ class PWSAnalysis(AbstractAnalysis):
     """
     def __init__(self, settings: PWSAnalysisSettings, extraReflectance: typing.Optional[typing.Union[pwsdt.ERMetaData, pwsdt.ExtraReflectionCube]], ref: pwsdt.ImCube):
         from pwspy.dataTypes import ExtraReflectanceCube
-        assert ref.processingStatus.cameraCorrected, "Before attempting to analyze using this reference make sure that it has had camera darkcounts and non-linearity corrected for."
         super().__init__()
         self._initWarnings = []
         self.settings = settings
+        if not ref.processingStatus.cameraCorrected:
+            ref.correctCameraEffects(settings.cameraCorrection)
         if not ref.processingStatus.normalizedByExposure:
             ref.normalizeByExposure()
         if ref.metadata.pixelSizeUm is not None: #Only works if pixel size was saved in the metadata.
@@ -131,7 +132,10 @@ class PWSAnalysis(AbstractAnalysis):
         self.extraReflection = Iextra
 
     def run(self, cube: pwsdt.ImCube) -> Tuple[PWSAnalysisResults, List[warnings.AnalysisWarning]]:  # Inherit docstring
-        assert cube.processingStatus.cameraCorrected
+        if not cube.processingStatus.cameraCorrected:
+            cube.correctCameraEffects(self.settings.cameraCorrection)
+        if not cube.processingStatus.normalizedByExposure:
+            cube.normalizeByExposure()
         warns = self._initWarnings
         cube = self._normalizeImCube(cube)
         interval = (max(cube.wavelengths) - min(cube.wavelengths)) / (len(cube.wavelengths) - 1)  # Wavelength interval. We are assuming equally spaced wavelengths here
@@ -175,7 +179,6 @@ class PWSAnalysis(AbstractAnalysis):
         return results, warns
 
     def _normalizeImCube(self, cube: pwsdt.ImCube) -> pwsdt.ImCube:
-        cube.normalizeByExposure()
         if self.extraReflection is not None:
             cube.subtractExtraReflection(self.extraReflection)
         cube.normalizeByReference(self.ref)
@@ -394,7 +397,7 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
         relativeUnits (bool): relativeUnits: If `True` then all calculation are performed such that the reflectance is 1 if it matches the reference. If `False` then we use the
             theoretical reflectance of the reference  (based on NA and reference material) to normalize our results to the actual physical reflectance of
             the sample (about 0.4% for water)
-        cameraCorrection: An object describing the dark counts and non-linearity of the camera used.
+        cameraCorrection: An object describing the dark counts and non-linearity of the camera used. This is not actually used by the PWSAnalysis class, it is just stored for retrospection.
     """
     filterOrder: int
     filterCutoff: typing.Optional[float]
