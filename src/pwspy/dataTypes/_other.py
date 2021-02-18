@@ -207,6 +207,43 @@ class Roi:
         mask = mask.astype(bool)
         return cls(name, number, mask, verts)
 
+    @classmethod
+    def fromMask(cls, name: str, number: int, mask: np.ndarray) -> Roi:
+        """
+        Use rasterio to create find the vertices of a mask.
+        Args:
+            name: The name used to identify this ROI. Multiple ROIs can share the same name but must have unique numbers.
+            number: The number used to identify this ROI. Each ROI with the same name must have a unique number.
+            mask: A boolean array. The mask have only one contiguous `True` region
+
+        Returns:
+            A new instance of `Roi`
+
+
+        """
+        from rasterio import features
+        import rasterio
+        import shapely
+        all_polygons = []
+        for shape, value in features.shapes(mask.astype(np.uint8), mask=mask):
+            all_polygons.append(shapely.geometry.shape(shape))
+
+        #Debug plots
+        # import matplotlib.pyplot as plt
+        # from matplotlib.patches import Polygon
+        # fig,ax = plt.subplots()
+        # ax.imshow(mask)
+        # for i in all_polygons:
+        #     fig, ax = plt.subplots()
+        #     ax.set_xlim([0, mask.shape[1]])
+        #     ax.set_ylim([0, mask.shape[0]])
+        #     coords = np.array(i.exterior.coords.xy).T
+        #     ax.add_patch(Polygon(coords))
+
+        poly = sorted(all_polygons, key=lambda poly: poly.area)[-1]  # Return the biggest found polygon
+        verts = np.array(poly.exterior.coords.xy).T
+        return cls(name, number, mask=mask, verts=verts)
+
 
     @classmethod
     def fromHDF_legacy(cls, directory: str, name: str, number: int) -> Roi:
