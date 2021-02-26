@@ -25,6 +25,8 @@ from __future__ import annotations
 import json
 import logging
 import os
+import warnings
+
 from matplotlib import patches, path
 import dataclasses
 from enum import Enum, auto
@@ -219,10 +221,10 @@ class Roi:
         Returns:
             A new instance of `Roi`
 
-
+        TODO:
+            This function doesn't work properly if there is a `False` region of `mask` completely enclosed by a `True` region of `mask`.
         """
         from rasterio import features
-        import rasterio
         import shapely
         all_polygons = []
         for shape, value in features.shapes(mask.astype(np.uint8), mask=mask):
@@ -231,7 +233,7 @@ class Roi:
         #Debug plots
         # import matplotlib.pyplot as plt
         # from matplotlib.patches import Polygon
-        # fig,ax = plt.subplots()
+        # fig, ax = plt.subplots()
         # ax.imshow(mask)
         # for i in all_polygons:
         #     fig, ax = plt.subplots()
@@ -347,8 +349,8 @@ class Roi:
                     raise OSError(f"The Roi file {savePath} already contains a dataset {self.number}")
             g = hf.create_group(np.string_(str(self.number)))
             if self.verts is None:
-                raise ValueError("An Roi cannot be saved to HDF without a `verts` property specifying the vertices of the"
-                                 "rois enclosing polygon. You can use `getBoundingPolygon` to use Concave Hull method to generate the vertices.")
+                warnings.warn("An Roi is being saved to HDF without a `verts` property specifying the vertices of the"
+                                 "ROI's enclosing polygon. You can use `getBoundingPolygon` to use Concave Hull method to generate the vertices.")
             else:
                 g.create_dataset(np.string_("verts"), data=self.verts.astype(np.float32))
             g.create_dataset(np.string_("mask"), data=self.mask.astype(np.uint8), compression=5)
