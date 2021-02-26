@@ -25,6 +25,7 @@ import subprocess
 import sys
 import typing
 import abc
+import warnings
 from datetime import datetime
 import enum
 from typing import Optional, Tuple, Union, List
@@ -176,7 +177,7 @@ class AnalysisManager(abc.ABC):
         """
 
         Returns:
-            AbstractHDFAnalysisResults: The class that contains analysis results for this acquisition type
+            The class that is used to contain analysis results for this acquisition type.
         """
         pass
 
@@ -206,17 +207,18 @@ class AnalysisManager(abc.ABC):
         else:
             return []
 
-    def saveAnalysis(self, analysis: AbstractHDFAnalysisResults, name: str):
+    def saveAnalysis(self, analysis: AbstractHDFAnalysisResults, name: str, overwrite: bool = False):
         """
 
         Args:
             analysis: An AnalysisResults object to be saved.
             name: The name to save the analysis as
+            overwrite: If `True` then any existing file of the same name will be replaced. If `False` an exception will be raised.
         """
         path = os.path.join(self.__filePath, 'analyses')
         if not os.path.exists(path):
             os.mkdir(path)
-        analysis.toHDF(path, name)
+        analysis.toHDF(path, name, overwrite=overwrite)
 
     def loadAnalysis(self, name: str) -> AbstractHDFAnalysisResults:
         """
@@ -770,12 +772,17 @@ class AcqDir:
         directory: the file path the root directory of the acquisition
     """
     def __init__(self, directory: str):
-        self.filePath = directory #TODO should this be forced to an absolute path? Doesn't appear to be causing any problems like it is now.
+        self.filePath = os.path.abspath(directory)  # Forcing an absolute path helps by: A: normalizing the path so string comparisons work. B: making sure that if the object is pickled and then unpickled from a different working direcotory the path will still be valid if the data is unmoved.
         if (self.pws is None) and (self.dynamics is None) and (len(self.fluorescence) == 0):
             raise OSError(f"Could not find a valid PWS or Dynamics Acquisition at {directory}.")
 
     def __repr__(self):
-        return f"AcqDir({self.filePath})"
+        if len(self.filePath) > 20:
+            path = ("%.15s" % self.filePath[::-1])[::-1]  # This is confusing. We cut everything but the last characters to make long paths readable.
+            path = "..." + path  # Add ellipsis
+        else:
+            path = self.filePath
+        return f"{self.__class__.__name__}({path})"
 
     @cached_property
     def pws(self) -> Optional[ICMetaData]:
@@ -838,8 +845,9 @@ class AcqDir:
 
     def loadRoi(self, name: str, num: int, fformat: Roi.FileFormats = None) -> Roi:
         """Load a Roi that has been saved to file in the acquisition's file path."""
-        assert isinstance(name, str)
-        assert isinstance(num, int)
+
+        assert isinstance(name, str), f"The ROI name must be a string. Got a {type(name)}"
+        assert isinstance(num, int), f"The ROI number must be an integer. Got a {type(num)}"
         if fformat == Roi.FileFormats.MAT:
             return Roi.fromMat(self.filePath, name, num)
         elif fformat == Roi.FileFormats.HDF2:
@@ -894,7 +902,12 @@ class AcqDir:
     def getNumber(self) -> int:
         return int(self.filePath.split("Cell")[-1])
 
-    
+    def __setstate__(self, state):
+        """When the object is unpickled this will check if the file path is still valid."""
+        if not os.path.exists(state['filePath']):
+            warnings.warn(f"{self.__class__.__name__} file path cannot be found. {state['filePath']}")
+        self.__dict__ = state  # This is the default thing to do to unpicle the object.
+
 
 if __name__ == '__main__':
     md = ICMetaData.fromNano(r'C:\Users\nicke\Desktop\LTL20b_Tracking cells in 50%EtOH,95%EtOH,Water\95% ethanol\Cell1')

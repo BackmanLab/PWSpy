@@ -119,6 +119,8 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
         Returns:
             An array of vertices of the polygon drawn.
         """
+        import warnings
+        warnings.warn("This method has been moved to the `pwspy_gui.utility` module and will be removed in the future.", category=DeprecationWarning)
         Verts = [None]
         if displayIndex is None:
             displayIndex = self.data.shape[2]//2
@@ -146,6 +148,10 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
         Returns:
             np.ndarray: An array of the 4 XY vertices of the rectangle.
         """
+        import warnings
+        warnings.warn("This method has been moved to the `pwspy_gui.utility` module and will be removed in the future.",
+                      category=DeprecationWarning)
+
         verts = [None]
 
         if displayIndex is None:
@@ -158,33 +164,6 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
             verts[0] = ((mins.ydata, mins.xdata), (maxes.ydata, mins.xdata), (maxes.ydata, maxes.xdata), (mins.ydata, maxes.xdata))
 
         r = widgets.RectangleSelector(ax, rectSelect)
-        fig.show()
-        while plt.fignum_exists(fig.number):
-            fig.canvas.flush_events()
-        return np.array(verts[0])
-
-    def selectPointROI(self, side: int = 3, displayIndex: Optional[int] = None):
-        """
-        Allow the user to select a single point on an image of the acquisition.
-
-        Args:
-            side (int): The length (in pixels) of the sides of the square that is used for selection.
-            displayIndex (Optional[int]): The z-slice of the 3d array which should be displayed
-
-        Returns:
-            np.ndarray: An array of the 4 XY vertices of the square.
-        """
-        from mpl_qt_viz.roiSelection import PointCreator
-        verts = [None]
-        if displayIndex is None:
-           displayIndex = self.data.shape[2]//2
-        fig, ax = plt.subplots()
-        ax.imshow(self.data[:, :, displayIndex])
-        fig.suptitle("Close to accept ROI")
-        def select(Verts, handles):
-            verts[0] = Verts
-        sel = PointCreator(ax, onselect=select, sideLength=side)
-        sel.set_active(True)
         fig.show()
         while plt.fignum_exists(fig.number):
             fig.canvas.flush_events()

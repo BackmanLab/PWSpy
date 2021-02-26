@@ -55,7 +55,7 @@ class AbstractAnalysisSettings(ABC):
             filePath: The path to the folder to contain the new JSON file.
             name: The name to save the analysis as.
         """
-        d = self._asDict()
+        d = self.asDict()
         with open(osp.join(filePath, f'{name}_{self.FileSuffix}.json'), 'w') as f:
             json.dump(d, f, indent=4)
 
@@ -65,7 +65,7 @@ class AbstractAnalysisSettings(ABC):
         Returns:
             A JSON formatted string.
         """
-        return json.dumps(self._asDict(), indent=4)
+        return json.dumps(self.asDict(), indent=4)
 
     @classmethod
     def fromJsonString(cls, string: str) -> AbstractAnalysisSettings:
@@ -79,7 +79,7 @@ class AbstractAnalysisSettings(ABC):
         return cls._fromDict(json.loads(string))
 
     @abstractmethod
-    def _asDict(self) -> dict:
+    def asDict(self) -> dict:
         """
 
          Returns:

@@ -89,15 +89,17 @@ class PWSAnalysis(AbstractAnalysis):
         extraReflectance: An object used to correct for stray reflectance present in the imaging system. This can be of type:
             None: No correction will be performed.
             ERMetaData (Recommended): The metadata object referring to a calibration file for extra reflectance. It will be processed in conjunction with the reference immage to produce an ExtraReflectionCube representing the stray reflectance in units of camera counts/ms.
+            ExtraReflectanceCube: Effectively identical to supplying an ERMataData object.
             ExtraReflectionCube: An object representing the stray reflection in units of counts/ms. It is up to the user to make sure that the data is scaled appropriately to match the data being analyzed.
         ref: The reference acquisition used for analysis.
     """
-    def __init__(self, settings: PWSAnalysisSettings, extraReflectance: typing.Optional[typing.Union[pwsdt.ERMetaData, pwsdt.ExtraReflectionCube]], ref: pwsdt.ImCube):
+    def __init__(self, settings: PWSAnalysisSettings, extraReflectance: typing.Optional[typing.Union[pwsdt.ERMetaData, pwsdt.ExtraReflectanceCube, pwsdt.ExtraReflectionCube]], ref: pwsdt.ImCube):
         from pwspy.dataTypes import ExtraReflectanceCube
-        assert ref.processingStatus.cameraCorrected, "Before attempting to analyze using this reference make sure that it has had camera darkcounts and non-linearity corrected for."
         super().__init__()
         self._initWarnings = []
         self.settings = settings
+        if not ref.processingStatus.cameraCorrected:
+            ref.correctCameraEffects(settings.cameraCorrection)
         if not ref.processingStatus.normalizedByExposure:
             ref.normalizeByExposure()
         if ref.metadata.pixelSizeUm is not None: #Only works if pixel size was saved in the metadata.
@@ -114,7 +116,8 @@ class PWSAnalysis(AbstractAnalysis):
             Iextra = None
             self._initWarnings.append(warnings.AnalysisWarning("Ignoring extra reflection correction.", "That's all"))
         elif isinstance(extraReflectance, pwsdt.ERMetaData):  # Load an extraReflectanceCube and use it in conjunction with the reference to generate an extraReflectionCube
-            extraReflectance = ExtraReflectanceCube.fromMetadata(extraReflectance) if extraReflectance is not None else None
+            extraReflectance = ExtraReflectanceCube.fromMetadata(extraReflectance)
+        if isinstance(extraReflectance, pwsdt.ExtraReflectanceCube):  # This case will be handled if the argument was supplied as an ExtraReflectance cube or if it was supplied as ERMetaData
             if extraReflectance.metadata.numericalAperture != settings.numericalAperture:
                 self._initWarnings.append(warnings.AnalysisWarning("NA mismatch!", f"The numerical aperture of your analysis does not match the NA of the Extra Reflectance Calibration. Calibration File NA: {extraReflectance.metadata.numericalAperture}. PWSAnalysis NA: {settings.numericalAperture}."))
             Iextra = pwsdt.ExtraReflectionCube.create(extraReflectance, theoryR, ref) #Convert from reflectance to predicted counts/ms for the internal reflections of the system.
@@ -131,7 +134,10 @@ class PWSAnalysis(AbstractAnalysis):
         self.extraReflection = Iextra
 
     def run(self, cube: pwsdt.ImCube) -> Tuple[PWSAnalysisResults, List[warnings.AnalysisWarning]]:  # Inherit docstring
-        assert cube.processingStatus.cameraCorrected
+        if not cube.processingStatus.cameraCorrected:
+            cube.correctCameraEffects(self.settings.cameraCorrection)
+        if not cube.processingStatus.normalizedByExposure:
+            cube.normalizeByExposure()
         warns = self._initWarnings
         cube = self._normalizeImCube(cube)
         interval = (max(cube.wavelengths) - min(cube.wavelengths)) / (len(cube.wavelengths) - 1)  # Wavelength interval. We are assuming equally spaced wavelengths here
@@ -175,7 +181,6 @@ class PWSAnalysis(AbstractAnalysis):
         return results, warns
 
     def _normalizeImCube(self, cube: pwsdt.ImCube) -> pwsdt.ImCube:
-        cube.normalizeByExposure()
         if self.extraReflection is not None:
             cube.subtractExtraReflection(self.extraReflection)
         cube.normalizeByReference(self.ref)
@@ -394,7 +399,8 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
         relativeUnits (bool): relativeUnits: If `True` then all calculation are performed such that the reflectance is 1 if it matches the reference. If `False` then we use the
             theoretical reflectance of the reference  (based on NA and reference material) to normalize our results to the actual physical reflectance of
             the sample (about 0.4% for water)
-        cameraCorrection: An object describing the dark counts and non-linearity of the camera used.
+        cameraCorrection: An object describing the dark counts and non-linearity of the camera used. If the data supplied to the PWSAnalysis class has already been corrected then this
+            setting will not be used. Setting this to `None` will result in the camera correcting being automatically determined based on the image files' metadata.
     """
     filterOrder: int
     filterCutoff: typing.Optional[float]
@@ -408,11 +414,11 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
     autoCorrMinSub: bool  # Determines if the autocorrelation should have it's minimum subtracted from it before processing. This is mathematically nonsense but is needed if the autocorrelation has negative values in it.
     numericalAperture: float
     relativeUnits: bool  # determines if reflectance (and therefore the other parameters) should be calculated in absolute units of reflectance or just relative to the reflectance of the reference image.
-    cameraCorrection: pwsdt.CameraCorrection
+    cameraCorrection: typing.Optional[pwsdt.CameraCorrection]
 
     FileSuffix = 'analysis'  # This is used for saving and loading to json
 
-    def _asDict(self) -> dict:  # Inherit docstring
+    def asDict(self) -> dict:  # Inherit docstring
         d = dataclasses.asdict(self)
         if self.referenceMaterial is None:
             d['referenceMaterial'] = None

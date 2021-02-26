@@ -38,7 +38,6 @@ import matplotlib.pyplot as plt
 from matplotlib import animation
 from skimage import feature
 from skimage import registration
-from mpl_qt_viz.visualizers import MultiPlot
 if typing.TYPE_CHECKING:
     import cv2
 
@@ -255,6 +254,7 @@ def _knnMatch(flannMatcher: cv2.FlannBasedMatcher, des1: np.ndarray, des2: np.nd
             raise Exception("Programming Error!")
     return good
 
+
 def edgeDetectRegisterTranslation(reference: np.ndarray, other: typing.Iterable[np.ndarray], mask: np.ndarray = None, debugPlots: bool = False, sigma: float = 3) -> typing.Tuple[typing.Iterable[np.ndarray], typing.List]:
     """This function is used to find the relative translation between a reference image and a list of other similar images. Unlike `SIFRegisterTransforms` this function
     will not work for images that are rotated relative to the reference. However, it does provide more robust performance for images that do not look identical.
@@ -274,6 +274,7 @@ def edgeDetectRegisterTranslation(reference: np.ndarray, other: typing.Iterable[
             list: A list of references to the plotting widgets used to display the results of the function.
     """
     import cv2
+    from mpl_qt_viz.visualizers import MultiPlot
     refEd = feature.canny(reference, sigma=sigma)
     if mask is not None: refEd[~mask] = False  # Clear any detected edges outside of the mask
     imEd = [feature.canny(im, sigma=sigma) for im in other]
@@ -307,7 +308,7 @@ def edgeDetectRegisterTranslation(reference: np.ndarray, other: typing.Iterable[
     return affineTransforms, an
 
 
-def crossCorrelateRegisterTranslation(reference: np.ndarray, other: typing.Iterable[np.ndarray], debugPlots: bool = False) -> typing.Tuple[typing.Iterable[np.ndarray], MultiPlot]:
+def crossCorrelateRegisterTranslation(reference: np.ndarray, other: typing.Iterable[np.ndarray], debugPlots: bool = False) -> typing.Tuple[typing.Iterable[np.ndarray], 'mpl_qt_viz.visualizers.MultiPlot']:
     """This function is used to find the relative translation between a reference image and a list of other similar images. Unlike `SIFRegisterTransforms` this function
     will not work for images that are rotated relative to the reference.
 
@@ -324,6 +325,7 @@ def crossCorrelateRegisterTranslation(reference: np.ndarray, other: typing.Itera
             MultiPlot: A reference to the plotting widgets used to display the results of the function. If `debugPlots` is False this will be `None`
     """
     import cv2
+    from mpl_qt_viz.visualizers import MultiPlot
     if debugPlots:
         anFig, anAx = plt.subplots()
         anFig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)

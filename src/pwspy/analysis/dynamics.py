@@ -48,9 +48,7 @@ import typing
 from . import AbstractAnalysis, warnings, AbstractAnalysisSettings, AbstractHDFAnalysisResults
 from pwspy import dateTimeFormat
 import pwspy.dataTypes as pwsdt
-from pwspy.utility.misc import cached_property
 from pwspy.utility.reflection import reflectanceHelper, Material
-from ..dataTypes import ERMetaData
 
 
 class DynamicsAnalysis(AbstractAnalysis):
@@ -62,15 +60,18 @@ class DynamicsAnalysis(AbstractAnalysis):
 
     Args:
         settings: The settings use for the analysis
-        extraReflectanceMetadata: the metadata object referring to a calibration file for extra reflectance.
+        extraReflectance: the metadata object referring to a calibration file for extra reflectance. You can optionally proide the ExtraReflectanceCube rather than just the metadata object referring to it.
         ref: A reference acquisition to use for normalization.
     """
-    def __init__(self, settings: DynamicsAnalysisSettings, extraReflectanceMetadata: typing.Optional[ERMetaData], ref: pwsdt.DynCube):
+    def __init__(self, settings: DynamicsAnalysisSettings, extraReflectance: typing.Optional[typing.Union[pwsdt.ERMetaData, pwsdt.ExtraReflectanceCube]], ref: pwsdt.DynCube):
         super().__init__()
-        extraReflectance = pwsdt.ExtraReflectanceCube.fromMetadata(extraReflectanceMetadata) if extraReflectanceMetadata is not None else None
+        if isinstance(extraReflectance, pwsdt.ERMetaData): # In the case the extraReflectance is an ExtraReflectanceCube or `None` no action needs to take place.
+            extraReflectance = pwsdt.ExtraReflectanceCube.fromMetadata(extraReflectance)
         logger = logging.getLogger(__name__)
-        assert ref.processingStatus.cameraCorrected
-        ref.normalizeByExposure()
+        if not ref.processingStatus.cameraCorrected:
+            ref.correctCameraEffects(settings.cameraCorrection)
+        if not ref.processingStatus.normalizedByExposure:
+            ref.normalizeByExposure()
         if ref.metadata.pixelSizeUm is not None:  # Only works if pixel size was saved in the metadata.
             ref.filterDust(.75)  # Apply a blur to filter out dust particles. This is in microns. I'm not sure if this is the optimal value.
         if settings.referenceMaterial is None:
@@ -101,9 +102,11 @@ class DynamicsAnalysis(AbstractAnalysis):
         self.extraReflection = Iextra
 
     def run(self, cube: pwsdt.DynCube) -> typing.Tuple[DynamicsAnalysisResults, typing.List[warnings.AnalysisWarning]]:  # Inherit docstring
-        assert cube.processingStatus.cameraCorrected
         warns = []
-        cube.normalizeByExposure()
+        if not cube.processingStatus.cameraCorrected:
+            cube.correctCameraEffects(self.settings.cameraCorrection)
+        if not cube.processingStatus.normalizedByExposure:
+            cube.normalizeByExposure()
         if self.extraReflection is not None:
             cube.subtractExtraReflection(self.extraReflection)
         cube.normalizeByReference(self.refMean)
@@ -227,7 +230,7 @@ class DynamicsAnalysisResults(AbstractHDFAnalysisResults): # Inherit docstring.
     @AbstractHDFAnalysisResults.FieldDecorator
     def settings(self) -> DynamicsAnalysisSettings:
         """The settings used to generate these results."""
-        return DynamicsAnalysisSettings.fromJsonString(self.file['settings'])
+        return DynamicsAnalysisSettings.fromJsonString(bytes(np.array(self.file['settings'])).decode())
 
     @AbstractHDFAnalysisResults.FieldDecorator
     def reflectance(self) -> pwsdt.DynCube:
@@ -277,16 +280,18 @@ class DynamicsAnalysisSettings(AbstractAnalysisSettings):
             relativeUnits: If `True` then all calculation are performed such that the reflectance is 1 if it matches the reference. If `False` then we use the
                 theoretical reflectance of the reference  (based on NA and reference material) to normalize our results to the actual physical reflectance of
                 the sample (about 0.4% for water)
+            cameraCorrection: An object describing the dark counts and non-linearity of the camera used. If the data supplied to the DynamicsAnalysis class has already been corrected then this
+                setting will not be used. Setting this to `None` will result in the camera correcting being automatically determined based on the image files' metadata.
             diffusionRegressionLength: The original matlab scripts for analysis of dynamics data determined the slope of the log(ACF) by looking only at the
                 first two indices, (log(ACF)[1]-log(ACF)[0])/dt. This results in very noisy results. However as you at higher index value of the log(ACF) the
                 noise becomes much worse. A middle ground is to perform linear regression on the first 4 indices to determine the slope. You can adjust that
                 number here.
     """
-    extraReflectanceId: str
+    extraReflectanceId: typing.Optional[str]
     referenceMaterial: Material
     numericalAperture: float
     relativeUnits: bool
-    cameraCorrection: pwsdt.CameraCorrection
+    cameraCorrection: typing.Optional[pwsdt.CameraCorrection]
     diffusionRegressionLength: int = 3
 
     FileSuffix = "dynAnalysis"  # This is used for setting the filename when saving and loading to json
@@ -295,7 +300,7 @@ class DynamicsAnalysisSettings(AbstractAnalysisSettings):
         assert self.diffusionRegressionLength > 0
         assert self.diffusionRegressionLength < 20  # Even 20 is probably way too long, unless a system is created with extremely low noise.
 
-    def _asDict(self) -> dict:
+    def asDict(self) -> dict:
         d = dataclasses.asdict(self)
         if self.referenceMaterial is None:
             d['referenceMaterial'] = None

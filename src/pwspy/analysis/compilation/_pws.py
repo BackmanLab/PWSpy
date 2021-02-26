@@ -17,27 +17,29 @@
 
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Tuple, List
-
+import typing as t_
 import numpy as np
 
 from pwspy.dataTypes import Roi
 from ._abstract import AbstractCompilerSettings, AbstractRoiCompilationResults, AbstractRoiCompiler
 from .. import warnings
-from ..pws import PWSAnalysisResults
+if t_.TYPE_CHECKING:
+    from ..pws import PWSAnalysisResults
+
+# TODO Documentation
 
 
 @dataclass
 class PWSCompilerSettings(AbstractCompilerSettings):
     """These settings determine which values should be processed during compilation"""
-    reflectance: bool
-    rms: bool
-    polynomialRms: bool
-    autoCorrelationSlope: bool
-    rSquared: bool
-    ld: bool
-    opd: bool
-    meanSigmaRatio: bool
+    reflectance: bool = False
+    rms: bool = False
+    polynomialRms: bool = False
+    autoCorrelationSlope: bool = False
+    rSquared: bool = False
+    ld: bool = False
+    opd: bool = False
+    meanSigmaRatio: bool = False
 
 
 @dataclass
@@ -56,10 +58,12 @@ class PWSRoiCompilationResults(AbstractRoiCompilationResults):
 
 
 class PWSRoiCompiler(AbstractRoiCompiler):
+    settings: PWSCompilerSettings  # Just doing this to get accurate type hinting
+
     def __init__(self, settings: PWSCompilerSettings):
         super().__init__(settings)
 
-    def run(self, results: PWSAnalysisResults, roi: Roi) -> Tuple[PWSRoiCompilationResults, List[warnings.AnalysisWarning]]:
+    def run(self, results: PWSAnalysisResults, roi: Roi) -> t_.Tuple[PWSRoiCompilationResults, t_.List[warnings.AnalysisWarning]]:
         warns = []
         reflectance = self._avgOverRoi(roi, results.meanReflectance) if self.settings.reflectance else None
         rms = self._avgOverRoi(roi, results.rms) if self.settings.rms else None

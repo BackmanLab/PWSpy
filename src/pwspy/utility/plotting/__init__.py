@@ -19,7 +19,7 @@
 
 Functions
 -----------
-.. autosummary:
+.. autosummary::
    :toctree: generated/
 
    roiColor

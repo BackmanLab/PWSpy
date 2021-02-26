@@ -29,4 +29,6 @@ This is a collection of example usages of the :mod:`pwspy` module.
     ROItoMirror
     syntheticMirror
     findOPDSurface
+    roiUsageExample
+    opdExampleScript
 """
