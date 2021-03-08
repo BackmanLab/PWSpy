@@ -111,20 +111,22 @@ class PWSAnalysis(AbstractAnalysis):
         else:
             theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, wavelengths=ref.wavelengths, NA=settings.numericalAperture)
 
-        #Handle the extra reflection cube.
-        if extraReflectance is None:
-            Iextra = None
-            self._initWarnings.append(warnings.AnalysisWarning("Ignoring extra reflection correction.", "That's all"))
-        elif isinstance(extraReflectance, pwsdt.ERMetaData):  # Load an extraReflectanceCube and use it in conjunction with the reference to generate an extraReflectionCube
+        # Handle the extra reflection cube.
+        if isinstance(extraReflectance, pwsdt.ERMetaData):  # Load an extraReflectanceCube and use it in conjunction with the reference to generate an extraReflectionCube
             extraReflectance = ExtraReflectanceCube.fromMetadata(extraReflectance)
+
         if isinstance(extraReflectance, pwsdt.ExtraReflectanceCube):  # This case will be handled if the argument was supplied as an ExtraReflectance cube or if it was supplied as ERMetaData
             if extraReflectance.metadata.numericalAperture != settings.numericalAperture:
                 self._initWarnings.append(warnings.AnalysisWarning("NA mismatch!", f"The numerical aperture of your analysis does not match the NA of the Extra Reflectance Calibration. Calibration File NA: {extraReflectance.metadata.numericalAperture}. PWSAnalysis NA: {settings.numericalAperture}."))
             Iextra = pwsdt.ExtraReflectionCube.create(extraReflectance, theoryR, ref) #Convert from reflectance to predicted counts/ms for the internal reflections of the system.
         elif isinstance(extraReflectance, pwsdt.ExtraReflectionCube): # An extraReflectionCube (counts/ms rather than a reflectance percentage) has been directly provided by the user. No need to generate one from the reference.
             Iextra = extraReflectance
+        elif extraReflectance is None:
+            Iextra = None
+            self._initWarnings.append(warnings.AnalysisWarning("Ignoring extra reflection correction.", "That's all"))
         else:
             raise TypeError(f"`extraReflectance` of type: {type(extraReflectance)} is not supported.")
+
         if Iextra is not None:
             ref.subtractExtraReflection(Iextra)  # remove the extra reflection from our reference data
 
