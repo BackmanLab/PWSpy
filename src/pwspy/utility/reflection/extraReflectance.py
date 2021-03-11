@@ -382,8 +382,8 @@ def _generateOneRExtraCube(combo: CubeCombo, theoryR: Dict[Material, pd.Series])
     """
     data1 = combo.data1.data
     data2 = combo.data2.data
-    T1 = np.array(theoryR[combo.mat1][np.newaxis, np.newaxis, :])
-    T2 = np.array(theoryR[combo.mat2][np.newaxis, np.newaxis, :])
+    T1 = np.array(theoryR[combo.mat1])[np.newaxis, np.newaxis, :]
+    T2 = np.array(theoryR[combo.mat2])[np.newaxis, np.newaxis, :]
     denominator = data1 - data2
     nominator = T1 * data2 - T2 * data1
     arr = nominator / denominator
