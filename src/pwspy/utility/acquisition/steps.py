@@ -6,7 +6,7 @@ import typing
 from ._treeModel.item import TreeItem
 from pwspy.utility.micromanager import PositionList
 import os
-
+from .sequencerCoordinate import SequencerCoordinateRange
 
 StepTypeNames = dict(  # The names to represent the `steps` that can be in an acquisition sequence
     ACQ="Acquisition",
@@ -76,6 +76,10 @@ class SequencerStep(TreeItem):
         for child in self.children():
             child.printSubTree(_indent=_indent+1)
 
+    def getCoordinate(self) -> SequencerCoordinateRange:
+        """Returns a sequencer coordinate range that points to this steps location in the tree of steps."""
+        return SequencerCoordinateRange([(step.id, None) for step in self.getTreePath()])
+
 
 class ContainerStep(SequencerStep):
     """
@@ -110,7 +114,7 @@ class CoordSequencerStep(ContainerStep):
 
         """
         raise NotImplementedError()
-
+    
 
 class PositionsStep(CoordSequencerStep):
     def __init__(self, *args, **kwargs):
