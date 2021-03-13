@@ -96,7 +96,7 @@ class SequencerCoordinateRange:
             the iterations of that step that are considered in range. `iterations` can be `None` or a sequence of `ints` that are considered in range.
             If `iterations is `None` then all iterations are considered in range. `None` is also the only acceptable value for steps which do not iterate.
     """
-    def __init__(self, coordSteps: t_.Sequence[t_.Tuple[int, t_.Optional[t_.Sequence[int]]]]):  # TODO htis has chnaged, need to fix UI plugin.
+    def __init__(self, coordSteps: t_.Sequence[t_.Tuple[int, t_.Optional[t_.Sequence[int]]]]):
         self.fullPath = tuple([_IterationRangeCoordStep(ID, iterations) for ID, iterations in coordSteps])
 
     def __contains__(self, item: SequencerCoordinate):
@@ -109,7 +109,7 @@ class SequencerCoordinateRange:
         return True
 
 
-class SeqAcqDir:  # TODO This changed. need to fix stuff.
+class SeqAcqDir:
     """
     A subclasss of AcqDir that has will also search for a sequencerCoordinate file
     and load it as an attribute.
