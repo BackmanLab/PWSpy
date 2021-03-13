@@ -59,10 +59,16 @@ class SequencerCoordinate:
         return self._fullPath == other._fullPath
 
 
-class IterationRangeCoordStep:
-    """Represents a coordinate for a single step that accepts multiple iterations"""
-    def __init__(self, id: int, iterations: t_.Sequence[int] = None):
-        self.stepId = id
+class _IterationRangeCoordStep:
+    """
+    Represents a coordinate for a single step that accepts multiple iterations
+
+    Args:
+        ID: The id number of the step being referred to.
+        iterations: A sequence of iteration numbers which are considered in the range of iterations this object contains. If `None` then all iterations are accepted.
+    """
+    def __init__(self, ID: int, iterations: t_.Sequence[int] = None):
+        self.stepId = ID
         self.iterations = iterations  #Only iterable step types will have this, most types will keep this as None
 
     def __contains__(self, item: t_.Tuple[int, int]):
@@ -83,9 +89,15 @@ class IterationRangeCoordStep:
 class SequencerCoordinateRange:
     """
     A coordinate that can have multiple iterations selected at once.
+
+    Args:
+        coordSteps: A sequence of tuples where each tuple represents an acceptable coordinate range for each step in the tree path.
+            Tuple is of the form (ID, iterations) where ID is an integer referring to the id number of the step and iterations indicates
+            the iterations of that step that are considered in range. `iterations` can be `None` or a sequence of `ints` that are considered in range.
+            If `iterations is `None` then all iterations are considered in range. `None` is also the only acceptable value for steps which do not iterate.
     """
-    def __init__(self, coordSteps: t_.Sequence[IterationRangeCoordStep]):
-        self.fullPath = tuple(coordSteps)
+    def __init__(self, coordSteps: t_.Sequence[t_.Tuple[int, t_.Optional[t_.Sequence[int]]]]):  # TODO htis has chnaged, need to fix UI plugin.
+        self.fullPath = tuple([_IterationRangeCoordStep(ID, iterations) for ID, iterations in coordSteps])
 
     def __contains__(self, item: SequencerCoordinate):
         """Returns True if this is a subpath of `item` and the iteration at each step lies within the range of acceptable iterations for this object"""
@@ -97,15 +109,15 @@ class SequencerCoordinateRange:
         return True
 
 
-class SeqAcqDir(AcqDir):
+class SeqAcqDir:  # TODO This changed. need to fix stuff.
     """
     A subclasss of AcqDir that has will also search for a sequencerCoordinate file
     and load it as an attribute.
     """
-    def __init__(self, directory: t_.Union[str, AcqDir]):
-        if isinstance(directory, AcqDir):
-            directory = directory.filePath
-        super().__init__(directory)
-        path = os.path.join(directory, "sequencerCoords.json")
-        self.sequencerCoordinate = SequencerCoordinate.fromJsonFile(path)
+    def __init__(self, acquisition: AcqDir):
+        self.acquisition = acquisition
+        path = os.path.join(acquisition.filePath, "sequencerCoords.json")
+        self.sequencerCoordinate = SequencerCoordinate.fromJsonFile(path)  # This will throw an exception if no sequence coord is found.
+
+
 
