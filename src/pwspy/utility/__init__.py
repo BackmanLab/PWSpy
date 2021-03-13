@@ -23,14 +23,16 @@ Modules
 .. autosummary::
    :toctree: generated/
 
+   acquisition
+   DConversion
    fileIO
-   misc
-   machineVision
    fluorescence
+   machineVision
+   micromanager
+   misc
    plotting
    reflection
-   micromanager
-   DConversion
+
 
 """
 

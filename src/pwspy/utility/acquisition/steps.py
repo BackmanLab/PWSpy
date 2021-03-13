@@ -80,6 +80,10 @@ class SequencerStep(TreeItem):
         """Returns a sequencer coordinate range that points to this steps location in the tree of steps."""
         return SequencerCoordinateRange([(step.id, None) for step in self.getTreePath()])
 
+    def __getitem__(self, item: int):
+        """Enable [i] subscripting to get a child step"""
+        return self.children()[item]
+
 
 class ContainerStep(SequencerStep):
     """
@@ -114,7 +118,7 @@ class CoordSequencerStep(ContainerStep):
 
         """
         raise NotImplementedError()
-    
+
 
 class PositionsStep(CoordSequencerStep):
     def __init__(self, *args, **kwargs):

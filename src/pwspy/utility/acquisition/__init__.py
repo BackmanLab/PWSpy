@@ -1,3 +1,25 @@
+# Copyright 2018-2020 Nick Anthony, Backman Biophotonics Lab, Northwestern University
+#
+# This file is part of PWSpy.
+#
+# PWSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PWSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
+
+"""
+This package includes functionality for loading experiment information saved by the PWS "Acquisition Sequencer" which is part of the PWS plugin
+for Micro-Manager.
+"""
+
 import typing as t_
 import warnings
 
@@ -6,6 +28,7 @@ from pwspy.utility.acquisition.steps import RuntimeSequenceSettings
 from .steps import SequencerStep
 from .sequencerCoordinate import SeqAcqDir
 import os
+import pwspy.dataTypes as pwsdt
 from glob import glob
 
 
@@ -30,7 +53,7 @@ def loadDirectory(directory: str) -> t_.Tuple[SequencerStep, t_.List[SeqAcqDir]]
     acqs = []
     for f in files:
         try:
-            acqs.append(SeqAcqDir(f))
+            acqs.append(SeqAcqDir(pwsdt.AcqDir(f)))
         except FileNotFoundError:
             pass  # There may be "Cell" folders that don't contain a sequencer coordinate.
     acqs = [acq for acq in acqs if acq.sequencerCoordinate.uuid == rtSeq.uuid]  # Filter out acquisitions that don't have a matching UUID to the sequence file.
