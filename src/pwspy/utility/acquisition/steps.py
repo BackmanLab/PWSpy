@@ -3,7 +3,7 @@ import abc
 import enum
 import json
 import typing
-from ._treeModel.item import TreeItem
+from ._treeItem import TreeItem
 from pwspy.utility.micromanager import PositionList
 import os
 from .sequencerCoordinate import SequencerCoordinateRange
