@@ -44,7 +44,7 @@ Classes
 
 Inheritance
 -------------
-.. inheritance-diagram:: SequencerStep CoordSequencerStep ZStackStep TimeStep PositionsStep ContainerStep
+.. inheritance-diagram:: SequencerStep CoordSequencerStep ZStackStep TimeStep PositionsStep ContainerStep RuntimeSequenceSettings SeqAcqDir SequencerCoordinate SequencerCoordinateRange
     :parts: 1
 
 """
@@ -55,7 +55,7 @@ import warnings
 from pwspy.utility.acquisition.steps import RuntimeSequenceSettings
 
 from .steps import SequencerStep, CoordSequencerStep, ZStackStep, TimeStep, PositionsStep, ContainerStep
-from ._treeModel.item import TreeItem
+from ._treeItem import TreeItem
 from .sequencerCoordinate import SeqAcqDir, SequencerCoordinate, SequencerCoordinateRange
 import os
 import pwspy.dataTypes as pwsdt
