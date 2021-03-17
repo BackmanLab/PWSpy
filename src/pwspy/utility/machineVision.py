@@ -37,8 +37,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
 from skimage import feature
+from skimage import registration
 if typing.TYPE_CHECKING:
     import cv2
+
+logger = logging.getLogger(__name__)
+
 
 def to8bit(arr: np.ndarray) -> np.ndarray:
     """Converts boolean or float type numpy arrays to 8bit and scales the data to span from 0 to 255. Used for many
@@ -84,7 +88,6 @@ def SIFTRegisterTransform(reference: np.ndarray, other: typing.Iterable[np.ndarr
 
             ArtistAnimation: A reference the animation used to diplay the results of the function.
         """
-    #TODO this function does some weird stuff in the case that MIN_MATCH_COUNT is not met for some of the images due to variables not being defined.
     import cv2
 
     refImg = to8bit(reference)
@@ -98,32 +101,33 @@ def SIFTRegisterTransform(reference: np.ndarray, other: typing.Iterable[np.ndarr
     flann = cv2.FlannBasedMatcher(index_params, search_params)
 
     # Initiate SIFT detector
-    sift = cv2.SIFT_create()  # By default this function is not included, you need a specially built version of Opencv due to patent issues :( Maybe try MOPS instead. Update: in 2020 the patent expired and now in opencv4 it is included.
+    sift = cv2.SIFT_create()
     kp1, des1 = sift.detectAndCompute(refImg, mask=mask)
 
     transforms = []
     if debugPlots:
         anFig, anAx = plt.subplots()
         anims = []
-    for img in other:
+    for i, img in enumerate(other):
+        logger.debug(f"Calculating SIFT matches for image {i} of {len(other)}")
         otherImg = to8bit(img)
         # find the keypoints and descriptors with SIFT
         kp2, des2 = sift.detectAndCompute(otherImg, mask=None)
 
         good = _knnMatch(flann, des1, des2)
 
-        MIN_MATCH_COUNT = 10
+        MIN_MATCH_COUNT = 5
         if len(good) > MIN_MATCH_COUNT:
             src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
             dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
             M, inlierMask = cv2.estimateAffinePartial2D(src_pts, dst_pts)
-            transforms.append(M)
             matchesMask = inlierMask.ravel().tolist()
         else:
-            logging.getLogger(__name__).warning("Not enough matches are found - %d/%d" % (len(good), MIN_MATCH_COUNT))
+            logger.warning(f"Image {i}: Not enough matches are found - {len(good)}/{MIN_MATCH_COUNT}")
+            M = None
             matchesMask = None
-            # M = None
-        if debugPlots:
+        transforms.append(M)
+        if debugPlots and (M is not None):
             anims.append([anAx.imshow(cv2.warpAffine(otherImg, cv2.invertAffineTransform(M), otherImg.shape), 'gray')])
             h, w = refImg.shape
             pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
@@ -180,31 +184,32 @@ def ORBRegisterTransform(reference: np.ndarray, other: typing.Iterable[np.ndarra
     flann = cv2.FlannBasedMatcher(index_params, search_params)
 
     # Initiate ORB detector
-    orb = cv2.ORB_create() # By default this function is not included, you need a specially built version of Opencv due to patent issues :( Maybe try MOPS instead
+    orb = cv2.ORB_create()
     kp1, des1 = orb.detectAndCompute(refImg, mask=mask)
 
     transforms = []
     if debugPlots:
         anFig, anAx = plt.subplots()
         anims = []
-    for img in other:
+    for i, img in enumerate(other):
         otherImg = to8bit(img)
         # find the keypoints and descriptors with ORB
         kp2, des2 = orb.detectAndCompute(otherImg, mask=None)
 
         good = _knnMatch(flann, des1, des2)
 
-        MIN_MATCH_COUNT = 10
+        MIN_MATCH_COUNT = 5
         if len(good) > MIN_MATCH_COUNT:
             src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
             dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
             M, inlierMask = cv2.estimateAffinePartial2D(src_pts, dst_pts)
-            transforms.append(M)
             matchesMask = inlierMask.ravel().tolist()
         else:
-            logging.getLogger(__name__).warning("Not enough matches are found - %d/%d" % (len(good), MIN_MATCH_COUNT))
+            logging.getLogger(__name__).warning(f"Image {i}: Not enough matches are found - {len(good)}/{MIN_MATCH_COUNT}")
+            M = None
             matchesMask = None
-        if debugPlots:
+        transforms.append(M)
+        if debugPlots and (M is not None):
             anims.append([anAx.imshow(cv2.warpAffine(otherImg, cv2.invertAffineTransform(M), otherImg.shape), 'gray')])
             h, w = refImg.shape
             pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
@@ -223,6 +228,7 @@ def ORBRegisterTransform(reference: np.ndarray, other: typing.Iterable[np.ndarra
     else:
         an = None
     return transforms, an
+
 
 def _knnMatch(flannMatcher: cv2.FlannBasedMatcher, des1: np.ndarray, des2: np.ndarray) -> typing.List[cv2.DMatch]:
     """
@@ -248,8 +254,9 @@ def _knnMatch(flannMatcher: cv2.FlannBasedMatcher, des1: np.ndarray, des2: np.nd
             raise Exception("Programming Error!")
     return good
 
+
 def edgeDetectRegisterTranslation(reference: np.ndarray, other: typing.Iterable[np.ndarray], mask: np.ndarray = None, debugPlots: bool = False, sigma: float = 3) -> typing.Tuple[typing.Iterable[np.ndarray], typing.List]:
-    """This function is used to find the relative translation between a reference image and a list of other similar images. Unlike `calculateTransforms` this function
+    """This function is used to find the relative translation between a reference image and a list of other similar images. Unlike `SIFRegisterTransforms` this function
     will not work for images that are rotated relative to the reference. However, it does provide more robust performance for images that do not look identical.
 
     Args:
@@ -267,6 +274,7 @@ def edgeDetectRegisterTranslation(reference: np.ndarray, other: typing.Iterable[
             list: A list of references to the plotting widgets used to display the results of the function.
     """
     import cv2
+    from mpl_qt_viz.visualizers import MultiPlot
     refEd = feature.canny(reference, sigma=sigma)
     if mask is not None: refEd[~mask] = False  # Clear any detected edges outside of the mask
     imEd = [feature.canny(im, sigma=sigma) for im in other]
@@ -293,9 +301,51 @@ def edgeDetectRegisterTranslation(reference: np.ndarray, other: typing.Iterable[
             animsEd.append([anEdAx.imshow(cv2.warpAffine(to8bit(edgeIm), cv2.invertAffineTransform(shifts), edgeIm.shape), 'gray'),  anEdAx.text(100, 100, str(i),  color='w')])
             anims.append([anAx.imshow(cv2.warpAffine(to8bit(im), cv2.invertAffineTransform(shifts), im.shape), 'gray'),  anAx.text(100, 100, str(i), color='r')])
     if debugPlots:
-        from pwspy.utility.plotting import MultiPlot
         an = [MultiPlot(anims, "If transforms worked, cells should not appear to move."), MultiPlot(animsEd, "If transforms worked, cells should not appear to move.")]
         [i.show() for i in an]
     else:
         an = []
+    return affineTransforms, an
+
+
+def crossCorrelateRegisterTranslation(reference: np.ndarray, other: typing.Iterable[np.ndarray], debugPlots: bool = False) -> typing.Tuple[typing.Iterable[np.ndarray], 'mpl_qt_viz.visualizers.MultiPlot']:
+    """This function is used to find the relative translation between a reference image and a list of other similar images. Unlike `SIFRegisterTransforms` this function
+    will not work for images that are rotated relative to the reference.
+
+    Args:
+        reference (np.ndarray): The 2d reference image.
+        other (Iterable[np.ndarray]): An iterable containing the images that you want to calculate the translations for.
+        debugPlots (bool): Indicates if extra plots should be openend showing the process of the function.
+
+    Returns:
+        tuple: A tuple containing:
+            list[np.ndarray]:  Returns a list of transforms. Each transform is a 2x3 array in the form returned by opencv.estimateAffinePartial2d(). Note that even
+                though they are returned as affine transforms they will only contain translation information, no scaling, shear, or rotation.
+
+            MultiPlot: A reference to the plotting widgets used to display the results of the function. If `debugPlots` is False this will be `None`
+    """
+    import cv2
+    from mpl_qt_viz.visualizers import MultiPlot
+    if debugPlots:
+        anFig, anAx = plt.subplots()
+        anFig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
+        anAx.get_xaxis().set_visible(False)
+        anAx.get_yaxis().set_visible(False)
+        anims = [[anAx.imshow(to8bit(reference), 'gray'), anAx.text(100, 100, "Reference", color='r')]]
+    affineTransforms = []
+    for i, im in enumerate(other):
+        shifts, error, phasediff = registration.phase_cross_correlation(im, reference, return_error=True)
+        logging.getLogger(__name__).debug(f"Translation: {shifts}, RMS Error: {error}, Phase Difference:{phasediff}")
+        shifts = np.array([[1, 0, shifts[1]],
+                           [0, 1, shifts[0]]], dtype=float) # Convert the shift to an affine transform
+        affineTransforms.append(shifts)
+        if debugPlots:
+            anims.append([
+                anAx.imshow(cv2.warpAffine(to8bit(im), cv2.invertAffineTransform(shifts), im.shape), 'gray'),
+                anAx.text(100, 100, str(i), color='r')])
+    if debugPlots:
+        an = MultiPlot(anims, "If transforms worked, images should not appear to move.")
+        an.show()
+    else:
+        an = None
     return affineTransforms, an

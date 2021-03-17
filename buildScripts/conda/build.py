@@ -30,18 +30,14 @@ buildDir = os.path.join(buildScriptDir, 'build')
 """This builds the pwpsy conda package and saves it to `build`
 It should be run from the base conda env."""
 sys.path.append(os.path.join(rootDir, 'src'))  # Add the sourcecode location to "path" so we can import the pwspy package.
-import pwspy.version # this should save the version to file.
 
-
-
-
-#Clean
+# Clean
 if os.path.exists(buildDir):
     shutil.rmtree(buildDir)
 os.mkdir(buildDir)
 
 # Build and save to the outputDirectory
-buildCmd = f"conda-build {rootDir} --output-folder {buildDir} -c conda-forge"
+buildCmd = f"conda-build {rootDir} --output-folder {buildDir} -c conda-forge -c backmanlab"
 if os.name == 'posix':
     buildCmd = f'bash -c "source activate base; {buildCmd}"'  # this is required for the anaconda environment ot be found through subprocess
 proc = subprocess.Popen(buildCmd, shell=True, stdout=None, stderr=subprocess.PIPE)
@@ -54,8 +50,8 @@ if proc.returncode != 0:
 else:
     logger.info("Success")
     
-#Upload to Anaconda
-#The user can enable conda upload in order to automatically do this after build.
+# Upload to Anaconda
+# The user can enable conda upload in order to automatically do this after build.
     
 
 #Copy the other scripts

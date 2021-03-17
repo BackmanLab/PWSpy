@@ -28,7 +28,7 @@ from ._abstract import AbstractCompilerSettings, AbstractRoiCompilationResults
 @dataclass
 class GenericCompilerSettings(AbstractCompilerSettings):
     """These settings determine which values should be processed during compilation"""
-    roiArea: bool
+    roiArea: bool = False
 
 
 @dataclass

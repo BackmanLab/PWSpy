@@ -10,3 +10,4 @@ docs/source/generated/
 buildScripts/pyInstaller/dist/
 .idea/
 src/pwspy/_version
+*.orig

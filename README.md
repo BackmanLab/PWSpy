@@ -2,7 +2,7 @@
 A python module supporting operations related to Partial Wave Spectroscopy.
 
 ## Documentation
-This project is automatically documented by "Sphinx". If you have Sphinx installed then you can compile documentation to HTML. 
+This project is automatically documented by "Sphinx". If you have Sphinx installed then you can compile documentation to HTML 
 by navigating to the `docs` folder and running `make html`. Formats other than HTML are also possible. Documentation is
 hosted online at [ReadTheDocs](https://pwspy.readthedocs.io/en/dev/) updating of documentation from the current version on Bitbucket can be performed
 by signing into the lab's account at `readthedocs.org`.
@@ -24,23 +24,8 @@ Set the appropriate Conda environment name to the `env` variable in the first li
 run `install.bat`  
 
 #### Installing Manually
-If you have the built package (.tar.gz file) then you can install the package by pointing `conda install` to the it.
+If you have the built package (.tar.gz file) then you can install the package by pointing `conda install` to it.
 Install the package with `conda install -c file:///{tarGzFileDestination} -c conda-forge pwspy`.
-
-#### First time startup
-While the `pwspy` package has many facets one of the major components is the "PWS Analysis App" GUI which is used to analyze PWS data.
-There are multiple ways that you can run this application:  
-
-1. On Windows a `PWS Analysis` shortcut should appear in your Start Menu under
-the `Anaconda` category  
-
-2. Type `PWSAnalysis` into the command prompt for the Conda environment
-that `pwspy` is installed in.  
-
-3. In `Anaconda-Navigator` an app named `pwspy` should appear. 
-
-The first time you run the GUI on a computer you will
-need to sign into the Google Drive database where calibration data is stored, the account name is `backman.lab@gmail.com`.
 
  
 ## Building from source and distributing
@@ -49,9 +34,11 @@ need to sign into the Google Drive database where calibration data is stored, th
 First you will need the `Conda` package manager. If you have installed Anaconda then Conda is included.
 On Windows you will need to use the `Anaconda Prompt` rather than the default Windows `Command Prompt`.
 In addition you will need:  
- - conda-build: `conda install conda-build`  
- - anaconda-client: `conda install anaconda-client`  
- - gitpython: `conda install -c conda-forge gitpython`  
+ - conda-build 
+ - anaconda-client 
+ - setuptools_scm
+
+These can be installed via: `conda install conda-build anaconda-client setuptools_scm`  
 
 #### Automatic Method (Recommended):
 Use the python in your `base` anaconda environment to run `python installScripts\build.py`.
@@ -61,10 +48,6 @@ files here but the most important one is `build/noarch/pwspy_xxxxxxxxxx.tar.gz`.
 This will update the module version in the `_version` file and run the conda-build and deploy steps.
 The version number can be understood as `a.b.c.d-xyz` where `a.b.c` are numbers set manually with a Git `Tag`, `d` is the number of commits since 
 `a.b.c` was tagged, `xyz` is the short sha hash for the git commit.
-
-#### Manual Method:  
-You will need to update the `_version` file on your own, this can be done by simply running `import pwspy` in python in an environment that has `gitpython` installed. Next, navigate to the root directory of the project and use `conda-build . --output-folder build -c conda-forge` to build the package. The package will appear as a .tar.gz file in the `build/noarch` directory.
-Copy `install.bat` from the `installScripts` folder to `{outputDestination}`. The `{outputDestination}` folder is all that is needed for distribution.
 
 #### Uploading a newly built version of the package to Anaconda Cloud
 The lab has a `Cloud` account at anaconda.org. The username is `backmanlab` and the password is `UNKNOWN!!!!` (do not put the password here, this git repository is publically available, we prefer not to get hacked).

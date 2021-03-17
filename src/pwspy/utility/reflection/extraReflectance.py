@@ -47,9 +47,6 @@ import numpy as np
 from functools import reduce
 import pandas as pd
 from dataclasses import dataclass
-from matplotlib import animation
-from pwspy.utility.plotting import PlotNd
-
 
 MCombo = Tuple[Material, Material]  # This is just an alias to shorten some of the type hinting.
 
@@ -407,7 +404,7 @@ def _generateOneRExtraCube(combo: CubeCombo, theoryR: Dict[Material, pd.Series])
 
 
 def generateRExtraCubes(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict, numericalAperture: float) -> \
-        Tuple[ExtraReflectanceCube, Dict[Union[str, MCombo], Tuple[np.ndarray, np.ndarray]], List[PlotNd]]:
+        Tuple[ExtraReflectanceCube, Dict[Union[str, MCombo], Tuple[np.ndarray, np.ndarray]]]:
     """Generate a series of extra reflectance cubes based on the input data.
 
     Args:
@@ -435,10 +432,9 @@ def generateRExtraCubes(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict,
     meanWeight = weightSum / len(weights)
     rExtra['mean'] = (weightedMean, meanWeight)
     sampleCube: ImCube = list(allCombos.values())[0][0].data1
-    plots = [PlotNd(rExtra[k][0], title=k, indices=[range(sampleCube.data.shape[0]), range(sampleCube.data.shape[1]), sampleCube.wavelengths]) for k in rExtra.keys()]
     md = ERMetaData(sampleCube.metadata.dict, numericalAperture)
     erCube = ExtraReflectanceCube(rExtra['mean'][0], sampleCube.wavelengths, md)
-    return erCube, rExtra, plots
+    return erCube, rExtra
 
 
 

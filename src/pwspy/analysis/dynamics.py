@@ -48,25 +48,7 @@ import typing
 from . import AbstractAnalysis, warnings, AbstractAnalysisSettings, AbstractHDFAnalysisResults
 from pwspy import dateTimeFormat
 import pwspy.dataTypes as pwsdt
-from pwspy.utility.misc import cached_property
 from pwspy.utility.reflection import reflectanceHelper, Material
-from ..dataTypes import ERMetaData
-
-
-def getFromDict(func):
-    """
-    This decorator makes it so that the function will only be evaluated if self.file is not None.
-    If self.file is None then we will just search self.dict for a value with a key matching the name of the decorated function.
-    We use this because while we often want to load data from a file for use, we also want to support the case of an object
-    that has been created but has not yet been saved to a file."""
-    def newFunc(self, *args):
-        if self.file is None:
-            return self.dict[func.__name__]
-        else:
-            return func(self, *args)
-
-    newFunc.__name__ = func.__name__
-    return newFunc
 
 
 class DynamicsAnalysis(AbstractAnalysis):
@@ -78,15 +60,18 @@ class DynamicsAnalysis(AbstractAnalysis):
 
     Args:
         settings: The settings use for the analysis
-        extraReflectanceMetadata: the metadata object referring to a calibration file for extra reflectance.
+        extraReflectance: the metadata object referring to a calibration file for extra reflectance. You can optionally proide the ExtraReflectanceCube rather than just the metadata object referring to it.
         ref: A reference acquisition to use for normalization.
     """
-    def __init__(self, settings: DynamicsAnalysisSettings, extraReflectanceMetadata: typing.Optional[ERMetaData], ref: pwsdt.DynCube):
+    def __init__(self, settings: DynamicsAnalysisSettings, extraReflectance: typing.Optional[typing.Union[pwsdt.ERMetaData, pwsdt.ExtraReflectanceCube]], ref: pwsdt.DynCube):
         super().__init__()
-        extraReflectance = pwsdt.ExtraReflectanceCube.fromMetadata(extraReflectanceMetadata) if extraReflectanceMetadata is not None else None
+        if isinstance(extraReflectance, pwsdt.ERMetaData): # In the case the extraReflectance is an ExtraReflectanceCube or `None` no action needs to take place.
+            extraReflectance = pwsdt.ExtraReflectanceCube.fromMetadata(extraReflectance)
         logger = logging.getLogger(__name__)
-        assert ref.processingStatus.cameraCorrected
-        ref.normalizeByExposure()
+        if not ref.processingStatus.cameraCorrected:
+            ref.correctCameraEffects(settings.cameraCorrection)
+        if not ref.processingStatus.normalizedByExposure:
+            ref.normalizeByExposure()
         if ref.metadata.pixelSizeUm is not None:  # Only works if pixel size was saved in the metadata.
             ref.filterDust(.75)  # Apply a blur to filter out dust particles. This is in microns. I'm not sure if this is the optimal value.
         if settings.referenceMaterial is None:
@@ -117,9 +102,11 @@ class DynamicsAnalysis(AbstractAnalysis):
         self.extraReflection = Iextra
 
     def run(self, cube: pwsdt.DynCube) -> typing.Tuple[DynamicsAnalysisResults, typing.List[warnings.AnalysisWarning]]:  # Inherit docstring
-        assert cube.processingStatus.cameraCorrected
         warns = []
-        cube.normalizeByExposure()
+        if not cube.processingStatus.cameraCorrected:
+            cube.correctCameraEffects(self.settings.cameraCorrection)
+        if not cube.processingStatus.normalizedByExposure:
+            cube.normalizeByExposure()
         if self.extraReflection is not None:
             cube.subtractExtraReflection(self.extraReflection)
         cube.normalizeByReference(self.refMean)
@@ -202,8 +189,9 @@ class DynamicsAnalysis(AbstractAnalysis):
 
 class DynamicsAnalysisResults(AbstractHDFAnalysisResults): # Inherit docstring.
     @staticmethod
-    def fields(): # Inherit docstring.
-        return ['meanReflectance', 'reflectance', 'rms_t_squared', 'diffusion', 'time', 'settings', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionIdTag']
+    def fields():   # Inherit docstring.
+        return ('meanReflectance', 'reflectance', 'rms_t_squared', 'diffusion', 'time',
+                'settings', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionIdTag')
 
     @staticmethod
     def name2FileName(name: str) -> str: # Inherit docstring.
@@ -227,60 +215,51 @@ class DynamicsAnalysisResults(AbstractHDFAnalysisResults): # Inherit docstring.
             'settings': settings}
         return cls(None, d)
 
-    @cached_property
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def meanReflectance(self) -> np.ndarray:
         """A 2D array giving the reflectance of the image averaged over the full spectra."""
         dset = self.file['meanReflectance']
         return np.array(dset)
 
-    @cached_property
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def rms_t_squared(self) -> np.ndarray:
         """A 2D array giving the spectral variance at each position in the image."""
         dset = self.file['rms_t_squared']
         return np.array(dset)
 
-    @cached_property
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def settings(self) -> DynamicsAnalysisSettings:
         """The settings used to generate these results."""
-        return DynamicsAnalysisSettings.fromJsonString(self.file['settings'])
+        return DynamicsAnalysisSettings.fromJsonString(bytes(np.array(self.file['settings'])).decode())
 
-    @cached_property
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def reflectance(self) -> pwsdt.DynCube:
         """A dynamics cube containing the 3D reflectance array after all corrections and analysis."""
         dset = self.file['reflectance']
         return pwsdt.DynCube.fromHdfDataset(dset)
 
-    @cached_property
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def diffusion(self) -> np.ndarray:
         """A 2D array indicating the diffusion at each position in the image."""
         dset = self.file['diffusion']
         return np.array(dset)
 
-    @cached_property
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def imCubeIdTag(self) -> str:
         """The idtag of the dynamics cube that was analyzed."""
         return bytes(np.array(self.file['imCubeIdTag'])).decode()
 
-    @cached_property
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def referenceIdTag(self) -> str:
         """The idtag of the dynamics cube that was used as a reference for normalization."""
         return bytes(np.array(self.file['referenceIdTag'])).decode()
 
-    @cached_property
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def time(self) -> str:
         """The time that the analysis was performed."""
         return self.file['time']
 
-    @cached_property
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def extraReflectionIdTag(self) -> str:
         """The idtag of the extra reflection correction that was used."""
         return bytes(np.array(self.file['extraReflectionIdTag'])).decode()
@@ -301,16 +280,18 @@ class DynamicsAnalysisSettings(AbstractAnalysisSettings):
             relativeUnits: If `True` then all calculation are performed such that the reflectance is 1 if it matches the reference. If `False` then we use the
                 theoretical reflectance of the reference  (based on NA and reference material) to normalize our results to the actual physical reflectance of
                 the sample (about 0.4% for water)
+            cameraCorrection: An object describing the dark counts and non-linearity of the camera used. If the data supplied to the DynamicsAnalysis class has already been corrected then this
+                setting will not be used. Setting this to `None` will result in the camera correcting being automatically determined based on the image files' metadata.
             diffusionRegressionLength: The original matlab scripts for analysis of dynamics data determined the slope of the log(ACF) by looking only at the
                 first two indices, (log(ACF)[1]-log(ACF)[0])/dt. This results in very noisy results. However as you at higher index value of the log(ACF) the
                 noise becomes much worse. A middle ground is to perform linear regression on the first 4 indices to determine the slope. You can adjust that
                 number here.
     """
-    extraReflectanceId: str
+    extraReflectanceId: typing.Optional[str]
     referenceMaterial: Material
     numericalAperture: float
     relativeUnits: bool
-    cameraCorrection: pwsdt.CameraCorrection
+    cameraCorrection: typing.Optional[pwsdt.CameraCorrection]
     diffusionRegressionLength: int = 3
 
     FileSuffix = "dynAnalysis"  # This is used for setting the filename when saving and loading to json
@@ -319,7 +300,7 @@ class DynamicsAnalysisSettings(AbstractAnalysisSettings):
         assert self.diffusionRegressionLength > 0
         assert self.diffusionRegressionLength < 20  # Even 20 is probably way too long, unless a system is created with extremely low noise.
 
-    def _asDict(self) -> dict:
+    def asDict(self) -> dict:
         d = dataclasses.asdict(self)
         if self.referenceMaterial is None:
             d['referenceMaterial'] = None

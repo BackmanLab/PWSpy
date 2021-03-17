@@ -1,2 +1,2 @@
 sphinx-autodoc-typehints
-gitpython
+setuptools_scm

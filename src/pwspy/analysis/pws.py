@@ -89,15 +89,17 @@ class PWSAnalysis(AbstractAnalysis):
         extraReflectance: An object used to correct for stray reflectance present in the imaging system. This can be of type:
             None: No correction will be performed.
             ERMetaData (Recommended): The metadata object referring to a calibration file for extra reflectance. It will be processed in conjunction with the reference immage to produce an ExtraReflectionCube representing the stray reflectance in units of camera counts/ms.
+            ExtraReflectanceCube: Effectively identical to supplying an ERMataData object.
             ExtraReflectionCube: An object representing the stray reflection in units of counts/ms. It is up to the user to make sure that the data is scaled appropriately to match the data being analyzed.
         ref: The reference acquisition used for analysis.
     """
-    def __init__(self, settings: PWSAnalysisSettings, extraReflectance: typing.Optional[typing.Union[pwsdt.ERMetaData, pwsdt.ExtraReflectionCube]], ref: pwsdt.ImCube):
+    def __init__(self, settings: PWSAnalysisSettings, extraReflectance: typing.Optional[typing.Union[pwsdt.ERMetaData, pwsdt.ExtraReflectanceCube, pwsdt.ExtraReflectionCube]], ref: pwsdt.ImCube):
         from pwspy.dataTypes import ExtraReflectanceCube
-        assert ref.processingStatus.cameraCorrected, "Before attempting to analyze using this reference make sure that it has had camera darkcounts and non-linearity corrected for."
         super().__init__()
         self._initWarnings = []
         self.settings = settings
+        if not ref.processingStatus.cameraCorrected:
+            ref.correctCameraEffects(settings.cameraCorrection)
         if not ref.processingStatus.normalizedByExposure:
             ref.normalizeByExposure()
         if ref.metadata.pixelSizeUm is not None: #Only works if pixel size was saved in the metadata.
@@ -114,7 +116,8 @@ class PWSAnalysis(AbstractAnalysis):
             Iextra = None
             self._initWarnings.append(warnings.AnalysisWarning("Ignoring extra reflection correction.", "That's all"))
         elif isinstance(extraReflectance, pwsdt.ERMetaData):  # Load an extraReflectanceCube and use it in conjunction with the reference to generate an extraReflectionCube
-            extraReflectance = ExtraReflectanceCube.fromMetadata(extraReflectance) if extraReflectance is not None else None
+            extraReflectance = ExtraReflectanceCube.fromMetadata(extraReflectance)
+        if isinstance(extraReflectance, pwsdt.ExtraReflectanceCube):  # This case will be handled if the argument was supplied as an ExtraReflectance cube or if it was supplied as ERMetaData
             if extraReflectance.metadata.numericalAperture != settings.numericalAperture:
                 self._initWarnings.append(warnings.AnalysisWarning("NA mismatch!", f"The numerical aperture of your analysis does not match the NA of the Extra Reflectance Calibration. Calibration File NA: {extraReflectance.metadata.numericalAperture}. PWSAnalysis NA: {settings.numericalAperture}."))
             Iextra = pwsdt.ExtraReflectionCube.create(extraReflectance, theoryR, ref) #Convert from reflectance to predicted counts/ms for the internal reflections of the system.
@@ -131,7 +134,10 @@ class PWSAnalysis(AbstractAnalysis):
         self.extraReflection = Iextra
 
     def run(self, cube: pwsdt.ImCube) -> Tuple[PWSAnalysisResults, List[warnings.AnalysisWarning]]:  # Inherit docstring
-        assert cube.processingStatus.cameraCorrected
+        if not cube.processingStatus.cameraCorrected:
+            cube.correctCameraEffects(self.settings.cameraCorrection)
+        if not cube.processingStatus.normalizedByExposure:
+            cube.normalizeByExposure()
         warns = self._initWarnings
         cube = self._normalizeImCube(cube)
         interval = (max(cube.wavelengths) - min(cube.wavelengths)) / (len(cube.wavelengths) - 1)  # Wavelength interval. We are assuming equally spaced wavelengths here
@@ -175,14 +181,13 @@ class PWSAnalysis(AbstractAnalysis):
         return results, warns
 
     def _normalizeImCube(self, cube: pwsdt.ImCube) -> pwsdt.ImCube:
-        cube.normalizeByExposure()
         if self.extraReflection is not None:
             cube.subtractExtraReflection(self.extraReflection)
         cube.normalizeByReference(self.ref)
         return cube
 
     def _filterSignal(self, data: np.ndarray, sampleFreq: float):
-        if self.settings.filterCutoff is None: # Skip filtering.
+        if self.settings.filterCutoff is None:  # Skip filtering.
             return data
         else:
             b, a = sps.butter(self.settings.filterOrder, self.settings.filterCutoff, fs=sampleFreq)  # Generate the filter coefficients
@@ -217,10 +222,10 @@ class PWSAnalysis(AbstractAnalysis):
         return ld
 
     def copySharedDataToSharedMemory(self):  # Inherit docstring
-        refdata = mp.RawArray('f', self.ref.data.size)
-        refdata = np.frombuffer(refdata, dtype=np.float32).reshape(self.ref.data.shape)
-        np.copyto(refdata, self.ref.data)
-        self.ref.data = refdata
+        refdata = mp.RawArray('f', self.ref.data.size)  # Create an empty ctypes array of shared memory
+        refdata = np.frombuffer(refdata, dtype=np.float32).reshape(self.ref.data.shape)  # Wrap the shared memory array in a numpy array and reshape back to origianl shape
+        np.copyto(refdata, self.ref.data)  # Copy our ImCubes data to the shared memory array.
+        self.ref.data = refdata # Reassign the shared memory array to our ImCube object data attribute.
 
         if self.extraReflection is not None:
             iedata = mp.RawArray('f', self.extraReflection.data.size)
@@ -235,8 +240,8 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
 
     @staticmethod
     def fields():  # Inherit docstring
-        return ['time', 'reflectance', 'meanReflectance', 'rms', 'polynomialRms', 'autoCorrelationSlope', 'rSquared',
-                'ld', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionTag', 'settings']
+        return ('time', 'reflectance', 'meanReflectance', 'rms', 'polynomialRms', 'autoCorrelationSlope', 'rSquared',
+                'ld', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionTag', 'settings')
 
     @staticmethod
     def name2FileName(name: str) -> str:  # Inherit docstring
@@ -264,95 +269,71 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
             'settings': settings}
         return cls(None, d)
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def settings(self) -> PWSAnalysisSettings:
         """The settings used for the analysis"""
         return PWSAnalysisSettings.fromJsonString(bytes(np.array(self.file['settings'])).decode())
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def imCubeIdTag(self) -> str:
         """The idtag of the acquisition that was analyzed."""
         return bytes(np.array(self.file['imCubeIdTag'])).decode()
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def referenceIdTag(self) -> str:
         """The idtag of the acquisition that was used as a reference for normalization."""
         return bytes(np.array(self.file['referenceIdTag'])).decode()
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def time(self) -> str:
         """The time that the analysis was performed."""
-        return self.file['time']
+        return self.file['time']  # TODO is this a bug that it doesn't have the same string decoding as the idtag properties?
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def reflectance(self) -> pwsdt.KCube:
         """The KCube containing the 3D reflectance data after all corrections and analysis."""
         dset = self.file['reflectance']
         return pwsdt.KCube.fromHdfDataset(dset)
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def meanReflectance(self) -> np.ndarray:
         """A 2D array giving the reflectance of the image averaged over the full spectra."""
         dset = self.file['meanReflectance']
         return np.array(dset)
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def rms(self) -> np.ndarray:
         """A 2D array giving the spectral variance at each posiiton in the image."""
         dset = self.file['rms']
         return np.array(dset)
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def polynomialRms(self) -> np.ndarray:
         """A 2D array giving the variance of the polynomial fit that was subtracted from the reflectance before
         calculating RMS."""
         dset = self.file['polynomialRms']
         return np.array(dset)
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def autoCorrelationSlope(self) -> np.ndarray:
         """A 2D array giving the slope of the ACF of the spectra at each position in the image."""
         dset = self.file['autoCorrelationSlope']
         return np.array(dset)
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def rSquared(self) -> np.ndarray:
         """A 2D array giving the r^2 coefficient of determination for the linear fit to the logarithm of the ACF. This
         basically tells us how confident to be in the `autoCorrelationSlope`."""
         dset = self.file['rSquared']
         return np.array(dset)
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def ld(self) -> np.ndarray:
         """A 2D array giving Ld. A parameter derived from RMS and the ACF slope."""
         dset = self.file['ld']
         return np.array(dset)
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def opd(self) -> Tuple[np.ndarray, np.ndarray]:
         """
         A tuple containing: `opd`: The 3D array of values, `opdIndex`: The sequence of OPD values associated with each
@@ -363,12 +344,20 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
         opd, opdIndex = cube.getOpd(isHannWindow=False, indexOpdStop=100)
         return opd, opdIndex
 
-    @cached_property
-    @clearError
-    @getFromDict
+    @AbstractHDFAnalysisResults.FieldDecorator
     def extraReflectionTag(self) -> str:
         """The `idtag` of the extra reflectance correction used."""
         return bytes(np.array(self.file['extraReflectionTag'])).decode()
+
+    def releaseMemory(self):
+        """
+        The cached properties continue to stay in RAM until they are deleted, this method deletes all cached data to release the memory.
+        """
+        for field in self.fields():
+            try:
+                delattr(self, field)
+            except AttributeError:
+                pass  # Fields that haven't yet been loaded won't be present for deletion
 
 
 class LegacyPWSAnalysisResults(AbstractAnalysisResults):
@@ -397,7 +386,7 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
 
     Attributes:
         filterOrder (int): The `order` of the buttersworth filter used for lowpass filtering.
-        filterCutoff (float): The cutoff frequency of the buttersworth filter used for lowpass filtering. Set to `None` to skip lowpass filtering.
+        filterCutoff (float): The cutoff frequency of the buttersworth filter used for lowpass filtering. Frequency unit is 1/wavelength . Set to `None` to skip lowpass filtering.
         polynomialOrder (int): The order of the polynomial which will be fit to the reflectance and then subtracted before calculating the analysis results.
         extraReflectanceId (str): The `idtag` of the extra reflection used for correction. Set to `None` if extra reflectance calibration is being skipped.
         referenceMaterial (Material): The material that was being imaged in the reference acquisition
@@ -410,7 +399,8 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
         relativeUnits (bool): relativeUnits: If `True` then all calculation are performed such that the reflectance is 1 if it matches the reference. If `False` then we use the
             theoretical reflectance of the reference  (based on NA and reference material) to normalize our results to the actual physical reflectance of
             the sample (about 0.4% for water)
-        cameraCorrection: An object describing the dark counts and non-linearity of the camera used.
+        cameraCorrection: An object describing the dark counts and non-linearity of the camera used. If the data supplied to the PWSAnalysis class has already been corrected then this
+            setting will not be used. Setting this to `None` will result in the camera correcting being automatically determined based on the image files' metadata.
     """
     filterOrder: int
     filterCutoff: typing.Optional[float]
@@ -424,11 +414,11 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
     autoCorrMinSub: bool  # Determines if the autocorrelation should have it's minimum subtracted from it before processing. This is mathematically nonsense but is needed if the autocorrelation has negative values in it.
     numericalAperture: float
     relativeUnits: bool  # determines if reflectance (and therefore the other parameters) should be calculated in absolute units of reflectance or just relative to the reflectance of the reference image.
-    cameraCorrection: pwsdt.CameraCorrection
+    cameraCorrection: typing.Optional[pwsdt.CameraCorrection]
 
     FileSuffix = 'analysis'  # This is used for saving and loading to json
 
-    def _asDict(self) -> dict:  # Inherit docstring
+    def asDict(self) -> dict:  # Inherit docstring
         d = dataclasses.asdict(self)
         if self.referenceMaterial is None:
             d['referenceMaterial'] = None

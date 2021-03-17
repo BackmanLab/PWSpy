@@ -26,15 +26,12 @@ of the fourier transfrom and extract RMS from what is left.
 # Last tested on pwspy ad745ef0c1ae526e25981b0036f460981397a456
 
 
-from pwspy.dataTypes import CameraCorrection, AcqDir, Roi, ImCube, KCube
-import matplotlib.pyplot as plt
-import scipy.signal as sps
-import os
-import sys
-import numpy as np
-import scipy as sp
-
 if __name__ == '__main__':
+    from pwspy.dataTypes import CameraCorrection, AcqDir, Roi, ImCube, KCube
+    import matplotlib.pyplot as plt
+    import scipy.signal as sps
+    import os
+    import numpy as np
 
     '''User Input'''
     path = r'2_7_2019 11.07'

@@ -1,27 +1,24 @@
+{% set version = load_setup_py_data().get("version") %}  # In order for this to work we must install setuptools_scm prior to running conda-build, hopefully they'll fix that.
 
 package:
   name: pwspy
-  version: {{ environ['GIT_DESCRIBE_TAG'] + '.' + environ.get('GIT_DESCRIBE_NUMBER', '')  }}
+  version: {{ version }}
 
 source:
   path: .. #tells conda-build that the source code is in the parent directory.
 
 build:
   noarch: python
-  number: {{ GIT_DESCRIBE_NUMBER }}
-  string: {{environ['GIT_DESCRIBE_HASH']}}
-  entry_points:
-    - PWSAnalysis = pwspy.apps.PWSAnalysisApp.__main__:main   # We must have an entry point specified for each entry point in setup.py or the noarch conda build will fail.
-    - ERCreator = pwspy.apps.ExtraReflectanceCreator.__main__:main
+  number: 0
 
 requirements:
   build:
-    - python
+    - python >=3.7
     - setuptools
-    - gitpython
+    - setuptools_scm
 
   run:
-    - python #python 3.7 or greater. can't specify here.
+    - python >=3.7
     - numpy >=1.16
     - scipy >=0.18
     - tifffile
@@ -31,24 +28,13 @@ requirements:
     - pandas
     - matplotlib >=1.4
     - jsonschema
-    - google-api-python-client 
-    - google-auth-httplib2
-    - google-auth-oauthlib
-    - py-opencv =4
-    - pyqt =5
+    - opencv =4
     - scikit-image
 
-app:
-  entry: PWSAnalysis
-  icon: cellLogo64.png  #The logo doesn't work :(
-  summary: PWS Analysis GUI
-  type: desk
-  own_environment: False
-
 about:
-  home: https://bitbucket.org/backmanlab/pwspython/src/master/
+  home: https://github.com/nanthony21/PWSpy
   summary: "A framework for working with Partial Wave Spectroscopy files."
   description: "A framework for working with Partial Wave Spectroscopy files."
   doc_url: https://pwspy.readthedocs.io/en/dev/
-  dev_url: https://bitbucket.org/backmanlab/pwspython/src/master/
+  dev_url: https://github.com/nanthony21/PWSpy
   
