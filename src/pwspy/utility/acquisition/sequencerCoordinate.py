@@ -3,6 +3,8 @@ import json
 import typing as t_
 import os
 from pwspy.dataTypes import AcqDir
+if t_.TYPE_CHECKING:
+    from pwspy.utility.acquisition.steps import SequencerStep
 
 
 class SequencerCoordinate:
@@ -53,6 +55,24 @@ class SequencerCoordinate:
     def ids(self) -> t_.Sequence[int]:
         return tuple(ID for ID, iteration in self._fullPath)
 
+    def getStepIteration(self, step: t_.Union[int, SequencerStep]) -> t_.Optional[int]:
+        """
+
+        Args:
+            step: May be the ID number of the step or a reference to the actual step.
+
+        Returns:
+            The iteration of `Step` that this coordinate corresponds to. If the step is not an iterable step then `None` will be returned.
+        """
+        from pwspy.utility.acquisition import SequencerStep
+        if isinstance(step, SequencerStep):
+            ID = step.id
+        elif isinstance(step, int):
+            ID = step
+        else:
+            raise TypeError(f"`step` arument must be `int` or `SequencerStep`, not `{type(step)}`")
+        return [iteration for coordID, iteration in self._fullPath if ID == coordID][0]
+
     def __eq__(self, other: SequencerCoordinate):
         """Check if these coordinates are identical"""
         assert isinstance(other, SequencerCoordinate)
@@ -97,17 +117,29 @@ class SequencerCoordinateRange:
             If `iterations is `None` then all iterations are considered in range. `None` is also the only acceptable value for steps which do not iterate.
     """
     def __init__(self, coordSteps: t_.Sequence[t_.Tuple[int, t_.Optional[t_.Sequence[int]]]]):
-        self.fullPath = tuple([_IterationRangeCoordStep(ID, iterations) for ID, iterations in coordSteps])
+        self._fullPath = tuple([_IterationRangeCoordStep(ID, iterations) for ID, iterations in coordSteps])
 
     def __contains__(self, item: SequencerCoordinate):
         """Returns True if this is a subpath of `item` and the iteration at each step lies within the range of acceptable iterations for this object"""
         if not isinstance(item, SequencerCoordinate):
             return False
-        for i, coordRange in enumerate(self.fullPath):
+        for i, coordRange in enumerate(self._fullPath):
             if not (item._fullPath[i] in coordRange):
                 return False
         return True
 
+    def setAcceptedIterations(self, stepId: int, iterations: t_.Optional[t_.Sequence[int]]):
+        """Sets the acceptable iterations for the step associated with `stepId`
+
+        Args:
+            stepId: The id of the step you want to adjust the iteration range for
+            iterations: A sequence if iteration numbers to include. If `None` then all iterations are accepted.
+        """
+        for coordStep in self._fullPath:
+            if coordStep.stepId == stepId:
+                coordStep.iterations = iterations
+                return
+        raise ValueError(f"No step with ID: {stepId} was found.")
 
 class SeqAcqDir:
     """
