@@ -534,20 +534,20 @@ if __name__ == '__main__':
     a = 1
 
 
-    def generateList(data: np.ndarray):
+    def generateList(data: np.ndarray) -> PositionList:
         assert isinstance(data, np.ndarray)
         assert len(data.shape) == 2
         assert data.shape[1] == 2
         positions = []
         for n, i in enumerate(data):
-            positions.append(Position2d(*i, 'TIXYDrive', f'Cell{n + 1}'))
+            positions.append(MultiStagePosition(f'Cell{n + 1}', 'TIXYDrive', 'TIZDrive', stagePositions=[Position2d(i[0], i[1], 'TIXYDrive')]))
         plist = PositionList(positions)
         return plist
 
 
     def pws1to2(loadPath, newOriginX, newOriginY):
         if isinstance(loadPath, str):
-            pws1 = PositionList.load(loadPath)
+            pws1 = PositionList.fromPropertyMap(PropertyMap.loadFromFile(loadPath))
         elif isinstance(loadPath, PositionList):
             pws1 = loadPath
         else:
@@ -564,7 +564,7 @@ if __name__ == '__main__':
 
     def pws1toSTORM(loadPath, newOriginX, newOriginY):
         if isinstance(loadPath, str):
-            pws1 = PositionList.load(loadPath)
+            pws1 = PositionList.fromPropertyMap(PropertyMap.loadFromFile(loadPath))
         elif isinstance(loadPath, PositionList):
             pws1 = loadPath
         else:
@@ -580,7 +580,7 @@ if __name__ == '__main__':
 
     def pws2toSTORM(loadPath, newOriginX, newOriginY):
         if isinstance(loadPath, str):
-            pws2 = PositionList.load(loadPath)
+            pws2 = PositionList.fromPropertyMap(PropertyMap.loadFromFile(loadPath))
         elif isinstance(loadPath, PositionList):
             pws2 = loadPath
         else:
@@ -595,7 +595,7 @@ if __name__ == '__main__':
 
     def STORMtoPws2(loadPath, newOriginX, newOriginY):
         if isinstance(loadPath, str):
-            storm = PositionList.load(loadPath)
+            storm = PositionList.fromPropertyMap(PropertyMap.loadFromFile(loadPath))
         elif isinstance(loadPath, PositionList):
             storm = loadPath
         else:
