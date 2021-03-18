@@ -141,7 +141,7 @@ def _concaveHull(coords: List[Tuple[int, int]], alpha):
     return cascaded_union(triangles), edge_points
 
 
-class Roi:
+class Roi:  # TODO get more in line with shapely.
     """This class represents a single Roi used to select a specific region of an image. Each Roi is identified by a
     `name` and a `number`. The recommended file format is HDF2, in this format multiple rois of the same name but differing
     numbers can be saved in a single HDF file. The Roi consists of a `mask` (a boolean array specifying which pixels are
@@ -499,7 +499,7 @@ class Roi:
         Returns:
             A matplotlib `Polygon` representing the border of the Roi
         """
-        if self.verts is None:  # calculate convex hull
+        if self.verts is None:  # calculate convex hull  # TODO this method does basically the same as `fromMask`. Unify
             x = np.arange(self.mask.shape[1])
             y = np.arange(self.mask.shape[0])
             X, Y = np.meshgrid(x, y)  # Generate arrays indicating X and Y coordinates for each array element.
