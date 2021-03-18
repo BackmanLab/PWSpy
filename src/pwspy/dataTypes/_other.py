@@ -141,7 +141,6 @@ def _concaveHull(coords: List[Tuple[int, int]], alpha):
     return cascaded_union(triangles), edge_points
 
 
-
 class Roi:
     """This class represents a single Roi used to select a specific region of an image. Each Roi is identified by a
     `name` and a `number`. The recommended file format is HDF2, in this format multiple rois of the same name but differing

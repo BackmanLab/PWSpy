@@ -141,6 +141,7 @@ class SequencerCoordinateRange:
                 return
         raise ValueError(f"No step with ID: {stepId} was found.")
 
+
 class SeqAcqDir:
     """
     A subclasss of AcqDir that has will also search for a sequencerCoordinate file
