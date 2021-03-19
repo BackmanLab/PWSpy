@@ -30,6 +30,7 @@ requirements:
     - jsonschema
     - opencv =4
     - scikit-image
+    - rasterio
 
 about:
   home: https://github.com/nanthony21/PWSpy

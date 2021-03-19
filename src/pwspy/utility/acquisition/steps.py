@@ -8,7 +8,7 @@ from pwspy.utility.micromanager import PositionList
 import os
 from .sequencerCoordinate import SequencerCoordinateRange
 
-StepTypeNames = dict(  # The names to represent the `steps` that can be in an acquisition sequence
+StepTypeNames = dict(  # The names to represent the `steps` that can be in an acquisition sequence # TODO this isn't used, should it be removed?
     ACQ="Acquisition",
     POS="Multiple Positions",
     TIME="Time Series",
