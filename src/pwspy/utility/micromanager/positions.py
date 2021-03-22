@@ -59,7 +59,7 @@ class Position1d:
 
     def toPropertyMap(self) -> PropertyMap:
         return PropertyMap({"Device": Property(self.stageName),
-                "Position_um": PropertyArray([Property(self.z)])})
+                            "Position_um": PropertyArray([Property(self.z)])})
 
     @staticmethod
     def fromPropertyMap(pmap: PropertyMap) -> Position1d:
@@ -96,15 +96,14 @@ class Position2d:
 
     def toPropertyMap(self) -> PropertyMap:
         return PropertyMap({"Device": Property(self.stageName),
-                        "Position_um": PropertyArray([Property(self.x), Property(self.y)])})
+                            "Position_um": PropertyArray([Property(self.x), Property(self.y)])})
 
     @staticmethod
     def fromPropertyMap(pmap: PropertyMap) -> Position2d:
-        if len(pmap['Position_um'])!=2:
+        if len(pmap['Position_um']) != 2:
             raise Exception("Errr")
         x, y = pmap['Position_um'][0].value, pmap['Position_um'][1].value
         return Position2d(x=x, y=y, stageName=pmap['Device'].value)
-
 
     def mirrorX(self) -> Position2d:
         self.x *= -1
@@ -162,7 +161,7 @@ class MultiStagePosition:
         label: A name for the position
         xyStage: The name of the 2D stage
         zStage: The name of the 1D stage
-        positions: A list of `Position1d` and `Position2D` objects, usually just one of each.
+        stagePositions: A list of `Position1d` and `Position2D` objects, usually just one of each.
     """
     label: str
     defaultXYStage: str
@@ -189,13 +188,6 @@ class MultiStagePosition:
                                   gridCol=d['gridCol'])
 
     def toPropertyMap(self) -> PropertyMap:
-        # contents = {
-        #     "DefaultXYStage": self.xyStage,
-        #     "DefaultZStage":self.zStage,
-        #     "DevicePositions": self.positions,
-        #     "GridCol": 0,
-        #     "GridRow": 0,
-        #     "Label": self.label}
         return PropertyMap({
             "DefaultXYStage": Property(self.defaultXYStage),
             "DefaultZStage": Property(self.defaultZStage),
@@ -205,7 +197,6 @@ class MultiStagePosition:
             "Label": Property(self.label),
             "Properties": PropertyMap({})
         })
-   
 
     @staticmethod
     def fromPropertyMap(d: PropertyMap) -> MultiStagePosition:
@@ -217,13 +208,14 @@ class MultiStagePosition:
                 positions.append(Position2d.fromPropertyMap(i))
             else:
                 raise Exception("EEEEE")
-        return MultiStagePosition(label=d['Label'].value, defaultXYStage=d['DefaultXYStage'].value, defaultZStage=d['DefaultZStage'].value, stagePositions=positions)
+        return MultiStagePosition(label=d['Label'].value, defaultXYStage=d['DefaultXYStage'].value, defaultZStage=d['DefaultZStage'].value,
+                                  stagePositions=positions)
 
     def getXYPosition(self):
         """Return the first `Position2d` saved in the `positions` list"""
         d1pos = [i for i in self.stagePositions if isinstance(i, Position2d)]
         return [i for i in d1pos if i.stageName == self.defaultXYStage][0]
-    
+
     def getZPosition(self):
         """Return the first `Position1d` saved in the positions` list. Returns `None` if no position is found."""
         try:
@@ -231,7 +223,7 @@ class MultiStagePosition:
             return [i for i in d1pos if i.stageName == self.defaultZStage][0]
         except IndexError:
             return None
-    
+
     def renameXYStage(self, label: str):
         """Change the name of the xy stage.
 
@@ -261,14 +253,14 @@ class MultiStagePosition:
             positions = copy.copy(self.stagePositions)
             positions.remove(self.getXYPosition())
             positions.append(newPos)
-            return MultiStagePosition(self.label, self.defaultXYStage, self.defaultZStage, positions=positions)
+            return MultiStagePosition(self.label, self.defaultXYStage, self.defaultZStage, stagePositions=positions)
         elif isinstance(other, MultiStagePosition):
             return self.__add__(other.getXYPosition())
         elif isinstance(other, PositionList):
             return other.__add__(self)
         else:
             raise NotImplementedError
-            
+
     def __sub__(self, other: Union[Position2d, MultiStagePosition, PositionList]) -> Union[MultiStagePosition, PositionList]:
         """See the documentation for __add__"""
         if isinstance(other, Position2d):
@@ -276,21 +268,21 @@ class MultiStagePosition:
             positions = copy.copy(self.stagePositions)
             positions.remove(self.getXYPosition())
             positions.append(newPos)
-            return MultiStagePosition(self.label, self.defaultXYStage, self.defaultZStage, positions=positions)
+            return MultiStagePosition(self.label, self.defaultXYStage, self.defaultZStage, stagePositions=positions)
         elif isinstance(other, MultiStagePosition):
-            self.__sub__(other.getXYPosition())
+            return self.__sub__(other.getXYPosition())
         elif isinstance(other, PositionList):
             return other.copy().mirrorX().mirrorY().__add__(self)  # a-b == -b + a
         else:
             raise NotImplementedError
-    
+
     def __eq__(self, other: MultiStagePosition):
         """Returns True if the stage names and stage coordinates are equivalent."""
         return all([self.defaultXYStage == other.defaultXYStage,
                     self.defaultZStage == other.defaultZStage,
                     self.getXYPosition() == other.getXYPosition(),
                     self.getZPosition() == other.getZPosition()])
-    
+
     def __repr__(self):
         s = f"MultiStagePosition({self.label}, "
         for i in self.stagePositions:
@@ -405,8 +397,8 @@ class PositionList:
             matPositions.append(f"({pos.x}, {pos.y})")
         matPositions = np.asarray(matPositions, dtype=np.object)
         print(matPositions.shape)
-        spio.savemat(path, {'list': matPositions[:,None]})
-    
+        spio.savemat(path, {'list': matPositions[:, None]})
+
     def getAffineTransform(self, otherList: PositionList) -> np.ndarray:
         """
         Calculate the partial affine transformation between this position list and another position list. Both position lists must have the same length
@@ -445,7 +437,7 @@ class PositionList:
         assert t.shape == (2, 3)
         selfXY = [pos.getXYPosition() for pos in self.positions]
         selfArr = np.array([[pos.x, pos.y] for pos in selfXY], dtype=np.float32)
-        selfArr = selfArr[None, :, :] # This is needed for opencv transform to work
+        selfArr = selfArr[None, :, :]  # This is needed for opencv transform to work
         ret = cv2.transform(selfArr, t)
         positions = []
         for i in range(len(self)):
@@ -529,8 +521,6 @@ class PositionList:
         fig.canvas.mpl_connect("motion_notify_event", hover)
 
 
-
-
 if __name__ == '__main__':
     path1 = r'C:\Users\nicke\Desktop\PositionList.pos'
     path2 = r'C:\Users\nicke\Desktop\PositionList5.pos'
@@ -543,20 +533,21 @@ if __name__ == '__main__':
         assert f1.read() == f2.read()
     a = 1
 
-    def generateList(data: np.ndarray):
+
+    def generateList(data: np.ndarray) -> PositionList:
         assert isinstance(data, np.ndarray)
         assert len(data.shape) == 2
         assert data.shape[1] == 2
         positions = []
         for n, i in enumerate(data):
-            positions.append(Position2d(*i, 'TIXYDrive', f'Cell{n + 1}'))
+            positions.append(MultiStagePosition(f'Cell{n + 1}', 'TIXYDrive', 'TIZDrive', stagePositions=[Position2d(i[0], i[1], 'TIXYDrive')]))
         plist = PositionList(positions)
         return plist
 
 
     def pws1to2(loadPath, newOriginX, newOriginY):
         if isinstance(loadPath, str):
-            pws1 = PositionList.load(loadPath)
+            pws1 = PositionList.fromPropertyMap(PropertyMap.loadFromFile(loadPath))
         elif isinstance(loadPath, PositionList):
             pws1 = loadPath
         else:
@@ -573,7 +564,7 @@ if __name__ == '__main__':
 
     def pws1toSTORM(loadPath, newOriginX, newOriginY):
         if isinstance(loadPath, str):
-            pws1 = PositionList.load(loadPath)
+            pws1 = PositionList.fromPropertyMap(PropertyMap.loadFromFile(loadPath))
         elif isinstance(loadPath, PositionList):
             pws1 = loadPath
         else:
@@ -589,7 +580,7 @@ if __name__ == '__main__':
 
     def pws2toSTORM(loadPath, newOriginX, newOriginY):
         if isinstance(loadPath, str):
-            pws2 = PositionList.load(loadPath)
+            pws2 = PositionList.fromPropertyMap(PropertyMap.loadFromFile(loadPath))
         elif isinstance(loadPath, PositionList):
             pws2 = loadPath
         else:
@@ -604,7 +595,7 @@ if __name__ == '__main__':
 
     def STORMtoPws2(loadPath, newOriginX, newOriginY):
         if isinstance(loadPath, str):
-            storm = PositionList.load(loadPath)
+            storm = PositionList.fromPropertyMap(PropertyMap.loadFromFile(loadPath))
         elif isinstance(loadPath, PositionList):
             storm = loadPath
         else:
@@ -615,4 +606,6 @@ if __name__ == '__main__':
         offset = pws2Origin - pws2.positions[0]
         pws2 = pws2 + offset
         return pws2
+
+
     a = 1

@@ -66,6 +66,7 @@ def to8bit(arr: np.ndarray) -> np.ndarray:
         arr[arr > 255] = 255
     return arr.astype(np.uint8)
 
+
 def SIFTRegisterTransform(reference: np.ndarray, other: typing.Iterable[np.ndarray], mask: np.ndarray = None, debugPlots: bool = False) -> typing.Tuple[typing.List[np.ndarray], animation.ArtistAnimation]:
     """Given a 2D reference image and a list of other images of the same scene but shifted a bit this function will use OpenCV to calculate the transform from
     each of the other images to the reference. The transforms can be inverted using cv2.invertAffineTransform().

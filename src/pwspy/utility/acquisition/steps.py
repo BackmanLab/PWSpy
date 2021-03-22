@@ -3,10 +3,10 @@ import abc
 import enum
 import json
 import typing
-from ._treeModel.item import TreeItem
+from ._treeItem import TreeItem
 from pwspy.utility.micromanager import PositionList
 import os
-
+from .sequencerCoordinate import SequencerCoordinateRange
 
 StepTypeNames = dict(  # The names to represent the `steps` that can be in an acquisition sequence
     ACQ="Acquisition",
@@ -37,9 +37,13 @@ class SequencerStep(TreeItem):
         super().__init__()
         self.id = id
         self.settings = settings
-        self.stepType = stepType
+        self._stepType = stepType
         if children is not None:
             self.addChildren(children)
+
+    @property
+    def stepType(self) -> str:
+        return self._stepType
 
     @staticmethod
     def hook(dct: dict):
@@ -49,7 +53,7 @@ class SequencerStep(TreeItem):
             dct: The `dict` representing the raw representation of the JSON\
         """
         if all([i in dct for i in ("id", 'stepType', 'settings')]):
-            clazz = SequencerStepTypes[dct['stepType']].value
+            clazz = _SequencerStepTypes[dct['stepType']].value
             s = clazz(**dct)
             return s
         else:
@@ -75,6 +79,14 @@ class SequencerStep(TreeItem):
         print(f"{indent}{self}")
         for child in self.children():
             child.printSubTree(_indent=_indent+1)
+
+    def getCoordinate(self) -> SequencerCoordinateRange:
+        """Returns a sequencer coordinate range that points to this steps location in the tree of steps."""
+        return SequencerCoordinateRange([(step.id, None) for step in self.getTreePath()])
+
+    def __getitem__(self, item: int):
+        """Enable [i] subscripting to get a child step"""
+        return self.children()[item]
 
 
 class ContainerStep(SequencerStep):
@@ -149,7 +161,7 @@ class ZStackStep(CoordSequencerStep):
         return f"{iteration * self.settings['intervalUm']} μm"
 
 
-class SequencerStepTypes(enum.Enum):
+class _SequencerStepTypes(enum.Enum):
     """
     An enumerator containing the sub-class of `SequencerStep` to use for each type of step.
     """

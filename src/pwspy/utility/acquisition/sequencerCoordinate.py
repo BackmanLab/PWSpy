@@ -1,43 +1,34 @@
 from __future__ import annotations
 import json
-import typing
+import typing as t_
 import os
 from pwspy.dataTypes import AcqDir
-
-
-class SequencerCoordinateStep:
-    """The contribution to a sequencer coordinate from a single step"""
-    def __init__(self, id: int, iteration: int = None):
-        self.stepId = id  # All steps should have a unique id number
-        self.iteration = iteration  # Most steps will keep this as None, iterable steps will have an iteration.
-
-    def __eq__(self, other: SequencerCoordinateStep):
-        return self.stepId == other.stepId and self.iteration == other.iteration
-
-    def __repr__(self):
-        s = f"Step(ID:{self.stepId}"
-        if self.iteration is not None:
-            s += f", i:{self.iteration}"
-        s += ")"
-        return s
+if t_.TYPE_CHECKING:
+    from pwspy.utility.acquisition.steps import SequencerStep
 
 
 class SequencerCoordinate:
     """
     A coordinate that fully defines a position within a `tree` of steps.
+
+    Args:
+        coordSteps: A sequence of tuples of the form (stepId, stepIteration) where `stepId` is the id number of the step being referred to.
+            If the step is an iterable step (multiple position, timeseries, etc.) then `stepIteration` should indicate the iteration number,
+            otherwise it should be `None`.
+        uuid: A universally unique ID string associated with the run of the sequencer that this coordinate is associated with.
     """
-    def __init__(self, coordSteps: typing.List[SequencerCoordinateStep], uuid: str):
-        self.fullPath = tuple(coordSteps)
+    def __init__(self, coordSteps: t_.Sequence[t_.Tuple[int, int]], uuid: str):
+        self._fullPath = tuple(coordSteps)
         self.uuid = uuid  # Matches the uuid of the sequence file that ran this acquisition.
 
     def __repr__(self):
-        return f"SeqCoord:{self.fullPath}"
+        return f"SeqCoord:{self._fullPath}"
 
     @staticmethod
     def fromDict(d: dict) -> SequencerCoordinate:
         c = []
-        for id, iteration in zip(d['treeIdPath'], d["stepIterations"]):
-            c.append(SequencerCoordinateStep(id, iteration))
+        for ID, iteration in zip(d['treeIdPath'], d["stepIterations"]):
+            c.append((ID, iteration))
         if 'uuid' in d:
             uuid = d['uuid']
         else:
@@ -52,37 +43,65 @@ class SequencerCoordinate:
     def isSubPathOf(self, other: SequencerCoordinate):
         """Check if `self` is a parent path of the `item` coordinate """
         assert isinstance(other, SequencerCoordinate)
-        if len(self.fullPath) >= len(other.fullPath):
+        if len(self._fullPath) >= len(other._fullPath):
             return False
-        return self.fullPath == other.fullPath[:len(self.fullPath)]
+        return self._fullPath == other._fullPath[:len(self._fullPath)]
 
     @property
-    def iterations(self) -> typing.Sequence[int]:
-        return tuple(i.iteration for i in self.fullPath)
+    def iterations(self) -> t_.Sequence[int]:
+        return tuple(iteration for ID, iteration in self._fullPath)
 
     @property
-    def ids(self) -> typing.Sequence[int]:
-        return tuple(i.stepId for i in self.fullPath)
+    def ids(self) -> t_.Sequence[int]:
+        return tuple(ID for ID, iteration in self._fullPath)
+
+    def getStepIteration(self, step: t_.Union[int, SequencerStep]) -> t_.Optional[int]:
+        """
+
+        Args:
+            step: May be the ID number of the step or a reference to the actual step.
+
+        Returns:
+            The iteration of `Step` that this coordinate corresponds to. If the step is not an iterable step then `None` will be returned.
+        """
+        from pwspy.utility.acquisition import SequencerStep
+        if isinstance(step, SequencerStep):
+            ID = step.id
+        elif isinstance(step, int):
+            ID = step
+        else:
+            raise TypeError(f"`step` arument must be `int` or `SequencerStep`, not `{type(step)}`")
+        return [iteration for coordID, iteration in self._fullPath if ID == coordID][0]
 
     def __eq__(self, other: SequencerCoordinate):
         """Check if these coordinates are identical"""
         assert isinstance(other, SequencerCoordinate)
-        return self.fullPath == other.fullPath
+        return self._fullPath == other._fullPath
 
 
-class IterationRangeCoordStep:
-    """Represents a coordinate for a single step that accepts multiple iterations"""
-    def __init__(self, id: int, iterations: typing.Sequence[int] = None):
-        self.stepId = id
+class _IterationRangeCoordStep:
+    """
+    Represents a coordinate for a single step that accepts multiple iterations
+
+    Args:
+        ID: The id number of the step being referred to.
+        iterations: A sequence of iteration numbers which are considered in the range of iterations this object contains. If `None` then all iterations are accepted.
+    """
+    def __init__(self, ID: int, iterations: t_.Sequence[int] = None):
+        self.stepId = ID
         self.iterations = iterations  #Only iterable step types will have this, most types will keep this as None
 
-    def __contains__(self, item: SequencerCoordinateStep):
-        if self.stepId == item.stepId:
+    def __contains__(self, item: t_.Tuple[int, int]):
+        """
+        Args:
+            item: A tuple of form (stepId, iteration). See the documentation for SequencerCoordinate
+        """
+        if self.stepId == item[0]:
             if self.iterations is None:  # This step doesn't have any iterations so there is no need to check anything.
                 return True
             elif len(self.iterations) == 0:  # If the accepted iterations are empty then we accept any iteration
                 return True
-            elif item.iteration in self.iterations:
+            elif item[1] in self.iterations:
                 return True
         return False
 
@@ -90,29 +109,48 @@ class IterationRangeCoordStep:
 class SequencerCoordinateRange:
     """
     A coordinate that can have multiple iterations selected at once.
+
+    Args:
+        coordSteps: A sequence of tuples where each tuple represents an acceptable coordinate range for each step in the tree path.
+            Tuple is of the form (ID, iterations) where ID is an integer referring to the id number of the step and iterations indicates
+            the iterations of that step that are considered in range. `iterations` can be `None` or a sequence of `ints` that are considered in range.
+            If `iterations is `None` then all iterations are considered in range. `None` is also the only acceptable value for steps which do not iterate.
     """
-    def __init__(self, coordSteps: typing.Sequence[IterationRangeCoordStep]):
-        self.fullPath = tuple(coordSteps)
+    def __init__(self, coordSteps: t_.Sequence[t_.Tuple[int, t_.Optional[t_.Sequence[int]]]]):
+        self._fullPath = tuple([_IterationRangeCoordStep(ID, iterations) for ID, iterations in coordSteps])
 
     def __contains__(self, item: SequencerCoordinate):
         """Returns True if this is a subpath of `item` and the iteration at each step lies within the range of acceptable iterations for this object"""
         if not isinstance(item, SequencerCoordinate):
             return False
-        for i, coordRange in enumerate(self.fullPath):
-            if not (item.fullPath[i] in coordRange):
+        for i, coordRange in enumerate(self._fullPath):
+            if not (item._fullPath[i] in coordRange):
                 return False
         return True
 
+    def setAcceptedIterations(self, stepId: int, iterations: t_.Optional[t_.Sequence[int]]):
+        """Sets the acceptable iterations for the step associated with `stepId`
 
-class SeqAcqDir(AcqDir):
+        Args:
+            stepId: The id of the step you want to adjust the iteration range for
+            iterations: A sequence if iteration numbers to include. If `None` then all iterations are accepted.
+        """
+        for coordStep in self._fullPath:
+            if coordStep.stepId == stepId:
+                coordStep.iterations = iterations
+                return
+        raise ValueError(f"No step with ID: {stepId} was found.")
+
+
+class SeqAcqDir:
     """
     A subclasss of AcqDir that has will also search for a sequencerCoordinate file
     and load it as an attribute.
     """
-    def __init__(self, directory: typing.Union[str, AcqDir]):
-        if isinstance(directory, AcqDir):
-            directory = directory.filePath
-        super().__init__(directory)
-        path = os.path.join(directory, "sequencerCoords.json")
-        self.sequencerCoordinate = SequencerCoordinate.fromJsonFile(path)
+    def __init__(self, acquisition: AcqDir):
+        self.acquisition = acquisition
+        path = os.path.join(acquisition.filePath, "sequencerCoords.json")
+        self.sequencerCoordinate = SequencerCoordinate.fromJsonFile(path)  # This will throw an exception if no sequence coord is found.
+
+
 

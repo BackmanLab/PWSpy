@@ -25,6 +25,8 @@ from __future__ import annotations
 import json
 import logging
 import os
+import warnings
+
 from matplotlib import patches, path
 import dataclasses
 from enum import Enum, auto
@@ -139,8 +141,7 @@ def _concaveHull(coords: List[Tuple[int, int]], alpha):
     return cascaded_union(triangles), edge_points
 
 
-
-class Roi:
+class Roi:  # TODO get more in line with shapely.
     """This class represents a single Roi used to select a specific region of an image. Each Roi is identified by a
     `name` and a `number`. The recommended file format is HDF2, in this format multiple rois of the same name but differing
     numbers can be saved in a single HDF file. The Roi consists of a `mask` (a boolean array specifying which pixels are
@@ -152,31 +153,43 @@ class Roi:
         name: The name used to identify this ROI. Multiple ROIs can share the same name but must have unique numbers.
         number: The number used to identify this ROI. Each ROI with the same name must have a unique number.
         mask: A 2D boolean array where the True values indicate pixels that are within the ROI.
-        verts: A sequence of 2D coordinates indicating the border of the ROI. While this information is partially
-            redundant with the mask it is useful for many applications and can be complicated to calculate from `mask`.
+        verts: Can be a sequence of 2D (x, y) coordinates indicating the border of the ROI or a shapely `Polygon`.
+            If an array of coordinates is used then it will be converted to the shell of a shapely polygon internally.
+            While this information is partially redundant with the mask it is useful for many applications and can be
+            complicated to calculate from `mask`.
         filePath: The path to the file that this object was loaded from.
         fileFormat: The format of the file that this object was loaded from.
     """
 
     class FileFormats(Enum):
         """An enumerator of the different file formats that an ROI can be saved to."""
-        MAT = auto() # The oldest file format. Each ROI was saved to its own matlab .mat file as a boolean mask.
-        HDF = auto() # This was originally the default file format of this Python software. Each ROI of the same name was saved as a dataset in an HDF file. The dataset contained the boolean mask.
-        HDF2 = auto() # This is the best file format and is the current default. Each ROI of the same name is saved as an H5PY.Group in an HDF file. Each ROI group contains a dataset for the boolean mask as well as a dataset for the XY coordinates of the enclosing polygon. This saves us from having to constantly recalculate the outline of the ROI for processing purposes.
+        MAT = auto()  # The oldest file format. Each ROI was saved to its own matlab .mat file as a boolean mask.
+        HDF = auto()  # This was originally the default file format of this Python software. Each ROI of the same name was saved as a dataset in an HDF file. The dataset contained the boolean mask.
+        HDF2 = auto()  # This is the best file format and is the current default. Each ROI of the same name is saved as an H5PY.Group in an HDF file. Each ROI group contains a dataset for the boolean mask as well as a dataset for the XY coordinates of the enclosing polygon. This saves us from having to constantly recalculate the outline of the ROI for processing purposes.
 
-    def __init__(self, name: str, number: int, mask: np.ndarray, verts: np.ndarray, filePath: typing.Optional[str] = None, fileFormat: typing.Optional[Roi.FileFormats] = None):
+    def __init__(self, name: str, number: int, mask: np.ndarray, verts: typing.Union[np.ndarray, geometry.Polygon], filePath: typing.Optional[str] = None, fileFormat: typing.Optional[Roi.FileFormats] = None):
         assert isinstance(mask, np.ndarray), f"data is a {type(mask)}"
         assert len(mask.shape) == 2
         if verts is not None: #Legacy files don't have verts, we allow that.
             assert len(verts.shape) == 2
             assert verts.shape[1] == 2
         assert mask.dtype == np.bool
-        self.verts = verts
+        self._polygon: geometry.Polygon
+        if isinstance(verts, geometry.Polygon):
+            self._polygon = verts
+        elif verts is None:
+            self._polygon = None
+        else:
+            self._polygon = geometry.Polygon(shell=verts)
         self.name = name
         self.number = number
         self.mask = mask
         self.filePath = filePath
         self.fileFormat = fileFormat
+
+    @property
+    def verts(self) -> np.ndarray:
+        return np.array(self._polygon.exterior.coords)
 
     @classmethod
     def fromVerts(cls, name: str, number: int, verts: np.ndarray, dataShape: typing.Tuple[float, float]) -> Roi:
@@ -219,26 +232,14 @@ class Roi:
         Returns:
             A new instance of `Roi`
 
-
+        TODO:
+            This function doesn't work properly if there is a `False` region of `mask` completely enclosed by a `True` region of `mask`.
         """
         from rasterio import features
-        import rasterio
         import shapely
         all_polygons = []
         for shape, value in features.shapes(mask.astype(np.uint8), mask=mask):
             all_polygons.append(shapely.geometry.shape(shape))
-
-        #Debug plots
-        # import matplotlib.pyplot as plt
-        # from matplotlib.patches import Polygon
-        # fig,ax = plt.subplots()
-        # ax.imshow(mask)
-        # for i in all_polygons:
-        #     fig, ax = plt.subplots()
-        #     ax.set_xlim([0, mask.shape[1]])
-        #     ax.set_ylim([0, mask.shape[0]])
-        #     coords = np.array(i.exterior.coords.xy).T
-        #     ax.add_patch(Polygon(coords))
 
         poly = sorted(all_polygons, key=lambda poly: poly.area)[-1]  # Return the biggest found polygon
         verts = np.array(poly.exterior.coords.xy).T
@@ -306,7 +307,6 @@ class Roi:
         except KeyError:
             return cls(name, number, mask=spio.loadmat(filePath)['mask'].astype(np.bool), verts=None, filePath=filePath, fileFormat=Roi.FileFormats.MAT)  # Some Nanocytomics files use 'mask' instead of 'bw'. annoying.    
 
-
     @classmethod
     def loadAny(cls, directory: str, name: str, number: int):
         """Attempt loading any of the known file formats.
@@ -339,19 +339,24 @@ class Roi:
             overwrite: If True then if an Roi with the same `number` as this Roi is found it will be overwritten.
         """
         savePath = os.path.join(directory, f'ROI_{self.name}.h5')
+        numStr = np.string_(str(self.number))
+        if self.verts is None:
+            verts = None
+            warnings.warn("An Roi is being saved to HDF without a `verts` property specifying the vertices of the"
+                             "ROI's enclosing polygon. You can use `getBoundingPolygon` to use Concave Hull method to generate the vertices.")
+        else:
+            verts = self.verts.astype(np.float32)
+        mask = self.mask.astype(np.uint8)
         with h5py.File(savePath, 'a') as hf:
             if np.string_(str(self.number)) in hf.keys():
                 if overwrite:
                     del hf[np.string_(str(self.number))]
                 else:
                     raise OSError(f"The Roi file {savePath} already contains a dataset {self.number}")
-            g = hf.create_group(np.string_(str(self.number)))
-            if self.verts is None:
-                raise ValueError("An Roi cannot be saved to HDF without a `verts` property specifying the vertices of the"
-                                 "rois enclosing polygon. You can use `getBoundingPolygon` to use Concave Hull method to generate the vertices.")
-            else:
-                g.create_dataset(np.string_("verts"), data=self.verts.astype(np.float32))
-            g.create_dataset(np.string_("mask"), data=self.mask.astype(np.uint8), compression=5)
+            g = hf.create_group(numStr)
+            if verts is not None:
+                g.create_dataset(np.string_("verts"), data=verts)
+            g.create_dataset(np.string_("mask"), data=mask, compression=5)
         self.filePath = savePath
         self.fileFormat = Roi.FileFormats.HDF2
 
@@ -494,7 +499,7 @@ class Roi:
         Returns:
             A matplotlib `Polygon` representing the border of the Roi
         """
-        if self.verts is None:  # calculate convex hull
+        if self.verts is None:  # calculate convex hull  # TODO this method does basically the same as `fromMask`. Unify
             x = np.arange(self.mask.shape[1])
             y = np.arange(self.mask.shape[0])
             X, Y = np.meshgrid(x, y)  # Generate arrays indicating X and Y coordinates for each array element.

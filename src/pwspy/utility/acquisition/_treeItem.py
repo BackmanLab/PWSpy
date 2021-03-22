@@ -3,7 +3,7 @@ import typing
 
 
 class TreeItem:
-    """Basic implementation of an item for a tree. Our `treemodel` is designed to work with this class and it's subclasses."""
+    """Basic implementation of an item for a tree. Our `treemodel` subclassed from QAbstractItemModel is designed to work with this class and it's subclasses."""
     def __init__(self):
         self._parentItem = None
         self._itemData = {}
@@ -43,6 +43,17 @@ class TreeItem:
             yield child
             yield from child.iterateChildren()
 
+    def getTreePath(self) -> typing.Tuple[TreeItem]:
+        """Return a list of steps starting with the root step and ending with this step."""
+        l: typing.List[TreeItem] = []
+        step = self
+        while True:
+            l.append(step)
+            if step._parentItem is None:
+                break
+            step = step._parentItem
+        return tuple(reversed(l))
+
     def data(self, role: int) -> typing.Any:
         try:
             return self._itemData[role]
@@ -51,3 +62,4 @@ class TreeItem:
 
     def setData(self, role: int, data: typing.Any):
         self._itemData[role] = data
+

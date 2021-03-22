@@ -44,7 +44,7 @@ import numpy as np
 import pandas as pd
 from numpy import ma
 import multiprocessing as mp
-import typing
+import typing as t_
 from . import AbstractAnalysis, warnings, AbstractAnalysisSettings, AbstractHDFAnalysisResults
 from pwspy import dateTimeFormat
 import pwspy.dataTypes as pwsdt
@@ -63,24 +63,30 @@ class DynamicsAnalysis(AbstractAnalysis):
         extraReflectance: the metadata object referring to a calibration file for extra reflectance. You can optionally proide the ExtraReflectanceCube rather than just the metadata object referring to it.
         ref: A reference acquisition to use for normalization.
     """
-    def __init__(self, settings: DynamicsAnalysisSettings, extraReflectance: typing.Optional[typing.Union[pwsdt.ERMetaData, pwsdt.ExtraReflectanceCube]], ref: pwsdt.DynCube):
+    n_medium = 1.37  # The average index of refraction for chromatin?
+
+    def __init__(self, settings: DynamicsAnalysisSettings, extraReflectance: t_.Optional[t_.Union[pwsdt.ERMetaData, pwsdt.ExtraReflectanceCube]], ref: pwsdt.DynCube):
         super().__init__()
-        if isinstance(extraReflectance, pwsdt.ERMetaData): # In the case the extraReflectance is an ExtraReflectanceCube or `None` no action needs to take place.
-            extraReflectance = pwsdt.ExtraReflectanceCube.fromMetadata(extraReflectance)
         logger = logging.getLogger(__name__)
+
         if not ref.processingStatus.cameraCorrected:
             ref.correctCameraEffects(settings.cameraCorrection)
         if not ref.processingStatus.normalizedByExposure:
             ref.normalizeByExposure()
         if ref.metadata.pixelSizeUm is not None:  # Only works if pixel size was saved in the metadata.
             ref.filterDust(.75)  # Apply a blur to filter out dust particles. This is in microns. I'm not sure if this is the optimal value.
+
         if settings.referenceMaterial is None:
             theoryR = pd.Series(np.ones((len(ref.times),)), index=ref.times)  # Having this as all ones effectively ignores it.
             logger.warning("DynamicsAnalysis ignoring reference material correction")
         else:
             theoryR = reflectanceHelper.getReflectance(settings.referenceMaterial, Material.Glass, wavelengths=ref.metadata.wavelength, NA=settings.numericalAperture)
+
+        if isinstance(extraReflectance, pwsdt.ERMetaData): # In the case the extraReflectance is an ExtraReflectanceCube or `None` no action needs to take place.
+            extraReflectance = pwsdt.ExtraReflectanceCube.fromMetadata(extraReflectance)
+
         if extraReflectance is None:
-            Iextra = None  # a bogus reflection that is all zeros
+            Iextra = None 
             logger.warning("DynamicsAnalysis ignoring extra reflection")
         else:
             if extraReflectance.metadata.numericalAperture != settings.numericalAperture:
@@ -97,11 +103,11 @@ class DynamicsAnalysis(AbstractAnalysis):
         self.refAc = ref.getAutocorrelation()[:, :, :settings.diffusionRegressionLength+1].mean(axis=(0, 1))  # We find the average autocorrlation of the background to cut down on noise, presumably this is uniform accross the field of view any way, right?
         self.refTag = ref.metadata.idTag
         self.erTag = extraReflectance.metadata.idTag if extraReflectance is not None else None
-        self.n_medium = 1.37  # The average index of refraction for chromatin?
+
         self.settings = settings
         self.extraReflection = Iextra
 
-    def run(self, cube: pwsdt.DynCube) -> typing.Tuple[DynamicsAnalysisResults, typing.List[warnings.AnalysisWarning]]:  # Inherit docstring
+    def run(self, cube: pwsdt.DynCube) -> t_.Tuple[DynamicsAnalysisResults, t_.List[warnings.AnalysisWarning]]:  # Inherit docstring
         warns = []
         if not cube.processingStatus.cameraCorrected:
             cube.correctCameraEffects(self.settings.cameraCorrection)
@@ -203,7 +209,7 @@ class DynamicsAnalysisResults(AbstractHDFAnalysisResults): # Inherit docstring.
 
     @classmethod
     def create(cls, settings: DynamicsAnalysisSettings, meanReflectance: np.ndarray, rms_t_squared: np.ndarray, reflectance: pwsdt.DynCube, diffusion: np.ndarray,
-                imCubeIdTag: str, referenceIdTag: str, extraReflectionIdTag: typing.Optional[str]): # Inherit docstring.
+                imCubeIdTag: str, referenceIdTag: str, extraReflectionIdTag: t_.Optional[str]): # Inherit docstring.
         d = {'time': datetime.now().strftime(dateTimeFormat),
             'meanReflectance': meanReflectance,
             'reflectance': reflectance,
@@ -287,11 +293,11 @@ class DynamicsAnalysisSettings(AbstractAnalysisSettings):
                 noise becomes much worse. A middle ground is to perform linear regression on the first 4 indices to determine the slope. You can adjust that
                 number here.
     """
-    extraReflectanceId: typing.Optional[str]
+    extraReflectanceId: t_.Optional[str]
     referenceMaterial: Material
     numericalAperture: float
     relativeUnits: bool
-    cameraCorrection: typing.Optional[pwsdt.CameraCorrection]
+    cameraCorrection: t_.Optional[pwsdt.CameraCorrection]
     diffusionRegressionLength: int = 3
 
     FileSuffix = "dynAnalysis"  # This is used for setting the filename when saving and loading to json
