@@ -454,21 +454,23 @@ class PositionList:
         s += '])'
         return s
 
-    def __add__(self, other: Union[Position2d, MultiStagePosition]) -> PositionList:
+    def __add__(self, other: Union[Position2d, MultiStagePosition, PositionList]) -> PositionList:
         if isinstance(other, Position2d):
             return PositionList([i + other for i in self.positions])
         elif isinstance(other, MultiStagePosition):
             self.__add__(other.getXYPosition())
         else:
-            raise NotImplementedError
+            assert len(other) == len(self), "Cannot subtract position lists of different sizes"
+            return PositionList([a + b for a, b in zip(self.positions, other.positions)])
 
-    def __sub__(self, other: Union[Position2d, MultiStagePosition]) -> PositionList:
+    def __sub__(self, other: Union[Position2d, MultiStagePosition, PositionList]) -> PositionList:
         if isinstance(other, Position2d):
             return PositionList([i - other for i in self.positions])
         elif isinstance(other, MultiStagePosition):
             return self.__sub__(other.getXYPosition())
         else:
-            raise NotImplementedError
+            assert len(other) == len(self), "Cannot subtract position lists of different sizes"
+            return PositionList([a - b for a, b in zip(self.positions, other.positions)])
 
     def __len__(self):
         return len(self.positions)

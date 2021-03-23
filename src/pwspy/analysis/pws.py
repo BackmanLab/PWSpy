@@ -45,14 +45,14 @@ import numpy as np
 import pandas as pd
 from scipy import signal as sps
 import multiprocessing as mp
-from typing import Type, Tuple, List, Optional
+from typing import Tuple, List, Optional
 from ._abstract import AbstractHDFAnalysisResults, AbstractAnalysis, AbstractAnalysisResults, AbstractAnalysisSettings
 from . import warnings
 import pwspy.dataTypes as pwsdt
 from pwspy import dateTimeFormat
-from pwspy.utility.misc import cached_property
 from pwspy.utility.reflection import reflectanceHelper, Material
 
+__all__ = ['PWSAnalysis', 'PWSAnalysisSettings', 'PWSAnalysisResults', "LegacyPWSAnalysisResults"]
 
 def clearError(func):
     """This decorator tries to run the original function. If the function raises a keyerror then we raise a new keyerror with a clearer message. This is intended to be used with `field` accessors of implementations

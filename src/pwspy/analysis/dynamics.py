@@ -50,6 +50,8 @@ from pwspy import dateTimeFormat
 import pwspy.dataTypes as pwsdt
 from pwspy.utility.reflection import reflectanceHelper, Material
 
+__all__ = ['DynamicsAnalysis', 'DynamicsAnalysisSettings', 'DynamicsAnalysisResults']
+
 
 class DynamicsAnalysis(AbstractAnalysis):
     """This class performs the analysis of RMS_t_squared and D (diffusion). It is based on a set of MATLAB scripts written
