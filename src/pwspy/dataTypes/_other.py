@@ -43,6 +43,7 @@ import cv2
 from rasterio import features
 import shapely
 import typing
+import copy
 if typing.TYPE_CHECKING:
     from matplotlib.image import AxesImage
 
@@ -120,7 +121,7 @@ class Roi:  # TODO get more in line with shapely. Remove all Matplotlib
     """
 
     def __init__(self, mask: np.ndarray, verts: typing.Optional[typing.Union[np.ndarray, geometry.Polygon]]):
-        assert isinstance(mask, np.ndarray), f"data is a {type(mask)}"
+        assert isinstance(mask, np.ndarray), f"Mask data is of type: {type(mask)}. Must be numpy array."
         assert len(mask.shape) == 2
         if verts is not None:  # Legacy files don't have verts, we allow that.
             assert len(verts.shape) == 2
@@ -273,7 +274,6 @@ class ROIFile:  # TODO ensure only one exists per file
         self.fformat = fileFormat
 
     def getRoi(self) -> Roi:
-        import copy
         return copy.deepcopy(self._roi)  # Rois are mutable so return a copy.
 
     def __repr__(self):
@@ -511,4 +511,4 @@ class ROIFile:  # TODO ensure only one exists per file
         if self.fformat is not ROIFile.FileFormats.HDF2:
             raise NotImplementedError(f"ROIFile of format: {self.fformat} cannot be updated.")
         self.toHDF(roi, self.name, self.number, self.filePath, overwrite=True)
-        self._roi = roi
+        self._roi = copy.deepcopy(roi)  # We don't wont to use the same object that might still have external mutable references
