@@ -23,6 +23,7 @@ import numpy as np
 
 from pwspy.dataTypes import Roi
 from ._abstract import AbstractCompilerSettings, AbstractRoiCompilationResults
+from ...dataTypes._other import RoiFile
 
 
 @dataclass
@@ -34,22 +35,22 @@ class GenericCompilerSettings(AbstractCompilerSettings):
 @dataclass
 class GenericRoiCompilationResults(AbstractRoiCompilationResults):
         """Results for compilation that don't pertain to any specific analysis."""
-        roi: Roi
-        roiArea: int #the number of pixels of an ROI
+        roiFile: RoiFile
+        roiArea: int  # the number of pixels of an ROI
 
 
 class GenericRoiCompiler:
     def __init__(self, settings: GenericCompilerSettings):
         self.settings = settings
 
-    def run(self, roi: Roi) -> GenericRoiCompilationResults:
+    def run(self, roi: RoiFile) -> GenericRoiCompilationResults:
         if self.settings.roiArea:
-            roiArea: typing.Optional[int] = np.sum(roi.mask)
+            roiArea: typing.Optional[int] = np.sum(roi.getRoi().mask)
         else:
             roiArea = None
 
         results = GenericRoiCompilationResults(
-                    roi=roi,
+                    roiFile=roi,
                     roiArea=roiArea)
         return results
 

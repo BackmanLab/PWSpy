@@ -29,10 +29,10 @@ def roiColor(data: np.ndarray, rois: List[Roi], vmin, vmax, scale_bg, hue=0, exp
 
     Args:
         data (np.ndarray): an MxN array of data to be imaged
-        rois (List[Roi]): a list of Roi objects. the regions inside a roi will be colored.
+        rois (List[Roi]): a list of Roi objects. the regions inside a roiFile will be colored.
         vmin (float): the minimum value in the data that will be set to black
         vmax (float): the maximum value in the data that will be set to white
-        scale_bg (float): Scales the brightness of the background (non-roi) region.
+        scale_bg (float): Scales the brightness of the background (non-roiFile) region.
         hue (float): A value of 0-1 indicating the hue of the colored regions.
         exponent (float): The exponent used to curve the color map for more pleasing results.
         numScaleBarPix (float): The length of the scale bar in number of pixels.
@@ -67,7 +67,7 @@ def roiColor(data: np.ndarray, rois: List[Roi], vmin, vmax, scale_bg, hue=0, exp
 if __name__ == "__main__":
     acq = AcqDir(r'G:\Aya_NAstudy\matchedNAi_largeNAc\cells\Cell3')
     an = acq.pws.loadAnalysis('p0')
-    rois = [acq.loadRoi(name, num) for name, num, fformat in acq.getRois() if name=='nucleus']
+    rois = [acq.loadRoi(name, num).getRoi() for name, num, fformat in acq.getRois() if name == 'nucleus']
     out = roiColor(an.rms, rois, 0.04, .3, 1, exponent=1.1, numScaleBarPix=100)
     fig, ax = plt.subplots()
     ax.xaxis.set_visible(False)

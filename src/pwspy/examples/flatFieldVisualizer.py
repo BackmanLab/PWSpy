@@ -114,7 +114,7 @@ if __name__ == "__main__":
 
     while True:
         try:
-            mask = Roi.fromVerts('null', 1, result[0][0].selectLassoROI(), dataShape=result[0][0].data.shape[:-1])
+            mask = Roi.fromVerts(result[0][0].selectLassoROI(), dataShape=result[0][0].data.shape[:-1])
             fig2, ax = plt.subplots()
             ax.plot(np.array(theory.index).astype(np.float), np.array(theory["Reflectance"]).astype(np.float),
                     label="Theory")

@@ -22,7 +22,7 @@ if __name__ == '__main__':
         and a 2D RMS image and plots a histogram of the RMS values inside the ROI
         """
         # Check input values just to be safe.
-        assert isinstance(roi, pwsdt.Roi)  # Make sure roi variable is actually an ROI
+        assert isinstance(roi, pwsdt.Roi)  # Make sure roiFile variable is actually an ROI
         assert isinstance(rms, np.ndarray)  # Make sure the RMS image is an numpy array
         assert roi.mask.shape == rms.shape  # Make sure the ROI and RMS arrays have the same dimensions.
 

@@ -22,6 +22,7 @@ from typing import Tuple, List
 
 from pwspy.dataTypes import Roi
 from .. import AbstractAnalysisResults, warnings
+from ...dataTypes._other import RoiFile
 
 
 class AbstractRoiCompiler(ABC):
@@ -34,12 +35,12 @@ class AbstractRoiCompiler(ABC):
         self.settings = settings
 
     @abstractmethod
-    def run(self, results: AbstractAnalysisResults, roi: Roi) -> Tuple[AbstractRoiCompilationResults, List[warnings.AnalysisWarning]]:
+    def run(self, results: AbstractAnalysisResults, roiFile: RoiFile) -> Tuple[AbstractRoiCompilationResults, List[warnings.AnalysisWarning]]:
         """Combine information from analysis results and an ROI to produce values averaged over the ROI.
 
         Args:
             results: The analysis results to compile.
-            roi: The ROI to used to segment out a section of the results.
+            roiFile: The ROI file to used to segment out a section of the results.
         """
         pass
 

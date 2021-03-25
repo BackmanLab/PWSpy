@@ -23,6 +23,8 @@ import numpy as np
 from pwspy.dataTypes import Roi
 from ._abstract import AbstractCompilerSettings, AbstractRoiCompilationResults, AbstractRoiCompiler
 from .. import warnings
+from ...dataTypes._other import RoiFile
+
 if t_.TYPE_CHECKING:
     from ..pws import PWSAnalysisResults
 
@@ -54,7 +56,7 @@ class PWSRoiCompilationResults(AbstractRoiCompilationResults):
         ld: float
         opd: np.ndarray
         opdIndex: np.ndarray  # The x axis of a plot of opd
-        varRatio: float #The ratio of signal variance of the Roi's mean spectra to the mean signal variance (rms^2) of the roi. should be between 0 and 1.
+        varRatio: float #The ratio of signal variance of the Roi's mean spectra to the mean signal variance (rms^2) of the roiFile. should be between 0 and 1.
 
 
 class PWSRoiCompiler(AbstractRoiCompiler):
@@ -63,8 +65,9 @@ class PWSRoiCompiler(AbstractRoiCompiler):
     def __init__(self, settings: PWSCompilerSettings):
         super().__init__(settings)
 
-    def run(self, results: PWSAnalysisResults, roi: Roi) -> t_.Tuple[PWSRoiCompilationResults, t_.List[warnings.AnalysisWarning]]:
+    def run(self, results: PWSAnalysisResults, roiFile: RoiFile) -> t_.Tuple[PWSRoiCompilationResults, t_.List[warnings.AnalysisWarning]]:
         warns = []
+        roi = roiFile.getRoi()
         reflectance = self._avgOverRoi(roi, results.meanReflectance) if self.settings.reflectance else None
         rms = self._avgOverRoi(roi, results.rms) if self.settings.rms else None
         if self.settings.polynomialRms:

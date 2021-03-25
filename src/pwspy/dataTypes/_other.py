@@ -234,7 +234,7 @@ class Roi:  # TODO get more in line with shapely. Remove all Matplotlib
         return max(yCoords), min(xCoords), min(yCoords), max(xCoords)
 
 
-class ROIFile:  # TODO ensure only one exists per file
+class RoiFile:  # TODO ensure only one exists per file
     """This class represents a single Roi File used to save and load an ROI. Each Roi File is identified by a
     `name` and a `number`. The recommended file format is HDF2, in this format multiple rois of the same name but differing
     numbers can be saved in a single HDF file.
@@ -253,7 +253,7 @@ class ROIFile:  # TODO ensure only one exists per file
         HDF = auto()  # This was originally the default file format of this Python software. Each ROI of the same name was saved as a dataset in an HDF file. The dataset contained the boolean mask.
         HDF2 = auto()  # This is the best file format and is the current default. Each ROI of the same name is saved as an H5PY.Group in an HDF file. Each ROI group contains a dataset for the boolean mask as well as a dataset for the XY coordinates of the enclosing polygon. This saves us from having to constantly recalculate the outline of the ROI for processing purposes.
 
-    def __init__(self, name: str, number: int, roi: Roi, filePath: str, fileFormat: ROIFile.FileFormats):
+    def __init__(self, name: str, number: int, roi: Roi, filePath: str, fileFormat: RoiFile.FileFormats):
         self._roi = roi
         self.name = name
         self.number = number
@@ -264,11 +264,11 @@ class ROIFile:  # TODO ensure only one exists per file
         return copy.deepcopy(self._roi)  # Rois are mutable so return a copy.
 
     def __repr__(self):
-        return f"ROIFile({self.name}, {self.number})"
+        return f"RoiFile({self.name}, {self.number})"
 
     @staticmethod
-    def getValidRoisInPath(path: str) -> List[Tuple[str, int, ROIFile.FileFormats]]:
-        """Search the `path` for valid roi files and return the detected rois as a list of tuple where each tuple
+    def getValidRoisInPath(path: str) -> List[Tuple[str, int, RoiFile.FileFormats]]:
+        """Search the `path` for valid roiFile files and return the detected rois as a list of tuple where each tuple
         contains the `name`, `number`, and file format for the Roi.
 
         Args:
@@ -280,11 +280,11 @@ class ROIFile:  # TODO ensure only one exists per file
                 number: The detected Roi number
                 fformat: The file format of the file that the Roi is stored in
         """
-        patterns = [('BW*_*.mat', ROIFile.FileFormats.MAT), ('ROI_*.h5', ROIFile.FileFormats.HDF)]
+        patterns = [('BW*_*.mat', RoiFile.FileFormats.MAT), ('ROI_*.h5', RoiFile.FileFormats.HDF)]
         files = {fformat: glob(os.path.join(path, p)) for p, fformat in patterns}  # Lists of the found files keyed by file format
         ret = []
         for fformat, fileNames in files.items():
-            if fformat == ROIFile.FileFormats.HDF:
+            if fformat == RoiFile.FileFormats.HDF:
                 for i in fileNames:
                     with h5py.File(i, 'r') as hf:  # making sure to open this file in read mode makes the function way faster!
                         for g in hf.keys():
@@ -293,7 +293,7 @@ class ROIFile:  # TODO ensure only one exists per file
                                     assert 'ROI_' in i
                                     name = i.split("ROI_")[-1][:-3]
                                     try:
-                                        ret.append((name, int(g), ROIFile.FileFormats.HDF2))
+                                        ret.append((name, int(g), RoiFile.FileFormats.HDF2))
                                     except ValueError:
                                         logging.getLogger(__name__).warning(f"File {i} contains uninterpretable dataset named {g}")
                                 else:
@@ -302,22 +302,22 @@ class ROIFile:  # TODO ensure only one exists per file
                                 assert 'roi_' in i
                                 name = i.split('roi_')[-1][:-3]  # Old files used lower case rather than "ROI_"
                                 try:
-                                    ret.append((name, int(g), ROIFile.FileFormats.HDF))
+                                    ret.append((name, int(g), RoiFile.FileFormats.HDF))
                                 except ValueError:
                                     logging.getLogger(__name__).warning(f"File {i} contains uninterpretable dataset named {g}")
 
-            elif fformat == ROIFile.FileFormats.MAT:
+            elif fformat == RoiFile.FileFormats.MAT:
                 for i in fileNames:  # list in files
                     i = os.path.split(i)[-1]
                     if len(i.split("_")) != 2:  # Some old data has files that are not ROIs but are named almost identically, this helps us avoid bugs with them.
                         continue
                     num = int(i.split('_')[0][2:])
                     name = i.split('_')[1][:-4]
-                    ret.append((name, num, ROIFile.FileFormats.MAT))
+                    ret.append((name, num, RoiFile.FileFormats.MAT))
         return ret
 
     @staticmethod
-    def deleteRoi(directory: str, name: str, number: int, fformat: Optional[ROIFile.FileFormats] = None):
+    def deleteRoi(directory: str, name: str, number: int, fformat: Optional[RoiFile.FileFormats] = None):
         """Delete the dataset associated with the Roi object specified by `name` and `num`.
 
         Args:
@@ -330,17 +330,17 @@ class ROIFile:  # TODO ensure only one exists per file
             FileNotFoundError: If the file isn't found.
         """
         assert os.path.isdir(directory)
-        if fformat is ROIFile.FileFormats.MAT:
+        if fformat is RoiFile.FileFormats.MAT:
             path = os.path.join(directory, f"BW{number}_{name}.mat")
-        elif fformat is ROIFile.FileFormats.HDF or fformat is ROIFile.FileFormats.HDF2:
+        elif fformat is RoiFile.FileFormats.HDF or fformat is RoiFile.FileFormats.HDF2:
             path = os.path.join(directory, f"ROI_{name}.h5")
         elif fformat is None:  # AutoDetect the file format
             try:
-                ROIFile.deleteRoi(directory, name, number, fformat=ROIFile.FileFormats.MAT)
+                RoiFile.deleteRoi(directory, name, number, fformat=RoiFile.FileFormats.MAT)
                 return
             except FileNotFoundError:
                 try:
-                    ROIFile.deleteRoi(directory, name, number, fformat=ROIFile.FileFormats.HDF)
+                    RoiFile.deleteRoi(directory, name, number, fformat=RoiFile.FileFormats.HDF)
                     return
                 except FileNotFoundError as e:
                     raise e
@@ -350,7 +350,7 @@ class ROIFile:  # TODO ensure only one exists per file
         if not os.path.exists(path):
             raise FileNotFoundError(f"The ROI file {name},{number} and format {fformat} was not found in {directory}.")
 
-        if fformat is ROIFile.FileFormats.HDF or fformat is ROIFile.FileFormats.HDF2:
+        if fformat is RoiFile.FileFormats.HDF or fformat is RoiFile.FileFormats.HDF2:
             with h5py.File(path, 'a') as hf:
                 if np.string_(str(number)) not in hf.keys():
                     raise ValueError(f"The file {path} does not contain ROI number {number}.")
@@ -358,13 +358,13 @@ class ROIFile:  # TODO ensure only one exists per file
                 remaining = len(list(hf.keys()))
             if remaining == 0:  # If the file is empty then remove it.
                 os.remove(path)
-        elif fformat is ROIFile.FileFormats.MAT:
+        elif fformat is RoiFile.FileFormats.MAT:
             os.remove(path)
         else:
             raise Exception("Programming error.")
 
     @classmethod
-    def fromHDF_legacy(cls, directory: str, name: str, number: int) -> ROIFile:
+    def fromHDF_legacy(cls, directory: str, name: str, number: int) -> RoiFile:
         """Load an Roi from an older version of the HDF file format which did not include the vertices parameter.
 
         Args:
@@ -381,10 +381,10 @@ class ROIFile:  # TODO ensure only one exists per file
             raise OSError(f"File {path} does not exist.")
         with h5py.File(path, 'r') as hf:
             roi = Roi.fromMask(np.array(hf[str(number)]).astype(np.bool))
-            return cls(name, number, roi, filePath=path, fileFormat=ROIFile.FileFormats.HDF)
+            return cls(name, number, roi, filePath=path, fileFormat=RoiFile.FileFormats.HDF)
 
     @classmethod
-    def fromHDF(cls, directory: str, name: str, number: int) -> ROIFile:
+    def fromHDF(cls, directory: str, name: str, number: int) -> RoiFile:
         """Load an Roi from an HDF file.
 
         Args:
@@ -407,10 +407,10 @@ class ROIFile:  # TODO ensure only one exists per file
                 roi = Roi.fromMask(np.array(hf[str(number)]['mask']).astype(np.bool))  # Some old files could be saved without verts. allow loading them.
             else:
                 roi = Roi(np.array(hf[str(number)]['mask']).astype(np.bool), verts=np.array(verts))
-            return cls(name, number, roi, filePath=path, fileFormat=ROIFile.FileFormats.HDF2)
+            return cls(name, number, roi, filePath=path, fileFormat=RoiFile.FileFormats.HDF2)
 
     @classmethod
-    def fromMat(cls, directory: str, name: str, number: int) -> ROIFile:
+    def fromMat(cls, directory: str, name: str, number: int) -> RoiFile:
         """Load an Roi from a .mat file saved in matlab. This file format is not recommended as it does not include the
         `vertices` parameter which is useful for visually rendering and readjusting the Roi.
 
@@ -430,10 +430,10 @@ class ROIFile:  # TODO ensure only one exists per file
         else:
             raise KeyError(f"A `mask` was not found in the `mat` file: {filePath}")
         roi = Roi.fromMask(mask)
-        return cls(name, number, roi, filePath=filePath, fileFormat=ROIFile.FileFormats.MAT)
+        return cls(name, number, roi, filePath=filePath, fileFormat=RoiFile.FileFormats.MAT)
 
     @classmethod
-    def loadAny(cls, directory: str, name: str, number: int) -> ROIFile:
+    def loadAny(cls, directory: str, name: str, number: int) -> RoiFile:
         """Attempt loading any of the known file formats.
 
         Args:
@@ -444,15 +444,15 @@ class ROIFile:  # TODO ensure only one exists per file
             A new instance of Roi loaded from file
         """
         try:
-            return ROIFile.fromHDF(directory, name, number)
+            return RoiFile.fromHDF(directory, name, number)
         except:
             try:
-                return ROIFile.fromHDF_legacy(directory, name, number)
+                return RoiFile.fromHDF_legacy(directory, name, number)
             except OSError:  # For backwards compatibility purposes
-                return ROIFile.fromMat(directory, name, number)
+                return RoiFile.fromMat(directory, name, number)
 
     @classmethod
-    def toHDF(cls, roi: Roi, name: str, number: int, directory: str, overwrite: typing.Optional[bool] = False) -> ROIFile:
+    def toHDF(cls, roi: Roi, name: str, number: int, directory: str, overwrite: typing.Optional[bool] = False) -> RoiFile:
         """
         Save the Roi to an HDF file in the specified directory. The filename is automatically chosen based on the
         `name` parameter of the Roi. Multiple Roi's with the same `name` will be saved into the same file if they have
@@ -480,7 +480,7 @@ class ROIFile:  # TODO ensure only one exists per file
             g = hf.create_group(numStr)
             g.create_dataset(np.string_("verts"), data=verts)
             g.create_dataset(np.string_("mask"), data=mask, compression=5)
-        return cls(name, number, roi, filePath=directory, fileFormat=ROIFile.FileFormats.HDF2)
+        return cls(name, number, roi, filePath=directory, fileFormat=RoiFile.FileFormats.HDF2)
 
     def delete(self):
         """
@@ -495,11 +495,11 @@ class ROIFile:  # TODO ensure only one exists per file
 
     def update(self, roi: Roi):
         """
-        Save a new roi to the existing file.
+        Save a new roiFile to the existing file.
         Args:
             roi: The updated ROI to save
         """
-        if self.fformat is not ROIFile.FileFormats.HDF2:
-            raise NotImplementedError(f"ROIFile of format: {self.fformat} cannot be updated.")
+        if self.fformat is not RoiFile.FileFormats.HDF2:
+            raise NotImplementedError(f"RoiFile of format: {self.fformat} cannot be updated.")
         self.toHDF(roi, self.name, self.number, self.filePath, overwrite=True)
         self._roi = copy.deepcopy(roi)  # We don't wont to use the same object that might still have external mutable references

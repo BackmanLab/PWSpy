@@ -36,7 +36,7 @@ import tifffile as tf
 from scipy import io as spio
 from pwspy.analysis import AbstractHDFAnalysisResults
 from pwspy.dataTypes import _jsonSchemasPath
-from pwspy.dataTypes._other import CameraCorrection, Roi
+from pwspy.dataTypes._other import CameraCorrection, Roi, RoiFile
 import pwspy.dataTypes._data as pwsdtd
 from pwspy import dateTimeFormat
 from pwspy.utility.misc import cached_property
@@ -837,32 +837,32 @@ class AcqDir:
         else: #We must have one of these two items.
             return self.dynamics.idTag
 
-    def getRois(self) -> List[Tuple[str, int, Roi.FileFormats]]:
+    def getRois(self) -> List[Tuple[str, int, RoiFile.FileFormats]]:
         """Return information about the Rois found in the acquisition's file path.
         See documentation for Roi.getValidRoisInPath()"""
         assert self.filePath is not None
-        return Roi.getValidRoisInPath(self.filePath)
+        return RoiFile.getValidRoisInPath(self.filePath)
 
-    def loadRoi(self, name: str, num: int, fformat: Roi.FileFormats = None) -> Roi:
+    def loadRoi(self, name: str, num: int, fformat: RoiFile.FileFormats = None) -> RoiFile:
         """Load a Roi that has been saved to file in the acquisition's file path."""
 
         assert isinstance(name, str), f"The ROI name must be a string. Got a {type(name)}"
         assert isinstance(num, int), f"The ROI number must be an integer. Got a {type(num)}"
-        if fformat == Roi.FileFormats.MAT:
-            return Roi.fromMat(self.filePath, name, num)
-        elif fformat == Roi.FileFormats.HDF2:
-            return Roi.fromHDF(self.filePath, name, num)
-        elif fformat == Roi.FileFormats.HDF:
-            return Roi.fromHDF_legacy(self.filePath, name, num)
+        if fformat == RoiFile.FileFormats.MAT:
+            return RoiFile.fromMat(self.filePath, name, num)
+        elif fformat == RoiFile.FileFormats.HDF2:
+            return RoiFile.fromHDF(self.filePath, name, num)
+        elif fformat == RoiFile.FileFormats.HDF:
+            return RoiFile.fromHDF_legacy(self.filePath, name, num)
         else:
-            return Roi.loadAny(self.filePath, name, num)
+            return RoiFile.loadAny(self.filePath, name, num)
 
-    def saveRoi(self, roi: Roi, overwrite: bool = False) -> None:
+    def saveRoi(self, roiName: str, roiNumber: int, roi: Roi, overwrite: bool = False) -> None:
         """Save a Roi to file in the acquisition's file path."""
-        roi.toHDF(self.filePath, overwrite=overwrite)
+        RoiFile.toHDF(roi, roiName, roiNumber, self.filePath, overwrite=overwrite)
 
     def deleteRoi(self, name: str, num: int):
-        Roi.deleteRoi(self.filePath, name, num)
+        RoiFile.deleteRoi(self.filePath, name, num)
 
     def editNotes(self):
         """Create a `notes.txt` file if it doesn't already exists and open it in a text editor."""
