@@ -105,48 +105,7 @@ class CameraCorrection:
             return cls(**json.load(f))
 
 
-def _concaveHull(coords: List[Tuple[int, int]], alpha):
-    """
-    Found here: https://gist.github.com/dwyerk/10561690
-    Compute the alpha shape (concave hull) of a set
-    of points.
-
-    Args:
-        coords: nx2 array of points.
-        alpha: alpha value to influence the
-            gooeyness of the border. Smaller numbers
-            don't fall inward as much as larger numbers.
-            Too large, and you lose everything!
-    """
-    if len(coords) < 4:
-        # When you have a triangle, there is no sense
-        # in computing an alpha shape.
-        return geometry.MultiPoint(coords).convex_hull
-    coords = np.array(coords)
-    tri = Delaunay(coords)
-    triangles = coords[tri.simplices]
-    # Lengths of sides of triangle
-
-    a = ((triangles[:, 0, 0] - triangles[:, 1, 0]) ** 2 + (triangles[:, 0, 1] - triangles[:, 1, 1]) ** 2) ** 0.5
-    b = ((triangles[:, 1, 0] - triangles[:, 2, 0]) ** 2 + (triangles[:, 1, 1] - triangles[:, 2, 1]) ** 2) ** 0.5
-    c = ((triangles[:, 2, 0] - triangles[:, 0, 0]) ** 2 + (triangles[:, 2, 1] - triangles[:, 0, 1]) ** 2) ** 0.5
-    s = (a + b + c) / 2.0        # Semiperimeter of triangle
-
-    areas = (s * (s - a) * (s - b) * (s - c)) ** 0.5        # Area of triangle by Heron's formula
-
-    circums = a * b * c / (4.0 * areas)
-    filtered = triangles[circums < alpha]         # Here's the radius filter.
-
-    edge1 = filtered[:, (0, 1)]
-    edge2 = filtered[:, (1, 2)]
-    edge3 = filtered[:, (2, 0)]
-    edge_points = np.unique(np.concatenate((edge1, edge2, edge3)), axis=0).tolist()
-    m = geometry.MultiLineString(edge_points)
-    triangles = list(polygonize(m))
-    return cascaded_union(triangles), edge_points
-
-
-class Roi:  # TODO get more in line with shapely.
+class Roi:  # TODO get more in line with shapely. Remove all Matplotlib
     """This class represents a single Roi used to select a specific region of an image. The Roi consists of a `mask` (a boolean array specifying which pixels are
     included in the Roi), a set of of `vertices` (a 2 x N array specifying the vertices of the polygon enclosing the
     mask, this is useful if you want to adjust the Roi later. Rather than calling the constructor directly you will
@@ -271,17 +230,12 @@ class Roi:  # TODO get more in line with shapely.
         Returns:
             A matplotlib `Polygon` representing the border of the Roi
         """
-        if self.verts is None:  # calculate convex hull  # TODO this method does basically the same as `fromMask`. Unify
-            x = np.arange(self.mask.shape[1])
-            y = np.arange(self.mask.shape[0])
-            X, Y = np.meshgrid(x, y)  # Generate arrays indicating X and Y coordinates for each array element.
-            X = X[self.mask]
-            Y = Y[self.mask]
-            coords = list(zip(X, Y))  # Get coordinates of items in the mask.
-            cHull, edgePoints = _concaveHull(coords, 4)
-            return patches.Polygon(cHull.exterior.coords, facecolor=(1, 0, 0, 0.5), linewidth=1, edgecolor=(0, 1, 0, .9))
+        if self.verts is None:  # calculate convex hull
+            roi = Roi.fromMask(self.mask)
+            verts = roi.verts
         else:
-            return patches.Polygon(self.verts, facecolor=(1, 0, 0, 0.5), linewidth=1, edgecolor=(0, 1, 0, 0.9))
+            verts = self.verts
+        return patches.Polygon(verts, facecolor=(1, 0, 0, 0.5), linewidth=1, edgecolor=(0, 1, 0, 0.9))
 
     def getBoundingBox(self) -> typing.Tuple[float, float, float, float]:
         """
