@@ -47,8 +47,6 @@ import copy
 if typing.TYPE_CHECKING:
     from matplotlib.image import AxesImage
 
-# TODO split into ROI and ROIFile classes.
-
 
 @dataclasses.dataclass(frozen=True)
 class CameraCorrection:
@@ -182,7 +180,7 @@ class Roi:  # TODO get more in line with shapely. Remove all Matplotlib
         for shape, value in features.shapes(mask.astype(np.uint8), mask=mask):
             all_polygons.append(shapely.geometry.shape(shape))
 
-        poly = sorted(all_polygons, key=lambda poly: poly.area)[-1]  # Return the biggest found polygon
+        poly = sorted(all_polygons, key=lambda ply: ply.area)[-1]  # Return the biggest found polygon
         verts = np.array(poly.exterior.coords.xy).T
         return cls(mask=mask, verts=verts)
 
@@ -382,7 +380,8 @@ class ROIFile:  # TODO ensure only one exists per file
         if not os.path.exists(path):
             raise OSError(f"File {path} does not exist.")
         with h5py.File(path, 'r') as hf:
-            return cls(name, number, Roi(mask=np.array(hf[str(number)]).astype(np.bool), verts=None), filePath=path, fileFormat=ROIFile.FileFormats.HDF)
+            roi = Roi.fromMask(np.array(hf[str(number)]).astype(np.bool))
+            return cls(name, number, roi, filePath=path, fileFormat=ROIFile.FileFormats.HDF)
 
     @classmethod
     def fromHDF(cls, directory: str, name: str, number: int) -> ROIFile:
@@ -412,7 +411,7 @@ class ROIFile:  # TODO ensure only one exists per file
 
     @classmethod
     def fromMat(cls, directory: str, name: str, number: int) -> ROIFile:
-        """Load an Roi from a .mat file saved in matlab. This file format is not reccomended as it does not include the
+        """Load an Roi from a .mat file saved in matlab. This file format is not recommended as it does not include the
         `vertices` parameter which is useful for visually rendering and readjusting the Roi.
 
         Args:
