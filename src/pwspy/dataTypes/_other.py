@@ -120,19 +120,16 @@ class Roi:  # TODO get more in line with shapely. Remove all Matplotlib
             complicated to calculate from `mask`.
     """
 
-    def __init__(self, mask: np.ndarray, verts: typing.Optional[typing.Union[np.ndarray, geometry.Polygon]]):
+    def __init__(self, mask: np.ndarray, verts: typing.Union[np.ndarray, geometry.Polygon]):
         assert isinstance(mask, np.ndarray), f"Mask data is of type: {type(mask)}. Must be numpy array."
         assert len(mask.shape) == 2
-        if verts is not None:  # Legacy files don't have verts, we allow that.
-            assert len(verts.shape) == 2
-            assert verts.shape[1] == 2
         assert mask.dtype == np.bool
         self._polygon: geometry.Polygon
         if isinstance(verts, geometry.Polygon):
             self._polygon = verts
-        elif verts is None:
-            self._polygon = None
         else:
+            assert len(verts.shape) == 2
+            assert verts.shape[1] == 2
             self._polygon = geometry.Polygon(shell=verts)
         self.mask = mask
 
@@ -199,10 +196,7 @@ class Roi:  # TODO get more in line with shapely. Remove all Matplotlib
             A new instance of Roi representing this Roi after transformation.
         """
         mask = cv2.warpAffine(self.mask.astype(np.uint8), matrix, self.mask.shape).astype(np.bool)
-        if self.verts is not None:
-            verts = cv2.transform(self.verts[None, :, :], matrix)[0, :, :]  # For some reason this needs to be 3d for opencv to work.
-        else:
-            verts = None
+        verts = cv2.transform(self.verts[None, :, :], matrix)[0, :, :]  # For some reason this needs to be 3d for opencv to work.
         return Roi(mask=mask, verts=verts)
 
     def getImage(self, ax: plt.Axes, alpha: float = 0.5, value: float = 0.5, cmap='Reds', **kwargs) -> AxesImage:
@@ -231,12 +225,7 @@ class Roi:  # TODO get more in line with shapely. Remove all Matplotlib
         Returns:
             A matplotlib `Polygon` representing the border of the Roi
         """
-        if self.verts is None:  # calculate convex hull
-            roi = Roi.fromMask(self.mask)
-            verts = roi.verts
-        else:
-            verts = self.verts
-        return patches.Polygon(verts, facecolor=(1, 0, 0, 0.5), linewidth=1, edgecolor=(0, 1, 0, 0.9))
+        return patches.Polygon(self.verts, facecolor=(1, 0, 0, 0.5), linewidth=1, edgecolor=(0, 1, 0, 0.9))
 
     def getBoundingBox(self) -> typing.Tuple[float, float, float, float]:
         """
@@ -415,9 +404,11 @@ class ROIFile:  # TODO ensure only one exists per file
             raise OSError(f"File {path} does not exist.")
         with h5py.File(path, 'r') as hf:
             verts = hf[str(number)]['verts']
-            verts = None if verts.shape is None else np.array(verts)
-            return cls(name, number, Roi(mask=np.array(hf[str(number)]['mask']).astype(np.bool), verts=verts), filePath=path,
-                       fileFormat=ROIFile.FileFormats.HDF2)
+            if verts.shape is None:
+                roi = Roi.fromMask(np.array(hf[str(number)]['mask']).astype(np.bool))  # Some old files could be saved without verts. allow loading them.
+            else:
+                roi = Roi(np.array(hf[str(number)]['mask']).astype(np.bool), verts=np.array(verts))
+            return cls(name, number, roi, filePath=path, fileFormat=ROIFile.FileFormats.HDF2)
 
     @classmethod
     def fromMat(cls, directory: str, name: str, number: int) -> ROIFile:
@@ -432,10 +423,15 @@ class ROIFile:  # TODO ensure only one exists per file
             A new instance of Roi loaded from file
         """
         filePath = os.path.join(directory, f'BW{number}_{name}.mat')
-        try:
-            return cls(name, number, Roi(mask=spio.loadmat(filePath)['BW'].astype(np.bool), verts=None), filePath=filePath, fileFormat=ROIFile.FileFormats.MAT)
-        except KeyError:
-            return cls(name, number, Roi(mask=spio.loadmat(filePath)['mask'].astype(np.bool), verts=None), filePath=filePath, fileFormat=ROIFile.FileFormats.MAT)  # Some Nanocytomics files use 'mask' instead of 'bw'. annoying.
+        spFile = spio.loadmat(filePath)
+        if 'BW' in spFile.keys():
+            mask = spFile['BW'].astype(np.bool)
+        elif 'mask' in spFile.keys():
+            mask = spFile['mask'].astype(np.bool)
+        else:
+            raise KeyError(f"A `mask` was not found in the `mat` file: {filePath}")
+        roi = Roi.fromMask(mask)
+        return cls(name, number, roi, filePath=filePath, fileFormat=ROIFile.FileFormats.MAT)
 
     @classmethod
     def loadAny(cls, directory: str, name: str, number: int) -> ROIFile:
@@ -453,7 +449,7 @@ class ROIFile:  # TODO ensure only one exists per file
         except:
             try:
                 return ROIFile.fromHDF_legacy(directory, name, number)
-            except OSError: #For backwards compatibility purposes
+            except OSError:  # For backwards compatibility purposes
                 return ROIFile.fromMat(directory, name, number)
 
     @classmethod
@@ -465,19 +461,16 @@ class ROIFile:  # TODO ensure only one exists per file
         error will be raised.
 
         Args:
+            roi: The ROI to save.
+            name: The name name to save as. This will be part of the file name
+            number: The ROI number to save as. Multiple ROIS of the same name can be saved to the same file but the numbers must be unique
             directory: The path of the folder to save the new HDF file to. The file will be named automatically based
                 on the `name` attribute of the Roi
             overwrite: If True then if an Roi with the same `number` as this Roi is found it will be overwritten.
         """
         savePath = os.path.join(directory, f'ROI_{name}.h5')
         numStr = np.string_(str(number))
-        if roi.verts is None:
-            verts = None
-            warnings.warn("An Roi is being saved to HDF without a `verts` property specifying the vertices of the "
-                          "ROI's enclosing polygon. You can use `getBoundingPolygon` to use Concave Hull method to "
-                          "generate the vertices.")
-        else:
-            verts = roi.verts.astype(np.float32)
+        verts = roi.verts.astype(np.float32)
         mask = roi.mask.astype(np.uint8)
         with h5py.File(savePath, 'a') as hf:
             if np.string_(str(number)) in hf.keys():
@@ -486,8 +479,7 @@ class ROIFile:  # TODO ensure only one exists per file
                 else:
                     raise OSError(f"The Roi file {savePath} already contains a dataset {number}")
             g = hf.create_group(numStr)
-            if verts is not None:
-                g.create_dataset(np.string_("verts"), data=verts)
+            g.create_dataset(np.string_("verts"), data=verts)
             g.create_dataset(np.string_("mask"), data=mask, compression=5)
         return cls(name, number, roi, filePath=directory, fileFormat=ROIFile.FileFormats.HDF2)
 
