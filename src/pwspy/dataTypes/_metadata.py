@@ -850,10 +850,12 @@ class AcqDir:
         assert isinstance(num, int), f"The ROI number must be an integer. Got a {type(num)}"
         if fformat == RoiFile.FileFormats.MAT:
             return RoiFile.fromMat(self.filePath, name, num)
-        elif fformat == RoiFile.FileFormats.HDF2:
+        elif fformat == RoiFile.FileFormats.HDF3:
             return RoiFile.fromHDF(self.filePath, name, num)
-        elif fformat == RoiFile.FileFormats.HDF:
+        elif fformat == RoiFile.FileFormats.HDF2:
             return RoiFile.fromHDF_legacy(self.filePath, name, num)
+        elif fformat == RoiFile.FileFormats.HDF:
+            return RoiFile.fromHDF_legacy_legacy(self.filePath, name, num)
         else:
             return RoiFile.loadAny(self.filePath, name, num)
 
