@@ -21,7 +21,6 @@ from typing import Tuple, List
 
 import numpy as np
 
-from pwspy.dataTypes import Roi
 from ._abstract import AbstractCompilerSettings, AbstractRoiCompilationResults, AbstractRoiCompiler
 from .. import warnings
 from ..dynamics import DynamicsAnalysisResults

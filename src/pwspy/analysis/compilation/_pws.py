@@ -20,7 +20,6 @@ from dataclasses import dataclass
 import typing as t_
 import numpy as np
 
-from pwspy.dataTypes import Roi
 from ._abstract import AbstractCompilerSettings, AbstractRoiCompilationResults, AbstractRoiCompiler
 from .. import warnings
 from ...dataTypes._other import RoiFile

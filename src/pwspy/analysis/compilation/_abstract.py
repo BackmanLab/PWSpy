@@ -20,7 +20,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Tuple, List
 
-from pwspy.dataTypes import Roi
 from .. import AbstractAnalysisResults, warnings
 from ...dataTypes._other import RoiFile
 

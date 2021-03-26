@@ -21,7 +21,6 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from pwspy.dataTypes import Roi
 from ._abstract import AbstractCompilerSettings, AbstractRoiCompilationResults
 from ...dataTypes._other import RoiFile
 
