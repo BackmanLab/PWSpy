@@ -27,25 +27,18 @@ import logging
 import os
 import warnings
 
-from matplotlib import patches
 import dataclasses
 from enum import Enum, auto
 from glob import glob
-from typing import List, Tuple, Optional
-import matplotlib.pyplot as plt
 import h5py
 import numpy as np
 from scipy import io as spio
-from scipy.spatial.qhull import Delaunay
 from shapely import geometry
-from shapely.ops import cascaded_union, polygonize
 import cv2
 from rasterio import features
 import shapely
-import typing
+import t_ as t_
 import copy
-if typing.TYPE_CHECKING:
-    from matplotlib.image import AxesImage
 
 
 @dataclasses.dataclass(frozen=True)
@@ -64,7 +57,7 @@ class CameraCorrection:
             This can generally be left as `None` for sCMOS cameras but it is often required for CCD type cameras.
     """
     darkCounts: float
-    linearityPolynomial: typing.Sequence[float, ...] = None
+    linearityPolynomial: t_.Sequence[float, ...] = None
 
     def __post_init__(self):
         # This code runs right after the built-in dataclass initializer runs.
@@ -104,7 +97,7 @@ class CameraCorrection:
             return cls(**json.load(f))
 
 
-class Roi:  # TODO get more in line with shapely. Remove all Matplotlib
+class Roi:
     """This class represents a single Roi used to select a specific region of an image. The Roi consists of a `mask` (a boolean array specifying which pixels are
     included in the Roi), a set of of `vertices` (a 2 x N array specifying the vertices of the polygon enclosing the
     mask, this is useful if you want to adjust the Roi later. Rather than calling the constructor directly you will
@@ -118,25 +111,26 @@ class Roi:  # TODO get more in line with shapely. Remove all Matplotlib
             complicated to calculate from `mask`.
     """
 
-    def __init__(self, mask: np.ndarray, verts: typing.Union[np.ndarray, geometry.Polygon]):
+    def __init__(self, mask: np.ndarray, verts: t_.Union[np.ndarray, geometry.Polygon]):
         assert isinstance(mask, np.ndarray), f"Mask data is of type: {type(mask)}. Must be numpy array."
         assert len(mask.shape) == 2
         assert mask.dtype == np.bool
-        self._polygon: geometry.Polygon
+        self.polygon: geometry.Polygon
         if isinstance(verts, geometry.Polygon):
-            self._polygon = verts
+            self.polygon = verts
         else:
             assert len(verts.shape) == 2
             assert verts.shape[1] == 2
-            self._polygon = geometry.Polygon(shell=verts)
+            self.polygon = geometry.Polygon(shell=verts)
         self.mask = mask
 
     @property
     def verts(self) -> np.ndarray:
-        return np.array(self._polygon.exterior.coords)
+        """An array of vertices for the outer ring of the polygon. For most ROIs they only have an outer ring anyway."""
+        return np.array(self.polygon.exterior.coords)
 
     @classmethod
-    def fromVerts(cls, verts: np.ndarray, dataShape: typing.Tuple[float, float]) -> Roi:
+    def fromVerts(cls, verts: np.ndarray, dataShape: t_.Tuple[float, float]) -> Roi:
         """
         Automatically generate the mask for an Roi using just the vertices of an enclosing polygon.
 
@@ -197,44 +191,8 @@ class Roi:  # TODO get more in line with shapely. Remove all Matplotlib
         verts = cv2.transform(self.verts[None, :, :], matrix)[0, :, :]  # For some reason this needs to be 3d for opencv to work.
         return Roi(mask=mask, verts=verts)
 
-    def getImage(self, ax: plt.Axes, alpha: float = 0.5, value: float = 0.5, cmap='Reds', **kwargs) -> AxesImage:
-        """Return a matplotlib `AxesImage` representing the `mask` of the Roi. The image will be displayed on `ax`.
 
-        Args:
-            ax: The matplotlib `Axes` to add the plot to.
-            alpha: The transparency of the image
-            value: A number between 0 and 1 to determine the color of the overlay.
-            cmap: The Matplotlib colormap that will be used to determine color.
-            kwargs: These keyword arguments will be passed to the matplotlib.imshow function.
-        Returns:
-             A reference to the matplotlib `AxesImage`.
-        """
-        assert (value >= 0) and (value <= 1)
-        arr = self.mask.astype(np.uint8) * int(255 * value)
-        arr = np.ma.masked_array(arr, arr == 0)
-        im = ax.imshow(arr, alpha=alpha, clim=[0, 255], cmap=cmap, **kwargs)
-        return im
-
-    def getBoundingPolygon(self) -> patches.Polygon:
-        """Return a matplotlib `Polygon` representing the bounding polygon of the `mask`. In the case where a `mask` was
-        saved but `vertices` were not this uses the 'Concave Hull` method to estimate the vertices of the bounding
-        polygon of the `mask`.
-
-        Returns:
-            A matplotlib `Polygon` representing the border of the Roi
-        """
-        return patches.Polygon(self.verts, facecolor=(1, 0, 0, 0.5), linewidth=1, edgecolor=(0, 1, 0, 0.9))
-
-    def getBoundingBox(self) -> typing.Tuple[float, float, float, float]:
-        """
-        Returns:
-            A tuple of length 4 giving the coordinates of the rectangle that encloses this ROI in the form: (top, left, bottom, right)
-        """
-        xCoords, yCoords = tuple(zip(*self.verts))  # Split (x,y) coords into x and then y
-        return max(yCoords), min(xCoords), min(yCoords), max(xCoords)
-
-
-class RoiFile:  # TODO ensure only one exists per file
+class RoiFile:
     """This class represents a single Roi File used to save and load an ROI. Each Roi File is identified by a
     `name` and a `number`. The recommended file format is HDF2, in this format multiple rois of the same name but differing
     numbers can be saved in a single HDF file.
@@ -452,7 +410,7 @@ class RoiFile:  # TODO ensure only one exists per file
                 return RoiFile.fromMat(directory, name, number)
 
     @classmethod
-    def toHDF(cls, roi: Roi, name: str, number: int, directory: str, overwrite: typing.Optional[bool] = False) -> RoiFile:
+    def toHDF(cls, roi: Roi, name: str, number: int, directory: str, overwrite: t_.Optional[bool] = False) -> RoiFile:
         """
         Save the Roi to an HDF file in the specified directory. The filename is automatically chosen based on the
         `name` parameter of the Roi. Multiple Roi's with the same `name` will be saved into the same file if they have
