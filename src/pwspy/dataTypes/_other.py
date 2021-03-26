@@ -480,14 +480,14 @@ class RoiFile:  # TODO ensure only one exists per file
             g = hf.create_group(numStr)
             g.create_dataset(np.string_("verts"), data=verts)
             g.create_dataset(np.string_("mask"), data=mask, compression=5)
-        return cls(name, number, roi, filePath=directory, fileFormat=RoiFile.FileFormats.HDF2)
+        return cls(name, number, roi, filePath=savePath, fileFormat=RoiFile.FileFormats.HDF2)
 
     def delete(self):
         """
         Delete the dataset associated with the Roi object.
 
         """
-        self.deleteRoi(self.filePath, self.name, self.number)
+        self.deleteRoi(os.path.split(self.filePath)[0], self.name, self.number)
         self._roi = None  # Just to make sure we don't still try to use the deleted file.
         self.filePath = None
         self.name = None
@@ -501,5 +501,5 @@ class RoiFile:  # TODO ensure only one exists per file
         """
         if self.fformat is not RoiFile.FileFormats.HDF2:
             raise NotImplementedError(f"RoiFile of format: {self.fformat} cannot be updated.")
-        self.toHDF(roi, self.name, self.number, self.filePath, overwrite=True)
+        self.toHDF(roi, self.name, self.number, os.path.split(self.filePath)[0], overwrite=True)
         self._roi = copy.deepcopy(roi)  # We don't wont to use the same object that might still have external mutable references
