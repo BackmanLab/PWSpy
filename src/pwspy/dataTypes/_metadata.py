@@ -857,9 +857,9 @@ class AcqDir:
         else:
             return RoiFile.loadAny(self.filePath, name, num)
 
-    def saveRoi(self, roiName: str, roiNumber: int, roi: Roi, overwrite: bool = False) -> None:
+    def saveRoi(self, roiName: str, roiNumber: int, roi: Roi, overwrite: bool = False) -> RoiFile:
         """Save a Roi to file in the acquisition's file path."""
-        RoiFile.toHDF(roi, roiName, roiNumber, self.filePath, overwrite=overwrite)
+        return RoiFile.toHDF(roi, roiName, roiNumber, self.filePath, overwrite=overwrite)
 
     def deleteRoi(self, name: str, num: int):
         RoiFile.deleteRoi(self.filePath, name, num)
