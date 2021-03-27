@@ -39,6 +39,8 @@ from rasterio import features
 import shapely
 import typing as t_
 import copy
+if t_.TYPE_CHECKING:
+    from pwspy.dataTypes import AcqDir
 
 
 @dataclasses.dataclass(frozen=True)
@@ -203,6 +205,7 @@ class RoiFile:
         roi: The ROI object associated with this file.
         filePath: The path to the file that this object was loaded from.
         fileFormat: The format of the file that this object was loaded from.
+        acquisition: The acquisition object that this ROI belongs to.
     """
 
     class FileFormats(Enum):
@@ -212,12 +215,14 @@ class RoiFile:
         HDF2 = auto()  # For a long time this was the default. Each ROI of the same name is saved as an H5PY.Group in an HDF file. Each ROI group contains a dataset for the boolean mask as well as a dataset for the XY coordinates of the enclosing polygon. This saves us from having to constantly recalculate the outline of the ROI for processing purposes.
         HDF3 = auto()  # On 3/26/2021 We switched to this from HDF2. Rather than verts we now store 'wkb' of the underlying shapely file. Allow for ROIs with holes, and other more complex situations.
 
-    def __init__(self, name: str, number: int, roi: Roi, filePath: str, fileFormat: RoiFile.FileFormats):
+    def __init__(self, name: str, number: int, roi: Roi, filePath: str, fileFormat: RoiFile.FileFormats, acquisition: AcqDir):
         self._roi = roi
         self.name = name
         self.number = number
         self.filePath = filePath
         self.fformat = fileFormat
+        self.acquisition = acquisition
+        self.isDeleted = False
 
     def getRoi(self) -> Roi:
         return copy.deepcopy(self._roi)  # Rois are mutable so return a copy.
@@ -226,7 +231,7 @@ class RoiFile:
         return f"RoiFile({self.name}, {self.number})"
 
     @staticmethod
-    def getValidRoisInPath(path: str) -> List[Tuple[str, int, RoiFile.FileFormats]]:
+    def getValidRoisInPath(path: str) -> t_.List[t_.Tuple[str, int, RoiFile.FileFormats]]:
         """Search the `path` for valid roiFile files and return the detected rois as a list of tuple where each tuple
         contains the `name`, `number`, and file format for the Roi.
 
@@ -285,7 +290,7 @@ class RoiFile:
         return ret
 
     @staticmethod
-    def deleteRoi(directory: str, name: str, number: int, fformat: Optional[RoiFile.FileFormats] = None):
+    def deleteRoi(directory: str, name: str, number: int, fformat: t_.Optional[RoiFile.FileFormats] = None):
         """Delete the dataset associated with the Roi object specified by `name` and `num`.
 
         Args:
@@ -332,7 +337,7 @@ class RoiFile:
             raise Exception("Programming error.")
 
     @classmethod
-    def fromHDF_legacy_legacy(cls, directory: str, name: str, number: int) -> RoiFile:
+    def fromHDF_legacy_legacy(cls, directory: str, name: str, number: int, acquisition: AcqDir = None) -> RoiFile:
         """Load an Roi from an older version of the HDF file format which did not include the vertices parameter.
 
         Args:
@@ -349,10 +354,10 @@ class RoiFile:
             raise OSError(f"File {path} does not exist.")
         with h5py.File(path, 'r') as hf:
             roi = Roi.fromMask(np.array(hf[str(number)]).astype(np.bool))
-            return cls(name, number, roi, filePath=path, fileFormat=RoiFile.FileFormats.HDF)
+            return cls(name, number, roi, filePath=path, fileFormat=RoiFile.FileFormats.HDF, acquisition=acquisition)
 
     @classmethod
-    def fromHDF_legacy(cls, directory: str, name: str, number: int) -> RoiFile:
+    def fromHDF_legacy(cls, directory: str, name: str, number: int, acquisition: AcqDir = None) -> RoiFile:
         """Load an Roi from an HDF file. Uses the old HDF2 format.
 
         Args:
@@ -376,10 +381,10 @@ class RoiFile:
                 roi = Roi.fromMask(np.array(dset['mask']).astype(np.bool))  # Some old files could be saved without verts. allow loading them.
             else:
                 roi = Roi(np.array(dset['mask']).astype(np.bool), verts=np.array(verts))
-            return cls(name, number, roi, filePath=path, fileFormat=RoiFile.FileFormats.HDF2)
+            return cls(name, number, roi, filePath=path, fileFormat=RoiFile.FileFormats.HDF2, acquisition=acquisition)
 
     @classmethod
-    def fromHDF(cls, directory: str, name: str, number: int) -> RoiFile:
+    def fromHDF(cls, directory: str, name: str, number: int, acquisition: AcqDir = None) -> RoiFile:
         """Load an Roi from the newest ROI format of HDF file.
 
         Args:
@@ -398,15 +403,15 @@ class RoiFile:
         with h5py.File(path, 'r') as hf:
             group = hf[str(number)]
             assert 'fileFormat' in group.attrs, "No fileFormat attribute found for the ROI file. Try using one of the legacy ROI loading methods."
-            assert group.attrs['fileFormat'] == RoiFile.FileFormats.HDF3.name, f'Only HDF3 format is supported by this loading method, not {g.attrs["fileFormat"]}'
+            assert group.attrs['fileFormat'] == RoiFile.FileFormats.HDF3.name, f'Only HDF3 format is supported by this loading method, not {group.attrs["fileFormat"]}'
             wkbBytes = bytes(group['wkb'][()])
             polygon = wkb.loads(wkbBytes)
             mask = np.array(group['mask']).astype(np.bool)
             roi = Roi(mask, verts=polygon)
-            return cls(name, number, roi, filePath=path, fileFormat=RoiFile.FileFormats.HDF3)
+            return cls(name, number, roi, filePath=path, fileFormat=RoiFile.FileFormats.HDF3, acquisition=acquisition)
 
     @classmethod
-    def fromMat(cls, directory: str, name: str, number: int) -> RoiFile:
+    def fromMat(cls, directory: str, name: str, number: int, acquisition: AcqDir = None) -> RoiFile:
         """Load an Roi from a .mat file saved in matlab. This file format is not recommended as it does not include the
         `vertices` parameter which is useful for visually rendering and readjusting the Roi.
 
@@ -426,10 +431,10 @@ class RoiFile:
         else:
             raise KeyError(f"A `mask` was not found in the `mat` file: {filePath}")
         roi = Roi.fromMask(mask)
-        return cls(name, number, roi, filePath=filePath, fileFormat=RoiFile.FileFormats.MAT)
+        return cls(name, number, roi, filePath=filePath, fileFormat=RoiFile.FileFormats.MAT, acquisition=acquisition)
 
     @classmethod
-    def loadAny(cls, directory: str, name: str, number: int) -> RoiFile:
+    def loadAny(cls, directory: str, name: str, number: int, acquisition: AcqDir = None) -> RoiFile:
         """Attempt loading any of the known file formats.
 
         Args:
@@ -440,18 +445,18 @@ class RoiFile:
             A new instance of Roi loaded from file
         """
         try:
-            return RoiFile.fromHDF(directory, name, number)
+            return RoiFile.fromHDF(directory, name, number, acquisition=acquisition)
         except:
             try:
-                return RoiFile.fromHDF_legacy(directory, name, number)
+                return RoiFile.fromHDF_legacy(directory, name, number, acquisition=acquisition)
             except:
                 try:
-                    return RoiFile.fromHDF_legacy_legacy(directory, name, number)
+                    return RoiFile.fromHDF_legacy_legacy(directory, name, number, acquisition=acquisition)
                 except OSError:  # For backwards compatibility purposes
-                    return RoiFile.fromMat(directory, name, number)
+                    return RoiFile.fromMat(directory, name, number, acquisition=acquisition)
 
     @classmethod
-    def toHDF(cls, roi: Roi, name: str, number: int, directory: str, overwrite: t_.Optional[bool] = False) -> RoiFile:
+    def toHDF(cls, roi: Roi, name: str, number: int, directory: str, overwrite: t_.Optional[bool] = False, acquisition: AcqDir = None) -> RoiFile:
         """
         Save the Roi to an HDF file in the specified directory. The filename is automatically chosen based on the
         `name` parameter of the Roi. Multiple Roi's with the same `name` will be saved into the same file if they have
@@ -479,7 +484,7 @@ class RoiFile:
             g.attrs['fileFormat'] = RoiFile.FileFormats.HDF3.name
             g.create_dataset(np.string_("wkb"), data=np.void(roi.polygon.wkb))  # np.void is required here so we can save a byte array with `null` in it.
             g.create_dataset(np.string_("mask"), data=mask, compression=5)
-        return cls(name, number, roi, filePath=savePath, fileFormat=RoiFile.FileFormats.HDF2)
+        return cls(name, number, roi, filePath=savePath, fileFormat=RoiFile.FileFormats.HDF2, acquisition=acquisition)
 
     def delete(self):
         """
@@ -487,10 +492,7 @@ class RoiFile:
 
         """
         self.deleteRoi(os.path.split(self.filePath)[0], self.name, self.number)
-        self._roi = None  # Just to make sure we don't still try to use the deleted file.
-        self.filePath = None
-        self.name = None
-        self.number = None
+        self.isDeleted = True
 
     def update(self, roi: Roi):
         """
@@ -498,7 +500,8 @@ class RoiFile:
         Args:
             roi: The updated ROI to save
         """
-        if self.fformat is not RoiFile.FileFormats.HDF2:
+        assert not self.isDeleted
+        if self.fformat not in [RoiFile.FileFormats.HDF2, RoiFile.FileFormats.HDF3]:
             raise NotImplementedError(f"RoiFile of format: {self.fformat} cannot be updated.")
         self.toHDF(roi, self.name, self.number, os.path.split(self.filePath)[0], overwrite=True)
         self._roi = copy.deepcopy(roi)  # We don't wont to use the same object that might still have external mutable references

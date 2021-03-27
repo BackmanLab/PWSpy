@@ -849,19 +849,19 @@ class AcqDir:
         assert isinstance(name, str), f"The ROI name must be a string. Got a {type(name)}"
         assert isinstance(num, int), f"The ROI number must be an integer. Got a {type(num)}"
         if fformat == RoiFile.FileFormats.MAT:
-            return RoiFile.fromMat(self.filePath, name, num)
+            return RoiFile.fromMat(self.filePath, name, num, acquisition=self)
         elif fformat == RoiFile.FileFormats.HDF3:
-            return RoiFile.fromHDF(self.filePath, name, num)
+            return RoiFile.fromHDF(self.filePath, name, num, acquisition=self)
         elif fformat == RoiFile.FileFormats.HDF2:
-            return RoiFile.fromHDF_legacy(self.filePath, name, num)
+            return RoiFile.fromHDF_legacy(self.filePath, name, num, acquisition=self)
         elif fformat == RoiFile.FileFormats.HDF:
-            return RoiFile.fromHDF_legacy_legacy(self.filePath, name, num)
+            return RoiFile.fromHDF_legacy_legacy(self.filePath, name, num, acquisition=self)
         else:
-            return RoiFile.loadAny(self.filePath, name, num)
+            return RoiFile.loadAny(self.filePath, name, num, acquisition=self)
 
     def saveRoi(self, roiName: str, roiNumber: int, roi: Roi, overwrite: bool = False) -> RoiFile:
         """Save a Roi to file in the acquisition's file path."""
-        return RoiFile.toHDF(roi, roiName, roiNumber, self.filePath, overwrite=overwrite)
+        return RoiFile.toHDF(roi, roiName, roiNumber, self.filePath, overwrite=overwrite, acquisition=self)
 
     def deleteRoi(self, name: str, num: int):
         RoiFile.deleteRoi(self.filePath, name, num)
@@ -910,6 +910,13 @@ class AcqDir:
             warnings.warn(f"{self.__class__.__name__} file path cannot be found. {state['filePath']}")
         self.__dict__ = state  # This is the default thing to do to unpicle the object.
 
+    def __hash__(self) -> int:
+        return hash(self.filePath)  # Since the class is intimiately tied to the filesystem this is all that makes it unique
+
+    def __eq__(self, other: AcqDir) -> bool:
+        if not isinstance(other, AcqDir):
+            return False
+        return self.filePath == other.filePath
 
 if __name__ == '__main__':
     md = ICMetaData.fromNano(r'C:\Users\nicke\Desktop\LTL20b_Tracking cells in 50%EtOH,95%EtOH,Water\95% ethanol\Cell1')
