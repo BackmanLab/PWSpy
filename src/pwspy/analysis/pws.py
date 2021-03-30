@@ -54,6 +54,7 @@ from pwspy.utility.reflection import reflectanceHelper, Material
 
 __all__ = ['PWSAnalysis', 'PWSAnalysisSettings', 'PWSAnalysisResults', "LegacyPWSAnalysisResults"]
 
+
 def clearError(func):
     """This decorator tries to run the original function. If the function raises a keyerror then we raise a new keyerror with a clearer message. This is intended to be used with `field` accessors of implementations
     of `AbstractHDFAnalysisResults`."""
@@ -392,8 +393,8 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
         polynomialOrder (int): The order of the polynomial which will be fit to the reflectance and then subtracted before calculating the analysis results.
         extraReflectanceId (str): The `idtag` of the extra reflection used for correction. Set to `None` if extra reflectance calibration is being skipped.
         referenceMaterial (Material): The material that was being imaged in the reference acquisition
-        wavelengthStart (int): The acquisition spectra will be truncated at this wavelength before analysis.
-        wavelengthStop (int): The acquisition spectra will be truncated after this wavelength before analysis.
+        wavelengthStart (int): The acquisition spectra will be truncated at this wavelength before analysis. Set to `None` to bypass this step
+        wavelengthStop (int): The acquisition spectra will be truncated after this wavelength before analysis. Set to `None` to bypass this step
         skipAdvanced (bool): If `True` then skip analysis of the OPD and autocorrelation.
         autoCorrStopIndex (int): The autocorrelation slope will be calculated up to this number of elements. More elements is theoretically better but it severely limited by SNR.
         autoCorrMinSub (bool): If `True` then subtract the minimum of the ACF from ACF. This prevents numerical issues but doesn't actually make any sense.
