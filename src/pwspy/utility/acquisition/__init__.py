@@ -54,7 +54,7 @@ import warnings
 
 from pwspy.utility.acquisition.steps import RuntimeSequenceSettings
 
-from .steps import SequencerStep, CoordSequencerStep, ZStackStep, TimeStep, PositionsStep, ContainerStep
+from .steps import SequencerStep, IterableSequencerStep, ZStackStep, TimeStep, PositionsStep, ContainerStep
 from ._treeItem import TreeItem
 from .sequencerCoordinate import SeqAcqDir, SequencerCoordinate, SequencerCoordinateRange
 import os
