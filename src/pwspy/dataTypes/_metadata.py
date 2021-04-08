@@ -36,7 +36,7 @@ import tifffile as tf
 from scipy import io as spio
 from pwspy.analysis import AbstractHDFAnalysisResults
 from pwspy.dataTypes import _jsonSchemasPath
-from pwspy.dataTypes._other import CameraCorrection, Roi
+from pwspy.dataTypes._other import CameraCorrection, Roi, RoiFile
 import pwspy.dataTypes._data as pwsdtd
 from pwspy import dateTimeFormat
 from pwspy.utility.misc import cached_property
@@ -837,32 +837,34 @@ class AcqDir:
         else: #We must have one of these two items.
             return self.dynamics.idTag
 
-    def getRois(self) -> List[Tuple[str, int, Roi.FileFormats]]:
+    def getRois(self) -> List[Tuple[str, int, RoiFile.FileFormats]]:
         """Return information about the Rois found in the acquisition's file path.
         See documentation for Roi.getValidRoisInPath()"""
         assert self.filePath is not None
-        return Roi.getValidRoisInPath(self.filePath)
+        return RoiFile.getValidRoisInPath(self.filePath)
 
-    def loadRoi(self, name: str, num: int, fformat: Roi.FileFormats = None) -> Roi:
+    def loadRoi(self, name: str, num: int, fformat: RoiFile.FileFormats = None) -> RoiFile:
         """Load a Roi that has been saved to file in the acquisition's file path."""
 
         assert isinstance(name, str), f"The ROI name must be a string. Got a {type(name)}"
         assert isinstance(num, int), f"The ROI number must be an integer. Got a {type(num)}"
-        if fformat == Roi.FileFormats.MAT:
-            return Roi.fromMat(self.filePath, name, num)
-        elif fformat == Roi.FileFormats.HDF2:
-            return Roi.fromHDF(self.filePath, name, num)
-        elif fformat == Roi.FileFormats.HDF:
-            return Roi.fromHDF_legacy(self.filePath, name, num)
+        if fformat == RoiFile.FileFormats.MAT:
+            return RoiFile.fromMat(self.filePath, name, num, acquisition=self)
+        elif fformat == RoiFile.FileFormats.HDF3:
+            return RoiFile.fromHDF(self.filePath, name, num, acquisition=self)
+        elif fformat == RoiFile.FileFormats.HDF2:
+            return RoiFile.fromHDF_legacy(self.filePath, name, num, acquisition=self)
+        elif fformat == RoiFile.FileFormats.HDF:
+            return RoiFile.fromHDF_legacy_legacy(self.filePath, name, num, acquisition=self)
         else:
-            return Roi.loadAny(self.filePath, name, num)
+            return RoiFile.loadAny(self.filePath, name, num, acquisition=self)
 
-    def saveRoi(self, roi: Roi, overwrite: bool = False) -> None:
+    def saveRoi(self, roiName: str, roiNumber: int, roi: Roi, overwrite: bool = False) -> RoiFile:
         """Save a Roi to file in the acquisition's file path."""
-        roi.toHDF(self.filePath, overwrite=overwrite)
+        return RoiFile.toHDF(roi, roiName, roiNumber, self.filePath, overwrite=overwrite, acquisition=self)
 
     def deleteRoi(self, name: str, num: int):
-        Roi.deleteRoi(self.filePath, name, num)
+        RoiFile.deleteRoi(self.filePath, name, num)
 
     def editNotes(self):
         """Create a `notes.txt` file if it doesn't already exists and open it in a text editor."""
@@ -908,6 +910,13 @@ class AcqDir:
             warnings.warn(f"{self.__class__.__name__} file path cannot be found. {state['filePath']}")
         self.__dict__ = state  # This is the default thing to do to unpicle the object.
 
+    def __hash__(self) -> int:
+        return hash(self.filePath)  # Since the class is intimiately tied to the filesystem this is all that makes it unique
+
+    def __eq__(self, other: AcqDir) -> bool:
+        if not isinstance(other, AcqDir):
+            return False
+        return self.filePath == other.filePath
 
 if __name__ == '__main__':
     md = ICMetaData.fromNano(r'C:\Users\nicke\Desktop\LTL20b_Tracking cells in 50%EtOH,95%EtOH,Water\95% ethanol\Cell1')

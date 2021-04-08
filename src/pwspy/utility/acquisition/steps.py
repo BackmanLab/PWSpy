@@ -8,7 +8,7 @@ from pwspy.utility.micromanager import PositionList
 import os
 from .sequencerCoordinate import SequencerCoordinateRange
 
-StepTypeNames = dict(  # The names to represent the `steps` that can be in an acquisition sequence
+StepTypeNames = dict(  # The names to represent the `steps` that can be in an acquisition sequence # TODO this isn't used, should it be removed?
     ACQ="Acquisition",
     POS="Multiple Positions",
     TIME="Time Series",
@@ -96,7 +96,7 @@ class ContainerStep(SequencerStep):
     pass
 
 
-class CoordSequencerStep(ContainerStep):
+class IterableSequencerStep(ContainerStep):
     """
     A base-class for steps which are iterable. Despite only being a single step they run multiple times in an acquisition.
     This add some complications as we want to keep track of which iteration the sub-steps of this belong to.
@@ -124,7 +124,7 @@ class CoordSequencerStep(ContainerStep):
         raise NotImplementedError()
 
 
-class PositionsStep(CoordSequencerStep):
+class PositionsStep(IterableSequencerStep):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._positionList = PositionList.fromDict(self.settings['posList'])
@@ -141,7 +141,7 @@ class PositionsStep(CoordSequencerStep):
         return self._positionList
 
 
-class TimeStep(CoordSequencerStep):
+class TimeStep(IterableSequencerStep):
     def stepIterations(self):
         if not hasattr(self, '_len'):
             self._len = self.settings['numFrames']
@@ -151,7 +151,7 @@ class TimeStep(CoordSequencerStep):
         return f"{iteration * self.settings['frameIntervalMinutes']} min."
 
 
-class ZStackStep(CoordSequencerStep):
+class ZStackStep(IterableSequencerStep):
     def stepIterations(self):
         if not hasattr(self, '_len'):
             self._len = self.settings['numStacks']

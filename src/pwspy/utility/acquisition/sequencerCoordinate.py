@@ -144,8 +144,11 @@ class SequencerCoordinateRange:
 
 class SeqAcqDir:
     """
-    A subclasss of AcqDir that has will also search for a sequencerCoordinate file
-    and load it as an attribute.
+    An object linking and acquisition with a sequencerCoordinate file.
+
+    Attributes:
+        acquisition: The pwspy.dataTypes.AcqDir object linking to the raw data
+        sequencerCoordinate: The coordinate object locating the acquisition within a sequence.
     """
     def __init__(self, acquisition: AcqDir):
         self.acquisition = acquisition

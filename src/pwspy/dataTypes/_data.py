@@ -22,23 +22,21 @@ import logging
 import multiprocessing as mp
 import numbers
 import os
-import typing
+import typing as t_
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Tuple, Optional, Union, Type
 
 import h5py
 import numpy as np
 import pandas as pd
-import scipy as sp
 import tifffile as tf
 from matplotlib import pyplot as plt, widgets
 from scipy import interpolate as spi
 from scipy.io import savemat
 from . import _metadata as pwsdtmd
 from . import _other
-if typing.TYPE_CHECKING:
+if t_.TYPE_CHECKING:
     from ..utility.reflection import Material
 
 
@@ -70,7 +68,7 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
         pass
 
     @property
-    def index(self) -> Tuple[float, ...]:
+    def index(self) -> t_.Tuple[float, ...]:
         """
 
         Returns:
@@ -78,7 +76,7 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
         """
         return self._index
 
-    def plotMean(self) -> Tuple[plt.Figure, plt.Axes]:
+    def plotMean(self) -> t_.Tuple[plt.Figure, plt.Axes]:
         """
 
         Returns:
@@ -91,7 +89,7 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
         plt.colorbar(im, ax=ax)
         return fig, ax
 
-    def getMeanSpectra(self, mask: Optional[Union[_other.Roi, np.ndarray]] = None) ->Tuple[np.ndarray, np.ndarray]:
+    def getMeanSpectra(self, mask: t_.Optional[t_.Union[_other.Roi, np.ndarray]] = None) -> t_.Tuple[np.ndarray, np.ndarray]:
         """Calculate the average spectra within a region of the data.
 
         Args:
@@ -109,7 +107,7 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
         std = self.data[mask].std(axis=0)
         return mean, std
 
-    def selectLassoROI(self, displayIndex: typing.Optional[int] = None, clim: typing.Sequence = None) -> np.ndarray:
+    def selectLassoROI(self, displayIndex: t_.Optional[int] = None, clim: t_.Sequence = None) -> np.ndarray:
         """
         Allow the user to draw a `freehand` ROI on an image of the acquisition.
 
@@ -138,7 +136,7 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
             fig.canvas.flush_events()
         return np.array(Verts[0])
 
-    def selectRectangleROI(self, displayIndex: typing.Optional[int] = None) -> np.ndarray:
+    def selectRectangleROI(self, displayIndex: t_.Optional[int] = None) -> np.ndarray:
         """
         Allow the user to draw a rectangular ROI on an image of the acquisition.
 
@@ -187,24 +185,30 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
         """This check is performed before allowing many arithmetic operations between two data cubes. Makes sure that the Z-axis of the two cubes match."""
         return self._index == other._index
 
-    def selIndex(self, start: float, stop: float) -> typing.Tuple[np.ndarray, typing.Sequence]:
+    def selIndex(self, start: t_.Optional[float], stop: t_.Optional[float]) -> t_.Tuple[np.ndarray, t_.Sequence]:
         """
         Args:
-            start: The beginning value of the index in the new object.
-            stop: The ending value of the index in the new object.
+            start: The beginning value of the index in the new object. Pass `None` to include everything.
+            stop: The ending value of the index in the new object. Pass `None` to include everything.
         Returns:
             A new instance of ICBase with only data from `start` to `stop` in the `index`."""
         wv = np.array(self.index)
-        iStart = np.argmin(np.abs(wv - start))
-        iStop = np.argmin(np.abs(wv - stop))
-        iStop += 1  # include the end point
-        if iStop >= len(wv):  # Include everything
+        if start is None:
+            iStart = None
+        else:
+            iStart = np.argmin(np.abs(wv - start))
+        if stop is None:
             iStop = None
+        else:
+            iStop = np.argmin(np.abs(wv - stop))
+            iStop += 1  # include the end point
+            if iStop >= len(wv):  # Include everything
+                iStop = None
         data = self.data[:, :, iStart:iStop]
         index = self.index[iStart:iStop]
         return data, index
 
-    def _add(self, other: typing.Union['self.__class__', numbers.Real, np.ndarray]) -> 'self.__class__':  #TODO these don't return the right datatype. They should probably just be gotten rid of
+    def _add(self, other: t_.Union['self.__class__', numbers.Real, np.ndarray]) -> 'self.__class__':  #TODO these don't return the right datatype. They should probably just be gotten rid of
         if isinstance(other, self.__class__):
             if not self._indicesMatch(other):
                 raise ValueError(f"{self.__class__} indices are not compatible")
@@ -215,7 +219,7 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
             raise NotImplementedError(f"Addition is not supported between {self.__class__} and {type(other)}")
         return ret
 
-    def _sub(self, other: typing.Union['self.__class__', numbers.Real, np.ndarray]) -> 'self.__class__':
+    def _sub(self, other: t_.Union['self.__class__', numbers.Real, np.ndarray]) -> 'self.__class__':
         if isinstance(other, self.__class__):
             if not self._indicesMatch(other):
                 raise ValueError(f"{self.__class__} indices are not compatible")
@@ -226,7 +230,7 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
             raise NotImplementedError(f"Subtraction is not supported between {self.__class__} and {type(other)}")
         return ret
 
-    def _mul(self, other: typing.Union['self.__class__', numbers.Real, np.ndarray]) -> 'self.__class__':
+    def _mul(self, other: t_.Union['self.__class__', numbers.Real, np.ndarray]) -> 'self.__class__':
         if isinstance(other, self.__class__):
             if not self._indicesMatch(other):
                 raise ValueError(f"{self.__class__} indices are not compatible")
@@ -238,7 +242,7 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
         return ret
 
 
-    def _truediv(self, other: typing.Union['self.__class__', numbers.Real, np.ndarray]) -> 'self.__class__':
+    def _truediv(self, other: t_.Union['self.__class__', numbers.Real, np.ndarray]) -> 'self.__class__':
         if isinstance(other, self.__class__):
             if not self._indicesMatch(other):
                 raise ValueError(f"{self.__class__} indices are not compatible")
@@ -313,7 +317,7 @@ class ICBase(ABC): #TODO add a `completeNormalization` method
         return g
 
     @classmethod
-    def decodeHdf(cls, d: h5py.Dataset) -> Tuple[np.array, Tuple[float, ...]]:
+    def decodeHdf(cls, d: h5py.Dataset) -> t_.Tuple[np.array, t_.Tuple[float, ...]]:
         """
         Load a new instance of ICBase from an `h5py.Dataset`
 
@@ -436,7 +440,7 @@ class ICRawBase(ICBase, ABC):
         """
         pass
 
-    def performFullPreProcessing(self, reference: 'self.__class__', referenceMaterial: Material, extraReflectance: ExtraReflectanceCube, cameraCorrection: typing.Optional[_other.CameraCorrection] = None):
+    def performFullPreProcessing(self, reference: 'self.__class__', referenceMaterial: Material, extraReflectance: ExtraReflectanceCube, cameraCorrection: t_.Optional[_other.CameraCorrection] = None):
         """
         Use the `subtractExtraReflection`, `normalizeByReference`, `correctCameraEffects`, and `normalizeByExposure`
         methods to perform the standard pre-processing that is done before analysis.
@@ -469,7 +473,7 @@ class ICRawBase(ICBase, ABC):
 
     @staticmethod
     @abstractmethod
-    def getMetadataClass() -> typing.Type[pwsdtmd.MetaDataBase]:
+    def getMetadataClass() -> t_.Type[pwsdtmd.MetaDataBase]:
         """
 
         Returns:
@@ -497,7 +501,7 @@ class ICRawBase(ICBase, ABC):
         return g
 
     @classmethod
-    def decodeHdf(cls, d: h5py.Dataset) -> Tuple[np.array, Tuple[float, ...], dict, ProcessingStatus]:
+    def decodeHdf(cls, d: h5py.Dataset) -> t_.Tuple[np.array, t_.Tuple[float, ...], dict, ProcessingStatus]:
         """
         Load a new instance of ICRawBase from an `h5py.Dataset`
 
@@ -540,11 +544,11 @@ class DynCube(ICRawBase):
         super().__init__(data, metadata.times, metadata, processingStatus=processingStatus, dtype=dtype)
 
     @staticmethod
-    def getMetadataClass() -> typing.Type[pwsdtmd.DynMetaData]:
+    def getMetadataClass() -> t_.Type[pwsdtmd.DynMetaData]:
         return pwsdtmd.DynMetaData
 
     @property
-    def times(self) -> typing.Tuple[float, ...]:
+    def times(self) -> t_.Tuple[float, ...]:
         """Unlike PWS where we operate along the dimension of wavelength, in dynamics we operate along the dimension of time.
 
         Returns:
@@ -574,7 +578,7 @@ class DynCube(ICRawBase):
             raise TypeError("Invalid FileFormat")
 
     @classmethod
-    def loadAny(cls, directory: str, metadata: typing.Optional[pwsdtmd.DynMetaData] = None, lock: typing.Optional[mp.Lock] = None) -> DynCube:
+    def loadAny(cls, directory: str, metadata: t_.Optional[pwsdtmd.DynMetaData] = None, lock: t_.Optional[mp.Lock] = None) -> DynCube:
         """
         Attempt to load a `DynCube` for any format of file in `directory`
 
@@ -653,7 +657,7 @@ class DynCube(ICRawBase):
         data = data.copy(order='C')
         return cls(data, metadata)
 
-    def normalizeByReference(self, reference: Union[DynCube, np.ndarray]):
+    def normalizeByReference(self, reference: t_.Union[DynCube, np.ndarray]):
         """This method can accept either a DynCube (in which case it's average over time will be calculated and used for
         normalization) or a 2d numpy Array which should represent the average over time of a reference DynCube. The array
         should be 2D and its shape should match the first two dimensions of this DynCube.
@@ -752,7 +756,7 @@ class ExtraReflectanceCube(ICBase):
 
     _hdfTypeName = "ExtraReflectanceCube"  # This is used for saving/loading from HDF. Important not to change it or old files will stop working.
 
-    def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], metadata: pwsdtmd.ERMetaData):
+    def __init__(self, data: np.ndarray, wavelengths: t_.Tuple[float, ...], metadata: pwsdtmd.ERMetaData):
         assert isinstance(metadata, pwsdtmd.ERMetaData)
         if data.max() > 1 or data.min() < 0:
             logging.getLogger(__name__).warning("Reflectance values must be between 0 and 1")
@@ -760,7 +764,7 @@ class ExtraReflectanceCube(ICBase):
         ICBase.__init__(self, data, wavelengths)
 
     @property
-    def wavelengths(self) -> Tuple[float, ...]:
+    def wavelengths(self) -> t_.Tuple[float, ...]:
         """
 
         Returns:
@@ -847,7 +851,7 @@ class ExtraReflectionCube(ICBase):
 
     _hdfTypeName = "ExtraReflectionCube"  # This is used for saving/loading from HDF. Important not to change it or old files will stop working.
 
-    def __init__(self, data: np.ndarray, wavelengths: Tuple[float, ...], metadata: pwsdtmd.ERMetaData):
+    def __init__(self, data: np.ndarray, wavelengths: t_.Tuple[float, ...], metadata: pwsdtmd.ERMetaData):
         super().__init__(data, wavelengths)
         self.metadata = metadata
 
@@ -1093,7 +1097,7 @@ class ImCube(ICRawBase):
             w.save(np.rollaxis(im, -1, 0), metadata=self.metadata.dict)
         self.metadata.metadataToJson(outpath)
 
-    def selIndex(self, start: float, stop: float) -> ImCube:  # Inherit docstring
+    def selIndex(self, start: t_.Optional[float], stop: t_.Optional[float]) -> ImCube:  # Inherit docstring
         data, index = super().selIndex(start, stop)
         md = copy.deepcopy(self.metadata)  # We are creating a copy of the metadata object because modifying the original metadata object can cause weird issues.
         assert md.dict is not self.metadata.dict
@@ -1101,7 +1105,7 @@ class ImCube(ICRawBase):
         return ImCube(data, md)
 
     @staticmethod
-    def getMetadataClass() -> Type[pwsdtmd.ICMetaData]:  # Inherit docstring
+    def getMetadataClass() -> t_.Type[pwsdtmd.ICMetaData]:  # Inherit docstring
         return pwsdtmd.ICMetaData
 
     @classmethod
@@ -1176,7 +1180,7 @@ class KCube(ICBase):
 
     _hdfTypeName = "KCube"  # This is used for saving/loading from HDF. Important not to change it or old files will stop working.
 
-    def __init__(self, data: np.ndarray, wavenumbers: Tuple[float], metadata: pwsdtmd.ICMetaData = None):
+    def __init__(self, data: np.ndarray, wavenumbers: t_.Tuple[float], metadata: pwsdtmd.ICMetaData = None):
         self.metadata = metadata #Just saving a reference to the original imcube in case we want to reference it.
         ICBase.__init__(self, data, wavenumbers, dtype=np.float32)
 
@@ -1204,10 +1208,10 @@ class KCube(ICBase):
         return cls(data, tuple(evenWavenumbers.astype(np.float32)), metadata=cube.metadata)
 
     @property
-    def wavenumbers(self) -> Tuple[float, ...]:
+    def wavenumbers(self) -> t_.Tuple[float, ...]:
         return self.index
 
-    def getOpd(self, isHannWindow: bool, indexOpdStop: int = None, mask: np.ndarray = None) -> Tuple[np.ndarray, np.ndarray]:
+    def getOpd(self, isHannWindow: bool, indexOpdStop: int = None, mask: np.ndarray = None) -> t_.Tuple[np.ndarray, np.ndarray]:
         """
         Calculate the Fourier transform of each spectra. This can be used to get the distance (in terms of OPD) to
         objects that are reflecting light.
@@ -1297,7 +1301,7 @@ class KCube(ICBase):
         return sig, waveNumbers
 
 
-    def getAutoCorrelation(self, isAutocorrMinSub: bool, stopIndex: int) -> Tuple[np.ndarray, np.ndarray]:
+    def getAutoCorrelation(self, isAutocorrMinSub: bool, stopIndex: int) -> t_.Tuple[np.ndarray, np.ndarray]:
         """The autocorrelation of a signal is the covariance of a signal with a
         lagged version of itself, normalized so that the covariance at
         zero-lag is equal to 1.0 (c[0] = 1.0).  The same process without
@@ -1428,7 +1432,7 @@ class FluorescenceImage:
         self.metadata = md
 
     @classmethod
-    def fromTiff(cls, directory: str, acquisitionDirectory: Optional[pwsdtmd.AcqDir] = None) -> FluorescenceImage:
+    def fromTiff(cls, directory: str, acquisitionDirectory: t_.Optional[pwsdtmd.AcqDir] = None) -> FluorescenceImage:
         """
         Load an image from a TIFF file.
 
@@ -1443,12 +1447,13 @@ class FluorescenceImage:
         return cls.fromMetadata(md)
 
     @classmethod
-    def fromMetadata(cls, md: pwsdtmd.FluorMetaData, lock: mp.Lock = None) -> FluorescenceImage:
+    def fromMetadata(cls, md: pwsdtmd.FluorMetaData, lock: t_.Optional[mp.Lock] = None) -> FluorescenceImage:
         """
         Load an image from the metadata object.
 
         Args:
             md: The metadata object to load the image from.
+            lock: An optional multiprocessing `Lock` object to synchronize file access in multiprocessing contexts
 
         Returns:
             A new instance of `FluorescenceImage`.

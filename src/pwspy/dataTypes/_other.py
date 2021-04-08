@@ -27,22 +27,20 @@ import logging
 import os
 import warnings
 
-from matplotlib import patches, path
 import dataclasses
 from enum import Enum, auto
 from glob import glob
-from typing import List, Tuple, Optional
-import matplotlib.pyplot as plt
 import h5py
 import numpy as np
 from scipy import io as spio
-from scipy.spatial.qhull import Delaunay
-from shapely import geometry
-from shapely.ops import cascaded_union, polygonize
+from shapely import geometry, wkb
 import cv2
-import typing
-if typing.TYPE_CHECKING:
-    from matplotlib.image import AxesImage
+from rasterio import features
+import shapely
+import typing as t_
+import copy
+if t_.TYPE_CHECKING:
+    from pwspy.dataTypes import AcqDir
 
 
 @dataclasses.dataclass(frozen=True)
@@ -61,7 +59,8 @@ class CameraCorrection:
             This can generally be left as `None` for sCMOS cameras but it is often required for CCD type cameras.
     """
     darkCounts: float
-    linearityPolynomial: typing.Sequence[float, ...] = None
+    linearityPolynomial: t_.Sequence[float, ...] = None
+
     def __post_init__(self):
         # This code runs right after the built-in dataclass initializer runs.
         # Force the linearity polynomial to be a tuple.
@@ -100,105 +99,44 @@ class CameraCorrection:
             return cls(**json.load(f))
 
 
-def _concaveHull(coords: List[Tuple[int, int]], alpha):
-    """
-    Found here: https://gist.github.com/dwyerk/10561690
-    Compute the alpha shape (concave hull) of a set
-    of points.
-
-    Args:
-        coords: nx2 array of points.
-        alpha: alpha value to influence the
-            gooeyness of the border. Smaller numbers
-            don't fall inward as much as larger numbers.
-            Too large, and you lose everything!
-    """
-    if len(coords) < 4:
-        # When you have a triangle, there is no sense
-        # in computing an alpha shape.
-        return geometry.MultiPoint(coords).convex_hull
-    coords = np.array(coords)
-    tri = Delaunay(coords)
-    triangles = coords[tri.simplices]
-    # Lengths of sides of triangle
-
-    a = ((triangles[:, 0, 0] - triangles[:, 1, 0]) ** 2 + (triangles[:, 0, 1] - triangles[:, 1, 1]) ** 2) ** 0.5
-    b = ((triangles[:, 1, 0] - triangles[:, 2, 0]) ** 2 + (triangles[:, 1, 1] - triangles[:, 2, 1]) ** 2) ** 0.5
-    c = ((triangles[:, 2, 0] - triangles[:, 0, 0]) ** 2 + (triangles[:, 2, 1] - triangles[:, 0, 1]) ** 2) ** 0.5
-    s = (a + b + c) / 2.0        # Semiperimeter of triangle
-
-    areas = (s * (s - a) * (s - b) * (s - c)) ** 0.5        # Area of triangle by Heron's formula
-
-    circums = a * b * c / (4.0 * areas)
-    filtered = triangles[circums < alpha]         # Here's the radius filter.
-
-    edge1 = filtered[:, (0, 1)]
-    edge2 = filtered[:, (1, 2)]
-    edge3 = filtered[:, (2, 0)]
-    edge_points = np.unique(np.concatenate((edge1, edge2, edge3)), axis=0).tolist()
-    m = geometry.MultiLineString(edge_points)
-    triangles = list(polygonize(m))
-    return cascaded_union(triangles), edge_points
-
-
-class Roi:  # TODO get more in line with shapely.
-    """This class represents a single Roi used to select a specific region of an image. Each Roi is identified by a
-    `name` and a `number`. The recommended file format is HDF2, in this format multiple rois of the same name but differing
-    numbers can be saved in a single HDF file. The Roi consists of a `mask` (a boolean array specifying which pixels are
+class Roi:
+    """This class represents a single Roi used to select a specific region of an image. The Roi consists of a `mask` (a boolean array specifying which pixels are
     included in the Roi), a set of of `vertices` (a 2 x N array specifying the vertices of the polygon enclosing the
     mask, this is useful if you want to adjust the Roi later. Rather than calling the constructor directly you will
     generally create one of these objects through one of the `class methods` that construct one for you.
 
     Args:
-        name: The name used to identify this ROI. Multiple ROIs can share the same name but must have unique numbers.
-        number: The number used to identify this ROI. Each ROI with the same name must have a unique number.
         mask: A 2D boolean array where the True values indicate pixels that are within the ROI.
         verts: Can be a sequence of 2D (x, y) coordinates indicating the border of the ROI or a shapely `Polygon`.
             If an array of coordinates is used then it will be converted to the shell of a shapely polygon internally.
             While this information is partially redundant with the mask it is useful for many applications and can be
             complicated to calculate from `mask`.
-        filePath: The path to the file that this object was loaded from.
-        fileFormat: The format of the file that this object was loaded from.
     """
 
-    class FileFormats(Enum):
-        """An enumerator of the different file formats that an ROI can be saved to."""
-        MAT = auto()  # The oldest file format. Each ROI was saved to its own matlab .mat file as a boolean mask.
-        HDF = auto()  # This was originally the default file format of this Python software. Each ROI of the same name was saved as a dataset in an HDF file. The dataset contained the boolean mask.
-        HDF2 = auto()  # This is the best file format and is the current default. Each ROI of the same name is saved as an H5PY.Group in an HDF file. Each ROI group contains a dataset for the boolean mask as well as a dataset for the XY coordinates of the enclosing polygon. This saves us from having to constantly recalculate the outline of the ROI for processing purposes.
-
-    def __init__(self, name: str, number: int, mask: np.ndarray, verts: typing.Union[np.ndarray, geometry.Polygon], filePath: typing.Optional[str] = None, fileFormat: typing.Optional[Roi.FileFormats] = None):
-        assert isinstance(mask, np.ndarray), f"data is a {type(mask)}"
+    def __init__(self, mask: np.ndarray, verts: t_.Union[np.ndarray, geometry.Polygon]):
+        assert isinstance(mask, np.ndarray), f"Mask data is of type: {type(mask)}. Must be numpy array."
         assert len(mask.shape) == 2
-        if verts is not None: #Legacy files don't have verts, we allow that.
+        assert mask.dtype == np.bool
+        self.polygon: geometry.Polygon
+        if isinstance(verts, geometry.Polygon):
+            self.polygon = verts
+        else:
             assert len(verts.shape) == 2
             assert verts.shape[1] == 2
-        assert mask.dtype == np.bool
-        self._polygon: geometry.Polygon
-        if isinstance(verts, geometry.Polygon):
-            self._polygon = verts
-        elif verts is None:
-            self._polygon = None
-        else:
-            self._polygon = geometry.Polygon(shell=verts)
-        self.name = name
-        self.number = number
+            self.polygon = geometry.Polygon(shell=verts)
         self.mask = mask
-        self.filePath = filePath
-        self.fileFormat = fileFormat
 
     @property
     def verts(self) -> np.ndarray:
-        return np.array(self._polygon.exterior.coords)
+        """An array of vertices for the outer ring of the polygon. For most ROIs they only have an outer ring anyway."""
+        return np.array(self.polygon.exterior.coords)
 
     @classmethod
-    def fromVerts(cls, name: str, number: int, verts: np.ndarray, dataShape: typing.Tuple[float, float]) -> Roi:
+    def fromVerts(cls, verts: np.ndarray, dataShape: t_.Tuple[float, float]) -> Roi:
         """
         Automatically generate the mask for an Roi using just the vertices of an enclosing polygon.
 
         Args:
-            name: The name used to identify this ROI. Multiple ROIs can share the same name but must have unique numbers.
-            number: The number used to identify this ROI. Each ROI with the same name must have a unique number.
             verts: A sequence of 2D (x, y) coordinates indicating the border of the ROI.
             dataShape: A tuple giving the shape of the array that this Roi is associated with.
 
@@ -218,15 +156,13 @@ class Roi:  # TODO get more in line with shapely.
         mask = np.zeros(dataShape, dtype=np.int32)
         cv2.fillPoly(mask, iVerts, 1)
         mask = mask.astype(bool)
-        return cls(name, number, mask, verts)
+        return cls(mask, verts)
 
     @classmethod
-    def fromMask(cls, name: str, number: int, mask: np.ndarray) -> Roi:
+    def fromMask(cls, mask: np.ndarray) -> Roi:
         """
         Use rasterio to create find the vertices of a mask.
         Args:
-            name: The name used to identify this ROI. Multiple ROIs can share the same name but must have unique numbers.
-            number: The number used to identify this ROI. Each ROI with the same name must have a unique number.
             mask: A boolean array. The mask have only one contiguous `True` region
 
         Returns:
@@ -235,19 +171,173 @@ class Roi:  # TODO get more in line with shapely.
         TODO:
             This function doesn't work properly if there is a `False` region of `mask` completely enclosed by a `True` region of `mask`.
         """
-        from rasterio import features
-        import shapely
+
         all_polygons = []
         for shape, value in features.shapes(mask.astype(np.uint8), mask=mask):
             all_polygons.append(shapely.geometry.shape(shape))
 
-        poly = sorted(all_polygons, key=lambda poly: poly.area)[-1]  # Return the biggest found polygon
-        verts = np.array(poly.exterior.coords.xy).T
-        return cls(name, number, mask=mask, verts=verts)
+        poly = sorted(all_polygons, key=lambda ply: ply.area)[-1]  # Return the biggest found polygon
+        poly = poly.buffer(0)  # This little trick `normalizes` the format of the polygon so that holes will plot properly. https://gis.stackexchange.com/questions/374001/plotting-shapely-polygon-with-holes-does-not-plot-all-holes
+        return cls(mask=mask, verts=poly)
 
+    def transform(self, matrix: np.ndarray) -> Roi:
+        """Return a copy of this Roi that has been transformed by an affine transform matrix like the one returned by
+        opencv.estimateRigidTransform. This can be obtained using the functions in the utility.machineVision module.
+
+        Args:
+            matrix: A 2x3 numpy array representing an affine transformation.
+        Returns:
+            A new instance of Roi representing this Roi after transformation.
+        """
+        mask = cv2.warpAffine(self.mask.astype(np.uint8), matrix, self.mask.shape).astype(np.bool)
+        verts = cv2.transform(self.verts[None, :, :], matrix)[0, :, :]  # For some reason this needs to be 3d for opencv to work.
+        return Roi(mask=mask, verts=verts)
+
+
+class RoiFile:
+    """This class represents a single Roi File used to save and load an ROI. Each Roi File is identified by a
+    `name` and a `number`. The recommended file format is HDF2, in this format multiple rois of the same name but differing
+    numbers can be saved in a single HDF file.
+
+    Args:
+        name: The name used to identify this ROI. Multiple ROIs can share the same name but must have unique numbers.
+        number: The number used to identify this ROI. Each ROI with the same name must have a unique number.
+        roi: The ROI object associated with this file.
+        filePath: The path to the file that this object was loaded from.
+        fileFormat: The format of the file that this object was loaded from.
+        acquisition: The acquisition object that this ROI belongs to.
+    """
+
+    class FileFormats(Enum):
+        """An enumerator of the different file formats that an ROI can be saved to."""
+        MAT = auto()  # The oldest file format. Each ROI was saved to its own matlab .mat file as a boolean mask.
+        HDF = auto()  # This was originally the default file format of this Python software. Each ROI of the same name was saved as a dataset in an HDF file. The dataset contained the boolean mask.
+        HDF2 = auto()  # For a long time this was the default. Each ROI of the same name is saved as an H5PY.Group in an HDF file. Each ROI group contains a dataset for the boolean mask as well as a dataset for the XY coordinates of the enclosing polygon. This saves us from having to constantly recalculate the outline of the ROI for processing purposes.
+        HDF3 = auto()  # On 3/26/2021 We switched to this from HDF2. Rather than verts we now store 'wkb' of the underlying shapely file. Allow for ROIs with holes, and other more complex situations.
+
+    def __init__(self, name: str, number: int, roi: Roi, filePath: str, fileFormat: RoiFile.FileFormats, acquisition: AcqDir):
+        self._roi = roi
+        self.name = name
+        self.number = number
+        self.filePath = filePath
+        self.fformat = fileFormat
+        self.acquisition = acquisition
+        self.isDeleted = False
+
+    def getRoi(self) -> Roi:
+        return copy.deepcopy(self._roi)  # Rois are mutable so return a copy.
+
+    def __repr__(self):
+        return f"RoiFile({self.name}, {self.number})"
+
+    @staticmethod
+    def getValidRoisInPath(path: str) -> t_.List[t_.Tuple[str, int, RoiFile.FileFormats]]:
+        """Search the `path` for valid roiFile files and return the detected rois as a list of tuple where each tuple
+        contains the `name`, `number`, and file format for the Roi.
+
+        Args:
+            path: The path to the folder containing the Roi files.
+
+        Returns:
+            A list of tuples containing:
+                name: The detected Roi name
+                number: The detected Roi number
+                fformat: The file format of the file that the Roi is stored in
+        """
+        patterns = [('BW*_*.mat', RoiFile.FileFormats.MAT), ('ROI_*.h5', RoiFile.FileFormats.HDF)]
+        files = {fformat: glob(os.path.join(path, p)) for p, fformat in patterns}  # Lists of the found files keyed by file format
+        ret = []
+        for fformat, fileNames in files.items():
+            if fformat == RoiFile.FileFormats.HDF:  # Could still technically be HDF2 or HDF3
+                for i in fileNames:
+                    with h5py.File(i, 'r') as hf:  # making sure to open this file in read mode makes the function way faster!
+                        for g in hf.keys():
+                            if isinstance(hf[g], h5py.Group):  # HDF3 or HDF2 file format
+                                if 'fileFormat' in hf[g].attrs:  # HDF3 format
+                                    assert 'wkb' in hf[g]
+                                    assert 'ROI_' in i
+                                    name = i.split("ROI_")[-1][:-3]
+                                    try:
+                                        ret.append((name, int(g), RoiFile.FileFormats.HDF3))
+                                    except ValueError:
+                                        logging.getLogger(__name__).warning(f"File {i} contains uninterpretable dataset named {g}")
+                                else:  # HDF2 did not have this fileformat attribute
+                                    if 'mask' in hf[g] and 'verts' in hf[g]:
+                                        assert 'ROI_' in i
+                                        name = i.split("ROI_")[-1][:-3]
+                                        try:
+                                            ret.append((name, int(g), RoiFile.FileFormats.HDF2))
+                                        except ValueError:
+                                            logging.getLogger(__name__).warning(f"File {i} contains uninterpretable dataset named {g}")
+                                    else:
+                                        raise ValueError("File is missing datasets")
+                            elif isinstance(hf[g], h5py.Dataset):  # Legacy format
+                                assert 'roi_' in i
+                                name = i.split('roi_')[-1][:-3]  # Old files used lower case rather than "ROI_"
+                                try:
+                                    ret.append((name, int(g), RoiFile.FileFormats.HDF))
+                                except ValueError:
+                                    logging.getLogger(__name__).warning(f"File {i} contains uninterpretable dataset named {g}")
+
+            elif fformat == RoiFile.FileFormats.MAT:
+                for i in fileNames:  # list in files
+                    i = os.path.split(i)[-1]
+                    if len(i.split("_")) != 2:  # Some old data has files that are not ROIs but are named almost identically, this helps us avoid bugs with them.
+                        continue
+                    num = int(i.split('_')[0][2:])
+                    name = i.split('_')[1][:-4]
+                    ret.append((name, num, RoiFile.FileFormats.MAT))
+        return ret
+
+    @staticmethod
+    def deleteRoi(directory: str, name: str, number: int, fformat: t_.Optional[RoiFile.FileFormats] = None):
+        """Delete the dataset associated with the Roi object specified by `name` and `num`.
+
+        Args:
+            directory: The path to the folder containing the Roi file.
+            name: The name used to identify this ROI.
+            number: The number used to identify this ROI.
+            fformat: The format of the file.
+
+        Raises:
+            FileNotFoundError: If the file isn't found.
+        """
+        assert os.path.isdir(directory)
+        if fformat is RoiFile.FileFormats.MAT:
+            path = os.path.join(directory, f"BW{number}_{name}.mat")
+        elif fformat in [RoiFile.FileFormats.HDF, RoiFile.FileFormats.HDF2, RoiFile.FileFormats.HDF3]:
+            path = os.path.join(directory, f"ROI_{name}.h5")
+        elif fformat is None:  # AutoDetect the file format
+            try:
+                RoiFile.deleteRoi(directory, name, number, fformat=RoiFile.FileFormats.MAT)
+                return
+            except FileNotFoundError:
+                try:
+                    RoiFile.deleteRoi(directory, name, number, fformat=RoiFile.FileFormats.HDF)
+                    return
+                except FileNotFoundError as e:
+                    raise e
+        else:
+            raise Exception(f"fformat of {fformat} is not accepted")
+
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"The ROI file {name},{number} and format {fformat} was not found in {directory}.")
+
+        if fformat in [RoiFile.FileFormats.HDF, RoiFile.FileFormats.HDF2, RoiFile.FileFormats.HDF3]:
+            with h5py.File(path, 'a') as hf:
+                if np.string_(str(number)) not in hf.keys():
+                    raise ValueError(f"The file {path} does not contain ROI number {number}.")
+                del hf[np.string_(str(number))]
+                remaining = len(list(hf.keys()))
+            if remaining == 0:  # If the file is empty then remove it.
+                os.remove(path)
+        elif fformat is RoiFile.FileFormats.MAT:
+            os.remove(path)
+        else:
+            raise Exception("Programming error.")
 
     @classmethod
-    def fromHDF_legacy(cls, directory: str, name: str, number: int) -> Roi:
+    def fromHDF_legacy_legacy(cls, directory: str, name: str, number: int, acquisition: AcqDir = None) -> RoiFile:
         """Load an Roi from an older version of the HDF file format which did not include the vertices parameter.
 
         Args:
@@ -263,11 +353,12 @@ class Roi:  # TODO get more in line with shapely.
         if not os.path.exists(path):
             raise OSError(f"File {path} does not exist.")
         with h5py.File(path, 'r') as hf:
-            return cls(name, number, mask=np.array(hf[str(number)]).astype(np.bool), verts=None, filePath=path, fileFormat=Roi.FileFormats.HDF)
+            roi = Roi.fromMask(np.array(hf[str(number)]).astype(np.bool))
+            return cls(name, number, roi, filePath=path, fileFormat=RoiFile.FileFormats.HDF, acquisition=acquisition)
 
     @classmethod
-    def fromHDF(cls, directory: str, name: str, number: int) -> Roi:
-        """Load an Roi from an HDF file.
+    def fromHDF_legacy(cls, directory: str, name: str, number: int, acquisition: AcqDir = None) -> RoiFile:
+        """Load an Roi from an HDF file. Uses the old HDF2 format.
 
         Args:
             directory: The path to the directory containing the HDF file.
@@ -284,14 +375,44 @@ class Roi:  # TODO get more in line with shapely.
         if not os.path.exists(path):
             raise OSError(f"File {path} does not exist.")
         with h5py.File(path, 'r') as hf:
-            verts = hf[str(number)]['verts']
-            verts = None if verts.shape is None else np.array(verts)
-            return cls(name, number, mask=np.array(hf[str(number)]['mask']).astype(np.bool), verts=verts, filePath=path,
-                       fileFormat=Roi.FileFormats.HDF2)
+            dset = hf[str(number)]
+            verts = dset['verts']
+            if verts.shape is None:
+                roi = Roi.fromMask(np.array(dset['mask']).astype(np.bool))  # Some old files could be saved without verts. allow loading them.
+            else:
+                roi = Roi(np.array(dset['mask']).astype(np.bool), verts=np.array(verts))
+            return cls(name, number, roi, filePath=path, fileFormat=RoiFile.FileFormats.HDF2, acquisition=acquisition)
 
     @classmethod
-    def fromMat(cls, directory: str, name: str, number: int) -> Roi:
-        """Load an Roi from a .mat file saved in matlab. This file format is not reccomended as it does not include the
+    def fromHDF(cls, directory: str, name: str, number: int, acquisition: AcqDir = None) -> RoiFile:
+        """Load an Roi from the newest ROI format of HDF file.
+
+        Args:
+            directory: The path to the directory containing the HDF file.
+            name: The name used to identify this ROI.
+            number: The number used to identify this ROI.
+        Raises:
+            OSError: If the file was not found
+        Returns:
+            A new instance of Roi loaded from file
+        Examples:
+            myRoi = Roi.fromHDF('~/Desktop', 'nucleus', 1)"""
+        path = os.path.join(directory, f'ROI_{name}.h5')
+        if not os.path.exists(path):
+            raise OSError(f"File {path} does not exist.")
+        with h5py.File(path, 'r') as hf:
+            group = hf[str(number)]
+            assert 'fileFormat' in group.attrs, "No fileFormat attribute found for the ROI file. Try using one of the legacy ROI loading methods."
+            assert group.attrs['fileFormat'] == RoiFile.FileFormats.HDF3.name, f'Only HDF3 format is supported by this loading method, not {group.attrs["fileFormat"]}'
+            wkbBytes = bytes(group['wkb'][()])
+            polygon = wkb.loads(wkbBytes)
+            mask = np.array(group['mask']).astype(np.bool)
+            roi = Roi(mask, verts=polygon)
+            return cls(name, number, roi, filePath=path, fileFormat=RoiFile.FileFormats.HDF3, acquisition=acquisition)
+
+    @classmethod
+    def fromMat(cls, directory: str, name: str, number: int, acquisition: AcqDir = None) -> RoiFile:
+        """Load an Roi from a .mat file saved in matlab. This file format is not recommended as it does not include the
         `vertices` parameter which is useful for visually rendering and readjusting the Roi.
 
         Args:
@@ -302,13 +423,18 @@ class Roi:  # TODO get more in line with shapely.
             A new instance of Roi loaded from file
         """
         filePath = os.path.join(directory, f'BW{number}_{name}.mat')
-        try:
-            return cls(name, number, mask=spio.loadmat(filePath)['BW'].astype(np.bool), verts=None, filePath=filePath, fileFormat=Roi.FileFormats.MAT)
-        except KeyError:
-            return cls(name, number, mask=spio.loadmat(filePath)['mask'].astype(np.bool), verts=None, filePath=filePath, fileFormat=Roi.FileFormats.MAT)  # Some Nanocytomics files use 'mask' instead of 'bw'. annoying.    
+        spFile = spio.loadmat(filePath)
+        if 'BW' in spFile.keys():
+            mask = spFile['BW'].astype(np.bool)
+        elif 'mask' in spFile.keys():
+            mask = spFile['mask'].astype(np.bool)
+        else:
+            raise KeyError(f"A `mask` was not found in the `mat` file: {filePath}")
+        roi = Roi.fromMask(mask)
+        return cls(name, number, roi, filePath=filePath, fileFormat=RoiFile.FileFormats.MAT, acquisition=acquisition)
 
     @classmethod
-    def loadAny(cls, directory: str, name: str, number: int):
+    def loadAny(cls, directory: str, name: str, number: int, acquisition: AcqDir = None) -> RoiFile:
         """Attempt loading any of the known file formats.
 
         Args:
@@ -319,14 +445,18 @@ class Roi:  # TODO get more in line with shapely.
             A new instance of Roi loaded from file
         """
         try:
-            return Roi.fromHDF(directory, name, number)
+            return RoiFile.fromHDF(directory, name, number, acquisition=acquisition)
         except:
             try:
-                return Roi.fromHDF_legacy(directory, name, number)
-            except OSError: #For backwards compatibility purposes
-                return Roi.fromMat(directory, name, number)
+                return RoiFile.fromHDF_legacy(directory, name, number, acquisition=acquisition)
+            except:
+                try:
+                    return RoiFile.fromHDF_legacy_legacy(directory, name, number, acquisition=acquisition)
+                except OSError:  # For backwards compatibility purposes
+                    return RoiFile.fromMat(directory, name, number, acquisition=acquisition)
 
-    def toHDF(self, directory: str, overwrite: typing.Optional[bool] = False):
+    @classmethod
+    def toHDF(cls, roi: Roi, name: str, number: int, directory: str, overwrite: t_.Optional[bool] = False, acquisition: AcqDir = None) -> RoiFile:
         """
         Save the Roi to an HDF file in the specified directory. The filename is automatically chosen based on the
         `name` parameter of the Roi. Multiple Roi's with the same `name` will be saved into the same file if they have
@@ -334,190 +464,44 @@ class Roi:  # TODO get more in line with shapely.
         error will be raised.
 
         Args:
+            roi: The ROI to save.
+            name: The name name to save as. This will be part of the file name
+            number: The ROI number to save as. Multiple ROIS of the same name can be saved to the same file but the numbers must be unique
             directory: The path of the folder to save the new HDF file to. The file will be named automatically based
                 on the `name` attribute of the Roi
             overwrite: If True then if an Roi with the same `number` as this Roi is found it will be overwritten.
         """
-        savePath = os.path.join(directory, f'ROI_{self.name}.h5')
-        numStr = np.string_(str(self.number))
-        if self.verts is None:
-            verts = None
-            warnings.warn("An Roi is being saved to HDF without a `verts` property specifying the vertices of the"
-                             "ROI's enclosing polygon. You can use `getBoundingPolygon` to use Concave Hull method to generate the vertices.")
-        else:
-            verts = self.verts.astype(np.float32)
-        mask = self.mask.astype(np.uint8)
+        savePath = os.path.join(directory, f'ROI_{name}.h5')
+        numStr = np.string_(str(number))
+        mask = roi.mask.astype(np.uint8)
         with h5py.File(savePath, 'a') as hf:
-            if np.string_(str(self.number)) in hf.keys():
+            if numStr in hf.keys():
                 if overwrite:
-                    del hf[np.string_(str(self.number))]
+                    del hf[numStr]
                 else:
-                    raise OSError(f"The Roi file {savePath} already contains a dataset {self.number}")
+                    raise OSError(f"The Roi file {savePath} already contains a dataset {number}")
             g = hf.create_group(numStr)
-            if verts is not None:
-                g.create_dataset(np.string_("verts"), data=verts)
+            g.attrs['fileFormat'] = RoiFile.FileFormats.HDF3.name
+            g.create_dataset(np.string_("wkb"), data=np.void(roi.polygon.wkb))  # np.void is required here so we can save a byte array with `null` in it.
             g.create_dataset(np.string_("mask"), data=mask, compression=5)
-        self.filePath = savePath
-        self.fileFormat = Roi.FileFormats.HDF2
+        return cls(name, number, roi, filePath=savePath, fileFormat=RoiFile.FileFormats.HDF2, acquisition=acquisition)
 
-    @staticmethod
-    def deleteRoi(directory: str, name: str, num: int, fformat: Optional[Roi.FileFormats] = None):
-        """Delete the dataset associated with the Roi object specified by `name` and `num`.
+    def delete(self):
+        """
+        Delete the dataset associated with the Roi object.
 
+        """
+        self.deleteRoi(os.path.split(self.filePath)[0], self.name, self.number)
+        self.isDeleted = True
+
+    def update(self, roi: Roi):
+        """
+        Save a new roiFile to the existing file.
         Args:
-            directory: The path to the folder containing the Roi file.
-            name: The name used to identify this ROI.
-            number: The number used to identify this ROI.
-            fformat: The format of the file.
-
-        Raises:
-            FileNotFoundError: If the file isn't found.
+            roi: The updated ROI to save
         """
-        assert os.path.isdir(directory)
-        if fformat is Roi.FileFormats.MAT:
-            path = os.path.join(directory, f"BW{num}_{name}.mat")
-        elif fformat is Roi.FileFormats.HDF or fformat is Roi.FileFormats.HDF2:
-            path = os.path.join(directory, f"ROI_{name}.h5")
-        elif fformat is None:  # AutoDetect the file format
-            try:
-                Roi.deleteRoi(directory, name, num, fformat=Roi.FileFormats.MAT)
-                return
-            except FileNotFoundError:
-                try:
-                    Roi.deleteRoi(directory, name, num, fformat=Roi.FileFormats.HDF)
-                    return
-                except FileNotFoundError as e:
-                    raise e
-        else:
-            raise Exception(f"fformat of {fformat} is not accepted")
-
-        if not os.path.exists(path):
-            raise FileNotFoundError(f"The ROI file {name},{num} and format {fformat} was not found in {directory}.")
-
-        if fformat is Roi.FileFormats.HDF or fformat is Roi.FileFormats.HDF2:
-            with h5py.File(path, 'a') as hf:
-                if np.string_(str(num)) not in hf.keys():
-                    raise ValueError(f"The file {path} does not contain ROI number {num}.")
-                del hf[np.string_(str(num))]
-                remaining = len(list(hf.keys()))
-            if remaining == 0: #  If the file is empty then remove it.
-                os.remove(path)
-        elif fformat is Roi.FileFormats.MAT:
-            os.remove(path)
-        else:
-            raise Exception("Programming error.")
-
-    @staticmethod
-    def getValidRoisInPath(path: str) -> List[Tuple[str, int, Roi.FileFormats]]:
-        """Search the `path` for valid roi files and return the detected rois as a list of tuple where each tuple
-        contains the `name`, `number`, and file format for the Roi.
-
-        Args:
-            path: The path to the folder containing the Roi files.
-
-        Returns:
-            A list of tuples containing:
-                name: The detected Roi name
-                number: The detected Roi number
-                fformat: The file format of the file that the Roi is stored in
-        """
-        patterns = [('BW*_*.mat', Roi.FileFormats.MAT), ('ROI_*.h5', Roi.FileFormats.HDF)]
-        files = {fformat: glob(os.path.join(path, p)) for p, fformat in patterns} #Lists of the found files keyed by file format
-        ret = []
-        for fformat, fileNames in files.items():
-            if fformat == Roi.FileFormats.HDF:
-                for i in fileNames:
-                    with h5py.File(i, 'r') as hf:  # making sure to open this file in read mode makes the function way faster!
-                        for g in hf.keys():
-                            if isinstance(hf[g], h5py.Group):  # Current file format
-                                if 'mask' in hf[g] and 'verts' in hf[g]:
-                                    assert 'ROI_' in i
-                                    name = i.split("ROI_")[-1][:-3]
-                                    try:
-                                        ret.append((name, int(g), Roi.FileFormats.HDF2))
-                                    except ValueError:
-                                        logging.getLogger(__name__).warning(f"File {i} contains uninterpretable dataset named {g}")
-                                else:
-                                    raise ValueError("File is missing datasets")
-                            elif isinstance(hf[g], h5py.Dataset): #Legacy format
-                                assert 'roi_' in i
-                                name = i.split('roi_')[-1][:-3]  # Old files used lower case rather than "ROI_"
-                                try:
-                                    ret.append((name, int(g), Roi.FileFormats.HDF))
-                                except ValueError:
-                                    logging.getLogger(__name__).warning(f"File {i} contains uninterpretable dataset named {g}")
-
-            elif fformat == Roi.FileFormats.MAT:
-                for i in fileNames: #list in files
-                    i = os.path.split(i)[-1]
-                    if len(i.split("_")) != 2:  # Some old data has files that are not ROIs but are named almost identically, this helps us avoid bugs with them.
-                        continue
-                    num = int(i.split('_')[0][2:])
-                    name = i.split('_')[1][:-4]
-                    ret.append((name, num, Roi.FileFormats.MAT))
-        return ret
-
-    def transform(self, matrix: np.ndarray) -> Roi:
-        """Return a copy of this Roi that has been transformed by an affine transform matrix like the one returned by
-        opencv.estimateRigidTransform. This can be obtained using the functions in the utility.machineVision module.
-
-        Args:
-            matrix: A 2x3 numpy array representing an affine transformation.
-        Returns:
-            A new instance of Roi representing this Roi after transformation.
-        """
-        mask = cv2.warpAffine(self.mask.astype(np.uint8), matrix, self.mask.shape).astype(np.bool)
-        if self.verts is not None:
-            verts = cv2.transform(self.verts[None, :, :], matrix)[0, :, :] #For some reason this needs to be 3d for opencv to work.
-        else:
-            verts = None
-        return Roi(self.name, self.number, mask=mask, verts=verts) #intentionally ditching the filepath and fileformat data here since the new roi is not associated with a saved file.
-
-    def getImage(self, ax: plt.Axes, alpha: float = 0.5, value: float = 0.5, cmap='Reds', **kwargs) -> AxesImage:
-        """Return a matplotlib `AxesImage` representing the `mask` of the Roi. The image will be displayed on `ax`.
-
-        Args:
-            ax: The matplotlib `Axes` to add the plot to.
-            alpha: The transparency of the image
-            value: A number between 0 and 1 to determine the color of the overlay.
-            cmap: The Matplotlib colormap that will be used to determine color.
-            kwargs: These keyword arguments will be passed to the matplotlib.imshow function.
-        Returns:
-             A reference to the matplotlib `AxesImage`.
-        """
-        assert (value >= 0) and (value <= 1)
-        arr = self.mask.astype(np.uint8) * int(255 * value)
-        arr = np.ma.masked_array(arr, arr == 0)
-        im = ax.imshow(arr, alpha=alpha, clim=[0, 255], cmap=cmap, **kwargs)
-        return im
-
-    def getBoundingPolygon(self) -> patches.Polygon:
-        """Return a matplotlib `Polygon` representing the bounding polygon of the `mask`. In the case where a `mask` was
-        saved but `vertices` were not this uses the 'Concave Hull` method to estimate the vertices of the bounding
-        polygon of the `mask`.
-
-        Returns:
-            A matplotlib `Polygon` representing the border of the Roi
-        """
-        if self.verts is None:  # calculate convex hull  # TODO this method does basically the same as `fromMask`. Unify
-            x = np.arange(self.mask.shape[1])
-            y = np.arange(self.mask.shape[0])
-            X, Y = np.meshgrid(x, y)  # Generate arrays indicating X and Y coordinates for each array element.
-            X = X[self.mask]
-            Y = Y[self.mask]
-            coords = list(zip(X, Y))  # Get coordinates of items in the mask.
-            cHull, edgePoints = _concaveHull(coords, 4)
-            return patches.Polygon(cHull.exterior.coords, facecolor=(1, 0, 0, 0.5), linewidth=1, edgecolor=(0,1,0,.9))
-        else:
-            return patches.Polygon(self.verts, facecolor=(1, 0, 0, 0.5), linewidth=1, edgecolor=(0,1,0,0.9))
-
-    def getBoundingBox(self) -> typing.Tuple[float, float, float, float]:
-        """
-        Returns:
-            A tuple of length 4 giving the coordinates of the rectangle that encloses this ROI in the form: (top, left, bottom, right)
-        """
-        xCoords, yCoords = tuple(zip(*self.verts))  # Split (x,y) coords into x and then y
-        return max(yCoords), min(xCoords), min(yCoords), max(xCoords)
-
-    def __repr__(self):
-        return f"Roi({self.name}, {self.number})"
+        assert not self.isDeleted
+        if self.fformat not in [RoiFile.FileFormats.HDF2, RoiFile.FileFormats.HDF3]:
+            raise NotImplementedError(f"RoiFile of format: {self.fformat} cannot be updated.")
+        self.toHDF(roi, self.name, self.number, os.path.split(self.filePath)[0], overwrite=True)
+        self._roi = copy.deepcopy(roi)  # We don't wont to use the same object that might still have external mutable references
