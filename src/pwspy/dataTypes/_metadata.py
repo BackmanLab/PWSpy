@@ -863,8 +863,8 @@ class AcqDir:
         """Save a Roi to file in the acquisition's file path."""
         return RoiFile.toHDF(roi, roiName, roiNumber, self.filePath, overwrite=overwrite, acquisition=self)
 
-    def deleteRoi(self, name: str, num: int):
-        RoiFile.deleteRoi(self.filePath, name, num)
+    def deleteRoi(self, name: str, num: int, fformat: typing.Optional[RoiFile.FileFormats] = None):
+        RoiFile.deleteRoi(self.filePath, name, num, fformat=fformat)
 
     def editNotes(self):
         """Create a `notes.txt` file if it doesn't already exists and open it in a text editor."""

@@ -36,7 +36,7 @@ Classes
    SequencerCoordinate
    SequencerCoordinateRange
    SequencerStep
-   CoordSequencerStep
+   IterableSequencerStep
    ZStackStep
    TimeStep
    PositionsStep
