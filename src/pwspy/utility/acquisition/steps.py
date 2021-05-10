@@ -201,4 +201,4 @@ class RuntimeSequenceSettings:
                 rootStep = json.load(f, object_hook=SequencerStep.hook)
             return cls(uuid=None, dateString=None, rootStep=rootStep)  # Old sequence files didn't have a uuid or date. Too bad
         else:
-            raise FileNotFoundError(f"No valide sequence file found in: {directory}")
+            raise FileNotFoundError(f"No valid sequence file found in: {directory}")
