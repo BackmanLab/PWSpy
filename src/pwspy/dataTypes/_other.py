@@ -226,6 +226,11 @@ class RoiFile:
         self.isDeleted = False
 
     def getRoi(self) -> Roi:
+        """Return the ROI object associated with this file.
+
+        Returns:
+            The `Roi` object containing geometry information.
+        """
         return copy.deepcopy(self._roi)  # Rois are mutable so return a copy.
 
     def __repr__(self):
