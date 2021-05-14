@@ -442,8 +442,8 @@ class PositionList:
         positions = []
         for i in range(len(self)):
             pos = copy.deepcopy(self[i].getXYPosition())
-            pos.x = ret[0, i, 0]
-            pos.y = ret[0, i, 1]
+            pos.x = float(ret[0, i, 0])  # Convert to float because the numpy number types cause some errors during jsonification.
+            pos.y = float(ret[0, i, 1])
             positions.append(MultiStagePosition(self[i].label, self[i].defaultXYStage, '', [pos]))
         return PositionList(positions)
 
