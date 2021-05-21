@@ -40,5 +40,5 @@ import os
 
 thinFilmPath = os.path.join(os.path.split(__file__)[0], 'thinFilmInterferenceFiles')
 
-__all__ = ['fileIO', 'misc', 'machineVision', 'fluorescence', 'plotting', 'reflection',
-           'micromanager', 'DConversion']
+__all__ = ['acquisition', 'DConversion', 'fileIO', 'fluorescence', 'machineVision', 'misc',
+           'micromanager', 'plotting', 'reflection']
