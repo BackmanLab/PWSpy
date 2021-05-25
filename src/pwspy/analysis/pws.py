@@ -365,22 +365,84 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
 
 class LegacyPWSAnalysisResults(AbstractAnalysisResults):
     """Allows loading of the .mat files that were used by matlab analysis code to save analysis results. Only partially implemented."""
-    def __init__(self, rms: np.ndarray):
-        self._dict = {'rms': rms}
+    def __init__(self, rms: np.ndarray, ld: np.ndarray, meanReflectance: np.ndarray, rSquared: np.ndarray,
+                 polynomialRms: np.ndarray, autoCorrelationSlope: np.ndarray, settings: dict):
+        self._dict = {
+             'meanReflectance': meanReflectance,
+             'rms': rms,
+             'polynomialRms': polynomialRms,
+             'autoCorrelationSlope': autoCorrelationSlope,
+             'rSquared': rSquared,
+             'ld': ld,
+             'settings': settings}
 
     @property
     def rms(self):
         return self._dict['rms']
 
+    @property
+    def ld(self):
+        return self._dict['ld']
+
+    @property
+    def meanReflectance(self):
+        return self._dict['meanReflectance']
+
+    @property
+    def rSquared(self):
+        return self._dict['rSquared']
+
+    @property
+    def polynomialRms(self):
+        return self._dict['polynomialRms']
+
+    @property
+    def autoCorrelationSlope(self):
+        return self._dict['autoCorrelationSlope']
+
+    @property
+    def settings(self):
+        return self._dict['settings']
+
     @classmethod
     def create(cls):
+        """We don't allow creating new analysis results like this, just for loading legacy files."""
         raise NotImplementedError
 
     @classmethod
     def load(cls, directory, analysisName: str):
         import scipy.io as sio
         rms = sio.loadmat(os.path.join(directory, f'{analysisName}_Rms.mat'))['cubeRms']
-        return cls(rms)
+        ld = sio.loadmat(os.path.join(directory, f'{analysisName}_Ld.mat'))['cubeLd']
+        meanReflectance = sio.loadmat(os.path.join(directory, f'{analysisName}_Reflectance.mat'))['cubeReflectance']
+        rSquared = sio.loadmat(os.path.join(directory, f'{analysisName}_RSquared.mat'))['cubeRSquared']
+        polynomialRms = sio.loadmat(os.path.join(directory, f'{analysisName}_RmsPoly.mat'))['cubeRmsPoly']
+        autoCorrelationSlope = sio.loadmat(os.path.join(directory, f'{analysisName}_Slope.mat'))['cubeSlope']
+        settings_ = dict(sio.loadmat(os.path.join(directory, f"{analysisName}_parameter")))  # These settings will be entirely different from settings in the current code.
+        settings = {}
+        for k, v in settings_.items():
+            k: str
+            v: np.ndarray
+            if k.startswith('__'):
+                continue  # Matlab has some built in variables that are like this.
+            v = v.squeeze()
+            if len(v.shape) == 0:  # 0-dimensional array, scalar
+                settings[k] = v[()]
+            elif v.dtype.type in ('S', 'U'):
+                settings[k] = str(v[0])
+            elif len(v.shape) == 1:
+                settings[k] = tuple(v)
+            else:
+                settings[k] = v
+        '''
+        # None of the following were saved in the old format.
+        reflectance = None  # The 3D analyzed reflectaqnce was not saved in the old version.
+        imCubeIdTag = None
+        referenceIdTag = None
+        extraReflectionTag = None
+        time = None
+        '''
+        return cls(rms, ld, meanReflectance, rSquared, polynomialRms, autoCorrelationSlope, settings)
 
 
 @dataclasses.dataclass
@@ -453,3 +515,4 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
     def loadDefaultSettings(cls, name: str) -> PWSAnalysisSettings:
         from . import defaultSettingsPath
         return cls.fromJson(defaultSettingsPath, name)
+
