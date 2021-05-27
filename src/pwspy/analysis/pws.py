@@ -379,31 +379,31 @@ class LegacyPWSAnalysisResults(AbstractAnalysisResults):
              'settings': settings}
 
     @property
-    def rms(self):
+    def rms(self) -> np.ndarray:
         return self._dict['rms']
 
     @property
-    def ld(self):
+    def ld(self) -> np.ndarray:
         return self._dict['ld']
 
     @property
-    def meanReflectance(self):
+    def meanReflectance(self) -> np.ndarray:
         return self._dict['meanReflectance']
 
     @property
-    def rSquared(self):
+    def rSquared(self) -> np.ndarray:
         return self._dict['rSquared']
 
     @property
-    def polynomialRms(self):
+    def polynomialRms(self) -> np.ndarray:
         return self._dict['polynomialRms']
 
     @property
-    def autoCorrelationSlope(self):
+    def autoCorrelationSlope(self) -> np.ndarray:
         return self._dict['autoCorrelationSlope']
 
     @property
-    def settings(self):
+    def settings(self) -> dict:
         return self._dict['settings']
 
     @classmethod
@@ -412,7 +412,7 @@ class LegacyPWSAnalysisResults(AbstractAnalysisResults):
         raise NotImplementedError
 
     @classmethod
-    def load(cls, directory, analysisName: str) -> LegacyPWSAnalysisResults:
+    def load(cls, directory: str, analysisName: str) -> LegacyPWSAnalysisResults:
         """
         Load an instance of this class from a directory.
 
