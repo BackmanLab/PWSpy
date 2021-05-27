@@ -364,7 +364,9 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
 
 
 class LegacyPWSAnalysisResults(AbstractAnalysisResults):
-    """Allows loading of the .mat files that were used by matlab analysis code to save analysis results. Only partially implemented."""
+    """
+    Allows loading of the .mat files that were used by the MATLAB analysis code to save analysis results.
+    """
     def __init__(self, rms: np.ndarray, ld: np.ndarray, meanReflectance: np.ndarray, rSquared: np.ndarray,
                  polynomialRms: np.ndarray, autoCorrelationSlope: np.ndarray, settings: dict):
         self._dict = {
@@ -410,7 +412,18 @@ class LegacyPWSAnalysisResults(AbstractAnalysisResults):
         raise NotImplementedError
 
     @classmethod
-    def load(cls, directory, analysisName: str):
+    def load(cls, directory, analysisName: str) -> LegacyPWSAnalysisResults:
+        """
+        Load an instance of this class from a directory.
+
+        Args:
+            directory: The file path to the "Cell{x}" folder containing the analysis files.
+            analysisName: The name used to save the analysis files. For example if the RMS file is named "blah_Rms.mat"
+                then the analysis name is "blah".
+
+        Returns:
+            A new instance of this class loaded from file.
+        """
         import scipy.io as sio
         rms = sio.loadmat(os.path.join(directory, f'{analysisName}_Rms.mat'))['cubeRms']
         ld = sio.loadmat(os.path.join(directory, f'{analysisName}_Ld.mat'))['cubeLd']
