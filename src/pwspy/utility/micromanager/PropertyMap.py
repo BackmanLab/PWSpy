@@ -65,28 +65,6 @@ class _JsonAble(abc.ABC):
         pass
 
 
-# class DictCoder:
-#     """Handles encoding/decoding of objects that implement the `Dictable` interface which defines a custom conversion to/from a dict."""
-#     def __init__(self):
-#         self._hr = HookReg()  #This keeps track of the various deserialization hooks and combines them. pass _hr.getHook() to the json.load function.
-#
-#     def registerClass(self, cls: typing.Type[Dictable]):
-#         self._hr.addHook(cls.fromDict)
-#
-#     def dictDecode(self, d):
-#         if isinstance(d, (int, float, bool, str)):
-#             pass
-#         elif isinstance(d, list):
-#             for i, e in enumerate(d):
-#                 d[i] = self.dictDecode(e)
-#         elif isinstance(d, dict):
-#             for k, v in d.items():
-#                 d[k] = self.dictDecode(v)
-#         else:
-#             return d
-#         d = self._hr.getHook()(d)
-#         return d
-
 class Property(_JsonAble):
     """Represents a single property from a micromanager PropertyMap
 

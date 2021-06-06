@@ -326,7 +326,6 @@ def crossCorrelateRegisterTranslation(reference: np.ndarray, other: typing.Itera
             MultiPlot: A reference to the plotting widgets used to display the results of the function. If `debugPlots` is False this will be `None`
     """
     import cv2
-    from mpl_qt_viz.visualizers import MultiPlot
     if debugPlots:
         anFig, anAx = plt.subplots()
         anFig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
@@ -345,6 +344,7 @@ def crossCorrelateRegisterTranslation(reference: np.ndarray, other: typing.Itera
                 anAx.imshow(cv2.warpAffine(to8bit(im), cv2.invertAffineTransform(shifts), im.shape), 'gray'),
                 anAx.text(100, 100, str(i), color='r')])
     if debugPlots:
+        from mpl_qt_viz.visualizers import MultiPlot
         an = MultiPlot(anims, "If transforms worked, images should not appear to move.")
         an.show()
     else:

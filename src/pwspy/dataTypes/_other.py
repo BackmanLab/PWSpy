@@ -124,6 +124,8 @@ class Roi:
             assert len(verts.shape) == 2
             assert verts.shape[1] == 2
             self.polygon = geometry.Polygon(shell=verts)
+        self.polygon = self.polygon.buffer(0)  # This little trick `normalizes` the format of the polygon so that holes will plot properly. https://gis.stackexchange.com/questions/374001/plotting-shapely-polygon-with-holes-does-not-plot-all-holes
+
         self.mask = mask
 
     @property
@@ -177,7 +179,6 @@ class Roi:
             all_polygons.append(shapely.geometry.shape(shape))
 
         poly = sorted(all_polygons, key=lambda ply: ply.area)[-1]  # Return the biggest found polygon
-        poly = poly.buffer(0)  # This little trick `normalizes` the format of the polygon so that holes will plot properly. https://gis.stackexchange.com/questions/374001/plotting-shapely-polygon-with-holes-does-not-plot-all-holes
         return cls(mask=mask, verts=poly)
 
     def transform(self, matrix: np.ndarray) -> Roi:
@@ -225,6 +226,11 @@ class RoiFile:
         self.isDeleted = False
 
     def getRoi(self) -> Roi:
+        """Return the ROI object associated with this file.
+
+        Returns:
+            The `Roi` object containing geometry information.
+        """
         return copy.deepcopy(self._roi)  # Rois are mutable so return a copy.
 
     def __repr__(self):

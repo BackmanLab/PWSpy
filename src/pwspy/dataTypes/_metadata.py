@@ -23,12 +23,11 @@ import os
 import pathlib
 import subprocess
 import sys
-import typing
+import typing as t_
 import abc
 import warnings
 from datetime import datetime
 import enum
-from typing import Optional, Tuple, Union, List
 import h5py
 import jsonschema
 import numpy as np
@@ -93,7 +92,7 @@ class MetaDataBase(abc.ABC):
             self.cameraCorrection = None
 
     @abc.abstractmethod
-    def toDataClass(self, lock: typing.Optional[mp.Lock]) -> pwsdtd.ICBase:
+    def toDataClass(self, lock: t_.Optional[mp.Lock]) -> pwsdtd.ICBase:
         """Convert the metadata class to a class that loads the data
 
         Args:
@@ -173,7 +172,7 @@ class AnalysisManager(abc.ABC):
 
     @staticmethod
     @abc.abstractmethod
-    def getAnalysisResultsClass() -> typing.Type[AbstractHDFAnalysisResults]:
+    def getAnalysisResultsClass() -> t_.Type[AbstractHDFAnalysisResults]:
         """
 
         Returns:
@@ -181,7 +180,7 @@ class AnalysisManager(abc.ABC):
         """
         pass
 
-    def getAnalyses(self) -> typing.List[str]:
+    def getAnalyses(self) -> t_.List[str]:
         """
 
         Returns:
@@ -191,7 +190,7 @@ class AnalysisManager(abc.ABC):
         return self.getAnalysesAtPath(self.__filePath)
 
     @classmethod
-    def getAnalysesAtPath(cls, path: str) -> typing.List[str]:
+    def getAnalysesAtPath(cls, path: str) -> t_.List[str]:
         """
 
         Args:
@@ -249,7 +248,7 @@ class DynMetaData(MetaDataBase, AnalysisManager):
         Hdf = enum.auto()
 
     @staticmethod
-    def getAnalysisResultsClass() -> typing.Type[AbstractHDFAnalysisResults]:
+    def getAnalysisResultsClass() -> t_.Type[AbstractHDFAnalysisResults]:
         from pwspy.analysis.dynamics import DynamicsAnalysisResults
         return DynamicsAnalysisResults
 
@@ -586,7 +585,7 @@ class ICMetaData(MetaDataBase, AnalysisManager):
         NanoMat = enum.auto()
 
     @staticmethod
-    def getAnalysisResultsClass() -> typing.Type[AbstractHDFAnalysisResults]:
+    def getAnalysisResultsClass() -> t_.Type[AbstractHDFAnalysisResults]:
         from pwspy.analysis.pws import PWSAnalysisResults
         return PWSAnalysisResults
 
@@ -771,7 +770,7 @@ class AcqDir:
     Args:
         directory: the file path the root directory of the acquisition
     """
-    def __init__(self, directory: str):
+    def __init__(self, directory: t_.Union[str, os.PathLike]):
         self.filePath = os.path.abspath(directory)  # Forcing an absolute path helps by: A: normalizing the path so string comparisons work. B: making sure that if the object is pickled and then unpickled from a different working direcotory the path will still be valid if the data is unmoved.
         if (self.pws is None) and (self.dynamics is None) and (len(self.fluorescence) == 0):
             raise OSError(f"Could not find a valid PWS or Dynamics Acquisition at {directory}.")
@@ -807,7 +806,7 @@ class AcqDir:
                 return None
 
     @cached_property
-    def fluorescence(self) -> typing.List[FluorMetaData]:
+    def fluorescence(self) -> t_.List[FluorMetaData]:
         # Newer acquisitions allow for multiple fluorescence images saved to numbered subfolders
         i = 0
         imgs = []
@@ -863,8 +862,8 @@ class AcqDir:
         """Save a Roi to file in the acquisition's file path."""
         return RoiFile.toHDF(roi, roiName, roiNumber, self.filePath, overwrite=overwrite, acquisition=self)
 
-    def deleteRoi(self, name: str, num: int):
-        RoiFile.deleteRoi(self.filePath, name, num)
+    def deleteRoi(self, name: str, num: int, fformat: t_.Optional[RoiFile.FileFormats] = None):
+        RoiFile.deleteRoi(self.filePath, name, num, fformat=fformat)
 
     def editNotes(self):
         """Create a `notes.txt` file if it doesn't already exists and open it in a text editor."""

@@ -53,6 +53,6 @@ __version__ = _versionStr
 dateTimeFormat = "%d-%m-%Y %H:%M:%S"
 
 
-__all__ = ['dateTimeFormat']
+__all__ = ['dateTimeFormat', 'utility', 'dataTypes', 'analysis', 'examples']
 
 
