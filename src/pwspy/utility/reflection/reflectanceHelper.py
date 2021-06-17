@@ -52,7 +52,7 @@ materialFiles = {
     Material.Ipa: 'Sani-DellOro-IPA.csv',
     Material.Ethanol: 'Rheims.csv',
     Material.ITO: 'Konig.csv',
-    Material.Methanol: 'El-Kashef.csv'
+    Material.Methanol: 'Moutzouris.csv'
 }
 
 
