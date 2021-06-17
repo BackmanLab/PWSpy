@@ -334,8 +334,8 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], ma
         scatterAx2.set_ylabel("Theoretical Ratio")
         scatterAx2.set_xlabel("Observed Ratio after Subtraction")
         scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in settMatCombos]
-        scatterPointsX = [((meanValues[sett][matCombo]['mat1Spectra'] - means['I0'] * means['rExtra']) / (
-                meanValues[sett][matCombo]['mat2Spectra'] - means['I0'] * means['rExtra'])).mean() for matCombo in
+        scatterPointsX = [np.nanmean((meanValues[sett][matCombo]['mat1Spectra'] - means['I0'] * means['rExtra']) / (
+                meanValues[sett][matCombo]['mat2Spectra'] - means['I0'] * means['rExtra'])) for matCombo in
                           settMatCombos]
         [scatterAx2.scatter(x, y, label=f'{matCombo[0].name}/{matCombo[1].name}') for x, y, matCombo in
          zip(scatterPointsX, scatterPointsY, settMatCombos)]
@@ -351,8 +351,8 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], ma
                     fig5 = plt.figure()
                     figs.append(fig5)
                     plt.title(f"Reflectance %. {sett}, {mat1}:{int(cubes[mat1].metadata.exposure)}ms, {mat2}:{int(cubes[mat2].metadata.exposure)}ms")
-                    _ = ((theoryR[mat1][np.newaxis, np.newaxis, :] * cubes[mat2].data) - (
-                        theoryR[mat2][np.newaxis, np.newaxis, :] * cubes[mat1].data)) / (
+                    _ = ((np.array(theoryR[mat1])[np.newaxis, np.newaxis, :] * cubes[mat2].data) - (
+                        np.array(theoryR[mat2])[np.newaxis, np.newaxis, :] * cubes[mat1].data)) / (
                             cubes[mat1].data - cubes[mat2].data)
                     _[np.isinf(_)] = np.nan
                     if np.any(np.isnan(_)):

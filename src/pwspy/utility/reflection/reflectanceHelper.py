@@ -51,7 +51,9 @@ materialFiles = {
     Material.Oil_1_4: "CargilleOil1_4.csv",
     Material.Ipa: 'Sani-DellOro-IPA.csv',
     Material.Ethanol: 'Rheims.csv',
-    Material.ITO: 'Konig.csv'}
+    Material.ITO: 'Konig.csv',
+    Material.Methanol: 'El-Kashef.csv'
+}
 
 
 def _init():
