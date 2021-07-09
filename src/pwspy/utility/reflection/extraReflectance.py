@@ -39,6 +39,9 @@ Classes
 """
 import logging
 from typing import Dict, List, Tuple, Iterable, Any, Iterator, Union, Optional, Set
+
+from mpl_qt_viz.visualizers import DockablePlotWindow
+
 from pwspy.dataTypes import Roi, ExtraReflectanceCube, ImCube, ERMetaData
 from pwspy.utility.reflection import reflectanceHelper, Material
 import itertools
@@ -235,7 +238,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], ma
     """Generate a variety of plots displaying information about the extra reflectance calculation.
     
     Args:
-        df: A pandas dataframe containging a row for each ImCube that is to be included in the calculation. The dataframe
+        df: A pandas dataframe containing a row for each ImCube that is to be included in the calculation. The dataframe
             should have the following columns: 'cube': The `ImCube` object in question, should be an image of a
             glass-{material} interface. `material`: The `Material` that the ImCube is an image of. `setting`: A string
             describing the imaging configuration. If the dataframe has multiple settings then each settings will be
@@ -257,10 +260,9 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], ma
     for sett in settings:
         cubeCombos = getAllCubeCombos(matCombos, df[df['setting'] == sett])
         meanValues[sett], allCombos[sett] = _calculateSpectraFromCombos(cubeCombos, theoryR, numericalAperture, mask)
-    figs = []
-    fig, ax = plt.subplots()  # For extra reflections
-    fig.suptitle("Extra Reflection")
-    figs.append(fig)
+    dock = DockablePlotWindow("Primary")
+    figs = [dock]
+    fig, ax = dock.subplots("Extra Reflection")  # For extra reflections
     ax.set_ylabel("Reflectance (1 = total reflection)")
     ax.set_xlabel("nm")
     i = 0
@@ -282,9 +284,9 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], ma
         ax.plot(cubes[mat1].wavelengths, meanValues[sett]['mean']['rExtra'], color='k', label=f'{sett} mean')  # TODO Add a hover annotation since all of the lines are black it's impossible to know which one is which.
     ax.legend()
 
-    fig2, ratioAxes = plt.subplots(nrows=len(matCombos))  # for correction factor
-    figs.append(fig2)
-    if not isinstance(ratioAxes, np.ndarray): ratioAxes = np.array(ratioAxes).reshape(1)  # If there is only one axis we still want it to be a list for the rest of the code
+    fig2, ratioAxes = dock.subplots("Reflectance Ratios", nrows=len(matCombos))  # for correction factor
+    if not isinstance(ratioAxes, np.ndarray):
+        ratioAxes = np.array(ratioAxes).reshape(1)  # If there is only one axis we still want it to be a list for the rest of the code
     ratioAxes = dict(zip(matCombos, ratioAxes))
     for combo in matCombos:
         ratioAxes[combo].set_title(f'{combo[0].name}/{combo[1].name} reflection ratio')
@@ -298,12 +300,12 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], ma
                                          label=f'{sett} {mat1.name}:{int(cubes[mat1].metadata.exposure)}ms {mat2.name}:{int(cubes[mat2].metadata.exposure)}ms')
     [ratioAxes[combo].legend() for combo in matCombos]
 
+    dock = DockablePlotWindow("Correction Comparison")
+    figs.append(dock)
     for sett in settings:
         settMatCombos = allCombos[sett].keys()  # Sometime we are looking at settings which don't have all the same matCombos. Only use the combos specific to this setting.
         means = meanValues[sett]['mean']
-        fig6, scatterAx3 = plt.subplots()
-        fig6.suptitle(f'{sett}')
-        figs.append(fig6)
+        fig6, scatterAx3 = dock.subplots(f"{sett}")
         scatterAx3.set_ylabel("Theoretical Ratio")
         scatterAx3.set_xlabel("Observed Ratio. No correction")
         scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in settMatCombos]
@@ -314,9 +316,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], ma
         scatterAx3.plot(x, x, label='1:1')
         scatterAx3.legend()
 
-        fig3, scatterAx = plt.subplots()  # A scatter plot of the theoretical vs observed reflectance ratio.
-        fig3.suptitle(f'{sett} cFactor: {means["cFactor"]}')
-        figs.append(fig3)
+        fig3, scatterAx = dock.subplots(f'{sett} cFactor: {means["cFactor"]}')  # A scatter plot of the theoretical vs observed reflectance ratio.
         scatterAx.set_ylabel("Theoretical Ratio")
         scatterAx.set_xlabel("Observed Ratio w/ cFactor")
         scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in settMatCombos]
@@ -328,9 +328,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], ma
         scatterAx.plot(x, x, label='1:1')
         scatterAx.legend()
 
-        fig4, scatterAx2 = plt.subplots()  # A scatter plot of the theoretical vs observed reflectance ratio.
-        fig4.suptitle(sett)
-        figs.append(fig4)
+        fig4, scatterAx2 = dock.subplots(sett)  # A scatter plot of the theoretical vs observed reflectance ratio.
         scatterAx2.set_ylabel("Theoretical Ratio")
         scatterAx2.set_xlabel("Observed Ratio after Subtraction")
         scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in settMatCombos]
@@ -344,13 +342,13 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], ma
         scatterAx2.legend()
 
         if plotReflectionImages:
+            dock = DockablePlotWindow("System Reflectance% Estimates")
+            figs.append(dock)
             for matCombo in settMatCombos:
                 mat1, mat2 = matCombo
                 for combo in allCombos[sett][matCombo]:
                     cubes = combo.combo
-                    fig5 = plt.figure()
-                    figs.append(fig5)
-                    plt.title(f"Reflectance %. {sett}, {mat1}:{int(cubes[mat1].metadata.exposure)}ms, {mat2}:{int(cubes[mat2].metadata.exposure)}ms")
+                    fig, ax = dock.subplots(f"{sett}, {mat1}:{int(cubes[mat1].metadata.exposure)}ms, {mat2}:{int(cubes[mat2].metadata.exposure)}ms")
                     _ = ((np.array(theoryR[mat1])[np.newaxis, np.newaxis, :] * cubes[mat2].data) - (
                         np.array(theoryR[mat2])[np.newaxis, np.newaxis, :] * cubes[mat1].data)) / (
                             cubes[mat1].data - cubes[mat2].data)
@@ -358,8 +356,8 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], ma
                     if np.any(np.isnan(_)):
                         _ = _interpolateNans(_)  # any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
                     refIm = _.mean(axis=2)
-                    plt.imshow(refIm, vmin=np.percentile(refIm, .5), vmax=np.percentile(refIm, 99.5))
-                    plt.colorbar()
+                    im = ax.imshow(refIm, vmin=np.percentile(refIm, .5), vmax=np.percentile(refIm, 99.5))
+                    plt.colorbar(mappable=im)
 
         logging.getLogger(__name__).info(f"{sett} correction factor")
     return figs
@@ -422,8 +420,8 @@ def generateRExtraCubes(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict,
     for matCombo, combosList in allCombos.items():
         logging.getLogger(__name__).info(f"Calculating rExtra for: {matCombo}")
         erCubes, weights = zip(*[_generateOneRExtraCube(combo, theoryR) for combo in combosList])
-        weightSum = reduce(lambda x,y: x+y, weights)
-        weightedMean = reduce(lambda x,y: x+y, [cube*weight for cube, weight in zip(erCubes, weights)]) / weightSum
+        weightSum = reduce(lambda x, y: x + y, weights)
+        weightedMean = reduce(lambda x, y: x + y, [cube*weight for cube, weight in zip(erCubes, weights)]) / weightSum
         meanWeight = weightSum / len(weights)
         rExtra[matCombo] = (weightedMean, meanWeight)
     erCubes, weights = zip(*rExtra.values())
