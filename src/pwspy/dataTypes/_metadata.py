@@ -720,19 +720,24 @@ class ICMetaData(MetaDataBase, AnalysisManager):
         finally:
             if lock is not None:
                 lock.release()
-        #For a while the micromanager metadata was getting saved weird this fixes it.
-        if 'major_version' in metadata['MicroManagerMetadata']:
-            metadata['MicroManagerMetadata'] = metadata['MicroManagerMetadata']['map']
-        # Get binning from the micromanager metadata
-        binning = metadata['MicroManagerMetadata']['Binning']
-        if isinstance(binning, dict):  # This is due to a property map change from beta to gamma
-            binning = binning['scalar']
+        if 'MicroManagerMetadata' not in metadata:  # Data saved by something other than the Micro-Manager acquisition plugin won't have this. I.E. NanoCytomics  data saved by `toTiff`
+            binning = metadata['binning']
+            pixelSize = metadata['pixelSizeUm']
+        else:
+            #For a while the micromanager metadata was getting saved weird this fixes it.
+            if 'major_version' in metadata['MicroManagerMetadata']:
+                metadata['MicroManagerMetadata'] = metadata['MicroManagerMetadata']['map']
+            # Get binning from the micromanager metadata
+            binning = metadata['MicroManagerMetadata']['Binning']
+            if isinstance(binning, dict):  # This is due to a property map change from beta to gamma
+                binning = binning['scalar']
+            # Get the pixel size from the micromanager metadata
+            try:
+                pixelSize = metadata['MicroManagerMetadata']['PixelSizeUm']['scalar']
+            except KeyError:
+                pixelSize = None
         metadata['binning'] = binning
-        # Get the pixel size from the micromanager metadata
-        try:
-            metadata['pixelSizeUm'] = metadata['MicroManagerMetadata']['PixelSizeUm']['scalar']
-        except KeyError:
-            metadata['pixelSizeUm'] = None
+        metadata['pixelSizeUm'] = pixelSize
         if metadata['pixelSizeUm'] == 0: metadata['pixelSizeUm'] = None
         if 'waveLengths' in metadata:  # Fix an old naming issue
             metadata['wavelengths'] = metadata['waveLengths']

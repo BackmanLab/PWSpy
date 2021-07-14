@@ -53,3 +53,4 @@ class Material(enum.Enum):
     Ipa = enum.auto()
     Ethanol = enum.auto()
     ITO = enum.auto()
+    Methanol = enum.auto()
