@@ -50,6 +50,7 @@ import numpy as np
 from functools import reduce
 import pandas as pd
 from dataclasses import dataclass
+__all__ = ['getAllCubeCombos', 'generateMaterialCombos', 'generateRExtraCubes', 'getTheoreticalReflectances']
 
 MCombo = Tuple[Material, Material]  # This is just an alias to shorten some of the type hinting.
 
