@@ -219,7 +219,7 @@ def processParallel(fileFrame: pd.DataFrame, processorFunc: typing.Callable[[], 
         numProcesses = psutil.cpu_count(logical=False) - 1  # Use one less than number of available cores. If we use all cores then things can get locked up.
     po = mp.Pool(processes=numProcesses, initializer=initializer, initargs=initArgs)
     try:
-        vars = fileFrame.iterrows() if procArgs is None else zip(fileFrame.iterrows(), *zip(*[[procArgs]] * len(fileFrame)))
+        vars = fileFrame.iterrows() if procArgs is None else zip(*zip(*fileFrame.iterrows()), *zip(*[procArgs] * len(fileFrame)))
         cubes = po.starmap(processorFunc, vars)
     finally:
         po.close()
