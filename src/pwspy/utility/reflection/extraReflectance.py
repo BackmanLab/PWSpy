@@ -301,12 +301,12 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], ma
                                          label=f'{sett} {mat1.name}:{int(cubes[mat1].metadata.exposure)}ms {mat2.name}:{int(cubes[mat2].metadata.exposure)}ms')
     [ratioAxes[combo].legend() for combo in matCombos]
 
-    dock = DockablePlotWindow("Correction Comparison")
-    figs.append(dock)
+    comparisonDock = DockablePlotWindow("Correction Comparison")
+    figs.append(comparisonDock)
     for sett in settings:
         settMatCombos = allCombos[sett].keys()  # Sometime we are looking at settings which don't have all the same matCombos. Only use the combos specific to this setting.
         means = meanValues[sett]['mean']
-        fig6, scatterAx3 = dock.subplots(f"{sett}")
+        fig6, scatterAx3 = comparisonDock.subplots(f"{sett} Uncorrected")
         scatterAx3.set_ylabel("Theoretical Ratio")
         scatterAx3.set_xlabel("Observed Ratio. No correction")
         scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in settMatCombos]
@@ -317,7 +317,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], ma
         scatterAx3.plot(x, x, label='1:1')
         scatterAx3.legend()
 
-        fig3, scatterAx = dock.subplots(f'{sett} cFactor: {means["cFactor"]}')  # A scatter plot of the theoretical vs observed reflectance ratio.
+        fig3, scatterAx = comparisonDock.subplots(f'{sett} cFactor: {means["cFactor"]}')  # A scatter plot of the theoretical vs observed reflectance ratio.
         scatterAx.set_ylabel("Theoretical Ratio")
         scatterAx.set_xlabel("Observed Ratio w/ cFactor")
         scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in settMatCombos]
@@ -329,7 +329,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], ma
         scatterAx.plot(x, x, label='1:1')
         scatterAx.legend()
 
-        fig4, scatterAx2 = dock.subplots(sett)  # A scatter plot of the theoretical vs observed reflectance ratio.
+        fig4, scatterAx2 = comparisonDock.subplots(sett)  # A scatter plot of the theoretical vs observed reflectance ratio.
         scatterAx2.set_ylabel("Theoretical Ratio")
         scatterAx2.set_xlabel("Observed Ratio after Subtraction")
         scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in settMatCombos]
