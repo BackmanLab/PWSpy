@@ -155,7 +155,7 @@ def generateMaterialCombos(materials: t_.Iterable[Material], excludedCombos: t_.
     return matCombos
 
 
-def getAllCubeCombos(matCombos: Iterable[MCombo], df: pd.DataFrame) -> Dict[MCombo, List[CubeCombo]]:
+def getAllCubeCombos(matCombos: t_.Iterable[MCombo], df: pd.DataFrame) -> t_.Dict[MCombo, t_.List[CubeCombo]]:
     """Given a list of material combo tuples, return a dictionary whose keys are the material combo tuples and whose values are
     lists of CubeCombos.
 
@@ -174,7 +174,7 @@ def getAllCubeCombos(matCombos: Iterable[MCombo], df: pd.DataFrame) -> Dict[MCom
     return allCombos
 
 
-def _calculateSpectraFromCombos(cubeCombos: t_.Dict[MCombo, t_.List[CubeCombo]], theoryR: Dict[Material, pd.Series],
+def _calculateSpectraFromCombos(cubeCombos: t_.Dict[MCombo, t_.List[CubeCombo]], theoryR: t_.Dict[Material, pd.Series],
                                 numericalAperture: float, mask: t_.Optional[Roi] = None) ->\
         t_.Tuple[t_.Dict[t_.Union[MCombo, str], t_.Dict[str, t_.Any]], t_.Dict[MCombo, t_.List[_ComboSummary]]]:
     """This is used to examine the output of extra reflection calculation before using saveRExtra to save a cube for each setting.
