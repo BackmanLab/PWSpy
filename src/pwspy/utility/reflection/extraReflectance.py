@@ -260,7 +260,6 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series],
     df['material'] = df['material'].astype('category')  # required for groupby
     for sett in settings:
         matCubeDict = df[df['setting'] == sett].groupby('material')['cube'].apply(list).to_dict()
-        # matCubeIterator = tuple(df[df['setting'] == sett][['material', 'cube']].itertuples(index=False))  # Iterate pairs of Material/Measurement
         cubeCombos = getAllCubeCombos(matCombos, matCubeDict)
         meanValues[sett], allCombos[sett] = _calculateSpectraFromCombos(cubeCombos, theoryR, numericalAperture, mask)
     dock = DockablePlotWindow("Primary")
@@ -398,11 +397,11 @@ def _generateOneRExtraCube(combo: CubeCombo, theoryR: t_.Dict[Material, pd.Serie
     # Since we are just looking for a relative measure of confidence we can ignore C. We use the `Variance weighted average'
     # (1/stddev^2)
     #Doing this calculation with noise in Theory instead of data gives us a variance of C^2 * (data1^2 + data2^2) / (data1 - data2)^2. this seems like a better equation to use. TODO Really? Why?
-    weight = (data1-data2)**2 / (data1**2 + data2**2) # The weight is the inverse of the variance. Higher weight = more reliable data.
+    weight = (data1-data2)**2 / (data1**2 + data2**2)  # The weight is the inverse of the variance. Higher weight = more reliable data.
     return arr, weight
 
 
-def generateRExtraCubes(allCombos: t_.Dict[MCombo, t_.List[CubeCombo]], theoryR: dict, numericalAperture: float) -> \
+def generateRExtraCubes(allCombos: t_.Dict[MCombo, t_.List[CubeCombo]], theoryR: t_.Dict[Material, pd.Series], numericalAperture: float) -> \
         t_.Tuple[ExtraReflectanceCube, t_.Dict[t_.Union[str, MCombo], t_.Tuple[np.ndarray, np.ndarray]]]:
     """Generate a series of extra reflectance cubes based on the input data.
 
@@ -413,9 +412,8 @@ def generateRExtraCubes(allCombos: t_.Dict[MCombo, t_.List[CubeCombo]], theoryR:
             also been calculated at this NA
 
     Returns:
-        Returns extra reflectance for each material combo as well as the mean of all extra reflectances.
-        This is what gets used. Ideally all the cubes will be very similar.
-        Additionally returns a list of plot objects. references to these must be kept alive for the plots to be responsive.
+        An `ExtraReflectanceCube` object containing data from the weighted average of all measurements.
+         A dictionary where the keys are material combos and the values are tuples of the weightedMean and the weight arrays.
     """
     rExtra = {}
     for matCombo, combosList in allCombos.items():
@@ -428,11 +426,10 @@ def generateRExtraCubes(allCombos: t_.Dict[MCombo, t_.List[CubeCombo]], theoryR:
     erCubes, weights = zip(*rExtra.values())
     weightSum = reduce(lambda x, y: x + y, weights)
     weightedMean = reduce(lambda x, y: x + y, [cube * weight for cube, weight in zip(erCubes, weights)]) / weightSum
-    meanWeight = weightSum / len(weights)
-    rExtra['mean'] = (weightedMean, meanWeight)
+    # meanWeight = weightSum / len(weights)
     sampleCube: ImCube = list(allCombos.values())[0][0].data1
     md = ERMetaData(sampleCube.metadata.dict, numericalAperture)
-    erCube = ExtraReflectanceCube(rExtra['mean'][0], sampleCube.wavelengths, md)
+    erCube = ExtraReflectanceCube(weightedMean, sampleCube.wavelengths, md)
     return erCube, rExtra
 
 
