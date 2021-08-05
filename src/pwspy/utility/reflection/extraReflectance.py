@@ -113,7 +113,6 @@ def getTheoreticalReflectances(materials: t_.Set[Material], wavelengths: t_.Tupl
     Returns:
         A dictionary of the reflectances for each material. The material serves as the dictionary key.
     """
-
     theoryR = {}
     for material in materials:  # For each unique material
         logging.getLogger(__name__).info(f"Calculating reflectance for {material}")
@@ -130,7 +129,6 @@ def generateMaterialCombos(materials: t_.Iterable[Material], excludedCombos: t_.
 
     Returns:
         A list of Material combinations.
-
     """
     if excludedCombos is None:
         excludedCombos = []
@@ -184,26 +182,29 @@ def _calculateSpectraFromCombos(cubeCombos: t_.Dict[MCombo, t_.List[CubeCombo]],
     # the raw data, `allCombos`
     allCombos = {}
     meanValues = {}
-    params = ['rExtra', 'I0', 'mat1Spectra', 'mat2Spectra']
     for matCombo in cubeCombos.keys():
+        # Generate summaries for every single combination.
         allCombos[matCombo] = []
         for combo in cubeCombos[matCombo]:
             mat1, mat2 = combo.keys()
-            c = _ComboSummary(mat1Spectra=combo[mat1].getMeanSpectra(mask)[0],
-                              mat2Spectra=combo[mat2].getMeanSpectra(mask)[0],
-                              weight=None,
-                              rExtra=None,
-                              I0=None,
-                              cFactor=None,
-                              combo=combo)
-            c.weight = (c.mat1Spectra - c.mat2Spectra) ** 2 / (c.mat1Spectra ** 2 + c.mat2Spectra ** 2)
-            c.rExtra = ((theoryR[mat1] * c.mat2Spectra) - (theoryR[mat2] * c.mat1Spectra)) / (c.mat1Spectra - c.mat2Spectra)
-            c.I0 = c.mat2Spectra / (theoryR[mat2] + c.rExtra)
+            spectra1 = combo[mat1].getMeanSpectra(mask)[0]
+            spectra2 = combo[mat2].getMeanSpectra(mask)[0]
+            weight = (spectra1 - spectra2) ** 2 / (spectra1 ** 2 + spectra2 ** 2)
+            rExtra = ((theoryR[mat1] * spectra2) - (theoryR[mat2] * spectra1)) / (spectra1 - spectra2)
+            I0 = spectra2 / (theoryR[mat2] + rExtra)  # Reconstructed intensity of illumination in same units as `spectra`. This could just as easily be done with material1. They are identical by definition.
             waterTheory = reflectanceHelper.getReflectance(Material.Water, Material.Glass, wavelengths=list(theoryR.values())[0].index, NA=numericalAperture)
-            c.cFactor = (c.rExtra.mean() + waterTheory.mean()) / waterTheory.mean()
+            cFactor = (rExtra.mean() + waterTheory.mean()) / waterTheory.mean()
+            c = _ComboSummary(mat1Spectra=spectra1,
+                              mat2Spectra=spectra2,
+                              weight=weight,
+                              rExtra=rExtra,
+                              I0=I0,
+                              cFactor=cFactor,
+                              combo=combo)
             allCombos[matCombo].append(c)
+
         meanValues[matCombo] = {}
-        for param in params:
+        for param in ('rExtra', 'I0', 'mat1Spectra', 'mat2Spectra'):
             meanValues[matCombo][param] = np.average(np.array(list([getattr(combo, param) for combo in allCombos[matCombo]])),
                                                     axis=0,
                                                     weights=np.array([combo.weight for combo in allCombos[matCombo]]))
@@ -250,6 +251,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series],
         matCubeDict = df[df['setting'] == sett].groupby('material')['cube'].apply(list).to_dict()
         cubeCombos = getAllCubeCombos(matCombos, matCubeDict)
         meanValues[sett], allCombos[sett] = _calculateSpectraFromCombos(cubeCombos, theoryR, numericalAperture, mask)
+
     dock = DockablePlotWindow("Primary")
     figs = [dock]
     fig, ax = dock.subplots("Extra Reflection")  # For extra reflections
