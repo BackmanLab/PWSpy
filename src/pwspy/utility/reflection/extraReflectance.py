@@ -101,18 +101,6 @@ class _ComboSummary:
     weight: np.ndarray
 
 
-def _interpolateNans(arr):
-    """Interpolate out nan values along the third axis of an array"""
-    def interp1(arr1):
-        nans = np.isnan(arr1)
-        f = lambda z: z.nonzero()[0]
-        arr1[nans] = np.interp(f(nans), f(~nans), arr1[~nans])
-        return arr1
-
-    arr = np.apply_along_axis(interp1, 2, arr)
-    return arr
-
-
 def getTheoreticalReflectances(materials: t_.Set[Material], wavelengths: t_.Tuple[float], numericalAperture: float) -> t_.Dict[Material, pd.Series]:
     """Generate a dictionary containing a pandas series of the `material`-glass reflectance for each material in
     `materials`.
@@ -351,13 +339,13 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series],
                 for combo in allCombos[sett][matCombo]:
                     cubes = combo.combo
                     fig, ax = dock.subplots(f"{sett}, {mat1}:{int(cubes[mat1].metadata.exposure)}ms, {mat2}:{int(cubes[mat2].metadata.exposure)}ms")
-                    _ = ((np.array(theoryR[mat1])[np.newaxis, np.newaxis, :] * cubes[mat2].data) - (
-                        np.array(theoryR[mat2])[np.newaxis, np.newaxis, :] * cubes[mat1].data)) / (
-                            cubes[mat1].data - cubes[mat2].data)
-                    _[np.isinf(_)] = np.nan
-                    if np.any(np.isnan(_)):
-                        _ = _interpolateNans(_)  # any division error resulting in an inf will really mess up our refIm. so we interpolate them out.
-                    refIm = _.mean(axis=2)
+                    T1 = np.array(theoryR[mat1])[np.newaxis, np.newaxis, :]  # Predicted reflectance for material 1
+                    T2 = np.array(theoryR[mat2])[np.newaxis, np.newaxis, :]  # Predicted for material 2
+                    I1 = cubes[mat1].data  # Intensity (A.U.) for material 1
+                    I2 = cubes[mat2].data
+                    er = ((T1 * I2) - (T2 * I1)) / (I1 - I2)  # The calculated Extra Reflectance.
+                    er[np.isinf(er)] = np.nan
+                    refIm = np.nanmean(er, axis=2)
                     im = ax.imshow(refIm, vmin=np.percentile(refIm, .5), vmax=np.percentile(refIm, 99.5))
                     plt.colorbar(mappable=im)
     return figs
