@@ -181,6 +181,7 @@ def _calculateSpectraFromCombos(cubeCombos: t_.Dict[MCombo, t_.List[CubeCombo]],
     # the raw data, `allCombos`
     allCombos = {}
     meanValues = {}
+    params = ('rExtra', 'I0', 'mat1Spectra', 'mat2Spectra')
     for matCombo in cubeCombos.keys():
         # Generate summaries for every single combination.
         allCombos[matCombo] = []
@@ -200,7 +201,7 @@ def _calculateSpectraFromCombos(cubeCombos: t_.Dict[MCombo, t_.List[CubeCombo]],
             allCombos[matCombo].append(c)
 
         meanValues[matCombo] = {}
-        for param in ('rExtra', 'I0', 'mat1Spectra', 'mat2Spectra'):
+        for param in params:
             meanValues[matCombo][param] = np.average(np.array(list([getattr(combo, param) for combo in allCombos[matCombo]])),
                                                     axis=0,
                                                     weights=np.array([combo.weight for combo in allCombos[matCombo]]))
