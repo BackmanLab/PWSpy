@@ -38,8 +38,7 @@ Classes
    CubeCombo
 """
 import logging
-from typing import Dict, List, Tuple, Iterable, Any, Iterator, Union, Optional, Set
-
+import typing as t_
 from mpl_qt_viz.visualizers import DockablePlotWindow
 
 from pwspy.dataTypes import Roi, ExtraReflectanceCube, ImCube, ERMetaData
@@ -52,7 +51,7 @@ import pandas as pd
 from dataclasses import dataclass
 __all__ = ['getAllCubeCombos', 'generateMaterialCombos', 'generateRExtraCubes', 'getTheoreticalReflectances']
 
-MCombo = Tuple[Material, Material]  # This is just an alias to shorten some of the type hinting.
+MCombo = t_.Tuple[Material, Material]  # This is just an alias to shorten some of the type hinting.
 
 
 class CubeCombo:
@@ -74,13 +73,14 @@ class CubeCombo:
     def keys(self) -> MCombo:
         return self.mat1, self.mat2
 
-    def values(self) -> Tuple[ImCube, ImCube]:
+    def values(self) -> t_.Tuple[ImCube, ImCube]:
         return self.data1, self.data2
 
-    def items(self) -> Iterator[Tuple[Material, ImCube]]:
+    def items(self) -> t_.Iterator[t_.Tuple[Material, ImCube]]:
         return zip(self.keys(), self.values())
 
     def __getitem__(self, item: Material) -> ImCube:
+        """cubeCombo[myMaterial] will return the data class for that material."""
         if item == self.mat1:
             return self.data1
         elif item == self.mat2:
@@ -92,9 +92,9 @@ class CubeCombo:
 @dataclass
 class _ComboSummary:
     """A convenient packaging of information related to the extra reflectance calculated from a single _CubeCombo"""
-    mat1Spectra: np.ndarray
+    mat1Spectra: np.ndarray  # The average spectrum in the ROI
     mat2Spectra: np.ndarray
-    combo: CubeCombo
+    combo: CubeCombo  # Container of the full raw data
     rExtra: np.ndarray
     I0: np.ndarray
     cFactor: float
@@ -103,7 +103,6 @@ class _ComboSummary:
 
 def _interpolateNans(arr):
     """Interpolate out nan values along the third axis of an array"""
-
     def interp1(arr1):
         nans = np.isnan(arr1)
         f = lambda z: z.nonzero()[0]
@@ -114,7 +113,7 @@ def _interpolateNans(arr):
     return arr
 
 
-def getTheoreticalReflectances(materials: Set[Material], wavelengths: Tuple[float], numericalAperture: float) -> Dict[Material, pd.Series]:
+def getTheoreticalReflectances(materials: t_.Set[Material], wavelengths: t_.Tuple[float], numericalAperture: float) -> t_.Dict[Material, pd.Series]:
     """Generate a dictionary containing a pandas series of the `material`-glass reflectance for each material in
     `materials`.
 
@@ -124,17 +123,17 @@ def getTheoreticalReflectances(materials: Set[Material], wavelengths: Tuple[floa
         numericalAperture: The numerical aperture that the reflectance should be calculated at.
 
     Returns:
-        A dictionary of the reflectances for each material.
+        A dictionary of the reflectances for each material. The material serves as the dictionary key.
     """
 
     theoryR = {}
-    for material in materials:  # For each unique material in the `cubes` list
+    for material in materials:  # For each unique material
         logging.getLogger(__name__).info(f"Calculating reflectance for {material}")
         theoryR[material] = reflectanceHelper.getReflectance(material, Material.Glass, wavelengths=wavelengths, NA=numericalAperture)
     return theoryR
 
 
-def generateMaterialCombos(materials: Iterable[Material], excludedCombos: Optional[Iterable[MCombo]] = None) -> List[MCombo]:
+def generateMaterialCombos(materials: t_.Iterable[Material], excludedCombos: t_.Optional[t_.Iterable[MCombo]] = None) -> t_.List[MCombo]:
     """Given a list of materials, this function returns a list of all possible material combo tuples.
 
     Args:
@@ -147,12 +146,12 @@ def generateMaterialCombos(materials: Iterable[Material], excludedCombos: Option
     """
     if excludedCombos is None:
         excludedCombos = []
-    matCombos = list(itertools.combinations(materials, 2))  # All the combinations of materials that can be compared
+    matCombos = list(itertools.combinations(materials, 2))  # All the 2-combinations of materials that can be compared
     matCombos = [(m1, m2) for m1, m2 in matCombos if
-                 not (((m1, m2) in excludedCombos) or ((m2, m1) in excludedCombos))]  # Remove excluded combinations.
+                 not (((m1, m2) in excludedCombos) or ((m2, m1) in excludedCombos))]  # Filter out all excluded combinations.
     for i, (m1, m2) in enumerate(matCombos):  # Make sure to arrange materials so that our reflectance ratio is greater than 1
         if (reflectanceHelper.getReflectance(m1, Material.Glass) / reflectanceHelper.getReflectance(m2, Material.Glass)).mean() < 1:
-            matCombos[i] = (m2, m1)
+            matCombos[i] = (m2, m1)  # Swap elements if the ratio of reflectance is <1
     return matCombos
 
 
@@ -175,9 +174,9 @@ def getAllCubeCombos(matCombos: Iterable[MCombo], df: pd.DataFrame) -> Dict[MCom
     return allCombos
 
 
-def _calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theoryR: Dict[Material, pd.Series],
-                                numericalAperture: float, mask: Optional[Roi] = None) ->\
-        Tuple[Dict[Union[MCombo, str], Dict[str, Any]], Dict[MCombo, List[_ComboSummary]]]:
+def _calculateSpectraFromCombos(cubeCombos: t_.Dict[MCombo, t_.List[CubeCombo]], theoryR: Dict[Material, pd.Series],
+                                numericalAperture: float, mask: t_.Optional[Roi] = None) ->\
+        t_.Tuple[t_.Dict[t_.Union[MCombo, str], t_.Dict[str, t_.Any]], t_.Dict[MCombo, t_.List[_ComboSummary]]]:
     """This is used to examine the output of extra reflection calculation before using saveRExtra to save a cube for each setting.
     Expects a dictionary as created by `getAllCubeCombos` and a dictionary of theoretical reflections.
 
@@ -233,9 +232,9 @@ def _calculateSpectraFromCombos(cubeCombos: Dict[MCombo, List[CubeCombo]], theor
     return meanValues, allCombos
 
 
-def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], matCombos: List[MCombo],
-                        numericalAperture: float, mask: Optional[Roi] = None,
-                        plotReflectionImages: bool = False) -> List[plt.Figure]:
+def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series], matCombos: t_.List[MCombo],
+                        numericalAperture: float, mask: t_.Optional[Roi] = None,
+                        plotReflectionImages: bool = False) -> t_.List[plt.Figure]:
     """Generate a variety of plots displaying information about the extra reflectance calculation.
     
     Args:
@@ -256,8 +255,8 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], ma
 
     """
     settings = set(df['setting'])
-    meanValues: Dict[str, Dict[Union[MCombo, str], Dict[str, Any]]] = {}
-    allCombos: Dict[str, Dict[MCombo, List[_ComboSummary]]] = {}
+    meanValues: t_.Dict[str, t_.Dict[t_.Union[MCombo, str], t_.Dict[str, t_.Any]]] = {}
+    allCombos: t_.Dict[str, t_.Dict[MCombo, t_.List[_ComboSummary]]] = {}
     for sett in settings:
         cubeCombos = getAllCubeCombos(matCombos, df[df['setting'] == sett])
         meanValues[sett], allCombos[sett] = _calculateSpectraFromCombos(cubeCombos, theoryR, numericalAperture, mask)
@@ -359,12 +358,10 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: Dict[Material, pd.Series], ma
                     refIm = _.mean(axis=2)
                     im = ax.imshow(refIm, vmin=np.percentile(refIm, .5), vmax=np.percentile(refIm, 99.5))
                     plt.colorbar(mappable=im)
-
-        logging.getLogger(__name__).info(f"{sett} correction factor")
     return figs
 
 
-def _generateOneRExtraCube(combo: CubeCombo, theoryR: Dict[Material, pd.Series]) -> Tuple[np.ndarray, np.ndarray]:
+def _generateOneRExtraCube(combo: CubeCombo, theoryR: t_.Dict[Material, pd.Series]) -> t_.Tuple[np.ndarray, np.ndarray]:
     """Given a combination of two ImCubes imaging different materials and the theoretical reflectance for the materials
     imaged in the two ImCubes this function will generate an estimation of the extra reflectance in the system.
 
@@ -402,8 +399,8 @@ def _generateOneRExtraCube(combo: CubeCombo, theoryR: Dict[Material, pd.Series])
     return arr, weight
 
 
-def generateRExtraCubes(allCombos: Dict[MCombo, List[CubeCombo]], theoryR: dict, numericalAperture: float) -> \
-        Tuple[ExtraReflectanceCube, Dict[Union[str, MCombo], Tuple[np.ndarray, np.ndarray]]]:
+def generateRExtraCubes(allCombos: t_.Dict[MCombo, t_.List[CubeCombo]], theoryR: dict, numericalAperture: float) -> \
+        t_.Tuple[ExtraReflectanceCube, t_.Dict[t_.Union[str, MCombo], t_.Tuple[np.ndarray, np.ndarray]]]:
     """Generate a series of extra reflectance cubes based on the input data.
 
     Args:

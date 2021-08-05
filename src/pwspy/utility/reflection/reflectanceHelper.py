@@ -107,13 +107,15 @@ def getRefractiveIndex(mat: Material, wavelengths: typing.Optional[typing.Iterab
     return refractiveIndex
 
 
-def getReflectance(mat1: Material, mat2: Material, wavelengths: Union[np.ndarray, List, Tuple] = None, NA: float = 0) -> pd.Series:
+def getReflectance(mat1: Union[Number, pd.Series, Material], mat2: Union[Number, pd.Series, Material], wavelengths: Union[np.ndarray, List, Tuple] = None, NA: float = 0) -> pd.Series:
     """Given the names of two interfaces this provides the reflectance in units of percent.
     If given a series as wavelengths the data will be interpolated and reindexed to match the wavelengths.
 
     Args:
-        mat1: The first material comprising the reflective interface.
-        mat2: The second material comprising the reflective interface.
+        mat1: The first material comprising the reflective interface. This can either be a number or series of numbers representing the refractive index at different wavelengths
+            or it can be a `Material` in which case the refractive index will be automatically calculated.
+        mat2: The second material comprising the reflective interface. This can either be a number or series of numbers representing the refractive index at different wavelengths
+            or it can be a `Material` in which case the refractive index will be automatically calculated.
         wavelengths: The wavelengths to calculate the reflectance at.
         NA: The numerical aperture of the system. Reflectance will be calculated by radially integrating results over
             the range of angles present within the numerical aperture. If left as `None` the result is calculated for
