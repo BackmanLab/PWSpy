@@ -164,7 +164,7 @@ def getAllCubeCombos(matCombos: t_.Iterable[MCombo], cubeDict: t_.Dict[Material,
 
 
 def _calculateSpectraFromCombos(cubeCombos: t_.Dict[MCombo, t_.List[CubeCombo]], theoryR: t_.Dict[Material, pd.Series],
-                                numericalAperture: float, mask: t_.Optional[Roi] = None) ->\
+                                 mask: t_.Optional[Roi] = None) ->\
         t_.Tuple[t_.Dict[t_.Union[MCombo, str], t_.Dict[str, t_.Any]], t_.Dict[MCombo, t_.List[_ComboSummary]]]:
     """This is used to examine the output of extra reflection calculation before using saveRExtra to save a cube for each setting.
     Expects a dictionary as created by `getAllCubeCombos` and a dictionary of theoretical reflections.
@@ -245,7 +245,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series],
     for sett in settings:
         matCubeDict = df[df['setting'] == sett].groupby('material')['cube'].apply(list).to_dict()
         cubeCombos = getAllCubeCombos(matCombos, matCubeDict)
-        meanValues[sett], allCombos[sett] = _calculateSpectraFromCombos(cubeCombos, theoryR, numericalAperture, mask)
+        meanValues[sett], allCombos[sett] = _calculateSpectraFromCombos(cubeCombos, theoryR, mask)
 
     dock = DockablePlotWindow("Primary")
     figs = [dock]
