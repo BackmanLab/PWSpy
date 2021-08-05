@@ -153,8 +153,12 @@ def getAllCubeCombos(matCombos: t_.Iterable[MCombo], cubeDict: t_.Dict[Material,
     """
     allCombos = {}  # A dictionary where each key is a material combo, e.g. (mat1, mat2). The values are lists of every possible 2-combination of ImCube measuremens for that material combo.
     for matCombo in matCombos:
-        matCubes = {mat: cubes for mat, cubes in cubeDict.items() if mat in matCombo}  # A dictionary with materials as keys and lists of associated imcubes as the values for this material combo
-        allCombos[matCombo] = [CubeCombo(*matCubes.keys(), *combo) for combo in itertools.product(*matCubes.values())]
+        # Very important that The CubeCombo has data in the same order that the matCombo is in. Otherwise our data is all mismatched.
+        matCubes = (
+            cubeDict[matCombo[0]],
+            cubeDict[matCombo[1]]
+        )
+        allCombos[matCombo] = [CubeCombo(*matCombo, *combo) for combo in itertools.product(*matCubes)]
     allCombos = {key: val for key, val in allCombos.items() if len(val) > 0}  # In some cases a matCombo appears for which there is no data. get rid of these.
     return allCombos
 
