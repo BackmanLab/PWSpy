@@ -97,7 +97,6 @@ class _ComboSummary:
     combo: CubeCombo  # Container of the full raw data
     rExtra: np.ndarray
     I0: np.ndarray
-    cFactor: float
     weight: np.ndarray
 
 
@@ -192,14 +191,11 @@ def _calculateSpectraFromCombos(cubeCombos: t_.Dict[MCombo, t_.List[CubeCombo]],
             weight = (spectra1 - spectra2) ** 2 / (spectra1 ** 2 + spectra2 ** 2)
             rExtra = ((theoryR[mat1] * spectra2) - (theoryR[mat2] * spectra1)) / (spectra1 - spectra2)
             I0 = spectra2 / (theoryR[mat2] + rExtra)  # Reconstructed intensity of illumination in same units as `spectra`. This could just as easily be done with material1. They are identical by definition.
-            waterTheory = reflectanceHelper.getReflectance(Material.Water, Material.Glass, wavelengths=list(theoryR.values())[0].index, NA=numericalAperture)
-            cFactor = (rExtra.mean() + waterTheory.mean()) / waterTheory.mean()
             c = _ComboSummary(mat1Spectra=spectra1,
                               mat2Spectra=spectra2,
                               weight=weight,
                               rExtra=rExtra,
                               I0=I0,
-                              cFactor=cFactor,
                               combo=combo)
             allCombos[matCombo].append(c)
 
@@ -208,16 +204,10 @@ def _calculateSpectraFromCombos(cubeCombos: t_.Dict[MCombo, t_.List[CubeCombo]],
             meanValues[matCombo][param] = np.average(np.array(list([getattr(combo, param) for combo in allCombos[matCombo]])),
                                                     axis=0,
                                                     weights=np.array([combo.weight for combo in allCombos[matCombo]]))
-        meanValues[matCombo]['cFactor'] = np.average(np.array([combo.cFactor for combo in allCombos[matCombo]]),
-                                                     axis=0,
-                                                     weights=np.array([combo.weight.mean() for combo in allCombos[matCombo]]))
         meanValues[matCombo]['weight'] = np.mean(np.array([combo.weight for combo in allCombos[matCombo]]))
     meanValues['mean'] = {param: np.average(np.array(list([meanValues[matCombo][param] for matCombo in cubeCombos.keys()])),
                                             axis=0,
                                             weights=np.array([meanValues[matCombo]['weight'] for matCombo in cubeCombos.keys()])) for param in params}
-    meanValues['mean']['cFactor'] = np.average(np.array([meanValues[matCombo]['cFactor'] for matCombo in cubeCombos.keys()]),
-                                                 axis=0,
-                                                 weights=np.array([meanValues[matCombo]['weight'].mean() for matCombo in cubeCombos.keys()]))
     return meanValues, allCombos
 
 
@@ -307,18 +297,6 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series],
         x = np.array([0, max(scatterPointsX)])
         scatterAx3.plot(x, x, label='1:1')
         scatterAx3.legend()
-
-        fig3, scatterAx = comparisonDock.subplots(f'{sett} cFactor: {means["cFactor"]}')  # A scatter plot of the theoretical vs observed reflectance ratio.
-        scatterAx.set_ylabel("Theoretical Ratio")
-        scatterAx.set_xlabel("Observed Ratio w/ cFactor")
-        scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in settMatCombos]
-        scatterPointsX = [means['cFactor'] * (
-                meanValues[sett][matCombo]['mat1Spectra'] / meanValues[sett][matCombo]['mat2Spectra']).mean() for
-                          matCombo in settMatCombos]
-        [scatterAx.scatter(x, y, label=f'{matCombo[0].name}/{matCombo[1].name}') for x, y, matCombo in zip(scatterPointsX, scatterPointsY, settMatCombos)]
-        x = np.array([0, max(scatterPointsX)])
-        scatterAx.plot(x, x, label='1:1')
-        scatterAx.legend()
 
         fig4, scatterAx2 = comparisonDock.subplots(sett)  # A scatter plot of the theoretical vs observed reflectance ratio.
         scatterAx2.set_ylabel("Theoretical Ratio")
