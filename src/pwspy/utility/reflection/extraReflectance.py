@@ -214,24 +214,21 @@ def _calculateSpectraFromCombos(cubeCombos: t_.Dict[MCombo, t_.List[CubeCombo]],
         meanSummary = _ComboSummary(
             mat1Spectra=spectra1,
             mat2Spectra=spectra2,
-            weight=np.mean(weights),  # TODO this will result in a scalar. Don't we want a 1d array?
+            weight=np.mean(weights, axis=0),
             rExtra=rExtra,
             I0=I0
         )
         meanComboSummary[matCombo] = meanSummary
 
-        #
-        # meanComboSummary[matCombo] = {}
-        # # Calculate the average of each parameter for each material combo.
-        # for param in params:
-        #     meanComboSummary[matCombo][param] = np.average(np.array(list([getattr(comboSummary, param) for comboSummary, combo in allComboSummary[matCombo]])),
-        #                                              axis=0,
-        #                                              weights=weights)
-        # meanComboSummary[matCombo]['weight'] = np.mean(np.array([comboSummary.weight for comboSummary, combo in allComboSummary[matCombo]]))
-
-    totalMean = {param: np.average(np.array(list([getattr(meanComboSummary[matCombo], param) for matCombo in cubeCombos.keys()])),
-                                            axis=0,
-                                            weights=np.array([meanComboSummary[matCombo].weight for matCombo in cubeCombos.keys()])) for param in params}
+    # Calculate the average accross all material combos.
+    weights = np.array([comboSummary.weight for comboSummary in meanComboSummary.values()])
+    totalMean = _ComboSummary(
+        mat1Spectra=np.average(np.array([comboSummary.mat1Spectra for comboSummary in meanComboSummary.values()]), axis=0, weights=weights),
+        mat2Spectra=np.average(np.array([comboSummary.mat2Spectra for comboSummary in meanComboSummary.values()]), axis=0, weights=weights),
+        weight=np.mean(weights, axis=0),
+        rExtra=np.average(np.array([comboSummary.rExtra for comboSummary in meanComboSummary.values()]), axis=0, weights=weights),
+        I0=np.average(np.array([comboSummary.I0 for comboSummary in meanComboSummary.values()]), axis=0, weights=weights)
+    )
     return totalMean, meanComboSummary, allComboSummary
 
 
@@ -256,7 +253,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series],
 
     """
     settings = set(df['setting'])
-    totalMean: t_.Dict[str, t_.Dict[str, t_.Any]] = {}
+    totalMean: t_.Dict[str, _ComboSummary] = {}
     meanValues: t_.Dict[str, t_.Dict[MCombo, _ComboSummary]] = {}
     allCombos: t_.Dict[str, t_.Dict[MCombo, t_.List[t_.Tuple[_ComboSummary, CubeCombo]]]] = {}
     df['material'] = df['material'].astype('category')  # required for groupby
@@ -285,7 +282,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series],
                 cubes = combo
                 ax.plot(cubes[mat1].wavelengths, comboSummary.rExtra,
                         label=f'{sett} {mat1}:{int(cubes[mat1].metadata.exposure)}ms {mat2}:{int(cubes[mat2].metadata.exposure)}ms')
-        ax.plot(cubes[mat1].wavelengths, totalMean[sett]['rExtra'], color='k', label=f'{sett} mean')  # TODO Add a hover annotation since all of the lines are black it's impossible to know which one is which.
+        ax.plot(cubes[mat1].wavelengths, totalMean[sett].rExtra, color='k', label=f'{sett} mean')  # TODO Add a hover annotation since all of the lines are black it's impossible to know which one is which.
     ax.legend()
 
     fig2, ratioAxes = dock.subplots("Reflectance Ratios", nrows=len(matCombos))  # for correction factor
@@ -324,8 +321,8 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series],
         scatterAx2.set_ylabel("Theoretical Ratio")
         scatterAx2.set_xlabel("Observed Ratio after Subtraction")
         scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in settMatCombos]
-        scatterPointsX = [np.nanmean((meanValues[sett][matCombo].mat1Spectra - means['I0'] * means['rExtra']) / (
-                meanValues[sett][matCombo].mat2Spectra - means['I0'] * means['rExtra'])) for matCombo in
+        scatterPointsX = [np.nanmean((meanValues[sett][matCombo].mat1Spectra - means.I0 * means.rExtra) / (
+                meanValues[sett][matCombo].mat2Spectra - means.I0 * means.rExtra)) for matCombo in
                           settMatCombos]
         [scatterAx2.scatter(x, y, label=f'{matCombo[0].name}/{matCombo[1].name}') for x, y, matCombo in
          zip(scatterPointsX, scatterPointsY, settMatCombos)]
@@ -387,17 +384,23 @@ def generateRExtraCubes(allCombos: t_.Dict[MCombo, t_.List[CubeCombo]], theoryR:
         An `ExtraReflectanceCube` object containing data from the weighted average of all measurements.
          A dictionary where the keys are material combos and the values are tuples of the weightedMean and the weight arrays.
     """
-    rExtra = {}
+    rExtra: t_.Dict[MCombo, np.ndarray] = {}
+    rExtraWeight: t_.Dict[MCombo, np.ndarray] = {}
+    # Calculate weighted sum for all measurements within a certain material combo
     for matCombo, combosList in allCombos.items():
         logging.getLogger(__name__).info(f"Calculating rExtra for: {matCombo}")
         erCubes, weights = zip(*[_generateOneRExtraCube(combo, theoryR) for combo in combosList])
-        weightSum = reduce(lambda x, y: x + y, weights)
-        weightedMean = reduce(lambda x, y: x + y, [cube*weight for cube, weight in zip(erCubes, weights)]) / weightSum
+        weightSum = reduce(lambda x, y: x + y, weights)  # Sum of all weights
+        weightedMean = reduce(lambda x, y: x + y, [cube*weight for cube, weight in zip(erCubes, weights)]) / weightSum  # Weighted mean of ER cubes
         meanWeight = weightSum / len(weights)
-        rExtra[matCombo] = (weightedMean, meanWeight)
-    erCubes, weights = zip(*rExtra.values())
-    weightSum = reduce(lambda x, y: x + y, weights)
-    weightedMean = reduce(lambda x, y: x + y, [cube * weight for cube, weight in zip(erCubes, weights)]) / weightSum
+        rExtra[matCombo] = weightedMean
+        rExtraWeight[matCombo] = meanWeight
+
+    # Calculate weight mean accross all material combos
+    erCubes = list(rExtra.values())
+    weights = list(rExtraWeight.values())
+    weightSum = reduce(lambda x, y: x + y, weights) # Sum of all weights
+    weightedMean = reduce(lambda x, y: x + y, [cube * weight for cube, weight in zip(erCubes, weights)]) / weightSum  # Weighted mean of ER cubes
     # meanWeight = weightSum / len(weights)
     sampleCube: ImCube = list(allCombos.values())[0][0].data1
     md = ERMetaData(sampleCube.metadata.dict, numericalAperture)
