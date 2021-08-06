@@ -166,7 +166,11 @@ def getAllCubeCombos(matCombos: t_.Iterable[MCombo], cubeDict: t_.Dict[Material,
 
 def _calculateSpectraFromCombos(cubeCombos: t_.Dict[MCombo, t_.List[CubeCombo]], theoryR: t_.Dict[Material, pd.Series],
                                  mask: t_.Optional[Roi] = None) ->\
-        t_.Tuple[t_.Dict[t_.Union[MCombo, str], t_.Dict[str, t_.Any]], t_.Dict[MCombo, t_.List[_ComboSummary]]]:
+        t_.Tuple[
+            t_.Dict[str, t_.Any],
+            t_.Dict[MCombo, t_.Dict[str, t_.Any]],
+            t_.Dict[MCombo, t_.List[_ComboSummary]]
+        ]:
     """This is used to examine the output of extra reflection calculation before using saveRExtra to save a cube for each setting.
     Expects a dictionary as created by `getAllCubeCombos` and a dictionary of theoretical reflections.
 
@@ -184,9 +188,7 @@ def _calculateSpectraFromCombos(cubeCombos: t_.Dict[MCombo, t_.List[CubeCombo]],
 
     # Save the results of relevant calculations to a dictionary, this dictionary will be returned to the user along with
     # the raw data, `allCombos`
-    allCombos = {}
-    meanValues = {}
-    params = ('rExtra', 'I0', 'mat1Spectra', 'mat2Spectra')
+    allCombos: t_.Dict[MCombo, t_.List[_ComboSummary]] = {}
     for matCombo in cubeCombos.keys():
         # Generate summaries for every single combination.
         allCombos[matCombo] = []
@@ -194,7 +196,7 @@ def _calculateSpectraFromCombos(cubeCombos: t_.Dict[MCombo, t_.List[CubeCombo]],
             mat1, mat2 = combo.keys()
             spectra1 = combo[mat1].getMeanSpectra(mask)[0]
             spectra2 = combo[mat2].getMeanSpectra(mask)[0]
-            weight = (spectra1 - spectra2) ** 2 / (spectra1 ** 2 + spectra2 ** 2)
+            weight = (spectra1 - spectra2) ** 2 / (spectra1 ** 2 + spectra2 ** 2) # See `_generateOneRExtraCube` for an explanation of this weighting.
             rExtra = ((theoryR[mat1] * spectra2) - (theoryR[mat2] * spectra1)) / (spectra1 - spectra2)
             I0 = spectra2 / (theoryR[mat2] + rExtra)  # Reconstructed intensity of illumination in same units as `spectra`. This could just as easily be done with material1. They are identical by definition.
             c = _ComboSummary(mat1Spectra=spectra1,
@@ -205,21 +207,25 @@ def _calculateSpectraFromCombos(cubeCombos: t_.Dict[MCombo, t_.List[CubeCombo]],
                               combo=combo)
             allCombos[matCombo].append(c)
 
+    meanValues: t_.Dict[MCombo, ] = {}
+    params = ('rExtra', 'I0', 'mat1Spectra', 'mat2Spectra')  # attribute names of _CubeCombo that are 1d arrays. Used for looping through and generating averages.
+    for matCombo in cubeCombos.keys():
         meanValues[matCombo] = {}
+        # Calculate the average of each parameter for each material combo.
         for param in params:
             meanValues[matCombo][param] = np.average(np.array(list([getattr(combo, param) for combo in allCombos[matCombo]])),
                                                     axis=0,
                                                     weights=np.array([combo.weight for combo in allCombos[matCombo]]))
         meanValues[matCombo]['weight'] = np.mean(np.array([combo.weight for combo in allCombos[matCombo]]))
-    meanValues['mean'] = {param: np.average(np.array(list([meanValues[matCombo][param] for matCombo in cubeCombos.keys()])),
+
+    totalMean = {param: np.average(np.array(list([meanValues[matCombo][param] for matCombo in cubeCombos.keys()])),
                                             axis=0,
                                             weights=np.array([meanValues[matCombo]['weight'] for matCombo in cubeCombos.keys()])) for param in params}
-    return meanValues, allCombos
+    return totalMean, meanValues, allCombos
 
 
 def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series], matCombos: t_.List[MCombo],
-                        numericalAperture: float, mask: t_.Optional[Roi] = None,
-                        plotReflectionImages: bool = False) -> t_.List[plt.Figure]:
+                        numericalAperture: float, mask: t_.Optional[Roi] = None) -> t_.List[plt.Figure]:
     """Generate a variety of plots displaying information about the extra reflectance calculation.
     
     Args:
@@ -233,20 +239,20 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series],
         matCombos: A list of the various material combinations that should be evaluated.
         numericalAperture: The numerical aperture that the ImCubes being used were imaged at.
         mask: An ROI indicating the region of the images that should be included in the evaluation.
-        plotReflectionImages: An optional parameter. If True additional plots will be opened.
 
     Returns:
         A list of matplotlib figures resulting from this calculation.
 
     """
     settings = set(df['setting'])
-    meanValues: t_.Dict[str, t_.Dict[t_.Union[MCombo, str], t_.Dict[str, t_.Any]]] = {}
+    totalMean: t_.Dict[str, t_.Dict[str, t_.Any]] = {}
+    meanValues: t_.Dict[str, t_.Dict[MCombo, t_.Dict[str, t_.Any]]] = {}
     allCombos: t_.Dict[str, t_.Dict[MCombo, t_.List[_ComboSummary]]] = {}
     df['material'] = df['material'].astype('category')  # required for groupby
     for sett in settings:
         matCubeDict = df[df['setting'] == sett].groupby('material')['cube'].apply(list).to_dict()
         cubeCombos = getAllCubeCombos(matCombos, matCubeDict)
-        meanValues[sett], allCombos[sett] = _calculateSpectraFromCombos(cubeCombos, theoryR, mask)
+        totalMean[sett], meanValues[sett], allCombos[sett] = _calculateSpectraFromCombos(cubeCombos, theoryR, mask)
 
     dock = DockablePlotWindow("Primary")
     figs = [dock]
@@ -291,7 +297,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series],
     figs.append(comparisonDock)
     for sett in settings:
         settMatCombos = allCombos[sett].keys()  # Sometime we are looking at settings which don't have all the same matCombos. Only use the combos specific to this setting.
-        means = meanValues[sett]['mean']
+        means = totalMean[sett]
         fig6, scatterAx3 = comparisonDock.subplots(f"{sett} Uncorrected")
         scatterAx3.set_ylabel("Theoretical Ratio")
         scatterAx3.set_xlabel("Observed Ratio. No correction")
@@ -316,23 +322,6 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series],
         scatterAx2.plot(x, x, label='1:1')
         scatterAx2.legend()
 
-        if plotReflectionImages:
-            dock = DockablePlotWindow("System Reflectance% Estimates")
-            figs.append(dock)
-            for matCombo in settMatCombos:
-                mat1, mat2 = matCombo
-                for combo in allCombos[sett][matCombo]:
-                    cubes = combo.combo
-                    fig, ax = dock.subplots(f"{sett}, {mat1}:{int(cubes[mat1].metadata.exposure)}ms, {mat2}:{int(cubes[mat2].metadata.exposure)}ms")
-                    T1 = np.array(theoryR[mat1])[np.newaxis, np.newaxis, :]  # Predicted reflectance for material 1
-                    T2 = np.array(theoryR[mat2])[np.newaxis, np.newaxis, :]  # Predicted for material 2
-                    I1 = cubes[mat1].data  # Intensity (A.U.) for material 1
-                    I2 = cubes[mat2].data
-                    er = ((T1 * I2) - (T2 * I1)) / (I1 - I2)  # The calculated Extra Reflectance.
-                    er[np.isinf(er)] = np.nan
-                    refIm = np.nanmean(er, axis=2)
-                    im = ax.imshow(refIm, vmin=np.percentile(refIm, .5), vmax=np.percentile(refIm, 99.5))
-                    plt.colorbar(mappable=im)
     return figs
 
 
