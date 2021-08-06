@@ -95,7 +95,6 @@ class _ComboSummary:
     """A convenient packaging of information related to the extra reflectance calculated from a single _CubeCombo"""
     mat1Spectra: np.ndarray  # The average spectrum in the ROI
     mat2Spectra: np.ndarray
-    combo: CubeCombo  # Container of the full raw data
     rExtra: np.ndarray
     I0: np.ndarray
     weight: np.ndarray
@@ -167,9 +166,9 @@ def getAllCubeCombos(matCombos: t_.Iterable[MCombo], cubeDict: t_.Dict[Material,
 def _calculateSpectraFromCombos(cubeCombos: t_.Dict[MCombo, t_.List[CubeCombo]], theoryR: t_.Dict[Material, pd.Series],
                                  mask: t_.Optional[Roi] = None) ->\
         t_.Tuple[
-            t_.Dict[str, t_.Any],
-            t_.Dict[MCombo, t_.Dict[str, t_.Any]],
-            t_.Dict[MCombo, t_.List[_ComboSummary]]
+            _ComboSummary,
+            t_.Dict[MCombo, _ComboSummary],
+            t_.Dict[MCombo, t_.List[t_.Tuple[_ComboSummary, CubeCombo]]]
         ]:
     """This is used to examine the output of extra reflection calculation before using saveRExtra to save a cube for each setting.
     Expects a dictionary as created by `getAllCubeCombos` and a dictionary of theoretical reflections.
@@ -185,13 +184,10 @@ def _calculateSpectraFromCombos(cubeCombos: t_.Dict[MCombo, t_.List[CubeCombo]],
         as well as the average calculation accross all material combinations. The seconds item is a dictionary containing
         information about every single cube combo.
     """
-
-    # Save the results of relevant calculations to a dictionary, this dictionary will be returned to the user along with
-    # the raw data, `allCombos`
-    allCombos: t_.Dict[MCombo, t_.List[_ComboSummary]] = {}
+    # Generate summaries for every possible combination of measurements.
+    allComboSummary: t_.Dict[MCombo, t_.List[t_.Tuple[_ComboSummary, CubeCombo]]] = {}  # Organize combos by the material combo they go with.
     for matCombo in cubeCombos.keys():
-        # Generate summaries for every single combination.
-        allCombos[matCombo] = []
+        allComboSummary[matCombo] = []
         for combo in cubeCombos[matCombo]:
             mat1, mat2 = combo.keys()
             spectra1 = combo[mat1].getMeanSpectra(mask)[0]
@@ -203,25 +199,40 @@ def _calculateSpectraFromCombos(cubeCombos: t_.Dict[MCombo, t_.List[CubeCombo]],
                               mat2Spectra=spectra2,
                               weight=weight,
                               rExtra=rExtra,
-                              I0=I0,
-                              combo=combo)
-            allCombos[matCombo].append(c)
+                              I0=I0)
+            allComboSummary[matCombo].append((c, combo))
 
-    meanValues: t_.Dict[MCombo, ] = {}
+    # Calculate the averages for each material combo.
+    meanComboSummary: t_.Dict[MCombo, t_.Any] = {}
     params = ('rExtra', 'I0', 'mat1Spectra', 'mat2Spectra')  # attribute names of _CubeCombo that are 1d arrays. Used for looping through and generating averages.
-    for matCombo in cubeCombos.keys():
-        meanValues[matCombo] = {}
-        # Calculate the average of each parameter for each material combo.
-        for param in params:
-            meanValues[matCombo][param] = np.average(np.array(list([getattr(combo, param) for combo in allCombos[matCombo]])),
-                                                    axis=0,
-                                                    weights=np.array([combo.weight for combo in allCombos[matCombo]]))
-        meanValues[matCombo]['weight'] = np.mean(np.array([combo.weight for combo in allCombos[matCombo]]))
+    for matCombo, comboSummaries in allComboSummary.items():
+        weights = np.array([comboSummary.weight for comboSummary, _ in comboSummaries])
+        spectra1 = np.average(np.array([comboSummary.mat1Spectra for comboSummary, _ in comboSummaries]), axis=0, weights=weights)
+        spectra2 = np.average(np.array([comboSummary.mat2Spectra for comboSummary, _ in comboSummaries]), axis=0, weights=weights)
+        I0 = np.average(np.array([comboSummary.I0 for comboSummary, _ in comboSummaries]), axis=0, weights=weights)
+        rExtra = np.average(np.array([comboSummary.rExtra for comboSummary, _ in comboSummaries]), axis=0, weights=weights)
+        meanSummary = _ComboSummary(
+            mat1Spectra=spectra1,
+            mat2Spectra=spectra2,
+            weight=np.mean(weights),  # TODO this will result in a scalar. Don't we want a 1d array?
+            rExtra=rExtra,
+            I0=I0
+        )
+        meanComboSummary[matCombo] = meanSummary
 
-    totalMean = {param: np.average(np.array(list([meanValues[matCombo][param] for matCombo in cubeCombos.keys()])),
+        #
+        # meanComboSummary[matCombo] = {}
+        # # Calculate the average of each parameter for each material combo.
+        # for param in params:
+        #     meanComboSummary[matCombo][param] = np.average(np.array(list([getattr(comboSummary, param) for comboSummary, combo in allComboSummary[matCombo]])),
+        #                                              axis=0,
+        #                                              weights=weights)
+        # meanComboSummary[matCombo]['weight'] = np.mean(np.array([comboSummary.weight for comboSummary, combo in allComboSummary[matCombo]]))
+
+    totalMean = {param: np.average(np.array(list([getattr(meanComboSummary[matCombo], param) for matCombo in cubeCombos.keys()])),
                                             axis=0,
-                                            weights=np.array([meanValues[matCombo]['weight'] for matCombo in cubeCombos.keys()])) for param in params}
-    return totalMean, meanValues, allCombos
+                                            weights=np.array([meanComboSummary[matCombo].weight for matCombo in cubeCombos.keys()])) for param in params}
+    return totalMean, meanComboSummary, allComboSummary
 
 
 def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series], matCombos: t_.List[MCombo],
@@ -246,8 +257,8 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series],
     """
     settings = set(df['setting'])
     totalMean: t_.Dict[str, t_.Dict[str, t_.Any]] = {}
-    meanValues: t_.Dict[str, t_.Dict[MCombo, t_.Dict[str, t_.Any]]] = {}
-    allCombos: t_.Dict[str, t_.Dict[MCombo, t_.List[_ComboSummary]]] = {}
+    meanValues: t_.Dict[str, t_.Dict[MCombo, _ComboSummary]] = {}
+    allCombos: t_.Dict[str, t_.Dict[MCombo, t_.List[t_.Tuple[_ComboSummary, CubeCombo]]]] = {}
     df['material'] = df['material'].astype('category')  # required for groupby
     for sett in settings:
         matCubeDict = df[df['setting'] == sett].groupby('material')['cube'].apply(list).to_dict()
@@ -270,9 +281,9 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series],
     for sett in settings:
         for matCombo in allCombos[sett].keys():
             mat1, mat2 = matCombo
-            for combo in allCombos[sett][matCombo]:
-                cubes = combo.combo
-                ax.plot(cubes[mat1].wavelengths, combo.rExtra,
+            for comboSummary, combo in allCombos[sett][matCombo]:
+                cubes = combo
+                ax.plot(cubes[mat1].wavelengths, comboSummary.rExtra,
                         label=f'{sett} {mat1}:{int(cubes[mat1].metadata.exposure)}ms {mat2}:{int(cubes[mat2].metadata.exposure)}ms')
         ax.plot(cubes[mat1].wavelengths, totalMean[sett]['rExtra'], color='k', label=f'{sett} mean')  # TODO Add a hover annotation since all of the lines are black it's impossible to know which one is which.
     ax.legend()
@@ -287,9 +298,9 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series],
     for sett in settings:
         for matCombo in allCombos[sett].keys():
             mat1, mat2 = matCombo
-            for combo in allCombos[sett][matCombo]:
-                cubes = combo.combo
-                ratioAxes[matCombo].plot(cubes[mat1].wavelengths, combo.mat1Spectra / combo.mat2Spectra,
+            for comboSummary, combo in allCombos[sett][matCombo]:
+                cubes = combo
+                ratioAxes[matCombo].plot(cubes[mat1].wavelengths, comboSummary.mat1Spectra / comboSummary.mat2Spectra,
                                          label=f'{sett} {mat1.name}:{int(cubes[mat1].metadata.exposure)}ms {mat2.name}:{int(cubes[mat2].metadata.exposure)}ms')
     [ratioAxes[combo].legend() for combo in matCombos]
 
@@ -302,7 +313,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series],
         scatterAx3.set_ylabel("Theoretical Ratio")
         scatterAx3.set_xlabel("Observed Ratio. No correction")
         scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in settMatCombos]
-        scatterPointsX = [(meanValues[sett][matCombo]['mat1Spectra'] / meanValues[sett][matCombo]['mat2Spectra']).mean() for
+        scatterPointsX = [(meanValues[sett][matCombo].mat1Spectra / meanValues[sett][matCombo].mat2Spectra).mean() for
                           matCombo in settMatCombos]
         [scatterAx3.scatter(x, y, label=f'{matCombo[0].name}/{matCombo[1].name}') for x, y, matCombo in zip(scatterPointsX, scatterPointsY, settMatCombos)]
         x = np.array([0, max(scatterPointsX)])
@@ -313,15 +324,14 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series],
         scatterAx2.set_ylabel("Theoretical Ratio")
         scatterAx2.set_xlabel("Observed Ratio after Subtraction")
         scatterPointsY = [(theoryR[matCombo[0]] / theoryR[matCombo[1]]).mean() for matCombo in settMatCombos]
-        scatterPointsX = [np.nanmean((meanValues[sett][matCombo]['mat1Spectra'] - means['I0'] * means['rExtra']) / (
-                meanValues[sett][matCombo]['mat2Spectra'] - means['I0'] * means['rExtra'])) for matCombo in
+        scatterPointsX = [np.nanmean((meanValues[sett][matCombo].mat1Spectra - means['I0'] * means['rExtra']) / (
+                meanValues[sett][matCombo].mat2Spectra - means['I0'] * means['rExtra'])) for matCombo in
                           settMatCombos]
         [scatterAx2.scatter(x, y, label=f'{matCombo[0].name}/{matCombo[1].name}') for x, y, matCombo in
          zip(scatterPointsX, scatterPointsY, settMatCombos)]
         x = np.array([0, max(scatterPointsX)])
         scatterAx2.plot(x, x, label='1:1')
         scatterAx2.legend()
-
     return figs
 
 
