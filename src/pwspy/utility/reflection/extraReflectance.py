@@ -15,9 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
 
-"""A collection of functions dedicated to the purpose of generating Extra Reflectance calibrations from images of
+"""
+===============================================================================================
+Extra Reflectance (:mod:`pwspy.utility.reflectance.extraReflectance`)
+===============================================================================================
+
+A collection of functions dedicated to the purpose of generating Extra Reflectance calibrations from images of
 materials with known reflectances (e.g. air/glass interface, water/glass interface.)
-These functions are relied on heavily in the pwspy.apps.ERCreator app.
+
+By calculating the "extra reflectance" of a microscope system we can come up with a subtraction from our raw data that
+will make our ratiometric measurements proportional to the actual sample reflectance.
+
+These functions are relied on heavily in "ERCreator" app found in `pwspy_gui.ExtraReflectanceCreator`.
 
 Functions
 ----------
