@@ -44,7 +44,6 @@ Classes
 """
 import logging
 import typing as t_
-from mpl_qt_viz.visualizers import DockablePlotWindow
 
 from pwspy.dataTypes import Roi, ExtraReflectanceCube, ImCube, ERMetaData
 from pwspy.utility.reflection import reflectanceHelper, Material
@@ -257,6 +256,8 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series],
         A list of matplotlib figures resulting from this calculation.
 
     """
+    from mpl_qt_viz.visualizers import DockablePlotWindow  # This is not a dependency of the library, just needed for this method.
+
     settings = set(df['setting'])
     totalMean: t_.Dict[str, _ComboSummary] = {}
     meanValues: t_.Dict[str, t_.Dict[MCombo, _ComboSummary]] = {}
