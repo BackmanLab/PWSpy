@@ -16,7 +16,8 @@
 # along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
 
 # -*- coding: utf-8 -*-
-"""Provides a number of functions for calculating simple reflections based on known refractive indices
+"""
+Provides a number of functions for calculating simple reflections based on known refractive indices
 
 Functions
 ----------

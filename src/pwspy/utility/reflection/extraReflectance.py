@@ -16,10 +16,6 @@
 # along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-===============================================================================================
-Extra Reflectance (:mod:`pwspy.utility.reflectance.extraReflectance`)
-===============================================================================================
-
 A collection of functions dedicated to the purpose of generating Extra Reflectance calibrations from images of
 materials with known reflectances (e.g. air/glass interface, water/glass interface.)
 

@@ -16,10 +16,6 @@
 # along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-===============================================================================================
-Multi-layer Reflectance Engine (:mod:`pwspy.utility.reflectance.multilayerReflectanceEngine`)
-===============================================================================================
-
 Using the wave transfer matrix formalism from chapter 7 of Saleh and Teich
 Fundamentals of Photonics, this script calculates the reflectance of a
 multilayer dielectric.
