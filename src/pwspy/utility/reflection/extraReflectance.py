@@ -49,6 +49,7 @@ import numpy as np
 from functools import reduce
 import pandas as pd
 from dataclasses import dataclass
+import matplotlib as mpl
 __all__ = ['getAllCubeCombos', 'generateMaterialCombos', 'generateRExtraCubes', 'getTheoreticalReflectances']
 
 MCombo = t_.Tuple[Material, Material]  # This is just an alias to shorten some of the type hinting.
@@ -252,23 +253,22 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series],
     fig, ax = dock.subplots("Extra Reflection")  # For extra reflections
     ax.set_ylabel("Reflectance (1 = total reflection)")
     ax.set_xlabel("nm")
-    i = 0
     numLines = []
     for sett in settings:
         for matCombo in allCombos[sett].keys():
             numLines.append(len(allCombos[sett][matCombo]))
     numLines = sum(numLines)
     colormap = plt.cm.gist_rainbow
-    colors = [colormap(i) for i in np.linspace(0, 0.99, numLines)]
+    colorCycle = mpl.cycler(color=plt.cm.gist_rainbow(np.linspace(0, 0.99, numLines)))
+    ax.set_prop_cycle(colorCycle)
     for sett in settings:
         for matCombo in allCombos[sett].keys():
             mat1, mat2 = matCombo
             for combo in allCombos[sett][matCombo]:
                 cubes = combo.combo
-                ax.plot(cubes[mat1].wavelengths, combo.rExtra, color=colors[i],
+                ax.plot(cubes[mat1].wavelengths, combo.rExtra,
                         label=f'{sett} {mat1}:{int(cubes[mat1].metadata.exposure)}ms {mat2}:{int(cubes[mat2].metadata.exposure)}ms')
-                i += 1
-        ax.plot(cubes[mat1].wavelengths, meanValues[sett]['mean']['rExtra'], color='k', label=f'{sett} mean')  # TODO Add a hover annotation since all of the lines are black it's impossible to know which one is which.
+        ax.plot(cubes[mat1].wavelengths, totalMean[sett]['rExtra'], color='k', label=f'{sett} mean')  # TODO Add a hover annotation since all of the lines are black it's impossible to know which one is which.
     ax.legend()
 
     fig2, ratioAxes = dock.subplots("Reflectance Ratios", nrows=len(matCombos))  # for correction factor
