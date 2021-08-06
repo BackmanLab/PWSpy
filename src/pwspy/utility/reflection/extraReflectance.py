@@ -271,7 +271,7 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series],
     dock = DockablePlotWindow("Primary")
     figs = [dock]
     fig, ax = dock.subplots("Extra Reflection")  # For extra reflections
-    ax.set_ylabel("Reflectance (1 = total reflection)")
+    ax.set_ylabel("Reflectance % (100 = total reflection)")
     ax.set_xlabel("nm")
     numLines = []
     for sett in settings:
@@ -286,9 +286,9 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series],
             mat1, mat2 = matCombo
             for comboSummary, combo in allCombos[sett][matCombo]:
                 cubes = combo
-                ax.plot(cubes[mat1].wavelengths, comboSummary.rExtra,
+                ax.plot(cubes[mat1].wavelengths, comboSummary.rExtra * 100,
                         label=f'{sett} {mat1}:{int(cubes[mat1].metadata.exposure)}ms {mat2}:{int(cubes[mat2].metadata.exposure)}ms')
-        ax.plot(cubes[mat1].wavelengths, totalMean[sett].rExtra, color='k', label=f'{sett} mean')  # TODO Add a hover annotation since all of the lines are black it's impossible to know which one is which.
+        ax.plot(cubes[mat1].wavelengths, totalMean[sett].rExtra * 100, color='k', label=f'{sett} mean')  # TODO Add a hover annotation since all of the lines are black it's impossible to know which one is which.
     ax.legend()
 
     fig2, ratioAxes = dock.subplots("Reflectance Ratios", nrows=len(matCombos))  # for correction factor
