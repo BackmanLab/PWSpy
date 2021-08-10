@@ -45,7 +45,7 @@ Classes
 import logging
 import typing as t_
 
-from pwspy.dataTypes import Roi, ExtraReflectanceCube, ImCube, ERMetaData
+import pwspy.dataTypes as pwsdt
 from pwspy.utility.reflection import reflectanceHelper, Material
 import itertools
 import matplotlib.pyplot as plt
@@ -69,7 +69,7 @@ class CubeCombo:
         cube2: An ImCube with an image of a glass-{material} interface where the material is `material2`.
 
     """
-    def __init__(self, material1: Material, material2: Material, cube1: ImCube, cube2: ImCube):
+    def __init__(self, material1: Material, material2: Material, cube1: pwsdt.ImCube, cube2: pwsdt.ImCube):
         self.mat1 = material1
         self.mat2 = material2
         self.data1 = cube1
@@ -78,13 +78,13 @@ class CubeCombo:
     def keys(self) -> MCombo:
         return self.mat1, self.mat2
 
-    def values(self) -> t_.Tuple[ImCube, ImCube]:
+    def values(self) -> t_.Tuple[pwsdt.ImCube, pwsdt.ImCube]:
         return self.data1, self.data2
 
-    def items(self) -> t_.Iterator[t_.Tuple[Material, ImCube]]:
+    def items(self) -> t_.Iterator[t_.Tuple[Material, pwsdt.ImCube]]:
         return zip(self.keys(), self.values())
 
-    def __getitem__(self, item: Material) -> ImCube:
+    def __getitem__(self, item: Material) -> pwsdt.ImCube:
         """cubeCombo[myMaterial] will return the data class for that material."""
         if item == self.mat1:
             return self.data1
@@ -144,7 +144,7 @@ def generateMaterialCombos(materials: t_.Iterable[Material], excludedCombos: t_.
     return matCombos
 
 
-def getAllCubeCombos(matCombos: t_.Iterable[MCombo], cubeDict: t_.Dict[Material, t_.List[ImCube]]) -> t_.Dict[MCombo, t_.List[CubeCombo]]:
+def getAllCubeCombos(matCombos: t_.Iterable[MCombo], cubeDict: t_.Dict[Material, t_.List[pwsdt.ImCube]]) -> t_.Dict[MCombo, t_.List[CubeCombo]]:
     """Given a list of material combo tuples, return a dictionary whose keys are the material combo tuples and whose values are
     lists of CubeCombos.
 
@@ -168,7 +168,7 @@ def getAllCubeCombos(matCombos: t_.Iterable[MCombo], cubeDict: t_.Dict[Material,
 
 
 def _calculateSpectraFromCombos(cubeCombos: t_.Dict[MCombo, t_.List[CubeCombo]], theoryR: t_.Dict[Material, pd.Series],
-                                 mask: t_.Optional[Roi] = None) ->\
+                                 mask: t_.Optional[pwsdt.Roi] = None) ->\
         t_.Tuple[
             _ComboSummary,
             t_.Dict[MCombo, _ComboSummary],
@@ -236,17 +236,15 @@ def _calculateSpectraFromCombos(cubeCombos: t_.Dict[MCombo, t_.List[CubeCombo]],
     return totalMean, meanComboSummary, allComboSummary
 
 
-def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series], matCombos: t_.List[MCombo],
-                        numericalAperture: float, mask: t_.Optional[Roi] = None) -> t_.List[plt.Figure]:
+def plotExtraReflection(images: t_.Dict[str, t_.Dict[Material, t_.List[pwsdt.ImCube]]], theoryR: t_.Dict[Material, pd.Series], matCombos: t_.List[MCombo],
+                        numericalAperture: float, mask: t_.Optional[pwsdt.Roi] = None) -> t_.List[plt.Figure]:
     """Generate a variety of plots displaying information about the extra reflectance calculation.
     
     Args:
-        df: A pandas dataframe containing a row for each ImCube that is to be included in the calculation. The dataframe
-            should have the following columns: 'cube': The `ImCube` object in question, should be an image of a
-            glass-{material} interface. `material`: The `Material` that the ImCube is an image of. `setting`: A string
-            describing the imaging configuration. If the dataframe has multiple settings then each settings will be
-            processed separately and compared.
-        theoryR: A dictionary where the key is a `Material` and the value is a pandas series giving the reflectance for
+        images: A dictionary where the keys are strings representing some configuration of the system and the
+            values are dictionaries where the keys are a `Material` and the values are lists of the `ImCube` that were
+            measured at the corresponding glass-{material} interface and configuration indicated by the dictionary keys.
+        theoryR: A dictionary where the key is a `Material` and the value is a Pandas 'Series' giving the reflectance for
             a glass-{material} reflection over a range of wavelengths. The index of the series should be the wavelengths.
         matCombos: A list of the various material combinations that should be evaluated.
         numericalAperture: The numerical aperture that the ImCubes being used were imaged at.
@@ -258,15 +256,23 @@ def plotExtraReflection(df: pd.DataFrame, theoryR: t_.Dict[Material, pd.Series],
     """
     from mpl_qt_viz.visualizers import DockablePlotWindow  # This is not a dependency of the library, just needed for this method.
 
-    settings = set(df['setting'])
+    settings = set(images.keys())
     totalMean: t_.Dict[str, _ComboSummary] = {}
     meanValues: t_.Dict[str, t_.Dict[MCombo, _ComboSummary]] = {}
     allCombos: t_.Dict[str, t_.Dict[MCombo, t_.List[t_.Tuple[_ComboSummary, CubeCombo]]]] = {}
-    df['material'] = df['material'].astype('category')  # required for groupby
-    for sett in settings:
-        matCubeDict = df[df['setting'] == sett].groupby('material')['cube'].apply(list).to_dict()
-        cubeCombos = getAllCubeCombos(matCombos, matCubeDict)
-        totalMean[sett], meanValues[sett], allCombos[sett] = _calculateSpectraFromCombos(cubeCombos, theoryR, mask)
+    for setting, materialCubeDict in images.items():
+        cubeCombos = getAllCubeCombos(matCombos, materialCubeDict)
+        totalMean[setting], meanValues[setting], allCombos[setting] = _calculateSpectraFromCombos(cubeCombos, theoryR, mask)
+
+    # settings = set(df['setting'])
+    # totalMean: t_.Dict[str, _ComboSummary] = {}
+    # meanValues: t_.Dict[str, t_.Dict[MCombo, _ComboSummary]] = {}
+    # allCombos: t_.Dict[str, t_.Dict[MCombo, t_.List[t_.Tuple[_ComboSummary, CubeCombo]]]] = {}
+    # df['material'] = df['material'].astype('category')  # required for groupby
+    # for sett in settings:
+    #     matCubeDict = df[df['setting'] == sett].groupby('material')['cube'].apply(list).to_dict()
+    #     cubeCombos = getAllCubeCombos(matCombos, matCubeDict)
+    #     totalMean[sett], meanValues[sett], allCombos[sett] = _calculateSpectraFromCombos(cubeCombos, theoryR, mask)
 
     dock = DockablePlotWindow("Primary")
     figs = [dock]
@@ -377,7 +383,7 @@ def _generateOneRExtraCube(combo: CubeCombo, theoryR: t_.Dict[Material, pd.Serie
 
 
 def generateRExtraCubes(allCombos: t_.Dict[MCombo, t_.List[CubeCombo]], theoryR: t_.Dict[Material, pd.Series], numericalAperture: float) -> \
-        t_.Tuple[ExtraReflectanceCube, t_.Dict[t_.Union[str, MCombo], t_.Tuple[np.ndarray, np.ndarray]]]:
+        t_.Tuple[pwsdt.ExtraReflectanceCube, t_.Dict[t_.Union[str, MCombo], t_.Tuple[np.ndarray, np.ndarray]]]:
     """Generate a series of extra reflectance cubes based on the input data.
 
     Args:
@@ -408,9 +414,9 @@ def generateRExtraCubes(allCombos: t_.Dict[MCombo, t_.List[CubeCombo]], theoryR:
     weightSum = reduce(lambda x, y: x + y, weights) # Sum of all weights
     weightedMean = reduce(lambda x, y: x + y, [cube * weight for cube, weight in zip(erCubes, weights)]) / weightSum  # Weighted mean of ER cubes
     # meanWeight = weightSum / len(weights)
-    sampleCube: ImCube = list(allCombos.values())[0][0].data1
-    md = ERMetaData(sampleCube.metadata.dict, numericalAperture)
-    erCube = ExtraReflectanceCube(weightedMean, sampleCube.wavelengths, md)
+    sampleCube: pwsdt.ImCube = list(allCombos.values())[0][0].data1
+    md = pwsdt.ERMetaData(sampleCube.metadata.dict, numericalAperture)
+    erCube = pwsdt.ExtraReflectanceCube(weightedMean, sampleCube.wavelengths, md)
     return erCube, rExtra
 
 
