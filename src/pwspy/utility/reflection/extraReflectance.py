@@ -105,7 +105,7 @@ class _ComboSummary:
 
 
 def getTheoreticalReflectances(materials: t_.Set[Material], wavelengths: t_.Tuple[float], numericalAperture: float) -> t_.Dict[Material, pd.Series]:
-    """Generate a dictionary containing a pandas series of the `material`-glass reflectance for each material in
+    """Generate a dictionary containing a Pandas `Series` of the `material`-glass reflectance for each material in
     `materials`.
 
     Args:
@@ -344,7 +344,7 @@ def _generateOneRExtraCube(combo: CubeCombo, theoryR: t_.Dict[Material, pd.Serie
 
     Args:
         combo: A combo of two ImCubes imaging two different glass-material interfaces.
-        theoryR: A dictionary providing pandas series giving the theoretically expected reflectance for each glass-material
+        theoryR: A dictionary providing Pandas `Series` giving the theoretically expected reflectance for each glass-material
             interface represented by the two ImCubes.
 
     Returns:
