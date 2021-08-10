@@ -264,16 +264,6 @@ def plotExtraReflection(images: t_.Dict[str, t_.Dict[Material, t_.List[pwsdt.ImC
         cubeCombos = getAllCubeCombos(matCombos, materialCubeDict)
         totalMean[setting], meanValues[setting], allCombos[setting] = _calculateSpectraFromCombos(cubeCombos, theoryR, mask)
 
-    # settings = set(df['setting'])
-    # totalMean: t_.Dict[str, _ComboSummary] = {}
-    # meanValues: t_.Dict[str, t_.Dict[MCombo, _ComboSummary]] = {}
-    # allCombos: t_.Dict[str, t_.Dict[MCombo, t_.List[t_.Tuple[_ComboSummary, CubeCombo]]]] = {}
-    # df['material'] = df['material'].astype('category')  # required for groupby
-    # for sett in settings:
-    #     matCubeDict = df[df['setting'] == sett].groupby('material')['cube'].apply(list).to_dict()
-    #     cubeCombos = getAllCubeCombos(matCombos, matCubeDict)
-    #     totalMean[sett], meanValues[sett], allCombos[sett] = _calculateSpectraFromCombos(cubeCombos, theoryR, mask)
-
     dock = DockablePlotWindow("Primary")
     figs = [dock]
     fig, ax = dock.subplots("Extra Reflection")  # For extra reflections
