@@ -106,7 +106,7 @@ class PWSAnalysis(AbstractAnalysis):
         if ref.metadata.pixelSizeUm is not None: #Only works if pixel size was saved in the metadata.
             ref.filterDust(.75)  # Apply a blur to filter out dust particles. This is in microns. I'm not sure if this is the optimal value.
         if settings.referenceMaterial is None:
-            theoryR = pd.Series(np.ones((len(ref.wavelengths),)), index=ref.wavelengths) # Having this as all ones effectively ignores it.
+            theoryR = pd.Series(np.ones((len(ref.wavelengths),)), index=ref.wavelengths)  # Having this as all ones effectively ignores it.
             self._initWarnings.append(warnings.AnalysisWarning("Ignoring reference material", "Analysis ignoring reference material correction. Extra Reflection subtraction can not be performed."))
             assert extraReflectance is None, "Extra reflectance calibration relies on being provided with the theoretical reflectance of our reference."
         else:
@@ -235,6 +235,37 @@ class PWSAnalysis(AbstractAnalysis):
             iedata = np.frombuffer(iedata, dtype=np.float32).reshape(self.extraReflection.data.shape)
             np.copyto(iedata, self.extraReflection.data)
             self.extraReflection.data = iedata
+
+
+class NanoCytomicsADCPWSAnalysis(AbstractAnalysis):
+    """
+    This Analysis uses the ADC (adaptive dark counts) method of calibration preferred by Nanocytomics rather than the ExtraReflectance
+    method
+    """
+
+    def __init__(self, settings: PWSAnalysisSettings, ref: pwsdt.ImCube):
+        super().__init__()
+        ref.correctCameraEffects(settings.cameraCorrection, binning=1)  # Binning isn't stored in Nano data. assume binning is 1
+        self._pwsAnalysis = PWSAnalysis(settings, None, ref)
+        adcSpectra = self._getADCSpectra(self._pwsAnalysis.ref)
+        self._pwsAnalysis.ref.data = self._pwsAnalysis.ref.data - adcSpectra
+
+    def run(self, cube: pwsdt.ImCube) -> Tuple[PWSAnalysisResults, List[warnings.AnalysisWarning]]:
+        if not cube.processingStatus.cameraCorrected:
+            cube.correctCameraEffects(self._pwsAnalysis.settings.cameraCorrection, binning=1) # Binning isn't stored in Nano data. assume binning is 1
+        if not cube.processingStatus.normalizedByExposure:
+            cube.normalizeByExposure()
+        adcSpectra = self._getADCSpectra(cube)
+        cube.data = cube.data - adcSpectra
+        return self._pwsAnalysis.run(cube)
+
+    def copySharedDataToSharedMemory(self):
+        self._pwsAnalysis.copySharedDataToSharedMemory()
+
+    @staticmethod
+    def _getADCSpectra(cube: pwsdt.ImCube):
+        adcSlice = (slice(0, 50), slice(0, 50), None)
+        return cube[adcSlice].mean(axis=(0, 1))
 
 
 class PWSAnalysisResults(AbstractHDFAnalysisResults):
@@ -511,6 +542,8 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
         for newKey in ['relativeUnits', 'extraReflectanceId', 'cameraCorrection']:
             if newKey not in d.keys():
                 d[newKey] = None #For a while these settings were missing from the code. Allow us to still load old files.
+        if d['cameraCorrection'] is not None:
+            d['cameraCorrection'] = pwsdt.CameraCorrection(**d['cameraCorrection'])
         return cls(**d)
 
     @classmethod
