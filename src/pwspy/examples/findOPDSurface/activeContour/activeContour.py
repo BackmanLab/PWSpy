@@ -51,7 +51,7 @@ def seg(cellDir: str):
 
         acq = pwsdt.AcqDir(cellDir) # Load a handle to the acquisition
         an = acq.pws.loadAnalysis(anName)  # Load the analysis results object
-        opd, opdIndex = an.reflectance.getOpd(isHannWindow=True)  # Using the Hann window should improve dynamic range and reduce false peaks from frequency leakage.
+        opd, opdIndex = an.reflectance.getOpd(useHannWindow=True)  # Using the Hann window should improve dynamic range and reduce false peaks from frequency leakage.
 
         # Remove the low and high OPD signal.
         idxLow = np.argmin(np.abs(opdIndex - opdCutoffLow))

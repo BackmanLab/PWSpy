@@ -375,7 +375,7 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
         """
         dset = self.file['reflectance']
         cube = pwsdt.KCube.fromHdfDataset(dset)
-        opd, opdIndex = cube.getOpd(isHannWindow=False, indexOpdStop=100)
+        opd, opdIndex = cube.getOpd(useHannWindow=False, indexOpdStop=100)
         return opd, opdIndex
 
     @AbstractHDFAnalysisResults.FieldDecorator

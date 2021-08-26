@@ -48,7 +48,7 @@ if __name__ == '__main__':
             print("No analysis found. skipping")
             continue
 
-        opd, opdIndex = an.reflectance.getOpd(isHannWindow=True)  # Using the Hann window should improve dynamic range and reduce false peaks from frequency leakage.
+        opd, opdIndex = an.reflectance.getOpd(useHannWindow=True)  # Using the Hann window should improve dynamic range and reduce false peaks from frequency leakage.
 
         # Remove the low OPD signal.
         idxLow = np.argmin(np.abs(opdIndex - opdCutoffLow))

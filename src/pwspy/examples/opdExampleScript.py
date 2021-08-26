@@ -20,7 +20,7 @@ if __name__ == '__main__':
     kCube = pwsdt.KCube.fromImCube(imCube)
     del imCube
 
-    opd, opdValues = kCube.getOpd(isHannWindow = False, indexOpdStop = 50)
+    opd, opdValues = kCube.getOpd(useHannWindow= False, indexOpdStop = 50)
 
     ri = 1.37
     opdValues = opdValues / (2 * ri)

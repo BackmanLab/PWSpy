@@ -1211,13 +1211,13 @@ class KCube(ICBase):
     def wavenumbers(self) -> t_.Tuple[float, ...]:
         return self.index
 
-    def getOpd(self, isHannWindow: bool, indexOpdStop: int = None, mask: np.ndarray = None) -> t_.Tuple[np.ndarray, np.ndarray]:
+    def getOpd(self, useHannWindow: bool, indexOpdStop: int = None, mask: np.ndarray = None) -> t_.Tuple[np.ndarray, np.ndarray]:
         """
         Calculate the Fourier transform of each spectra. This can be used to get the distance (in terms of OPD) to
         objects that are reflecting light.
 
         Args:
-            isHannWindow: If True, apply a Hann window to the data before the FFT. This reduces spectral resolution but
+            useHannWindow: If True, apply a Hann window to the data before the FFT. This reduces spectral resolution but
                 improves dynamic range and reduces "frequency leakage".
             indexOpdStop: This parameter is a holdover from the original MATLAB implementation. Truncates the 3rd axis
                 of the OPD array.
@@ -1229,7 +1229,7 @@ class KCube(ICBase):
 
         """
         dataLength = self.data.shape[2]
-        opd = _FFTHelper.getFFTMagnitude(self.data, isHannWindow, normalization=_FFTHelper.Normalization.POWER)
+        opd = _FFTHelper.getFFTMagnitude(self.data, useHannWindow, normalization=_FFTHelper.Normalization.POWER)
         fftSize = opd.shape[-1]  # Due to FFT interpolation the FFT will be longer than the original data.
 
         # Isolate the desired values in the OPD.
