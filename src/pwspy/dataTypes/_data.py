@@ -1235,24 +1235,21 @@ class KCube(ICBase):
         # Isolate the desired values in the OPD.
         opd = opd[:, :, :indexOpdStop]
 
-        if not mask is None:
+        if mask is not None:  # Get the average opd within the ROI of the bool array `mask`
             opd = opd[mask].mean(axis=0)
 
+        # Generate the opd values for the current OPD.
         dk = self.wavenumbers[1] - self.wavenumbers[0]  # The interval that our linear array of wavenumbers is spaced by. Units: radians / micron
-
-        # Generate the xval for the current OPD.
-        maxOpd = 2 * np.pi / dk  # This is the maximum OPD value we can get with. tighter wavenumber spacing increases OPD range. units of microns
-        dOpd = maxOpd / dataLength  # The interval we want between values in our opd vector.
-        opdVals = dataLength / 2 * np.array(range(fftSize)) * dOpd / fftSize
-        # The above line is how it was written in the matlab code. Couldn't it be simplified down to maxOpd * np.linspace(0, 1, num = fftSize // 2 + 1) / 2 ? I'm not sure what the 2 means though.
+        maxFrequency = 1 / (dk * 2)  # Max resolvable frequency is half of the sampling frequency. Units: microns / radian
+        maxOpd = 2 * np.pi * maxFrequency  # Convert to units of microns. This is the maximum OPD value we can get with our sample interval. tighter wavenumber spacing increases OPD range. units of microns
+        opdVals = np.linspace(0, maxOpd, num=fftSize)
 
         # Above is how the old MATLAB code calculated the frequencies. IMO the code below is simpler and more understandable but we'll stick with the old code.
-        # opdVals = np.fft.rfftfreq(fftSize, dk)  # Units: cycles / (radians/microns), equivalent to microns / (radians/cycles)
-        # opdVals *= 2 * np.pi  # Units: microns
+        # opdVals = 2 * np.pi * np.fft.rfftfreq(fftSize, dk)  # Units: microns
 
         opdVals = opdVals[:indexOpdStop]
 
-        opd = opd.astype(self.data.dtype) #Make sure to upscale precision
+        opd = opd.astype(self.data.dtype)  # Make sure to upscale precision
         opdVals = opdVals.astype(self.data.dtype)
         return opd, opdVals
 
@@ -1270,14 +1267,9 @@ class KCube(ICBase):
         Returns:
             A 2d numpy array of the signal RMS at each XY location in the image.
         """
-        data = self.data - self.data.mean(axis=2)[:, :, None]  # Subtract the mean from every pixel so we are only measuring variance.
-        opd = _FFTHelper.getFFTMagnitude(data, useHannWindow, normalization=_FFTHelper.Normalization.POWER)
-        dk = self.wavenumbers[1] - self.wavenumbers[0]  # Units of radians / microns
-        opdIndex = np.fft.rfftfreq(opd.shape[2], dk)  # Units of microns / (radians / cycles)
-        opdIndex *= 2 * np.pi  # Units of microns
+        opd, opdIndex = self.getOpd(useHannWindow=useHannWindow)
         startOpdIdx = np.argmin(np.abs(opdIndex - lowerOPD))  # The index associated with lowerOPD
         stopOpdIdx = np.argmin(np.abs(opdIndex - upperOPD))  # The index associated with upperOPD
-        print(stopOpdIdx, startOpdIdx)
         opdSquaredSum = np.sum(opd[:, :, startOpdIdx:stopOpdIdx+1] ** 2, axis=2)  # Parseval's theorem tells us that this is equivalent to the sum of the squares of our original signal
         opdSquaredSum *= len(self.wavenumbers) / opd.shape[2]  # If the original data and opd were of the same length then the above line would be correct. Since the fft may have been upsampled. we need to normalize.
         return np.sqrt(opdSquaredSum)
