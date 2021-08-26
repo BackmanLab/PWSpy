@@ -65,7 +65,7 @@ class MetaDataBase(abc.ABC):
         This serves as a schematic that can be checked against when loading metadata to make sure it contains the required information."""
         pass
 
-    def __init__(self, metadata: dict, filePath: Optional[str] = None, acquisitionDirectory: Optional[AcqDir] = None):
+    def __init__(self, metadata: dict, filePath: t_.Optional[str] = None, acquisitionDirectory: t_.Optional[AcqDir] = None):
         logger = logging.getLogger(__name__)
         self.filePath = filePath
         self.acquisitionDirectory = acquisitionDirectory
@@ -256,7 +256,7 @@ class DynMetaData(MetaDataBase, AnalysisManager):
     with open(_jsonSchemaPath) as f:
         _jsonSchema = json.load(f)
 
-    def __init__(self, metadata: dict, filePath: Optional[str] = None, fileFormat: Optional[FileFormats] = None, acquisitionDirectory: Optional[AcqDir] = None):
+    def __init__(self, metadata: dict, filePath: t_.Optional[str] = None, fileFormat: t_.Optional[FileFormats] = None, acquisitionDirectory: t_.Optional[AcqDir] = None):
         self.fileFormat = fileFormat
         MetaDataBase.__init__(self, metadata, filePath, acquisitionDirectory=acquisitionDirectory)
         AnalysisManager.__init__(self, filePath)
@@ -286,12 +286,12 @@ class DynMetaData(MetaDataBase, AnalysisManager):
         return self.dict['wavelength']
 
     @property
-    def times(self) -> Tuple[float, ...]:
+    def times(self) -> t_.Tuple[float, ...]:
         """A sequence indicatin the time associated with each 2D slice of the 3rd axis of the `data` array"""
         return self.dict['times']
 
     @classmethod
-    def fromOldPWS(cls, directory: str, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> DynMetaData:
+    def fromOldPWS(cls, directory: str, lock: mp.Lock = None, acquisitionDirectory: t_.Optional[AcqDir] = None) -> DynMetaData:
         """Loads old dynamics cubes which were saved the same as old pws cubes. a raw binary file with some metadata saved in random .mat files. Does not support
         automatic detection of binning, pixel size, camera dark counts, system name.
 
@@ -329,7 +329,7 @@ class DynMetaData(MetaDataBase, AnalysisManager):
         return cls(md, filePath=directory, fileFormat=DynMetaData.FileFormats.RawBinary, acquisitionDirectory=acquisitionDirectory)
 
     @classmethod
-    def fromTiff(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> DynMetaData:
+    def fromTiff(cls, directory, lock: mp.Lock = None, acquisitionDirectory: t_.Optional[AcqDir] = None) -> DynMetaData:
         """
 
         Args:
@@ -416,7 +416,7 @@ class ERMetaData:
         return self.inheritedMetadata['system']
 
     @classmethod
-    def validPath(cls, path: str) -> Tuple[bool, Union[str, bytes], Union[str, bytes]]:
+    def validPath(cls, path: str) -> t_.Tuple[bool, t_.Union[str, bytes], t_.Union[str, bytes]]:
         """
 
         Args:
@@ -473,7 +473,7 @@ class ERMetaData:
         return g
 
     @classmethod
-    def directory2dirName(cls, path: str) -> Tuple[Union[bytes, str], Union[bytes, str]]:
+    def directory2dirName(cls, path: str) -> t_.Tuple[t_.Union[bytes, str], t_.Union[bytes, str]]:
         """
 
         Args:
@@ -511,7 +511,7 @@ class FluorMetaData(MetaDataBase):
     with open(_jsonSchemaPath) as f:
         _jsonSchema = json.load(f)
 
-    def __init__(self, md: dict, filePath: Optional[str] = None, acquisitionDirectory: Optional[AcqDir] = None):
+    def __init__(self, md: dict, filePath: t_.Optional[str] = None, acquisitionDirectory: t_.Optional[AcqDir] = None):
         super().__init__(md, filePath, acquisitionDirectory)
 
     def toDataClass(self, lock: mp.Lock = None) -> pwsdtd.FluorescenceImage:
@@ -522,7 +522,7 @@ class FluorMetaData(MetaDataBase):
         return f"Fluor_{self.dict['system']}_{self.dict['time']}"
 
     @classmethod
-    def fromTiff(cls, directory: str, acquisitionDirectory: Optional[AcqDir]) -> FluorMetaData:
+    def fromTiff(cls, directory: str, acquisitionDirectory: t_.Optional[AcqDir]) -> FluorMetaData:
         """Load from a TIFF file.
 
         Args:
@@ -593,7 +593,7 @@ class ICMetaData(MetaDataBase, AnalysisManager):
     with open(_jsonSchemaPath) as f:
         _jsonSchema = json.load(f)
 
-    def __init__(self, metadata: dict, filePath: Optional[str] = None, fileFormat: ICMetaData.FileFormats = None, acquisitionDirectory: Optional[AcqDir] = None):
+    def __init__(self, metadata: dict, filePath: t_.Optional[str] = None, fileFormat: ICMetaData.FileFormats = None, acquisitionDirectory: t_.Optional[AcqDir] = None):
         MetaDataBase.__init__(self, metadata, filePath, acquisitionDirectory=acquisitionDirectory)
         AnalysisManager.__init__(self, filePath)
         self.fileFormat: ICMetaData.FileFormats = fileFormat
@@ -607,11 +607,11 @@ class ICMetaData(MetaDataBase, AnalysisManager):
         return f"ImCube_{self.dict['system']}_{self.dict['time']}"
 
     @property
-    def wavelengths(self) -> Tuple[float, ...]:
+    def wavelengths(self) -> t_.Tuple[float, ...]:
         return self.dict['wavelengths']
 
     @classmethod
-    def loadAny(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> ICMetaData:
+    def loadAny(cls, directory, lock: mp.Lock = None, acquisitionDirectory: t_.Optional[AcqDir] = None) -> ICMetaData:
         """
         Attempt to load from any file format.
 
@@ -632,7 +632,7 @@ class ICMetaData(MetaDataBase, AnalysisManager):
                     raise OSError(f"Could not find a valid PWS image cube file at {directory}.")
 
     @classmethod
-    def fromOldPWS(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> ICMetaData:
+    def fromOldPWS(cls, directory, lock: mp.Lock = None, acquisitionDirectory: t_.Optional[AcqDir] = None) -> ICMetaData:
         """
         Attempt to load from the old .mat file format.
 
@@ -664,7 +664,7 @@ class ICMetaData(MetaDataBase, AnalysisManager):
         return cls(md, filePath=directory, fileFormat=ICMetaData.FileFormats.RawBinary, acquisitionDirectory=acquisitionDirectory)
 
     @classmethod
-    def fromNano(cls, directory: str, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> ICMetaData:
+    def fromNano(cls, directory: str, lock: mp.Lock = None, acquisitionDirectory: t_.Optional[AcqDir] = None) -> ICMetaData:
         """
         Attempt to load from NanoCytomic .mat file format
 
@@ -690,7 +690,7 @@ class ICMetaData(MetaDataBase, AnalysisManager):
         return cls(md, filePath=directory, fileFormat=ICMetaData.FileFormats.NanoMat, acquisitionDirectory=acquisitionDirectory)
 
     @classmethod
-    def fromTiff(cls, directory, lock: mp.Lock = None, acquisitionDirectory: Optional[AcqDir] = None) -> ICMetaData:
+    def fromTiff(cls, directory, lock: mp.Lock = None, acquisitionDirectory: t_.Optional[AcqDir] = None) -> ICMetaData:
         """
         Attempt to load from the standard TIFF file format.
 
@@ -789,7 +789,7 @@ class AcqDir:
         return f"{self.__class__.__name__}({path})"
 
     @cached_property
-    def pws(self) -> Optional[ICMetaData]:
+    def pws(self) -> t_.Optional[ICMetaData]:
         """ICMetaData: Returns None if no PWS acquisition was found."""
         try:
             return ICMetaData.loadAny(os.path.join(self.filePath, 'PWS'), acquisitionDirectory=self)
@@ -800,7 +800,7 @@ class AcqDir:
                 return None
 
     @cached_property
-    def dynamics(self) -> Optional[DynMetaData]:
+    def dynamics(self) -> t_.Optional[DynMetaData]:
         """DynMetaData: Returns None if no dynamics acquisition was found."""
         try:
             return DynMetaData.fromTiff(os.path.join(self.filePath, 'Dynamics'), acquisitionDirectory=self)
@@ -841,7 +841,7 @@ class AcqDir:
         else: #We must have one of these two items.
             return self.dynamics.idTag
 
-    def getRois(self) -> List[Tuple[str, int, RoiFile.FileFormats]]:
+    def getRois(self) -> t_.List[t_.Tuple[str, int, RoiFile.FileFormats]]:
         """Return information about the Rois found in the acquisition's file path.
         See documentation for Roi.getValidRoisInPath()"""
         assert self.filePath is not None
