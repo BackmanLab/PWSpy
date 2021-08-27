@@ -30,11 +30,11 @@ background = 1997  # Normal cube used for temporal background for noise subtract
 
 roiName = 'nuc'
 
-refAcq = pwsdt.AcqDir(os.path.join(wDir, f'DYN_Cell{mirrorNum}'))
+refAcq = pwsdt.Acquisition(os.path.join(wDir, f'DYN_Cell{mirrorNum}'))
 ref = refAcq.dynamics.toDataClass()
 
 for num in cellNum + [background]: #Loop through all cell folders +1 for background
-    dynAcq = pwsdt.AcqDir(os.path.join(wDir, f'DYN_Cell{num}'))
+    dynAcq = pwsdt.Acquisition(os.path.join(wDir, f'DYN_Cell{num}'))
     dyn = dynAcq.dynamics.toDataClass()
     dyn.correctCameraEffects()
     dyn.normalizeByExposure()

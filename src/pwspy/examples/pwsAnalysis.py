@@ -22,7 +22,7 @@ An adaptation of the PWS analysis script used in MATLAB. This is now outdated. T
 """
 import logging
 
-from pwspy.dataTypes import ImCube, KCube
+from pwspy.dataTypes import PwsCube, KCube
 import copy
 import scipy.signal as sps
 import numpy as np
@@ -30,7 +30,7 @@ import numpy as np
 from pwspy.analysis.pws import PWSAnalysisResults
 
 
-def analyzeCube(cubeCell: ImCube, darkCount: int, mirror: ImCube, orderFilter: int,
+def analyzeCube(cubeCell: PwsCube, darkCount: int, mirror: PwsCube, orderFilter: int,
                 cutoffFilter: float, wavelengthStart: int, wavelengthStop: int,
                 orderPolyFit: int, isAutocorrMinSub: bool, indexAutocorrLinear: int,
                 isOpdPolysub: bool, isHannWindow: bool):
@@ -41,7 +41,7 @@ def analyzeCube(cubeCell: ImCube, darkCount: int, mirror: ImCube, orderFilter: i
 
     cube = copy.deepcopy(cubeCell)  # We don't want to mess up the original cube.
 
-    logger.info("Normalizing ImCubes")
+    logger.info("Normalizing PwsCubes")
     cube.subtractDarkCounts(darkCount)
     cube.normalizeByExposure()
     mirror.subtractDarkCounts(darkCount)
@@ -61,7 +61,7 @@ def analyzeCube(cubeCell: ImCube, darkCount: int, mirror: ImCube, orderFilter: i
 
     ## -- Convert to K-Space
     logger.info("Converting to K-Space")
-    cube = KCube.fromImCube(cube)
+    cube = KCube.fromPwsCube(cube)
 
     ## -- Polynomial Fit
     logger.info("Subtracting Polynomial")
@@ -119,8 +119,8 @@ def analyzeCube(cubeCell: ImCube, darkCount: int, mirror: ImCube, orderFilter: i
 
 
 if __name__ == '__main__':
-    cube = ImCube.loadAny(r'G:\Calibrations\CellPhantom\lcpws1\5th\Cell1')
-    mirror = ImCube.loadAny(r'G:\Calibrations\CellPhantom\lcpws1\5th\Cell666')
+    cube = PwsCube.loadAny(r'G:\Calibrations\CellPhantom\lcpws1\5th\Cell1')
+    mirror = PwsCube.loadAny(r'G:\Calibrations\CellPhantom\lcpws1\5th\Cell666')
     # Default settings
     darkCounts = 1957
     results = analyzeCube(cube, darkCounts, mirror, 6, 0.15, 510, 690, 0, True, 7, True, True)

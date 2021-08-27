@@ -145,7 +145,7 @@ class DynamicsAnalysis(AbstractAnalysis):
                                                  reflectance=cube,
                                                  diffusion=d_slope,
                                                  settings=self.settings,
-                                                 imCubeIdTag=cube.metadata.idTag,
+                                                 PwsCubeIdTag=cube.metadata.idTag,
                                                  referenceIdTag=self.refTag,
                                                  extraReflectionIdTag=self.erTag)
 
@@ -199,7 +199,7 @@ class DynamicsAnalysisResults(AbstractHDFAnalysisResults): # Inherit docstring.
     @staticmethod
     def fields():   # Inherit docstring.
         return ('meanReflectance', 'reflectance', 'rms_t_squared', 'diffusion', 'time',
-                'settings', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionIdTag')
+                'settings', 'PwsCubeIdTag', 'referenceIdTag', 'extraReflectionIdTag')
 
     @staticmethod
     def name2FileName(name: str) -> str: # Inherit docstring.
@@ -211,13 +211,13 @@ class DynamicsAnalysisResults(AbstractHDFAnalysisResults): # Inherit docstring.
 
     @classmethod
     def create(cls, settings: DynamicsAnalysisSettings, meanReflectance: np.ndarray, rms_t_squared: np.ndarray, reflectance: pwsdt.DynCube, diffusion: np.ndarray,
-                imCubeIdTag: str, referenceIdTag: str, extraReflectionIdTag: t_.Optional[str]): # Inherit docstring.
+                PwsCubeIdTag: str, referenceIdTag: str, extraReflectionIdTag: t_.Optional[str]): # Inherit docstring.
         d = {'time': datetime.now().strftime(dateTimeFormat),
             'meanReflectance': meanReflectance,
             'reflectance': reflectance,
             'diffusion': diffusion,
             'rms_t_squared': rms_t_squared,
-            'imCubeIdTag': imCubeIdTag,
+            'PwsCubeIdTag': PwsCubeIdTag,
             'referenceIdTag': referenceIdTag,
             'extraReflectionIdTag': extraReflectionIdTag,
             'settings': settings}
@@ -253,9 +253,9 @@ class DynamicsAnalysisResults(AbstractHDFAnalysisResults): # Inherit docstring.
         return np.array(dset)
 
     @AbstractHDFAnalysisResults.FieldDecorator
-    def imCubeIdTag(self) -> str:
+    def PwsCubeIdTag(self) -> str:
         """The idtag of the dynamics cube that was analyzed."""
-        return bytes(np.array(self.file['imCubeIdTag'])).decode()
+        return bytes(np.array(self.file['PwsCubeIdTag'])).decode()
 
     @AbstractHDFAnalysisResults.FieldDecorator
     def referenceIdTag(self) -> str:

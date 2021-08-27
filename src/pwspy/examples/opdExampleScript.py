@@ -11,14 +11,14 @@ if __name__ == '__main__':
 
     imageDirectory = r'\\backmanlabnas.myqnapcloud.com\home\Year3\ethanolTimeSeries\LTL20l_Pure\Track_3hrs\Cell3'
 
-    acquisition = pwsdt.AcqDir(imageDirectory)
+    acquisition = pwsdt.Acquisition(imageDirectory)
 
     roiSpecs = acquisition.getRois()
     print("ROIs:\n", roiSpecs)
 
-    imCube = acquisition.pws.toDataClass()
-    kCube = pwsdt.KCube.fromImCube(imCube)
-    del imCube
+    PwsCube = acquisition.pws.toDataClass()
+    kCube = pwsdt.KCube.fromPwsCube(PwsCube)
+    del PwsCube
 
     opd, opdValues = kCube.getOpd(useHannWindow= False, indexOpdStop = 50)
 

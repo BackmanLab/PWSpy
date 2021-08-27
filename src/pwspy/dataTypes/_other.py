@@ -25,8 +25,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-import warnings
-
 import dataclasses
 from enum import Enum, auto
 from glob import glob
@@ -39,8 +37,7 @@ from rasterio import features
 import shapely
 import typing as t_
 import copy
-if t_.TYPE_CHECKING:
-    from pwspy.dataTypes import AcqDir
+import pwspy.dataTypes._metadata as metadata
 
 
 @dataclasses.dataclass(frozen=True)
@@ -216,7 +213,7 @@ class RoiFile:
         HDF2 = auto()  # For a long time this was the default. Each ROI of the same name is saved as an H5PY.Group in an HDF file. Each ROI group contains a dataset for the boolean mask as well as a dataset for the XY coordinates of the enclosing polygon. This saves us from having to constantly recalculate the outline of the ROI for processing purposes.
         HDF3 = auto()  # On 3/26/2021 We switched to this from HDF2. Rather than verts we now store 'wkb' of the underlying shapely file. Allow for ROIs with holes, and other more complex situations.
 
-    def __init__(self, name: str, number: int, roi: Roi, filePath: str, fileFormat: RoiFile.FileFormats, acquisition: AcqDir):
+    def __init__(self, name: str, number: int, roi: Roi, filePath: str, fileFormat: RoiFile.FileFormats, acquisition: metadata.Acquisition):
         self._roi = roi
         self.name = name
         self.number = number
@@ -343,7 +340,7 @@ class RoiFile:
             raise Exception("Programming error.")
 
     @classmethod
-    def fromHDF_legacy_legacy(cls, directory: str, name: str, number: int, acquisition: AcqDir = None) -> RoiFile:
+    def fromHDF_legacy_legacy(cls, directory: str, name: str, number: int, acquisition: metadata.Acquisition = None) -> RoiFile:
         """Load an Roi from an older version of the HDF file format which did not include the vertices parameter.
 
         Args:
@@ -363,7 +360,7 @@ class RoiFile:
             return cls(name, number, roi, filePath=path, fileFormat=RoiFile.FileFormats.HDF, acquisition=acquisition)
 
     @classmethod
-    def fromHDF_legacy(cls, directory: str, name: str, number: int, acquisition: AcqDir = None) -> RoiFile:
+    def fromHDF_legacy(cls, directory: str, name: str, number: int, acquisition: metadata.Acquisition = None) -> RoiFile:
         """Load an Roi from an HDF file. Uses the old HDF2 format.
 
         Args:
@@ -390,7 +387,7 @@ class RoiFile:
             return cls(name, number, roi, filePath=path, fileFormat=RoiFile.FileFormats.HDF2, acquisition=acquisition)
 
     @classmethod
-    def fromHDF(cls, directory: str, name: str, number: int, acquisition: AcqDir = None) -> RoiFile:
+    def fromHDF(cls, directory: str, name: str, number: int, acquisition: metadata.Acquisition = None) -> RoiFile:
         """Load an Roi from the newest ROI format of HDF file.
 
         Args:
@@ -417,7 +414,7 @@ class RoiFile:
             return cls(name, number, roi, filePath=path, fileFormat=RoiFile.FileFormats.HDF3, acquisition=acquisition)
 
     @classmethod
-    def fromMat(cls, directory: str, name: str, number: int, acquisition: AcqDir = None) -> RoiFile:
+    def fromMat(cls, directory: str, name: str, number: int, acquisition: metadata.Acquisition = None) -> RoiFile:
         """Load an Roi from a .mat file saved in matlab. This file format is not recommended as it does not include the
         `vertices` parameter which is useful for visually rendering and readjusting the Roi.
 
@@ -440,7 +437,7 @@ class RoiFile:
         return cls(name, number, roi, filePath=filePath, fileFormat=RoiFile.FileFormats.MAT, acquisition=acquisition)
 
     @classmethod
-    def loadAny(cls, directory: str, name: str, number: int, acquisition: AcqDir = None) -> RoiFile:
+    def loadAny(cls, directory: str, name: str, number: int, acquisition: metadata.Acquisition = None) -> RoiFile:
         """Attempt loading any of the known file formats.
 
         Args:
@@ -462,7 +459,7 @@ class RoiFile:
                     return RoiFile.fromMat(directory, name, number, acquisition=acquisition)
 
     @classmethod
-    def toHDF(cls, roi: Roi, name: str, number: int, directory: str, overwrite: t_.Optional[bool] = False, acquisition: AcqDir = None) -> RoiFile:
+    def toHDF(cls, roi: Roi, name: str, number: int, directory: str, overwrite: t_.Optional[bool] = False, acquisition: metadata.Acquisition = None) -> RoiFile:
         """
         Save the Roi to an HDF file in the specified directory. The filename is automatically chosen based on the
         `name` parameter of the Roi. Multiple Roi's with the same `name` will be saved into the same file if they have

@@ -2,9 +2,8 @@ from __future__ import annotations
 import json
 import typing as t_
 import os
-from pwspy.dataTypes import AcqDir
-if t_.TYPE_CHECKING:
-    from pwspy.utility.acquisition.steps import SequencerStep
+from pwspy.dataTypes import Acquisition
+from pwspy.utility.acquisition import steps
 
 
 class SequencerCoordinate:
@@ -55,7 +54,7 @@ class SequencerCoordinate:
     def ids(self) -> t_.Sequence[int]:
         return tuple(ID for ID, iteration in self._fullPath)
 
-    def getStepIteration(self, step: t_.Union[int, SequencerStep]) -> t_.Optional[int]:
+    def getStepIteration(self, step: t_.Union[int, steps.SequencerStep]) -> t_.Optional[int]:
         """
 
         Args:
@@ -64,8 +63,7 @@ class SequencerCoordinate:
         Returns:
             The iteration of `Step` that this coordinate corresponds to. If the step is not an iterable step then `None` will be returned.
         """
-        from pwspy.utility.acquisition import SequencerStep
-        if isinstance(step, SequencerStep):
+        if isinstance(step, steps.SequencerStep):
             ID = step.id
         elif isinstance(step, int):
             ID = step
@@ -142,15 +140,15 @@ class SequencerCoordinateRange:
         raise ValueError(f"No step with ID: {stepId} was found.")
 
 
-class SeqAcqDir:
+class SequenceAcquisition:
     """
     An object linking and acquisition with a sequencerCoordinate file.
 
     Attributes:
-        acquisition: The pwspy.dataTypes.AcqDir object linking to the raw data
+        acquisition: The pwspy.dataTypes.Acquisition object linking to the raw data
         sequencerCoordinate: The coordinate object locating the acquisition within a sequence.
     """
-    def __init__(self, acquisition: AcqDir):
+    def __init__(self, acquisition: Acquisition):
         self.acquisition = acquisition
         path = os.path.join(acquisition.filePath, "sequencerCoords.json")
         self.sequencerCoordinate = SequencerCoordinate.fromJsonFile(path)  # This will throw an exception if no sequence coord is found.

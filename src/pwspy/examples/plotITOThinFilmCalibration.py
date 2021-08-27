@@ -19,7 +19,7 @@
 """
 Plots the spectra of the ITO thin film used for calibration.
 """
-from pwspy.dataTypes import ImCube, AcqDir
+from pwspy.dataTypes import PwsCube, Acquisition
 from glob import glob
 import matplotlib.pyplot as plt
 import numpy as np
@@ -30,10 +30,10 @@ import matplotlib as mpl
 from pwspy.utility.fileIO import loadAndProcess
 
 
-def proc(im: ImCube):
+def proc(im: PwsCube):
     """This function is run in a separate thread/process to load the files."""
     refPath = os.path.join(os.path.split(im.metadata.acquisitionDirectory.filePath)[0], 'Cell999')
-    ref = ImCube.fromMetadata(AcqDir(refPath).pws)
+    ref = PwsCube.fromMetadata(Acquisition(refPath).pws)
     ref.correctCameraEffects()
     im.correctCameraEffects()
     ref.normalizeByExposure()
@@ -54,7 +54,7 @@ if __name__ == '__main__':
     ims = []
     for i in files:
         try:
-            ims.append(AcqDir(os.path.join(i, 'Cell1')).pws)
+            ims.append(Acquisition(os.path.join(i, 'Cell1')).pws)
         except:
             print("Skip ", i)
     ims = loadAndProcess(ims, processorFunc=proc)

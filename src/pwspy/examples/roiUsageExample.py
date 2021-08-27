@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
     cellFolderIterator = pathlib.Path(workingDirectory).glob("Cell[0-9]")  # An iterator for all folders that are below workingDirectory and match the "regex" pattern "Cell[0-9]"
     for folder in cellFolderIterator:
-        acq = pwsdt.AcqDir(folder)  # An object handling the contents of a single "Cell{X}" folder
+        acq = pwsdt.Acquisition(folder)  # An object handling the contents of a single "Cell{X}" folder
 
         try:
             anls = acq.pws.loadAnalysis(analysisName)  # Load the analysis results from file.

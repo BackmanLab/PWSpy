@@ -40,7 +40,7 @@ if t_.TYPE_CHECKING:
     from ..utility.reflection import Material
 
 
-class ICBase(ABC): #TODO add a `completeNormalization` method
+class ICBase(ABC):
     """A class to handle the data operations common to PWS related `image cubes`. Does not contain any file specific
     functionality. uses the generic `index` attribute which can be overridden by derived classes to be wavelength, wavenumber,
     time, etc.
@@ -383,14 +383,14 @@ class ICRawBase(ICBase, ABC):
 
     def normalizeByExposure(self):
         """This is one of the first steps in most analysis pipelines. Data is divided by the camera exposure.
-        This way two ImCube that were acquired at different exposure times will still be on equivalent scales."""
+        This way two PwsCube that were acquired at different exposure times will still be on equivalent scales."""
         if not self.processingStatus.cameraCorrected:
             raise Exception(
-                "This ImCube has not yet been corrected for camera effects. are you sure you want to normalize by exposure?")
+                "This PwsCube has not yet been corrected for camera effects. are you sure you want to normalize by exposure?")
         if not self.processingStatus.normalizedByExposure:
             self.data = self.data / self.metadata.exposure
         else:
-            raise Exception("The ImCube has already been normalized by exposure.")
+            raise Exception("The PwsCube has already been normalized by exposure.")
         self.processingStatus.normalizedByExposure = True
 
     def correctCameraEffects(self, correction: _other.CameraCorrection = None, binning: int = None):
@@ -403,7 +403,7 @@ class ICRawBase(ICBase, ABC):
             binning: The binning that the raw data was imaged at. 2 = 2x2 binning, 3 = 3x3 binning, etc.
         """
         if self.processingStatus.cameraCorrected:
-            raise Exception("This ImCube has already had it's camera correction applied!")
+            raise Exception("This PwsCube has already had it's camera correction applied!")
         if binning is None:
             binning = self.metadata.binning
             if binning is None: raise ValueError('Binning metadata not found. Binning must be specified in function argument.')
@@ -856,7 +856,7 @@ class ExtraReflectionCube(ICBase):
         self.metadata = metadata
 
     @classmethod
-    def create(cls, reflectance: ExtraReflectanceCube, theoryR: pd.Series, reference: ImCube) -> ExtraReflectionCube:
+    def create(cls, reflectance: ExtraReflectanceCube, theoryR: pd.Series, reference: PwsCube) -> ExtraReflectionCube:
         """
         Construct and ExtraReflectionCube from an ExtraReflectanceCube and a reference measurement. The resulting
         ExtraReflectionCube will be in the same units as `reference`. `theoryR` should be a spectrum describing the theoretically
@@ -875,7 +875,7 @@ class ExtraReflectionCube(ICBase):
         return cls(data, reflectance.wavelengths, reflectance.metadata)
 
 
-class ImCube(ICRawBase):
+class PwsCube(ICRawBase):
     """
     A class representing a single PWS acquisition. Contains methods for loading and saving to multiple formats as
     well as common operations used in analysis.
@@ -888,9 +888,9 @@ class ImCube(ICRawBase):
         dtype (type): the data type that the data should be stored as. The default is numpy.float32.
     """
 
-    _hdfTypeName = "ImCube"  # This is used for saving/loading from HDF. Important not to change it or old files will stop working.
+    _hdfTypeName = "PwsCube"  # This is used for saving/loading from HDF. Important not to change it or old files will stop working.
 
-    def __init__(self, data, metadata: pwsdtmd.ICMetaData, processingStatus: ICRawBase.ProcessingStatus=None, dtype=np.float32):
+    def __init__(self, data, metadata: pwsdtmd.ICMetaData, processingStatus: ICRawBase.ProcessingStatus = None, dtype=np.float32):
         assert isinstance(metadata, pwsdtmd.ICMetaData)
         super().__init__(data, metadata.wavelengths, metadata, processingStatus=processingStatus, dtype=dtype)
 
@@ -904,7 +904,7 @@ class ImCube(ICRawBase):
     @classmethod
     def loadAny(cls, directory: str, metadata: pwsdtmd.ICMetaData = None,  lock: mp.Lock = None):
         """
-        Attempt to load a `ImCube` for any format of file in `directory`
+        Attempt to load a `PwsCube` for any format of file in `directory`
 
         Args:
             directory: The directory containing the data files.
@@ -912,16 +912,16 @@ class ImCube(ICRawBase):
             lock: A `Lock` object used to synchronized IO in multithreading and multiprocessing applications.
 
         Returns:
-            A new instance of `ImCube`.
+            A new instance of `PwsCube`.
         """
         try:
-            return ImCube.fromTiff(directory, metadata=metadata, lock=lock)
+            return PwsCube.fromTiff(directory, metadata=metadata, lock=lock)
         except:
             try:
-                return ImCube.fromOldPWS(directory, metadata=metadata, lock=lock)
+                return PwsCube.fromOldPWS(directory, metadata=metadata, lock=lock)
             except:
                 try:
-                    return ImCube.fromNano(directory, metadata=metadata, lock=lock)
+                    return PwsCube.fromNano(directory, metadata=metadata, lock=lock)
                 except:
                     raise OSError(f"Could not find a valid PWS image cube file at {directory}.")
 
@@ -938,7 +938,7 @@ class ImCube(ICRawBase):
             lock: A `Lock` object used to synchronized IO in multithreading and multiprocessing applications.
 
         Returns:
-            A new instance of `ImCube`.
+            A new instance of `PwsCube`.
         """
         if lock is not None:
             lock.acquire()
@@ -968,7 +968,7 @@ class ImCube(ICRawBase):
             lock: A `Lock` object used to synchronized IO in multithreading and multiprocessing applications.
 
         Returns:
-            A new instance of `ImCube`.
+            A new instance of `PwsCube`.
         """
         if lock is not None:
             lock.acquire()
@@ -990,7 +990,7 @@ class ImCube(ICRawBase):
         return cls(data, metadata)
 
     @classmethod
-    def fromNano(cls, directory: str, metadata: pwsdtmd.ICMetaData = None, lock: mp.Lock = None) -> ImCube:
+    def fromNano(cls, directory: str, metadata: pwsdtmd.ICMetaData = None, lock: mp.Lock = None) -> PwsCube:
         """
         Loads from the file format used at NanoCytomics. all data and metadata is contained in a .mat file.
 
@@ -1000,7 +1000,7 @@ class ImCube(ICRawBase):
             lock: A `Lock` object used to synchronized IO in multithreading and multiprocessing applications.
 
         Returns:
-            A new instance of `ImCube`.
+            A new instance of `PwsCube`.
         """
         path = os.path.join(directory, 'imageCube.mat')
         if lock is not None:
@@ -1018,17 +1018,17 @@ class ImCube(ICRawBase):
         return cls(data, metadata)
 
     @classmethod
-    def fromMetadata(cls, meta: pwsdtmd.ICMetaData,  lock: mp.Lock = None) -> ImCube:
+    def fromMetadata(cls, meta: pwsdtmd.ICMetaData,  lock: mp.Lock = None) -> PwsCube:
         """
         If provided with an ICMetadata object this function will automatically select the correct file loading method
-        and will return the associated ImCube.
+        and will return the associated PwsCube.
 
         Args:
             meta: The metadata to use to load the object from.
             lock: A `Lock` object used to synchronized IO in multithreading and multiprocessing applications.
 
         Returns:
-            A new instance of `ImCube`.
+            A new instance of `PwsCube`.
         """
         assert isinstance(meta, pwsdtmd.ICMetaData)
         if meta.fileFormat == pwsdtmd.ICMetaData.FileFormats.Tiff:
@@ -1084,7 +1084,7 @@ class ImCube(ICRawBase):
         im.close()
 
     def toTiff(self, outpath: str, dtype=np.uint16):
-        """Save the ImCube to the standard TIFF file format.
+        """Save the PwsCube to the standard TIFF file format.
 
         Args:
             outpath: The path to save the new TIFF file to.
@@ -1097,12 +1097,12 @@ class ImCube(ICRawBase):
             w.save(np.rollaxis(im, -1, 0), metadata=self.metadata.dict)
         self.metadata.metadataToJson(outpath)
 
-    def selIndex(self, start: t_.Optional[float], stop: t_.Optional[float]) -> ImCube:  # Inherit docstring
+    def selIndex(self, start: t_.Optional[float], stop: t_.Optional[float]) -> PwsCube:  # Inherit docstring
         data, index = super().selIndex(start, stop)
         md = copy.deepcopy(self.metadata)  # We are creating a copy of the metadata object because modifying the original metadata object can cause weird issues.
         assert md.dict is not self.metadata.dict
         md.dict['wavelengths'] = index
-        return ImCube(data, md)
+        return PwsCube(data, md)
 
     @staticmethod
     def getMetadataClass() -> t_.Type[pwsdtmd.ICMetaData]:  # Inherit docstring
@@ -1110,14 +1110,14 @@ class ImCube(ICRawBase):
 
     @classmethod
     def fromHdfDataset(cls, d: h5py.Dataset):
-        """Load an Imcube from an HDF5 dataset."""
+        """Load an PwsCube from an HDF5 dataset."""
         data, index, mdDict, processingStatus = cls.decodeHdf(d)
         md = pwsdtmd.ICMetaData(mdDict, fileFormat=pwsdtmd.ICMetaData.FileFormats.Hdf)
         return cls(data, md, processingStatus=processingStatus)
 
     def filterDust(self, kernelRadius: float, pixelSize: float = None) -> None:
-        """This method blurs the data of the ImCube along the X and Y dimensions. This is useful if the ImCube is being
-        used as a reference to normalize other ImCube. It helps blur out dust adn other unwanted small features.
+        """This method blurs the data of the PwsCube along the X and Y dimensions. This is useful if the PwsCube is being
+        used as a reference to normalize other PwsCube. It helps blur out dust adn other unwanted small features.
 
         Args:
             kernelRadius: The `sigma` of the gaussian kernel used for blurring. A greater value results in greater
@@ -1129,46 +1129,46 @@ class ImCube(ICRawBase):
         if pixelSize is None:
             pixelSize = self.metadata.pixelSizeUm
             if pixelSize is None:
-                raise ValueError("ImCube Metadata does not have a `pixelSizeUm` saved. please manually specify pixel size. use pixelSize=1 to make `kernelRadius in units of pixels.")
+                raise ValueError("PwsCube Metadata does not have a `pixelSizeUm` saved. please manually specify pixel size. use pixelSize=1 to make `kernelRadius in units of pixels.")
         super().filterDust(kernelRadius, pixelSize)
 
-    def normalizeByReference(self, reference: ImCube):
+    def normalizeByReference(self, reference: PwsCube):
         """Normalize the raw data of this data cube by a reference cube to result in data representing
         arbitrarily scaled reflectance.
 
         Args:
-            reference (ImCube): A reference acquisition (Usually a blank spot on a dish). The data of this acquisition will be divided by the data of the reference
+            reference (PwsCube): A reference acquisition (Usually a blank spot on a dish). The data of this acquisition will be divided by the data of the reference
         """
         logger = logging.getLogger(__name__)
         if self.processingStatus.normalizedByReference:
-            raise Exception("This ImCube has already been normalized by a reference.")
+            raise Exception("This PwsCube has already been normalized by a reference.")
         if not self.processingStatus.cameraCorrected:
-            logger.warning("This ImCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
+            logger.warning("This PwsCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
         if not self.processingStatus.normalizedByExposure:
-            logger.warning("This ImCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
+            logger.warning("This PwsCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
         if not reference.processingStatus.cameraCorrected:
-            logger.warning("The reference ImCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
+            logger.warning("The reference PwsCube has not been corrected for camera effects. This is highly reccomended before performing any analysis steps.")
         if not reference.processingStatus.normalizedByExposure:
-            logger.warning("The reference ImCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
+            logger.warning("The reference PwsCube has not been normalized by exposure. This is highly reccomended before performing any analysis steps.")
         self.data = self.data / reference.data
         self.processingStatus.normalizedByReference = True
 
     def subtractExtraReflection(self, extraReflection: ExtraReflectionCube):  # Inherit docstring
         assert self.data.shape == extraReflection.data.shape
         if not self.processingStatus.normalizedByExposure:
-            raise Exception("This ImCube has not yet been normalized by exposure. Are you sure you want to subtract system reflectance before doing this?")
+            raise Exception("This PwsCube has not yet been normalized by exposure. Are you sure you want to subtract system reflectance before doing this?")
         if not self.processingStatus.extraReflectionSubtracted:
             self.data = self.data - extraReflection.data
             self.processingStatus.extraReflectionSubtracted = True
         else:
-            raise Exception("The ImCube has already has extra reflection subtracted.")
+            raise Exception("The PwsCube has already has extra reflection subtracted.")
 
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.metadata.idTag})"
 
 
 class KCube(ICBase):
-    """A class representing an ImCube after being transformed from being described in terms of wavelength to
+    """A class representing an PwsCube after being transformed from being described in terms of wavelength to
     wavenumber (k-space). Much of the analysis operated in terms of k-space.
 
     Args:
@@ -1181,17 +1181,17 @@ class KCube(ICBase):
     _hdfTypeName = "KCube"  # This is used for saving/loading from HDF. Important not to change it or old files will stop working.
 
     def __init__(self, data: np.ndarray, wavenumbers: t_.Tuple[float], metadata: pwsdtmd.ICMetaData = None):
-        self.metadata = metadata #Just saving a reference to the original imcube in case we want to reference it.
+        self.metadata = metadata #Just saving a reference to the original PwsCube in case we want to reference it.
         ICBase.__init__(self, data, wavenumbers, dtype=np.float32)
 
     @classmethod
-    def fromImCube(cls, cube: ImCube) -> KCube:
+    def fromPwsCube(cls, cube: PwsCube) -> KCube:
         """
-        Convert an ImCube into a KCube. Data is converted from wavelength to wavenumber (1/lambda), interpolation is
+        Convert an PwsCube into a KCube. Data is converted from wavelength to wavenumber (1/lambda), interpolation is
         then used to linearize the data in terms of wavenumber.
 
         Args:
-            cube: The `ImCube` object to generate a `KCube` object from.
+            cube: The `PwsCube` object to generate a `KCube` object from.
 
         Returns:
             A new instance of `KCube`
@@ -1424,13 +1424,13 @@ class FluorescenceImage:
         self.metadata = md
 
     @classmethod
-    def fromTiff(cls, directory: str, acquisitionDirectory: t_.Optional[pwsdtmd.AcqDir] = None) -> FluorescenceImage:
+    def fromTiff(cls, directory: str, acquisitionDirectory: t_.Optional[pwsdtmd.Acquisition] = None) -> FluorescenceImage:
         """
         Load an image from a TIFF file.
 
         Args:
             directory: The path to the folder containing the TIFF file.
-            acquisitionDirectory: The `AcqDir` object associated with this acquisition.
+            acquisitionDirectory: The `Acquisition` object associated with this acquisition.
 
         Returns:
             A new instanse of `FluorescenceImage`.

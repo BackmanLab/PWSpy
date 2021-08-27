@@ -49,7 +49,7 @@ def seg(cellDir: str):
         opdCutoffLow = 0  # In preprocessing data below this OPD value will be excluded
         opdCutoffHigh = 25  # In preprocessing data above this OPD value will be excluded
 
-        acq = pwsdt.AcqDir(cellDir) # Load a handle to the acquisition
+        acq = pwsdt.Acquisition(cellDir) # Load a handle to the acquisition
         an = acq.pws.loadAnalysis(anName)  # Load the analysis results object
         opd, opdIndex = an.reflectance.getOpd(useHannWindow=True)  # Using the Hann window should improve dynamic range and reduce false peaks from frequency leakage.
 

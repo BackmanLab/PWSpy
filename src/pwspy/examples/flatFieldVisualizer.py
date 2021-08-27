@@ -23,7 +23,7 @@ A script that attempts to reveal information about the spectral uniformity accro
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from pwspy.dataTypes import ExtraReflectanceCube, ExtraReflectionCube, ImCube
+from pwspy.dataTypes import ExtraReflectanceCube, ExtraReflectionCube, PwsCube
 from pwspy.utility.reflection import reflectanceHelper, Material
 from glob import glob
 import os
@@ -65,8 +65,8 @@ if __name__ == "__main__":
     result = []
     for f in files:
         print("Loading")
-        im = ImCube.loadAny(os.path.join(f, f'Cell{cellNumber}'))
-        ref = ImCube.loadAny(os.path.join(f, f'Cell{referenceNumber}'))
+        im = PwsCube.loadAny(os.path.join(f, f'Cell{cellNumber}'))
+        ref = PwsCube.loadAny(os.path.join(f, f'Cell{referenceNumber}'))
         er = ExtraReflectanceCube.fromHdfFile(r'C:\Users\backman05\PwspyApps\ExtraReflectanceCreatorData\GoogleDriveData', 'LCPWS2_100xpfs-7_8_2019')
         print("Dividing data by mirror spectra")
         im.correctCameraEffects()

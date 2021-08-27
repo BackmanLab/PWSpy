@@ -39,13 +39,13 @@ import typing
 from typing import Union, Optional, List, Tuple
 import pandas as pd
 import psutil
-from pwspy.dataTypes import AcqDir, MetaDataBase
+from pwspy.dataTypes import Acquisition, MetaDataBase
 
 '''Local Functions'''
 def _load(loadHandle: Union[str, MetaDataBase], lock: mp.Lock):
     md: MetaDataBase
     if isinstance(loadHandle, str):
-        md = AcqDir(loadHandle).pws # In the case that we just have a string to work with, we assume that we are loading a PWS file and not any other type such as dynamics.
+        md = Acquisition(loadHandle).pws # In the case that we just have a string to work with, we assume that we are loading a PWS file and not any other type such as dynamics.
     elif isinstance(loadHandle, MetaDataBase):
         md = loadHandle
     else:
@@ -54,7 +54,7 @@ def _load(loadHandle: Union[str, MetaDataBase], lock: mp.Lock):
 
 
 def _loadIms(qout: queue.Queue, qin: queue.Queue, lock: th.Lock):
-    """When not running in parallel this function is executed in a separate thread to load ImCubes and populate a Queue
+    """When not running in parallel this function is executed in a separate thread to load PwsCubes and populate a Queue
     with them."""
     logger = logging.getLogger(__name__)
     while not qin.empty():
@@ -89,7 +89,7 @@ def _procWrap(procFunc, lock: th.Lock):
 
 
 def _loadThenProcess(procFunc, procFuncArgs, lock: mp.Lock, row):
-    """Handles loading the ImCubes from file and if needed then calling the processorFunc. This function will be executed
+    """Handles loading the PwsCubes from file and if needed then calling the processorFunc. This function will be executed
      on each core when running in parallel. If not running in parallel then _loadIms will be used."""
     index, row = row
     im = _load(row['cube'], lock=lock)
@@ -112,15 +112,15 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
     Parameters
     ----------
     fileFrame
-        A dataframe containing a column of ImCube file paths titled 'cube' and other columns to act as specifiers for each cube.
+        A dataframe containing a column of PwsCube file paths titled 'cube' and other columns to act as specifiers for each cube.
         If no specifiers are used this can just be a list of file paths.
     processorFunc
         A function that each loaded cell should be passed to. The first argument of processorFunc should be the loaded
-        ImCube. Additional arguments can be passed to processorFunc using the procArgs variable.
+        PwsCube. Additional arguments can be passed to processorFunc using the procArgs variable.
     parallel
         default is `False`. If `True` then the loading and processing will be performed in parallel on multiple cores,
         otherwise it will be done using multithreading on a single core. Setting this to true can result if big speedups
-        if the time to run processorFunc is greater than the time to load an ImCube from file.
+        if the time to run processorFunc is greater than the time to load an PwsCube from file.
     procArgs
         Optional arguments to pass to processorFunc
     initializer:
@@ -130,8 +130,8 @@ def loadAndProcess(fileFrame: Union[pd.DataFrame, List, Tuple], processorFunc: O
 
     Returns
     -------
-        An object of the same form as fileFrame except the ImCube file paths have been replaced by ImCube Object.
-        If using processorFunc the return values from processorFunc will be returned rather than ImCube Objects.
+        An object of the same form as fileFrame except the PwsCube file paths have been replaced by PwsCube Object.
+        If using processorFunc the return values from processorFunc will be returned rather than PwsCube Objects.
     """
     if procArgs is None:
         procArgs = []

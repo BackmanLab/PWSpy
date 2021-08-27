@@ -81,7 +81,7 @@ def getFromDict(func):
 
 
 class PWSAnalysis(AbstractAnalysis):
-    """The standard PWS analysis routine. Initialize and then `run` for as many different ImCubes as you want.
+    """The standard PWS analysis routine. Initialize and then `run` for as many different PwsCubes as you want.
     For a given set of settings and reference you only need to instantiate one instance of this class. You can then perform `run`
     on as many data cubes as you want.
 
@@ -94,7 +94,7 @@ class PWSAnalysis(AbstractAnalysis):
             ExtraReflectionCube: An object representing the stray reflection in units of counts/ms. It is up to the user to make sure that the data is scaled appropriately to match the data being analyzed.
         ref: The reference acquisition used for analysis.
     """
-    def __init__(self, settings: PWSAnalysisSettings, extraReflectance: typing.Optional[typing.Union[pwsdt.ERMetaData, pwsdt.ExtraReflectanceCube, pwsdt.ExtraReflectionCube]], ref: pwsdt.ImCube):
+    def __init__(self, settings: PWSAnalysisSettings, extraReflectance: typing.Optional[typing.Union[pwsdt.ERMetaData, pwsdt.ExtraReflectanceCube, pwsdt.ExtraReflectionCube]], ref: pwsdt.PwsCube):
         from pwspy.dataTypes import ExtraReflectanceCube
         super().__init__()
         self._initWarnings = []
@@ -136,20 +136,20 @@ class PWSAnalysis(AbstractAnalysis):
         self.ref = ref
         self.extraReflection = Iextra
 
-    def run(self, cube: pwsdt.ImCube) -> Tuple[PWSAnalysisResults, List[warnings.AnalysisWarning]]:  # Inherit docstring
+    def run(self, cube: pwsdt.PwsCube) -> Tuple[PWSAnalysisResults, List[warnings.AnalysisWarning]]:  # Inherit docstring
         if not cube.processingStatus.cameraCorrected:
             cube.correctCameraEffects(self.settings.cameraCorrection)
         if not cube.processingStatus.normalizedByExposure:
             cube.normalizeByExposure()
         warns = self._initWarnings
-        cube = self._normalizeImCube(cube)
+        cube = self._normalizePwsCube(cube)
         interval = (max(cube.wavelengths) - min(cube.wavelengths)) / (len(cube.wavelengths) - 1)  # Wavelength interval. We are assuming equally spaced wavelengths here
         cube.data = self._filterSignal(cube.data, 1/interval)
         # The rest of the analysis will be performed only on the selected wavelength range.
         cube = cube.selIndex(self.settings.wavelengthStart, self.settings.wavelengthStop)
         # Determine the mean-reflectance for each pixel in the cell.
         reflectance = cube.data.mean(axis=2)
-        cube = pwsdt.KCube.fromImCube(cube)  # -- Convert to K-Space
+        cube = pwsdt.KCube.fromPwsCube(cube)  # -- Convert to K-Space
         cubePoly = self._fitPolynomial(cube)
         # Remove the polynomial fit from filtered cubeCell.
         cube.data = cube.data - cubePoly
@@ -177,13 +177,13 @@ class PWSAnalysis(AbstractAnalysis):
             rSquared=rSquared,
             ld=ld,
             settings=self.settings,
-            imCubeIdTag=cube.metadata.idTag,
+            PwsCubeIdTag=cube.metadata.idTag,
             referenceIdTag=self.ref.metadata.idTag,
             extraReflectionTag=self.extraReflection.metadata.idTag if self.extraReflection is not None else None)
         warns = [warn for warn in warns if warn is not None]  # Filter out null values.
         return results, warns
 
-    def _normalizeImCube(self, cube: pwsdt.ImCube) -> pwsdt.ImCube:
+    def _normalizePwsCube(self, cube: pwsdt.PwsCube) -> pwsdt.PwsCube:
         if self.extraReflection is not None:
             cube.subtractExtraReflection(self.extraReflection)
         cube.normalizeByReference(self.ref)
@@ -227,8 +227,8 @@ class PWSAnalysis(AbstractAnalysis):
     def copySharedDataToSharedMemory(self):  # Inherit docstring
         refdata = mp.RawArray('f', self.ref.data.size)  # Create an empty ctypes array of shared memory
         refdata = np.frombuffer(refdata, dtype=np.float32).reshape(self.ref.data.shape)  # Wrap the shared memory array in a numpy array and reshape back to origianl shape
-        np.copyto(refdata, self.ref.data)  # Copy our ImCubes data to the shared memory array.
-        self.ref.data = refdata # Reassign the shared memory array to our ImCube object data attribute.
+        np.copyto(refdata, self.ref.data)  # Copy our PwsCubes data to the shared memory array.
+        self.ref.data = refdata # Reassign the shared memory array to our PwsCube object data attribute.
 
         if self.extraReflection is not None:
             iedata = mp.RawArray('f', self.extraReflection.data.size)
@@ -243,14 +243,14 @@ class NanoCytomicsADCPWSAnalysis(AbstractAnalysis):
     method
     """
 
-    def __init__(self, settings: PWSAnalysisSettings, ref: pwsdt.ImCube):
+    def __init__(self, settings: PWSAnalysisSettings, ref: pwsdt.PwsCube):
         super().__init__()
         ref.correctCameraEffects(settings.cameraCorrection, binning=1)  # Binning isn't stored in Nano data. assume binning is 1
         self._pwsAnalysis = PWSAnalysis(settings, None, ref)
         adcSpectra = self._getADCSpectra(self._pwsAnalysis.ref)
         self._pwsAnalysis.ref.data = self._pwsAnalysis.ref.data - adcSpectra
 
-    def run(self, cube: pwsdt.ImCube) -> Tuple[PWSAnalysisResults, List[warnings.AnalysisWarning]]:
+    def run(self, cube: pwsdt.PwsCube) -> Tuple[PWSAnalysisResults, List[warnings.AnalysisWarning]]:
         if not cube.processingStatus.cameraCorrected:
             cube.correctCameraEffects(self._pwsAnalysis.settings.cameraCorrection, binning=1) # Binning isn't stored in Nano data. assume binning is 1
         if not cube.processingStatus.normalizedByExposure:
@@ -263,7 +263,7 @@ class NanoCytomicsADCPWSAnalysis(AbstractAnalysis):
         self._pwsAnalysis.copySharedDataToSharedMemory()
 
     @staticmethod
-    def _getADCSpectra(cube: pwsdt.ImCube):
+    def _getADCSpectra(cube: pwsdt.PwsCube):
         adcSlice = (slice(0, 50), slice(0, 50), None)
         return cube[adcSlice].mean(axis=(0, 1))
 
@@ -275,7 +275,7 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
     @staticmethod
     def fields():  # Inherit docstring
         return ('time', 'reflectance', 'meanReflectance', 'rms', 'polynomialRms', 'autoCorrelationSlope', 'rSquared',
-                'ld', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionTag', 'settings')
+                'ld', 'PwsCubeIdTag', 'referenceIdTag', 'extraReflectionTag', 'settings')
 
     @staticmethod
     def name2FileName(name: str) -> str:  # Inherit docstring
@@ -288,7 +288,7 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
     @classmethod
     def create(cls, settings: PWSAnalysisSettings, reflectance: pwsdt.KCube, meanReflectance: np.ndarray, rms: np.ndarray,
                polynomialRms: np.ndarray, autoCorrelationSlope: np.ndarray, rSquared: np.ndarray, ld: np.ndarray,
-               imCubeIdTag: str, referenceIdTag: str, extraReflectionTag: Optional[str]):  # Inherit docstring
+               PwsCubeIdTag: str, referenceIdTag: str, extraReflectionTag: Optional[str]):  # Inherit docstring
         d = {'time': datetime.now().strftime(dateTimeFormat),
             'reflectance': reflectance,
             'meanReflectance': meanReflectance,
@@ -297,7 +297,7 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
             'autoCorrelationSlope': autoCorrelationSlope,
             'rSquared': rSquared,
             'ld': ld,
-            'imCubeIdTag': imCubeIdTag,
+            'PwsCubeIdTag': PwsCubeIdTag,
             'referenceIdTag': referenceIdTag,
             'extraReflectionTag': extraReflectionTag,
             'settings': settings}
@@ -309,9 +309,9 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
         return PWSAnalysisSettings.fromJsonString(bytes(np.array(self.file['settings'])).decode())
 
     @AbstractHDFAnalysisResults.FieldDecorator
-    def imCubeIdTag(self) -> str:
+    def PwsCubeIdTag(self) -> str:
         """The idtag of the acquisition that was analyzed."""
-        return bytes(np.array(self.file['imCubeIdTag'])).decode()
+        return bytes(np.array(self.file['PwsCubeIdTag'])).decode()
 
     @AbstractHDFAnalysisResults.FieldDecorator
     def referenceIdTag(self) -> str:
@@ -481,7 +481,7 @@ class LegacyPWSAnalysisResults(AbstractAnalysisResults):
         '''
         # None of the following were saved in the old format.
         reflectance = None  # The 3D analyzed reflectaqnce was not saved in the old version.
-        imCubeIdTag = None
+        PwsCubeIdTag = None
         referenceIdTag = None
         extraReflectionTag = None
         time = None

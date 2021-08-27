@@ -25,11 +25,11 @@ most of the the FOV is glass.
 import copy
 
 import matplotlib.pyplot as plt
-from pwspy.dataTypes import ImCube
+from pwspy.dataTypes import PwsCube
 
 
 if __name__ == '__main__':
-    a = ImCube.fromTiff(r'G:\Vasundhara_MSCs_data\Cell1170')
+    a = PwsCube.fromTiff(r'G:\Vasundhara_MSCs_data\Cell1170')
 
     mirror = copy.deepcopy(a)  # This doesn't work right. maybe becuaes of the wi
     mirror.filterDust(10)

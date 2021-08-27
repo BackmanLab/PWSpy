@@ -19,7 +19,7 @@
  attempt to localize the cell surface. It is very finnick and needs to be adjusted for each individual image. I reccomend the "activeContour" script instead."""
 
 if __name__ == '__main__':
-    from pwspy.dataTypes import AcqDir
+    from pwspy.dataTypes import Acquisition
     from glob import glob
     import os
     import scipy as sp
@@ -39,7 +39,7 @@ if __name__ == '__main__':
     opdCutoffHigh = 20
 
     files = glob(os.path.join(rootDir, 'Cell*'))
-    acqs = [AcqDir(f) for f in files]
+    acqs = [Acquisition(f) for f in files]
 
     for acq in acqs:
         try:

@@ -17,23 +17,23 @@
 
 # -*- coding: utf-8 -*-
 """
-This script Allows the user to select a region of an ImCube. the spectra of this
+This script Allows the user to select a region of an PwsCube. the spectra of this
 region is then averaged over the X and Y dimensions. This spectra is then saved
 as a reference dataTypes with the same initial dimensions.
 Can help to make a reference when you don't actually have one for some reason
 """
 
-from pwspy.dataTypes import ImCube
+from pwspy.dataTypes import PwsCube
 import matplotlib.pyplot as plt
 import numpy as np
 
 if __name__ == '__main__':
-    a = ImCube.loadAny(r'G:\Calibrations\CellPhantom\lcpws1\5th\Cell2')
+    a = PwsCube.loadAny(r'G:\Calibrations\CellPhantom\lcpws1\5th\Cell2')
 
     mask = a.selectLassoROI()
     spec, std = a.getMeanSpectra(mask)
     newData = np.zeros(a.data.shape)
     newData[:, :, :] = spec[np.newaxis, np.newaxis, :]
-    ref = ImCube(newData, a.metadata)
+    ref = PwsCube(newData, a.metadata)
 
     plt.plot(a.wavelengths, spec)
