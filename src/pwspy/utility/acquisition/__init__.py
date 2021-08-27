@@ -44,7 +44,7 @@ Classes
 
 Inheritance
 -------------
-.. inheritance-diagram:: SequencerStep CoordSequencerStep ZStackStep TimeStep PositionsStep ContainerStep RuntimeSequenceSettings SequenceAcquisition SequencerCoordinate SequencerCoordinateRange
+.. inheritance-diagram:: TreeItem SequencerStep IterableSequencerStep ZStackStep TimeStep PositionsStep ContainerStep RuntimeSequenceSettings SequenceAcquisition SequencerCoordinate SequencerCoordinateRange
     :parts: 1
 
 """

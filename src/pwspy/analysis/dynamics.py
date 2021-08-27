@@ -276,6 +276,7 @@ class DynamicsAnalysisResults(AbstractHDFAnalysisResults): # Inherit docstring.
 @dataclasses.dataclass
 class DynamicsAnalysisSettings(AbstractAnalysisSettings):
     """These settings determine the behavior of the `DynamicsAnalysis` class.
+
         Args:
             extraReflectanceId: The unique `IDTag` of the extraReflectance calibration that was used on this analysis.
             referenceMaterial: The material that was imaged in the reference image of this analysis. Found as an in pwspy.moduleConst.Material. The

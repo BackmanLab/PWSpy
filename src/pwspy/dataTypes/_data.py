@@ -539,7 +539,7 @@ class DynCube(ICRawBase):
 
     _hdfTypeName = "DynCube"  # This is used for saving/loading from HDF. Important not to change it or old files will stop working.
 
-    def __init__(self, data, metadata: pwsdtmd.DynMetaData, processingStatus: ICRawBase.ProcessingStatus=None, dtype=np.float32):
+    def __init__(self, data, metadata: pwsdtmd.DynMetaData, processingStatus: ICRawBase.ProcessingStatus = None, dtype=np.float32):
         assert isinstance(metadata, pwsdtmd.DynMetaData)
         super().__init__(data, metadata.times, metadata, processingStatus=processingStatus, dtype=dtype)
 
