@@ -177,7 +177,7 @@ class PWSAnalysis(AbstractAnalysis):
             rSquared=rSquared,
             ld=ld,
             settings=self.settings,
-            PwsCubeIdTag=cube.metadata.idTag,
+            imCubeIdTag=cube.metadata.idTag,
             referenceIdTag=self.ref.metadata.idTag,
             extraReflectionTag=self.extraReflection.metadata.idTag if self.extraReflection is not None else None)
         warns = [warn for warn in warns if warn is not None]  # Filter out null values.
@@ -275,7 +275,7 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
     @staticmethod
     def fields():  # Inherit docstring
         return ('time', 'reflectance', 'meanReflectance', 'rms', 'polynomialRms', 'autoCorrelationSlope', 'rSquared',
-                'ld', 'PwsCubeIdTag', 'referenceIdTag', 'extraReflectionTag', 'settings')
+                'ld', 'imCubeIdTag', 'referenceIdTag', 'extraReflectionTag', 'settings')
 
     @staticmethod
     def name2FileName(name: str) -> str:  # Inherit docstring
@@ -288,7 +288,7 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
     @classmethod
     def create(cls, settings: PWSAnalysisSettings, reflectance: pwsdt.KCube, meanReflectance: np.ndarray, rms: np.ndarray,
                polynomialRms: np.ndarray, autoCorrelationSlope: np.ndarray, rSquared: np.ndarray, ld: np.ndarray,
-               PwsCubeIdTag: str, referenceIdTag: str, extraReflectionTag: Optional[str]):  # Inherit docstring
+               imCubeIdTag: str, referenceIdTag: str, extraReflectionTag: Optional[str]):  # Inherit docstring
         d = {'time': datetime.now().strftime(dateTimeFormat),
             'reflectance': reflectance,
             'meanReflectance': meanReflectance,
@@ -297,7 +297,7 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
             'autoCorrelationSlope': autoCorrelationSlope,
             'rSquared': rSquared,
             'ld': ld,
-            'PwsCubeIdTag': PwsCubeIdTag,
+            'imCubeIdTag': imCubeIdTag,
             'referenceIdTag': referenceIdTag,
             'extraReflectionTag': extraReflectionTag,
             'settings': settings}
@@ -309,9 +309,9 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
         return PWSAnalysisSettings.fromJsonString(bytes(np.array(self.file['settings'])).decode())
 
     @AbstractHDFAnalysisResults.FieldDecorator
-    def PwsCubeIdTag(self) -> str:
+    def imCubeIdTag(self) -> str:
         """The idtag of the acquisition that was analyzed."""
-        return bytes(np.array(self.file['PwsCubeIdTag'])).decode()
+        return bytes(np.array(self.file['imCubeIdTag'])).decode()
 
     @AbstractHDFAnalysisResults.FieldDecorator
     def referenceIdTag(self) -> str:
@@ -481,7 +481,7 @@ class LegacyPWSAnalysisResults(AbstractAnalysisResults):
         '''
         # None of the following were saved in the old format.
         reflectance = None  # The 3D analyzed reflectaqnce was not saved in the old version.
-        PwsCubeIdTag = None
+        imCubeIdTag = None
         referenceIdTag = None
         extraReflectionTag = None
         time = None

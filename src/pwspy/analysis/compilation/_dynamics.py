@@ -55,7 +55,7 @@ class DynamicsRoiCompiler(AbstractRoiCompiler):
         diffusion = self._avgOverRoi(roi, results.diffusion, np.logical_not(np.isnan(results.diffusion))) if self.settings.diffusion else None  # Don't include nan values in the average. Diffusion is expected to have many Nans due to low SNR.
 
         results = DynamicsRoiCompilationResults(
-                    cellIdTag=results.PwsCubeIdTag,
+                    cellIdTag=results.imCubeIdTag,
                     analysisName=results.analysisName,
                     reflectance=reflectance,
                     rms_t_squared=rms_t_squared,
