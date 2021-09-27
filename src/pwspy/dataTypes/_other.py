@@ -115,6 +115,8 @@ class Roi:
         assert len(mask.shape) == 2
         assert mask.dtype == np.bool
         self.polygon: geometry.Polygon
+        if isinstance(verts, geometry.MultiPolygon):  # I'm not sure how but it is possible to get a multipolygon. In this case just select out the biggest polygon.
+            verts = verts[0]
         if isinstance(verts, geometry.Polygon):
             self.polygon = verts
         else:
