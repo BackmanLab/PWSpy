@@ -78,5 +78,4 @@ if __name__ == '__main__':
     ri = s.createRIDefinitionFromGladstoneDale(1.337, .3)
     conf = s.createSystemConfiguration(ri, .52, 1.49, 585, True, True)
     out = s.SigmaToD_AllInputs([.1, .1, .2], conf, 1e6, 3)
-
     a = 1
