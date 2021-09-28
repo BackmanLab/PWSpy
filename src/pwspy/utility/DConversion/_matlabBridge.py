@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing
 import collections.abc
 
-NumberOrArray = typing.Union[np.ndarray, float]
+NumberOrArray = typing.Union[typing.Sequence[float], float]
 
 
 class S2DMatlabBridge:

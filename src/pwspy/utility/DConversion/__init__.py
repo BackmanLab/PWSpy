@@ -15,7 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
 
-"""An adaptation of Adam Eshein's (aeshein@u.northwestern.edu) MATLAB code for converting PWS
+"""
+An adaptation of Adam Eshein's (aeshein@u.northwestern.edu) MATLAB code for converting PWS
 RMS measurements to D. The MATLAB code was based on Vadim-Backman's (v-backman@northwestern.edu) original code in
 Mathematica.
 
