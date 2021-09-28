@@ -49,8 +49,12 @@ This will update the module version in the `_version` file and run the conda-bui
 The version number can be understood as `a.b.c.d-xyz` where `a.b.c` are numbers set manually with a Git `Tag`, `d` is the number of commits since 
 `a.b.c` was tagged, `xyz` is the short sha hash for the git commit.
 
+#### Github Actions to publish new releases
+This repository contains Github Actions configuration files such that when a new release is created with a tag giving the version number, i.e. `1.0.8` the package will be built
+and published to PyPi and Anaconda Cloud.
+
 #### Uploading a newly built version of the package to Anaconda Cloud
-The lab has a `Cloud` account at anaconda.org. The username is `backmanlab` and the password is `UNKNOWN!!!!` (do not put the password here, this git repository is publically available, we prefer not to get hacked).
+The Backman lab has a `Cloud` account at anaconda.org. The username is `backmanlab`.
 You can upload the package to the lab's Anaconda Cloud account using `anaconda login` to log into the account and then with `anaconda upload build/noarch/pwspy_xxxxxxxxxx.tar.gz`
 
 
