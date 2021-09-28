@@ -48,6 +48,7 @@ These functions are called by the primary functions and probably don't need to b
 Classes
 -----------
 This class is used to connect to the MATLAB Sigma to D conversion library.
+
 .. autosummary::
     :toctree: generated/
 
