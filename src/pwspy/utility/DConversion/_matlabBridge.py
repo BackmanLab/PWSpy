@@ -3,6 +3,8 @@ from __future__ import annotations
 import typing
 import collections.abc
 
+NumberOrArray = typing.Union[np.ndarray, float]
+
 
 class S2DMatlabBridge:
     def __init__(self, s2dPath: str):
@@ -30,7 +32,7 @@ class S2DMatlabBridge:
         return self._engine.S2D.RIDefinition.createFromGladstoneDale(mediaRI, CVC)
 
     def createSystemConfiguration(self, ri_def: 'S2D.RIDefinition', na_i: float, na_c: float, center_lambda: float,
-                                  oil_immersion: bool, cell_glass_interface: bool):
+                                  oil_immersion: bool, cell_glass_interface: bool) -> 'matlab.object':
         """
         TODO
 
@@ -46,7 +48,8 @@ class S2DMatlabBridge:
         """
         return self._engine.S2D.SystemConfiguration(ri_def, na_i, na_c, center_lambda, oil_immersion, cell_glass_interface)
 
-    def SigmaToD_AllInputs(self, sigmaIn: typing.Union[float, typing.Sequence[float]], system_config: 'S2D.SystemConfiguration', Nf: float, thickIn: float):
+    def SigmaToD_AllInputs(self, sigmaIn: NumberOrArray, system_config: 'S2D.SystemConfiguration',
+                           Nf: float, thickIn: float) -> NumberOrArray:
         """
         Run the complete sigma to D conversion function.
 
