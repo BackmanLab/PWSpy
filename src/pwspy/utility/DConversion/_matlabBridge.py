@@ -5,14 +5,14 @@ import collections.abc
 
 
 class S2DMatlabBridge:
-    """
-    Opens a MATLAB process to run the Sigma2D conversion code. You must have the MATLAB engine for Python installed
-    in your Python environment.
-
-    Args:
-        s2dPath: The file path to the SigmaConversion MATLAB package.
-    """
     def __init__(self, s2dPath: str):
+        """
+         Opens a MATLAB process to run the Sigma2D conversion code. You must have the MATLAB engine for Python installed
+         in your Python environment.
+
+         Args:
+             s2dPath: The file path to the SigmaConversion MATLAB package.
+         """
         import matlab.engine
         self._engine = matlab.engine.start_matlab()
         self._engine.addpath(s2dPath)
@@ -32,6 +32,8 @@ class S2DMatlabBridge:
     def createSystemConfiguration(self, ri_def: 'S2D.RIDefinition', na_i: float, na_c: float, center_lambda: float,
                                   oil_immersion: bool, cell_glass_interface: bool):
         """
+        TODO
+
         Args:
             ri_def: An RI definition object
             na_i: The illumination NA of the objective.
@@ -48,18 +50,17 @@ class S2DMatlabBridge:
         """
         Run the complete sigma to D conversion function.
 
-         Args:
-           sigmaIn: The sigma values you want to convert.
-           system_config: The SystemConfiguration object to use.
-           Nf: The genomic length of a packing domain.
-           thickIn: The expected thickness of the sample.
+        Args:
+            sigmaIn: The sigma values you want to convert.
+            system_config: The SystemConfiguration object to use.
+            Nf: The genomic length of a packing domain.
+            thickIn: The expected thickness of the sample.
 
-         Returns:
-           dOut: This is analogous to `D_b` in Aya's paper. The `model parameter`.
-           dCorrected: This is the true `D`. This is usually what we care about.
-           Nf_expected: The genomic length we expect based on D and the calculated lMax.
-           lmax_corrected: Calculation of LMax from Nf and Db based on eqn. 2.
-
+        Returns:
+            dOut: This is analogous to `D_b` in Aya's paper. The `model parameter`.
+            dCorrected: This is the true `D`. This is usually what we care about.
+            Nf_expected: The genomic length we expect based on D and the calculated lMax.
+            lmax_corrected: Calculation of LMax from Nf and Db based on eqn. 2.
         """
         if isinstance(sigmaIn, collections.abc.Sequence):
             import matlab
