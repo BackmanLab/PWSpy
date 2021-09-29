@@ -5,7 +5,7 @@ import collections.abc
 
 NumberOrArray = typing.Union[typing.Sequence[float], float]
 
-
+# TODO implement the SigmaToDApprox method as well.
 class S2DMatlabBridge:
     def __init__(self, s2dPath: str):
         """
@@ -22,6 +22,7 @@ class S2DMatlabBridge:
     def createRIDefinitionFromGladstoneDale(self, mediaRI: float, CVC: float) -> 'matlab.object':
         """
         Create an S2D.RIDefinition object from the GladstoneDale equation.
+
         Args:
             mediaRI: The refractive index of the media that the chromatin is immersed in.
             CVC: The CVC, also referred to as Phi. The ratio of Chromatin Volume : Total Volume, kind of like density.
@@ -34,7 +35,7 @@ class S2DMatlabBridge:
     def createSystemConfiguration(self, ri_def: 'S2D.RIDefinition', na_i: float, na_c: float, center_lambda: float,
                                   oil_immersion: bool, cell_glass_interface: bool) -> 'matlab.object':
         """
-        TODO
+        Create a system configuration object. This object contains all information about the microscope and sample refractive indices.
 
         Args:
             ri_def: An RI definition object
