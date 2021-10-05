@@ -5,16 +5,16 @@ import collections.abc
 
 NumberOrArray = typing.Union[typing.Sequence[float], float]
 
-# TODO implement the SigmaToDApprox method as well.
-class S2DMatlabBridge:
+
+class S2DMatlabBridge: # TODO implement the SigmaToDApprox method as well.
     def __init__(self, s2dPath: str):
         """
-         Opens a MATLAB process to run the Sigma2D conversion code. You must have the MATLAB engine for Python installed
-         in your Python environment.
+        Opens a MATLAB process to run the Sigma2D conversion code. You must have the MATLAB engine for Python installed
+        in your Python environment.
 
-         Args:
-             s2dPath: The file path to the SigmaConversion MATLAB package.
-         """
+        Args:
+            s2dPath: The file path to the SigmaConversion MATLAB package.
+        """
         import matlab.engine
         self._engine = matlab.engine.start_matlab()
         self._engine.addpath(s2dPath)
