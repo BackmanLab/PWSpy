@@ -27,7 +27,7 @@ requirements:
     - h5py
     - pandas
     - matplotlib >=1.4
-    - jsonschema
+    - jsonschema >=4
     - opencv =4
     - scikit-image
     - rasterio

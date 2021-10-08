@@ -70,7 +70,7 @@ class MetaDataBase(abc.ABC):
         self.filePath = filePath
         self.acquisitionDirectory = acquisitionDirectory
         refResolver = jsonschema.RefResolver(pathlib.Path(self._jsonSchemaPath).as_uri(), None)  # This resolver is used to allow derived json schemas to refer to the base schema.
-        jsonschema.validate(instance=metadata, schema=self._jsonSchema, types={'array': (list, tuple)}, resolver=refResolver)
+        jsonschema.validate(instance=metadata, schema=self._jsonSchema, resolver=refResolver)
         self.dict: dict = metadata
         try:
             datetime.strptime(self.dict['time'], dateTimeFormat)
