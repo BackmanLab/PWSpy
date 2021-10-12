@@ -1,11 +1,7 @@
 # PWSpy
 A python module supporting operations related to Partial Wave Spectroscopy.
 
-## Documentation
-This project is automatically documented by "Sphinx". If you have Sphinx installed then you can compile documentation to HTML 
-by navigating to the `docs` folder and running `make html`. Formats other than HTML are also possible. Documentation is
-hosted online at [ReadTheDocs](https://pwspy.readthedocs.io/en/dev/) updating of documentation from the current version on Bitbucket can be performed
-by signing into the lab's account at `readthedocs.org`.
+
 
 ## Installation
 The first step in installation is to install [Anaconda](https://www.anaconda.com/products/individual) on your computer. Once installation
@@ -40,7 +36,11 @@ In addition you will need:
 
 These can be installed via: `conda install conda-build anaconda-client setuptools_scm`  
 
-#### Automatic Method (Recommended):
+#### Github Actions to publish new releases (Recommended):
+This repository contains Github Actions configuration files such that when a new release is created with a tag giving the version number, i.e. `1.0.8` the package will be built
+and published to PyPi and Anaconda Cloud.
+
+#### Automatic Method:
 Use the python in your `base` anaconda environment to run `python installScripts\build.py`.
 The output will default to `buildscripts/conda/build`. You can optionally provide a custom
 output path as the first argument to the `build.py` script. There will be many
@@ -49,12 +49,14 @@ This will update the module version in the `_version` file and run the conda-bui
 The version number can be understood as `a.b.c.d-xyz` where `a.b.c` are numbers set manually with a Git `Tag`, `d` is the number of commits since 
 `a.b.c` was tagged, `xyz` is the short sha hash for the git commit.
 
-#### Github Actions to publish new releases
-This repository contains Github Actions configuration files such that when a new release is created with a tag giving the version number, i.e. `1.0.8` the package will be built
-and published to PyPi and Anaconda Cloud.
 
 #### Uploading a newly built version of the package to Anaconda Cloud
 The Backman lab has a `Cloud` account at anaconda.org. The username is `backmanlab`.
 You can upload the package to the lab's Anaconda Cloud account using `anaconda login` to log into the account and then with `anaconda upload build/noarch/pwspy_xxxxxxxxxx.tar.gz`
 
+## Documentation
+This project is automatically documented by "Sphinx". If you have Sphinx installed then you can compile documentation to HTML 
+by navigating to the `docs` folder and running `make html`. Formats other than HTML are also possible. Documentation is
+hosted online at [ReadTheDocs](https://pwspy.readthedocs.io/en/dev/) updating of documentation from the current version on Bitbucket can be performed
+by signing into the lab's account at `readthedocs.org`.
 
