@@ -76,6 +76,7 @@ class ICBase(ABC):
         """
         return self._index
 
+
     def plotMean(self) -> t_.Tuple[plt.Figure, plt.Axes]:
         """
 
@@ -107,7 +108,7 @@ class ICBase(ABC):
         std = self.data[mask].std(axis=0)
         return mean, std
 
-    def selectLassoROI(self, displayIndex: t_.Optional[int] = None, clim: t_.Sequence = None) -> np.ndarray:
+    def selectLassoROI(self, displayIndex: t_.Optional[int] = None, clim: t_.Sequence = None) -> _other.Roi:
         """
         Allow the user to draw a `freehand` ROI on an image of the acquisition.
 
@@ -134,7 +135,7 @@ class ICBase(ABC):
         fig.show()
         while plt.fignum_exists(fig.number):
             fig.canvas.flush_events()
-        return np.array(Verts[0])
+        return _other.Roi.fromVerts(np.array(Verts[0]), self.data.shape[:2])
 
     def selectRectangleROI(self, displayIndex: t_.Optional[int] = None) -> np.ndarray:
         """

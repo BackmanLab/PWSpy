@@ -11,10 +11,11 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import pathlib
     import numpy as np
+    from pwspy.examples import PWSExperimentPath
+    plt.ion()
 
-    workingDirectory = r'C:\Users\nicke\Desktop\cells'  # The folder that all your acquisitions are saved under.
+    workingDirectory = PWSExperimentPath  # The folder that all your acquisitions are saved under.
     analysisName = 'script'  # This will often be "p0"
-
 
     def plotHist(roi, rms):
         """
@@ -43,6 +44,6 @@ if __name__ == '__main__':
         roiSpecs = acq.getRois()  # A list of the names, numbers, and fileFormats of the ROIs in this acquisition
 
         for name, number, fformat in roiSpecs:  # Loop through every ROI.
-            roi = acq.loadRoi(name, number, fformat)  # Load the ROI from file.
-            plotHist(roi, anls.rms)  # Use the function defined above to plot a histogram
+            roiFile = acq.loadRoi(name, number, fformat)  # Load the ROI from file.
+            plotHist(roiFile.getRoi(), anls.rms)  # Use the function defined above to plot a histogram
 

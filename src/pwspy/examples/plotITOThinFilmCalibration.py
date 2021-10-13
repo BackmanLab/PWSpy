@@ -41,7 +41,7 @@ def proc(im: PwsCube):
     return im, ref
 
 if __name__ == '__main__':
-    subDir = r'J:\Calibrations\ITOThinFilm\LCPWS1' # Use '*' to include all subdirectories
+    subDir = r'J:\Calibrations\ITOThinFilm\LCPWS1'  # Use '*' to include all subdirectories
     dateStart = '1-16-2020'
     dateEnd = None
     templateName = '1_16_2020'

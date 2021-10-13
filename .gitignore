@@ -11,3 +11,4 @@ buildScripts/pyInstaller/dist/
 .idea/
 src/pwspy/_version
 *.orig
+tests/resources/test_data/

@@ -78,7 +78,7 @@ if __name__ == '__main__':
                 resinRoi = resin.metadata.acquisitionDirectory.loadRoi(maskSuffix, 1)
             else:
                 print('Select a region containing only resin.')
-                resinRoi = Roi.fromVerts(resin.selectLassoROI(), resin.data.shape[:2])
+                resinRoi = resin.selectLassoROI()
                 resin.metadata.acquisitionDirectory.saveRoi(maskSuffix, 1, resinRoi)
             resin.data -= resin.data.mean(axis=2)[:, :, np.newaxis]
             opdResin, xvals = resin.getOpd(isHannWindow, indexOpdStop=None, mask=resinRoi.mask)
