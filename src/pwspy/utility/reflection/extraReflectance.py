@@ -287,7 +287,9 @@ def plotExtraReflection(images: t_.Dict[str, t_.Dict[Material, t_.List[pwsdt.Pws
         ax.plot(cubes[mat1].wavelengths, totalMean[sett].rExtra * 100, color='k', label=f'{sett} mean')  # TODO Add a hover annotation since all of the lines are black it's impossible to know which one is which.
     ax.legend()
 
-    fig2, ratioAxes = dock.subplots("Reflectance Ratios", nrows=len(matCombos))  # for correction factor
+    fig2, ratioAxes = dock.subplots("Reflectance Ratios",
+                                    subplots_kwargs=dict(nrows=len(matCombos))
+                                    )  # for correction factor
     if not isinstance(ratioAxes, np.ndarray):
         ratioAxes = np.array(ratioAxes).reshape(1)  # If there is only one axis we still want it to be a list for the rest of the code
     ratioAxes = dict(zip(matCombos, ratioAxes))
