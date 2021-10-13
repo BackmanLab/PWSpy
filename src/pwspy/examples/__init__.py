@@ -32,3 +32,5 @@ This is a collection of example usages of the :mod:`pwspy` module.
     roiUsageExample
     opdExampleScript
 """
+
+PWSImagePath = r'\\backmanlabnas.myqnapcloud.com\home\Year2\canvassing\Cell868'

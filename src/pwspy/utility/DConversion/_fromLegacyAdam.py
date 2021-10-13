@@ -81,7 +81,8 @@ def calcDSize(raw_rms: np.ndarray, noise: float, NAi: float):
 
 
 def sigma2D(raw_rms: np.ndarray, noise: float, NAi: float) -> np.ndarray:
-    """Converts d_size to D precisely. This function can be significantly slower than
+    """
+    Converts d_size to D precisely. This function can be significantly slower than
     `sigma2DApproximation` but more closely follows the analytical solution.
 
     Args:

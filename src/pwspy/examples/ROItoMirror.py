@@ -26,9 +26,10 @@ Can help to make a reference when you don't actually have one for some reason
 from pwspy.dataTypes import PwsCube
 import matplotlib.pyplot as plt
 import numpy as np
+from pwspy.examples import PWSImagePath
 
 if __name__ == '__main__':
-    a = PwsCube.loadAny(r'G:\Calibrations\CellPhantom\lcpws1\5th\Cell2')
+    a = PwsCube.loadAny(PWSImagePath)
 
     mask = a.selectLassoROI()
     spec, std = a.getMeanSpectra(mask)
