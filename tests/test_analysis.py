@@ -6,11 +6,11 @@ from pwspy import analysis
 import pwspy.dataTypes as pwsdt
 from pwspy.utility.reflection import Material
 import pytest
+from datasetDefinitions import dynamicsTestData, sequenceTestData
 
 _analysisName = 'testAnalysis'
-resourcesDir = os.path.join(os.path.split(__file__)[0], 'resources')
-_Acquisition = os.path.join(resourcesDir, 'seqTest', 'Cell1')
-_refDir = os.path.join(resourcesDir, 'seqTest', 'Cell3')
+_Acquisition = dynamicsTestData.datasetPath / 'Cell1'
+_refDir = dynamicsTestData.referenceCellPath
 
 
 def test_pws_analysis():
@@ -25,13 +25,14 @@ def test_pws_analysis():
     cube = acq.pws.toDataClass()  # TODO test various states of preprocessing
     results, warnings = anls.run(cube)
 
+    acq.pws.saveAnalysis(results, _analysisName, overwrite=True)
     with pytest.raises(OSError):
         acq.pws.saveAnalysis(results, _analysisName)  # The analysis already exists so an OSError should be thrown.
-    acq.pws.saveAnalysis(results, _analysisName, overwrite=True)
-    
+
     acq.pws.loadAnalysis(_analysisName)
     
     # TODO add assertions
+
     
 def test_dynamics_analysis():
     er = None  # TODO add other cases
@@ -79,8 +80,9 @@ def test_compilation():
 
 def test_sequence():
     from pwspy.utility.acquisition import loadDirectory
-    seq, acqs = loadDirectory((os.path.join(resourcesDir, 'seqTest')))
+    seq, acqs = loadDirectory(sequenceTestData.datasetPath)
 
 if __name__ == '__main__':
     test_pws_analysis()
+    a = 1
     a = 1
