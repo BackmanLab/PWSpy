@@ -17,7 +17,7 @@
 
 from typing import List
 import numpy as np
-from pwspy.dataTypes import Roi, AcqDir
+from pwspy.dataTypes import Roi, Acquisition
 import matplotlib.pyplot as plt
 import matplotlib
 
@@ -66,7 +66,7 @@ def roiColor(data: np.ndarray, rois: List[Roi], vmin, vmax, scale_bg, hue=0, exp
 
 
 if __name__ == "__main__":
-    acq = AcqDir(r'G:\Aya_NAstudy\matchedNAi_largeNAc\cells\Cell3')
+    acq = Acquisition(r'G:\Aya_NAstudy\matchedNAi_largeNAc\cells\Cell3')
     an = acq.pws.loadAnalysis('p0')
     rois = [acq.loadRoi(name, num).getRoi() for name, num, fformat in acq.getRois() if name == 'nucleus']
     out = roiColor(an.rms, rois, 0.04, .3, 1, exponent=1.1, numScaleBarPix=100)

@@ -32,3 +32,9 @@ This is a collection of example usages of the :mod:`pwspy` module.
     roiUsageExample
     opdExampleScript
 """
+
+# Set this to a folder containing multiple "Cell{x}" acquisition folders. Some examples will use this.
+PWSExperimentPath = r"C:\Users\backman05\Documents\Bitbucket\pwspython\tests\resources\seqTest"
+
+# Set this to the "Cell{X}" folder of a PWS acquisition. Most of the examples will then refer to this file.
+PWSImagePath = r'\\backmanlabnas.myqnapcloud.com\home\Year2\canvassing\Cell868'

@@ -9,7 +9,7 @@ import pytest
 
 _analysisName = 'testAnalysis'
 resourcesDir = os.path.join(os.path.split(__file__)[0], 'resources')
-_acqDir = os.path.join(resourcesDir, 'seqTest', 'Cell1')
+_Acquisition = os.path.join(resourcesDir, 'seqTest', 'Cell1')
 _refDir = os.path.join(resourcesDir, 'seqTest', 'Cell3')
 
 
@@ -17,11 +17,11 @@ def test_pws_analysis():
     settings = analysis.pws.PWSAnalysisSettings.loadDefaultSettings("Recommended")
     er = None  # TODO add other cases
     
-    refAcq = pwsdt.AcqDir(_refDir)
+    refAcq = pwsdt.Acquisition(_refDir)
     ref = refAcq.pws.toDataClass()  # TODO Test other cases of processing status (exposure normalized or not)
     anls = analysis.pws.PWSAnalysis(settings=settings, extraReflectance=er, ref=ref)
     
-    acq = pwsdt.AcqDir(_acqDir)
+    acq = pwsdt.Acquisition(_Acquisition)
     cube = acq.pws.toDataClass()  # TODO test various states of preprocessing
     results, warnings = anls.run(cube)
 
@@ -44,11 +44,11 @@ def test_dynamics_analysis():
         relativeUnits=True
     )
 
-    refAcq = pwsdt.AcqDir(_refDir)
+    refAcq = pwsdt.Acquisition(_refDir)
     ref = refAcq.dynamics.toDataClass()  # TODO Test other cases of processing status (exposure normalized or not)
     anls = analysis.dynamics.DynamicsAnalysis(settings=settings, extraReflectance=er, ref=ref)
 
-    acq = pwsdt.AcqDir(_acqDir)
+    acq = pwsdt.Acquisition(_Acquisition)
     cube = acq.dynamics.toDataClass()  # TODO test various states of preprocessing
     results, warnings = anls.run(cube)
 
@@ -67,7 +67,7 @@ def test_compilation():
     settings = analysis.compilation.DynamicsCompilerSettings(True, True, True)
     dynComp = analysis.compilation.DynamicsRoiCompiler(settings)
     
-    acq = pwsdt.AcqDir(_acqDir)
+    acq = pwsdt.Acquisition(_Acquisition)
     
     for roiSpecs in acq.getRois():
         roi = acq.loadRoi(*roiSpecs)

@@ -11,10 +11,11 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import pathlib
     import numpy as np
+    from pwspy.examples import PWSExperimentPath
+    plt.ion()
 
-    workingDirectory = r'C:\Users\nicke\Desktop\cells'  # The folder that all your acquisitions are saved under.
+    workingDirectory = PWSExperimentPath  # The folder that all your acquisitions are saved under.
     analysisName = 'script'  # This will often be "p0"
-
 
     def plotHist(roi, rms):
         """
@@ -32,7 +33,7 @@ if __name__ == '__main__':
 
     cellFolderIterator = pathlib.Path(workingDirectory).glob("Cell[0-9]")  # An iterator for all folders that are below workingDirectory and match the "regex" pattern "Cell[0-9]"
     for folder in cellFolderIterator:
-        acq = pwsdt.AcqDir(folder)  # An object handling the contents of a single "Cell{X}" folder
+        acq = pwsdt.Acquisition(folder)  # An object handling the contents of a single "Cell{X}" folder
 
         try:
             anls = acq.pws.loadAnalysis(analysisName)  # Load the analysis results from file.
@@ -43,6 +44,6 @@ if __name__ == '__main__':
         roiSpecs = acq.getRois()  # A list of the names, numbers, and fileFormats of the ROIs in this acquisition
 
         for name, number, fformat in roiSpecs:  # Loop through every ROI.
-            roi = acq.loadRoi(name, number, fformat)  # Load the ROI from file.
-            plotHist(roi, anls.rms)  # Use the function defined above to plot a histogram
+            roiFile = acq.loadRoi(name, number, fformat)  # Load the ROI from file.
+            plotHist(roiFile.getRoi(), anls.rms)  # Use the function defined above to plot a histogram
 

@@ -81,7 +81,7 @@ def getFromDict(func):
 
 
 class PWSAnalysis(AbstractAnalysis):
-    """The standard PWS analysis routine. Initialize and then `run` for as many different ImCubes as you want.
+    """The standard PWS analysis routine. Initialize and then `run` for as many different PwsCubes as you want.
     For a given set of settings and reference you only need to instantiate one instance of this class. You can then perform `run`
     on as many data cubes as you want.
 
@@ -94,7 +94,7 @@ class PWSAnalysis(AbstractAnalysis):
             ExtraReflectionCube: An object representing the stray reflection in units of counts/ms. It is up to the user to make sure that the data is scaled appropriately to match the data being analyzed.
         ref: The reference acquisition used for analysis.
     """
-    def __init__(self, settings: PWSAnalysisSettings, extraReflectance: typing.Optional[typing.Union[pwsdt.ERMetaData, pwsdt.ExtraReflectanceCube, pwsdt.ExtraReflectionCube]], ref: pwsdt.ImCube):
+    def __init__(self, settings: PWSAnalysisSettings, extraReflectance: typing.Optional[typing.Union[pwsdt.ERMetaData, pwsdt.ExtraReflectanceCube, pwsdt.ExtraReflectionCube]], ref: pwsdt.PwsCube):
         from pwspy.dataTypes import ExtraReflectanceCube
         super().__init__()
         self._initWarnings = []
@@ -106,7 +106,7 @@ class PWSAnalysis(AbstractAnalysis):
         if ref.metadata.pixelSizeUm is not None: #Only works if pixel size was saved in the metadata.
             ref.filterDust(.75)  # Apply a blur to filter out dust particles. This is in microns. I'm not sure if this is the optimal value.
         if settings.referenceMaterial is None:
-            theoryR = pd.Series(np.ones((len(ref.wavelengths),)), index=ref.wavelengths) # Having this as all ones effectively ignores it.
+            theoryR = pd.Series(np.ones((len(ref.wavelengths),)), index=ref.wavelengths)  # Having this as all ones effectively ignores it.
             self._initWarnings.append(warnings.AnalysisWarning("Ignoring reference material", "Analysis ignoring reference material correction. Extra Reflection subtraction can not be performed."))
             assert extraReflectance is None, "Extra reflectance calibration relies on being provided with the theoretical reflectance of our reference."
         else:
@@ -136,20 +136,20 @@ class PWSAnalysis(AbstractAnalysis):
         self.ref = ref
         self.extraReflection = Iextra
 
-    def run(self, cube: pwsdt.ImCube) -> Tuple[PWSAnalysisResults, List[warnings.AnalysisWarning]]:  # Inherit docstring
+    def run(self, cube: pwsdt.PwsCube) -> Tuple[PWSAnalysisResults, List[warnings.AnalysisWarning]]:  # Inherit docstring
         if not cube.processingStatus.cameraCorrected:
             cube.correctCameraEffects(self.settings.cameraCorrection)
         if not cube.processingStatus.normalizedByExposure:
             cube.normalizeByExposure()
         warns = self._initWarnings
-        cube = self._normalizeImCube(cube)
+        cube = self._normalizePwsCube(cube)
         interval = (max(cube.wavelengths) - min(cube.wavelengths)) / (len(cube.wavelengths) - 1)  # Wavelength interval. We are assuming equally spaced wavelengths here
         cube.data = self._filterSignal(cube.data, 1/interval)
         # The rest of the analysis will be performed only on the selected wavelength range.
         cube = cube.selIndex(self.settings.wavelengthStart, self.settings.wavelengthStop)
         # Determine the mean-reflectance for each pixel in the cell.
         reflectance = cube.data.mean(axis=2)
-        cube = pwsdt.KCube.fromImCube(cube)  # -- Convert to K-Space
+        cube = pwsdt.KCube.fromPwsCube(cube)  # -- Convert to K-Space
         cubePoly = self._fitPolynomial(cube)
         # Remove the polynomial fit from filtered cubeCell.
         cube.data = cube.data - cubePoly
@@ -183,7 +183,7 @@ class PWSAnalysis(AbstractAnalysis):
         warns = [warn for warn in warns if warn is not None]  # Filter out null values.
         return results, warns
 
-    def _normalizeImCube(self, cube: pwsdt.ImCube) -> pwsdt.ImCube:
+    def _normalizePwsCube(self, cube: pwsdt.PwsCube) -> pwsdt.PwsCube:
         if self.extraReflection is not None:
             cube.subtractExtraReflection(self.extraReflection)
         cube.normalizeByReference(self.ref)
@@ -227,14 +227,45 @@ class PWSAnalysis(AbstractAnalysis):
     def copySharedDataToSharedMemory(self):  # Inherit docstring
         refdata = mp.RawArray('f', self.ref.data.size)  # Create an empty ctypes array of shared memory
         refdata = np.frombuffer(refdata, dtype=np.float32).reshape(self.ref.data.shape)  # Wrap the shared memory array in a numpy array and reshape back to origianl shape
-        np.copyto(refdata, self.ref.data)  # Copy our ImCubes data to the shared memory array.
-        self.ref.data = refdata # Reassign the shared memory array to our ImCube object data attribute.
+        np.copyto(refdata, self.ref.data)  # Copy our PwsCubes data to the shared memory array.
+        self.ref.data = refdata # Reassign the shared memory array to our PwsCube object data attribute.
 
         if self.extraReflection is not None:
             iedata = mp.RawArray('f', self.extraReflection.data.size)
             iedata = np.frombuffer(iedata, dtype=np.float32).reshape(self.extraReflection.data.shape)
             np.copyto(iedata, self.extraReflection.data)
             self.extraReflection.data = iedata
+
+
+class NanoCytomicsADCPWSAnalysis(AbstractAnalysis):
+    """
+    This Analysis uses the ADC (adaptive dark counts) method of calibration preferred by Nanocytomics rather than the ExtraReflectance
+    method
+    """
+
+    def __init__(self, settings: PWSAnalysisSettings, ref: pwsdt.PwsCube):
+        super().__init__()
+        ref.correctCameraEffects(settings.cameraCorrection, binning=1)  # Binning isn't stored in Nano data. assume binning is 1
+        self._pwsAnalysis = PWSAnalysis(settings, None, ref)
+        adcSpectra = self._getADCSpectra(self._pwsAnalysis.ref)
+        self._pwsAnalysis.ref.data = self._pwsAnalysis.ref.data - adcSpectra
+
+    def run(self, cube: pwsdt.PwsCube) -> Tuple[PWSAnalysisResults, List[warnings.AnalysisWarning]]:
+        if not cube.processingStatus.cameraCorrected:
+            cube.correctCameraEffects(self._pwsAnalysis.settings.cameraCorrection, binning=1) # Binning isn't stored in Nano data. assume binning is 1
+        if not cube.processingStatus.normalizedByExposure:
+            cube.normalizeByExposure()
+        adcSpectra = self._getADCSpectra(cube)
+        cube.data = cube.data - adcSpectra
+        return self._pwsAnalysis.run(cube)
+
+    def copySharedDataToSharedMemory(self):
+        self._pwsAnalysis.copySharedDataToSharedMemory()
+
+    @staticmethod
+    def _getADCSpectra(cube: pwsdt.PwsCube):
+        adcSlice = (slice(0, 50), slice(0, 50), None)
+        return cube[adcSlice].mean(axis=(0, 1))
 
 
 class PWSAnalysisResults(AbstractHDFAnalysisResults):
@@ -344,7 +375,7 @@ class PWSAnalysisResults(AbstractHDFAnalysisResults):
         """
         dset = self.file['reflectance']
         cube = pwsdt.KCube.fromHdfDataset(dset)
-        opd, opdIndex = cube.getOpd(isHannWindow=False, indexOpdStop=100)
+        opd, opdIndex = cube.getOpd(useHannWindow=False, indexOpdStop=100)
         return opd, opdIndex
 
     @AbstractHDFAnalysisResults.FieldDecorator
@@ -511,6 +542,8 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
         for newKey in ['relativeUnits', 'extraReflectanceId', 'cameraCorrection']:
             if newKey not in d.keys():
                 d[newKey] = None #For a while these settings were missing from the code. Allow us to still load old files.
+        if d['cameraCorrection'] is not None:
+            d['cameraCorrection'] = pwsdt.CameraCorrection(**d['cameraCorrection'])
         return cls(**d)
 
     @classmethod

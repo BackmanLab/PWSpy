@@ -27,7 +27,7 @@ of the fourier transfrom and extract RMS from what is left.
 
 
 if __name__ == '__main__':
-    from pwspy.dataTypes import CameraCorrection, AcqDir, Roi, ImCube, KCube
+    from pwspy.dataTypes import CameraCorrection, Acquisition, Roi, PwsCube, KCube
     import matplotlib.pyplot as plt
     import scipy.signal as sps
     import os
@@ -35,7 +35,7 @@ if __name__ == '__main__':
 
     '''User Input'''
     path = r'2_7_2019 11.07'
-    refName = 'Cell999'  # This is an imcube of glass, used for normalization.
+    refName = 'Cell999'  # This is an PwsCube of glass, used for normalization.
     cellNames = ['Cell1', 'Cell2']  # , 'Cell3', 'Cell4','Cell5']
     maskSuffix = 'resin'
 
@@ -57,7 +57,7 @@ if __name__ == '__main__':
     opdIntegralEnd = integrationDepth * 2 * sampleRI  # We need to convert from our desired depth into an opd value. There are some questions about having a 2 here but that's how it is in the matlab code so I'm keeping it.
 
     ### load and save mirror or glass image cube
-    ref = ImCube.fromMetadata(AcqDir(os.path.join(path, refName)).pws)
+    ref = PwsCube.fromMetadata(Acquisition(os.path.join(path, refName)).pws)
     ref.correctCameraEffects(correction)
     ref.filterDust(6, pixelSize=1)
     ref.normalizeByExposure()
@@ -67,18 +67,18 @@ if __name__ == '__main__':
         fig, ax = plt.subplots()
         resinOpds = {}
         for cellName in cellNames:
-            resin = ImCube.fromMetadata(AcqDir(os.path.join(path, cellName)).pws)
+            resin = PwsCube.fromMetadata(Acquisition(os.path.join(path, cellName)).pws)
             resin.correctCameraEffects(correction)
             resin.normalizeByExposure()
             resin /= ref
-            resin = KCube.fromImCube(resin)
+            resin = KCube.fromPwsCube(resin)
             if resetResinMasks:
                 [resin.metadata.acquisitionDirectory.deleteRoi(name, num) for name, num, fformat in resin.metadata.acquisitionDirectory.getRois() if name == maskSuffix]
             if maskSuffix in [name for name, number, fformat in resin.metadata.acquisitionDirectory.getRois()]:
                 resinRoi = resin.metadata.acquisitionDirectory.loadRoi(maskSuffix, 1)
             else:
                 print('Select a region containing only resin.')
-                resinRoi = Roi.fromVerts(resin.selectLassoROI(), resin.data.shape[:2])
+                resinRoi = resin.selectLassoROI()
                 resin.metadata.acquisitionDirectory.saveRoi(maskSuffix, 1, resinRoi)
             resin.data -= resin.data.mean(axis=2)[:, :, np.newaxis]
             opdResin, xvals = resin.getOpd(isHannWindow, indexOpdStop=None, mask=resinRoi.mask)
@@ -92,12 +92,12 @@ if __name__ == '__main__':
 
     rmses = {}  # Store the rms maps for later saving
     for cellName in cellNames:
-        cube = ImCube.fromMetadata(AcqDir(os.path.join(path, cellName)).pws)
+        cube = PwsCube.fromMetadata(Acquisition(os.path.join(path, cellName)).pws)
         cube.correctCameraEffects(correction)
         cube.normalizeByExposure()
         cube /= ref
         cube.data = sps.filtfilt(b, a, cube.data, axis=2)
-        cube = KCube.fromImCube(cube)
+        cube = KCube.fromPwsCube(cube)
 
         ## -- Polynomial Fit
         print("Subtracting Polynomial")

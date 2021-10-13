@@ -211,7 +211,7 @@ class DynamicsAnalysisResults(AbstractHDFAnalysisResults): # Inherit docstring.
 
     @classmethod
     def create(cls, settings: DynamicsAnalysisSettings, meanReflectance: np.ndarray, rms_t_squared: np.ndarray, reflectance: pwsdt.DynCube, diffusion: np.ndarray,
-                imCubeIdTag: str, referenceIdTag: str, extraReflectionIdTag: t_.Optional[str]): # Inherit docstring.
+               imCubeIdTag: str, referenceIdTag: str, extraReflectionIdTag: t_.Optional[str]): # Inherit docstring.
         d = {'time': datetime.now().strftime(dateTimeFormat),
             'meanReflectance': meanReflectance,
             'reflectance': reflectance,
@@ -276,6 +276,7 @@ class DynamicsAnalysisResults(AbstractHDFAnalysisResults): # Inherit docstring.
 @dataclasses.dataclass
 class DynamicsAnalysisSettings(AbstractAnalysisSettings):
     """These settings determine the behavior of the `DynamicsAnalysis` class.
+
         Args:
             extraReflectanceId: The unique `IDTag` of the extraReflectance calibration that was used on this analysis.
             referenceMaterial: The material that was imaged in the reference image of this analysis. Found as an in pwspy.moduleConst.Material. The

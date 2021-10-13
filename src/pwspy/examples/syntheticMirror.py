@@ -25,18 +25,26 @@ most of the the FOV is glass.
 import copy
 
 import matplotlib.pyplot as plt
-from pwspy.dataTypes import ImCube
+import pwspy.dataTypes as pwsdt
+from pwspy.examples import PWSImagePath
 
 
 if __name__ == '__main__':
-    a = ImCube.fromTiff(r'G:\Vasundhara_MSCs_data\Cell1170')
+    plt.ion()
 
-    mirror = copy.deepcopy(a)  # This doesn't work right. maybe becuaes of the wi
-    mirror.filterDust(10)
+    acq = pwsdt.Acquisition(PWSImagePath)
+    a = acq.pws.toDataClass()
 
-    a.plotMean()
-    mirror.plotMean()
-    norm = (a / mirror)
-    norm.plotMean()
+    a.correctCameraEffects()
+    a.normalizeByExposure()
+
+    mirror = copy.deepcopy(a)
+    mirror.filterDust(10)  # Apply a gaussian blurring with sigma=10 microns along the XY plane.
+
+    a.plotMean()  # Plot the mean reflectance of the original
+    mirror.plotMean()  # Plot the mean reflectance after filtering.
+    a.normalizeByReference(mirror)  # Normalize raw by reference
+    a.plotMean()  # Plot the measurement after normalization.
     plt.figure()
-    plt.imshow(norm.data.std(axis=2))
+    plt.imshow(a.data.std(axis=2))  # Plot RMS after normalization.
+
