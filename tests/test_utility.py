@@ -14,6 +14,11 @@ class TestSequence:
 
         assert len(posList) == len(acqs)
 
+        posList2 = posList.copy()
+        posList2.mirrorX().mirrorY()  # inplace
+        afTransform = posList.getAffineTransform(posList2)
+        posList3 = posList.applyAffineTransform(afTransform)
+
         for acq in acqs:
             iterationNum = acq.sequencerCoordinate.getStepIteration(multiplePosStep)
             print(posList[iterationNum])
