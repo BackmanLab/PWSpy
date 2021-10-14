@@ -2,6 +2,12 @@
 # Minimum requirements for the build system to execute.
 requires = ["setuptools", "wheel", "setuptools_scm"]  # PEP 508 specifications.
 
+[project.optional-dependencies]
+tests = [
+    'pytest>=6',
+    'coverage>=5'
+]
+
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-ra"

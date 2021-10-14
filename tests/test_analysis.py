@@ -1,7 +1,3 @@
-import sys
-import os
-# sys.path.append(os.path.join('..', 'src'))
-
 from pwspy import analysis
 import pwspy.dataTypes as pwsdt
 from pwspy.utility.reflection import Material
@@ -58,7 +54,7 @@ class TestAnalysis:
 
         acq.dynamics.saveAnalysis(results, _analysisName, overwrite=True)
         with pytest.raises(OSError):
-            acq.pws.saveAnalysis(results, _analysisName)  # The analysis already exists so an OSError should be thrown.
+            acq.dynamics.saveAnalysis(results, _analysisName)  # The analysis already exists so an OSError should be thrown.
 
         result = acq.dynamics.loadAnalysis(_analysisName)
 
@@ -86,24 +82,5 @@ class TestAnalysis:
                        dynComp.run(acq.dynamics.loadAnalysis(_analysisName), roi)))
 
             print(f"Successfully Compiled {len(results)} ROIs for general, PWS, and dynamics analysis.")
-
-
-class TestSequence:
-    def test_sequence(self, sequenceData):
-        from pwspy.utility.acquisition import loadDirectory, PositionsStep
-        from pwspy.utility.micromanager import PositionList
-        seq, acqs = loadDirectory(sequenceData.datasetPath)
-
-        seq.printSubTree()
-
-        multiplePosStep: PositionsStep = [i for i in seq.iterateChildren() if isinstance(i, PositionsStep)][0]
-        positionDict = multiplePosStep.settings['posList']
-        posList = PositionList.fromDict(positionDict)
-
-        assert len(posList) == len(acqs)
-
-        for acq in acqs:
-            iterationNum = acq.sequencerCoordinate.getStepIteration(multiplePosStep)
-            print(posList[iterationNum])
 
 
