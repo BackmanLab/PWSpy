@@ -1,86 +1,86 @@
-import sys
-import os
-# sys.path.append(os.path.join('..', 'src'))
-
 from pwspy import analysis
 import pwspy.dataTypes as pwsdt
 from pwspy.utility.reflection import Material
 import pytest
+from conftest import testDataPath
+import numpy as np
 
 _analysisName = 'testAnalysis'
-resourcesDir = os.path.join(os.path.split(__file__)[0], 'resources')
-_Acquisition = os.path.join(resourcesDir, 'seqTest', 'Cell1')
-_refDir = os.path.join(resourcesDir, 'seqTest', 'Cell3')
+
+erMeta = pwsdt.ERMetaData.fromHdfFile(testDataPath / 'extraReflection', 'LCPWS2_100xpfs-8_4_2021')
 
 
-def test_pws_analysis():
-    settings = analysis.pws.PWSAnalysisSettings.loadDefaultSettings("Recommended")
-    er = None  # TODO add other cases
-    
-    refAcq = pwsdt.Acquisition(_refDir)
-    ref = refAcq.pws.toDataClass()  # TODO Test other cases of processing status (exposure normalized or not)
-    anls = analysis.pws.PWSAnalysis(settings=settings, extraReflectance=er, ref=ref)
-    
-    acq = pwsdt.Acquisition(_Acquisition)
-    cube = acq.pws.toDataClass()  # TODO test various states of preprocessing
-    results, warnings = anls.run(cube)
+class TestAnalysis:
+    @pytest.mark.parametrize('extraReflection', [None, erMeta])
+    def test_pws_analysis(self, dynamicsData, extraReflection):
+        settings = analysis.pws.PWSAnalysisSettings.loadDefaultSettings("Recommended")
 
-    with pytest.raises(OSError):
-        acq.pws.saveAnalysis(results, _analysisName)  # The analysis already exists so an OSError should be thrown.
-    acq.pws.saveAnalysis(results, _analysisName, overwrite=True)
-    
-    acq.pws.loadAnalysis(_analysisName)
-    
-    # TODO add assertions
-    
-def test_dynamics_analysis():
-    er = None  # TODO add other cases
+        refAcq = pwsdt.Acquisition(dynamicsData.referenceCellPath)
+        ref = refAcq.pws.toDataClass()
+        anls = analysis.pws.PWSAnalysis(settings=settings, extraReflectance=extraReflection, ref=ref)
 
-    settings = analysis.dynamics.DynamicsAnalysisSettings(
-        cameraCorrection=None,
-        extraReflectanceId=er.idTag if er is not None else None,
-        referenceMaterial=Material.Water,
-        numericalAperture=0.52,
-        relativeUnits=True
-    )
+        acq = pwsdt.Acquisition(dynamicsData.datasetPath / "Cell1")
+        cube = acq.pws.toDataClass()
+        results, warnings = anls.run(cube)
 
-    refAcq = pwsdt.Acquisition(_refDir)
-    ref = refAcq.dynamics.toDataClass()  # TODO Test other cases of processing status (exposure normalized or not)
-    anls = analysis.dynamics.DynamicsAnalysis(settings=settings, extraReflectance=er, ref=ref)
+        acq.pws.saveAnalysis(results, _analysisName, overwrite=True)
+        with pytest.raises(OSError):
+            acq.pws.saveAnalysis(results, _analysisName)  # The analysis already exists so an OSError should be thrown.
 
-    acq = pwsdt.Acquisition(_Acquisition)
-    cube = acq.dynamics.toDataClass()  # TODO test various states of preprocessing
-    results, warnings = anls.run(cube)
+        result = acq.pws.loadAnalysis(_analysisName)
 
-    acq.dynamics.saveAnalysis(results, _analysisName)
+        assert isinstance(result.rms, np.ndarray)
+        assert isinstance(result.meanReflectance, np.ndarray)
+        assert isinstance(result.reflectance, pwsdt.KCube)
 
-    acq.dynamics.loadAnalysis(_analysisName)
+    @pytest.mark.parametrize('extraReflection', [None, erMeta])
+    def test_dynamics_analysis(self, dynamicsData, extraReflection):
+
+        settings = analysis.dynamics.DynamicsAnalysisSettings(
+            cameraCorrection=None,
+            extraReflectanceId=extraReflection.idTag if extraReflection is not None else None,
+            referenceMaterial=Material.Water,
+            numericalAperture=0.52,
+            relativeUnits=True
+        )
+
+        refAcq = pwsdt.Acquisition(dynamicsData.referenceCellPath)
+        ref = refAcq.dynamics.toDataClass()
+        anls = analysis.dynamics.DynamicsAnalysis(settings=settings, extraReflectance=extraReflection, ref=ref)
+
+        acq = pwsdt.Acquisition(dynamicsData.datasetPath / 'Cell1')
+        cube = acq.dynamics.toDataClass()
+        results, warnings = anls.run(cube)
+
+        acq.dynamics.saveAnalysis(results, _analysisName, overwrite=True)
+        with pytest.raises(OSError):
+            acq.dynamics.saveAnalysis(results, _analysisName)  # The analysis already exists so an OSError should be thrown.
+
+        result = acq.dynamics.loadAnalysis(_analysisName)
+
+        assert isinstance(result.rms_t_squared, np.ndarray)
+        assert isinstance(result.meanReflectance, np.ndarray)
+        assert isinstance(result.reflectance, pwsdt.DynCube)
+
+    def test_compilation(self, dynamicsData):
+        settings = analysis.compilation.GenericCompilerSettings(roiArea=True)
+        genComp = analysis.compilation.GenericRoiCompiler(settings)
+
+        settings = analysis.compilation.PWSCompilerSettings(reflectance=True, rms=True, polynomialRms=True)
+        pwsComp = analysis.compilation.PWSRoiCompiler(settings)
+
+        settings = analysis.compilation.DynamicsCompilerSettings(meanReflectance=True, rms_t_squared=True, diffusion=True)
+        dynComp = analysis.compilation.DynamicsRoiCompiler(settings)
+
+        acq = pwsdt.Acquisition(dynamicsData.datasetPath / 'Cell1')
+
+        results = []
+        for roiSpecs in acq.getRois():
+            roi = acq.loadRoi(*roiSpecs)
+            results.append((genComp.run(roi),
+                       pwsComp.run(acq.pws.loadAnalysis(_analysisName), roi),
+                       dynComp.run(acq.dynamics.loadAnalysis(_analysisName), roi)))
+
+            print(f"Successfully Compiled {len(results)} ROIs for general, PWS, and dynamics analysis.")
 
 
-def test_compilation():
-    settings = analysis.compilation.GenericCompilerSettings(True)
-    genComp = analysis.compilation.GenericRoiCompiler(settings)
-    
-    settings = analysis.compilation.PWSCompilerSettings(True, True, True)
-    pwsComp = analysis.compilation.PWSRoiCompiler(settings)
-    
-    settings = analysis.compilation.DynamicsCompilerSettings(True, True, True)
-    dynComp = analysis.compilation.DynamicsRoiCompiler(settings)
-    
-    acq = pwsdt.Acquisition(_Acquisition)
-    
-    for roiSpecs in acq.getRois():
-        roi = acq.loadRoi(*roiSpecs)
-        results = (genComp.run(roi), 
-                   pwsComp.run(acq.pws.loadAnalysis(_analysisName), roi),
-                   dynComp.run(acq.dynamics.loadAnalysis(_analysisName), roi))
-        print(results)
-
-
-def test_sequence():
-    from pwspy.utility.acquisition import loadDirectory
-    seq, acqs = loadDirectory((os.path.join(resourcesDir, 'seqTest')))
-
-if __name__ == '__main__':
-    test_pws_analysis()
-    a = 1
