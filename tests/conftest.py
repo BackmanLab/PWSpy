@@ -1,5 +1,4 @@
 import pathlib as pl
-import typing as t_
 import pwspy.dataTypes as pwsdt
 import pytest
 
@@ -30,15 +29,6 @@ class Dataset:
                     acq.dynamics.removeAnalysis(anName)
                     print(f"Deleted {acq.filePath} Dynamics {anName}")
 
-# sequenceTestData = Dataset()
-# sequenceTestData.datasetPath = testDataPath / 'sequencer'
-# sequenceTestData.referenceCellPath = sequenceTestData.datasetPath / 'Cell3'
-#
-# dynamicsTestData = Dataset()
-# dynamicsTestData.datasetPath = testDataPath / 'dynamics'
-# dynamicsTestData.referenceCellPath = dynamicsTestData.datasetPath / 'Cell999'
-
-# allDatasets: t_.Tuple[Dataset, ...] = (sequenceTestData, dynamicsTestData)
 
 
 @pytest.fixture(scope='session')
@@ -59,10 +49,3 @@ def dynamicsData() -> Dataset:
     )
     yield ds
     ds.clean()
-
-# if __name__ == '__main__':
-#     Dataset(
-#         testDataPath / 'dynamics',
-#         testDataPath / 'dynamics' / "Cell3"
-#     ).clean()
-#     a = 1
