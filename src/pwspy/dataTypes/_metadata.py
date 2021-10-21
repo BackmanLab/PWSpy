@@ -397,7 +397,7 @@ class ERMetaData:
     def __init__(self, inheritedMetadata: dict, numericalAperture: float, filePath: str=None):
         self.inheritedMetadata = inheritedMetadata
         self.inheritedMetadata['numericalAperture'] = numericalAperture
-        jsonschema.validate(instance=inheritedMetadata, schema=self._jsonSchema, types={'array': (list, tuple)})
+        jsonschema.validate(instance=inheritedMetadata, schema=self._jsonSchema)
         self.filePath = filePath
 
     @property
