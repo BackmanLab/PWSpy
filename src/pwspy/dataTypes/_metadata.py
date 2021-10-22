@@ -100,6 +100,7 @@ class MetaDataBase(abc.ABC):
         """
         pass
 
+    @property
     @abc.abstractmethod
     def idTag(self) -> str:
         """A string that uniquely identifies this data."""

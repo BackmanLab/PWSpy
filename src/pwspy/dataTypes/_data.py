@@ -889,7 +889,7 @@ class PwsCube(ICRawBase):
         dtype (type): the data type that the data should be stored as. The default is numpy.float32.
     """
 
-    _hdfTypeName = "PwsCube"  # This is used for saving/loading from HDF. Important not to change it or old files will stop working.
+    _hdfTypeName = "ImCube"  # This is used for saving/loading from HDF. Important not to change it or old files will stop working.
 
     def __init__(self, data, metadata: pwsdtmd.ICMetaData, processingStatus: ICRawBase.ProcessingStatus = None, dtype=np.float32):
         assert isinstance(metadata, pwsdtmd.ICMetaData)
