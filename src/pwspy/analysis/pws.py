@@ -237,9 +237,9 @@ class PWSAnalysis(AbstractAnalysis):
             self.extraReflection.data = iedata
 
 
-class NanoCytomicsADCPWSAnalysis(AbstractAnalysis):
+class NCADCPWSAnalysis(AbstractAnalysis):
     """
-    This Analysis uses the ADC (adaptive dark counts) method of calibration preferred by Nanocytomics rather than the ExtraReflectance
+    This Analysis uses the ADC (adaptive dark counts) method of calibration preferred by NC rather than the ExtraReflectance
     method
     """
 

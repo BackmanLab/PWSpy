@@ -993,7 +993,7 @@ class PwsCube(ICRawBase):
     @classmethod
     def fromNano(cls, directory: str, metadata: pwsdtmd.ICMetaData = None, lock: mp.Lock = None) -> PwsCube:
         """
-        Loads from the file format used at NanoCytomics. all data and metadata is contained in a .mat file.
+        Loads from the file format used at NC. all data and metadata is contained in a .mat file.
 
         Args:
             directory: The directory containing the data files.
