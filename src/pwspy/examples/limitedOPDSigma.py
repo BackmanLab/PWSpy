@@ -17,7 +17,7 @@
 
 # -*- coding: utf-8 -*-
 """
-This script is based on a matlab script written by Lusik Cherkezyan for Nanocytomics.
+This script is based on a matlab script written by Lusik Cherkezyan for NC.
 Nano uses this method to extract rms from phantom make from ChromEM cells embedded in resin.
 The phantom has a strong thin-film spectrum. This script is meant to filter out the thin film components
 of the fourier transfrom and extract RMS from what is left.

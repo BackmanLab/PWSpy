@@ -364,7 +364,7 @@ class PositionList:
 
     @classmethod
     def fromNanoMatFile(cls, path: str, xyStageName: str):
-        """Load an instance of the `PositionList` from a file saved by NanoCytomics MATLAB acquisition software.
+        """Load an instance of the `PositionList` from a file saved by NC MATLAB acquisition software.
 
         Args:
             path: The file path to the .mat file.
@@ -386,7 +386,7 @@ class PositionList:
         return PositionList(positions)
 
     def toNanoMatFile(self, path: str):
-        """Save this object to a .mat file in the format saved by NanoCytomics MATLAB acquistion software.
+        """Save this object to a .mat file in the format saved by NC MATLAB acquistion software.
 
         Args:
             path: The file path for the new .mat file.

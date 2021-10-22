@@ -5,6 +5,7 @@ import pwspy.dataTypes as pwsdt
 
 
 def test_roi(sequenceData):
+    """Test that ROIs can be detected, loaded, and that the various required attributes have the expected data types."""
     acqs = [pwsdt.Acquisition(i) for i in sequenceData.datasetPath.glob("Cell[0-9]")]
     for acq in acqs:
         roiSpecs = acq.getRois()

@@ -100,6 +100,7 @@ class MetaDataBase(abc.ABC):
         """
         pass
 
+    @property
     @abc.abstractmethod
     def idTag(self) -> str:
         """A string that uniquely identifies this data."""
@@ -720,7 +721,7 @@ class ICMetaData(MetaDataBase, AnalysisManager):
         finally:
             if lock is not None:
                 lock.release()
-        if 'MicroManagerMetadata' not in metadata:  # Data saved by something other than the Micro-Manager acquisition plugin won't have this. I.E. NanoCytomics  data saved by `toTiff`
+        if 'MicroManagerMetadata' not in metadata:  # Data saved by something other than the Micro-Manager acquisition plugin won't have this. I.E. NC  data saved by `toTiff`
             binning = metadata['binning']
             pixelSize = metadata['pixelSizeUm']
         else:

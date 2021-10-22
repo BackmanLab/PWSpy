@@ -93,9 +93,9 @@ class DynamicsAnalysis(AbstractAnalysis):
         else:
             if extraReflectance.metadata.numericalAperture != settings.numericalAperture:
                 logger.warning("The numerical aperture of your analysis does not match the NA of the Extra Reflectance Calibration. Calibration File NA: {extraReflectance.metadata.numericalAperture}. PWSAnalysis NA: {settings.numericalAperture}.")
-            idx = np.asarray(np.array(extraReflectance.wavelengths) == ref.metadata.wavelength).nonzero()[0][0] #The index of extra reflectance that matches the wavelength of our dynamics cube
-            I0 = ref.data.mean(axis=2) / (float(theoryR) + extraReflectance.data[:, :, idx]) #  I0 is the intensity of the illumination source, reconstructed in units of `counts`. this is an inversion of our assumption that reference = I0*(referenceReflectance + extraReflectance)
-            Iextra = I0 * extraReflectance.data[:, :, idx] #  Convert from reflectance to predicted counts/ms.
+            idx = np.asarray(np.array(extraReflectance.wavelengths) == ref.metadata.wavelength).nonzero()[0][0]  # The index of extra reflectance that matches the wavelength of our dynamics cube
+            I0 = ref.data.mean(axis=2) / (float(theoryR) + extraReflectance.data[:, :, idx])  # I0 is the intensity of the illumination source, reconstructed in units of `counts`. this is an inversion of our assumption that reference = I0*(referenceReflectance + extraReflectance)
+            Iextra = I0 * extraReflectance.data[:, :, idx]  # Convert from reflectance to predicted counts/ms.
             ref.subtractExtraReflection(Iextra)  # remove the extra reflection from our data#
         if not settings.relativeUnits:
             ref = ref / theoryR[None, None, :]  # now when we normalize by our reference we will get a result in units of physical reflectance rather than arbitrary units.
@@ -128,7 +128,7 @@ class DynamicsAnalysis(AbstractAnalysis):
         # Determine the mean-reflectance for each pixel in the cell.
         reflectance = cube.data.mean(axis=2)
 
-        #Diffusion
+        # Diffusion
         cubeAc = ma.array(cubeAc)  # Convert to the numpy.MaskedArray type to help us mark some data as invalid.
         cubeAc[cubeAc.data[:, :, 0] < np.sqrt(2)*self.refAc[0]] = ma.masked  # Remove pixels with low SNR. Default threshold removes values where 1st point of acf is less than sqrt(2) of background acf
         ac = ma.array(cubeAc - self.refAc)  # Background subtracted autocorrelation function.

@@ -62,7 +62,7 @@ import pwspy.dataTypes as pwsdt
 from glob import glob
 
 
-def loadDirectory(directory: str) -> t_.Tuple[SequencerStep, t_.List[SequenceAcquisition]]:
+def loadDirectory(directory: os.PathLike) -> t_.Tuple[SequencerStep, t_.List[SequenceAcquisition]]:
     """
     If `directory` contains a dataset acquired with the acquisition sequencer then this function will return a python
     object representing the sequence settings and a list of references to the acquisitions that are part of the sequence.

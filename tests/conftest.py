@@ -2,10 +2,14 @@ import pathlib as pl
 import pwspy.dataTypes as pwsdt
 import pytest
 
-testDataPath = pl.Path(__file__).parent / 'resources' / 'test_data'
+
+testDataPath = pl.Path(__file__).parent / 'resources' / 'test_data'  # The path to find the test data in.
 
 
 class Dataset:
+    """
+    Just a simple class to represent what is needed from a single test dataset.
+    """
     datasetPath: pl.Path   # The path to the folder containing all the acquisitions
     referenceCellPath: pl.Path  # The path to the acquisition folder that is to be used as the reference for analysis.
 
@@ -33,6 +37,7 @@ class Dataset:
 
 @pytest.fixture(scope='session')
 def sequenceData() -> Dataset:
+    """A reference to the dataset with PWS data collected with the automated event sequencing plugin. Cleans out analysis files when done."""
     ds = Dataset(
         testDataPath / 'sequencer',
         testDataPath / 'sequencer' / "Cell3"
@@ -43,6 +48,7 @@ def sequenceData() -> Dataset:
 
 @pytest.fixture(scope='session')
 def dynamicsData() -> Dataset:
+    """A reference to the dataset with PWS and Dynamics data. Cleans out analysis files when done."""
     ds = Dataset(
         testDataPath / 'dynamics',
         testDataPath / 'dynamics' / "Cell999"
