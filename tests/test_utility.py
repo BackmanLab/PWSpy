@@ -4,6 +4,8 @@ from pwspy.utility.micromanager import PositionList
 
 class TestSequence:
     def test_sequence(self, sequenceData):
+        """Test that the metadata files saved by the event sequencer plugin can be loaded. Use the sequence metadata to load acquisitions
+        and a position list giving the locations of each acquisition. Test basic operations on the position list."""
         seq, acqs = loadDirectory(sequenceData.datasetPath)
 
         seq.printSubTree()

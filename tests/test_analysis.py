@@ -11,8 +11,13 @@ erMeta = pwsdt.ERMetaData.fromHdfFile(testDataPath / 'extraReflection', 'LCPWS2_
 
 
 class TestAnalysis:
+    """
+    Test the code under pwspy.analysis
+    """
+
     @pytest.mark.parametrize('extraReflection', [None, erMeta])
     def test_pws_analysis(self, dynamicsData, extraReflection):
+        """Test that PWS data can be analyzed. Results can be loaded. TODO check that values of analysis results don't change."""
         settings = analysis.pws.PWSAnalysisSettings.loadDefaultSettings("Recommended")
 
         refAcq = pwsdt.Acquisition(dynamicsData.referenceCellPath)
@@ -35,7 +40,7 @@ class TestAnalysis:
 
     @pytest.mark.parametrize('extraReflection', [None, erMeta])
     def test_dynamics_analysis(self, dynamicsData, extraReflection):
-
+        """Test that dynamics data can be analyzed, results can be loaded"""
         settings = analysis.dynamics.DynamicsAnalysisSettings(
             cameraCorrection=None,
             extraReflectanceId=extraReflection.idTag if extraReflection is not None else None,
@@ -63,6 +68,7 @@ class TestAnalysis:
         assert isinstance(result.reflectance, pwsdt.DynCube)
 
     def test_compilation(self, dynamicsData):
+        """Test that ROIs and PWS/Dynamics analysis results can be successfully `compiled` into a data table."""
         settings = analysis.compilation.GenericCompilerSettings(roiArea=True)
         genComp = analysis.compilation.GenericRoiCompiler(settings)
 
