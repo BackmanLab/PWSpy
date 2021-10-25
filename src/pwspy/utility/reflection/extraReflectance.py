@@ -180,7 +180,6 @@ def _calculateSpectraFromCombos(cubeCombos: t_.Dict[MCombo, t_.List[CubeCombo]],
     Args:
         cubeCombos: A dictionary containing all possible combinations of PwsCubes measured at different materials. Keyed by the material combo.
         theoryR: A dictionary containing the theoretical reflectances for all `Materials` in use. Should be accurate for the `numericalAperture` in question.
-        numericalAperture: The illumination numerial aperture that the images were taken at.
         mask: An ROI that limits the region of the PwsCubes that is analyzed. The spectra will be averaged over this region. If `None` the spectra will be average over the full XY FOV.
 
     Returns:
@@ -237,7 +236,7 @@ def _calculateSpectraFromCombos(cubeCombos: t_.Dict[MCombo, t_.List[CubeCombo]],
 
 
 def plotExtraReflection(images: t_.Dict[str, t_.Dict[Material, t_.List[pwsdt.PwsCube]]], theoryR: t_.Dict[Material, pd.Series], matCombos: t_.List[MCombo],
-                        numericalAperture: float, mask: t_.Optional[pwsdt.Roi] = None) -> t_.List[plt.Figure]:
+                        mask: t_.Optional[pwsdt.Roi] = None) -> t_.List[plt.Figure]:
     """Generate a variety of plots displaying information about the extra reflectance calculation.
     
     Args:
@@ -247,7 +246,6 @@ def plotExtraReflection(images: t_.Dict[str, t_.Dict[Material, t_.List[pwsdt.Pws
         theoryR: A dictionary where the key is a `Material` and the value is a Pandas 'Series' giving the reflectance for
             a glass-{material} reflection over a range of wavelengths. The index of the series should be the wavelengths.
         matCombos: A list of the various material combinations that should be evaluated.
-        numericalAperture: The numerical aperture that the PwsCubes being used were imaged at.
         mask: An ROI indicating the region of the images that should be included in the evaluation.
 
     Returns:
@@ -375,12 +373,12 @@ def _generateOneRExtraCube(combo: CubeCombo, theoryR: t_.Dict[Material, pd.Serie
 
 
 def generateRExtraCubes(allCombos: t_.Dict[MCombo, t_.List[CubeCombo]], theoryR: t_.Dict[Material, pd.Series], numericalAperture: float) -> \
-        t_.Tuple[pwsdt.ExtraReflectanceCube, t_.Dict[t_.Union[str, MCombo], t_.Tuple[np.ndarray, np.ndarray]]]:
+        t_.Tuple[pwsdt.ExtraReflectanceCube, t_.Dict[t_.Union[str, MCombo], np.ndarray]]:
     """Generate a series of extra reflectance cubes based on the input data.
 
     Args:
         allCombos: a dict of lists CubeCombos, each keyed by a 2-tuple of Materials.
-        theoryR: the theoretical reflectance for each material.
+        theoryR: the theoretically predicted reflectance for each material.
         numericalAperture: The numerical aperture that the PwsCubes were imaged at. The theoryR reflectances should have
             also been calculated at this NA
 
