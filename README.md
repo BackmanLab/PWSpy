@@ -1,5 +1,5 @@
 # PWSpy
-A python module supporting operations related to Partial Wave Spectroscopy.
+A Python module dedicated to analysis of Partial Wave Spectroscopyic Microscopy data.
 
 ## Documentation
 This project is automatically documented by "Sphinx". If you have Sphinx installed then you can compile documentation to HTML 
@@ -17,17 +17,12 @@ Create a new environment with the command: `conda create -n {environmentName} py
 More information [here](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html).
 
 #### Installing from Anaconda Cloud (recommended)
-`PWSpy` is stored online on the "backmanlab" Anaconda Cloud channel. It can be installed from Conda with the command `conda install -c conda-forge -c backmanlab pwspy`
-
-#### Installing with the installation helper script
-Set the appropriate Conda environment name to the `env` variable in the first line of `install.bat`.
-run `install.bat`  
+`PWSpy` is published online to the "backmanlab" Anaconda Cloud channel. It can be installed from Conda with the command `conda install -c conda-forge -c backmanlab pwspy` 
 
 #### Installing Manually
-If you have the built package (.tar.gz file) then you can install the package by pointing `conda install` to it.
+If you have a copy built Conda package (.tar.gz file) then you can install the package with `conda install` like this:
 Install the package with `conda install -c file:///{tarGzFileDestination} -c conda-forge pwspy`.
 
- 
 ## Building from source and distributing
 
 #### Setting up your computer to build the source code.
@@ -50,7 +45,7 @@ The version number can be understood as `a.b.c.d-xyz` where `a.b.c` are numbers 
 `a.b.c` was tagged, `xyz` is the short sha hash for the git commit.
 
 #### Uploading a newly built version of the package to Anaconda Cloud
-The lab has a `Cloud` account at anaconda.org. The username is `backmanlab` and the password is `UNKNOWN!!!!` (do not put the password here, this git repository is publically available, we prefer not to get hacked).
+The lab has a `Cloud` account at anaconda.org, the channel name is`backmanlab`.
 You can upload the package to the lab's Anaconda Cloud account using `anaconda login` to log into the account and then with `anaconda upload build/noarch/pwspy_xxxxxxxxxx.tar.gz`
 
 
