@@ -1,5 +1,5 @@
 # PWSpy
-A python module dedicated to analysis of Partial Wave Spectroscopyic Microscopy data.
+A Python module dedicated to analysis of Partial Wave Spectroscopyic Microscopy data.
 
 ## Documentation
 This project is automatically documented by "Sphinx". If you have Sphinx installed then you can compile documentation to HTML 
