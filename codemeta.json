@@ -1,0 +1,23 @@
+{
+  "@context": "https://raw.githubusercontent.com/codemeta/codemeta/master/codemeta.jsonld",
+  "@type": "Code",
+  "author": [
+    {
+      "@id": "0000-0003-2882-2471",
+      "@type": "Person",
+      "email": "nicholas.anthony@northwestern.edu",
+      "name": "Nicholas M. Anthony",
+      "affiliation": "Department of Biomedical Engineering, Northwestern University, Evanston, IL, USA."
+    }
+  ],
+  "identifier": "",
+  "codeRepository": "https://github.com/nanthony21/PWSpy",
+  "datePublished": "2021-11-09",
+  "dateModified": "2021-11-09",
+  "dateCreated": "2021-11-09",
+  "description": "A Python library dedicated to the analysis of Partial Wave Spectroscopic Microscopy data.",
+  "keywords": "Python, Microscopy, Hyperspectral Imaging",
+  "license": "GPS v3.0",
+  "title": "PWSpy",
+  "version": "1.0.0"
+}
