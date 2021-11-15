@@ -7,6 +7,9 @@ Performing FFT on the raw data to get a view of the estimated depth of cell feat
    :language: python
    :linenos:
 
+.. image:: ../resources/opdExample.gif
+
+
 Brief example of basic PWS analysis to extra sigma and reflectance values.
 ---------------------------------------------------
 .. literalinclude:: ../../examples/runPWSAnalysis.py
