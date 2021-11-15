@@ -26,18 +26,17 @@ Can help to make a reference when you don't actually have one for some reason
 import pwspy.dataTypes as pwsdt
 import matplotlib.pyplot as plt
 import numpy as np
-from pwspy.examples import PWSImagePath
+from examples import PWSImagePath
 
 if __name__ == '__main__':
     plt.ion()
     a = pwsdt.Acquisition(PWSImagePath).pws.toDataClass()
 
-    roi = a.selectLassoROI()
-    spec, std = a.getMeanSpectra(mask=roi)
+    roi = a.selectLassoROI()  # Prompt the user for a hand-drawn ROI
+    spec, std = a.getMeanSpectra(mask=roi)  # Get the average spectra within the ROI
     newData = np.zeros(a.data.shape)
-    newData[:, :, :] = spec[np.newaxis, np.newaxis, :]
-    ref = pwsdt.PwsCube(newData, a.metadata)
-
+    newData[:, :, :] = spec[np.newaxis, np.newaxis, :]  # Extend the averaged spectrum along the full dimensions of the original measurement.
+    ref = pwsdt.PwsCube(newData, a.metadata)  # Create a new synthetic measurement using the averaged spectrum
     plt.plot(a.wavelengths, spec)
 
     a = 1

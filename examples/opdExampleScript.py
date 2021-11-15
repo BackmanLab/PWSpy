@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Load the OPD from a previosly saved analysis result and plot it using a special multi-dimensional plotting widget.
+Load the OPD from a previously saved analysis result and plot it using a special multi-dimensional plotting widget.
 
 @author: Nick Anthony
 """
@@ -8,7 +8,7 @@ if __name__ == '__main__':
 
     import pwspy.dataTypes as pwsdt
     from mpl_qt_viz.visualizers import PlotNd
-    from pwspy.examples import PWSImagePath
+    from examples import PWSImagePath
     import matplotlib.pyplot as plt
 
     plt.ion()  # Without this we will get a crash when trying to open the PlotNd window because a Qt application loop must be running.
@@ -31,5 +31,4 @@ if __name__ == '__main__':
     plotWindow = PlotNd(opd, names=('y', 'x', 'depth'),
                         indices=(None, None, opdValues), title="Estimated Depth")
 
-    a = 1
     a = 1
