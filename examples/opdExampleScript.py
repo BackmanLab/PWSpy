@@ -8,7 +8,7 @@ if __name__ == '__main__':
 
     import pwspy.dataTypes as pwsdt
     from mpl_qt_viz.visualizers import PlotNd
-    from pwspy.examples import PWSImagePath
+    from examples import PWSImagePath
     import matplotlib.pyplot as plt
 
     plt.ion()  # Without this we will get a crash when trying to open the PlotNd window because a Qt application loop must be running.
@@ -31,5 +31,3 @@ if __name__ == '__main__':
     plotWindow = PlotNd(opd, names=('y', 'x', 'depth'),
                         indices=(None, None, opdValues), title="Estimated Depth")
 
-    a = 1
-    a = 1

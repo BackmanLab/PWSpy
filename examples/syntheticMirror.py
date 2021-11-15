@@ -19,14 +19,15 @@
 """
 This script blurs an image cube in the xy direction. Allows you to turn an
 image of cells into something that can be used as a reference image, assuming
-most of the the FOV is glass.
+most of the the FOV is glass. In reality you should just have a good reference image to use and not resort to something
+like this.
 """
 
 import copy
 
 import matplotlib.pyplot as plt
 import pwspy.dataTypes as pwsdt
-from pwspy.examples import PWSImagePath
+from examples import PWSImagePath
 
 
 if __name__ == '__main__':
@@ -35,8 +36,8 @@ if __name__ == '__main__':
     acq = pwsdt.Acquisition(PWSImagePath)
     a = acq.pws.toDataClass()
 
-    a.correctCameraEffects()
-    a.normalizeByExposure()
+    a.correctCameraEffects()  # Correct for dark counts and potentially for camera nonlinearity using metadata stored with the original measurement.
+    a.normalizeByExposure()  # Divide by exposure time to get data in units of `counts/ms`. This isn't strictly necessary in this case.
 
     mirror = copy.deepcopy(a)
     mirror.filterDust(10)  # Apply a gaussian blurring with sigma=10 microns along the XY plane.
@@ -48,3 +49,5 @@ if __name__ == '__main__':
     plt.figure()
     plt.imshow(a.data.std(axis=2))  # Plot RMS after normalization.
 
+    a = 1
+    a = 1

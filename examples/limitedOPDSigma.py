@@ -147,7 +147,4 @@ if __name__ == '__main__':
         plt.pause(0.2)
     plt.pause(0.5)
 
-    ## plt.waitforbuttonpress(timeout=-1)
-    #for k, v in rmses.items():
-    #    if input(f"Save opdRms for {k}? (y/n): ").strip().lower() == 'y':
-    #        sp.io.savemat(os.path.join(path, k, 'phantom_Rms.mat'), {'cubeRms': v.astype(np.float32)})  # save as a single
+    a = 1

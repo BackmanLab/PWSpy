@@ -11,7 +11,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import pathlib
     import numpy as np
-    from pwspy.examples import PWSExperimentPath
+    from examples import PWSExperimentPath
     plt.ion()
 
     workingDirectory = PWSExperimentPath  # The folder that all your acquisitions are saved under.
@@ -46,4 +46,4 @@ if __name__ == '__main__':
         for name, number, fformat in roiSpecs:  # Loop through every ROI.
             roiFile = acq.loadRoi(name, number, fformat)  # Load the ROI from file.
             plotHist(roiFile.getRoi(), anls.rms)  # Use the function defined above to plot a histogram
-
+    a = 1
