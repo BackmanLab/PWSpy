@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Load the OPD from a previosly saved analysis result and plot it using a special multi-dimensional plotting widget.
+Load the OPD from a previously saved analysis result and plot it using a special multi-dimensional plotting widget.
 
 @author: Nick Anthony
 """
@@ -31,3 +31,4 @@ if __name__ == '__main__':
     plotWindow = PlotNd(opd, names=('y', 'x', 'depth'),
                         indices=(None, None, opdValues), title="Estimated Depth")
 
+    a = 1

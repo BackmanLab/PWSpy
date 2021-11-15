@@ -1,8 +1,12 @@
-:mod:`pwspy`
+:mod:`pwspy` API
 ===============
 
 .. automodule:: pwspy
 
+Examples
+===========
+.. toctree::
+    examples
 
 Indices and tables
 ==================
