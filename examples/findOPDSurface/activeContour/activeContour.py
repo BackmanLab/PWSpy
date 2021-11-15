@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 from skimage import filters
 import multiprocessing as mp
 import pwspy.dataTypes as pwsdt
-from pwspy.examples.findOPDSurface.activeContour.funcs import volume3Dto2D, termSeg, morphSmoothing3D, equalAxis3dPlot
+from examples.findOPDSurface.activeContour.funcs import volume3Dto2D, termSeg, morphSmoothing3D, equalAxis3dPlot
 import scipy as sp
 from glob import glob
 import os

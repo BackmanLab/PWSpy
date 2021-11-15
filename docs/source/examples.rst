@@ -38,6 +38,6 @@ Blurring data laterally to smooth a reference image.
 
 Measuring sigma using only a limited range of the OPD range.
 --------------------------------------------------------------
-.. literalinclude:: ../../examples/limitedOPD.py
+.. literalinclude:: ../../examples/limitedOPDSigma.py
    :language: python
    :linenos:

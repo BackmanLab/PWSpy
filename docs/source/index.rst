@@ -1,5 +1,5 @@
 :mod:`pwspy` API
-===============
+===================
 
 .. automodule:: pwspy
 

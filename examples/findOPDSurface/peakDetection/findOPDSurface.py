@@ -28,7 +28,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import skimage.morphology as morph
     import skimage.measure as meas
-    from pwspy.examples.findOPDSurface.peakDetection.funcs import prune3dIm, Skel
+    from examples.findOPDSurface.peakDetection.funcs import prune3dIm, Skel
 
     # rootDir = r'G:\Data\NA_i_vs_NA_c\matchedNAi_largeNAc\cells'
     rootDir = r'G:\Data\NA_i_vs_NA_c\smallNAi_largeNAc\cells'
