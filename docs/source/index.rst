@@ -9,7 +9,7 @@ With PWSpy, it is trivial to skip to skip the basics and get to the heart of ext
 Utility functionality for generating visualizations, automatic colocalization, calculation of thin-film reflectance based on fresnel equations, parsing metadata from the graph-based acquisition engine, and more are provided in the utility subpackage.
 
 
-:mod:`pwspy` API
+API
 ===================
 
 .. automodule:: pwspy
