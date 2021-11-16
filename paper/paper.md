@@ -39,4 +39,7 @@ be found under the `dataTypes` package. This library provides the backend code f
 designed to be used by any researchers working with PWS data. It has already been
 used in one scientific publication [@Li:2021] with many more on the way.
 
+# Acknowledgements
+The author would like to thank the many pilot testers and early users of `PWSpy` for providing feedback as the project has developed.
+
 # References
