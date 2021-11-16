@@ -23,9 +23,15 @@ file and type `pip install .`. This file is also used by the Conda recipe (build
 from setuptools import setup, find_packages
 import setuptools_scm
 
+from pathlib import Path
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
+
 setup(name='pwspy',
       version=setuptools_scm.get_version(write_to="src/pwspy/version.py"),
-      description='A framework for working with Partial Wave Spectroscopy files.',
+      description='A framework for working with Partial Wave Spectroscopic microscopy files.',
+      long_description=long_description,
+      long_description_content_type='text/markdown',
       author='Nick Anthony',
       author_email='nicholas.anthony@northwestern.edu',
       url='https://github.com/nanthony21/PWSpy',

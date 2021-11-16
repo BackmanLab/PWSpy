@@ -27,11 +27,7 @@ Subpackages
 
    analysis
    dataTypes
-   examples
    utility
-
-Attributes:
-    dateTimeFormat (str): This format string is used as the standard format to interpret timestamps.
 
 """
 import logging
@@ -53,6 +49,6 @@ __version__ = _versionStr
 dateTimeFormat = "%d-%m-%Y %H:%M:%S"
 
 
-__all__ = ['dateTimeFormat', 'utility', 'dataTypes', 'analysis', 'examples']
+__all__ = ['dateTimeFormat', 'utility', 'dataTypes', 'analysis']
 
 
