@@ -17,11 +17,8 @@
 
 # -*- coding: utf-8 -*-
 
-"""This module contains variables that are used across the entirety of the pwspy package. `dateTimeFormat` is the
-format string used by the datetime module to load and store time stamps in metadata.
+"""
 
-Subpackages
-------------
 .. autosummary::
    :toctree: generated/
 
