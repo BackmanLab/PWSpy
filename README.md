@@ -25,3 +25,4 @@ For information on creating a Conda package yourself see [here](docs/building.md
 
 ## Contributing
 Read the [contributing section](CONTRIBUTING.md) in the documentation if you want to help us improve and further develop PWSpy!
+
