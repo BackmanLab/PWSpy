@@ -32,9 +32,10 @@ This is a collection of example usages of the :mod:`pwspy` module.
     roiUsageExample
     opdExampleScript
 """
+import pathlib as pl
 
 # Set this to a folder containing multiple "Cell{x}" acquisition folders. Some examples will use this.
-PWSExperimentPath = r"C:\Users\backman05\Documents\Bitbucket\pwspython\tests\resources\seqTest"
+PWSExperimentPath = pl.Path(__file__).parent.parent / 'tests' / 'resources' / 'test_data' / 'sequencer'
 
 # Set this to the "Cell{X}" folder of a PWS acquisition. Most of the examples will then refer to this file.
-PWSImagePath = r'\\backmanlabnas.myqnapcloud.com\home\Year2\canvassing\Cell868'
+PWSImagePath = PWSExperimentPath / 'Cell1'

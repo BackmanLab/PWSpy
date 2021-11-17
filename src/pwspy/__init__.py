@@ -17,21 +17,14 @@
 
 # -*- coding: utf-8 -*-
 
-"""This module contains variables that are used across the entirety of the pwspy package. `dateTimeFormat` is the
-format string used by the datetime module to load and store time stamps in metadata.
+"""
 
-Subpackages
-------------
 .. autosummary::
    :toctree: generated/
 
    analysis
    dataTypes
-   examples
    utility
-
-Attributes:
-    dateTimeFormat (str): This format string is used as the standard format to interpret timestamps.
 
 """
 import logging
@@ -53,6 +46,6 @@ __version__ = _versionStr
 dateTimeFormat = "%d-%m-%Y %H:%M:%S"
 
 
-__all__ = ['dateTimeFormat', 'utility', 'dataTypes', 'analysis', 'examples']
+__all__ = ['dateTimeFormat', 'utility', 'dataTypes', 'analysis']
 
 
