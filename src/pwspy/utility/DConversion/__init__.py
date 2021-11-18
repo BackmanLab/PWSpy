@@ -16,35 +16,6 @@
 # along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-An adaptation of Adam Eshein's (aeshein@u.northwestern.edu) MATLAB code for converting PWS
-RMS measurements to D. The MATLAB code was based on Vadim-Backman's (v-backman@northwestern.edu) original code in
-Mathematica.
-
-References:
-   L. Cherkezyan, D. Zhang, H. Subramanian, I. Capoglu, A. Taflove,
-   V. Backman, "Review of interferometric spectroscopy of scattered light
-   for the quantification of subdiffractional structure of biomaterials."
-   J. of Biomedical Optics, 22(3), 030901 (2017).
-
-Primary Functions
------------------
-.. autosummary::
-   :toctree: generated/
-
-   sigma2D
-   sigma2DApproximation
-
-Secondary Functions
---------------------
-These functions are called by the primary functions and probably don't need to be used directly.
-
-.. autosummary::
-   :toctree: generated/
-
-   expn
-   acf
-   acfd
-   calcDSize
 
 Classes
 -----------
@@ -56,6 +27,5 @@ This class is used to connect to the MATLAB Sigma to D conversion library.
     S2DMatlabBridge
 
 """
-from ._fromLegacyAdam import sigma2D, sigma2DApproximation, expn, acf, acfd, calcDSize
 from ._matlabBridge import S2DMatlabBridge
 
