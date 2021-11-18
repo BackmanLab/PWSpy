@@ -395,9 +395,10 @@ class ERMetaData:
     DATASETTAG = 'extraReflection'
     _MDTAG = 'metadata'
 
-    def __init__(self, inheritedMetadata: dict, numericalAperture: float, filePath: str=None):
+    def __init__(self, inheritedMetadata: dict, numericalAperture: float, filePath: str = None):
         self.inheritedMetadata = inheritedMetadata
         self.inheritedMetadata['numericalAperture'] = numericalAperture
+        self.inheritedMetadata['wavelengths'] = list(self.inheritedMetadata['wavelengths'])  # This is just here because we can't figure out how to make jsonschema accept tuples as arrays.
         jsonschema.validate(instance=inheritedMetadata, schema=self._jsonSchema)
         self.filePath = filePath
 
