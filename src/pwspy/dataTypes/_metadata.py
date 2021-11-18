@@ -70,7 +70,7 @@ class MetaDataBase(abc.ABC):
         self.filePath = filePath
         self.acquisitionDirectory = acquisitionDirectory
         refResolver = jsonschema.RefResolver(pathlib.Path(self._jsonSchemaPath).as_uri(), None)  # This resolver is used to allow derived json schemas to refer to the base schema.
-        jsonschema.validate(instance=metadata, schema=self._jsonSchema, resolver=refResolver)
+        jsonschema.validate(instance=metadata, schema=self._jsonSchema, resolver=refResolver, cls=_TupleValidator)
         self.dict: dict = metadata
         try:
             datetime.strptime(self.dict['time'], dateTimeFormat)
@@ -398,8 +398,7 @@ class ERMetaData:
     def __init__(self, inheritedMetadata: dict, numericalAperture: float, filePath: str = None):
         self.inheritedMetadata = inheritedMetadata
         self.inheritedMetadata['numericalAperture'] = numericalAperture
-        self.inheritedMetadata['wavelengths'] = list(self.inheritedMetadata['wavelengths'])  # This is just here because we can't figure out how to make jsonschema accept tuples as arrays.
-        jsonschema.validate(instance=inheritedMetadata, schema=self._jsonSchema)
+        jsonschema.validate(instance=inheritedMetadata, schema=self._jsonSchema, cls=_TupleValidator)
         self.filePath = filePath
 
     @property
@@ -923,6 +922,14 @@ class Acquisition:
         if not isinstance(other, Acquisition):
             return False
         return self.filePath == other.filePath
+
+
+_TupleValidator = jsonschema.validators.extend(  # All of this is just so that jsonschema will allow a tuple as a 'array' schema member.
+    jsonschema.Draft7Validator,
+    type_checker=jsonschema.Draft7Validator.TYPE_CHECKER.redefine(
+        'array',
+        lambda checker, instance: jsonschema.Draft7Validator.TYPE_CHECKER.is_type(instance, 'array') or isinstance(instance, tuple)
+    ))
 
 if __name__ == '__main__':
     md = ICMetaData.fromNano(r'C:\Users\nicke\Desktop\LTL20b_Tracking cells in 50%EtOH,95%EtOH,Water\95% ethanol\Cell1')
