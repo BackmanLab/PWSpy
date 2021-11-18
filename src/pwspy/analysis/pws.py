@@ -269,7 +269,7 @@ class NCADCPWSAnalysis(AbstractAnalysis):
 
 
 class PWSAnalysisResults(AbstractHDFAnalysisResults):
-    """A loader for analysis results that will only load them from hard disk as needed."""
+    """A representation of analysis results. Items are loaded from disk using lazy-loading strategy and are then cached in memory."""
     # All these cached properties stay in memory once they are loaded. It may be necessary to add a mechanism to decache them when memory is needed.
 
     @staticmethod
