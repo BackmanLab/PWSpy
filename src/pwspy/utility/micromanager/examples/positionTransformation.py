@@ -28,6 +28,9 @@ if __name__ == '__main__':
 
     import pathlib as pl
     import matplotlib.pyplot as plt
+    from skimage.transform import AffineTransform
+    import numpy as np
+
     plt.ion()
     NCPath = pl.Path(r'Z:\Nick\NU-NC_EtOH fixation comparison\NC\Buccal cell')
     NUPath = pl.Path(r'Z:\Nick\NU-NC_EtOH fixation comparison\NU\Buccal')
@@ -39,6 +42,15 @@ if __name__ == '__main__':
     postTreatCellPositions = preTreatCellPositions.applyAffineTransform(transformMatrix)  # Transform the cell positions to the new expected locations.
     postTreatCellPositions.toPropertyMap().saveToFile(NUPath / 'transformedPositions.pos')  # Save the new positions to a file that can be loaded by Micro-Manager.
 
-    preTreatRefPositions.plot()
-    postTreatRefPositions.plot()
+    fig, ax = plt.subplots()
+    preTreatRefPositions.plot(fig, ax)
+    preTreatCellPositions.plot(fig, ax)
+
+    fig2, ax2 = plt.subplots()
+    postTreatRefPositions.plot(fig2, ax2)
+    postTreatCellPositions.plot(fig2, ax2)
+
+    af = AffineTransform(np.vstack([transformMatrix, [0, 0, 1]]))
+    print(f"Scale: {af.scale}, Shear: {af.shear}, Rotation: {af.rotation / (2*np.pi) * 360}, Translation: {af.translation}")
+
     a = 1

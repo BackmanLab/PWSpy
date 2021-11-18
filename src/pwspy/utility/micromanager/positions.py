@@ -26,6 +26,7 @@ from __future__ import annotations
 import abc
 import json
 import typing
+import warnings
 from dataclasses import dataclass
 from numbers import Number
 from typing import Union
@@ -35,7 +36,6 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import scipy.io as spio
 from pwspy.utility.micromanager.PropertyMap import PropertyMap, PropertyMapArray, Property, PropertyArray
-
 
 @dataclass
 class Position1d:
@@ -65,7 +65,7 @@ class Position1d:
     def fromPropertyMap(pmap: PropertyMap) -> Position1d:
         if len(pmap['Position_um']) != 1:
             raise Exception("RERAR")
-        return Position1d(z=pmap['Position_um'][0].value, zStage=pmap['Device'].value)
+        return Position1d(z=pmap['Position_um'][0].value, stageName=pmap['Device'].value)
 
     def __repr__(self):
         return f"Position1d({self.stageName}, {self.z})"
@@ -159,8 +159,8 @@ class MultiStagePosition:
 
     Attributes:
         label: A name for the position
-        xyStage: The name of the 2D stage
-        zStage: The name of the 1D stage
+        defaultXYStage: The name of the 2D stage
+        defaultZStage: The name of the 1D stage
         stagePositions: A list of `Position1d` and `Position2D` objects, usually just one of each.
     """
     label: str
@@ -230,8 +230,8 @@ class MultiStagePosition:
         Args:
             label: The new name for the xy Stage
         """
-        self.defaultXYStage = label
         self.getXYPosition().renameStage(label)
+        self.defaultXYStage = label  # This must come after the previous line or things get messed up
 
     def copy(self) -> MultiStagePosition:
         """Creates a copy fo the object
@@ -423,7 +423,9 @@ class PositionList:
         otherXY = [pos.getXYPosition() for pos in otherList.positions]
         selfArr = np.array([(pos.x, pos.y) for pos in selfXY], dtype=np.float32)
         otherArr = np.array([(pos.x, pos.y) for pos in otherXY], dtype=np.float32)
-        transform, inliers = cv2.estimateAffinePartial2D(selfArr, otherArr)
+        transform, inliers = cv2.estimateAffine2D(selfArr, otherArr)
+        if inliers.sum() < inliers.shape[0]:
+            warnings.warn(f"Only {inliers.sum()} of {inliers.shape[0]} coordinates were considered to be inliers.")
         return transform
 
     def applyAffineTransform(self, t: np.ndarray):
@@ -482,9 +484,8 @@ class PositionList:
         return all([len(self) == len(other)] +
                    [self[i] == other[i] for i in range(len(self))])
 
-    def plot(self):
+    def plot(self, fig: plt.Figure, ax: plt.Axes):
         """Open a matplotlib plot showing the positions contained in this list."""
-        fig, ax = plt.subplots()
         annot = ax.annotate("", xy=(0, 0), xytext=(20, 20), textcoords="offset points",
                             bbox=dict(boxstyle="round", fc="w"),
                             arrowprops=dict(arrowstyle="->"))
@@ -495,7 +496,7 @@ class PositionList:
         cmap = mpl.cm.get_cmap("gist_rainbow")
         colors = [cmap(i) for i in np.linspace(0, 1, num=len(self.positions))]
         names = [pos.label for pos in self.positions]
-        sc = plt.scatter([pos.getXYPosition().x for pos in self.positions], [pos.getXYPosition().y for pos in self.positions],
+        sc = ax.scatter([pos.getXYPosition().x for pos in self.positions], [pos.getXYPosition().y for pos in self.positions],
                          c=[colors[i] for i in range(len(self.positions))])
 
         def update_annot(ind):
