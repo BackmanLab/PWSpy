@@ -33,9 +33,9 @@ requirements:
     - rasterio
 
 about:
-  home: https://github.com/nanthony21/PWSpy
+  home: https://github.com/BackmanLab/PWSpy
   summary: "A framework for working with Partial Wave Spectroscopy files."
   description: "A framework for working with Partial Wave Spectroscopy files."
   doc_url: https://pwspy.readthedocs.io/en/dev/
-  dev_url: https://github.com/nanthony21/PWSpy
+  dev_url: https://github.com/BackmanLab/PWSpy
   
