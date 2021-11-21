@@ -8,7 +8,7 @@ from pwspy.utility.micromanager import PositionList
 import os
 from .sequencerCoordinate import SequencerCoordinateRange
 
-StepTypeNames = dict(  # The names to represent the `steps` that can be in an acquisition sequence # TODO this isn't used, should it be removed?
+StepTypeNames = dict(  # The names to represent the `steps` that can be in an acquisition sequence
     ACQ="Acquisition",
     POS="Multiple Positions",
     TIME="Time Series",
@@ -20,7 +20,8 @@ StepTypeNames = dict(  # The names to represent the `steps` that can be in an ac
     ROOT="Initialization",
     AF="Software Autofocus",
     ZSTACK="Z-Stack",
-    AUTOSHUTTER='AutoShutter'
+    AUTOSHUTTER='AutoShutter',
+    WAIT="Wait"
 )
 
 
@@ -177,6 +178,7 @@ class _SequencerStepTypes(enum.Enum):
     SUBFOLDER = ContainerStep
     ZSTACK = ZStackStep
     AUTOSHUTTER = ContainerStep
+    WAIT = SequencerStep
 
 
 class RuntimeSequenceSettings:
