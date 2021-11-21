@@ -167,6 +167,7 @@ def _clearError(func):
         except KeyError:
             raise KeyError(f"The analysis file does not contain a {func.__name__} item.")
     newFunc.__name__ = func.__name__  # failing to do this renaming can mess with other decorators e.g. cached_property
+    newFunc.__doc__ = func.__doc__
     return newFunc
 
 
@@ -180,6 +181,7 @@ def _getFromDict(func):
             return func(self, *args)
 
     newFunc.__name__ = func.__name__
+    newFunc.__doc__ = func.__doc__
     return newFunc
 
 
