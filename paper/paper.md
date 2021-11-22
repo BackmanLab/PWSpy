@@ -12,7 +12,8 @@ authors:
    orcid: 0000-0003-1981-1818
    affiliation: 1
 affiliations:
- - name: Department of Biomedical Engineering, Northwestern University, Evanston, IL, USA.
+ - name: Department of Biomedical Engineering, Northwestern University, Evanston, IL, USA. 
+   index: 1
 
 date: 10 November 2021
 bibliography: paper.bib
