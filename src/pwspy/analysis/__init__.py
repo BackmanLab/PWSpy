@@ -36,12 +36,17 @@ from ._abstract import AbstractAnalysisSettings, AbstractAnalysis, AbstractAnaly
 from . import pws
 from . import dynamics
 from . import compilation
+from ._utility import ParallelRunner
 # TODO settings are missing reference IDtag but they exist in the results. Results and settings both contain extra reflectance idTag, reduntant
 
 resources = os.path.join(os.path.split(__file__)[0], '_resources')
 defaultSettingsPath = os.path.join(resources, 'defaultAnalysisSettings')
 
 __all__ = ['AbstractAnalysisSettings', 'AbstractAnalysis', 'AbstractAnalysisResults',
-           'AbstractHDFAnalysisResults', 'resources', 'defaultSettingsPath', 'pws', 'dynamics', 'compilation']
+           'AbstractHDFAnalysisResults', 'resources', 'defaultSettingsPath', 'pws', 'dynamics', 'compilation', 'ParallelRunner']
+
+
+
+
 
 

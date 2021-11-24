@@ -33,12 +33,13 @@ import jsonschema
 import numpy as np
 import tifffile as tf
 from scipy import io as spio
-from pwspy.analysis import AbstractHDFAnalysisResults
 from pwspy.dataTypes import _jsonSchemasPath
 from pwspy.dataTypes._other import CameraCorrection, Roi, RoiFile
 import pwspy.dataTypes._data as pwsdtd
 from pwspy import dateTimeFormat
 from pwspy.utility.misc import cached_property
+if t_.TYPE_CHECKING:
+    from pwspy.analysis import AbstractHDFAnalysisResults
 
 
 class MetaDataBase(abc.ABC):
