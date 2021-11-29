@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from typing import Tuple, List
 
 from .. import AbstractAnalysisResults, warnings
-from ...dataTypes._other import RoiFile
+from ...dataTypes._other import Roi
 
 
 class AbstractRoiCompiler(ABC):
@@ -34,12 +34,12 @@ class AbstractRoiCompiler(ABC):
         self.settings = settings
 
     @abstractmethod
-    def run(self, results: AbstractAnalysisResults, roiFile: RoiFile) -> Tuple[AbstractRoiCompilationResults, List[warnings.AnalysisWarning]]:
+    def run(self, results: AbstractAnalysisResults, roi: Roi) -> Tuple[AbstractRoiCompilationResults, List[warnings.AnalysisWarning]]:
         """Combine information from analysis results and an ROI to produce values averaged over the ROI.
 
         Args:
             results: The analysis results to compile.
-            roiFile: The ROI file to used to segment out a section of the results.
+            roi: The ROI to be used to segment out a section of the results.
         """
         pass
 

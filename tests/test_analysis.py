@@ -84,8 +84,8 @@ class TestAnalysis:
         for roiSpecs in acq.getRois():
             roi = acq.loadRoi(*roiSpecs)
             results.append((genComp.run(roi),
-                       pwsComp.run(acq.pws.loadAnalysis(_analysisName), roi),
-                       dynComp.run(acq.dynamics.loadAnalysis(_analysisName), roi)))
+                       pwsComp.run(acq.pws.loadAnalysis(_analysisName), roi.getRoi()),
+                       dynComp.run(acq.dynamics.loadAnalysis(_analysisName), roi.getRoi())))
 
             print(f"Successfully Compiled {len(results)} ROIs for general, PWS, and dynamics analysis.")
 

@@ -24,6 +24,7 @@ import numpy as np
 from ._abstract import AbstractCompilerSettings, AbstractRoiCompilationResults, AbstractRoiCompiler
 from .. import warnings
 from ..dynamics import DynamicsAnalysisResults
+from ...dataTypes import Roi
 from ...dataTypes._other import RoiFile
 
 
@@ -48,8 +49,7 @@ class DynamicsRoiCompiler(AbstractRoiCompiler):
     def __init__(self, settings: DynamicsCompilerSettings):
         super().__init__(settings)
 
-    def run(self, results: DynamicsAnalysisResults, roiFile: RoiFile) -> Tuple[DynamicsRoiCompilationResults, List[warnings.AnalysisWarning]]:
-        roi = roiFile.getRoi()
+    def run(self, results: DynamicsAnalysisResults, roi: Roi) -> Tuple[DynamicsRoiCompilationResults, List[warnings.AnalysisWarning]]:
         reflectance = self._avgOverRoi(roi, results.meanReflectance) if self.settings.meanReflectance else None
         rms_t_squared = self._avgOverRoi(roi, results.rms_t_squared) if self.settings.rms_t_squared else None  # Unlike with diffusion we should not have any nan values for rms_t. If we get nan then something is wrong with the analysis.
         diffusion = self._avgOverRoi(roi, results.diffusion, np.logical_not(np.isnan(results.diffusion))) if self.settings.diffusion else None  # Don't include nan values in the average. Diffusion is expected to have many Nans due to low SNR.

@@ -1229,7 +1229,6 @@ class KCube(ICBase):
                 2D slice along the 3rd axis of the `opd` data.
 
         """
-        dataLength = self.data.shape[2]
         opd = _FFTHelper.getFFTMagnitude(self.data, useHannWindow, normalization=_FFTHelper.Normalization.POWER)
         fftSize = opd.shape[-1]  # Due to FFT interpolation the FFT will be longer than the original data.
 

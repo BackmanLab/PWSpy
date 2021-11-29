@@ -22,6 +22,7 @@ import numpy as np
 
 from ._abstract import AbstractCompilerSettings, AbstractRoiCompilationResults, AbstractRoiCompiler
 from .. import warnings
+from ...dataTypes import Roi
 from ...dataTypes._other import RoiFile
 
 if t_.TYPE_CHECKING:
@@ -64,9 +65,8 @@ class PWSRoiCompiler(AbstractRoiCompiler):
     def __init__(self, settings: PWSCompilerSettings):
         super().__init__(settings)
 
-    def run(self, results: PWSAnalysisResults, roiFile: RoiFile) -> t_.Tuple[PWSRoiCompilationResults, t_.List[warnings.AnalysisWarning]]:
+    def run(self, results: PWSAnalysisResults, roi: Roi) -> t_.Tuple[PWSRoiCompilationResults, t_.List[warnings.AnalysisWarning]]:
         warns = []
-        roi = roiFile.getRoi()
         reflectance = self._avgOverRoi(roi, results.meanReflectance) if self.settings.reflectance else None
         rms = self._avgOverRoi(roi, results.rms) if self.settings.rms else None
         if self.settings.polynomialRms:
