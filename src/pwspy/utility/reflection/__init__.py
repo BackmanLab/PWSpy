@@ -54,3 +54,4 @@ class Material(enum.Enum):
     Ethanol = enum.auto()
     ITO = enum.auto()
     Methanol = enum.auto()
+    Glycerol_99_5 = enum.auto()  # 99.5 purity Glycerol
