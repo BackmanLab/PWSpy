@@ -144,13 +144,14 @@ class PWSAnalysis(AbstractAnalysis):
         warns = self._initWarnings
         cube = self._normalizePwsCube(cube)
         interval = (max(cube.wavelengths) - min(cube.wavelengths)) / (len(cube.wavelengths) - 1)  # Wavelength interval. We are assuming equally spaced wavelengths here
-        cube.data = self._filterSignal(cube.data, 1/interval)
+        cube.data = self._filterSignal(cube.data, 1/interval)  # Used for denoising
         # The rest of the analysis will be performed only on the selected wavelength range.
         cube = cube.selIndex(self.settings.wavelengthStart, self.settings.wavelengthStop)
         # Determine the mean-reflectance for each pixel in the cell.
         reflectance = cube.data.mean(axis=2)
         cube = pwsdt.KCube.fromPwsCube(cube)  # -- Convert to K-Space
-        cubePoly = self._fitPolynomial(cube)
+        cube.data = self._filterWavenumber(cube, self.settings.waveNumberCutoff) # This step didn't exist until after pwspy 0.2.11. Rather than denoising it is intended to filter out high opd signals.
+        cubePoly = self._fitPolynomial(cube, self.settings.polynomialOrder)
         # Remove the polynomial fit from filtered cubeCell.
         cube.data = cube.data - cubePoly
 
@@ -196,19 +197,41 @@ class PWSAnalysis(AbstractAnalysis):
             b, a = sps.butter(self.settings.filterOrder, self.settings.filterCutoff, fs=sampleFreq)  # Generate the filter coefficients
             return sps.filtfilt(b, a, data, axis=2).astype(data.dtype)  # Actually do the filtering on the data.
 
+    @staticmethod
+    def _filterWavenumber(cube: pwsdt.KCube, cutoff: float):
+        """
+
+        Args:
+            cube: A pwspy KCube
+            cutoff: The cutoff frequency of the filter, in units of um (inverse wavenumber)
+
+        Returns:
+            The data after being low-pass filtered.
+        """
+        if cutoff is None: # skip filtering
+            return cube.data
+        else:
+            # Wavenumber interval. We are assuming equally spaced wavenumbers here. Units: Radians/um
+            interval = (max(cube.wavenumbers) - min(cube.wavenumbers)) / (len(cube.wavenumbers) - 1)
+
+            sampleFreq =  2 * np.pi / interval # In units of um (inverse wavenumber)
+            b, a = sps.butter(2, cutoff, fs=sampleFreq)
+            return sps.filtfilt(b, a, cube.data, axis=2).astype(data.dtype)
+
     # -- Polynomial Fit
-    def _fitPolynomial(self, cube: pwsdt.KCube):
-        order = self.settings.polynomialOrder
+    @staticmethod
+    def _fitPolynomial(cube: pwsdt.KCube, polynomialOrder: int):
+        polynomialOrder
         flattenedData = cube.data.reshape((cube.data.shape[0] * cube.data.shape[1], cube.data.shape[2]))
         # Flatten the array to 2d and put the wavenumber axis first.
         flattenedData = np.rollaxis(flattenedData, 1)
         # make an empty array to hold the fit values.
         cubePoly = np.zeros(flattenedData.shape, dtype=cube.data.dtype)
         # At this point polydata goes from holding the cube data to holding the polynomial values for each pixel. still 2d.
-        polydata = np.polyfit(cube.wavenumbers, flattenedData, order)
-        for i in range(order + 1):
+        polydata = np.polyfit(cube.wavenumbers, flattenedData, polynomialOrder)
+        for i in range(polynomialOrder + 1):
             # Populate cubePoly with the fit values.
-            cubePoly += (np.array(cube.wavenumbers)[:, np.newaxis] ** i) * polydata[order - i, :]
+            cubePoly += (np.array(cube.wavenumbers)[:, np.newaxis] ** i) * polydata[polynomialOrder - i, :]
         cubePoly = np.moveaxis(cubePoly, 0, 1)
         cubePoly = cubePoly.reshape(cube.data.shape)  # reshape back to a cube.
         return cubePoly
@@ -510,6 +533,7 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
             the sample (about 0.4% for water)
         cameraCorrection: An object describing the dark counts and non-linearity of the camera used. If the data supplied to the PWSAnalysis class has already been corrected then this
             setting will not be used. Setting this to `None` will result in the camera correcting being automatically determined based on the image files' metadata.
+        waveNumberCutoff: A cutoff frequency for filtering the signal after converting from wavelength to wavenumber. In units of microns (opd). Note: To convert from depth to opd divide by 2 (because the light makes a round trip) and divide by the RI of the media (nucleus)
     """
     filterOrder: int
     filterCutoff: typing.Optional[float]
@@ -524,6 +548,7 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
     numericalAperture: float
     relativeUnits: bool  # determines if reflectance (and therefore the other parameters) should be calculated in absolute units of reflectance or just relative to the reflectance of the reference image.
     cameraCorrection: typing.Optional[pwsdt.CameraCorrection]
+    waveNumberCutoff: float
 
     FileSuffix = 'analysis'  # This is used for saving and loading to json
 
@@ -539,7 +564,7 @@ class PWSAnalysisSettings(AbstractAnalysisSettings):
     def _fromDict(cls, d: dict) -> PWSAnalysisSettings:  # Inherit docstring
         if d['referenceMaterial'] is not None:
             d['referenceMaterial'] = Material[d['referenceMaterial']]  # Convert from string to enum
-        for newKey in ['relativeUnits', 'extraReflectanceId', 'cameraCorrection']:
+        for newKey in ['relativeUnits', 'extraReflectanceId', 'cameraCorrection', 'waveNumberCutoff']:
             if newKey not in d.keys():
                 d[newKey] = None #For a while these settings were missing from the code. Allow us to still load old files.
         if d['cameraCorrection'] is not None:

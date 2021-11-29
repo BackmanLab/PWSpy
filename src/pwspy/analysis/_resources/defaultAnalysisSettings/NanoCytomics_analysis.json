@@ -10,4 +10,6 @@
   "autoCorrMinSub": true,
   "numericalAperture": 0.6,
   "relativeUnits": true,
-  "cameraCorrection": {"darkCounts": 203, "linearityPolynomial": null}}
+  "cameraCorrection": {"darkCounts": 203, "linearityPolynomial": null},
+  "waveNumberCutoff": null
+}

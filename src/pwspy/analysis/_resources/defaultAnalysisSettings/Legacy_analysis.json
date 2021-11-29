@@ -9,4 +9,5 @@
   "autoCorrStopIndex": 7,
   "autoCorrMinSub": true,
   "numericalAperture": 0.52,
-  "relativeUnits": true}
+  "relativeUnits": true,
+  "waveNumberCutoff": null}
