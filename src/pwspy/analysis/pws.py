@@ -216,7 +216,7 @@ class PWSAnalysis(AbstractAnalysis):
 
             sampleFreq =  2 * np.pi / interval # In units of um (inverse wavenumber)
             b, a = sps.butter(2, cutoff, fs=sampleFreq)
-            return sps.filtfilt(b, a, cube.data, axis=2).astype(data.dtype)
+            return sps.filtfilt(b, a, cube.data, axis=2).astype(cube.data.dtype)
 
     # -- Polynomial Fit
     @staticmethod
