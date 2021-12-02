@@ -1021,7 +1021,7 @@ class PwsCube(ICRawBase):
     @classmethod
     def fromMetadata(cls, meta: pwsdtmd.PwsMetaData, lock: mp.Lock = None) -> PwsCube:
         """
-        If provided with an ICMetadata object this function will automatically select the correct file loading method
+        If provided with an PwsMetaData object this function will automatically select the correct file loading method
         and will return the associated PwsCube.
 
         Args:
