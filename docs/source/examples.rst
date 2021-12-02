@@ -10,7 +10,7 @@ Performing FFT on the raw data to get a view of the estimated depth of cell feat
 .. image:: ../resources/opdExample.gif
 
 
-Brief example of basic PWS analysis to extra sigma and reflectance values.
+Brief example of basic PWS analysis to extract Sigma and Reflectance values.
 ------------------------------------------------------------------------------
 .. literalinclude:: ../../examples/runPWSAnalysis.py
    :language: python
@@ -36,7 +36,7 @@ Blurring data laterally to smooth a reference image.
    :linenos:
 
 
-Measuring sigma using only a limited range of the OPD range.
+Measuring Sigma using only a limited range of the OPD signal.
 --------------------------------------------------------------
 .. literalinclude:: ../../examples/limitedOPDSigma.py
    :language: python
