@@ -32,6 +32,7 @@ about the equipment used, the date the acquisition was taken, the location of th
     PwsMetaData
     DynMetaData
     ERMetaData
+    FluorMetaData
 
 Data Classes
 -----------------

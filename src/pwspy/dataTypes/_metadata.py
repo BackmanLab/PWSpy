@@ -814,7 +814,7 @@ class Acquisition:
 
     @cached_property
     def fluorescence(self) -> t_.List[FluorMetaData]:
-        # Newer acquisitions allow for multiple fluorescence images saved to numbered subfolders
+        """List[FluorMetaData]: Newer acquisitions allow for multiple fluorescence images saved to numbered subfolders"""
         i = 0
         imgs = []
         while True:
