@@ -16,7 +16,7 @@
 # along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-Objects used in the analysis of PWS data.
+Classes used in the analysis of PWS data.
 
 Classes
 ---------

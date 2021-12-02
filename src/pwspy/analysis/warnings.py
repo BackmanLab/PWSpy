@@ -16,7 +16,7 @@
 # along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-The purpose of this file is provide functions which check data during analysis for abnormality. If abnormal conditions are found
+Functions which check data during analysis for abnormality. If abnormal conditions are found
 then an AnalysisWarning is produced. The application can then display or record these warnings. This aspect of the program has not really
 been fully implemented.
 """

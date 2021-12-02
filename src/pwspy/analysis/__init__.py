@@ -30,6 +30,11 @@ Submodules
     warnings
     dynamics
 
+Inheritance
+-------------
+.. inheritance-diagram:: pwspy.analysis.pws.PWSAnalysisSettings pwspy.analysis.pws.PWSAnalysisResults pwspy.analysis.pws.PWSAnalysis pwspy.analysis.dynamics.DynamicsAnalysisSettings pwspy.analysis.dynamics.DynamicsAnalysisResults pwspy.analysis.dynamics.DynamicsAnalysis
+    :parts: 1
+
 """
 import os
 from ._abstract import AbstractAnalysisSettings, AbstractAnalysis, AbstractAnalysisResults, AbstractHDFAnalysisResults

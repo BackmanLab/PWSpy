@@ -16,7 +16,7 @@
 # along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-Objects used during the "Compilation" step of analysis. This is when the data saved during analysis
+Classes used during the "compilation" step of analysis. This is when the data saved during analysis
 is combined with ROIs to generate a table of values such as the average RMS, reflectance, diffusion coefficient, etc.
 
 PWS
