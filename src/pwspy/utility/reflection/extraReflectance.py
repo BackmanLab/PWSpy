@@ -315,7 +315,7 @@ def plotExtraReflection(images: t_.Dict[str, t_.Dict[Material, t_.List[pwsdt.Pws
         scatterPointsX = [(meanValues[sett][matCombo].mat1Spectra / meanValues[sett][matCombo].mat2Spectra).mean() for
                           matCombo in settMatCombos]
         [scatterAx3.scatter(x, y, label=f'{matCombo[0].name}/{matCombo[1].name}') for x, y, matCombo in zip(scatterPointsX, scatterPointsY, settMatCombos)]
-        x = np.array([0, max(scatterPointsX)])
+        x = np.array([1, max(scatterPointsX + scatterPointsY) * 1.05])
         scatterAx3.plot(x, x, label='1:1')
         scatterAx3.legend()
 
@@ -328,7 +328,7 @@ def plotExtraReflection(images: t_.Dict[str, t_.Dict[Material, t_.List[pwsdt.Pws
                           settMatCombos]
         [scatterAx2.scatter(x, y, label=f'{matCombo[0].name}/{matCombo[1].name}') for x, y, matCombo in
          zip(scatterPointsX, scatterPointsY, settMatCombos)]
-        x = np.array([0, max(scatterPointsX)])
+        x = np.array([1, max(scatterPointsX + scatterPointsY) * 1.05])
         scatterAx2.plot(x, x, label='1:1')
         scatterAx2.legend()
     return figs
