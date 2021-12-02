@@ -10,12 +10,18 @@ Performing FFT on the raw data to get a view of the estimated depth of cell feat
 .. image:: ../resources/opdExample.gif
 
 
-Brief example of basic PWS analysis to extract Sigma and Reflectance values.
-------------------------------------------------------------------------------
+Brief example of basic PWS analysis to produce Sigma, Reflectance, Ld, and other images.
+-----------------------------------------------------------------------------------------
 .. literalinclude:: ../../examples/runPWSAnalysis.py
    :language: python
    :linenos:
 
+
+Use the `compilation` functionality to reduce analysis results to a table of values of average values within an ROI
+----------------------------------------------------------------------------------------------------------------------
+.. literalinclude:: ../../examples/compileResults.py
+   :language: python
+   :linenos:
 
 Basic loading of ROI's to extract data from specific regions
 --------------------------------------------------------------
