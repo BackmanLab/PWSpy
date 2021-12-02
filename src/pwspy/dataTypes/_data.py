@@ -891,8 +891,8 @@ class PwsCube(ICRawBase):
 
     _hdfTypeName = "ImCube"  # This is used for saving/loading from HDF. Important not to change it or old files will stop working.
 
-    def __init__(self, data, metadata: pwsdtmd.ICMetaData, processingStatus: ICRawBase.ProcessingStatus = None, dtype=np.float32):
-        assert isinstance(metadata, pwsdtmd.ICMetaData)
+    def __init__(self, data, metadata: pwsdtmd.PwsMetaData, processingStatus: ICRawBase.ProcessingStatus = None, dtype=np.float32):
+        assert isinstance(metadata, pwsdtmd.PwsMetaData)
         super().__init__(data, metadata.wavelengths, metadata, processingStatus=processingStatus, dtype=dtype)
 
     @property
@@ -903,7 +903,7 @@ class PwsCube(ICRawBase):
         return self.index
 
     @classmethod
-    def loadAny(cls, directory: str, metadata: pwsdtmd.ICMetaData = None,  lock: mp.Lock = None):
+    def loadAny(cls, directory: str, metadata: pwsdtmd.PwsMetaData = None, lock: mp.Lock = None):
         """
         Attempt to load a `PwsCube` for any format of file in `directory`
 
@@ -927,7 +927,7 @@ class PwsCube(ICRawBase):
                     raise OSError(f"Could not find a valid PWS image cube file at {directory}.")
 
     @classmethod
-    def fromOldPWS(cls, directory: str, metadata: pwsdtmd.ICMetaData = None,  lock: mp.Lock = None):
+    def fromOldPWS(cls, directory: str, metadata: pwsdtmd.PwsMetaData = None, lock: mp.Lock = None):
         """
         Loads from the file format that was saved by the all-matlab version of the Basis acquisition code.
         Data was saved in raw binary to a file called `image_cube`. Some metadata was saved to .mat files called
@@ -945,7 +945,7 @@ class PwsCube(ICRawBase):
             lock.acquire()
         try:
             if metadata is None:
-                metadata = pwsdtmd.ICMetaData.fromOldPWS(directory)
+                metadata = pwsdtmd.PwsMetaData.fromOldPWS(directory)
             with open(os.path.join(directory, 'image_cube'), 'rb') as f:
                 data = np.frombuffer(f.read(), dtype=np.uint16)
             data = data.reshape((metadata.dict['imgHeight'], metadata.dict['imgWidth'], len(metadata.wavelengths)), order='F')
@@ -956,7 +956,7 @@ class PwsCube(ICRawBase):
         return cls(data, metadata)
 
     @classmethod
-    def fromTiff(cls, directory, metadata: pwsdtmd.ICMetaData = None,  lock: mp.Lock = None):
+    def fromTiff(cls, directory, metadata: pwsdtmd.PwsMetaData = None, lock: mp.Lock = None):
         """
         Loads from a 3D tiff file named `pws.tif`, or in some older data `MMStack.ome.tif`. Metadata can be stored in
         the tags of the tiff file but if there is a pwsmetadata.json file found then this is preferred.
@@ -975,7 +975,7 @@ class PwsCube(ICRawBase):
             lock.acquire()
         try:
             if metadata is None:
-                metadata = pwsdtmd.ICMetaData.fromTiff(directory)
+                metadata = pwsdtmd.PwsMetaData.fromTiff(directory)
             if os.path.exists(os.path.join(directory, 'MMStack.ome.tif')):
                 path = os.path.join(directory, 'MMStack.ome.tif')
             elif os.path.exists(os.path.join(directory, 'pws.tif')):
@@ -991,7 +991,7 @@ class PwsCube(ICRawBase):
         return cls(data, metadata)
 
     @classmethod
-    def fromNano(cls, directory: str, metadata: pwsdtmd.ICMetaData = None, lock: mp.Lock = None) -> PwsCube:
+    def fromNano(cls, directory: str, metadata: pwsdtmd.PwsMetaData = None, lock: mp.Lock = None) -> PwsCube:
         """
         Loads from the file format used at NC. all data and metadata is contained in a .mat file.
 
@@ -1008,7 +1008,7 @@ class PwsCube(ICRawBase):
             lock.acquire()
         try:
             if metadata is None:
-                metadata = pwsdtmd.ICMetaData.fromNano(directory)
+                metadata = pwsdtmd.PwsMetaData.fromNano(directory)
             with h5py.File(path, 'r') as hf:
                 data = np.array(hf['imageCube'])
                 data = data.transpose((2, 1, 0))  # Re-order axes to match the shape of ROIs and thumbnails.
@@ -1019,7 +1019,7 @@ class PwsCube(ICRawBase):
         return cls(data, metadata)
 
     @classmethod
-    def fromMetadata(cls, meta: pwsdtmd.ICMetaData,  lock: mp.Lock = None) -> PwsCube:
+    def fromMetadata(cls, meta: pwsdtmd.PwsMetaData, lock: mp.Lock = None) -> PwsCube:
         """
         If provided with an ICMetadata object this function will automatically select the correct file loading method
         and will return the associated PwsCube.
@@ -1031,12 +1031,12 @@ class PwsCube(ICRawBase):
         Returns:
             A new instance of `PwsCube`.
         """
-        assert isinstance(meta, pwsdtmd.ICMetaData)
-        if meta.fileFormat == pwsdtmd.ICMetaData.FileFormats.Tiff:
+        assert isinstance(meta, pwsdtmd.PwsMetaData)
+        if meta.fileFormat == pwsdtmd.PwsMetaData.FileFormats.Tiff:
             return cls.fromTiff(meta.filePath, metadata=meta, lock=lock)
-        elif meta.fileFormat == pwsdtmd.ICMetaData.FileFormats.RawBinary:
+        elif meta.fileFormat == pwsdtmd.PwsMetaData.FileFormats.RawBinary:
             return cls.fromOldPWS(meta.filePath, metadata=meta, lock=lock)
-        elif meta.fileFormat == pwsdtmd.ICMetaData.FileFormats.NanoMat:
+        elif meta.fileFormat == pwsdtmd.PwsMetaData.FileFormats.NanoMat:
             return cls.fromNano(meta.filePath, metadata=meta, lock=lock)
         elif meta.fileFormat is None:
             return cls.loadAny(meta.filePath, metadata=meta, lock=lock)
@@ -1106,14 +1106,14 @@ class PwsCube(ICRawBase):
         return PwsCube(data, md)
 
     @staticmethod
-    def getMetadataClass() -> t_.Type[pwsdtmd.ICMetaData]:  # Inherit docstring
-        return pwsdtmd.ICMetaData
+    def getMetadataClass() -> t_.Type[pwsdtmd.PwsMetaData]:  # Inherit docstring
+        return pwsdtmd.PwsMetaData
 
     @classmethod
     def fromHdfDataset(cls, d: h5py.Dataset):
         """Load an PwsCube from an HDF5 dataset."""
         data, index, mdDict, processingStatus = cls.decodeHdf(d)
-        md = pwsdtmd.ICMetaData(mdDict, fileFormat=pwsdtmd.ICMetaData.FileFormats.Hdf)
+        md = pwsdtmd.PwsMetaData(mdDict, fileFormat=pwsdtmd.PwsMetaData.FileFormats.Hdf)
         return cls(data, md, processingStatus=processingStatus)
 
     def filterDust(self, kernelRadius: float, pixelSize: float = None) -> None:
@@ -1181,7 +1181,7 @@ class KCube(ICBase):
 
     _hdfTypeName = "KCube"  # This is used for saving/loading from HDF. Important not to change it or old files will stop working.
 
-    def __init__(self, data: np.ndarray, wavenumbers: t_.Tuple[float], metadata: pwsdtmd.ICMetaData = None):
+    def __init__(self, data: np.ndarray, wavenumbers: t_.Tuple[float], metadata: pwsdtmd.PwsMetaData = None):
         self.metadata = metadata #Just saving a reference to the original PwsCube in case we want to reference it.
         ICBase.__init__(self, data, wavenumbers, dtype=np.float32)
 
