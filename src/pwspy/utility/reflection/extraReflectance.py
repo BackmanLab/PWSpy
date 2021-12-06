@@ -264,9 +264,9 @@ def plotExtraReflection(images: t_.Dict[str, t_.Dict[Material, t_.List[pwsdt.Pws
 
     dock = DockablePlotWindow("Primary")
     figs = [dock]
-    fig, ax = dock.subplots("Extra Reflection")  # For extra reflections
-    ax.set_ylabel("Reflectance % (100 = total reflection)")
-    ax.set_xlabel("nm")
+    fig, ax = dock.subplots("System Reflectance")  # For extra reflections
+    ax.set_ylabel("System Reflectance % (100 = total reflection)")
+    ax.set_xlabel("Wavelength (nm)")
     numLines = []
     for sett in settings:
         for matCombo in allCombos[sett].keys():
@@ -281,8 +281,8 @@ def plotExtraReflection(images: t_.Dict[str, t_.Dict[Material, t_.List[pwsdt.Pws
             for comboSummary, combo in allCombos[sett][matCombo]:
                 cubes = combo
                 ax.plot(cubes[mat1].wavelengths, comboSummary.rExtra * 100,
-                        label=f'{sett} {mat1}:{int(cubes[mat1].metadata.exposure)}ms {mat2}:{int(cubes[mat2].metadata.exposure)}ms')
-        ax.plot(cubes[mat1].wavelengths, totalMean[sett].rExtra * 100, color='k', label=f'{sett} mean')  # TODO Add a hover annotation since all of the lines are black it's impossible to know which one is which.
+                        label=f'{sett} {mat1.name} : {mat2.name}')
+        ax.plot(cubes[mat1].wavelengths, totalMean[sett].rExtra * 100, color='k', label=f'{sett} Weighted Avg.')  # TODO Add a hover annotation since all of the lines are black it's impossible to know which one is which.
     ax.legend()
 
     fig2, ratioAxes = dock.subplots("Reflectance Ratios",
@@ -315,7 +315,7 @@ def plotExtraReflection(images: t_.Dict[str, t_.Dict[Material, t_.List[pwsdt.Pws
         scatterPointsX = [(meanValues[sett][matCombo].mat1Spectra / meanValues[sett][matCombo].mat2Spectra).mean() for
                           matCombo in settMatCombos]
         [scatterAx3.scatter(x, y, label=f'{matCombo[0].name}/{matCombo[1].name}') for x, y, matCombo in zip(scatterPointsX, scatterPointsY, settMatCombos)]
-        x = np.array([0, max(scatterPointsX)])
+        x = np.array([1, max(scatterPointsX + scatterPointsY) * 1.05])
         scatterAx3.plot(x, x, label='1:1')
         scatterAx3.legend()
 
@@ -328,7 +328,7 @@ def plotExtraReflection(images: t_.Dict[str, t_.Dict[Material, t_.List[pwsdt.Pws
                           settMatCombos]
         [scatterAx2.scatter(x, y, label=f'{matCombo[0].name}/{matCombo[1].name}') for x, y, matCombo in
          zip(scatterPointsX, scatterPointsY, settMatCombos)]
-        x = np.array([0, max(scatterPointsX)])
+        x = np.array([1, max(scatterPointsX + scatterPointsY) * 1.05])
         scatterAx2.plot(x, x, label='1:1')
         scatterAx2.legend()
     return figs

@@ -16,16 +16,22 @@
 # along with PWSpy.  If not, see <https://www.gnu.org/licenses/>.
 
 from __future__ import annotations
+
+import logging
 from abc import ABC, abstractmethod
 import json
 import os.path as osp
 import h5py
 import numpy as np
-import typing
+import typing as t_
+import pandas as pd
+
 from pwspy import __version__ as pwspyversion
+from pwspy.analysis.warnings import AnalysisWarning
+from pwspy.utility.fileIO import processParallel
 from pwspy.utility.misc import cached_property
-if typing.TYPE_CHECKING:
-    from pwspy.dataTypes import ICBase
+if t_.TYPE_CHECKING:
+    from pwspy.dataTypes import ICBase, MetaDataBase
 
 
 class AbstractAnalysisSettings(ABC):
@@ -112,7 +118,7 @@ class AbstractAnalysis(ABC):
         pass
 
     @abstractmethod
-    def run(self, cube: ICBase) -> AbstractAnalysisResults:
+    def run(self, cube: ICBase) -> t_.Tuple[AbstractAnalysisResults, t_.List[AnalysisWarning]]:
         """Given an data cube to analyze this function returns an instanse of AnalysisResults. In the PWSAnalysisApp this function is run in parallel by the AnalysisManager.
 
         Args:
@@ -205,7 +211,7 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
         return cached_property(_clearError(_getFromDict(func)))
 
     #TODO this holds onto the reference to the h5py.File meaning that the file can't be deleted until the object has been deleted. Maybe that's good. but it causes some problems.
-    def __init__(self, file: typing.Optional[h5py.File] = None, variablesDict: typing.Optional[dict] = None, analysisName: typing.Optional[str] = None):
+    def __init__(self, file: t_.Optional[h5py.File] = None, variablesDict: t_.Optional[dict] = None, analysisName: t_.Optional[str] = None):
         if file is not None:
             assert variablesDict is None
         elif variablesDict is not None:
@@ -221,7 +227,7 @@ class AbstractHDFAnalysisResults(AbstractAnalysisResults):
 
     @staticmethod
     @abstractmethod
-    def fields() -> typing.Tuple[str, ...]:
+    def fields() -> t_.Tuple[str, ...]:
         """
 
         Returns:

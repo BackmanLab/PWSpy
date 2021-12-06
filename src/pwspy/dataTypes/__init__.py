@@ -29,9 +29,10 @@ about the equipment used, the date the acquisition was taken, the location of th
     :toctree: generated/
     :nosignatures:
 
-    ICMetaData
+    PwsMetaData
     DynMetaData
     ERMetaData
+    FluorMetaData
 
 Data Classes
 -----------------
@@ -63,21 +64,22 @@ Other Classes
 
 Inheritance
 -------------
-.. inheritance-diagram:: PwsCube DynCube ICMetaData DynMetaData FluorescenceImage CameraCorrection Roi ERMetaData ExtraReflectionCube ExtraReflectanceCube KCube Acquisition FluorMetaData
-    :top-classes: ICBase, ICMetaData
+.. inheritance-diagram:: PwsCube DynCube PwsMetaData DynMetaData ExtraReflectionCube ExtraReflectanceCube KCube FluorMetaData
+    :top-classes: ICBase, MetaDataBase, AnalysisManager, ICRawBase
     :parts: 1
+    :caption: Abstract base classes define common behavior between the implementations of the various data types making it easy to write software using PWSpy that will work for all available data type implementations.
 
 """
 
 import os
 _jsonSchemasPath = os.path.join(os.path.split(__file__)[0], 'jsonSchemas')
-from ._metadata import (ICMetaData, Acquisition, DynMetaData, ERMetaData, FluorMetaData, AnalysisManager, MetaDataBase,
+from ._metadata import (PwsMetaData, Acquisition, DynMetaData, ERMetaData, FluorMetaData, AnalysisManager, MetaDataBase,
                         MetaDataBase)
 from ._other import Roi, CameraCorrection, RoiFile
 from ._data import (FluorescenceImage, ExtraReflectanceCube, ExtraReflectionCube, PwsCube, KCube, DynCube, ICBase,
                     ICRawBase)
 
-__all__ = ['ICMetaData', 'Acquisition', 'DynMetaData', 'ERMetaData', 'FluorMetaData', 'AnalysisManager', 'MetaDataBase',
+__all__ = ['PwsMetaData', 'Acquisition', 'DynMetaData', 'ERMetaData', 'FluorMetaData', 'AnalysisManager', 'MetaDataBase',
            'MetaDataBase', 'Roi', 'CameraCorrection', 'FluorescenceImage', 'ExtraReflectionCube',
            'ExtraReflectanceCube', 'PwsCube', 'KCube', 'DynCube', 'ICBase', 'ICRawBase', 'RoiFile']
 

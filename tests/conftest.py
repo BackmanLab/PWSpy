@@ -34,7 +34,6 @@ class Dataset:
                     print(f"Deleted {acq.filePath} Dynamics {anName}")
 
 
-
 @pytest.fixture(scope='session')
 def sequenceData() -> Dataset:
     """A reference to the dataset with PWS data collected with the automated event sequencing plugin. Cleans out analysis files when done."""

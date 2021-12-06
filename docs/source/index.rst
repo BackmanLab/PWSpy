@@ -26,6 +26,11 @@ with the :py:class:`pwspy.dataTypes.Acquisition` class. An instance of `Acquisit
     if acq.dynamics is not None:
         dynamicsMetadata = acq.dynamics
 
+    if acq.fluorescence is not None:
+        listOfFluorMetadata = acq.fluorescence
+
+
+
 An acquisition also provides access to information that applies to all measurements such as ROIs and automated imaging
 metadata.
 
@@ -43,12 +48,15 @@ as analysis results and raw data.
     from pwspy.analysis.pws import PWSAnalysisResults
     from pwspy.analysis.dynamics import DynAnalysisResults
 
+    listOfAnalysisNames = acq.pws.getAnalyses()
+    analysisName = listOfAnalysisNames[0]
+
     pAnalysisResults: PWSAnalysisResults = acq.pws.loadAnalysis(analysisName)
     dAnalysisResults: DynAnalysisResults = acq.dynamics.loadAnalysis(analysisName)
-    roi: pwsdf.Roi = acq.loadRoi(roiName, roiNumber).getRoi()
+    roi: pwsdt.Roi = acq.loadRoi(roiName, roiNumber).getRoi()
 
-    print(f"Average nuclear Sigma is: {pAnalysisResults.rms[roi].mean()}")
-    print(f"Average nuclear Sigma_t^2 is: {dAnalysisResults.rms_t_squared[roi].mean()}")
+    print(f"Average nuclear Sigma is: {pAnalysisResults.rms[roi.mask].mean()}")
+    print(f"Average nuclear Sigma_t^2 is: {dAnalysisResults.rms_t_squared[roi.mask].mean()}")
 
 There is much more functionality in this library, please see the examples and API documentation.
 

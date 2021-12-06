@@ -33,12 +33,13 @@ import jsonschema
 import numpy as np
 import tifffile as tf
 from scipy import io as spio
-from pwspy.analysis import AbstractHDFAnalysisResults
 from pwspy.dataTypes import _jsonSchemasPath
 from pwspy.dataTypes._other import CameraCorrection, Roi, RoiFile
 import pwspy.dataTypes._data as pwsdtd
 from pwspy import dateTimeFormat
 from pwspy.utility.misc import cached_property
+if t_.TYPE_CHECKING:
+    from pwspy.analysis import AbstractHDFAnalysisResults
 
 
 class MetaDataBase(abc.ABC):
@@ -573,7 +574,7 @@ class FluorMetaData(MetaDataBase):
             return f.asarray()
 
 
-class ICMetaData(MetaDataBase, AnalysisManager):
+class PwsMetaData(MetaDataBase, AnalysisManager):
     """A class that represents the metadata of a PWS acquisition.
 
     Args:
@@ -590,14 +591,14 @@ class ICMetaData(MetaDataBase, AnalysisManager):
         from pwspy.analysis.pws import PWSAnalysisResults
         return PWSAnalysisResults
 
-    _jsonSchemaPath = os.path.join(_jsonSchemasPath, 'ICMetaData.json')
+    _jsonSchemaPath = os.path.join(_jsonSchemasPath, 'PwsMetaData.json')
     with open(_jsonSchemaPath) as f:
         _jsonSchema = json.load(f)
 
-    def __init__(self, metadata: dict, filePath: t_.Optional[str] = None, fileFormat: ICMetaData.FileFormats = None, acquisitionDirectory: t_.Optional[Acquisition] = None):
+    def __init__(self, metadata: dict, filePath: t_.Optional[str] = None, fileFormat: PwsMetaData.FileFormats = None, acquisitionDirectory: t_.Optional[Acquisition] = None):
         MetaDataBase.__init__(self, metadata, filePath, acquisitionDirectory=acquisitionDirectory)
         AnalysisManager.__init__(self, filePath)
-        self.fileFormat: ICMetaData.FileFormats = fileFormat
+        self.fileFormat: PwsMetaData.FileFormats = fileFormat
         self.dict['wavelengths'] = tuple(np.array(self.dict['wavelengths']).astype(float))
 
     def toDataClass(self, lock: mp.Lock = None) -> pwsdtd.PwsCube:
@@ -612,35 +613,35 @@ class ICMetaData(MetaDataBase, AnalysisManager):
         return self.dict['wavelengths']
 
     @classmethod
-    def loadAny(cls, directory, lock: mp.Lock = None, acquisitionDirectory: t_.Optional[Acquisition] = None) -> ICMetaData:
+    def loadAny(cls, directory, lock: mp.Lock = None, acquisitionDirectory: t_.Optional[Acquisition] = None) -> PwsMetaData:
         """
         Attempt to load from any file format.
 
         Args:
             directory: The file path to load the metadata from.
         Returns:
-            A new instance of `ICMetaData` loaded from file
+            A new instance of `PwsMetaData` loaded from file
         """
         try:
-            return ICMetaData.fromTiff(directory, lock=lock, acquisitionDirectory=acquisitionDirectory)
+            return PwsMetaData.fromTiff(directory, lock=lock, acquisitionDirectory=acquisitionDirectory)
         except:
             try:
-                return ICMetaData.fromOldPWS(directory, lock=lock, acquisitionDirectory=acquisitionDirectory)
+                return PwsMetaData.fromOldPWS(directory, lock=lock, acquisitionDirectory=acquisitionDirectory)
             except:
                 try:
-                    return ICMetaData.fromNano(directory, lock=lock, acquisitionDirectory=acquisitionDirectory)
+                    return PwsMetaData.fromNano(directory, lock=lock, acquisitionDirectory=acquisitionDirectory)
                 except:
                     raise OSError(f"Could not find a valid PWS image cube file at {directory}.")
 
     @classmethod
-    def fromOldPWS(cls, directory, lock: mp.Lock = None, acquisitionDirectory: t_.Optional[Acquisition] = None) -> ICMetaData:
+    def fromOldPWS(cls, directory, lock: mp.Lock = None, acquisitionDirectory: t_.Optional[Acquisition] = None) -> PwsMetaData:
         """
         Attempt to load from the old .mat file format.
 
         Args:
             directory: The file path to load the metadata from.
         Returns:
-            A new instance of `ICMetaData` loaded from file
+            A new instance of `PwsMetaData` loaded from file
         """
         if lock is not None:
             lock.acquire()
@@ -662,17 +663,17 @@ class ICMetaData(MetaDataBase, AnalysisManager):
         finally:
             if lock is not None:
                 lock.release()
-        return cls(md, filePath=directory, fileFormat=ICMetaData.FileFormats.RawBinary, acquisitionDirectory=acquisitionDirectory)
+        return cls(md, filePath=directory, fileFormat=PwsMetaData.FileFormats.RawBinary, acquisitionDirectory=acquisitionDirectory)
 
     @classmethod
-    def fromNano(cls, directory: str, lock: mp.Lock = None, acquisitionDirectory: t_.Optional[Acquisition] = None) -> ICMetaData:
+    def fromNano(cls, directory: str, lock: mp.Lock = None, acquisitionDirectory: t_.Optional[Acquisition] = None) -> PwsMetaData:
         """
         Attempt to load from NanoCytomic .mat file format
 
         Args:
             directory: The file path to load the metadata from.
         Returns:
-            A new instance of `ICMetaData` loaded from file
+            A new instance of `PwsMetaData` loaded from file
         """
         if lock is not None:
             lock.acquire()
@@ -688,17 +689,17 @@ class ICMetaData(MetaDataBase, AnalysisManager):
         finally:
             if lock is not None:
                 lock.release()
-        return cls(md, filePath=directory, fileFormat=ICMetaData.FileFormats.NanoMat, acquisitionDirectory=acquisitionDirectory)
+        return cls(md, filePath=directory, fileFormat=PwsMetaData.FileFormats.NanoMat, acquisitionDirectory=acquisitionDirectory)
 
     @classmethod
-    def fromTiff(cls, directory, lock: mp.Lock = None, acquisitionDirectory: t_.Optional[Acquisition] = None) -> ICMetaData:
+    def fromTiff(cls, directory, lock: mp.Lock = None, acquisitionDirectory: t_.Optional[Acquisition] = None) -> PwsMetaData:
         """
         Attempt to load from the standard TIFF file format.
 
         Args:
             directory: The file path to load the metadata from.
         Returns:
-            A new instance of `ICMetaData` loaded from file
+            A new instance of `PwsMetaData` loaded from file
         """
         if lock is not None:
             lock.acquire()
@@ -743,7 +744,7 @@ class ICMetaData(MetaDataBase, AnalysisManager):
         if 'waveLengths' in metadata:  # Fix an old naming issue
             metadata['wavelengths'] = metadata['waveLengths']
             del metadata['waveLengths']
-        return cls(metadata, filePath=directory, fileFormat=ICMetaData.FileFormats.Tiff, acquisitionDirectory=acquisitionDirectory)
+        return cls(metadata, filePath=directory, fileFormat=PwsMetaData.FileFormats.Tiff, acquisitionDirectory=acquisitionDirectory)
 
     def metadataToJson(self, directory):
         """
@@ -762,7 +763,7 @@ class ICMetaData(MetaDataBase, AnalysisManager):
         Returns:
             An image for quick viewing of the acquisition. No numerical significance.
         """
-        if self.fileFormat == ICMetaData.FileFormats.NanoMat:
+        if self.fileFormat == PwsMetaData.FileFormats.NanoMat:
             with h5py.File(os.path.join(self.filePath, 'image_bd.mat'), 'r') as hf:
                 return np.array(hf['image_bd']).T.copy()  # For some reason these are saved transposed?
         else:
@@ -790,13 +791,13 @@ class Acquisition:
         return f"{self.__class__.__name__}({path})"
 
     @cached_property
-    def pws(self) -> t_.Optional[ICMetaData]:
-        """ICMetaData: Returns None if no PWS acquisition was found."""
+    def pws(self) -> t_.Optional[PwsMetaData]:
+        """PwsMetaData: Returns None if no PWS acquisition was found."""
         try:
-            return ICMetaData.loadAny(os.path.join(self.filePath, 'PWS'), acquisitionDirectory=self)
+            return PwsMetaData.loadAny(os.path.join(self.filePath, 'PWS'), acquisitionDirectory=self)
         except:
             try:
-                return ICMetaData.loadAny(os.path.join(self.filePath), acquisitionDirectory=self) #Many of the old files are saved here in the root directory.
+                return PwsMetaData.loadAny(os.path.join(self.filePath), acquisitionDirectory=self) #Many of the old files are saved here in the root directory.
             except:
                 return None
 
@@ -813,7 +814,7 @@ class Acquisition:
 
     @cached_property
     def fluorescence(self) -> t_.List[FluorMetaData]:
-        # Newer acquisitions allow for multiple fluorescence images saved to numbered subfolders
+        """List[FluorMetaData]: Newer acquisitions allow for multiple fluorescence images saved to numbered subfolders"""
         i = 0
         imgs = []
         while True:
@@ -865,7 +866,23 @@ class Acquisition:
             return RoiFile.loadAny(self.filePath, name, num, acquisition=self)
 
     def saveRoi(self, roiName: str, roiNumber: int, roi: Roi, overwrite: bool = False) -> RoiFile:
-        """Save a Roi to file in the acquisition's file path."""
+        """
+        Save a Roi to file in the acquisition's file path.
+
+        Args:
+            roiName: The name to identify this ROI
+            roiNumber: The number to identify this ROI
+            roi: The ROI object defining the ROI geometry
+            overwrite: If True then any existing ROIFile matching this name and number will be overwritten. Otherwise an OSError is raised.
+
+        Returns:
+            A reference to the new ROIFile
+
+        Raises:
+            OSError: If `overwrite` is False and an ROI of the same name and number
+        already exists then an OSError will be raised.
+
+        """
         return RoiFile.toHDF(roi, roiName, roiNumber, self.filePath, overwrite=overwrite, acquisition=self)
 
     def deleteRoi(self, name: str, num: int, fformat: t_.Optional[RoiFile.FileFormats] = None):
@@ -932,4 +949,4 @@ _TupleValidator = jsonschema.validators.extend(  # All of this is just so that j
     ))
 
 if __name__ == '__main__':
-    md = ICMetaData.fromNano(r'C:\Users\nicke\Desktop\LTL20b_Tracking cells in 50%EtOH,95%EtOH,Water\95% ethanol\Cell1')
+    md = PwsMetaData.fromNano(r'C:\Users\nicke\Desktop\LTL20b_Tracking cells in 50%EtOH,95%EtOH,Water\95% ethanol\Cell1')

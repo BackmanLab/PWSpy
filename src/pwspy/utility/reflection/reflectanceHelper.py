@@ -37,12 +37,12 @@ from numbers import Number
 import pandas as pd
 import numpy as np
 import os
-from . import Material
+from pwspy.utility.reflection import Material
 
-from .multilayerReflectanceEngine import Stack, Layer, Polarization
+from pwspy.utility.reflection.multilayerReflectanceEngine import Stack, Layer, Polarization
 from typing import Union, List, Tuple
 
-
+# File paths for materials that have the N values stored in csv.
 materialFiles = {
     Material.Glass: 'N-BK7.csv',
     Material.Water: 'Daimon-21.5C.csv',
@@ -54,6 +54,11 @@ materialFiles = {
     Material.Ethanol: 'Rheims.csv',
     Material.ITO: 'Konig.csv',
     Material.Methanol: 'Moutzouris.csv'
+}
+
+# Coefficients for materials that use the Cauchy equation
+materialCoeffs = {
+    Material.Glycerol_99_5: (1.45797, 0.00598, -0.00036)  # 1.45797+0.00598λ−2−0.00036λ−4. Rheims et al. 1997: n 0.589-1.05 µm
 }
 
 
@@ -73,13 +78,24 @@ def _init():
     for k, v in ser.items():
         first += [v.first_valid_index()]
         last += [v.last_valid_index()]
-    first = max(first)
-    last = min(last)
+    first = max(first)  # The lowest wavelength we have data for all materials.
+    last = min(last)  # The higherst wavelength we have data for all materials.
     # Interpolate so we don't have any nan values.
     #    df = pd.DataFrame(ser)
     df = pd.concat(ser, axis='columns', keys=materialFiles.keys())
     df = df.interpolate('index')
-    return df.loc[first:last]
+    df = df.loc[first:last]  # Crop to the first and last wavelengths that we have data for all materials.
+
+    # Calculate from the cauchy Equation
+    wavelengths = df.index / 1e3  # Convert to microns
+    for name, coeffs in materialCoeffs.items():
+        arr = np.zeros((len(wavelengths),))
+        for i, coeff in enumerate(coeffs):
+            arr += coeff / (wavelengths ** (i*2))
+        df[(name, 'n')] = arr
+        df[(name, 'k')] = 0
+
+    return df
 
 _n = _init()
 del _init
@@ -140,3 +156,6 @@ def getReflectance(mat1: Union[Number, pd.Series, Material], mat2: Union[Number,
     else:
         r = s.circularIntegration(np.linspace(0, NA, num=1000))
     return r
+
+if __name__ == '__main__':
+    a = 1
