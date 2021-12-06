@@ -866,7 +866,23 @@ class Acquisition:
             return RoiFile.loadAny(self.filePath, name, num, acquisition=self)
 
     def saveRoi(self, roiName: str, roiNumber: int, roi: Roi, overwrite: bool = False) -> RoiFile:
-        """Save a Roi to file in the acquisition's file path."""
+        """
+        Save a Roi to file in the acquisition's file path.
+
+        Args:
+            roiName: The name to identify this ROI
+            roiNumber: The number to identify this ROI
+            roi: The ROI object defining the ROI geometry
+            overwrite: If True then any existing ROIFile matching this name and number will be overwritten. Otherwise an OSError is raised.
+
+        Returns:
+            A reference to the new ROIFile
+
+        Raises:
+            OSError: If `overwrite` is False and an ROI of the same name and number
+        already exists then an OSError will be raised.
+
+        """
         return RoiFile.toHDF(roi, roiName, roiNumber, self.filePath, overwrite=overwrite, acquisition=self)
 
     def deleteRoi(self, name: str, num: int, fformat: t_.Optional[RoiFile.FileFormats] = None):
