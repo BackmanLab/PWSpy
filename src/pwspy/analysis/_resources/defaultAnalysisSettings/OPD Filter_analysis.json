@@ -1,0 +1,13 @@
+{"filterOrder": 2,
+  "filterCutoff": 0.2,
+  "polynomialOrder": 0,
+  "extraReflectanceId": null,
+  "referenceMaterial": "Water",
+  "wavelengthStart": 510,
+  "wavelengthStop": 690,
+  "skipAdvanced": true,
+  "autoCorrStopIndex": 7,
+  "autoCorrMinSub": true,
+  "numericalAperture": 0.52,
+  "relativeUnits": true,
+  "waveNumberCutoff": 4.3}
