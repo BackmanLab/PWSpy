@@ -89,6 +89,8 @@ class Position2d:
         assert isinstance(self.x, Number)
         assert isinstance(self.y, Number)
         assert isinstance(self.stageName, str)
+        self.x = float(self.x)
+        self.y = float(self.y)  # make sure to convert in case it is a numpy type
 
     @staticmethod
     def fromDict(d: dict) -> Position2d:
