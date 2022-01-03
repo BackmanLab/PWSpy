@@ -31,6 +31,7 @@ This is a collection of example usages of the :mod:`pwspy` module.
     findOPDSurface
     roiUsageExample
     opdExampleScript
+    positionTransformation
 """
 import pathlib as pl
 
