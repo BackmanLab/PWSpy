@@ -37,17 +37,25 @@ if __name__ == '__main__':
     NCPath = pl.Path(r'Z:\Nick\NU-NC_EtOH fixation comparison\NC\Buccal cell')
     NUPath = pl.Path(r'Z:\Nick\NU-NC_EtOH fixation comparison\NU\Buccal')
 
-    preTreatRefPositions = PositionList.fromNanoMatFile(NCPath / 'corners_list2.mat', 'TIXYDrive')  # Load the position list of the coverslip corners taken at the beginning of the experiment.
-    postTreatRefPositions = PositionList.fromPropertyMap(PropertyMap.loadFromFile(NUPath / 'corners.pos')) # Load the position list of the coverslip corners after placing the dish back on the microscope after treatment.
-    transformMatrix = preTreatRefPositions.getAffineTransform(postTreatRefPositions)  # Generate an affine transform describing the difference between the two position lists.
-    preTreatCellPositions = PositionList.fromNanoMatFile(NCPath / 'cell_list.mat', 'TIXYDrive')  # Load the positions of the cells we are measuring before the dish was removed.
-    postTreatCellPositions = preTreatCellPositions.applyAffineTransform(transformMatrix)  # Transform the cell positions to the new expected locations.
-    postTreatCellPositions.toPropertyMap().saveToFile(NUPath / 'transformedPositions.pos')  # Save the new positions to a file that can be loaded by Micro-Manager.
+    # Load the position list of the coverslip corners taken at the beginning of the experiment.
+    preTreatRefPositions = PositionList.fromNanoMatFile(NCPath / 'corners_list2.mat', 'TIXYDrive')
+    # Load the position list of the coverslip corners after placing the dish back on the microscope after treatment.
+    postTreatRefPositions = PositionList.fromPropertyMap(PropertyMap.loadFromFile(NUPath / 'corners.pos'))
+    # Generate an affine transform describing the difference between the two position lists.
+    transformMatrix = preTreatRefPositions.getAffineTransform(postTreatRefPositions)
+    # Load the positions of the cells we are measuring before the dish was removed.
+    preTreatCellPositions = PositionList.fromNanoMatFile(NCPath / 'cell_list.mat', 'TIXYDrive')
+    # Transform the cell positions to the new expected locations.
+    postTreatCellPositions = preTreatCellPositions.applyAffineTransform(transformMatrix)
+    # Save the new positions to a file that can be loaded by Micro-Manager.
+    postTreatCellPositions.toPropertyMap().saveToFile(NUPath / 'transformedPositions.pos')
 
+    # Plot the reference and cell positions before treatment
     fig, ax = plt.subplots()
     preTreatRefPositions.plot(fig, ax)
     preTreatCellPositions.plot(fig, ax)
 
+    # Plot the reference and cell positions after treatment
     fig2, ax2 = plt.subplots()
     postTreatRefPositions.plot(fig2, ax2)
     postTreatCellPositions.plot(fig2, ax2)
