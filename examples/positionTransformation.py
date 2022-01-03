@@ -22,6 +22,8 @@ from pwspy.utility.micromanager.positions import PositionList
 This method relies on measuring a set (at least 3) of reference positions before and after moving the dish. You can then use these positions to generate an 
 affine transform. This affine transform can then be applied to your original cell positions in order to generate a new set of positions for the same cells.
 In the case of a standard cell culture dish it is best to use the corners of the glass coverslip as your reference locations.
+
+@author: Nick Anthony
 """
 
 if __name__ == '__main__':
@@ -52,5 +54,3 @@ if __name__ == '__main__':
 
     af = AffineTransform(np.vstack([transformMatrix, [0, 0, 1]]))
     print(f"Scale: {af.scale}, Shear: {af.shear}, Rotation: {af.rotation / (2*np.pi) * 360}, Translation: {af.translation}")
-
-    a = 1
