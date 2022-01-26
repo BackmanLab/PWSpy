@@ -83,6 +83,7 @@ def _init():
     # Interpolate so we don't have any nan values.
     #    df = pd.DataFrame(ser)
     df = pd.concat(ser, axis='columns', keys=materialFiles.keys())
+    df = df.sort_index()
     df = df.interpolate('index')
     df = df.loc[first:last]  # Crop to the first and last wavelengths that we have data for all materials.
 
