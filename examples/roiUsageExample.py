@@ -24,11 +24,15 @@ import pwspy.dataTypes as pwsdt
 import matplotlib.pyplot as plt
 import pathlib
 import numpy as np
-from examples import PWSExperimentPath
+
+
+### User Variables ###
+PWSExperimentPath = ...  # Set this to a folder containing multiple "Cell{x}" acquisition folders. If you have downloaded the test dataset you can use `pl.Path(__file__).parent.parent / 'tests' / 'resources' / 'test_data' / 'sequencer'`
+analysisName = 'script'  # This will often be "p0"
+######################
+
 plt.ion()
 
-workingDirectory = PWSExperimentPath  # The folder that all your acquisitions are saved under.
-analysisName = 'script'  # This will often be "p0"
 
 def plotHist(roi, rms):
     """
@@ -44,7 +48,7 @@ def plotHist(roi, rms):
     plt.hist(vals)  # Plot a histogram
 
 
-cellFolderIterator = pathlib.Path(workingDirectory).glob("Cell[0-9]")  # An iterator for all folders that are below workingDirectory and match the "regex" pattern "Cell[0-9]"
+cellFolderIterator = pathlib.Path(PWSExperimentPath).glob("Cell[0-9]")  # An iterator for all folders that are below workingDirectory and match the "regex" pattern "Cell[0-9]"
 for folder in cellFolderIterator:
     acq = pwsdt.Acquisition(folder)  # An object handling the contents of a single "Cell{X}" folder
 

@@ -27,7 +27,10 @@ Can help to make a reference when you don't actually have one for some reason
 import pwspy.dataTypes as pwsdt
 import matplotlib.pyplot as plt
 import numpy as np
-from examples import PWSImagePath
+
+### User Variables ###
+PWSImagePath = ...  # Set this to the path of a "Cell{X}" folder of a PWS acquisition.
+######################
 
 plt.ion()
 a = pwsdt.Acquisition(PWSImagePath).pws.toDataClass()  # Load a measurement from file.

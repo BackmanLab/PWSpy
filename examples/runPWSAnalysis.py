@@ -22,7 +22,10 @@ This script saves pws analysis results to the test data. This must be run before
 
 from pwspy import analysis
 from pwspy import dataTypes as pwsdt
-from examples import PWSExperimentPath
+
+### User Variables ###
+PWSExperimentPath = ...  # Set this to a folder containing multiple "Cell{x}" acquisition folders. If you have downloaded the test dataset you can use `pl.Path(__file__).parent.parent / 'tests' / 'resources' / 'test_data' / 'sequencer'`
+######################
 
 settings = analysis.pws.PWSAnalysisSettings.loadDefaultSettings("Recommended")
 
