@@ -23,9 +23,12 @@ Load the OPD from a previously saved analysis result and plot it using a special
 """
 
 import pwspy.dataTypes as pwsdt
-from mpl_qt_viz.visualizers import PlotNd
-from examples import PWSImagePath
+from mpl_qt_viz.visualizers import PlotNd  # The mpl_qt_viz library is not a dependency of PWSpy and will need to be installed separately. It can be found on Conda-Forge (conda install -c conda-forge mpl_qt_viz) or on PyPi (pip install mpl_qt_viz)
 import matplotlib.pyplot as plt
+
+### User Variables ###
+PWSImagePath = ...  # Set this to the path of a "Cell{X}" folder of a PWS acquisition.
+######################
 
 plt.ion()  # Without this we will get a crash when trying to open the PlotNd window because a Qt application loop must be running.
 plt.figure()

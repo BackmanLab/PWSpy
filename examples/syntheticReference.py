@@ -27,7 +27,10 @@ import copy
 
 import matplotlib.pyplot as plt
 import pwspy.dataTypes as pwsdt
-from examples import PWSImagePath
+
+### User Variables ###
+PWSImagePath = ...  # Set this to the path of a "Cell{X}" folder of a PWS acquisition.
+######################
 
 plt.ion()
 

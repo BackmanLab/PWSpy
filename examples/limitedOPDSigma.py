@@ -23,7 +23,7 @@ Nano uses this method to extract rms from phantom make from ChromEM cells embedd
 The phantom has a strong thin-film spectrum. This script is meant to filter out the thin film components
 of the fourier transfrom and extract RMS from what is left.
 """
-from pwspy.dataTypes import CameraCorrection, Acquisition, Roi, PwsCube, KCube
+from pwspy.dataTypes import CameraCorrection, Acquisition, PwsCube, KCube
 import matplotlib.pyplot as plt
 import scipy.signal as sps
 import os
@@ -36,7 +36,7 @@ cellNames = ['Cell1', 'Cell2']  # , 'Cell3', 'Cell4','Cell5']
 maskSuffix = 'resin'
 
 # identify the depth in um to which the OPD spectra need to be integrated
-integrationDepth = 2.0  ##  in um
+integrationDepth = 2.0  # in um
 isHannWindow = True  # Should Hann windowing be applied to eliminate edge artifacts?
 subtractResinOpd = True
 resetResinMasks = False
