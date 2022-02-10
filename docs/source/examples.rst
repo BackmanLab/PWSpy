@@ -1,5 +1,7 @@
 Examples
 ==========
+If you don't have PWS experimental data to run these examples with you can find a dataset that is used for automated testing
+on Zenodo here: https://zenodo.org/record/5976039#.Yf6aPt_MJPY
 
 Performing FFT on the raw data to get a view of the estimated depth of cell features
 --------------------------------------------------------------------------------------
