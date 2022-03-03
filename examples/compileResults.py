@@ -22,9 +22,10 @@ values within the ROIs for each acquisition. The compiled results are then place
 import pandas
 from pwspy.analysis.compilation import PWSRoiCompiler, PWSCompilerSettings
 import pwspy.dataTypes as pwsdt
+import pathlib as pl
 
 ### User Variables ###
-PWSExperimentPath = ...  # Set this to a folder containing multiple "Cell{x}" acquisition folders. If you have downloaded the test dataset you can use `pl.Path(__file__).parent.parent / 'tests' / 'resources' / 'test_data' / 'sequencer'`
+PWSExperimentPath: pl.Path = ...  # Set this to a folder containing multiple "Cell{x}" acquisition folders. If you have downloaded the test dataset you can use `pl.Path(__file__).parent.parent / 'tests' / 'resources' / 'test_data' / 'sequencer'`
 ######################
 
 

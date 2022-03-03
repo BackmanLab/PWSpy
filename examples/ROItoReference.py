@@ -27,9 +27,10 @@ Can help to make a reference when you don't actually have one for some reason
 import pwspy.dataTypes as pwsdt
 import matplotlib.pyplot as plt
 import numpy as np
+import pathlib as pl
 
 ### User Variables ###
-PWSImagePath = ...  # Set this to the path of a "Cell{X}" folder of a PWS acquisition.
+PWSImagePath: pl.Path = ... # Set this to the path of a "Cell{X}" folder of a PWS acquisition.
 ######################
 
 plt.ion()

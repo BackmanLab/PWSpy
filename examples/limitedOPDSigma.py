@@ -28,10 +28,11 @@ import matplotlib.pyplot as plt
 import scipy.signal as sps
 import os
 import numpy as np
+import pathlib as pl
 
 '''User Input'''
-path = r'2_7_2019 11.07'
-refName = 'Cell999'  # This is an PwsCube of glass, used for normalization.
+path: pl.Path = ...
+refName = 'Cell3'  # This is an PwsCube of glass, used for normalization.
 cellNames = ['Cell1', 'Cell2']  # , 'Cell3', 'Cell4','Cell5']
 maskSuffix = 'resin'
 
@@ -71,7 +72,7 @@ if subtractResinOpd:
         if resetResinMasks:
             [resin.metadata.acquisitionDirectory.deleteRoi(name, num) for name, num, fformat in resin.metadata.acquisitionDirectory.getRois() if name == maskSuffix]
         if maskSuffix in [name for name, number, fformat in resin.metadata.acquisitionDirectory.getRois()]:
-            resinRoi = resin.metadata.acquisitionDirectory.loadRoi(maskSuffix, 1)
+            resinRoi = resin.metadata.acquisitionDirectory.loadRoi(maskSuffix, 1).getRoi()
         else:
             print('Select a region containing only resin.')
             resinRoi = resin.selectLassoROI()
@@ -86,6 +87,7 @@ if subtractResinOpd:
     ax.legend()
     plt.pause(0.2)
 
+print("Beginning processing.")
 rmses = {}  # Store the rms maps for later saving
 for cellName in cellNames:
     cube = PwsCube.fromMetadata(Acquisition(os.path.join(path, cellName)).pws)

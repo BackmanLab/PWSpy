@@ -24,7 +24,6 @@ like this.
 """
 
 import copy
-
 import matplotlib.pyplot as plt
 import pwspy.dataTypes as pwsdt
 
