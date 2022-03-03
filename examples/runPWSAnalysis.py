@@ -22,9 +22,10 @@ This script saves pws analysis results to the test data. This must be run before
 
 from pwspy import analysis
 from pwspy import dataTypes as pwsdt
+import pathlib as pl
 
 ### User Variables ###
-PWSExperimentPath = ...  # Set this to a folder containing multiple "Cell{x}" acquisition folders. If you have downloaded the test dataset you can use `pl.Path(__file__).parent.parent / 'tests' / 'resources' / 'test_data' / 'sequencer'`
+PWSExperimentPath: pl.Path = ...  # Set this to a folder containing multiple "Cell{x}" acquisition folders. If you have downloaded the test dataset you can use `pl.Path(__file__).parent.parent / 'tests' / 'resources' / 'test_data' / 'sequencer'`
 ######################
 
 settings = analysis.pws.PWSAnalysisSettings.loadDefaultSettings("Recommended")
@@ -42,3 +43,5 @@ results, warnings = anls.run(cube)  # Run the pre-setup analysis on our data. Ge
 acq.pws.saveAnalysis(results, 'myAnalysis', overwrite=True)  # Save our analysis results to file in the default location alongside the raw data under the `analyses` folder.
 
 loadedResults = acq.pws.loadAnalysis('myAnalysis')  # This is just going to be a copy of `results`, loaded from file.
+
+print(f"Saved anlysis `myAnalysis` to {acq.filePath}")

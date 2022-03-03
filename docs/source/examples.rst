@@ -3,7 +3,17 @@ Examples
 If you don't have PWS experimental data to run these examples with you can find a dataset that is used for automated testing
 on Zenodo here: https://zenodo.org/record/5976039#.Yf6aPt_MJPY
 
-Performing FFT on the raw data to get a view of the estimated depth of cell features
+Running basic PWS analysis on a single image.
+-----------------------------------------------------------------------------------------
+This example runs the PWS analysis on a single measurement. The results of the analysis will be saved alongside the raw data
+under the `analyses` folder. Running this example may be required in order for other examples which require that analysis results
+already be available.
+
+.. literalinclude:: ../../examples/runPWSAnalysis.py
+   :language: python
+   :linenos:
+
+Performing FFT to visualize the estimated depth of cell features
 --------------------------------------------------------------------------------------
 .. literalinclude:: ../../examples/opdExampleScript.py
    :language: python
@@ -11,15 +21,7 @@ Performing FFT on the raw data to get a view of the estimated depth of cell feat
 
 .. image:: ../resources/opdExample.gif
 
-
-Brief example of basic PWS analysis to produce Sigma, Reflectance, Ld, and other images.
------------------------------------------------------------------------------------------
-.. literalinclude:: ../../examples/runPWSAnalysis.py
-   :language: python
-   :linenos:
-
-
-Use the `compilation` functionality to reduce analysis results to a table of values of average values within an ROI
+Compile analysis results to a table of average values within each ROI
 ----------------------------------------------------------------------------------------------------------------------
 .. literalinclude:: ../../examples/compileResults.py
    :language: python

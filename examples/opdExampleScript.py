@@ -25,9 +25,11 @@ Load the OPD from a previously saved analysis result and plot it using a special
 import pwspy.dataTypes as pwsdt
 from mpl_qt_viz.visualizers import PlotNd  # The mpl_qt_viz library is not a dependency of PWSpy and will need to be installed separately. It can be found on Conda-Forge (conda install -c conda-forge mpl_qt_viz) or on PyPi (pip install mpl_qt_viz)
 import matplotlib.pyplot as plt
+import pathlib as pl
+from PyQt5.QtWidgets import QApplication
 
 ### User Variables ###
-PWSImagePath = ...  # Set this to the path of a "Cell{X}" folder of a PWS acquisition.
+PWSImagePath: pl.Path = ... # Set this to the path of a "Cell{X}" folder of a PWS acquisition.
 ######################
 
 plt.ion()  # Without this we will get a crash when trying to open the PlotNd window because a Qt application loop must be running.
@@ -47,5 +49,7 @@ opd, opdValues = kCube.getOpd(useHannWindow=False, indexOpdStop=50)  # Use FFT t
 ri = 1.37  # Estimated RI of livecell chromatin
 opdValues = opdValues / (2 * ri)
 
+app = QApplication([])  # Start a QApplication instance to run the PlotNd qwidget
 plotWindow = PlotNd(opd, names=('y', 'x', 'depth'),
                     indices=(None, None, opdValues), title="Estimated Depth")
+app.exec()

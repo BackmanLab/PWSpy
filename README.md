@@ -23,6 +23,9 @@ More information [here](https://docs.conda.io/projects/conda/en/latest/user-guid
 ## Building from source and distributing
 For information on creating a Conda package yourself see [here](docs/building.md).
 
+## Testing
+Automated tests using the [pytest](https://docs.pytest.org/en/7.0.x/) framework reside under the [tests](tests) directory. The default configuration for pytest can be found in [pyproject.toml](https://github.com/BackmanLab/PWSpy/blob/dev/pyproject.toml). Pytest 6.0 or greater is required. For more information on running pytest from the commandline or IDE integration please see the pytest [documentation](https://docs.pytest.org/en/7.0.x/how-to/index.html#how-to). The tests require that you first install the test dataset under `tests/resources`. Due to the size of the test dataset it is hosted externally rather than being included in the Git repository. Please check [here](tests/resources/readme.txt) for up to date information on how to acquire the test dataset.
+
 ## Contributing
 Read the [contributing section](CONTRIBUTING.md) in the documentation if you want to help us improve and further develop PWSpy!
 
