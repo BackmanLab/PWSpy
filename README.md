@@ -29,3 +29,4 @@ Automated tests using the [pytest](https://docs.pytest.org/en/7.0.x/) framework 
 ## Contributing
 Read the [contributing section](CONTRIBUTING.md) in the documentation if you want to help us improve and further develop PWSpy!
 
+[![DOI](https://zenodo.org/badge/329972125.svg)](https://zenodo.org/badge/latestdoi/329972125)
