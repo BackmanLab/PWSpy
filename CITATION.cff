@@ -1,0 +1,16 @@
+cff-version: 1.1.0
+message: "If you use this software, please cite it as below."
+
+authors:
+ - name: Nicholas M. Anthony
+   orcid: 0000-0003-2882-2471
+   affiliation: 1
+ - name: Vadim Backman
+   orcid: 0000-0003-1981-1818
+   affiliation: 1
+affiliations:
+ - name: Department of Biomedical Engineering, Northwestern University, Evanston, IL, USA. 
+   index: 1
+title: BackmanLab/PWSpy: 1.0.0
+version: 1.0.0
+date-released: 2022-03-23
