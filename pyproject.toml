@@ -2,6 +2,10 @@
 # Minimum requirements for the build system to execute.
 requires = ["setuptools", "wheel", "setuptools_scm"]  # PEP 508 specifications.
 
+[project]
+name = "pwspy"
+dynamic = ['version']
+
 [project.optional-dependencies]
 tests = [
     'pytest>=6',
