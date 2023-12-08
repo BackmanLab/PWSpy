@@ -4,7 +4,7 @@ requires = ["setuptools", "wheel", "setuptools_scm"]  # PEP 508 specifications.
 
 [project]
 name = "pwspy"
-dynamic = ['version']
+dynamic = ['version', 'description', 'readme', 'requires-python', 'authors', 'dependencies']
 
 [project.optional-dependencies]
 tests = [
